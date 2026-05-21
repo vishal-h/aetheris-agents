@@ -75,13 +75,13 @@ tree is inspectable via `mix aetheris tree show`.
 
 ## Delivery sequence
 
-```
-T0 (aetheris) — spawn_agent sandbox inheritance          ✅ ad3675f
-  └─ T1 (aetheris-agents) — payslip_compute.py          ✅ 2e8b0e1
-     T2-Part-A (aetheris) — exec server allowlist        ✅ b5f329b
-     T2-Part-B (aetheris-agents) — merge_payslips.py    ✅ f7f31a3
-       └─ T3 (aetheris-agents + aetheris) — agent + docs + sprint  ✅ b37dc72 / 7cb26d8
-```
+| # | Ticket | Repo | What |
+|---|--------|------|------|
+| 0 | T0 | aetheris | Propagate `sandbox_path` to sub-agents in `spawn_agent.ex` |
+| 1 | T1 | aetheris-agents | `payslip_compute.py`: CSV → JSON salary computation (11 tests) |
+| 2 | T2-Part-A | aetheris | Add `wkhtmltopdf` and `gs` to exec server allowlist |
+| 3 | T2-Part-B | aetheris-agents | `merge_payslips.py`: HTML → PDF merge (6 tests) |
+| 4 | T3 | both | Orchestrator, docs, sprint case, eval test |
 
 T1 and T2-Part-B were implemented together in branch `t1-t2b-payslip-scripts`
 in the aetheris-agents repo. T2-Part-A was a separate branch `t2a-exec-allowlist`

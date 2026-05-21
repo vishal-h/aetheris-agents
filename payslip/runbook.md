@@ -38,14 +38,12 @@ Then construct and run a one-off sub-agent config pointing at that employee's da
 
 Check run status:
 ```bash
-cd ~/sandbox/elixirws/aetheris
 mix aetheris agent status <run_id>
 ```
 
-If checkpointed, the run resumes automatically on next start:
-```bash
-mix aetheris run ../aetheris-agents/payslip/agents/payslip_orchestrator.exs
-```
+If checkpointed, the interrupted run resumes automatically the next time
+the Aetheris application starts — for example, when you run any
+`mix aetheris` command. You do not need to re-run the orchestrator agent file.
 
 Inspect which sub-agents completed and which failed:
 ```bash

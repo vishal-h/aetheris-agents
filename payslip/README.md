@@ -1,20 +1,42 @@
 # uc-payslip — Payslip Generation
 
-This use case generates monthly payslips for all employees in a payroll CSV. An Aetheris orchestrator runs `payslip_compute.py` to produce structured salary JSON, then spawns one sub-agent per employee. Each sub-agent renders per-month HTML payslips from the JSON and the HTML template, then merges them into a single PDF via `wkhtmltopdf` and Ghostscript. All output survives the run because `overlay_base_dir` is nil — files are written directly to `payslip/output/`.
+Generates monthly HTML payslips and merged PDFs for all employees in a
+payroll CSV. An Aetheris orchestrator spawns one sub-agent per employee;
+each sub-agent runs a single Python script that handles computation,
+template filling, and PDF merging end-to-end.
+
+---
+
+## Design principle
+
+Scripts do, agents decide.
+
+- **Python scripts** handle all data transformation, arithmetic, file I/O,
+  and HTML generation — everything deterministic and testable in isolation.
+- **Agents** handle orchestration: read the employee list, spawn sub-agents
+  in parallel, wait for results, report.
+- The LLM is never asked to generate file content programmatically or perform
+  arithmetic.
+
+This keeps prompts simple, business logic testable without Aetheris, and
+prevents the LLM from reaching for inline scripting patterns.
 
 ---
 
 ## Business rules
 
-| Condition | Earnings type | Breakdown |
-|-----------|---------------|-----------|
-| `sal ≤ ₹25,000` | `stipend` | Single **Stipend** line; TDS from `tds` column |
-| `employee_type == "Consultant"` (case-insensitive) | `consultant` | Single **Consultant Fee** line; TDS from `tds_94j` column |
-| All others | `regular` | Basic = 50% sal · HRA = 50% Basic · LTA = ₹3,000 · WFH Allowance = ₹3,000 · Flexi Pay = remainder |
+| Condition | Earnings type | Salary breakdown |
+|-----------|---------------|-----------------|
+| `sal ≤ ₹25,000` | Stipend | Single **Stipend** line; no component breakdown |
+| `employee_type = Consultant` | Consultant | Single **Consultant Fee** line; TDS from `tds_94j` column |
+| All others | Regular | Basic = 50% sal · HRA = 50% Basic · LTA = ₹3,000 · WFH Allowance = ₹3,000 · Flexi Pay = remainder |
 
-**Bonus** — if the `bonus` column is non-zero, a separate **Bonus** earnings line is appended after the salary components. Never folded into sal.
+**Bonus** — if `bonus` column is non-zero: separate earnings line, never
+folded into salary.
 
-**Arrears** — any CSV column whose name starts with `arrears` (case-insensitive, e.g. `arrears - Jan-Feb 2025`) is detected automatically. If non-zero, a separate **Arrears** earnings line is appended.
+**Arrears** — any column whose name starts with `arrears` (case-insensitive,
+e.g. `arrears - Jan-Feb 2025`) is auto-detected. Non-zero value adds a
+separate Arrears earnings line.
 
 **Deductions** — PT, TDS, and Loan Recovery are included only when non-zero.
 
@@ -22,12 +44,19 @@ This use case generates monthly payslips for all employees in a payroll CSV. An 
 
 ## Prerequisites
 
-| Tool | Notes |
-|------|-------|
-| `python3` | stdlib only — no pip install needed |
-| `wkhtmltopdf` | HTML → PDF conversion |
-| `gs` (Ghostscript) | PDF merge |
-| Aetheris | Running at `../aetheris`; `ANTHROPIC_API_KEY` must be set |
+| Tool | Purpose | Install |
+|------|---------|---------|
+| `python3` | Computation and HTML generation | stdlib only — no pip install needed |
+| `wkhtmltopdf` | HTML → PDF conversion | `sudo apt-get install wkhtmltopdf` |
+| `gs` | PDF merging (Ghostscript) | `sudo apt-get install ghostscript` |
+| Aetheris | Agent harness | See `../aetheris` |
+| `ANTHROPIC_API_KEY` | LLM orchestration | Set in environment |
+
+Verify:
+```bash
+mix aetheris doctor          # from aetheris repo
+python3 -m pytest payslip/tests/ -v
+```
 
 ---
 
@@ -36,23 +65,26 @@ This use case generates monthly payslips for all employees in a payroll CSV. An 
 ```
 payslip/
 ├── agents/
-│   └── payslip_orchestrator.exs   # Aetheris RunConfig — top-level orchestrator
+│   └── payslip_orchestrator.exs     # Aetheris orchestrator — entry point
 ├── data/
-│   ├── payroll.csv                # Your payroll data (not committed)
-│   ├── payslip_template.html      # HTML template used by sub-agents
-│   └── sample_payroll.csv         # Reference example (3 employees)
+│   ├── payroll.csv                  # Your payroll data (gitignored)
+│   ├── payslip_template.html        # HTML template
+│   └── sample_payroll.csv           # Reference: 3 employees covering all types
 ├── docs/
-│   └── t3-implementation-notes.md
-├── output/                        # Generated — not committed
+│   └── t*-implementation-notes.md   # Per-ticket implementation notes
+├── output/                          # Generated (gitignored)
 │   └── {employee_id_safe}/
-│       ├── {YYYY-MM}.html         # One file per payslip month
-│       └── merged.pdf             # All months merged, newest first
+│       ├── {YYYY-MM}.html           # One per month, newest first
+│       └── merged.pdf
 ├── scripts/
-│   ├── merge_payslips.py          # HTML → PDF merge (wkhtmltopdf + gs)
-│   └── payslip_compute.py         # CSV → JSON salary computation
+│   ├── payslip_compute.py           # CSV → per-employee JSON with salary breakdown
+│   ├── generate_employee_payslips.py # JSON + template → HTML files + PDF (per employee)
+│   └── merge_payslips.py            # HTML files → merged PDF (via wkhtmltopdf + gs)
 ├── tests/
-│   ├── test_merge_payslips.py
-│   └── test_payslip_compute.py
+│   ├── conftest.py                  # Integration marker; skips if tools absent
+│   ├── test_payslip_compute.py      # 11 unit tests
+│   ├── test_merge_payslips.py       # 6 mocked subprocess tests
+│   └── test_generate_employee_payslips.py  # 6 integration tests
 ├── milestone.md
 ├── README.md
 └── runbook.md
@@ -60,28 +92,49 @@ payslip/
 
 ---
 
-## How to run end-to-end
+## How to run
 
-1. Place your payroll CSV at `payslip/data/payroll.csv` (see `sample_payroll.csv` for the column format).
+1. Place your payroll CSV at `payslip/data/payroll.csv`.
+   See `sample_payroll.csv` for the required column format.
 
-2. Change to the Aetheris repo:
+2. From the aetheris repo:
    ```bash
    cd ~/sandbox/elixirws/aetheris
-   ```
-
-3. Run the orchestrator:
-   ```bash
    mix aetheris run ../aetheris-agents/payslip/agents/payslip_orchestrator.exs
    ```
 
-4. Inspect the agent tree:
+3. Inspect the agent tree:
    ```bash
    mix aetheris tree show <run_id>
    ```
 
-5. Output is in `payslip/output/{employee_id_safe}/`:
-   - `{YYYY-MM}.html` — per-month payslip
-   - `merged.pdf` — all months merged, newest first
+4. Output per employee:
+   ```bash
+   ls ../aetheris-agents/payslip/output/BTL_999/
+   # 2026-04.html  2026-03.html  merged.pdf
+   ```
+
+---
+
+## Scripts
+
+Each script can be run standalone from the `payslip/` directory:
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/payslip
+
+# Compute salary breakdown for all employees
+python3 scripts/payslip_compute.py data/payroll.csv
+
+# Compute for one employee
+python3 scripts/payslip_compute.py data/payroll.csv --employee-id BTL_999
+
+# Generate HTML payslips and PDF for one employee
+python3 scripts/generate_employee_payslips.py BTL_999
+
+# Merge HTML files into a single PDF
+python3 scripts/merge_payslips.py output/BTL_999/
+```
 
 ---
 
@@ -89,7 +142,7 @@ payslip/
 
 | Column | Description |
 |--------|-------------|
-| `employee_id` | Employee identifier (e.g. `BTL/999`); `/` is sanitised to `_` in filenames and the `--employee-id` flag |
+| `employee_id` | Identifier (e.g. `BTL/999`); `/` → `_` in output paths |
 | `employee_type` | `Regular` or `Consultant` |
 | `designation` | Job title |
 | `name` | Full name |
@@ -98,12 +151,12 @@ payslip/
 | `doj` | Date of joining (`DD-Mon-YYYY`) |
 | `month` | Payslip month (e.g. `Apr 2026`) |
 | `paid_in` | Month salary was paid (e.g. `May 2026`) |
-| `sal` | Gross salary / CTC component |
+| `sal` | Gross salary |
 | `bonus` | One-time bonus; `0` if none |
-| `arrears - …` | Arrears column(s); any column whose name starts with `arrears` is auto-detected |
-| `loan_recovery` | Loan recovery deduction; blank or `0` if none |
+| `arrears - …` | Any column starting with `arrears`; auto-detected |
+| `loan_recovery` | Loan deduction; blank or `0` if none |
 | `pt` | Professional Tax |
-| `tds_94j` | TDS under section 94J (Consultants only) |
-| `tds` | Income tax TDS (Regular and Stipend employees) |
+| `tds_94j` | TDS section 94J — Consultants only |
+| `tds` | Income tax TDS — Regular and Stipend employees |
 | `work_mode` | `Hybrid`, `WFH`, or `Remote` |
-| `account_number` | Bank account reference printed on the payslip |
+| `account_number` | Bank account printed on payslip |

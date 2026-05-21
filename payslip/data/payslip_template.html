@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        .right-align {
+            text-align: right;
+        }
+        .highlight {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        .no-border table, .no-border th, .no-border td {
+            border: none; /* Remove border for specific tables */
+        }
+        .company {
+            font-size: 1.rem; 
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <p class="company">Bitloka Solutions Private Limited</p>
+    <p>#311/1, Zikhin Bhavan, 26th X, 9th Main<br>BSK II Stage, Bangalore - 560070</p>
+    <p class="highlight">Payslip - March 2024</p>
+
+    <p>
+        Employee Id: EMP_001<br>
+        Name: John Doe<br>
+        DOJ: January 1, 2020<br>
+        Designation: Software Engineer<br>
+        Mode of payment: Net banking<br>
+        Work mode: Hybrid<br>
+        A/C: BANK_CODE / ACCOUNT_NUMBER
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Earnings</th>
+                <th class="right-align">Amount</th>
+                <th>Deductions</th>
+                <th class="right-align">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Basic</td>
+                <td class="right-align">25000.00</td>
+                <td>PT</td>
+                <td class="right-align">200.00</td>
+            </tr>
+            <tr>
+                <td>HRA</td>
+                <td class="right-align">12500.00</td>
+                <td>TDS</td>
+                <td class="right-align">5000.00</td>
+            </tr>
+            <tr>
+                <td>LTA</td>
+                <td class="right-align">3000.00</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>WFH Allowance</td>
+                <td class="right-align">3000.00</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Flexi Pay</td>
+                <td class="right-align">6500.00</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="highlight">
+                <td>Total Earnings</td>
+                <td class="right-align">50000.00</td>
+                <td>Total Deductions</td>
+                <td class="right-align">5200.00</td>
+            </tr>
+            <tr class="highlight">
+                <td>Previous Balance</td>
+                <td class="right-align">0.00</td>
+                <td>Net Pay</td>
+                <td class="right-align">44800.00</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <table class="no-border" style="margin-top: 20px;" border="0">
+        <tr>
+            <td>Approved by: __________________</td>
+            <td class="right-align">Employee Signature: __________________</td>
+        </tr>
+    </table>
+    <p style="margin-top: 20px; font-style: italic;">
+            Disclaimer: This is a computer-generated payslip and does not require a signature.
+    </p>
+</body>
+</html>

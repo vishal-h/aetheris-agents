@@ -35,42 +35,29 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
      Step 1: Run python3 scripts/payslip_compute.py data/payroll.csv --employee-id {id}
      All salary values are pre-computed. Do not recalculate anything.
 
-     Step 2: Read data/payslip_template.html
+     Step 2: Read data/payslip_template.html using the read_file tool.
 
-     Step 3: For each month in the JSON output (already sorted newest-first):
-     Write the file output/{id}/{month_file}.html
+     Step 3: For each month in the JSON output, construct the HTML directly
+     and write it using the write_file tool:
+       path: "output/{id}/{month_file}.html"
+       content: <the complete HTML you construct>
 
-     Use the template HTML as the base. Replace placeholder values with actual data:
-     - Payslip period in the <p class="highlight"> tag: use the "month" field
-       (e.g. "Payslip - April 2026")
-     - Employee Id: employee_id_raw
-     - Name: name
-     - DOJ: doj
-     - Designation: designation
-     - Mode of payment: Net banking (always)
-     - Work mode: work_mode
-     - A/C: account_number
+     DO NOT use run_command or Python scripts for HTML generation.
+     Construct the HTML yourself by modifying the template string:
+     - Replace "Payslip - March 2024" with "Payslip - {month}"
+     - Replace "EMP_001" with employee_id_raw
+     - Replace "John Doe" with name
+     - Replace "January 1, 2020" with doj
+     - Replace "Software Engineer" with designation
+     - Replace "Hybrid" with work_mode
+     - Replace "BANK_CODE / ACCOUNT_NUMBER" with account_number
+     - Replace the <tbody> contents with one <tr> per earnings/deductions entry
+     - Replace footer amounts with total_earnings, total_deductions,
+       previous_balance, net_pay formatted to 2 decimal places
 
-     For the earnings table rows, use the "earnings" list from the JSON.
-     Each entry has "label" and "amount". Create one <tr> per entry.
-     Earnings type rules:
-     - "regular": rows are Basic, HRA, LTA, WFH Allowance, Flexi Pay
-     - "stipend": single row labelled "Stipend"
-     - "consultant": single row labelled "Consultant Fee"
-     Bonus and Arrears appear as additional rows when present.
-
-     For the deductions table rows, use the "deductions" list.
-     Align deduction rows with earnings rows where possible (PT beside Basic,
-     TDS beside HRA). Leave deduction cells empty where there are more
-     earnings rows than deduction rows.
-
-     Footer: Total Earnings, Total Deductions, Net Pay, Previous Balance
-     — all from the JSON. Format amounts as "50000.00" (2 decimal places).
-
-     Keep the company name, address, approval section, and disclaimer unchanged.
-
-     Step 4: After all months for this employee are written, run:
-     python3 scripts/merge_payslips.py output/{id}/
+     Step 4: After all months are written, call run_command:
+       command: "python3"
+       args: ["scripts/merge_payslips.py", "output/{id}/"]
 
      Step 5: Report: employee name, months written, PDF path.
      ---
@@ -85,6 +72,7 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
   - All paths are relative to the sandbox root — no absolute paths in tool calls.
   - overlay_base_dir is nil by design. Output files must persist on disk.
   - The output directory output/{id}/ will be created automatically by write_file.
+  - Use write_file to save HTML. Never use run_command with python3 -c for file generation — only use run_command for payslip_compute.py and merge_payslips.py.
   """,
   user_prompt: "Generate payslips for all employees in data/payroll.csv."
 }

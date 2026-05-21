@@ -120,7 +120,7 @@ def main():
         written.append(out_path)
 
     result = subprocess.run(
-        ["python3", "scripts/merge_payslips.py", f"{args.output_dir}/{args.employee_id_safe}/"],
+        ["python3", "scripts/merge_payslips.py", emp_dir],
         capture_output=True, text=True
     )
     if result.returncode != 0:
@@ -128,7 +128,7 @@ def main():
         sys.exit(result.returncode)
 
     print(f"Generated {len(written)} payslip(s) for {args.employee_id_safe}.")
-    print(f"PDF: {args.output_dir}/{args.employee_id_safe}/merged.pdf")
+    print(f"PDF: {os.path.join(args.output_dir, args.employee_id_safe, 'merged.pdf')}")
 
 
 if __name__ == "__main__":

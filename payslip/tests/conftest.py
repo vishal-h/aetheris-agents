@@ -10,7 +10,7 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    if shutil.which("wkhtmltopdf") is None:
+    if shutil.which("wkhtmltopdf") is None or shutil.which("gs") is None:
         skip = pytest.mark.skip(reason="wkhtmltopdf not installed")
         for item in items:
             if item.get_closest_marker("integration"):

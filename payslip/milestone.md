@@ -1,124 +1,342 @@
-# Milestone: uc-payslip — Payslip Generation
+# uc-payslip — Payslip Generation
 
-## Why
+**Status:** Complete (T0, T1, T2, T3)
+**Repos:** `aetheris` (T0, T2-Part-A, T3 sprint) + `aetheris-agents` (T1, T2-Part-B, T3 agent)
+**Goal:** Generate monthly payslips from CSV data, producing per-employee
+HTML archives and merged PDFs, orchestrated by an Aetheris agent hierarchy.
 
-Bitloka Solutions Private Limited generates monthly payslips for employees with diverse salary structures (regular, stipend, consultant). Today the process is manual: HR enters data into spreadsheets, calculates salary breakdowns, copies values into an HTML template, and exports to PDF. This is error-prone and slow, especially with edge cases like bonuses, arrears, and consultant TDS (section 94J vs standard TDS).
+---
+
+## Why uc-payslip
+
+This is the first production use-case milestone — using Aetheris to do real
+business work rather than extend the harness. It validates the full agent
+authoring pattern against a concrete business requirement and establishes
+conventions for the `aetheris-agents` repo.
+
+The existing workflow is manual: a finance person uploads a CSV to a chat
+session, instructs an LLM step by step, downloads generated HTML, runs a
+shell script to convert to PDF, then uploads to Drive and emails employees.
+The process repeats monthly, is error-prone for arithmetic, and leaves no
+audit trail.
+
+Aetheris replaces the manual orchestration with a reproducible, auditable
+agent run. The trajectory captures every tool call, every file written, and
+every computation. A failed run is resumable from the last checkpoint. The
+same agent file runs every month against a new CSV.
+
+Three things needed to be in place before the first run:
+
+**Arithmetic accuracy.** LLMs make arithmetic errors on payslip calculations.
+A Python script handles all computation — the LLM only does HTML templating
+with pre-computed values.
+
+**PDF generation from within Aetheris.** `wkhtmltopdf` and `gs` were not in
+the exec server allowlist. Both needed to be added before the agent could
+invoke the PDF merger.
+
+**`spawn_agent` sandbox inheritance.** Agent files set `sandbox_path` using
+`__ENV__.file` so all tool calls resolve relative to the use-case root.
+Sub-agents must inherit this path or their `read_file` and `write_file`
+calls fail.
+
+---
 
 ## What this enables
 
-- One-command payslip generation for all employees from a CSV input
-- AI-orchestrated sub-agent per employee: computes, renders per-month HTML, merges to PDF
-- Correct handling of all salary types: regular 5-component breakdown, stipend single-line, consultant fee
-- Bonus and arrears as separate earnings lines — never folded into the base salary
-- Merged PDF per employee with newest month first
-- Full audit trail via Aetheris trajectory and agent tree
+```bash
+# From the aetheris repo
+mix aetheris run ../aetheris-agents/payslip/agents/payslip_orchestrator.exs
+```
+
+The orchestrator spawns one sub-agent per employee in parallel. Each
+sub-agent generates HTML payslips for all months, then merges them into a
+single PDF. A failed employee run can be re-run independently. The full
+tree is inspectable via `mix aetheris tree show`.
+
+---
 
 ## Exit criterion
 
-- `mix aetheris run ../aetheris-agents/payslip/agents/payslip_orchestrator.exs` completes without error for the sample payroll
-- Each employee in `data/payroll.csv` has `output/{employee_id_safe}/merged.pdf`
-- `python3 -m pytest payslip/tests/ -v` — all 17 tests pass
+| Criterion | Status |
+|-----------|--------|
+| `spawn_agent` propagates `sandbox_path`, `overlay_base_dir`, `context_strategy`, `max_context_steps` | ✅ ad3675f |
+| `wkhtmltopdf` and `gs` callable via `run_command` | ✅ b5f329b |
+| `payslip_compute.py` produces correct JSON for all earnings types | ✅ 2e8b0e1 |
+| `merge_payslips.py` converts and merges HTML to PDF | ✅ f7f31a3 |
+| Running the orchestrator against `sample_payroll.csv` produces `output/BTL_999/*.html` | ✅ b37dc72 |
+| `output/BTL_999/merged.pdf` generated | ✅ b37dc72 |
+| `mix aetheris tree show <run_id>` shows orchestrator + sub-agent tree | ✅ b37dc72 |
+| `./scripts/sprint.sh payslip` passes | ✅ 7cb26d8 |
+| All aetheris CI checks pass | ✅ 7cb26d8 |
+| `README.md` and `runbook.md` complete | ✅ b37dc72 |
+
+---
 
 ## Delivery sequence
 
-| # | Ticket | Repo | What |
-|---|--------|------|------|
-| 0 | T0 | aetheris | Propagate `sandbox_path` to sub-agents in `spawn_agent.ex` |
-| 1 | T1 | aetheris-agents | `payslip_compute.py`: CSV → JSON salary computation (11 tests) |
-| 2 | T2-Part-B | aetheris-agents | `merge_payslips.py`: HTML → PDF merge via wkhtmltopdf + gs (6 tests) |
-| 3 | T3 | both | Orchestrator, docs, sprint case, eval test |
+```
+T0 (aetheris) — spawn_agent sandbox inheritance          ✅ ad3675f
+  └─ T1 (aetheris-agents) — payslip_compute.py          ✅ 2e8b0e1
+     T2-Part-A (aetheris) — exec server allowlist        ✅ b5f329b
+     T2-Part-B (aetheris-agents) — merge_payslips.py    ✅ f7f31a3
+       └─ T3 (aetheris-agents + aetheris) — agent + docs + sprint  ✅ b37dc72 / 7cb26d8
+```
+
+T1 and T2-Part-B were implemented together in branch `t1-t2b-payslip-scripts`
+in the aetheris-agents repo. T2-Part-A was a separate branch `t2a-exec-allowlist`
+in the aetheris repo.
+
+---
 
 ## Repos
 
-| Repo | Role |
-|------|------|
-| `aetheris` | Agent harness (Elixir + Rust); hosts sprint case and eval test |
-| `aetheris-agents` | Agent scripts and use-case assets; hosts orchestrator and Python tools |
+| Ticket | Repo | Branch | Commit |
+|--------|------|--------|--------|
+| T0 | `aetheris` | `t0-spawn-agent-sandbox` | ad3675f |
+| T1 | `aetheris-agents` | `t1-t2b-payslip-scripts` | 2e8b0e1 |
+| T2-Part-A | `aetheris` | `t2a-exec-allowlist` | b5f329b |
+| T2-Part-B | `aetheris-agents` | `t1-t2b-payslip-scripts` | f7f31a3 |
+| T3 | `aetheris-agents` + `aetheris` | `t3-payslip-agent` | b37dc72 / 7cb26d8 |
+
+---
 
 ## Tickets
 
-### T0 — sandbox_path propagation (aetheris)
+---
 
-**File:** `lib/aetheris/execution/tool/spawn_agent.ex`
+### T0 — spawn_agent sandbox_path inheritance ✅
 
-Copy `sandbox_path` from the parent `RunConfig` to the child `RunConfig` inside `build_child_config/4`. Without this fix, sub-agents spawned by the orchestrator fall back to a default temp path and cannot read the payslip data directory or write to the shared `output/` tree.
+**Repo:** aetheris
+**Commit:** ad3675f
+
+**Problem:**
+
+`spawn_agent` constructed sub-agent `RunConfig` with `sandbox_path: nil`.
+Orchestrator agent files set `sandbox_path` to the use-case root via
+`__ENV__.file`. Sub-agents with `nil` resolved file paths against the aetheris
+repo CWD and failed.
+
+**What was built:**
+
+Three lines added to `build_child_config/4` in `spawn_agent.ex`:
+
+```elixir
+sandbox_path:      parent_config.sandbox_path,
+context_strategy:  parent_config.context_strategy,
+max_context_steps: parent_config.max_context_steps,
+```
+
+`overlay_base_dir` was already propagated from m12. `context_strategy` and
+`max_context_steps` were added in m13 after `spawn_agent` was written and had
+never been wired through.
+
+Fields deliberately not propagated: `spawn_depth` (incremented by harness),
+`run_id` (generated fresh), `label`, `coordinator_pid`, `orb_id`,
+`blackboard_pid`, `stub_responses`.
+
+**Tests:** 3 new unit tests using `Registry.lookup` + `:sys.get_state` to
+inspect the child config directly after spawn.
 
 ---
 
-### T1 — payslip_compute.py (aetheris-agents)
+### T1 — payslip_compute.py ✅
 
-**File:** `payslip/scripts/payslip_compute.py`
+**Repo:** aetheris-agents
+**Commit:** 2e8b0e1
 
-Stdlib-only Python 3 script. Reads a payroll CSV and emits per-employee, per-month salary JSON to stdout. Supports `--employee-id` filter; exits non-zero with an error message if the employee is not found. Month entries are sorted newest-first.
+**What was built:**
 
-Business rules:
-- **Regular** (sal > ₹25,000, not Consultant): Basic = 50% sal, HRA = 50% Basic, LTA = ₹3,000, WFH Allowance = ₹3,000, Flexi Pay = remainder
-- **Stipend** (sal ≤ ₹25,000): single "Stipend" line, TDS from `tds` column
-- **Consultant** (employee_type == "Consultant", case-insensitive): single "Consultant Fee" line, TDS from `tds_94j` column
-- **Bonus**: separate earnings entry if `bonus` column is non-zero
-- **Arrears**: any column with name prefix `arrears` (case-insensitive) is auto-detected; non-zero value produces a separate "Arrears" earnings entry
+`payslip/scripts/payslip_compute.py` — reads a payroll CSV, applies business
+rules, outputs JSON to stdout. No dependencies beyond Python 3 stdlib.
 
-**Tests:** `payslip/tests/test_payslip_compute.py` — 11 pytest cases
+```bash
+python3 payslip/scripts/payslip_compute.py data/payroll.csv
+python3 payslip/scripts/payslip_compute.py data/payroll.csv --employee-id BTL_999
+```
+
+Business rules implemented:
+
+- **Employee ID:** `/` → `_` in `employee_id_safe`; original preserved in
+  `employee_id_raw`
+- **Stipend:** `sal <= 25000` → single "Stipend" earnings entry; TDS from
+  `tds` column
+- **Consultant:** `employee_type == "Consultant"` (case-insensitive) → single
+  "Consultant Fee" entry; TDS from `tds_94j` column
+- **Regular:** Basic=50% sal, HRA=50% Basic, LTA=₹3000, WFH=₹3000,
+  FlexiPay=remainder
+- **Bonus/Arrears:** separate earnings entries if non-zero; never folded into sal
+- **Arrears column detection:** case-insensitive prefix match on `"arrears"` —
+  column name includes date range and varies per CSV export
+- **Deductions:** PT, TDS (per type above), Loan Recovery; only included if
+  non-zero
+- **Month ordering:** newest first; `month_file` field: "Apr 2026" → "2026-04"
+
+**Tests:** 11 pytest tests in `payslip/tests/test_payslip_compute.py` covering
+all earnings types, bonus, arrears detection, month sorting, employee ID
+filter, not-found exit.
 
 ---
 
-### T2-Part-B — merge_payslips.py (aetheris-agents)
+### T2 — Exec server allowlist + merge_payslips.py ✅
 
-**File:** `payslip/scripts/merge_payslips.py`
+**T2-Part-A repo:** aetheris — commit b5f329b
+**T2-Part-B repo:** aetheris-agents — commit f7f31a3
 
-Stdlib-only Python 3 script. Globs `*.html` files in an employee output directory, sorts them descending by filename (newest month first), converts each to a temp PDF via `wkhtmltopdf`, then merges all temp PDFs into `merged.pdf` via Ghostscript (`gs`). Uses `tempfile.TemporaryDirectory` for intermediate files. Exits non-zero on any subprocess failure; exits 0 with a message if no HTML files are found.
+**Problem:**
 
-**Tests:** `payslip/tests/test_merge_payslips.py` — 6 pytest cases (subprocess mocked)
+`wkhtmltopdf` and `gs` were not in the exec server `PERMITTED_COMMANDS`.
+The existing `merge_html_to_pdf.sh` required `bash` which is explicitly
+blocked.
+
+**What was built:**
+
+**T2-Part-A:** Two entries appended to `PERMITTED_COMMANDS` in
+`native/aetheris_exec_server/src/runner.rs`:
+
+```rust
+"echo", "wkhtmltopdf", "gs",
+```
+
+Compiled binary at `priv/exec_server/aetheris_exec_server` updated and
+committed.
+
+**T2-Part-B:** `payslip/scripts/merge_payslips.py` — Python replacement for
+`merge_html_to_pdf.sh`. Calls `wkhtmltopdf` and `gs` directly via
+`subprocess.run` without requiring bash.
+
+```bash
+python3 payslip/scripts/merge_payslips.py output/BTL_999/
+```
+
+Sorts HTML files descending by filename (newest month first in merged PDF),
+converts each to a temp PDF, merges with gs, writes `merged.pdf` to the
+employee directory. Uses `tempfile.TemporaryDirectory()` for cleanup.
+
+**Tests:** 6 pytest tests in `payslip/tests/test_merge_payslips.py` with
+mocked subprocess calls covering sort order, per-file conversion, gs argument
+order, failure propagation, empty directory, output path.
 
 ---
 
-### T3 — Orchestrator, docs, sprint (both repos)
+### T3 — Orchestrator agent + sprint + docs ✅
 
-**aetheris-agents:**
-- `payslip/agents/payslip_orchestrator.exs` — Aetheris RunConfig; uses `__ENV__.file` to set `sandbox_path` to the `payslip/` directory so all tool paths resolve correctly regardless of where `mix aetheris run` is invoked from
-- `payslip/README.md` — usage, business rules, CSV column reference
-- `payslip/runbook.md` — operational procedures
-- `payslip/milestone.md` — this document
-- `payslip/docs/t3-implementation-notes.md`
+**Repo:** aetheris-agents + aetheris
+**Commits:** b37dc72 (aetheris-agents) / 7cb26d8 (aetheris)
 
-**aetheris:**
-- `scripts/sprint.sh` — added `payslip` target: checks prerequisites, copies sample CSV if `payroll.csv` absent, runs orchestrator, verifies output
-- `test/aetheris/agents_test.exs` — orchestrator eval test: asserts `RunConfig` shape, `sandbox_path`, `overlay_base_dir`, tools, `max_spawn_depth`, `context_strategy`
+**What was built:**
+
+**`payslip/agents/payslip_orchestrator.exs`**
+
+Uses `__ENV__.file` to set `sandbox_path` to the payslip use-case root,
+making the agent file portable regardless of invocation directory:
+
+```elixir
+agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
+
+%Aetheris.RunConfig{
+  run_id:            "payslip-orch-#{Aetheris.ID.generate()}",
+  provider:          "anthropic",
+  model:             "claude-haiku-4-5-20251001",
+  label:             "Payslip Orchestrator",
+  sandbox_path:      agent_root,
+  overlay_base_dir:  nil,
+  max_steps:         20,
+  max_spawn_depth:   2,
+  context_strategy:  :rolling,
+  max_context_steps: 6,
+  tools:             ["run_command", "spawn_agent", "wait_for_all"],
+  system_prompt:     "...",
+  user_prompt:       "Generate payslips for all employees in data/payroll.csv."
+}
+```
+
+The orchestrator:
+1. Runs `payslip_compute.py` to get all employees as JSON
+2. Spawns one sub-agent per employee via `spawn_agent`
+3. Each sub-agent runs compute for its employee, reads the template, writes
+   one HTML per month, then runs `merge_payslips.py`
+4. Collects all run_ids and calls `wait_for_all`
+5. Reports summary
+
+**`payslip/README.md`:** use case description, business rules, prerequisites,
+folder structure, end-to-end run instructions, CSV column reference.
+
+**`payslip/runbook.md`:** re-run one employee, handle bad CSV, resume failed
+run, install wkhtmltopdf/gs, inspect trajectory.
+
+**`scripts/sprint.sh payslip` (aetheris repo):** prerequisite checks
+(python3, wkhtmltopdf, gs), runs orchestrator, verifies HTML and PDF output.
+
+**`test/aetheris/agents_test.exs` addition (aetheris repo):** evaluates
+`payslip_orchestrator.exs` and asserts `sandbox_path != nil`,
+`overlay_base_dir == nil`, correct tools, `max_spawn_depth == 2`.
+
+**`payslip/docs/t3-implementation-notes.md`**
+
+---
 
 ## Repository structure
 
+### aetheris repo additions
+
+```
+native/
+  aetheris_exec_server/
+    src/
+      runner.rs              ← wkhtmltopdf + gs in PERMITTED_COMMANDS (T2-Part-A)
+    priv/
+      exec_server/
+        aetheris_exec_server ← rebuilt binary (T2-Part-A)
+lib/aetheris/execution/tool/
+  spawn_agent.ex             ← sandbox_path inheritance (T0)
+test/aetheris/
+  agents_test.exs            ← payslip_orchestrator eval test (T3)
+scripts/
+  sprint.sh                  ← payslip case (T3)
+docs/aetheris/milestones/
+  uc-payslip-t0-implementation-notes.md
+  uc-payslip-t2a-implementation-notes.md
+```
+
+### aetheris-agents repo
+
 ```
 aetheris-agents/
-└── payslip/
-    ├── agents/
-    │   └── payslip_orchestrator.exs   # T3
-    ├── data/
-    │   ├── payroll.csv                # production input (not committed)
-    │   ├── payslip_template.html      # HTML template for sub-agents
-    │   └── sample_payroll.csv         # reference (3 employees: regular×2mo, stipend, consultant)
-    ├── docs/
-    │   └── t3-implementation-notes.md
-    ├── output/                        # generated (not committed)
-    │   └── {employee_id_safe}/
-    │       ├── {YYYY-MM}.html
-    │       └── merged.pdf
-    ├── scripts/
-    │   ├── merge_payslips.py          # T2-Part-B
-    │   └── payslip_compute.py         # T1
-    ├── tests/
-    │   ├── test_merge_payslips.py
-    │   └── test_payslip_compute.py
-    ├── milestone.md
-    ├── README.md
-    └── runbook.md
-
-aetheris/
-├── scripts/sprint.sh                  # T3: payslip target added
-└── test/aetheris/agents_test.exs      # T3: orchestrator eval test added
+  README.md
+  .gitignore
+  payslip/
+    __init__.py
+    README.md                       ← T3
+    runbook.md                      ← T3
+    milestone.md                    ← this document
+    .gitignore
+    data/
+      sample_payroll.csv            ← committed (anonymised, covers all test cases)
+      payslip_template.html         ← committed
+    output/
+      .gitkeep
+    agents/
+      payslip_orchestrator.exs      ← T3
+    scripts/
+      __init__.py
+      payslip_compute.py            ← T1
+      merge_payslips.py             ← T2-Part-B
+    tests/
+      __init__.py
+      test_payslip_compute.py       ← T1 (11 tests)
+      test_merge_payslips.py        ← T2-Part-B (6 tests)
+    docs/
+      t3-implementation-notes.md    ← T3
 ```
 
-## Milestone reference
+---
 
-| Milestone | Tickets | Status |
-|-----------|---------|--------|
-| uc-payslip | T0, T1, T2-Part-B, T3 | complete |
+## Milestone reference row
+
+```
+| uc-payslip | payslip-generation | ✅ | Python + Elixir | Use Case |
+spawn_agent sandbox inheritance, payslip_compute.py, merge_payslips.py,
+payslip orchestrator | Monthly payslips from CSV; per-employee PDFs;
+full audit trail |
+```

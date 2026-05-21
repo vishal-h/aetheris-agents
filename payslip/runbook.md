@@ -1,115 +1,106 @@
 # Payslip Runbook
 
 Operational procedures for the uc-payslip use case.
+All commands assume `~/sandbox/elixirws/` as the working root.
+
+---
+
+## Run the full sprint
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+./scripts/sprint.sh payslip
+```
+
+Requires: `ANTHROPIC_API_KEY`, `python3`, `wkhtmltopdf`, `gs`.
+Uses `sample_payroll.csv` if `payroll.csv` is absent.
+
+---
+
+## Generate payslips for a new month
+
+1. Replace `payslip/data/payroll.csv` with the new month's CSV.
+2. Run the orchestrator:
+   ```bash
+   cd ~/sandbox/elixirws/aetheris
+   mix aetheris run ../aetheris-agents/payslip/agents/payslip_orchestrator.exs
+   ```
+3. Output lands in `payslip/output/{employee_id_safe}/`.
 
 ---
 
 ## Re-run one employee
 
-**Option A — filter at the orchestrator level:**
-Edit `user_prompt` in `payslip_orchestrator.exs` to name the specific employee, then re-run:
+Run the generation script directly — no agent needed:
+
 ```bash
-mix aetheris run ../aetheris-agents/payslip/agents/payslip_orchestrator.exs
+cd ~/sandbox/elixirws/aetheris-agents/payslip
+python3 scripts/generate_employee_payslips.py BTL_999
 ```
 
-**Option B — run the compute script and spawn a manual sub-agent:**
+To write to a different directory:
 ```bash
-cd ~/sandbox/elixirws/aetheris
-python3 ../aetheris-agents/payslip/scripts/payslip_compute.py \
-  ../aetheris-agents/payslip/data/payroll.csv \
-  --employee-id BTL_999 | python3 -m json.tool
+python3 scripts/generate_employee_payslips.py BTL_999 --output-dir /tmp/test_out
 ```
-Then construct and run a one-off sub-agent config pointing at that employee's data.
 
 ---
 
 ## Handle a bad CSV row
 
 1. Fix the row in `payslip/data/payroll.csv`.
-2. Delete any partial output for that employee:
+2. Delete partial output for that employee if any:
    ```bash
    rm -rf payslip/output/BTL_999/
    ```
-3. Re-run the orchestrator (or use the single-employee path above).
+3. Re-run the single-employee script or the full orchestrator.
 
 ---
 
 ## Resume a failed orchestrator run
 
-Check run status:
+Failed runs checkpoint automatically. When the Aetheris application next
+starts (any `mix aetheris` command), interrupted runs resume from their
+last checkpoint. You do not need to re-run the agent file.
+
+Check status:
 ```bash
 mix aetheris agent status <run_id>
-```
-
-If checkpointed, the interrupted run resumes automatically the next time
-the Aetheris application starts — for example, when you run any
-`mix aetheris` command. You do not need to re-run the orchestrator agent file.
-
-Inspect which sub-agents completed and which failed:
-```bash
 mix aetheris inspect <run_id>
 ```
 
+Inspect which sub-agents completed:
+```bash
+mix aetheris tree show <run_id>
+```
+
 ---
 
-## Inspect the agent tree
+## Inspect a run
 
 ```bash
-# Show the full orchestrator + sub-agent tree
+# Full agent tree — orchestrator + per-employee sub-agents
 mix aetheris tree show <run_id>
 
-# Inspect a specific sub-agent's trajectory
+# Orchestrator trajectory
+mix aetheris trajectory <run_id>
+
+# Sub-agent trajectory
 mix aetheris trajectory <child_run_id>
+
+# Recent runs
+mix aetheris list --limit 10
 ```
 
 ---
 
-## wkhtmltopdf not installed
-
-**Ubuntu / Debian:**
-```bash
-sudo apt-get install wkhtmltopdf
-```
-
-**macOS:**
-```bash
-brew install wkhtmltopdf
-```
-
-**Verify:**
-```bash
-wkhtmltopdf --version
-```
-
----
-
-## Ghostscript not installed
-
-**Ubuntu / Debian:**
-```bash
-sudo apt-get install ghostscript
-```
-
-**macOS:**
-```bash
-brew install ghostscript
-```
-
-**Verify:**
-```bash
-gs --version
-```
-
----
-
-## Check output for an employee
+## Verify output
 
 ```bash
 ls -la payslip/output/BTL_999/
-# Should show: 2026-04.html  2026-03.html  merged.pdf  (etc.)
+# Expect: 2026-04.html  2026-03.html  merged.pdf
 
-open payslip/output/BTL_999/merged.pdf
-# macOS — use xdg-open on Linux
+xdg-open payslip/output/BTL_999/merged.pdf   # Linux
+open payslip/output/BTL_999/merged.pdf        # macOS
 ```
 
 ---
@@ -121,4 +112,49 @@ cd ~/sandbox/elixirws/aetheris-agents
 python3 -m pytest payslip/tests/ -v
 ```
 
-All 17 tests (11 compute + 6 merge) should pass with no external dependencies.
+Unit tests (no external tools needed): always run.
+Integration tests: skipped automatically if `wkhtmltopdf` or `gs` absent.
+
+---
+
+## Install prerequisites
+
+**wkhtmltopdf:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install wkhtmltopdf
+
+# macOS
+brew install wkhtmltopdf
+
+wkhtmltopdf --version
+```
+
+**Ghostscript:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install ghostscript
+
+# macOS
+brew install ghostscript
+
+gs --version
+```
+
+---
+
+## Validate the computation script standalone
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/payslip
+
+# All employees
+python3 scripts/payslip_compute.py data/sample_payroll.csv | python3 -m json.tool
+
+# One employee
+python3 scripts/payslip_compute.py data/sample_payroll.csv --employee-id BTL_999
+
+# Unknown employee — should exit non-zero
+python3 scripts/payslip_compute.py data/sample_payroll.csv --employee-id BTL_000
+echo "Exit code: $?"
+```

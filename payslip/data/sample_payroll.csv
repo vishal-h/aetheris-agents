@@ -1,0 +1,5 @@
+employee_id,employee_type,designation,name,email,pan,doj,month,paid_in,sal,bonus,arrears - Jan-Feb 2025,loan_recovery,pt,tds_94j,tds,work_mode,account_number
+BTL/999,Regular,Senior Software Engineer,Anil Rao,anil.rao@bitloka.com,ABCDE1234F,22-Nov-2022,Apr 2026,May 2026,100000,0,0,,200,,10000,Hybrid,BANK1234567 / 123405010010108
+BTL/999,Regular,Senior Software Engineer,Anil Rao,anil.rao@bitloka.com,ABCDE1234F,22-Nov-2022,Mar 2026,Apr 2026,100000,25000,0,,200,,10000,Hybrid,BANK1234567 / 123405010010108
+BTL/998,Regular,Junior Engineer,Priya Shah,priya.shah@bitloka.com,BCDEF2345G,01-Jan-2024,Apr 2026,May 2026,20000,0,0,,0,,0,WFH,BANK9876543 / 987601020030104
+BTL/997,Consultant,ML Consultant,Ravi Kumar,ravi.kumar@bitloka.com,CDEFG3456H,15-Mar-2023,Apr 2026,May 2026,80000,0,5000,,0,8000,,Remote,BANK5556667 / 555601030050106

@@ -12,7 +12,7 @@ cd ~/sandbox/elixirws/aetheris
 ./scripts/sprint.sh payslip
 ```
 
-Requires: `ANTHROPIC_API_KEY`, `python3`, `wkhtmltopdf`, `gs`.
+Requires: `ANTHROPIC_API_KEY`, `python3`, `wkhtmltopdf`.
 Uses `sample_payroll.csv` if `payroll.csv` is absent.
 
 ---
@@ -97,10 +97,11 @@ mix aetheris list --limit 10
 
 ```bash
 ls -la payslip/output/BTL_999/
-# Expect: 2026-04.html  2026-03.html  merged.pdf
+# Expect: 2026-04-Payslip.html  2026-04-Payslip.pdf  2026-04-Payslip.csv
+#         2026-03-Payslip.html  2026-03-Payslip.pdf  2026-03-Payslip.csv
 
-xdg-open payslip/output/BTL_999/merged.pdf   # Linux
-open payslip/output/BTL_999/merged.pdf        # macOS
+xdg-open payslip/output/BTL_999/2026-04-Payslip.pdf   # Linux
+open payslip/output/BTL_999/2026-04-Payslip.pdf        # macOS
 ```
 
 ---
@@ -113,7 +114,28 @@ python3 -m pytest payslip/tests/ -v
 ```
 
 Unit tests (no external tools needed): always run.
-Integration tests: skipped automatically if `wkhtmltopdf` or `gs` absent.
+Integration tests: skipped automatically if `wkhtmltopdf` is absent.
+
+---
+
+## Generate annual payslips for audit
+
+Requires Ghostscript (`gs`). Run from the `payslip/` directory.
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/payslip
+
+# All months on disk for BTL_999
+python3 scripts/merge_employee_payslips.py BTL_999
+
+# Financial year Apr 2025 – Mar 2026
+python3 scripts/merge_employee_payslips.py BTL_999 --from 2025-04 --to 2026-03
+
+# Calendar year 2025
+python3 scripts/merge_employee_payslips.py BTL_999 --year 2025
+```
+
+Output is written to `output/{employee_id_safe}/` alongside the per-month files.
 
 ---
 

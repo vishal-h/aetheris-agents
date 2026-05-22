@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import csv
 import json
 import os
 import re
@@ -90,9 +91,59 @@ def generate_html(template, employee, month_data):
     return html
 
 
+def write_csv(csv_path, employee, month_data):
+    earnings = month_data["earnings"]
+    deductions = month_data["deductions"]
+    n = max(len(earnings), len(deductions))
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+
+        writer.writerow(["Field", "Value"])
+        writer.writerow(["Employee ID", employee["employee_id_raw"]])
+        writer.writerow(["Name", employee["name"]])
+        writer.writerow(["Designation", employee["designation"]])
+        writer.writerow(["DOJ", employee["doj"]])
+        writer.writerow(["Work Mode", employee["work_mode"]])
+        writer.writerow(["Account Number", employee["account_number"]])
+        writer.writerow(["Month", month_data["month"]])
+        writer.writerow(["Paid In", month_data["paid_in"]])
+
+        writer.writerow([])
+
+        writer.writerow(["Earnings", "Amount", "Deductions", "Amount"])
+        for i in range(n):
+            e = earnings[i] if i < len(earnings) else None
+            d = deductions[i] if i < len(deductions) else None
+            writer.writerow([
+                e["label"] if e else "",
+                f'{e["amount"]:.2f}' if e else "",
+                d["label"] if d else "",
+                f'{d["amount"]:.2f}' if d else "",
+            ])
+        writer.writerow([
+            "Total Earnings", f'{month_data["total_earnings"]:.2f}',
+            "Total Deductions", f'{month_data["total_deductions"]:.2f}',
+        ])
+        writer.writerow([
+            "Previous Balance", f'{month_data["previous_balance"]:.2f}',
+            "Net Pay", f'{month_data["net_pay"]:.2f}',
+        ])
+
+
+def convert_to_pdf(html_path, pdf_path):
+    result = subprocess.run(
+        ["wkhtmltopdf", html_path, pdf_path],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print(result.stderr, file=sys.stderr)
+        sys.exit(result.returncode)
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate HTML payslips and merged PDF for one employee."
+        description="Generate HTML payslips and per-month PDFs for one employee."
     )
     parser.add_argument("employee_id_safe", help="Employee ID (safe form, e.g. BTL_999)")
     parser.add_argument("--output-dir", dest="output_dir", default="output",
@@ -111,24 +162,28 @@ def main():
     emp_dir = os.path.join(args.output_dir, args.employee_id_safe)
     os.makedirs(emp_dir, exist_ok=True)
 
-    written = []
+    months_written = []
     for month_data in employee["months"]:
+        stem = f"{month_data['month_file']}-Payslip"
+        html_path = os.path.join(emp_dir, f"{stem}.html")
+        pdf_path = os.path.join(emp_dir, f"{stem}.pdf")
+        csv_path = os.path.join(emp_dir, f"{stem}.csv")
+
         html = generate_html(template, employee, month_data)
-        out_path = os.path.join(emp_dir, f"{month_data['month_file']}.html")
-        with open(out_path, "w", encoding="utf-8") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(html)
-        written.append(out_path)
 
-    result = subprocess.run(
-        ["python3", "scripts/merge_payslips.py", emp_dir],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-        sys.exit(result.returncode)
+        convert_to_pdf(html_path, pdf_path)
+        write_csv(csv_path, employee, month_data)
 
-    print(f"Generated {len(written)} payslip(s) for {args.employee_id_safe}.")
-    print(f"PDF: {os.path.join(args.output_dir, args.employee_id_safe, 'merged.pdf')}")
+        months_written.append(stem)
+
+    print(f"Generated {len(months_written)} payslip(s) for {args.employee_id_safe}.")
+    print(f"Files in {os.path.join(args.output_dir, args.employee_id_safe)}{os.sep}:")
+    for stem in months_written:
+        print(f"  {stem}.html")
+        print(f"  {stem}.pdf")
+        print(f"  {stem}.csv")
 
 
 if __name__ == "__main__":

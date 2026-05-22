@@ -48,7 +48,6 @@ separate Arrears earnings line.
 |------|---------|---------|
 | `python3` | Computation and HTML generation | stdlib only — no pip install needed |
 | `wkhtmltopdf` | HTML → PDF conversion | `sudo apt-get install wkhtmltopdf` |
-| `gs` | PDF merging (Ghostscript) | `sudo apt-get install ghostscript` |
 | Aetheris | Agent harness | See `../aetheris` |
 | `ANTHROPIC_API_KEY` | LLM orchestration | Set in environment |
 
@@ -74,17 +73,16 @@ payslip/
 │   └── t*-implementation-notes.md   # Per-ticket implementation notes
 ├── output/                          # Generated (gitignored)
 │   └── {employee_id_safe}/
-│       ├── {YYYY-MM}.html           # One per month, newest first
-│       └── merged.pdf
+│       ├── {YYYY-MM}-Payslip.html   # Source template (kept as build artefact)
+│       ├── {YYYY-MM}-Payslip.pdf    # One PDF per month
+│       └── {YYYY-MM}-Payslip.csv   # Source data for that month
 ├── scripts/
 │   ├── payslip_compute.py           # CSV → per-employee JSON with salary breakdown
-│   ├── generate_employee_payslips.py # JSON + template → HTML files + PDF (per employee)
-│   └── merge_payslips.py            # HTML files → merged PDF (via wkhtmltopdf + gs)
+│   └── generate_employee_payslips.py # JSON + template → per-month HTML, PDF, CSV
 ├── tests/
-│   ├── conftest.py                  # Integration marker; skips if tools absent
+│   ├── conftest.py                  # Integration marker; skips if wkhtmltopdf absent
 │   ├── test_payslip_compute.py      # 11 unit tests
-│   ├── test_merge_payslips.py       # 6 mocked subprocess tests
-│   └── test_generate_employee_payslips.py  # 6 integration tests
+│   └── test_generate_employee_payslips.py  # 7 integration tests
 ├── milestone.md
 ├── README.md
 └── runbook.md
@@ -111,7 +109,8 @@ payslip/
 4. Output per employee:
    ```bash
    ls ../aetheris-agents/payslip/output/BTL_999/
-   # 2026-04.html  2026-03.html  merged.pdf
+   # 2026-04-Payslip.html  2026-04-Payslip.pdf  2026-04-Payslip.csv
+   # 2026-03-Payslip.html  2026-03-Payslip.pdf  2026-03-Payslip.csv
    ```
 
 ---
@@ -129,11 +128,8 @@ python3 scripts/payslip_compute.py data/payroll.csv
 # Compute for one employee
 python3 scripts/payslip_compute.py data/payroll.csv --employee-id BTL_999
 
-# Generate HTML payslips and PDF for one employee
+# Generate HTML payslips, per-month PDFs, and CSVs for one employee
 python3 scripts/generate_employee_payslips.py BTL_999
-
-# Merge HTML files into a single PDF
-python3 scripts/merge_payslips.py output/BTL_999/
 ```
 
 ---

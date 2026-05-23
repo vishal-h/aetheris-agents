@@ -97,16 +97,6 @@ see [payslip/runbook.md](https://github.com/vishal-h/aetheris-agents/blob/main/p
 
 ---
 
-## Service account setup
-
-1. In Google Cloud Console, create a service account with no roles.
-2. Generate and download a JSON key. Save to `drive/data/service_account.json`
-   (excluded from git by `.gitignore`).
-3. Share the payroll folder and output folder with the service account email,
-   granting **Viewer** on the payroll folder and **Editor** on the output folder.
-
----
-
 ## Common failures
 
 ### `GOOGLE_SERVICE_ACCOUNT` not set
@@ -152,6 +142,17 @@ N uploaded, M failed.
 Individual employee failures are reported but do not abort other uploads. The script
 exits 1 at the end if any employee failed. Re-run to retry; uploads are idempotent
 (existing files are updated in place, not duplicated).
+
+### `HttpError 403: storageQuotaExceeded`
+
+```
+HttpError 403: storageQuotaExceeded
+```
+
+Service accounts do not have storage quota. The output folder is a regular
+My Drive folder — service accounts cannot create files there. Move the output
+folder to a Shared Drive, add the service account as a Contributor, and update
+`DRIVE_OUTPUT_FOLDER_ID` to the Shared Drive folder ID.
 
 ### `wkhtmltopdf` not found
 
@@ -223,14 +224,3 @@ Drive files rather than duplicating them.
 
 Verify in Drive:
 `https://drive.google.com/drive/folders/{DRIVE_OUTPUT_FOLDER_ID}`
-
-## `HttpError 403: storageQuotaExceeded`
-
-Service Accounts do not have storage quota.
-
-The output folder is a regular My Drive folder. Service accounts cannot create
-files there. Move the output folder to a Shared Drive, add the service account
-as a Contributor, and update `DRIVE_OUTPUT_FOLDER_ID` to the Shared Drive
-folder ID.
-
-

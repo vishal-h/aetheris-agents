@@ -6,6 +6,9 @@ import sys
 from io import BytesIO
 from pathlib import Path
 
+# Ensure aetheris-agents/ is on the path when running as a script
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload

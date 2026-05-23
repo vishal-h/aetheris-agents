@@ -6,6 +6,9 @@ import sys
 from itertools import groupby
 from pathlib import Path
 
+# Ensure aetheris-agents/ is on the path when running as a script
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
 from googleapiclient.http import MediaFileUpload
 
 from drive.scripts.drive_download import build_service

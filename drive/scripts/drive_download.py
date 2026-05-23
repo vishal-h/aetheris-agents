@@ -13,17 +13,20 @@ from googleapiclient.http import MediaIoBaseDownload
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
-def build_service():
+def build_service(scopes=None):
     """Build and return an authenticated Drive v3 service.
 
     Reads the service account key path from GOOGLE_SERVICE_ACCOUNT.
     Exits 1 with a clear message if the variable is not set.
+    Defaults to drive.readonly scope; pass *scopes* to override.
     """
+    if scopes is None:
+        scopes = SCOPES
     key_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT")
     if not key_path:
         print("GOOGLE_SERVICE_ACCOUNT environment variable is not set.", file=sys.stderr)
         sys.exit(1)
-    creds = service_account.Credentials.from_service_account_file(key_path, scopes=SCOPES)
+    creds = service_account.Credentials.from_service_account_file(key_path, scopes=scopes)
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 

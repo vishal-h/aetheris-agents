@@ -48,7 +48,7 @@ def find_payroll_file(service, folder_id):
             q=query,
             orderBy="modifiedTime desc",
             fields="files(id, name, modifiedTime)",
-            pageSize=1,
+            pageSize=10,
         )
         .execute()
     )

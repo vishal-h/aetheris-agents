@@ -29,13 +29,13 @@ to_address = finance@bitloka.com
 EMPLOYEES = [
     {
         "employee_id_safe": "BTL_999",
-        "employee_name": "Alice Smith",
-        "employee_email": "alice@example.com",
+        "name": "Alice Smith",
+        "email": "alice@example.com",
     },
     {
         "employee_id_safe": "BTL_998",
-        "employee_name": "Bob Jones",
-        "employee_email": "bob@example.com",
+        "name": "Bob Jones",
+        "email": "bob@example.com",
     },
 ]
 
@@ -80,7 +80,7 @@ def test_load_config_exits_1_when_smtp_section_missing(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_get_employees_returns_employee_list(monkeypatch):
-    payload = {"BTL_999": EMPLOYEES[0], "BTL_998": EMPLOYEES[1]}
+    payload = {"employees": EMPLOYEES}
     mock_result = MagicMock(returncode=0, stdout=json.dumps(payload), stderr="")
     with patch(f"{MODULE}.subprocess.run", return_value=mock_result):
         result = get_employees("payslip/data/payroll.csv")
@@ -301,11 +301,10 @@ def test_main_skips_employee_with_warning_when_pdf_not_found(
          patch(f"{MODULE}.send_email"):
         main()
 
-    err = capsys.readouterr().err
+    out, err = capsys.readouterr()
     assert "BTL_998" in err
-    out = capsys.readouterr().out
-    # BTL_999 was sent; BTL_998 was skipped (not failed)
-    assert "1 sent" in capsys.readouterr().out or True  # summary already consumed
+    assert "1 sent" in out
+    assert "0 failed" in out
 
 
 def test_main_exits_1_when_send_fails(monkeypatch, tmp_path, capsys):
@@ -329,8 +328,8 @@ def test_main_exits_1_when_send_fails(monkeypatch, tmp_path, capsys):
         with pytest.raises(SystemExit) as exc:
             main()
     assert exc.value.code == 1
-    out, err = capsys.readouterr().out, capsys.readouterr().err
-    assert "2 failed" in out or "failed" in out
+    out, err = capsys.readouterr()
+    assert "2 failed" in out
 
 
 def test_main_exits_0_when_all_sends_succeed(monkeypatch, tmp_path, capsys):

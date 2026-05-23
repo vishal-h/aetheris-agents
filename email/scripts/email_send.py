@@ -40,7 +40,7 @@ def get_employees(payroll_csv_path):
 
     Calls payslip/scripts/payslip_compute.py via subprocess with the given CSV
     path. Parses stdout as JSON. Each dict contains at minimum employee_id_safe,
-    employee_name, and employee_email.
+    name, and email (matching payslip_compute.py output).
 
     Exits 1 if the subprocess returns a non-zero exit code or stdout is not
     valid JSON.
@@ -58,7 +58,7 @@ def get_employees(payroll_csv_path):
     except json.JSONDecodeError as exc:
         print(f"payslip_compute.py output is not valid JSON: {exc}", file=sys.stderr)
         sys.exit(1)
-    return list(data.values())
+    return data["employees"]
 
 
 def render_template(template_path, variables):
@@ -170,8 +170,8 @@ def main():
 
     for emp in employees:
         employee_id = emp["employee_id_safe"]
-        employee_name = emp["employee_name"]
-        employee_email = emp["employee_email"]
+        employee_name = emp["name"]
+        employee_email = emp["email"]
 
         pdf_path = _find_pdf_or_none(args.output_dir, employee_id, args.month)
         if pdf_path is None:

@@ -93,3 +93,56 @@ brew install wkhtmltopdf
 
 Open the folder in Drive and copy the last path segment from the URL:
 `https://drive.google.com/drive/folders/<FOLDER_ID>`
+
+
+---
+
+## Validate download standalone
+
+Confirm credentials and folder access before running the full orchestrator:
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents
+python3 drive/scripts/drive_download.py --dest /tmp/payroll_check.csv
+```
+
+Expected output:
+```
+Found: payroll_2026-04.csv (modified 2026-04-30T...)
+Downloaded to: /tmp/payroll_check.csv
+```
+
+Inspect the file before proceeding:
+```bash
+head -5 /tmp/payroll_check.csv
+```
+
+If this succeeds, the service account has Viewer access to `DRIVE_PAYROLL_FOLDER_ID`
+and the download path resolves correctly.
+
+---
+
+## Validate upload standalone
+
+Confirm Editor access on `DRIVE_OUTPUT_FOLDER_ID` against existing payslip output:
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents
+python3 drive/scripts/drive_upload.py --source payslip/output/
+```
+
+Expected output:
+```
+Uploaded BTL_001/2026-04-Payslip.pdf → <file_id>
+Uploaded BTL_001/2026-04-Payslip.csv → <file_id>
+...
+N uploaded, 0 failed.
+```
+
+Requires `payslip/output/` to contain at least one employee directory with
+`*-Payslip.pdf` or `*-Payslip.csv` files. Run the payslip orchestrator first
+if output is empty. Uploads are idempotent — re-running overwrites existing
+Drive files rather than duplicating them.
+
+Verify in Drive:
+`https://drive.google.com/drive/folders/{DRIVE_OUTPUT_FOLDER_ID}`

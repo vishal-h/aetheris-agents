@@ -52,7 +52,10 @@ def find_or_create_folder(service, parent_id, name):
         f" and mimeType = '{FOLDER_MIME}'"
         f" and '{parent_id}' in parents"
     )
-    response = service.files().list(q=query, fields="files(id)").execute()
+    response = service.files().list(
+        q=query, fields="files(id)", supportsAllDrives=True,
+        includeItemsFromAllDrives=True,
+    ).execute()
     files = response.get("files", [])
     if files:
         return files[0]["id"]
@@ -61,6 +64,7 @@ def find_or_create_folder(service, parent_id, name):
         .create(
             body={"name": name, "mimeType": FOLDER_MIME, "parents": [parent_id]},
             fields="id",
+            supportsAllDrives=True,
         )
         .execute()
     )
@@ -78,14 +82,18 @@ def upload_file(service, folder_id, file_path):
         " and trashed = false"
         f" and '{folder_id}' in parents"
     )
-    response = service.files().list(q=query, fields="files(id)").execute()
+    response = service.files().list(
+        q=query, fields="files(id)", supportsAllDrives=True,
+        includeItemsFromAllDrives=True,
+    ).execute()
     existing = response.get("files", [])
     mime = MIME_TYPES.get(file_path.suffix, "application/octet-stream")
     media = MediaFileUpload(str(file_path), mimetype=mime)
     if existing:
         result = (
             service.files()
-            .update(fileId=existing[0]["id"], media_body=media, fields="id")
+            .update(fileId=existing[0]["id"], media_body=media, fields="id",
+                    supportsAllDrives=True)
             .execute()
         )
     else:
@@ -95,6 +103,7 @@ def upload_file(service, folder_id, file_path):
                 body={"name": file_path.name, "parents": [folder_id]},
                 media_body=media,
                 fields="id",
+                supportsAllDrives=True,
             )
             .execute()
         )

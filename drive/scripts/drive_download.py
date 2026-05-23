@@ -86,8 +86,8 @@ def main():
     )
     parser.add_argument(
         "--dest",
-        default="../payslip/data/payroll.csv",
-        help="Local destination path (default: ../payslip/data/payroll.csv)",
+        default="payslip/data/payroll.csv",
+        help="Local destination path (default: payslip/data/payroll.csv)",
     )
     args = parser.parse_args()
 

@@ -108,8 +108,8 @@ def main():
     )
     parser.add_argument(
         "--source",
-        default="../payslip/output/",
-        help="Local source directory (default: ../payslip/output/)",
+        default="payslip/output/",
+        help="Local source directory (default: payslip/output/)",
     )
     args = parser.parse_args()
 

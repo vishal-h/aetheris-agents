@@ -1,0 +1,12 @@
+# Copy to smtp.cfg and fill in real values. smtp.cfg is gitignored.
+# username: the Google account that owns the app password
+# from_address: alias configured in that account's "Send mail as" settings
+# to_address: recipient for all payslip emails (finance alias or direct)
+
+[smtp]
+host         = smtp.gmail.com
+port         = 587
+username     = sender@example.com
+password     = xxxx xxxx xxxx xxxx
+from_address = payroll@example.com
+to_address   = payroll@example.com

@@ -4,7 +4,7 @@
 
 **Prerequisites:** `payslip/output/` must contain generated payslips. If running
 for the first time or after clearing output, run the payslip orchestrator first —
-see [payslip/runbook.md](payslip/runbook.md)
+see [payslip/runbook.md](https://github.com/vishal-h/aetheris-agents/blob/main/payslip/runbook.md)
 
 1. Ensure environment variables are set:
    ```bash

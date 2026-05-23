@@ -73,6 +73,14 @@ def test_download_template_writes_correct_bytes(tmp_path):
     assert dest.read_bytes() == content
 
 
+def test_download_template_calls_get_media_with_correct_file_id(tmp_path):
+    service = MagicMock()
+    dest = tmp_path / "payslip_email_template.html"
+    with patch(f"{MODULE}.MediaIoBaseDownload", side_effect=fake_downloader()):
+        download_template(service, "target-file-id", str(dest))
+    service.files.return_value.get_media.assert_called_once_with(fileId="target-file-id")
+
+
 def test_download_template_creates_parent_directories(tmp_path):
     service = MagicMock()
     dest = tmp_path / "deep" / "nested" / "payslip_email_template.html"

@@ -51,7 +51,7 @@ def download_template(service, file_id, dest_path):
     """
     dest = Path(dest_path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    request = service.files().get_media(fileId=file_id, supportsAllDrives=True)
+    request = service.files().get_media(fileId=file_id)
     buf = BytesIO()
     downloader = MediaIoBaseDownload(buf, request)
     done = False

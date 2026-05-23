@@ -2,12 +2,19 @@
 
 ## Monthly payslip run
 
+**Prerequisites:** `payslip/output/` must contain generated payslips. If running
+for the first time or after clearing output, run the payslip orchestrator first —
+see [payslip/runbook.md](payslip/runbook.md)
+
 1. Ensure environment variables are set:
    ```bash
    export GOOGLE_SERVICE_ACCOUNT=/path/to/service_account.json
    export DRIVE_PAYROLL_FOLDER_ID=<folder-id>
    export DRIVE_OUTPUT_FOLDER_ID=<folder-id>
    ```
+   
+> [!NOTE]
+> DRIVE_PAYROLL_FOLDER_ID and DRIVE_OUTPUT_FOLDER_ID can point to the same folder
 
 2. Run the orchestrator:
    ```bash

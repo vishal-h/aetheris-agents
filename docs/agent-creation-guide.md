@@ -127,6 +127,28 @@ only needs recent context to decide the next step.
 }
 ```
 
+### Runtime parameters in orchestrators
+
+Use `System.get_env/1` at eval time and interpolate into the prompt string.
+Build the prompt as a named variable first — do not inline `System.get_env`
+calls inside the struct literal:
+
+```elixir
+month = System.get_env("PAYSLIP_MONTH") || raise "PAYSLIP_MONTH not set"
+system_prompt = """
+  Send payslip emails for #{month}.
+  ...
+"""
+
+%Aetheris.RunConfig{
+  system_prompt: system_prompt,
+  ...
+}
+```
+
+This keeps the struct readable and makes the variable visible at the top of
+the file where it is easy to spot and validate.
+
 ---
 
 ## Orchestrator patterns
@@ -278,6 +300,32 @@ python3 scripts/generate_{name}.py BTL_999
 
 If you can't run the script standalone, the agent can't either.
 
+### Python package naming
+
+Never create `__init__.py` in a directory whose name collides with a Python
+stdlib package. The common case in this repo is `email/` — creating
+`email/__init__.py` shadows the stdlib `email` package and breaks pytest
+(which uses `email.message` internally).
+
+**Fix:** omit `__init__.py` at the top level and use `conftest.py` to insert
+the scripts directory into `sys.path` directly:
+
+```python
+# email/tests/conftest.py
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+```
+
+Tests then import by module name (`from email_send import ...`) rather than
+via the package namespace (`from email.scripts.email_send import ...`), which
+would resolve to the stdlib package instead.
+
+Check for collisions before naming a new use-case directory:
+`python3 -c "import {name}"` — if it succeeds, pick a different name or
+omit the top-level `__init__.py` and use the conftest pattern.
+
 ### Subprocess for calling other scripts
 
 ```python
@@ -410,6 +458,39 @@ inherits `sandbox_path` (requires Aetheris ≥ uc-payslip T0).
 
 `overlay_base_dir` is set. Writes went to a per-run `upper/` layer.
 Fix: set `overlay_base_dir: nil` for use cases where output must persist.
+
+### Env vars and worker lifetime
+
+The exec server spawns workers at invocation time and they inherit the
+environment at that point. If you export an env var after starting the server
+(or change it mid-session), running workers won't see the new value.
+
+**Fix:** export all required env vars before running `mix aetheris run`.
+If vars changed mid-session, kill stale workers first:
+
+```bash
+pkill -f aetheris_worker
+```
+
+Then re-export and re-run.
+
+### Shared Drive required for service account uploads
+
+Service accounts have no personal storage quota and cannot create files in a
+regular My Drive folder. Attempting to upload produces:
+
+```
+HttpError 403: storageQuotaExceeded
+```
+
+**Fix:** the output folder must be a Shared Drive (formerly Team Drive). Create
+a Shared Drive in Google Drive, add the service account email as a Contributor,
+and use that folder's ID as `DRIVE_OUTPUT_FOLDER_ID`. The payroll source folder
+(read-only) can be a regular folder.
+
+All `files().list()` and `files().create()` calls must include
+`supportsAllDrives=True` (and `includeItemsFromAllDrives=True` for list calls)
+or the Shared Drive folder will appear empty.
 
 ### Orchestrator goes off-script after sub-agent failures
 

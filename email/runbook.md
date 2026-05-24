@@ -105,6 +105,103 @@ restore `to_address`.
 
 ---
 
+## Environment variables and worker restart
+
+The Aetheris worker (`aetheris_worker`) and exec server (`aetheris_exec_server`)
+are spawned once when `mix aetheris run` starts and inherit the shell environment
+at that point. Updating env vars in the shell after the worker is running has no
+effect — the worker does not see the new values.
+
+**Always set all required env vars before running `mix aetheris run`:**
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export GOOGLE_SERVICE_ACCOUNT=/path/to/drive/data/service_account.json
+export DRIVE_PAYROLL_FOLDER_ID=<month-folder-id>
+export DRIVE_OUTPUT_FOLDER_ID=<month-folder-id>
+export PAYSLIP_MONTH=2026-04
+
+cd ~/sandbox/elixirws/aetheris
+mix aetheris run ../aetheris-agents/email/agents/email_orchestrator.exs
+```
+
+---
+
+### If env vars were set incorrectly or changed mid-session
+
+Kill any stale worker processes and start fresh:
+
+```bash
+pkill -f aetheris_worker 2>/dev/null || true
+pkill -f aetheris_exec_server 2>/dev/null || true
+```
+
+Confirm they are gone:
+
+```bash
+ps aux | grep aetheris_worker
+ps aux | grep aetheris_exec_server
+```
+
+Then re-export all env vars in the same shell and re-run.
+
+---
+
+### Monthly folder ID update
+
+`DRIVE_PAYROLL_FOLDER_ID` and `DRIVE_OUTPUT_FOLDER_ID` point to the same
+per-month folder and must be updated each month.
+
+Workflow for a new month:
+
+1. Create a new folder in the Shared Drive:
+   `payroll/payslips/202605-may/`
+
+2. Upload `payroll.csv` for that month into the folder
+
+3. Copy the folder ID from the Drive URL:
+   `https://drive.google.com/drive/folders/<FOLDER_ID>`
+
+4. Update both env vars:
+   ```bash
+   export DRIVE_PAYROLL_FOLDER_ID=<new-folder-id>
+   export DRIVE_OUTPUT_FOLDER_ID=<new-folder-id>
+   export PAYSLIP_MONTH=2026-05
+   ```
+
+5. Run the pipeline — per-employee subfolders (`BTL_999/` etc.) and uploaded
+   PDFs will appear inside the new month folder automatically.
+
+The `payslip_email_template.html` only needs to be re-uploaded when Finance
+updates it — it does not move with the monthly folder.
+
+---
+
+### Diagnosing env var issues mid-run
+
+If a run fails with a folder-not-found or file-not-found error, check what
+folder ID the script actually received by inspecting the trajectory:
+
+```bash
+mix aetheris trajectory <run_id> --step 0
+```
+
+Look at the `tool_result` event's `stderr` field. If the debug print is present:
+```
+DEBUG: folder_id=<value>
+```
+compare that value against `echo $DRIVE_OUTPUT_FOLDER_ID` in the current shell.
+A mismatch means the worker was started with stale env vars — kill and restart.
+
+If no debug print appears and the error is "not found", the env var was set to
+the wrong folder ID from the start. Verify with:
+
+```bash
+env | grep DRIVE
+```
+
+---
+
 ## Common failures
 
 ### `Config file not found: email/data/smtp.cfg`

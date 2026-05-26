@@ -1,0 +1,4 @@
+name,date_of_birth,gender,email,mobile,course,section,roll_no,father_name,father_email,father_mobile,mother_name,mother_email,mother_mobile,guardian_name,guardian_gender,guardian_email,guardian_mobile
+Priya Sharma,2010/06/15,Female,,,Standard I,A,1,Rajesh Sharma,rajesh.sharma@gmail.com,9876543210,Sunita Sharma,sunita.sharma@gmail.com,9876543211,,,
+Arjun Patel,2011/03/22,Male,,,Standard I,A,2,,,,Meena Patel,,9876543212,,,
+Ravi Kumar,,Male,,,Standard II,B,,,,,,,,,,

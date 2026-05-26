@@ -1,0 +1,23 @@
+{"record_type": "meta", "domain": "ct.stu", "version": "1", "published_at": "2026-05-26", "intent_count": 1, "gateway": "cot1.stu"}
+
+{"record_type": "section", "intent": "enroll_students", "seq": 1}
+{"record_type": "intent", "name": "enroll_students", "description": "Create new student records", "requires": ["name", "gender", "courseName", "secName", "termName"], "optional": ["dob", "doa", "email", "mobile", "rollNo", "admissionNumber"], "max_batch_size": 500}
+{"record_type": "field", "name": "dob", "type": "date", "format": "ISO8601", "if_missing": "use_sentinel", "sentinel": "0001-01-01T00:00:00", "advisory_only": true}
+{"record_type": "field", "name": "doa", "type": "date", "format": "ISO8601", "if_missing": "use_sentinel", "sentinel": "0001-01-01T00:00:00", "advisory_only": true}
+{"record_type": "field", "name": "gender", "type": "enum", "clarify_from": "lookup.gender"}
+{"record_type": "field", "name": "termName", "type": "string"}
+{"record_type": "rule", "intent": "enroll_students", "field": "termName", "if_missing": "use_default", "default_from": "current_term", "clarify_as": "select_one", "clarify_from": "lookup.terms"}
+{"record_type": "rule", "intent": "enroll_students", "if": {"field": "fatherName", "present": true}, "then": {"require_one_of": ["fatherMobile", "fatherEmail"]}}
+{"record_type": "rule", "intent": "enroll_students", "if": {"field": "guardianName", "present": true}, "then": {"require": ["guardianGender"]}}
+{"record_type": "lookup", "name": "terms", "id": "annual", "label": "Annual", "current": true}
+{"record_type": "lookup", "name": "terms", "id": "t1-2026", "label": "Term 1 2026", "current": false}
+{"record_type": "lookup", "name": "gender", "id": "0", "label": "Female"}
+{"record_type": "lookup", "name": "gender", "id": "1", "label": "Male"}
+{"record_type": "lookup", "name": "gender", "id": "90", "label": "Other"}
+{"record_type": "lookup", "name": "courses", "id": "a1b2c3d4-0001-0000-0000-000000000001", "label": "Standard I", "active": true}
+{"record_type": "lookup", "name": "courses", "id": "a1b2c3d4-0002-0000-0000-000000000002", "label": "Standard II", "active": true}
+{"record_type": "lookup", "name": "sections", "course_id": "a1b2c3d4-0001-0000-0000-000000000001", "section": "A"}
+{"record_type": "lookup", "name": "sections", "course_id": "a1b2c3d4-0002-0000-0000-000000000002", "section": "B"}
+
+{"record_type": "intent_combo", "intents": ["enroll_students", "send_welcome_email"], "requires_confirmation": false}
+{"record_type": "intent_combo", "intents": ["enroll_students", "setup_fee_structure"], "requires_confirmation": true}

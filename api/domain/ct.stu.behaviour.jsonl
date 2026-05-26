@@ -1,0 +1,9 @@
+{"record_type": "meta", "domain": "ct.stu.behaviour", "version": "1", "published_at": "2026-05-26"}
+
+{"record_type": "section", "intent": "enroll_students", "seq": 1}
+{"record_type": "execution", "intent": "enroll_students", "step": 1, "capability": "create_student", "mode": "etl", "fields": "core"}
+{"record_type": "execution", "intent": "enroll_students", "step": 2, "capability": "update_father_details", "mode": "etl", "when": {"field": "fatherName", "present": true}}
+{"record_type": "execution", "intent": "enroll_students", "step": 3, "capability": "update_mother_details", "mode": "etl", "when": {"field": "motherName", "present": true}}
+{"record_type": "execution", "intent": "enroll_students", "step": 4, "capability": "update_guardian_details", "mode": "etl", "when": {"field": "guardianName", "present": true}}
+{"record_type": "execution", "intent": "enroll_students", "step": 5, "capability": "set_roll_no", "mode": "etl", "when": {"field": "rollNo", "present": true}}
+{"record_type": "outcome", "intent": "enroll_students", "success_when": "all_records_queued", "partial_success_when": "at_least_one_queued"}

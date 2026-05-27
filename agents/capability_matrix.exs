@@ -3,161 +3,179 @@
 # Dog-fooding agent: reads the aetheris-agents repo and generates a capability
 # matrix documenting all use cases, agents, tools, and scripts.
 #
-# Output: docs/capability-matrix.md (overwritten on each run)
+# Two-step process:
 #
-# Run from the aetheris repo:
-#   mix aetheris run ../aetheris-agents/agents/capability_matrix.exs
+#   Step 1 — run the sub-agents orb (all use cases in parallel):
+#     mix aetheris run ../aetheris-agents/agents/capability_matrix.exs
 #
-# Re-run whenever a new use case, agent, or script is added.
+#   Step 2 — run the orchestrator after all sub-agents complete:
+#     mix aetheris run ../aetheris-agents/agents/capability_matrix_assemble.exs
+#
+# Output: docs/capability-matrix.md
+# Intermediate: docs/.sections/{use_case}.md (one per sub-agent)
+#
+# Re-run both steps whenever a new use case, agent, or script is added.
 
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
-%Aetheris.RunConfig{
-  run_id:           "capability-matrix-#{Aetheris.ID.generate()}",
-  mode:             :record,
-  provider:         "anthropic",
-  model:            "claude-haiku-4-5-20251001",
-  label:            "Capability matrix generator",
-  sandbox_path:     agent_root,
-  overlay_base_dir: nil,
-  max_steps:        40,
-  context_strategy: :full,
-  tools:            ["list_dir", "read_file", "write_file"],
-  system_prompt:    """
-  You are a documentation agent. Your job is to read the aetheris-agents repository
-  and produce a capability matrix in Markdown.
+sub_agent_prompt = fn use_case, side ->
+  {agents_dir, scripts_dir, section_title, note} =
+    case {use_case, side} do
+      {"api", "tenant"} ->
+        {"api/tenant/agents", "api/tenant/scripts",
+         "api/ — TAP Protocol — Tenant side",
+         "Tenant-side agents: at1cmd (dispatcher), at1qry (collector)."}
 
-  Repository layout:
-    {use_case}/agents/    — Elixir .exs agent files
-    {use_case}/scripts/   — Python scripts
-    {use_case}/docs/      — implementation notes (optional)
+      {"api", "gateway"} ->
+        {"api/gateway/agents", "api/gateway/scripts",
+         "api/ — TAP Protocol — Gateway side",
+         "Gateway-side agents: cot1 (TAP gateway). Connects to ct.stu API."}
 
-  Exception: the api/ use case has a tenant/gateway split:
-    api/tenant/agents/    — at1cmd.exs, at1qry.exs
-    api/tenant/scripts/   — tenant-side Python scripts
-    api/gateway/agents/   — cot1.exs, cot1_stub.exs
-    api/gateway/scripts/  — gateway-side Python scripts
+      {uc, _} ->
+        {"#{uc}/agents", "#{uc}/scripts",
+         String.capitalize(uc),
+         ""}
+    end
 
-  For each use case you find, collect:
-    1. Agent name and the tools: [...] list from the RunConfig or OrbConfig
-    2. Each script name and its one-line purpose from the first docstring line
-       (the line after the opening triple-quote, e.g. "parse_csv.py <csv_path>\\n\\nReads...")
-    3. Any scripts that share a name with scripts in another use case (overlap flag)
-    4. Any agents that use an identical tool set to another agent (duplication flag)
+  section_file =
+    case side do
+      "" -> "docs/.sections/#{use_case}.md"
+      s  -> "docs/.sections/#{use_case}_#{s}.md"
+    end
 
-  Do not read test files, conftest.py, __init__.py, or output/ directories.
+  """
+  You are a documentation agent. Read the source files in this use case and
+  write a capability section in Markdown. #{note}
 
   Workflow — follow these steps in order:
 
-  Step 1: Discover use cases.
-    Call list_dir with path: "."
-    Collect directory names that are use cases: payslip, drive, email, api.
-    Ignore: docs/, protocol/, agents/ (top-level), .git, __pycache__, etc.
+  Step 1: List agents.
+    Call list_dir with path: "#{agents_dir}"
+    Collect .exs filenames only. Ignore non-.exs files.
 
-  Step 2: For each non-api use case (payslip, drive, email):
-    a. list_dir("{uc}/agents") — collect .exs filenames
-    b. list_dir("{uc}/scripts") — collect .py filenames
-    c. read_file each .exs agent — extract the tools: [...] value
-       Look for: tools: ["tool1", "tool2", ...]
-       If it is an OrbConfig, extract tools from each agent_config entry.
-    d. read_file the first 30 lines of each .py script — extract the one-line
-       purpose from the first docstring line (the line after \"\"\").
+  Step 2: For each .exs agent file:
+    Call read_file with path: "#{agents_dir}/{filename}"
+    Extract:
+      - The label: "..." value (agent's human name)
+      - The tools: [...] list
+      - If OrbConfig: extract tools from each agent_config entry separately,
+        labelling each by its label field.
 
-  Step 3: For the api/ use case:
-    a. list_dir("api/tenant/agents") and list_dir("api/gateway/agents")
-    b. list_dir("api/tenant/scripts") and list_dir("api/gateway/scripts")
-    c. read_file each .exs and .py as above, noting tenant vs gateway side.
-    d. Also read the first line of domain/ct.stu.vocabulary.jsonl for context.
+  Step 3: List scripts.
+    Call list_dir with path: "#{scripts_dir}"
+    Collect .py filenames only. Skip __init__.py and conftest.py.
 
-  Step 4: Detect overlaps.
-    - List any script filename that appears in more than one use case.
-    - List any agent whose tools: list is identical to another agent's tools: list.
+  Step 4: For each .py script:
+    Call read_file with path: "#{scripts_dir}/{filename}"
+    Read the file and extract the one-line purpose from the opening docstring
+    (the line immediately after the opening triple-quote, before any blank
+    lines or argument descriptions). Example:
+      \"\"\"parse_csv.py <csv_path>\\n\\nReads payroll CSV...\"\"\"
+      → purpose is "Reads payroll CSV..."
+      (skip the usage line, use the first descriptive sentence)
 
-  Step 5: Write the matrix.
+  Step 5: Write the section file.
     Call write_file with:
-      path: "docs/capability-matrix.md"
-      content: <the full markdown document — see format below>
+      path: "#{section_file}"
+      content: the Markdown section (format below)
 
   Output format:
 
-  ---
-  # Aetheris-Agents — Capability Matrix
+  ## #{section_title}
 
-  _Generated by `agents/capability_matrix.exs`. Re-run to update._
+  ### Agents
 
-  ---
+  | Agent file | Label | Tools |
+  |------------|-------|-------|
+  | {file}.exs | {label} | `{tool1}`, `{tool2}` |
 
-  ## Use Cases
-
-  ### {Use Case Name}
-
-  **Purpose:** {one sentence from README or inferred from agents}
-
-  #### Agents
-
-  | Agent file | Role | Tools |
-  |------------|------|-------|
-  | {file}.exs | {role} | {tool1}, {tool2} |
-
-  #### Scripts
+  ### Scripts
 
   | Script | Purpose |
   |--------|---------|
-  | {script}.py | {one-line docstring} |
-
-  ---
-  (repeat for each use case)
-
-  ---
-
-  ## api/ — TAP Protocol
-
-  ### Tenant side
-
-  #### Agents
-  (same table format)
-
-  #### Scripts
-  (same table format)
-
-  ### Gateway side
-
-  #### Agents
-  (same table format)
-
-  #### Scripts
-  (same table format)
-
-  ---
-
-  ## Overlap Report
-
-  ### Script name overlaps
-  (table: script name | use cases it appears in | notes)
-  If none: "No script name overlaps found."
-
-  ### Identical tool sets
-  (table: tool set | agents sharing it | notes)
-  If none: "No identical tool sets found."
-
-  ---
-
-  ## Summary
-
-  | Use case | Agents | Scripts | Tools (unique) |
-  |----------|--------|---------|----------------|
-  | payslip  | N      | N       | N              |
-  ...
-  | **Total** | N     | N       | N              |
-
-  ---
+  | {script}.py | {one-line purpose} |
 
   Rules:
-  - Read only what you need. Do not read every file in the repo.
-  - If a file is missing or a directory is empty, note it and continue.
-  - Keep script purpose to one line — the first sentence of the docstring only.
-  - If a tool set is a subset of another, do not flag it as identical — only flag exact matches.
-  - Write the file once at the end, not incrementally.
-  """,
-  user_prompt: "Generate the capability matrix for this repository. Begin."
+  - One row per agent file. For OrbConfig, expand to one row per agent_config.
+  - Keep purpose to one line — first descriptive sentence of docstring only.
+  - If a directory is empty or missing, write "None." under that heading.
+  - Do not include test files, output/ directories, or __pycache__.
+  - Write the section file once at Step 5.
+  """
+end
+
+%Aetheris.OrbConfig{
+  orb_id: "cap-matrix-#{Aetheris.ID.generate()}",
+  agent_configs: [
+    %Aetheris.RunConfig{
+      run_id:           "cap-matrix-#{Aetheris.ID.generate()}-payslip",
+      mode:             :record,
+      provider:         "anthropic",
+      model:            "claude-haiku-4-5-20251001",
+      label:            "cap-matrix: payslip",
+      sandbox_path:     agent_root,
+      overlay_base_dir: nil,
+      max_steps:        15,
+      context_strategy: :full,
+      tools:            ["list_dir", "read_file", "write_file"],
+      system_prompt:    sub_agent_prompt.("payslip", ""),
+      user_prompt:      "Generate the capability section for the payslip use case. Begin."
+    },
+    %Aetheris.RunConfig{
+      run_id:           "cap-matrix-#{Aetheris.ID.generate()}-drive",
+      mode:             :record,
+      provider:         "anthropic",
+      model:            "claude-haiku-4-5-20251001",
+      label:            "cap-matrix: drive",
+      sandbox_path:     agent_root,
+      overlay_base_dir: nil,
+      max_steps:        15,
+      context_strategy: :full,
+      tools:            ["list_dir", "read_file", "write_file"],
+      system_prompt:    sub_agent_prompt.("drive", ""),
+      user_prompt:      "Generate the capability section for the drive use case. Begin."
+    },
+    %Aetheris.RunConfig{
+      run_id:           "cap-matrix-#{Aetheris.ID.generate()}-email",
+      mode:             :record,
+      provider:         "anthropic",
+      model:            "claude-haiku-4-5-20251001",
+      label:            "cap-matrix: email",
+      sandbox_path:     agent_root,
+      overlay_base_dir: nil,
+      max_steps:        15,
+      context_strategy: :full,
+      tools:            ["list_dir", "read_file", "write_file"],
+      system_prompt:    sub_agent_prompt.("email", ""),
+      user_prompt:      "Generate the capability section for the email use case. Begin."
+    },
+    %Aetheris.RunConfig{
+      run_id:           "cap-matrix-#{Aetheris.ID.generate()}-api-tenant",
+      mode:             :record,
+      provider:         "anthropic",
+      model:            "claude-haiku-4-5-20251001",
+      label:            "cap-matrix: api/tenant",
+      sandbox_path:     agent_root,
+      overlay_base_dir: nil,
+      max_steps:        15,
+      context_strategy: :full,
+      tools:            ["list_dir", "read_file", "write_file"],
+      system_prompt:    sub_agent_prompt.("api", "tenant"),
+      user_prompt:      "Generate the capability section for the api/tenant side. Begin."
+    },
+    %Aetheris.RunConfig{
+      run_id:           "cap-matrix-#{Aetheris.ID.generate()}-api-gateway",
+      mode:             :record,
+      provider:         "anthropic",
+      model:            "claude-haiku-4-5-20251001",
+      label:            "cap-matrix: api/gateway",
+      sandbox_path:     agent_root,
+      overlay_base_dir: nil,
+      max_steps:        15,
+      context_strategy: :full,
+      tools:            ["list_dir", "read_file", "write_file"],
+      system_prompt:    sub_agent_prompt.("api", "gateway"),
+      user_prompt:      "Generate the capability section for the api/gateway side. Begin."
+    }
+  ]
 }

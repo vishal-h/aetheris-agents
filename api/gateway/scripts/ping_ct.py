@@ -7,12 +7,23 @@ Output: {"status": "ok", "latency_ms": N} or {"status": "error", "reason": "..."
 Exit 0 on 200, exit 1 on failure.
 """
 
+import base64
 import json
 import os
 import sys
 import time
 import urllib.error
 import urllib.request
+
+
+def _app_id_from_token(token: str) -> str | None:
+    try:
+        parts = token.split(".")
+        payload = json.loads(base64.b64decode(parts[1] + "==").decode())
+        inner = json.loads(payload["token"])
+        return inner.get("AppId")
+    except Exception:
+        return None
 
 
 def ping() -> dict:
@@ -23,9 +34,12 @@ def ping() -> dict:
         return {"status": "error", "reason": "CT_API_BASE_URL not set"}
 
     url = f"{base_url}/api/stu/_Monitor/ping"
-    headers = {}
+    headers: dict[str, str] = {}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+        app_id = _app_id_from_token(token)
+        if app_id:
+            headers["AccessCode"] = app_id
 
     req = urllib.request.Request(url, headers=headers)
     start = time.monotonic()

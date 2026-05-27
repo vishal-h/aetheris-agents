@@ -22,7 +22,7 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), "../.."))
   Step 1: Wait for a message from cot1.
     Call wait_for_event with:
       condition: "message_received"
-      timeout_ms: 120000
+      timeout_ms: 300000
     Extract the intent_id: it is the string after "intent_id: " in the message.
     Check the message body:
     - If it contains "TAP result ready" → proceed to the Result Path (Step 2).

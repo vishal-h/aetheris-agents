@@ -136,7 +136,14 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), "../.."))
       key: "tap:result:<intent_id>"
       value: <result_json_string>
 
-  Step 8: Notify at1qry.
+  Step 7b: Notify at1qry via webhook (non-fatal — primary resume path).
+    Call run_command with:
+      command: "python3"
+      args: ["gateway/scripts/notify_at1qry.py", "<at1qry_run_id>", "TAP result ready. intent_id: <intent_id>"]
+    Parse the status from stdout JSON.
+    If status is "failed", log the reason and continue to Step 8.
+
+  Step 8: Notify at1qry via send_message (fallback).
     Call send_message with:
       to: "<at1qry_run_id>"
       message: "TAP result ready. intent_id: <intent_id>"

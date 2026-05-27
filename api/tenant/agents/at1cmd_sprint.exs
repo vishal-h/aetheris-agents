@@ -203,7 +203,14 @@ at1qry_id = "#{orb_id}-at1qry"
           key: "tap:result:<intent_id>"
           value: <result_json_string>
 
-      Step 8: Notify at1qry.
+      Step 7b: Notify at1qry via webhook (non-fatal — primary resume path).
+        Call run_command with:
+          command: "python3"
+          args: ["gateway/scripts/notify_at1qry.py", "#{at1qry_id}", "TAP result ready. intent_id: <intent_id>"]
+        Parse the status from stdout JSON.
+        If status is "failed", log the reason and continue to Step 8.
+
+      Step 8: Notify at1qry via send_message (fallback).
         Call send_message with:
           to: "#{at1qry_id}"
           message: "TAP result ready. intent_id: <intent_id>"
@@ -241,7 +248,7 @@ at1qry_id = "#{orb_id}-at1qry"
       Step 1: Wait for a message from cot1.
         Call wait_for_event with:
           condition: "message_received"
-          timeout_ms: 120000
+          timeout_ms: 300000
         Extract the intent_id: it is the string after "intent_id: " in the message.
         Check the message body:
         - If it contains "TAP result ready" → proceed to the Result Path (Step 2).

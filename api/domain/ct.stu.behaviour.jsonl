@@ -1,6 +1,14 @@
-{"record_type": "meta", "domain": "ct.stu.behaviour", "version": "1", "published_at": "2026-05-26"}
+{"record_type": "meta", "domain": "ct.stu.behaviour", "version": "2", "published_at": "2026-05-26"}
 
-{"record_type": "section", "intent": "enroll_students", "seq": 1}
+{"record_type": "section", "intent": "setup_institution", "seq": 1}
+{"record_type": "execution", "intent": "setup_institution", "step": 1, "capability": "create_institution", "mode": "direct", "on_duplicate": "return_existing_id"}
+{"record_type": "outcome", "intent": "setup_institution", "success_when": "inst_id_returned", "contributes_to_context": ["inst_id"]}
+
+{"record_type": "section", "intent": "setup_courses", "seq": 2}
+{"record_type": "execution", "intent": "setup_courses", "step": 1, "capability": "create_course", "mode": "direct", "on_duplicate": "return_existing_id"}
+{"record_type": "outcome", "intent": "setup_courses", "success_when": "all_courses_created", "contributes_to_context": ["course_map"]}
+
+{"record_type": "section", "intent": "enroll_students", "seq": 3}
 {"record_type": "execution", "intent": "enroll_students", "step": 1, "capability": "create_student", "mode": "etl", "fields": "core"}
 {"record_type": "execution", "intent": "enroll_students", "step": 2, "capability": "update_father_details", "mode": "etl", "when": {"field": "fatherName", "present": true}}
 {"record_type": "execution", "intent": "enroll_students", "step": 3, "capability": "update_mother_details", "mode": "etl", "when": {"field": "motherName", "present": true}}

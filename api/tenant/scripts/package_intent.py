@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""package_intent.py <rows_json> <user_intent> [--correlation-id CID] [--seq N] [--source-file PATH]
+"""package_intent.py <rows_json> <user_intent> [--intent-id IID] [--correlation-id CID] [--seq N] [--source-file PATH]
 
 Packages normalised row dicts into a TAP intent packet for the enroll_students intent.
 Flags rows with missing DOB (advisory) in the flags array.
@@ -30,14 +30,15 @@ def flag_record(row: dict, index: int) -> dict | None:
 def package_intent(
     rows: list[dict],
     user_intent: str,
+    intent_id: str | None = None,
     correlation_id: str | None = None,
     seq: int = 1,
     source_file: str | None = None,
 ) -> dict:
     if not correlation_id:
         correlation_id = f"cor-{generate_short_id()}"
-
-    intent_id = f"int-{generate_short_id()}"
+    if not intent_id:
+        intent_id = f"int-{generate_short_id()}"
 
     flags = []
     for i, row in enumerate(rows):
@@ -71,6 +72,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("rows_json", help="JSON string or file path of normalised rows")
     parser.add_argument("user_intent", help="Original user intent string")
+    parser.add_argument("--intent-id", default=None)
     parser.add_argument("--correlation-id", default=None)
     parser.add_argument("--seq", type=int, default=1)
     parser.add_argument("--source-file", default=None)
@@ -85,6 +87,7 @@ def main() -> None:
     packet = package_intent(
         rows=rows,
         user_intent=args.user_intent,
+        intent_id=args.intent_id,
         correlation_id=args.correlation_id,
         seq=args.seq,
         source_file=args.source_file,

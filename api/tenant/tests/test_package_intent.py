@@ -71,6 +71,12 @@ def test_intent_id_generated():
     assert len(packet["intent_id"]) > 4
 
 
+def test_intent_id_passthrough():
+    result = run_script(SAMPLE_ROWS, "Enroll students", ["--intent-id", "int-sprint-stable-01"])
+    packet = json.loads(result.stdout)
+    assert packet["intent_id"] == "int-sprint-stable-01"
+
+
 def test_correlation_id_passthrough():
     result = run_script(SAMPLE_ROWS, "Enroll students", ["--correlation-id", "cor-test-001"])
     packet = json.loads(result.stdout)

@@ -14,7 +14,7 @@ at1qry_id = "#{orb_id}-at1qry"
       mode:             :record,
       provider:         "anthropic",
       model:            "claude-haiku-4-5-20251001",
-      label:            "at1cmd — TAP Tenant Dispatcher",
+      label:            "at1cmd — TAP Tenant Dispatcher (sprint)",
       sandbox_path:     agent_root,
       overlay_base_dir: nil,
       max_steps:        20,
@@ -34,7 +34,7 @@ at1qry_id = "#{orb_id}-at1qry"
       Step 2: Package the TAP intent.
         Call run_command with:
           command: "python3"
-          args: ["tenant/scripts/package_intent.py", "<rows_json>", "Enroll students from tenant/data/sample_enrollments_t2.csv", "--source-file", "tenant/data/sample_enrollments_t2.csv"]
+          args: ["tenant/scripts/package_intent.py", "<rows_json>", "Enroll students from tenant/data/sample_enrollments_t2.csv", "--intent-id", "int-sprint-t2-steady-001", "--correlation-id", "cor-sprint-t2-steady-001", "--source-file", "tenant/data/sample_enrollments_t2.csv"]
         Parse the TAP intent JSON from stdout. Extract the intent_id field.
 
       Step 3: Write the intent to the blackboard.

@@ -1,0 +1,4 @@
+name,date_of_birth,gender,email,mobile,course,section,roll_no,father_name,father_email,father_mobile,mother_name,mother_email,mother_mobile,guardian_name,guardian_gender,guardian_email,guardian_mobile
+Priya Agent,2010/06/15,Female,,,SSLC,A,101,Rajesh Agent,rajesh.agent@example.com,9876543210,Sunita Agent,sunita.agent@example.com,9876543211,,,
+Arjun Agent,2011/03/22,Male,,,SSLC,A,102,,,,Meena Agent,,9876543212,,,
+Ravi Agent,,Male,,,SSLC,B,,,,,,,,,,

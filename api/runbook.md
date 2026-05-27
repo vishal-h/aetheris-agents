@@ -197,10 +197,21 @@ Expected outcome:
 
 #### Manual BEAM Restart Verification
 
-1. Start the Aetheris API server and launch the T4 or T5 sprint in a second terminal.
-2. While at1qry is in its `wait_for_event` step (after cot1 submits to RabbitMQ), kill the
-   Aetheris server terminal with `Ctrl+C`.
-3. Verify the checkpoint is in SQLite:
+> **This is a best-effort verification, not a sprint requirement. The unit tests
+> (`server_inject_test.exs`) are the gate for T5.**
+
+**IMPORTANT — timing window**: The BEAM must be killed while at1qry's run status in the `runs`
+table is still `:running`. If the orb has already completed (cot1 finished, coordinator updated
+statuses), the checkpoint is orphaned and the resume scan will skip it. To verify reliably, kill
+the BEAM immediately after seeing "at1qry: waiting" in the logs, before cot1 has a chance to
+finish.
+
+1. Start the Aetheris API server and launch the T5 sprint in a second terminal.
+2. Watch the logs for at1qry entering its `wait_for_event` step. Kill the server immediately:
+   ```bash
+   # Ctrl+C in the aetheris server terminal — must happen before cot1 finishes
+   ```
+3. Verify the checkpoint is in SQLite with status `waiting` (not `done`):
    ```bash
    sqlite3 priv/aetheris.db \
      "SELECT run_id, status, wait_condition_json FROM run_checkpoints WHERE status='waiting';"
@@ -212,13 +223,11 @@ Expected outcome:
    ```
 5. On startup, `Application` calls `list_resumable_checkpoints` and resumes at1qry via
    `resume_from_checkpoint`. The server registers `{:message_received, run_id}` in `WaitRegistry`.
-6. cot1's `notify_at1qry.py` (if it retries) or the `send_message` fallback wakes at1qry.
-7. at1qry runs `gap_analysis.py` and finishes.
-
-If cot1 has already finished (webhook POST got 404), re-send manually:
-```bash
-python3 api/gateway/scripts/notify_at1qry.py <at1qry_run_id> "TAP result ready. intent_id: <id>"
-```
+6. Wake at1qry manually (cot1 has already finished):
+   ```bash
+   python3 api/gateway/scripts/notify_at1qry.py <at1qry_run_id> "TAP result ready. intent_id: <id>"
+   ```
+7. at1qry runs `gap_analysis.py` and reaches `agent_finished`.
 
 ---
 

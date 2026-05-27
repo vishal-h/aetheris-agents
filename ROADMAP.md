@@ -38,7 +38,7 @@ at `docs/capability-matrix.md`. Sprint case: `capability_matrix`.
 
 ---
 
-### uc-api-agent — T1 through T4
+### uc-api-agent — T1 through T5
 Agent-to-API communication for the EdTech platform via the TAP protocol.
 
 | Ticket | What it delivered |

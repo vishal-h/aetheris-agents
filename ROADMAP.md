@@ -47,8 +47,9 @@ Agent-to-API communication for the EdTech platform via the TAP protocol.
 | T2 | cot1 executes against ct-api: ETL pipeline (parse → validate → build job → S3 → RabbitMQ); direct-mode for setup_institution and setup_courses |
 | T3 | Skill extraction (extract_skill_hints.py → skill_hint.json → inject on next run); structured clarification round-trip for unresolved termName |
 | T4 | Webhook resume: cot1 POSTs to `POST /api/runs/:run_id/resume` as primary path; send_message retained as fallback; inject_message harness fix (WaitRegistry.notify for message_received wait) |
+| T5 | BEAM durability: `resume_from_checkpoint` re-establishes `{:message_received, _}` wait; at1qry survives a node restart while waiting for the webhook |
 
-Sprint cases: `uc_api_agent_t1`, `uc_api_agent_t2_steady`, `uc_api_agent_t2_greenfield`, `uc_api_agent_t3`, `uc_api_agent_t4`
+Sprint cases: `uc_api_agent_t1`, `uc_api_agent_t2_steady`, `uc_api_agent_t2_greenfield`, `uc_api_agent_t3`, `uc_api_agent_t4`, `uc_api_agent_t5`
 
 ---
 
@@ -64,20 +65,13 @@ See `aetheris/docs/aetheris/runbook-ollama-xml.md`.
 
 ## Active
 
-### uc-api-agent — T5
-Durable at1qry persistence across BEAM restarts via `resume_from_checkpoint`.
-
-Currently, if the BEAM node restarts after cot1 writes the result but before the
-webhook fires, the at1qry run is lost. T5 implements checkpoint/restore so at1qry
-can survive a node crash and pick up from its last persisted state.
-
-**Depends on:** T4 ✅, `resume_from_checkpoint` primitive in aetheris harness
+*(Nothing active at this time.)*
 
 ---
 
 ## Planned
 
-*(Nothing formally scoped beyond T5 at this time.)*
+*(Nothing formally scoped.)*
 
 ---
 
@@ -108,7 +102,7 @@ T3 — skill / clarify ✅ skill hint injection; clarification round-trip
       ↓
 T4 — webhook resume  ✅ primary POST path; inject_message harness fix
       ↓
-T5 — BEAM durability 🚧 resume_from_checkpoint; active
+T5 — BEAM durability ✅ resume_from_checkpoint; message_received waits survive restart
 ```
 
 ---

@@ -102,7 +102,7 @@ T3 — skill / clarify ✅ skill hint injection; clarification round-trip
       ↓
 T4 — webhook resume  ✅ primary POST path; inject_message harness fix
       ↓
-T5 — BEAM durability ✅ resume_from_checkpoint; message_received waits survive restart
+T5 — BEAM durability ✅ resume_from_checkpoint for message_received waits
 ```
 
 ---

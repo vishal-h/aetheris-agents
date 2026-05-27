@@ -1,6 +1,6 @@
 # uc-api-agent — Milestone
 
-**Status:** Pre-implementation
+**Status:** ✅ Complete (T1–T5)
 **Design doc:** `docs/uc-api-agent-design.md`
 **Depends on:** Aetheris m12 complete, m13 planned (T4 only)
 **API:** ct.stu (`CT_API_BASE_URL=https://svc.campustrack.net/api`)
@@ -25,7 +25,7 @@ gateway. First use case: student enrollment via the ct.stu API.
 - Greenfield (setup_institution → setup_courses → enroll_students) and steady-state
   (enroll_students only) scenarios both work end-to-end against ct-api
 - Skill extracted after first successful run; second run uses it
-- at1qry survives BEAM restarts (m13 T1); resumes via cot1 webhook (m13 T3)
+- at1qry survives BEAM restarts (m13 T1); resumes via cot1 webhook (m13 T3) ✅
 - All scripts have passing tests; all checks pass
 
 ---
@@ -37,6 +37,7 @@ T1 (TAP plumbing — no real API calls)
   └── T2 (cot1 executes against ct-api; both scenarios)
         └── T3 (skill extraction; structured clarification)
               └── T4 (at1qry persistence via m13; webhook resume)
+                    └── T5 (BEAM durability: resume_from_checkpoint for message_received waits)
 ```
 
 T1 and T2 are the critical path. T3 and T4 layer on top without rework.
@@ -551,6 +552,35 @@ AETHERIS_API_BASE=http://localhost:4001   ← m13 T3 webhook API
 - Gap report produced correctly after webhook resume
 - Injected message from webhook appears in at1qry trajectory
 - All checks pass
+
+---
+
+### T5 — BEAM durability
+
+**Layer:** Aetheris harness (`lib/aetheris/agent/server.ex`)
+**Depends on:** T4 merged
+**Status:** ✅ Complete
+
+**What was built:**
+
+`resume_from_checkpoint` was silently abandoning at1qry runs that had checkpointed
+while waiting for the cot1 webhook. Three independent guards each prevented resume:
+(1) `decode_checkpoint` returned `:unresumable` for `{:message_received, _}` conditions;
+(2) `handle_call(:resume_from_checkpoint)` discarded the decoded `wait_condition` with `_`;
+(3) `do_resume` unconditionally set `wait_condition: nil` in the resumed server state.
+
+All three were fixed. On resume, `{:message_received, _}` waits are now restored in server
+state and the server process pre-registers in `WaitRegistry` before the Task starts,
+ensuring the run is wakeable immediately after `resume_from_checkpoint/1` returns `:ok`.
+All other wait conditions (`{:agent_done, _}`, `nil`) remain cleared on resume.
+
+**Acceptance criteria:**
+
+- ✅ `resume_from_checkpoint/1` returns `:ok` for a `{:message_received, _}` checkpoint
+- ✅ `WaitRegistry.notify` unblocks a resumed run to terminal state
+- ✅ `:blackboard_key` checkpoint still returns `:unresumable` (regression guard)
+- ✅ T4 regression: webhook path intact after T5 changes (sprint Part A)
+- ✅ All checks pass (676 tests, 0 failures)
 
 ---
 

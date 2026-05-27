@@ -1,5 +1,12 @@
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), "../.."))
 
+skill_hint_path = Path.join(agent_root, "tenant/data/skill_hint.json")
+skill_context = if File.exists?(skill_hint_path) do
+  "\nPrevious run skill hint:\n" <> File.read!(skill_hint_path)
+else
+  ""
+end
+
 orb_id    = "uc-api-t2-#{Aetheris.ID.generate()}"
 at1cmd_id = "#{orb_id}-at1cmd"
 cot1_id   = "#{orb_id}-cot1"
@@ -56,6 +63,7 @@ at1qry_id = "#{orb_id}-at1qry"
       - Exact command format: command field is "python3", args is a list starting with the script path.
       - overlay_base_dir is nil — output files must persist.
       - If run_command fails, report the error and stop.
+      #{skill_context}
       """,
       user_prompt: "Read the enrollment CSV, package a TAP intent, write it to the blackboard, and notify cot1 at run '#{cot1_id}'. Begin."
     },
@@ -96,6 +104,37 @@ at1qry_id = "#{orb_id}-at1qry"
           args: ["gateway/scripts/validate_intent.py", "<intent_json>", "domain/ct.stu.vocabulary.jsonl"]
         Parse the validation report JSON from stdout.
         If valid is false and errors is non-empty, write a failed result and go to Step 9.
+
+      Step 3.5: Check if clarification is needed.
+        Clarification is required ONLY when the validation report indicates termName is
+        unresolved AND there is no term with "current": true in domain/ct.stu.vocabulary.jsonl.
+        In normal runs (Annual has "current": true), skip this step and proceed to Step 4.
+
+        If clarification IS needed:
+          a) Build the clarification request:
+             {
+               "tap_version": "0",
+               "message_type": "clarification_request",
+               "intent_id": "<intent_id>",
+               "correlation_id": "<correlation_id>",
+               "field": "termName",
+               "clarification_type": "select_one",
+               "options": [<term names from vocabulary lookup>],
+               "context": "termName required for <N> records",
+               "round": 1,
+               "max_rounds": 2
+             }
+          b) Write to blackboard:
+               key: "tap:clarify:<intent_id>", value: <clarification_request_json>
+          c) Send message to at1qry:
+               to: "#{at1qry_id}"
+               message: "TAP clarification needed. intent_id: <intent_id>"
+          d) Wait for clarification response:
+               Call wait_for_event with condition: "message_received", timeout_ms: 300000
+             Parse the response message:
+             - "clarification_response": extract termName and apply to all payload records.
+             - "clarification_invalid_response": increment round, re-send with updated round, wait again.
+             - "clarification_failed" OR round >= max_rounds: write failed TAP result, skip to Step 9.
 
       Step 4: Resolve execution context.
         Read the current execution context from blackboard:
@@ -188,44 +227,86 @@ at1qry_id = "#{orb_id}-at1qry"
       label:            "at1qry — TAP Tenant Collector",
       sandbox_path:     agent_root,
       overlay_base_dir: nil,
-      max_steps:        15,
+      max_steps:        20,
       context_strategy: :full,
-      tools:            ["read_blackboard", "run_command", "wait_for_event"],
+      tools:            ["read_blackboard", "write_blackboard", "send_message", "run_command", "wait_for_event"],
       system_prompt:    """
       You are at1qry, the TAP tenant collector agent.
 
-      Workflow — follow these steps in order:
+      You handle two message types from cot1: "TAP result ready" and "TAP clarification needed".
+      The round limit for clarification is 2 total (invalid responses consume rounds).
+
+      Workflow:
 
       Step 1: Wait for a message from cot1.
         Call wait_for_event with:
           condition: "message_received"
           timeout_ms: 120000
-        The message body contains the intent_id. Extract it.
-        The intent_id is the string after "intent_id: " in the message.
+        Extract the intent_id: it is the string after "intent_id: " in the message.
+        Check the message body:
+        - If it contains "TAP result ready" → proceed to the Result Path (Step 2).
+        - If it contains "TAP clarification needed" → proceed to the Clarification Path (Step 3).
+
+      --- Result Path ---
 
       Step 2: Read the TAP result packet from the blackboard.
         Call read_blackboard with:
-          key: "tap:result:<intent_id>"    (substitute the intent_id from step 1)
+          key: "tap:result:<intent_id>"
         The value is the TAP result JSON string.
 
-      Step 3: Run gap analysis.
+      Step 2a: Run gap analysis.
         Call run_command with:
           command: "python3"
           args: ["tenant/scripts/gap_analysis.py", "<result_json>"]
         Parse the gap report JSON from stdout.
 
-      Step 4: Report the summary.
+      Step 2b: Report the summary.
         Include:
         - Total records, queued, failed, skipped counts
         - Non-idempotent count and which records are affected
         - Each gap: record name, reason, suggested_action
-        - Confirm the job_ref and s3_path from the result
+        - Confirm the job_ref from the result
+
+      --- Clarification Path ---
+
+      Step 3: Handle clarification request (max 2 rounds; invalid responses count as rounds).
+        a) Read the clarification request:
+             Call read_blackboard with key: "tap:clarify:<intent_id>"
+             Parse the clarification request JSON.
+        b) Read the operator response:
+             Call read_blackboard with key: "tap:clarify_response:<intent_id>"
+             If the value is nil or empty:
+               Send message to cot1: "clarification_failed. intent_id: <intent_id> reason: no operator response"
+               Report and finish.
+        c) Validate the response (track rounds_consumed, starting at 1):
+             For clarification_type "select_one": value must be one of the options list.
+             For clarification_type "confirm": value must be "true" or "false".
+             If invalid:
+               rounds_consumed += 1
+               If rounds_consumed >= max_rounds (2):
+                 Write to blackboard:
+                   key: "tap:result:<intent_id>"
+                   value: {"tap_version":"0","message_type":"result","intent_id":"<intent_id>",
+                           "intent_lifecycle":{"status":"failed","reason":"clarification_unresolved"}}
+                 Send message to cot1: "clarification_failed. intent_id: <intent_id> reason: clarification_unresolved"
+                 Report and finish.
+               Send message to cot1:
+                 "clarification_invalid_response. intent_id: <intent_id> round: <rounds_consumed> error: <validation_error>"
+               Wait for message_received (cot1 will re-send clarification).
+               Read updated tap:clarify_response:<intent_id> from blackboard.
+               Go back to step (c).
+        d) If valid:
+             Send message to cot1:
+               "clarification_response. intent_id: <intent_id> termName: <value>"
+             Wait for message_received (cot1 will send "TAP result ready" when done).
+             Proceed to Step 2.
 
       Rules:
       - All paths are relative to the sandbox root — no absolute paths.
-      - Do not retry — report what you received and finish.
+      - Do not retry on the result path — report what you received and finish.
+      - Round limit (2) applies to ALL exchanges including invalid responses.
       """,
-      user_prompt: "Wait for the TAP result from cot1, run gap analysis, and report all findings. Begin."
+      user_prompt: "Wait for cot1 — handle either a result or a clarification request. Begin."
     }
   ]
 }

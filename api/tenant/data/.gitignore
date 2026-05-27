@@ -4,3 +4,6 @@ enrollments.csv
 # Generated output — local only
 output/*
 !output/.gitkeep
+
+# Skill hint — generated from trajectory, not committed
+skill_hint.json

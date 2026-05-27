@@ -163,22 +163,62 @@ Expected outcome:
 - at1qry trajectory contains an `agent_message_received` event with `from_run_id: "webhook"`
 - Webhook call precedes the `send_message` in cot1's trajectory
 
-#### BEAM Restart Verification (manual, not in sprint)
+#### BEAM Restart Behavior
 
-To verify that at1qry survives a BEAM restart while waiting:
+T4 does not implement BEAM durability — a restart while at1qry is waiting loses the in-memory run.
+T5 fixes this (see T5 section below). For a T4-only deployment, recovery is re-running the orb from
+scratch with the same correlation_id (idempotent records produce identical GUIDs).
 
-1. Start the API server and orb as above.
-2. After cot1 writes the result to the blackboard (before Step 7b), kill and restart the Aetheris node:
+---
+
+### T5 Sprint — BEAM Durability (resume_from_checkpoint)
+
+**What changed in T5**: `resume_from_checkpoint` now re-establishes `{:message_received, _}` wait
+conditions on resume. If the BEAM node restarts while at1qry is waiting for the webhook, the next
+startup auto-resumes at1qry from its checkpoint instead of losing the run.
+
+Three changes in `lib/aetheris/agent/server.ex`:
+- `decode_checkpoint`: `{:message_received, _}` is no longer `:unresumable`
+- `handle_call(:resume_from_checkpoint)`: passes the decoded `wait_condition` to `do_resume`
+- `do_resume`: registers in `WaitRegistry` and restores `wait_condition` in server state for
+  `{:message_received, _}` only; all other wait conditions are cleared (including `{:agent_done, _}`)
+
+#### Running the T5 sprint
+
+```bash
+source api/.env
+cd /home/it/sandbox/elixirws/aetheris
+./scripts/sprint.sh uc_api_agent_t5
+```
+
+Expected outcome:
+- Part A: T4 regression passes (webhook resume path intact)
+- Part B: `server_checkpoint_test.exs` and `server_inject_test.exs` pass
+
+#### Manual BEAM Restart Verification
+
+1. Start the Aetheris API server and launch the T4 or T5 sprint in a second terminal.
+2. While at1qry is in its `wait_for_event` step (after cot1 submits to RabbitMQ), kill the
+   Aetheris server terminal with `Ctrl+C`.
+3. Verify the checkpoint is in SQLite:
    ```bash
-   # In the aetheris terminal: Ctrl+C to stop, then re-run
+   sqlite3 priv/aetheris.db \
+     "SELECT run_id, status, wait_condition_json FROM run_checkpoints WHERE status='waiting';"
+   # Expected: a row for the at1qry run_id with type=message_received
+   ```
+4. Restart the server:
+   ```bash
    mix aetheris server --port 4001
    ```
-3. The at1qry run will have been lost from in-memory state. The webhook POST will return 404.
-4. cot1 falls back to `send_message`, which also fails (run gone). cot1 reports and finishes.
-5. Recovery: re-run the orb from scratch with the same correlation_id (idempotent records produce same GUIDs).
+5. On startup, `Application` calls `list_resumable_checkpoints` and resumes at1qry via
+   `resume_from_checkpoint`. The server registers `{:message_received, run_id}` in `WaitRegistry`.
+6. cot1's `notify_at1qry.py` (if it retries) or the `send_message` fallback wakes at1qry.
+7. at1qry runs `gap_analysis.py` and finishes.
 
-This is the expected behavior — T4 does not implement durable persistence across BEAM restarts.
-That is deferred to T5 (pending m13 durable state).
+If cot1 has already finished (webhook POST got 404), re-send manually:
+```bash
+python3 api/gateway/scripts/notify_at1qry.py <at1qry_run_id> "TAP result ready. intent_id: <id>"
+```
 
 ---
 
@@ -223,13 +263,3 @@ keyed on `{inst_id}|{course_name}|{name}|{discriminator}` against namespace
   the ETL job list pending confirmation of the correct endpoint format (PUT path param vs POST
   body) with the CT dev team. The TODO is in `build_etl_job.py`.
 
-**Context ordering on webhook resume (T4)**
-- `Server.inject_message/2` for `message_received` waits prepends the webhook message to the
-  context list rather than appending it. This means the injected message appears at position 0
-  of the conversation history rather than at the end. The agent resumes correctly in practice but
-  the context ordering is semantically wrong. Fix: change `[context_entry | state.context]` to
-  `state.context ++ [context_entry]` in `lib/aetheris/agent/server.ex`.
-
-**BEAM restart (T4)**
-- at1qry does not survive a BEAM restart while waiting. Durable persistence is deferred to T5.
-  Recovery requires re-running the full orb from scratch.

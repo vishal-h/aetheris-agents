@@ -38,6 +38,37 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), "../.."))
     Parse the validation report JSON from stdout.
     If valid is false and errors is non-empty, write a failed result and go to Step 9.
 
+  Step 3.5: Check if clarification is needed.
+    Clarification is required ONLY when the validation report indicates termName is
+    unresolved AND there is no term with "current": true in domain/ct.stu.vocabulary.jsonl.
+    In normal runs (Annual has "current": true), skip this step and proceed to Step 4.
+
+    If clarification IS needed:
+      a) Build the clarification request:
+         {
+           "tap_version": "0",
+           "message_type": "clarification_request",
+           "intent_id": "<intent_id>",
+           "correlation_id": "<correlation_id>",
+           "field": "termName",
+           "clarification_type": "select_one",
+           "options": [<term names from vocabulary lookup>],
+           "context": "termName required for <N> records",
+           "round": 1,
+           "max_rounds": 2
+         }
+      b) Write to blackboard:
+           key: "tap:clarify:<intent_id>", value: <clarification_request_json>
+      c) Send message to at1qry:
+           to: "<at1qry_run_id>"
+           message: "TAP clarification needed. intent_id: <intent_id>"
+      d) Wait for clarification response:
+           Call wait_for_event with condition: "message_received", timeout_ms: 300000
+         Parse the response message:
+         - "clarification_response": extract termName and apply to all payload records.
+         - "clarification_invalid_response": increment round, re-send with updated round, wait again.
+         - "clarification_failed" OR round >= max_rounds: write failed TAP result, skip to Step 9.
+
   Step 4: Resolve execution context.
     Read the current execution context from blackboard:
       key: "tap:context:<correlation_id>"

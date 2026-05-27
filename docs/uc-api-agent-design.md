@@ -279,8 +279,9 @@ Defined in the behaviour doc, not the vocabulary doc. cot1 chooses based on
 **ETL mode** — bulk write operations:
 1. Pre-generate GUIDs for all new records
 2. Build ETL job list (one line per API call, all capabilities bundled)
-3. Submit to RabbitMQ with job idempotency key
-4. Return result packet: `{job_ref, records: [...], status: "queued"}`
+3. Upload ETL file to S3 → receive s3_path
+4. Push `{title, s3_path, client_id}` to RabbitMQ queue `"ct_r_etl_worker"`
+5. Return result packet: `{job_ref, s3_path, records: [...], status: "queued"}`
 
 **Direct mode** — setup operations and queries:
 1. Call ct-api via `http_call`
@@ -292,10 +293,59 @@ Defined in the behaviour doc, not the vocabulary doc. cot1 chooses based on
 Each line: `METHOD\tENDPOINT\tJSON_PAYLOAD`
 
 ```
-POST\t/api/stu/student\t{"Name":"Priya Sharma","Gender":0,...,"Id":"<guid>","InstId":"<inst_id>"}
+post\t/api/stu/student\t{"AadharNumber":null,"AdmissionNumber":null,"ApplicationNumber":null,"CourseId":"<course_guid>","CourseName":"SSLC","DOA":"0001-01-01T00:00:00","DOB":"0001-01-01T00:00:00","Email":null,"Gender":0,"Mobile":null,"Name":"Priya Sharma","SecName":"A","StudentId":null,"Branch":"","TermName":"Annual","Id":"<student_guid>","InstId":"<inst_id>"}
 ```
 
+Field names in the ETL JSON are **PascalCase** (API format), not the CSV's snake_case.
+`build_etl_job.py` maps explicitly:
+
+| CSV field | ETL JSON field | Notes |
+|-----------|---------------|-------|
+| `name` | `Name` | |
+| `gender` | `Gender` | integer: 0=Female, 1=Male, 90=Other |
+| `course` | `CourseName` | human label |
+| resolved CourseId | `CourseId` | GUID from context/vocabulary |
+| `section` | `SecName` | |
+| `date_of_birth` | `DOB` | ISO8601 or sentinel |
+| `date_of_admission` | `DOA` | sentinel when absent |
+| `email` | `Email` | |
+| `mobile` | `Mobile` | |
+| generated GUID | `Id` | UUID v5 or v4 fallback |
+| extracted InstId | `InstId` | from JWT claim |
+| `branch` | `Branch` | empty string when absent |
+| `termName` | `TermName` | defaulted to "Annual" |
+
 GUIDs pre-generated. ETL worker receives complete payloads — no chaining.
+
+### ETL file naming convention
+
+```
+{env}_{seq}_{inst_short_code}_{acad_year}_{entity}.etl
+dev_05_btlcol_2425_students.etl
+```
+
+Academic year extracted from InstId — second group of the UUID:
+```python
+def acad_year_from_inst_id(inst_id: str) -> str:
+    return inst_id.split("-")[1]   # "0c250000-2425-11e7-..." → "2425"
+```
+
+S3 path: `s3://{CT_S3_BUCKET}/{inst_short_code}/etls/{filename}.etl`
+
+### RabbitMQ payload (cot1 internal)
+
+```json
+{
+  "title": "etl_run_script",
+  "payload": {
+    "s3_path": "s3://s3-btl-ct-test/btlcol/etls/dev_05_btlcol_2425_students.etl",
+    "queue": []
+  },
+  "client_id": "<inst_id>"
+}
+```
+
+Queue name: `"ct_r_etl_worker"`
 
 ### Record identity
 
@@ -694,15 +744,30 @@ T1 does not require m13. T4 depends on m13 T1 + T3.
 
 ---
 
-## Auth
+## Auth and environment
 
+**ct-api:**
 ```
-Authorization: Bearer <token>
-CT_API_BASE_URL=https://svc.campustrack.net/api
-CT_API_TOKEN=<jwt>
+CT_API_BASE_URL=https://svc.campustrack.net    ← no /api suffix
+CT_API_TOKEN=<jwt>                              ← Authorization: Bearer <token>
 ```
 
-Token held by cot1. at1cmd never holds API credentials. Token lifetime days/months
+**AWS S3:**
+```
+AWS_ACCESS_KEY_ID=<key>
+AWS_SECRET_ACCESS_KEY=<secret>
+CT_S3_BUCKET=s3-btl-ct-test                    ← test bucket; prod bucket separate
+CT_S3_REGION=ap-south-1
+CT_INST_SHORT_CODE=btlcol                       ← 6-letter institute code (SMS id)
+CT_ENV=dev                                      ← dev | prod; used in ETL filename
+```
+
+**RabbitMQ:**
+```
+CT_RABBITMQ_URL=amqp://user:pass@host:5672/vhost
+```
+
+Token held by cot1. at1cmd never holds credentials. Token lifetime days/months
 via internal service account. No mid-run refresh needed.
 
 ---
@@ -734,13 +799,22 @@ uc-api-agent/
       cot1_stub.exs               ← T1 stub for plumbing tests
     scripts/
       validate_intent.py          ← TAP intent + vocabulary doc → validation report
-      build_etl_job.py            ← TAP intent → ETL job list (cot1 internal)
+      build_etl_job.py            ← TAP intent + context → ETL job list (PascalCase)
+      upload_etl_to_s3.py         ← ETL job list → S3 file → s3_path
+      submit_to_rmq.py            ← s3_path + inst_id → RabbitMQ → job_ref
+      direct_call.py              ← single direct-mode API call with on_duplicate
+      lookup_existing.py          ← deduplication guard: search ct-api by name+course
+      resolve_context.py          ← execution context threading helpers
       stub_cot1.py                ← T1: intent → mock TAP result JSON
       ping_ct.py                  ← connectivity check
     tests/
       conftest.py
       test_validate_intent.py
       test_build_etl_job.py
+      test_upload_etl_to_s3.py
+      test_submit_to_rmq.py
+      test_resolve_context.py
+      test_lookup_existing.py
       test_stub_cot1.py
 
   domain/                         ← owned by gateway
@@ -798,14 +872,17 @@ Fail-fast on entire correlation is too aggressive for real institutional data.
 **ETL job build sequence**
 
 ```
-1. Decode JWT → extract InstId (cached)
+1. Decode JWT → extract InstId + acad_year (cached)
 2. Validate entire batch against vocabulary doc
 3. Resolve CourseIds: execution context → vocabulary doc lookups
 4. Flag unresolvable records; send clarifications if needed (max 2 rounds)
 5. Pre-generate GUIDs (deterministic where possible, guarded random v4 fallback)
-6. Build ETL job list with job idempotency key
-7. Submit to RabbitMQ → receive job_ref
-8. Return result packet: job_ref + per-record {guid, name, identity_state, status}
+6. Build ETL job list (PascalCase field names, per field mapping table)
+7. Generate ETL filename: {CT_ENV}_{seq}_{CT_INST_SHORT_CODE}_{acad_year}_students.etl
+8. Upload ETL file to s3://{CT_S3_BUCKET}/{CT_INST_SHORT_CODE}/etls/{filename}
+9. Push to RabbitMQ queue "ct_r_etl_worker":
+     {title: "etl_run_script", payload: {s3_path, queue: []}, client_id: inst_id}
+10. Return result packet: s3_path + job_ref + per-record {guid, name, identity_state, status}
 ```
 
 **Execution context loss on crash (known limitation, T2)**

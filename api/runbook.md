@@ -21,6 +21,7 @@ Required environment variables:
 | `CT_ENV` | Deployment environment label used in ETL filenames (e.g. `dev`, `prod`) |
 | `AWS_ACCESS_KEY_ID` | AWS credentials for S3 upload |
 | `AWS_SECRET_ACCESS_KEY` | AWS credentials for S3 upload |
+| `AETHERIS_API_BASE` | Aetheris webhook server URL, e.g. `http://localhost:4001`; read by `notify_at1qry.py` |
 
 Token rotation: `CT_API_TOKEN` expires. If scripts return `410 TokenExpiredException`, update `.env` with a fresh token and re-source.
 
@@ -102,3 +103,54 @@ Idempotent GUIDs (UUID v5) are generated when either `dob` or `admissionNumber` 
 - `GET /api/auth/Institution` returns 403 — cannot verify institution existence via API.
 - `GET /api/stu/Student/flatData` server-side `name` filter does not work; `lookup_existing.py` uses client-side filtering over up to 500 records.
 - `GET /api/stu/Etl` returns 403 — ETL job status cannot be polled via API; job progress is tracked only through RabbitMQ ack and S3 artifact presence.
+
+---
+
+### T4 — at1qry Persistence via Webhook
+
+**What changed in T4**: cot1 now notifies at1qry via `POST /api/runs/:run_id/resume` (webhook) as the primary resume path, with `send_message` retained as fallback. This requires the Aetheris API server to be running before the orb starts.
+
+#### Starting the Aetheris API server
+
+```bash
+cd /home/it/sandbox/elixirws/aetheris
+mix aetheris server --port 4001
+```
+
+Leave this running in a separate terminal. Confirm it is up:
+
+```bash
+curl -s http://localhost:4001/api/runs/no-such-run/resume \
+  -X POST -H "Content-Type: application/json" -d '{"message":"test"}'
+# Expected: 404 response (not connection refused)
+```
+
+#### T4 Sprint
+
+```bash
+source api/.env
+cd /home/it/sandbox/elixirws/aetheris
+./scripts/sprint.sh uc_api_agent_t4
+```
+
+Expected outcome:
+- Aetheris API server is running before the orb starts
+- All 3 agents reach `agent_finished`
+- at1qry trajectory contains an `agent_message_received` event with `from_run_id: "webhook"`
+- Webhook call precedes the `send_message` in cot1's trajectory
+
+#### BEAM Restart Verification (manual, not in sprint)
+
+To verify that at1qry survives a BEAM restart while waiting:
+
+1. Start the API server and orb as above.
+2. After cot1 writes the result to the blackboard (before Step 7b), kill and restart the Aetheris node:
+   ```bash
+   # In the aetheris terminal: Ctrl+C to stop, then re-run
+   mix aetheris server --port 4001
+   ```
+3. The at1qry run will have been lost from in-memory state. The webhook POST will return 404.
+4. cot1 falls back to `send_message`, which also fails (run gone). cot1 reports and finishes.
+5. Recovery: re-run the orb from scratch with the same correlation_id (idempotent records produce same GUIDs).
+
+This is the expected behavior — T4 does not implement durable persistence across BEAM restarts. That is deferred to T5.

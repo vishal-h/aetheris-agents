@@ -31,6 +31,13 @@ Completes the payslip pipeline: generate → upload → deliver.
 
 ---
 
+### Capability matrix
+Auto-generated inventory of all agents and scripts across use cases, with
+tool-set overlap analysis. Produced by `agents/capability_matrix.exs`; output
+at `docs/capability-matrix.md`. Sprint case: `capability_matrix`.
+
+---
+
 ### uc-api-agent — T1 through T4
 Agent-to-API communication for the EdTech platform via the TAP protocol.
 
@@ -42,6 +49,16 @@ Agent-to-API communication for the EdTech platform via the TAP protocol.
 | T4 | Webhook resume: cot1 POSTs to `POST /api/runs/:run_id/resume` as primary path; send_message retained as fallback; inject_message harness fix (WaitRegistry.notify for message_received wait) |
 
 Sprint cases: `uc_api_agent_t1`, `uc_api_agent_t2_steady`, `uc_api_agent_t2_greenfield`, `uc_api_agent_t3`, `uc_api_agent_t4`
+
+---
+
+### Ollama provider with XML tool calling (aetheris harness)
+Small models (3B–8B) served via Ollama are supported as a local development
+path. XML mode injects tool definitions into the system prompt and parses
+`<tool_call>` blocks from the response, sidestepping the unreliable native
+JSON function-calling output of small models. Enabled by default via
+`config/runtime.exs`; use `provider: "ollama"` in any RunConfig.
+See `aetheris/docs/aetheris/runbook-ollama-xml.md`.
 
 ---
 
@@ -115,6 +132,21 @@ Sub-agents get the smallest tool set that lets them do their job.
 **context_strategy: :full on all orb agents.**
 `:rolling` truncates old messages and leaves orphaned tool_use_id references,
 causing HTTP 400. Use `:full` for any agent running fewer than ~10 steps.
+
+**`__ENV__.file` for sandbox_path in cross-repo agents.**
+Never use `File.cwd!()` in `.exs` agent files — it resolves to wherever
+`mix aetheris run` was invoked, not to the agent file's location. Use
+`Path.expand(Path.join(Path.dirname(__ENV__.file), "../.."))` (adjusting
+`..` depth to reach the use-case root). This is the only reliable anchor
+in a cross-repo setup where the harness and the agents live in sibling
+directories.
+
+**Sequential over parallel for independent agents.**
+`OrbConfig` implies coupled supervision — all agents share an orb lifecycle,
+a blackboard, and a coordinator. Use it only when agents genuinely need to
+communicate mid-run (blackboard, send_message, wait_for_event). Agents that
+run independently and hand off results via files or env vars should be
+separate `run_agent` calls in sprint.sh, not co-tenants of an orb.
 
 **Output structure is stable.**
 `{YYYY-MM}-Payslip.{html,pdf,csv}` per employee per month.

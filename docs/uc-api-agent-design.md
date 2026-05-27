@@ -759,16 +759,22 @@ sequenceDiagram
     participant AetherisAPI as Aetheris API
     participant at1qry
 
+    %% Flow
     at1cmd->>Blackboard: write tap:intent:{id}
-    at1cmd->>cot1: send_message (intent_id)
+    at1cmd->>cot1: send_message(intent_id)
+
     cot1->>cot1: wait_for_event → message_received
     cot1->>Blackboard: read tap:intent:{id}
+
     cot1->>S3: upload ETL file
     cot1->>RabbitMQ: push job (job_ref)
     cot1->>Blackboard: write tap:result:{id}
+
     cot1->>AetherisAPI: POST /api/runs/{run_id}/resume
-    Note over cot1,AetherisAPI: primary path; unblocks at1qry via WaitRegistry.notify
-    cot1->>at1qry: send_message (intent_id, fallback)
+    Note over cot1,AetherisAPI: Primary path<br/>Unblocks at1qry via WaitRegistry.notify
+
+    cot1->>at1qry: send_message(intent_id, fallback)
+
     at1qry->>at1qry: wait_for_event → message_received (unblocked)
     at1qry->>Blackboard: read tap:result:{id}
     at1qry->>at1qry: gap_analysis → report
@@ -780,23 +786,31 @@ sequenceDiagram
 sequenceDiagram
     participant at1qry
     participant Store as SQLite Store
-    participant BEAM
     participant Application
     participant WaitRegistry
     participant cot1
     participant AetherisAPI as Aetheris API
 
-    at1qry->>at1qry: wait_for_event (message_received)
-    at1qry->>Store: save_checkpoint (wait_condition: message_received)
-    Note over BEAM: BEAM process killed
-    Note over BEAM: BEAM restarted
+    %% Initial wait and checkpoint
+    at1qry->>at1qry: wait_for_event(message_received)
+    at1qry->>Store: save_checkpoint(wait_condition: message_received)
+
+    %% Crash & Restart
+    Note over at1qry, Application: BEAM process killed
+    Note over at1qry, Application: BEAM process restarted
+
     Application->>Store: scan for :running checkpoints
-    Application->>at1qry: resume_from_checkpoint
-    at1qry->>WaitRegistry: register {:message_received, run_id}
-    Note over at1qry: run status → :running; loop re-enters wait
+    Application->>at1qry: resume_from_checkpoint()
+
+    %% Re-registration
+    at1qry->>WaitRegistry: register({:message_received, run_id})
+    Note over at1qry: run status → :running<br/>Re-enters wait loop
+
+    %% Resume from external trigger
     cot1->>AetherisAPI: POST /api/runs/{run_id}/resume
-    AetherisAPI->>WaitRegistry: notify {:message_received, run_id}
+    AetherisAPI->>WaitRegistry: notify({:message_received, run_id})
     WaitRegistry->>at1qry: {:resume, :message_received, payload}
+
     at1qry->>at1qry: gap_analysis → done
 ```
 

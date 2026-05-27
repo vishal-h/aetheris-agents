@@ -11,68 +11,56 @@ Established the core pattern: **scripts do, agents decide.**
 
 ---
 
-## Active
-
 ### uc-drive
 Download payroll CSV from Google Drive before the monthly run. Upload
 generated PDFs and CSVs back to Drive after. Bookends uc-payslip
 without touching its internals.
 
 - Service account authentication (google-api-python-client + google-auth)
-- drive_download.py — pulls payroll.csv from configured Drive folder
-- drive_upload.py — pushes *-Payslip.pdf and *-Payslip.csv per employee
-- HTML files are local build artefacts — not uploaded
-- Technical brief: protocol/TAP-v0-design.md (context), docs/
-
-**Status:** Technical brief written. Ready to start.
+- drive_download.py / drive_upload.py
+- Sprint case: `drive`
 
 ---
-
-## Planned
 
 ### uc-email
 Email each employee their monthly payslip PDF as an attachment.
 Completes the payslip pipeline: generate → upload → deliver.
 
-- One sub-agent per employee, parallel
-- Attaches {YYYY-MM}-Payslip.pdf directly (per-month file, clean attachment)
-- SMTP or email API; credentials from environment
-- Input: payslip/output/{employee_id_safe}/{YYYY-MM}-Payslip.pdf
-- Composes with uc-payslip output directly
-
-**Depends on:** uc-payslip (complete)
+- One send per employee; attaches `{YYYY-MM}-Payslip.pdf`
+- Sprint case: `email`
 
 ---
 
-### uc-api-agent
-Agent-to-API communication for the EdTech platform. Structured data
-from local filesystem posted to a well-defined API. Foundation for
-the TAP protocol implementation.
+### uc-api-agent — T1 through T4
+Agent-to-API communication for the EdTech platform via the TAP protocol.
 
-Phases:
-1. Structured data (CSV/JSON) against test database
-2. at1cmd + at1qry split — dispatcher and persistent collector
-3. Unstructured data and PDF extraction
-4. cot1 minimal implementation — first TAP exchange
+| Ticket | What it delivered |
+|--------|------------------|
+| T1 | at1cmd + cot1_stub + at1qry skeleton; TAP intent/result packet format; 3-agent orb |
+| T2 | cot1 executes against ct-api: ETL pipeline (parse → validate → build job → S3 → RabbitMQ); direct-mode for setup_institution and setup_courses |
+| T3 | Skill extraction (extract_skill_hints.py → skill_hint.json → inject on next run); structured clarification round-trip for unresolved termName |
+| T4 | Webhook resume: cot1 POSTs to `POST /api/runs/:run_id/resume` as primary path; send_message retained as fallback; inject_message harness fix (WaitRegistry.notify for message_received wait) |
 
-**Depends on:** TAP v0 design (complete)
+Sprint cases: `uc_api_agent_t1`, `uc_api_agent_t2_steady`, `uc_api_agent_t2_greenfield`, `uc_api_agent_t3`, `uc_api_agent_t4`
 
 ---
 
-## Protocol
+## Active
 
-### TAP — Tenancy Agency Protocol
-*Tap in. Intelligent flow across trust boundaries.*
+### uc-api-agent — T5
+Durable at1qry persistence across BEAM restarts via `resume_from_checkpoint`.
 
-Agent-to-agent communication protocol for tenant-scoped, trusted
-interaction between autonomous agents across organisational boundaries.
+Currently, if the BEAM node restarts after cot1 writes the result but before the
+webhook fires, the at1qry run is lost. T5 implements checkpoint/restore so at1qry
+can survive a node crash and pick up from its last persisted state.
 
-- v0 design: protocol/TAP-v0-design.md — architecture, message types,
-  participant roles, progressive autonomy arc
-- v0.1: intuitive names, refined schemas, open questions resolved
-  (emerges from uc-api-agent implementation experience)
+**Depends on:** T4 ✅, `resume_from_checkpoint` primitive in aetheris harness
 
-TAP is not Aetheris-specific. Any agent framework can implement it.
+---
+
+## Planned
+
+*(Nothing formally scoped beyond T5 at this time.)*
 
 ---
 
@@ -81,13 +69,13 @@ TAP is not Aetheris-specific. Any agent framework can implement it.
 ### Payslip pipeline (monthly, automated)
 
 ```
-Drive (download)     uc-drive      ← active
+Drive (download)     uc-drive      ✅ complete
       ↓
 Payslip (generate)   uc-payslip    ✅ complete
       ↓
-Drive (upload)       uc-drive      ← active
+Drive (upload)       uc-drive      ✅ complete
       ↓
-Email (deliver)      uc-email      ← planned
+Email (deliver)      uc-email      ✅ complete
 ```
 
 ### TAP implementation track
@@ -95,11 +83,15 @@ Email (deliver)      uc-email      ← planned
 ```
 TAP v0 design        ✅ complete
       ↓
-uc-api-agent T1      at1cmd + at1qry skeleton
+T1 — TAP skeleton    ✅ at1cmd + cot1_stub + at1qry; orb wired
       ↓
-uc-api-agent T2      cot1 minimal
+T2 — cot1 execution  ✅ ETL pipeline + direct mode against ct-api
       ↓
-TAP v0.1             refined from implementation experience
+T3 — skill / clarify ✅ skill hint injection; clarification round-trip
+      ↓
+T4 — webhook resume  ✅ primary POST path; inject_message harness fix
+      ↓
+T5 — BEAM durability 🚧 resume_from_checkpoint; active
 ```
 
 ---
@@ -117,13 +109,16 @@ runnable and testable without Aetheris.
 
 **Minimal sub-agent tools.**
 Sub-agents get the smallest tool set that lets them do their job.
-["run_command"] if possible. Add read_file or write_file only
-when genuinely needed.
+`["run_command"]` if possible. Add `read_blackboard`, `write_blackboard`,
+`send_message` only when the agent genuinely participates in an orb.
+
+**context_strategy: :full on all orb agents.**
+`:rolling` truncates old messages and leaves orphaned tool_use_id references,
+causing HTTP 400. Use `:full` for any agent running fewer than ~10 steps.
 
 **Output structure is stable.**
-{YYYY-MM}-Payslip.{html,pdf,csv} per employee per month.
+`{YYYY-MM}-Payslip.{html,pdf,csv}` per employee per month.
 Downstream use cases (uc-drive, uc-email) depend on this structure.
-Do not change without updating all dependents.
 
 **Test before sprint.**
 Scripts must run standalone before the agent runs.
@@ -135,6 +130,6 @@ sprint.sh passes before merge.
 ## Reference
 
 - Agent creation guide: docs/agent-creation-guide.md
-- TAP v0 design: protocol/TAP-v0-design.md
+- TAP v0 design: docs/uc-api-agent-design.md
 - Aetheris harness: ../aetheris
-- Milestone docs: {use_case}/milestone.md
+- Implementation notes: `{use_case}/docs/t*-implementation-notes.md`

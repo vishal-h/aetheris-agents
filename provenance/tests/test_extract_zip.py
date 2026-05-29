@@ -33,11 +33,15 @@ def _make_zip(path: Path, members: dict[str, bytes]) -> Path:
 
 
 def _make_encrypted_zip(path: Path) -> Path:
-    """Create a zip whose first member has the encryption flag set."""
+    """Create a zip whose first member has the encryption flag set.
+
+    Patches bit 0 (encryption flag) in BOTH the local file header (LFH, byte
+    offset 6 from PK\\x03\\x04) AND the central directory header (CDH, byte
+    offset 8 from PK\\x01\\x02).  This is necessary because
+    zipfile.ZipInfo.flag_bits is populated from the CDH, not the LFH — patching
+    only the LFH produces a zip that the detection code sees as unencrypted.
+    """
     # Python's zipfile can't write encrypted zips natively.
-    # Patch bit 0 (encryption flag) in both the local file header (offset 6)
-    # AND the central directory header (offset 8) — zipfile.infolist() reads
-    # flag_bits from the central directory, not the local header.
     with zipfile.ZipFile(path, "w") as zf:
         zf.writestr("secret.txt", "secret content")
 

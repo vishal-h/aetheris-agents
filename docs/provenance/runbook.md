@@ -174,6 +174,81 @@ Prints a JSON array of paths (one per unique SHA-256) to stdout, count to stderr
 
 ---
 
+## Classification review
+
+After the classification orchestrator runs, export proposed classifications for
+human review, edit the CSV, then import the decisions.
+
+### Export for review
+
+```bash
+python3 provenance/scripts/export_for_review.py \
+  --db /data/corpus.duckdb \
+  --out output/review_$(date +%Y%m%d).csv
+```
+
+Options:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--status` | `proposed,needs_review` | Comma-separated statuses to export |
+| `--client` | — | Filter to one client |
+| `--limit` | — | Cap export row count |
+
+Output is ordered by `confidence ASC` — low-confidence results appear first.
+
+Prints the output path and a summary JSON to stdout:
+```
+output/review_20260115.csv
+{"output": "output/review_20260115.csv", "exported": 247, "needs_review": 12}
+```
+
+**Large corpora — export per client:**
+
+```bash
+for client in acme globex initech; do
+  python3 provenance/scripts/export_for_review.py \
+    --db /data/corpus.duckdb \
+    --client $client \
+    --out output/review_${client}.csv
+done
+```
+
+### Review the CSV
+
+Open in Excel or any spreadsheet tool. Fill in the `reviewer_action` column:
+- `approve` — accept the classification
+- `reject` — reject it (file will be re-queued on next orchestrator run)
+- blank — leave unchanged (skip)
+
+`reviewer_notes` is a free-text field for comments; it is not read back into DuckDB.
+
+### Import decisions
+
+```bash
+python3 provenance/scripts/approve_classifications.py \
+  --db /data/corpus.duckdb \
+  --input output/review_20260115.csv \
+  --reviewer "Jane Smith"
+```
+
+`--reviewer` defaults to `$USER` if not provided.
+
+Use `--dry-run` to preview what would change without writing to the database:
+
+```bash
+python3 provenance/scripts/approve_classifications.py \
+  --db /data/corpus.duckdb \
+  --input output/review_20260115.csv \
+  --dry-run
+```
+
+Output JSON: `{"approved": N, "rejected": N, "skipped": N, "errors": N}`
+
+Re-importing the same CSV is safe — rows already in the target status are skipped.
+
+---
+
 ## Run tests
 
 ```bash

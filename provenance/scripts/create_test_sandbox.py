@@ -36,6 +36,8 @@ from pathlib import Path
 def tax_doc(client: str, fy: str, variant: str = "") -> bytes:
     return f"""TAX RETURN -{f' ({variant})' if variant else ''}
 Australian Taxation Office
+Client: {client.upper()}
+Financial year: {fy}
 Taxable income: $450,000
 PAYG withholding: $135,000
 GST collected: $45,000
@@ -59,6 +61,8 @@ Prepared by: Legal Department
 
 def accounts_doc(client: str, fy: str) -> bytes:
     return f"""BALANCE SHEET -
+Client: {client.upper()}
+Financial year: {fy}
 Total assets:       $2,450,000
 Total liabilities:    $890,000
 Net assets:         $1,560,000
@@ -258,16 +262,18 @@ If you are reading this, the depth limit was not exceeded.
     # -------------------------------------------------------------------------
 
     zip_files  = list(zips.glob("*.zip"))
-    total_size = sum(f.stat().st_size for f in flat_files) + sum(z.stat().st_size for z in zip_files)
-    unique_hashes = len(set(hashlib.sha256(f.read_bytes()).hexdigest() for f in flat_files))
-    dup_file_count = len(flat_files) - unique_hashes
+    all_scanned = flat_files + zip_files
+    total_size = sum(f.stat().st_size for f in all_scanned)
+    unique_hashes = len(set(hashlib.sha256(f.read_bytes()).hexdigest() for f in all_scanned))
+    dup_file_count = len(all_scanned) - unique_hashes
 
     print(f"\n✅  Provenance test sandbox created at {root}")
     print(f"\n    Archive: {archive}")
     print(f"\n{'─'*64}")
     print(f"  Flat files:          {len(flat_files):>4}")
+    print(f"  Zip files:           {len(zip_files):>4}  (also indexed as flat files by scanner)")
+    print(f"  Total indexed:       {len(all_scanned):>4}")
     print(f"  Unique files (SHA):  {unique_hashes:>4}  (scanner will find {dup_file_count} duplicates)")
-    print(f"  Zip files:           {len(zip_files):>4}")
     print(f"  Total size:          {total_size / 1024:>6.1f} KB")
     print(f"\n  Duplicate groups:")
     for original, dups, note in dup_groups:
@@ -281,10 +287,11 @@ If you are reading this, the depth limit was not exceeded.
         print(f"      → {notes}")
     print(f"\n{'─'*64}")
     print(f"  Expected scan results:")
-    print(f"    files_scanned:     {len(flat_files)}")
+    print(f"    files_scanned:     {len(all_scanned)}  ({len(flat_files)} txt + {len(zip_files)} zip)")
     print(f"    unique_files:      {unique_hashes}")
     print(f"    duplicate_files:   {dup_file_count}")
     print(f"    zip_files:         {len(zip_files)}")
+    print(f"  Note: zip files are indexed as flat files AND processed by zip archaeology.")
     print(f"\n  Expected zip archaeology:")
     print(f"    new-to-corpus:     2  (internal_memo_jun2023.txt, contract_addendum.txt)")
     print(f"    known files:       3  (files already in flat corpus)")

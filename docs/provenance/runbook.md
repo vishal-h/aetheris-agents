@@ -25,6 +25,40 @@ gh auth status   # should show your account as active
 
 ---
 
+## Run the scan orchestrator agent
+
+### Required environment variables
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `PROVENANCE_NAS_PATH` | `/mnt/archive` | Root path to scan |
+| `PROVENANCE_DB_PATH` | `/data/corpus.duckdb` | DuckDB file path |
+
+Export before running:
+
+```bash
+export PROVENANCE_NAS_PATH=/mnt/archive
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+```
+
+### Run the agent
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs
+```
+
+### Evaluate the agent file (syntax check, no LLM call)
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+mix run --eval 'Code.eval_file("../aetheris-agents/provenance/agents/scan_orchestrator.exs")'
+```
+
+Note: this will raise at eval time if the env vars are not set.
+
+---
+
 ## Initialise the DuckDB schema
 
 ```bash

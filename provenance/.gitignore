@@ -1,0 +1,6 @@
+# Generated reports — local only
+output/*
+!output/.gitkeep
+
+# Real corpus data — never commit
+*.duckdb

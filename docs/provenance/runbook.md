@@ -361,6 +361,85 @@ Prints what would be rolled back to stderr without modifying files or the databa
 
 ---
 
+## corpus-search MCP server
+
+The corpus-search MCP is a self-developed stdio JSON-RPC 2.0 server that exposes
+DuckDB-backed metadata search to Aetheris agents. It lives at
+`provenance/mcp/corpus-search/server.py` and requires no install step beyond
+its Python dependencies.
+
+### Installation
+
+```bash
+pip install -r provenance/mcp/corpus-search/requirements.txt
+```
+
+### Environment variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CORPUS_DB_PATH` | Yes | — | Path to DuckDB corpus file |
+| `CORPUS_SEARCH_READ_ONLY` | No | `true` | Set `false` to open read-write |
+| `CORPUS_SEARCH_MCP_ENABLED` | Yes (agent) | — | Must be `true` to wire server into agent |
+
+### Test standalone
+
+```bash
+export CORPUS_DB_PATH=/data/corpus.duckdb
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  | python3 provenance/mcp/corpus-search/server.py
+```
+
+### Wiring into an agent
+
+```elixir
+db_path = System.get_env("PROVENANCE_DB_PATH") || raise "PROVENANCE_DB_PATH required"
+
+corpus_search_server =
+  if System.get_env("CORPUS_SEARCH_MCP_ENABLED") == "true" do
+    %{
+      server_id: "corpus_search",
+      path:      "python3",
+      args:      [Path.expand("mcp/corpus-search/server.py")],
+      env:       %{"CORPUS_DB_PATH" => db_path}
+    }
+  end
+
+mcp_servers = [corpus_search_server] |> Enum.reject(&is_nil/1)
+```
+
+**Note:** `Path.expand("mcp/corpus-search/server.py")` resolves relative to
+the process working directory (`aetheris/` when running `mix aetheris run`),
+which resolves to `aetheris-agents/provenance/mcp/corpus-search/server.py`
+since `sandbox_path` is set to the `provenance/` directory.
+
+Actually `Path.expand` in Elixir resolves relative to the process cwd (the
+`aetheris/` directory). Use an absolute path to avoid ambiguity:
+
+```elixir
+args: [Path.join([agent_root, "mcp", "corpus-search", "server.py"])]
+```
+
+where `agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))`.
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `search_corpus` | Keyword + metadata filter search over classified corpus |
+| `list_clients` | All clients with file counts and doc type lists |
+| `list_documents` | Documents for a client, optionally filtered by FY / doc type |
+| `get_document_meta` | Full metadata for a single path; returns `null` if not found |
+| `find_duplicates` | All corpus entries sharing a SHA-256 hash |
+
+### Run MCP server tests
+
+```bash
+python3 -m pytest provenance/mcp/corpus-search/tests/ -v
+```
+
+---
+
 ## Run zip archaeology
 
 Zip archaeology extracts zip files found in the corpus, classifies their

@@ -471,6 +471,78 @@ The agent:
 
 ---
 
+## Validate search quality
+
+Run the validation script before production sign-off. It sends 20 representative
+queries to the search agent and measures the pass rate.
+
+### Seed fixture classifications (local testing only)
+
+The `sample_corpus.duckdb` fixture ships with an empty `classifications` table.
+Seed it before running validation locally:
+
+```bash
+python3 provenance/scripts/seed_search_fixture.py --db /tmp/corpus_seeded.duckdb
+```
+
+This copies the fixture and inserts approved classifications for all five known
+fixture paths, enabling the search agent to return results.
+
+### Run validation
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+export CORPUS_SEARCH_MCP_ENABLED=true
+python3 provenance/scripts/validate_search.py \
+  --db /data/corpus.duckdb \
+  --queries provenance/tests/fixtures/search_queries.json \
+  --threshold 0.85
+```
+
+**Pass criteria:** pass_rate ≥ 0.85 (85%). Exits 0 on pass, 1 on fail.
+
+Output JSON includes per-query pass/fail with result counts and run IDs.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--db` | required | DuckDB corpus path |
+| `--queries` | `tests/fixtures/search_queries.json` | Query fixture file |
+| `--model` | agent default | Override model |
+| `--n` | `1` | Runs per query |
+| `--threshold` | `0.85` | Minimum pass rate |
+| `--aetheris` | `../aetheris` | Path to aetheris repo |
+
+### Query categories
+
+The 20 queries cover: client+FY (4), client+doc_type (4), content keywords (4),
+FY only (2), doc type only (2), multi-term (2), no-results expected (2).
+
+`expected_paths: null` queries verify graceful "no documents found" handling.
+`expected_paths: []` queries verify that ≥1 result is returned.
+
+### Register the eval task (once)
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+mix run ../aetheris-agents/provenance/scripts/register_eval_task.exs
+```
+
+This registers the `provenance_search` eval task in the Aetheris eval store
+(idempotent). After registration:
+
+```bash
+# Smoke-test the MCP server via the eval framework
+mix aetheris eval run provenance_search
+
+# Lock a baseline after first passing run
+mix aetheris eval baseline lock provenance_search
+
+# Regression check after future changes
+mix aetheris eval compare provenance_search
+```
+
+---
+
 ## Run zip archaeology
 
 Zip archaeology extracts zip files found in the corpus, classifies their

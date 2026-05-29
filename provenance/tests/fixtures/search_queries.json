@@ -1,0 +1,102 @@
+[
+  {
+    "query": "tax returns for acme FY2024",
+    "expected_paths": [],
+    "notes": "Client + FY + doc_type — basic metadata search"
+  },
+  {
+    "query": "globex FY2023 documents",
+    "expected_paths": [],
+    "notes": "Client + FY"
+  },
+  {
+    "query": "initech FY2024",
+    "expected_paths": [],
+    "notes": "Client + FY — minimal query"
+  },
+  {
+    "query": "acme financial year 2022 records",
+    "expected_paths": [],
+    "notes": "Client + FY — natural language form"
+  },
+  {
+    "query": "legal notices globex",
+    "expected_paths": [],
+    "notes": "Client + doc_type"
+  },
+  {
+    "query": "acme tax returns",
+    "expected_paths": [],
+    "notes": "Client + doc_type — tax category"
+  },
+  {
+    "query": "initech contracts",
+    "expected_paths": [],
+    "notes": "Client + doc_type — legal/contracts"
+  },
+  {
+    "query": "accounts receivable acme",
+    "expected_paths": [],
+    "notes": "Client + doc_type — accounts"
+  },
+  {
+    "query": "balance sheet 2022",
+    "expected_paths": [],
+    "notes": "Content keyword + year"
+  },
+  {
+    "query": "court notice",
+    "expected_paths": [],
+    "notes": "Content keyword — legal domain"
+  },
+  {
+    "query": "GST schedule",
+    "expected_paths": [],
+    "notes": "Content keyword — tax domain"
+  },
+  {
+    "query": "annual report profit loss",
+    "expected_paths": [],
+    "notes": "Content keywords — accounts domain"
+  },
+  {
+    "query": "all documents from FY2022",
+    "expected_paths": [],
+    "notes": "FY only — broad sweep"
+  },
+  {
+    "query": "FY2024",
+    "expected_paths": [],
+    "notes": "FY only — minimal"
+  },
+  {
+    "query": "all legal documents",
+    "expected_paths": [],
+    "notes": "Doc type only — legal"
+  },
+  {
+    "query": "all tax returns",
+    "expected_paths": [],
+    "notes": "Doc type only — tax"
+  },
+  {
+    "query": "acme FY2024 tax GST",
+    "expected_paths": [],
+    "notes": "Multi-term — client + FY + doc_type + content"
+  },
+  {
+    "query": "globex FY2024 invoice consulting services",
+    "expected_paths": [],
+    "notes": "Multi-term — client + FY + content keywords"
+  },
+  {
+    "query": "xyznonexistentclient9872abc",
+    "expected_paths": null,
+    "notes": "No-results expected — gibberish client name"
+  },
+  {
+    "query": "quantum blockchain synergy FY9999",
+    "expected_paths": null,
+    "notes": "No-results expected — nonsense query with impossible FY"
+  }
+]

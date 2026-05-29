@@ -8,3 +8,6 @@ __pycache__/
 
 api/.env
 docs/.sections/
+
+# Rust build artifacts
+provenance/scanner/target/

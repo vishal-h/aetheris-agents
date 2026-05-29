@@ -186,7 +186,8 @@ pub async fn resume_scan(db: DbConn, run_id: &str, batch_size: u64, throttle_pct
     scan_directory_resume(db, config).await
 }
 
-/// Like scan_directory but skips the initial insert (row already exists).
+// TODO: scan_directory_resume duplicates the walk loop from scan_directory.
+// Extract a scan_loop(db, config) inner fn if the core loop ever changes.
 async fn scan_directory_resume(db: DbConn, config: ScanConfig) -> Result<ScanResult, String> {
     log::info!("Resuming scan of: {}", config.root_path.display());
 

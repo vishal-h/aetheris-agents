@@ -1,0 +1,28 @@
+[package]
+name = "f2-scanner"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "f2-scanner"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+duckdb = { version = "1", features = ["bundled"] }
+walkdir = "2"
+sha2 = "0.10"
+digest = "0.10"
+sysinfo = "0.30"
+hex = "0.4"
+mime_guess = "2"
+glob = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+env_logger = "0.10"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3"

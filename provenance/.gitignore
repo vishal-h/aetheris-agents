@@ -4,3 +4,4 @@ output/*
 
 # Real corpus data — never commit
 *.duckdb
+!tests/fixtures/*.duckdb

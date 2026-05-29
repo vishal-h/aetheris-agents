@@ -361,6 +361,82 @@ Prints what would be rolled back to stderr without modifying files or the databa
 
 ---
 
+## Run zip archaeology
+
+Zip archaeology extracts zip files found in the corpus, classifies their
+contents as known (duplicate) or new-to-corpus, and registers new finds in
+`f2_file_index` so the classification pipeline can pick them up.
+
+### Required environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROVENANCE_DB_PATH` | required | DuckDB file path |
+| `STAGING_PATH` | `priv/zip_staging` | Root staging directory |
+| `MAX_ZIP_DEPTH` | `4` | Maximum nesting depth for recursive extraction |
+| `ZIP_TIMEOUT_MS` | `300000` | Per-zip sub-agent timeout (5 min) |
+
+### Dry run — estimate work before extracting
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+DRY_RUN=true mix aetheris run ../aetheris-agents/provenance/agents/zip_orchestrator.exs
+```
+
+Reports the number of pending zips and depth distribution without extracting anything.
+
+### Check pending zips (standalone)
+
+```bash
+python3 provenance/scripts/list_pending_zips.py --db /data/corpus.duckdb
+python3 provenance/scripts/list_pending_zips.py --db /data/corpus.duckdb --max-depth 2
+```
+
+Prints a JSON object with total count and list of `{path, depth}` records.
+
+### Run zip archaeology
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+export STAGING_PATH=priv/zip_staging
+cd ~/sandbox/elixirws/aetheris
+mix aetheris run ../aetheris-agents/provenance/agents/zip_orchestrator.exs
+```
+
+The orchestrator:
+1. Queries `f2_file_index` for unprocessed zip files via `list_pending_zips.py`.
+2. Spawns one `zip_archaeologist` sub-agent per zip in parallel.
+3. Each archaeologist: extracts → classifies finds (known vs new-to-corpus) → updates `zip_inventory`.
+4. After all sub-agents finish, escalates once for any encrypted zips (not per zip).
+5. Checks for newly discovered nested zips and repeats until no pending zips remain or `MAX_ZIP_DEPTH` is reached.
+6. Reports totals: zips processed, files found (known / new-to-corpus), encrypted pending.
+
+New-to-corpus files are added to `f2_file_index` at their `priv/zip_staging/new_finds/` path.
+Run the classification orchestrator next to classify them.
+
+### Rollback a zip archaeology pass
+
+Zip archaeology does not copy to `/clients/` — it only writes to `f2_file_index`,
+`zip_inventory`, and `zip_contents`, and copies files into `priv/zip_staging/new_finds/`.
+
+To reset a zip's processing status and re-run it:
+
+```bash
+python3 -c "
+import duckdb
+c = duckdb.connect('/data/corpus.duckdb')
+c.execute(\"UPDATE zip_inventory SET status='pending' WHERE path='\$ZIP_PATH'\")
+# Also remove zip_contents rows for this zip so process_zip_finds re-processes them
+c.execute(\"DELETE FROM zip_contents WHERE zip_path='\$ZIP_PATH'\")
+c.close()
+print('reset done')
+"
+```
+
+Then re-run the orchestrator.
+
+---
+
 ## Run tests
 
 ```bash

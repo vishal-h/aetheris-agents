@@ -15,8 +15,7 @@ db_path  = System.get_env("PROVENANCE_DB_PATH") ||
   sandbox_path:      agent_root,
   overlay_base_dir:  nil,
   max_steps:         20,
-  context_strategy:  :rolling,
-  max_context_steps: 6,
+  context_strategy:  :full,
   tools:             ["run_command"],
   system_prompt: """
   You are the Provenance scan orchestrator. Initialise the database, run the

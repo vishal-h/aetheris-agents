@@ -1,0 +1,71 @@
+# Provenance Document Taxonomy
+Generated: 2026-05-29 17:01:50
+Auditor: [AUDITOR NAME]
+
+## Clients
+
+| Client ID | Full name | Aliases | Notes |
+|-----------|-----------|---------|-------|
+| acme | Acme Pty Ltd | ACME, acme_pty | Primary client |
+| globex | Globex Corp | GLOBEX | — |
+| initech | Initech Ltd | — | — |
+
+## Financial year convention
+
+- Format: FY{YYYY} (April–March)
+- Example: FY2024 = April 2023 – March 2024
+- Boundary month: April
+
+## Document types
+
+### tax
+Keywords: BAS, GST, tax return, income statement, PAYG, franking credits
+Filename signals: tax, bas, gst, return
+Content signals: "Australian Taxation Office", "taxable income", "ATO"
+
+### legal
+Keywords: notice, deed, contract, agreement, court, ASIC, litigation
+Filename signals: legal, notice, deed, contract, agreement
+Content signals: "Australian Securities and Investments Commission", "pursuant to"
+
+### accounts
+Keywords: balance sheet, profit and loss, trial balance, workpapers, journal
+Filename signals: accounts, balance, pl, tb, workpaper
+Content signals: "Total assets", "Net profit", "equity"
+
+### correspondence
+Keywords: letter, email, memo, correspondence
+Filename signals: letter, email, memo, corr
+Content signals: "Dear", "Regards", "Subject:"
+
+### other
+Keywords: miscellaneous
+
+
+## Classification rules (for the agent)
+
+When classifying a document:
+1. Check the file path for client ID or known alias
+2. Check the first 20 lines for client name, FY indicators, and document keywords
+3. If confident (>0.85): assign client, FY, doc_type directly
+4. If uncertain (0.50–0.85): assign best guess, set confidence accordingly
+5. If client unidentifiable (<0.50): set client = "unknown", doc_type as best effort
+
+For binary files (PDF, DOCX) where content is not readable as text:
+- Classify from path and filename only
+- Cap confidence at 0.65 for path-only classifications
+- Set raw_excerpt to "binary file — classified from path and filename only"
+
+
+## Naming patterns
+
+- Filenames include client name: yes
+- Filenames include year: yes
+- Common affixes: DRAFT, FINAL, v2, _signed
+- Document language: English
+
+## Edge cases
+
+**Multi-client documents:** Assign to the client whose name appears first in the file path.
+**Confidential markers:** CONFIDENTIAL, PRIVILEGED
+**Path-to-client rules:** Paths containing /personal/ are always client = 'unknown'.

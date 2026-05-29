@@ -5,3 +5,7 @@ output/*
 # Real corpus data — never commit
 *.duckdb
 !tests/fixtures/*.duckdb
+
+# Taxonomy — real taxonomy is local; example is committed
+agents/*.md
+!agents/taxonomy.md.example

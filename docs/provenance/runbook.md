@@ -25,6 +25,30 @@ gh auth status   # should show your account as active
 
 ---
 
+## Before Phase 2 begins — taxonomy session
+
+Before running the classification agent, capture the client/FY/document-type
+taxonomy by interviewing the auditor:
+
+```bash
+cd aetheris-agents/provenance
+python3 scripts/taxonomy_session.py --auditor "Your Name"
+```
+
+This writes `agents/taxonomy.md` (gitignored — stays local). An example of the
+expected output is in `agents/taxonomy.md.example`.
+
+For CI or testing without a terminal:
+
+```bash
+python3 scripts/taxonomy_session.py --non-interactive --output agents/taxonomy.md
+```
+
+The classification agent reads `agents/taxonomy.md` at runtime. If the file is
+missing, the agent will not know which clients or document types to assign.
+
+---
+
 ## Run the scan orchestrator agent
 
 ### Required environment variables

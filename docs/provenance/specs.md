@@ -119,12 +119,14 @@ GROUP BY sha256
 HAVING COUNT(*) > 1;
 
 -- Migration queue
+-- Note: DuckDB 1.5.3 does not have basename(). Use
+--   regexp_extract(path, '([^/]+)$', 1) for the filename component.
 CREATE VIEW migration_queue AS
 SELECT
     c.id AS classification_id,
     f.path AS source_path,
     '/clients/' || c.client || '/' || c.financial_year
-        || '/' || c.doc_type || '/' || BASENAME(f.path) AS proposed_dest,
+        || '/' || c.doc_type || '/' || regexp_extract(f.path, '([^/]+)$', 1) AS proposed_dest,
     c.confidence
 FROM classifications c
 JOIN f2_file_index f ON c.path = f.path

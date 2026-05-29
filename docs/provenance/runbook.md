@@ -57,6 +57,13 @@ mix run --eval 'Code.eval_file("../aetheris-agents/provenance/agents/scan_orches
 
 Note: this will raise at eval time if the env vars are not set.
 
+### Where to find the report
+
+The inventory report is written to `output/` relative to the `provenance/`
+directory (`aetheris-agents/provenance/output/`), **not** the Aetheris working
+directory. The agent's `sandbox_path` is set to `agent_root` (the `provenance/`
+directory), so all relative paths in `run_command` resolve there.
+
 ---
 
 ## Initialise the DuckDB schema

@@ -440,6 +440,37 @@ python3 -m pytest provenance/mcp/corpus-search/tests/ -v
 
 ---
 
+## Run the search agent
+
+The search agent takes a natural language query, searches the corpus via the
+corpus-search MCP server, and returns a formatted list of matching documents.
+
+### Required environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PROVENANCE_DB_PATH` | Yes | DuckDB corpus path |
+| `CORPUS_SEARCH_MCP_ENABLED` | Yes | Must be `true` to enable MCP server |
+| `SEARCH_QUERY` | No | Pre-set query (otherwise the agent uses its default user_prompt) |
+| `LATTICE_MCP_ENABLED` | No | Set `true` to enable deeper content search via Matryoshka |
+
+### Run a search
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+export CORPUS_SEARCH_MCP_ENABLED=true
+SEARCH_QUERY="tax returns for acme FY2024" \
+  mix aetheris run ../aetheris-agents/provenance/agents/search_agent.exs
+```
+
+The agent:
+1. Calls `search_corpus` with the full query (limit 10).
+2. If fewer than 3 results, tries narrower terms or client-based navigation.
+3. If `lattice_load` is available, loads top candidates for deeper content search.
+4. Returns a formatted list of matching documents with path, client, FY, type, and preview.
+
+---
+
 ## Run zip archaeology
 
 Zip archaeology extracts zip files found in the corpus, classifies their

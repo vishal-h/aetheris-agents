@@ -122,6 +122,58 @@ f2-scanner resume --run-id <id> --db /data/corpus.duckdb
 
 ---
 
+## Run the classification orchestrator
+
+### Required environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROVENANCE_DB_PATH` | required | DuckDB file path |
+| `TAXONOMY_PATH` | `agents/taxonomy.md` | Path to taxonomy rules file |
+| `CLASSIFICATION_BATCH_SIZE` | `20` | Files per sub-agent batch |
+| `CLASSIFICATION_THRESHOLD` | `0.70` | Confidence threshold for `proposed` vs `needs_review` |
+| `CLASSIFICATION_TIMEOUT_MS` | `600000` | Per-batch wait timeout (ms) |
+| `DRY_RUN` | — | Set to `true` to report file/batch count without spawning agents |
+
+### Dry run — estimate cost before classifying
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+DRY_RUN=true mix aetheris run ../aetheris-agents/provenance/agents/classification_orchestrator.exs
+```
+
+Reports how many files would be classified and how many batches would be spawned.
+No agents are spawned and no LLM classification calls are made.
+
+### Run classification
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+export TAXONOMY_PATH=agents/taxonomy.md
+cd ~/sandbox/elixirws/aetheris
+mix aetheris run ../aetheris-agents/provenance/agents/classification_orchestrator.exs
+```
+
+The orchestrator:
+1. Queries DuckDB for unique unclassified files (one representative path per SHA-256).
+2. Splits into batches of `CLASSIFICATION_BATCH_SIZE` (default 20).
+3. Spawns one `classify_batch` sub-agent per batch in parallel.
+4. Waits for all sub-agents to finish.
+5. Reports classification counts by status and remaining unclassified files.
+
+Re-running is safe — `classify_documents.py` skips paths already `proposed` or
+`approved`. Rejected files are re-queued automatically.
+
+### Query unclassified files (standalone)
+
+```bash
+python3 provenance/scripts/list_unclassified.py --db /data/corpus.duckdb
+```
+
+Prints a JSON array of paths (one per unique SHA-256) to stdout, count to stderr.
+
+---
+
 ## Run tests
 
 ```bash

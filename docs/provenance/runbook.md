@@ -249,6 +249,118 @@ Re-importing the same CSV is safe — rows already in the target status are skip
 
 ---
 
+## Run the migration agent
+
+### Pre-migration checklist
+
+Before running, confirm:
+
+1. **`/clients/` is mounted and writable** — the agent checks this at start and will stop if not.
+2. **`/data/archive/` is mounted read-only** — the agent warns if writable, but does not stop.
+3. **Disk space** — the agent estimates pending bytes vs free space and warns if tight.
+4. **All classifications reviewed** — run `export_for_review.py` and confirm no `proposed` rows remain that should be rejected before migration.
+5. **Taxonomy correct** — once files are copied to `/clients/`, the destination structure is derived from the taxonomy. Correct taxonomy errors before migrating.
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROVENANCE_DB_PATH` | required | DuckDB file path |
+| `CLIENTS_ROOT` | `/clients` | Destination root on NAS |
+| `MIGRATION_BATCH_SIZE` | `50` | Files per batch |
+| `MIGRATION_ESCALATION_THRESHOLD` | `100` | Batches above this size require human approval |
+| `DRY_RUN` | — | Set to `true` to preview without copying |
+
+### Dry run — preview before committing
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+DRY_RUN=true mix aetheris run ../aetheris-agents/provenance/agents/migration_agent.exs
+```
+
+Shows how many files would be migrated and a sample of source → destination mappings.
+
+### Run migration
+
+```bash
+export PROVENANCE_DB_PATH=/data/corpus.duckdb
+export CLIENTS_ROOT=/clients
+cd ~/sandbox/elixirws/aetheris
+mix aetheris run ../aetheris-agents/provenance/agents/migration_agent.exs
+```
+
+For large batches (above `MIGRATION_ESCALATION_THRESHOLD`), the agent pauses and asks for
+human approval. Respond via IEx:
+
+```elixir
+Aetheris.respond_to_escalation("run_id", "approve")
+```
+
+### Post-migration verification
+
+1. Spot-check 10+ files: confirm they exist in `/clients/` at the expected path.
+2. Check the migrations table:
+   ```bash
+   python3 -c "import duckdb; c=duckdb.connect('/data/corpus.duckdb'); print(c.execute('SELECT status,COUNT(*) FROM migrations GROUP BY status').fetchall())"
+   ```
+3. Confirm migration queue is empty:
+   ```bash
+   python3 provenance/scripts/list_migration_queue.py --db /data/corpus.duckdb
+   ```
+   Expected: `{"total": 0, "records": []}`
+4. Re-running the migration agent on an already-migrated corpus is safe — all files
+   will be reported as skipped.
+
+---
+
+## Rollback a migration
+
+Use this when a batch produced wrong destination paths or incorrect classifications
+were approved. Rollback deletes the destination copies and resets `migrations.status`
+to `proposed` so the files re-enter the queue on the next run.
+
+**Source files in `/archive/` are never touched by rollback.**
+
+### Rollback all migrated files
+
+```bash
+python3 provenance/scripts/execute_migration.py \
+  --db /data/corpus.duckdb \
+  --rollback
+```
+
+Output: `{"rolled_back": N, "skipped": 0, "dry_run": false}`
+
+### Rollback only recent migrations (since a timestamp)
+
+```bash
+python3 provenance/scripts/execute_migration.py \
+  --db /data/corpus.duckdb \
+  --rollback \
+  --since 2026-01-15T09:00:00
+```
+
+Only files migrated at or after the given ISO timestamp are rolled back.
+
+### Preview rollback without deleting
+
+```bash
+python3 provenance/scripts/execute_migration.py \
+  --db /data/corpus.duckdb \
+  --rollback \
+  --dry-run
+```
+
+Prints what would be rolled back to stderr without modifying files or the database.
+
+### After rollback
+
+1. Fix the root cause (incorrect taxonomy, wrong approved classifications, etc.).
+2. Re-run `approve_classifications.py` if classifications need correcting.
+3. Re-run the migration agent — rolled-back files will appear in the queue again.
+
+---
+
 ## Run tests
 
 ```bash

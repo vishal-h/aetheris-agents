@@ -25,6 +25,101 @@ gh auth status   # should show your account as active
 
 ---
 
+## Local test sandbox
+
+A standalone script creates a self-contained corpus under
+`~/sandbox/provenance-test/` for local end-to-end testing. No NAS or real
+client data required.
+
+### Create the sandbox
+
+```bash
+python3 provenance/scripts/create_test_sandbox.py
+python3 provenance/scripts/create_test_sandbox.py --root ~/sandbox/provenance-test
+python3 provenance/scripts/create_test_sandbox.py --overwrite   # recreate from scratch
+```
+
+### What it creates
+
+Three clients with realistic documents across multiple financial years,
+intentional duplicate groups, and five zip files covering all archaeology
+scenarios.
+
+| Item | Detail |
+|------|--------|
+| Clients | acme (FY2022–2024), globex (FY2023–2024), initech (FY2022) |
+| Flat files | 21 text files across 4 doc types (tax, legal, accounts, correspondence) |
+| Duplicate groups | 3 groups, 4 duplicate files total |
+| Zip files | 5 (see below) |
+
+**Zip files:**
+
+| File | Purpose |
+|------|---------|
+| `acme_archive_FY2023.zip` | 2 known files + 1 new (`internal_memo_jun2023.txt`) |
+| `globex_backup_FY2023.zip` | 1 known + 1 new (`contract_addendum.txt`) |
+| `backup_of_backup.zip` | Depth 2 — contains `acme_archive_FY2023.zip` |
+| `nested_depth3_outer.zip` | Depth 3 nesting — depth limit test |
+| `confidential_board_minutes.zip` | Encrypted — triggers escalation |
+
+### Expected results per pipeline stage
+
+| Stage | Expected |
+|-------|----------|
+| Scan | 26 files (21 txt + 5 zip), 22 unique, 4 duplicates |
+| Zip archaeology | 2 new-to-corpus, 3 known, 1 encrypted, max depth 3 |
+| Classification | 22 unique files classified across 3 clients |
+| Migration | 22 files copied to `/clients/` structure |
+
+Note: zip files are indexed as flat files by the scanner AND processed separately
+by zip archaeology.
+
+### Run the full pipeline against the sandbox
+
+```bash
+export PROVENANCE_NAS_PATH=~/sandbox/provenance-test/archive
+export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb
+export CORPUS_SEARCH_MCP_ENABLED=true
+```
+
+Run each agent in pipeline order:
+
+```bash
+# 1. Scan
+cd ~/sandbox/elixirws/aetheris
+mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs
+
+# 2. Classify (requires agents/taxonomy.md — see taxonomy session below)
+mix aetheris run ../aetheris-agents/provenance/agents/classification_orchestrator.exs
+
+# 3. Review classifications (export, edit CSV, import)
+python3 provenance/scripts/export_for_review.py --db ~/sandbox/provenance-test/corpus.duckdb --out /tmp/review.csv
+# edit /tmp/review.csv, then:
+python3 provenance/scripts/approve_classifications.py --db ~/sandbox/provenance-test/corpus.duckdb --input /tmp/review.csv
+
+# 4. Migrate
+mix aetheris run ../aetheris-agents/provenance/agents/migration_agent.exs
+
+# 5. Zip archaeology
+mix aetheris run ../aetheris-agents/provenance/agents/zip_orchestrator.exs
+
+# 6. Search (optional smoke test)
+SEARCH_QUERY="tax returns for acme FY2024" \
+  mix aetheris run ../aetheris-agents/provenance/agents/search_agent.exs
+```
+
+### Reset
+
+```bash
+python3 provenance/scripts/create_test_sandbox.py --overwrite
+rm -f ~/sandbox/provenance-test/corpus.duckdb
+```
+
+`--overwrite` recreates the archive directory but leaves `corpus.duckdb` intact.
+Delete the database file separately to fully reset all pipeline state.
+
+---
+
 ## Before Phase 2 begins — taxonomy session
 
 Before running the classification agent, capture the client/FY/document-type

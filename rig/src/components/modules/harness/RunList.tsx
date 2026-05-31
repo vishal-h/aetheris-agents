@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { Fragment, useState, useCallback, useEffect, useRef } from 'react';
+import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { Tab } from '@/components/shell/TabBar';
 import { MainArea } from '@/components/shell/MainArea';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +52,94 @@ const SELECT_CLASS =
   'h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 // ============================================================================
+// Run grouping
+// ============================================================================
+
+const DEFAULT_SHOW = 10;
+
+// Order matters — more specific prefixes must appear before less specific ones.
+const USE_CASE_PREFIXES: Array<{ prefix: string; label: string }> = [
+  { prefix: 'payslip',     label: 'Payslip' },
+  { prefix: 'drive',       label: 'Drive' },
+  { prefix: 'email',       label: 'Email' },
+  { prefix: 'api-tenant',  label: 'API / Tenant' },
+  { prefix: 'api-gateway', label: 'API / Gateway' },
+  { prefix: 'provenance',  label: 'Provenance' },
+  { prefix: 'cap-matrix',  label: 'Capability Matrix' },
+];
+
+interface RunGroup {
+  label: string;
+  runs:  RunSummary[];
+}
+
+function classifyRun(label: string): string {
+  const lower = label.toLowerCase();
+  for (const { prefix, label: groupLabel } of USE_CASE_PREFIXES) {
+    if (lower.startsWith(prefix)) return groupLabel;
+  }
+  return 'Unclassified';
+}
+
+function groupRuns(runs: RunSummary[]): RunGroup[] {
+  const map = new Map<string, RunSummary[]>();
+  for (const run of runs) {
+    const g = classifyRun(run.label);
+    const arr = map.get(g) ?? [];
+    arr.push(run);
+    map.set(g, arr);
+  }
+  const ordered: RunGroup[] = [];
+  for (const { label } of USE_CASE_PREFIXES) {
+    const arr = map.get(label);
+    if (arr?.length) ordered.push({ label, runs: arr });
+  }
+  const unclassified = map.get('Unclassified');
+  if (unclassified?.length) ordered.push({ label: 'Unclassified', runs: unclassified });
+  return ordered;
+}
+
+function visibleRuns(group: RunGroup, showAll: boolean): RunSummary[] {
+  return showAll ? group.runs : group.runs.slice(0, DEFAULT_SHOW);
+}
+
+// ============================================================================
+// RunRow
+// ============================================================================
+
+interface RunRowProps {
+  run:      RunSummary;
+  onSelect: (run: RunSummary) => void;
+}
+
+function RunRow({ run, onSelect }: RunRowProps) {
+  return (
+    <tr
+      onClick={() => onSelect(run)}
+      className="cursor-pointer border-b transition-colors hover:bg-muted/50"
+    >
+      <td className="px-4 py-2 max-w-[280px] truncate" title={run.label}>
+        {run.label.length > 45 ? run.label.slice(0, 45) + '…' : run.label}
+      </td>
+      <td className="px-4 py-2">
+        <Badge variant={statusBadgeVariant(run.status)}>{run.status}</Badge>
+      </td>
+      <td className="px-4 py-2 text-muted-foreground">
+        {run.model.split('/').pop() ?? run.model}
+      </td>
+      <td className="px-4 py-2 text-muted-foreground">
+        {new Date(run.started_at).toLocaleString()}
+      </td>
+      <td className="px-4 py-2 text-muted-foreground">
+        {formatDuration(run.started_at, run.finished_at)}
+      </td>
+      <td className="px-4 py-2 text-right tabular-nums">{run.step_count}</td>
+      <td className="px-4 py-2 text-right tabular-nums">{run.event_count}</td>
+    </tr>
+  );
+}
+
+// ============================================================================
 // Tab 1 — Runs
 // ============================================================================
 
@@ -60,17 +148,33 @@ interface RunsContentProps {
 }
 
 function RunsContent({ onSelectRun }: RunsContentProps) {
-  const status = useHarnessStatus();
+  const status  = useHarnessStatus();
   const runList = useRunList();
   const [statusFilter, setStatusFilter] = useState('all');
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [showAll,  setShowAll]  = useState<Record<string, boolean>>({});
 
   if (status.data && !status.data.connected) return <NotConnected />;
   if (runList.loading) return <LoadingShell rows={6} />;
   if (runList.error?.includes('harness not connected')) return <NotConnected />;
 
-  const rows = (runList.data ?? []).filter(
+  // Filter first, then group — empty groups are hidden after filter.
+  const filtered = (runList.data ?? []).filter(
     (r) => statusFilter === 'all' || r.status === statusFilter,
   );
+  const groups = groupRuns(filtered);
+
+  function isGroupExpanded(label: string): boolean {
+    return expanded[label] !== false; // default expanded
+  }
+
+  function toggleExpanded(label: string) {
+    setExpanded((prev) => ({ ...prev, [label]: !isGroupExpanded(label) }));
+  }
+
+  function toggleShowAll(label: string) {
+    setShowAll((prev) => ({ ...prev, [label]: !(prev[label] ?? false) }));
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -93,7 +197,7 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
         </Button>
       </div>
 
-      {rows.length === 0 ? (
+      {groups.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-muted-foreground">
             No runs found. Run an agent via{' '}
@@ -115,31 +219,52 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((run) => (
-                <tr
-                  key={run.run_id}
-                  onClick={() => onSelectRun(run)}
-                  className="cursor-pointer border-b transition-colors hover:bg-muted/50"
-                >
-                  <td className="px-4 py-2 max-w-[280px] truncate" title={run.label}>
-                    {run.label.length > 45 ? run.label.slice(0, 45) + '…' : run.label}
-                  </td>
-                  <td className="px-4 py-2">
-                    <Badge variant={statusBadgeVariant(run.status)}>{run.status}</Badge>
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {run.model.split('/').pop() ?? run.model}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {new Date(run.started_at).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {formatDuration(run.started_at, run.finished_at)}
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums">{run.step_count}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{run.event_count}</td>
-                </tr>
-              ))}
+              {groups.map((group) => {
+                const exp = isGroupExpanded(group.label);
+                const sa  = showAll[group.label] ?? false;
+                return (
+                  <Fragment key={group.label}>
+                    {/* Group header row */}
+                    <tr
+                      onClick={() => toggleExpanded(group.label)}
+                      className="cursor-pointer select-none border-b bg-muted/50 transition-colors hover:bg-muted/80"
+                    >
+                      <td colSpan={7} className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          {exp
+                            ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                          <span className="text-sm font-medium">{group.label}</span>
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            ({group.runs.length})
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Run rows */}
+                    {exp && visibleRuns(group, sa).map((run) => (
+                      <RunRow key={run.run_id} run={run} onSelect={onSelectRun} />
+                    ))}
+
+                    {/* Show more / show less */}
+                    {exp && group.runs.length > DEFAULT_SHOW && (
+                      <tr className="border-b">
+                        <td colSpan={7} className="px-4 py-2">
+                          <button
+                            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                            onClick={(e) => { e.stopPropagation(); toggleShowAll(group.label); }}
+                          >
+                            {sa
+                              ? 'Show less'
+                              : `Show ${group.runs.length - DEFAULT_SHOW} more…`}
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

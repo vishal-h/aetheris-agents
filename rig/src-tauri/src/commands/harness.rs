@@ -71,7 +71,7 @@ pub fn harness_list_runs(
     limit: Option<i64>,
 ) -> Result<Vec<RunSummary>, String> {
     let conn = get_harness_conn(&state)?;
-    let limit = limit.unwrap_or(50);
+    let limit = limit.unwrap_or(500);
 
     let sql = "
         SELECT

@@ -566,6 +566,76 @@ The agent:
 
 ---
 
+## Matryoshka content search (optional)
+
+Matryoshka (lattice-mcp) provides deep content search over the corpus —
+vector similarity over full document text rather than keyword matching on
+raw_excerpt. It is wired into the search agent but disabled by default.
+
+The corpus-search MCP's ILIKE search on raw_excerpt is sufficient for most
+queries. Enable Matryoshka when auditors report that keyword search is missing
+documents they expect to find — typically on a large corpus where excerpt
+coverage is incomplete.
+
+### Install
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/mcp/stdio/node
+npm install
+```
+
+Verify the binary exists:
+
+```bash
+ls mcp/stdio/node/node_modules/.bin/lattice-mcp
+```
+
+### Enable
+
+Set the environment variable before running the search agent:
+
+```bash
+export LATTICE_MCP_ENABLED=true
+```
+
+The search agent checks both the env var and the binary path at eval time.
+If either is missing, Matryoshka is silently skipped and the agent falls back
+to corpus-search MCP only.
+
+### How the search agent uses it
+
+When Matryoshka tools appear in the MCP schema, the agent uses them as a
+second pass after corpus-search MCP:
+
+1. `search_corpus` returns metadata matches (ILIKE on path/client/raw_excerpt)
+2. If results < 3, `lattice_load` loads top candidate files for content search
+3. Results are merged and ranked before presentation
+
+### Verify it is active
+
+Check the trajectory of a search run:
+
+```bash
+mix aetheris inspect <run_id>
+```
+
+Look for `tool_called` events with `server_id: "lattice"`. If none appear,
+the binary is missing or LATTICE_MCP_ENABLED was not set.
+
+### When to enable on the real corpus
+
+Enable Matryoshka when:
+- Auditors report false negatives on queries that should match known documents
+- The corpus exceeds ~10,000 files and excerpt coverage becomes sparse
+- Queries involve document content not captured in the first 20 lines
+
+Leave it disabled when:
+- Keyword search on raw_excerpt is returning good results
+- Running classification or migration agents (Matryoshka adds no value there)
+- Debugging search issues — isolate corpus-search MCP first
+
+---
+
 ## Validate search quality
 
 Run the validation script before production sign-off. It sends 20 representative

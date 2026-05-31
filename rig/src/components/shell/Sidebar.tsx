@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   ChevronDown,
   Plus,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { modules } from '@/modules/registry';
@@ -26,6 +27,7 @@ const iconMap: Record<string, LucideIcon> = {
   BarChart2,
   ClipboardCheck,
   Plus,
+  Sparkles,
 };
 
 export function Sidebar() {

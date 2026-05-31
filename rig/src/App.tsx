@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/shell/Sidebar';
 import { MainArea } from '@/components/shell/MainArea';
 import { RightPanel } from '@/components/shell/RightPanel';
 import { HarnessRoute } from '@/components/modules/harness/RunList';
+import { OrchestratorView } from '@/components/modules/orchestrator/OrchestratorView';
 import { F2Operations, F2Viewer, WatchedFoldersSettings } from '@/components/modules/f2';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
@@ -32,6 +33,13 @@ function App() {
 
             {/* Harness — agent run inspector */}
             <Route path="/harness" element={<HarnessRoute />} />
+
+            {/* Orchestrator — natural language request + plan approval */}
+            <Route path="/orchestrator" element={
+              <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto p-8">
+                <OrchestratorView />
+              </div>
+            } />
 
             {/* F2 routes */}
             <Route path="/f2/operations" element={<MainArea tabs={F2Operations()} />} />

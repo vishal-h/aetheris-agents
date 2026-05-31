@@ -51,5 +51,15 @@ const provenanceModule: Module = {
   ],
 };
 
+// Orchestrator — natural language request + plan approval workflow
+const orchestratorModule: Module = {
+  id: 'orchestrator',
+  label: 'Orchestrator',
+  icon: 'Sparkles',
+  sections: [
+    { id: 'orchestrator', label: 'Orchestrator', icon: 'Sparkles', path: '/orchestrator' },
+  ],
+};
+
 // Module registry - add new modules here
-export const modules: Module[] = [harnessModule, f2Module, provenanceModule];
+export const modules: Module[] = [harnessModule, orchestratorModule, f2Module, provenanceModule];

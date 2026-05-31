@@ -136,6 +136,44 @@ git commit -m "feat(sprint): add {use_case} to capability_matrix case"
 
 ---
 
+## Prompt: Add a new use case to the capability matrix
+
+Use this prompt with Claude Code when adding a new use case.
+Run from aetheris-agents/.
+
+```
+Follow the "Adding a new use case" steps in
+docs/capability-matrix-runbook.md to add {use_case} to the capability matrix.
+
+Values for this use case:
+  use_case      = {use_case}
+  agents_dir    = "{use_case}/agents"
+  scripts_dir   = "{use_case}/scripts"
+  section_title = "{Section Title — Human Readable}"
+  section_file  = "docs/.sections/{use_case}.md"
+  run_id prefix = "cap-matrix-{use_case}"
+  label         = "Capability Matrix — {Section Title}"
+
+Source file to copy: agents/capability_matrix_email.exs
+(or whichever capability_matrix_{uc}.exs exists — pick any one)
+
+Work in aetheris-agents/ for agent files, aetheris/ for sprint.sh.
+Follow all steps including the assembler update and sprint.sh addition.
+Do not re-run the matrix — just confirm the files are correct and stop.
+```
+
+After Claude Code completes, verify the four changed values in the new
+sub-agent file, then re-run and commit:
+
+```bash
+./scripts/sprint.sh capability_matrix
+cd ~/sandbox/elixirws/aetheris-agents
+git add docs/capability-matrix.md
+git commit -m "docs: update capability matrix"
+```
+
+---
+
 ## Known limitations
 
 **Assembler reads hardcoded paths.** Adding a new use case requires updating

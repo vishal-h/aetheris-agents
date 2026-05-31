@@ -4,6 +4,7 @@ export interface Tab {
   id: string;
   label: string;
   content: React.ReactNode;
+  disabled?: boolean;
 }
 
 interface TabBarProps {
@@ -17,7 +18,8 @@ export function TabBar({ tabs }: TabBarProps) {
         <TabsTrigger
           key={tab.id}
           value={tab.id}
-          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+          disabled={tab.disabled}
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {tab.label}
         </TabsTrigger>

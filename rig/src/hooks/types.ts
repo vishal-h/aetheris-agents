@@ -187,6 +187,43 @@ export interface RunDetail {
 }
 
 // ============================================================================
+// Trajectory types — matching commands/trajectory.rs
+// ============================================================================
+
+export interface TrajectoryMeta {
+  model:           string;
+  provider:        string;
+  mode:            string;
+  step_count:      number;
+  max_steps:       number;
+  started_at:      string;
+  finished_at:     string;
+  tools:           string[];
+  system_prompt:   string;
+  user_prompt:     string;
+  sandbox_path:    string;
+  seed:            string | null;
+  overlay_changes: unknown[];
+}
+
+export interface TrajectoryEvent {
+  id:          string;
+  run_id:      string;
+  seq:         number;
+  step:        number;
+  event_type:  string;
+  payload:     Record<string, unknown>;   // parsed object — NOT a raw string
+  timestamp:   string;
+}
+
+export interface TrajectoryFile {
+  run_id:         string;
+  schema_version: string;
+  meta:           TrajectoryMeta;
+  events:         TrajectoryEvent[];
+}
+
+// ============================================================================
 // Orchestrator types — matching protocol.md
 // ============================================================================
 

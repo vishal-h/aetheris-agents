@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { RunSummary } from '@/hooks/types';
 import { useHarnessStatus, useRunList, useRunEvents } from '@/hooks';
 import { NotConnected, LoadingShell } from './shared';
+import { TrajectoryView } from './TrajectoryView';
 
 // ============================================================================
 // Helpers
@@ -274,13 +275,16 @@ export function HarnessRoute() {
     setActiveTab('events');
   }, []);
 
+  const hasSelection = selectedRun !== null;
+
   return (
     <MainArea
       activeTab={activeTab}
       onTabChange={setActiveTab}
       tabs={[
-        { id: 'runs',   label: 'Runs',   content: <RunsContent onSelectRun={handleSelectRun} /> },
-        { id: 'events', label: 'Events', content: <EventsContent selectedRun={selectedRun} /> },
+        { id: 'runs',       label: 'Runs',       content: <RunsContent onSelectRun={handleSelectRun} /> },
+        { id: 'events',     label: 'Events',     content: <EventsContent selectedRun={selectedRun} />, disabled: !hasSelection },
+        { id: 'trajectory', label: 'Trajectory', content: <TrajectoryView runId={selectedRun?.run_id ?? null} />, disabled: !hasSelection },
       ]}
     />
   );

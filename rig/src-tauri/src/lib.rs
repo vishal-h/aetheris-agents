@@ -63,7 +63,10 @@ pub fn run() {
       commands::orchestrate::orchestrate_poll,
       commands::orchestrate::orchestrate_approve,
       commands::orchestrate::orchestrate_cancel,
+      commands::trajectory::trajectory_load,
+      commands::trajectory::trajectory_export,
     ])
+    .plugin(tauri_plugin_dialog::init())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

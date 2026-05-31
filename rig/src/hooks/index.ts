@@ -32,5 +32,7 @@ export type { UseProvenanceStatusResult } from './useProvenanceStatus';
 
 export { useHarnessStatus, useRunList, useRunEvents, useRunDetail } from './useHarness';
 export type { HarnessStatus, RunSummary, EventRow, RunDetail } from './types';
+export type { TrajectoryMeta, TrajectoryEvent, TrajectoryFile } from './types';
 export type { PlanStep, OrchestratorPlan, PollResult, OrchestratorPhase, StepStatus } from './types';
 export { useOrchestrator } from './useOrchestrator';
+export { useTrajectory } from './useTrajectory';

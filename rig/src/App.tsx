@@ -7,6 +7,7 @@ import { HarnessRoute } from '@/components/modules/harness/RunList';
 import { OrchestratorView } from '@/components/modules/orchestrator/OrchestratorView';
 import { DiffView } from '@/components/modules/harness/DiffView';
 import { F2Operations, F2Viewer, WatchedFoldersSettings } from '@/components/modules/f2';
+import { CapabilityMatrixView } from '@/components/modules/harness/CapabilityMatrixView';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
 import { MigrationStatus } from '@/components/modules/provenance/MigrationStatus';
@@ -39,6 +40,13 @@ function App() {
             <Route path="/diff" element={
               <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto">
                 <DiffView />
+              </div>
+            } />
+
+            {/* Capability matrix — agent/script catalogue */}
+            <Route path="/capability-matrix" element={
+              <div className="flex flex-1 flex-col h-full bg-background overflow-hidden">
+                <CapabilityMatrixView />
               </div>
             } />
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOrchestrator } from '@/hooks/useOrchestrator';
@@ -12,7 +13,9 @@ function StepIcon({ status }: { status: StepStatus }) {
 }
 
 export function OrchestratorView() {
-  const [request, setRequest] = useState('');
+  const location = useLocation();
+  const prefill  = (location.state as { prefill?: string } | null)?.prefill ?? '';
+  const [request, setRequest] = useState(prefill);
   const { phase, plan, stepStatuses, error, start, approve, cancel, reset } = useOrchestrator();
 
   return (

@@ -38,3 +38,5 @@ export { useOrchestrator } from './useOrchestrator';
 export { useTrajectory } from './useTrajectory';
 export type { MetaDiffRow, StepDiffEntry, RunDiff } from './types';
 export { useRunDiff } from './useRunDiff';
+export { useCapabilityMatrix } from './useCapabilityMatrix';
+export type { MatrixAgent, MatrixScript, MatrixUseCase, CapabilityMatrix } from './types';

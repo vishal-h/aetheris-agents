@@ -65,6 +65,7 @@ pub fn run() {
       commands::orchestrate::orchestrate_cancel,
       commands::trajectory::trajectory_load,
       commands::trajectory::trajectory_export,
+      commands::capability_matrix::capability_matrix_load,
     ])
     .plugin(tauri_plugin_dialog::init())
     .setup(|app| {

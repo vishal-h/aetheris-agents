@@ -280,3 +280,29 @@ export type OrchestratorPhase =
   | 'error';
 
 export type StepStatus = 'pending' | 'running' | 'done' | 'failed';
+
+// ============================================================================
+// Capability matrix types — matching commands/capability_matrix.rs
+// ============================================================================
+
+export interface MatrixAgent {
+  file:  string;
+  label: string;
+  tools: string[];
+}
+
+export interface MatrixScript {
+  file:    string;
+  purpose: string;
+}
+
+export interface MatrixUseCase {
+  title:   string;
+  agents:  MatrixAgent[];
+  scripts: MatrixScript[];
+}
+
+export interface CapabilityMatrix {
+  use_cases:    MatrixUseCase[];
+  generated_at: string | null;
+}

@@ -158,7 +158,7 @@ export function TrajectoryView({ runId }: Props) {
 
   async function handleExport() {
     try {
-      await invoke('trajectory_export', { run_id: trajectory!.run_id });
+      await invoke('trajectory_export', { runId: trajectory!.run_id });
     } catch (e) {
       console.error('export failed', e);
     }

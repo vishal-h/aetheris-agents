@@ -14,7 +14,7 @@ export function useTrajectory(runId: string | null) {
     }
     setLoading(true);
     setError(null);
-    invoke<TrajectoryFile>('trajectory_load', { run_id: runId })
+    invoke<TrajectoryFile>('trajectory_load', { runId })
       .then((t) => { setTrajectory(t); setLoading(false); })
       .catch((e) => { setError(String(e)); setLoading(false); });
   }, [runId]);

@@ -57,7 +57,7 @@ export function useRunEvents(
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<EventRow[]>('harness_get_events', { run_id: runId });
+      const result = await invoke<EventRow[]>('harness_get_events', { runId });
       setData(result);
     } catch (e) {
       setError(String(e));
@@ -108,7 +108,7 @@ export function useRunDetail(runId: string | null): AsyncState<RunDetail> {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<RunDetail>('harness_get_run', { run_id: runId });
+      const result = await invoke<RunDetail>('harness_get_run', { runId });
       setData(result);
     } catch (e) {
       setError(String(e));

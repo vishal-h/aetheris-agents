@@ -138,6 +138,18 @@ Base it on the same pattern as p1-003: route issues under milestones/p4/.
 
 ### Rust / Tauri
 
+**Tauri v2 `invoke()` keys must be camelCase.**
+Tauri v2 deserializes arguments by converting JS camelCase keys → Rust snake_case.
+Always use camelCase keys in `invoke()`:
+```typescript
+invoke('trajectory_load', { runId })          // ✓ runId → run_id
+invoke('trajectory_load', { run_id: runId })  // ✗ fails — "missing required key runId"
+```
+Why `{ run_id }` fails: Tauri converts camelCase → snake_case. A key already in
+snake_case (`run_id`) is not valid camelCase input and doesn't convert correctly.
+Note: P3 commands used `{ job_id: jobId }` and worked — explicit snake_case can
+sometimes pass through, but it is not reliable. The safe invariant is camelCase keys.
+
 **`harness_connection_status` returns `Ok`, not `Err`.**
 Returns `Ok(HarnessStatus { connected: false, error: Some(...) })` when not
 connected. All other harness commands return `Err("harness not connected")`.

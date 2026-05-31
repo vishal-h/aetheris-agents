@@ -199,6 +199,27 @@ SQLite timestamp columns are TEXT in ISO 8601 format — no casting needed
 
 ---
 
+## Tauri invoke() argument naming
+
+Tauri v2 deserializes command arguments by converting JS camelCase keys to Rust snake_case.
+**Use camelCase keys in all `invoke()` calls.** This is the only form that is reliably safe.
+
+```typescript
+// Rust: pub fn trajectory_load(run_id: String) -> ...
+invoke('trajectory_load', { runId })          // ✓ camelCase key → run_id parameter
+invoke('trajectory_load', { run_id: runId })  // ✗ fails — "missing required key runId"
+```
+
+**Why `{ run_id: runId }` fails:** Tauri's pipeline converts camelCase → snake_case. A key
+that is already snake_case (`run_id`) is not valid camelCase input and does not survive
+the conversion correctly. Empirically, explicit snake_case keys like `{ job_id: jobId }`
+have worked in some commands (P3), but `{ run_id: runId }` does not. Do not rely on
+snake_case passthrough — camelCase keys are the only form that is consistently safe.
+
+Error form: `invalid args runId for command X: missing required key runId`
+
+---
+
 ## Database gotchas
 
 SQLite and DuckDB have different type systems — do not mix up casting rules between them. SQLite timestamps are TEXT (no cast needed); DuckDB timestamps require `CAST(col AS VARCHAR)`. The rules below apply to DuckDB only.

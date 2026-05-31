@@ -85,8 +85,8 @@ export function useRunDiff(runIdA: string | null, runIdB: string | null) {
     setError(null);
 
     Promise.all([
-      invoke<TrajectoryFile>('trajectory_load', { run_id: runIdA }),
-      invoke<TrajectoryFile>('trajectory_load', { run_id: runIdB }),
+      invoke<TrajectoryFile>('trajectory_load', { runId: runIdA }),
+      invoke<TrajectoryFile>('trajectory_load', { runId: runIdB }),
     ])
       .then(([a, b]) => {
         setTrajectoryA(a);

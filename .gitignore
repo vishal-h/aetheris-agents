@@ -11,6 +11,10 @@ docs/.sections/
 
 # Rust build artifacts
 provenance/scanner/target/
+rig/src-tauri/target/
+
+# Node
+rig/node_modules/
 
 # Local env overrides (not committed)
 .env.local

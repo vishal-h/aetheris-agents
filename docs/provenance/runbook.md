@@ -144,6 +144,82 @@ missing, the agent will not know which clients or document types to assign.
 
 ---
 
+## Environment variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `AETHERIS_MODEL`            | No | `claude-haiku-4-5-20251001` | Default model for all agents across all use cases |
+| `AETHERIS_PROVIDER`         | No | `anthropic`                 | Default provider for all agents |
+| `PROVENANCE_MODEL`          | No | `AETHERIS_MODEL`            | Override model for all Provenance agents |
+| `PROVENANCE_CLASSIFY_MODEL` | No | `PROVENANCE_MODEL`          | Override model for classification agents only |
+
+---
+
+## Model configuration
+
+Model and provider are resolved at agent eval time using a three-level
+fallback chain read directly from environment variables:
+
+```
+{USE_CASE}_MODEL → AETHERIS_MODEL → hardcoded default
+```
+
+The hardcoded default is always `claude-haiku-4-5-20251001` and acts as
+a safety net if neither env var is set. There is no application config
+layer — agents call `System.get_env` directly.
+
+### Switch all Provenance agents to Sonnet for a session
+
+```bash
+export PROVENANCE_MODEL=claude-sonnet-4-6
+```
+
+### Switch all agents across all use cases
+
+```bash
+export AETHERIS_MODEL=claude-sonnet-4-6
+```
+
+### Persistent defaults
+
+Defaults live in `aetheris-agents/.env` (committed to the repo):
+
+```bash
+# View current defaults
+cat ~/sandbox/elixirws/aetheris-agents/.env
+
+# Edit to change persistent defaults for all future sessions
+# Changes take effect after sourcing or opening a new shell:
+set -a && source ~/sandbox/elixirws/aetheris-agents/.env && set +a
+```
+
+### Local overrides
+
+For machine-specific overrides that should not be committed, use
+`aetheris-agents/.env.local` (gitignored):
+
+```bash
+echo "AETHERIS_MODEL=claude-sonnet-4-6" \
+  >> ~/sandbox/elixirws/aetheris-agents/.env.local
+set -a \
+  && source ~/sandbox/elixirws/aetheris-agents/.env.local \
+  && set +a
+```
+
+### When to use Sonnet vs Haiku
+
+| Task | Recommended | Reason |
+|------|-------------|--------|
+| Scan orchestrator | Haiku | Scripted steps, no reasoning needed |
+| Classification batches | Haiku | High volume, excerpt-based judgment |
+| Taxonomy session | Sonnet | Nuanced auditor interview |
+| Migration agent | Haiku | Scripted steps |
+| Zip orchestrator | Haiku | Scripted steps |
+| Search agent | Haiku | Metadata lookup, simple broadening logic |
+| Capability matrix | Haiku | File reading and summarising |
+
+---
+
 ## Run the scan orchestrator agent
 
 ### Required environment variables

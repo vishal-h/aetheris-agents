@@ -39,55 +39,52 @@
 **What p1 delivered:**
 - `aetheris-agents/rig/` — full Tauri app (moved from hai-rig)
 - `HarnessState` + 4 read-only SQLite commands for `aetheris.db`
-- Harness module in sidebar: Runs tab (table + status filter) and Events tab (event log)
+- Harness module in sidebar: Runs tab (table + status filter) and Events tab
 - Controlled/uncontrolled `MainArea` — supports cross-tab shared state
 
 **What p2 delivered:**
-- `useRunEvents` polls every 2s when `{ polling: true }` — stops automatically on `run_complete`
-- Events tab auto-scrolls to bottom as new events arrive (smart: respects user scroll position)
-- Pulsing "Live" indicator in the Events header while polling
-- Status badge updates locally to 'done' when `run_complete` detected — no extra network call
+- `useRunEvents` polls every 2s when `{ polling: true }` — stops on `run_complete`
+- Smart auto-scroll (respects user scroll position, 50px threshold)
+- Pulsing "Live" indicator while polling
+- Local status badge update on `run_complete` — no extra network call
 
 ### Infrastructure — done
 
-- Model parameterisation: all agent files use `PROVENANCE_MODEL` →
-  `AETHERIS_MODEL` → hardcoded fallback. Configured via `aetheris-agents/.env`
-- Capability matrix: generated and committed at `docs/capability-matrix.md`
-- Runbook: `docs/provenance/runbook.md` — complete including "Before going live"
-  checklist and model configuration section
-- Test sandbox: `provenance/scripts/create_test_sandbox.py` — creates 26 files,
-  5 zips, 4 duplicate groups, 1 encrypted zip, depth-3 nesting
+- Model parameterisation: `PROVENANCE_MODEL` → `AETHERIS_MODEL` → hardcoded fallback
+- Capability matrix: committed at `docs/capability-matrix.md`
+- Test sandbox: `provenance/scripts/create_test_sandbox.py` resets between runs
 
 ---
 
 ## What is in progress
 
-Nothing active. Two threads ready to start:
+### Rig p3 — Orchestrator
 
-### Thread 1 — Rig p3 (Orchestrator)
+Docs written and committed. Implementation not yet started.
 
-Natural language request → plan → confirm → execute agents. Spec in
-`docs/rig/milestones/p3/`. **Not yet written** — needs milestone + issue docs
-written in Claude.ai before any Claude Code work.
+| Issue | Status | Notes |
+|-------|--------|-------|
+| p3-001 Mock script | ⬜ Ready | Elixir; lives in `aetheris-agents/agents/` |
+| p3-002 Rust backend | ⬜ Ready | `commands/orchestrate.rs`, `OrchestratorState` in `lib.rs` |
+| p3-003 Orchestrator UI | ⬜ Blocked on 001+002 | `OrchestratorView`, `useOrchestrator` hook |
 
-**Goal:** user types "email payslips for May 2026", orchestrator reads
-capability matrix, reasons about agents needed, writes a plan to a temp file,
-blocks on confirmation, executes on approval, shows live run progress.
+**001 and 002 can be implemented in parallel — they share only `protocol.md`.**
+003 needs both merged first.
+
+**Key design decisions (all in `docs/rig/milestones/p3/`):**
+- IPC via stdin/stdout newline-delimited JSON (not temp files)
+- Request passed via `ORCHESTRATOR_REQUEST` env var (not CLI arg — Mix arg parsing is unreliable)
+- `AETHERIS_AGENTS_PATH` — one new env var; `aetheris_dir` derived from existing `AETHERIS_DB_PATH`
+  (parent of `priv/` — no second new var needed)
+- Frontend polls `orchestrate_poll` every 1s (consistent with p2 polling pattern)
+- `OrchestratorRoute` is not a tabs component — single-view workflow, rendered directly
+
+**p3-002 is the hardest piece.** Reader thread + `Arc<Mutex<>>` pattern for the stdout buffer.
+The issue doc has the full Rust code for all 4 commands — Claude Code should use it verbatim.
 
 ### Thread 2 — uc-provenance-validation
 
-Full pipeline validation against the test sandbox. In `ROADMAP.md` under
-Planned. Steps in order:
-
-1. Taxonomy session (`taxonomy_session.py` interactively)
-2. Classification orchestrator against sandbox
-3. Export → review → import cycle
-4. Migration agent against sandbox
-5. Zip archaeology against sandbox
-6. Search validation (`validate_search.py`, pass rate ≥ 85%)
-7. Eval sprint (`./scripts/sprint.sh eval`)
-
-**Blocked on:** `ANTHROPIC_API_KEY` available in shell.
+Blocked on `ANTHROPIC_API_KEY` available in shell. Steps in `ROADMAP.md`.
 
 ---
 
@@ -96,58 +93,99 @@ Planned. Steps in order:
 | Phase | Goal | Status |
 |-------|------|--------|
 | p1 | Consolidation + run list UI | ✅ Complete |
-| p2 | Live monitoring — watch active runs in real time | ✅ Complete |
-| p3 | Orchestrator — NL request → plan → confirm → execute agents | ⬜ Needs milestone docs |
+| p2 | Live monitoring | ✅ Complete |
+| p3 | Orchestrator — NL → plan → confirm → execute | 🔄 Docs done, impl pending |
 | p4 | Trajectory explorer — full event detail, search, export | ⬜ |
-
-Phase docs live at `aetheris-agents/docs/rig/milestones/`.
 
 ---
 
-## Key files to know
+## Key files
 
 ```
 aetheris-agents/
-  .env                              ← model defaults (AETHERIS_MODEL etc.)
-  docs/
-    capability-matrix.md            ← auto-generated, all agents + scripts
-    rig/
-      README.md                     ← Rig project overview
-      specs.md                      ← data model, command shapes, TS types
-      architecture.md               ← component map, data flow
-      runbook.md                    ← dev setup, env vars, common issues
-      milestones/
-        p1/                         ← p1-001, p1-002, p1-003 (all done)
-        p2/                         ← p2-001, p2-002 (all done)
-    provenance/
-      runbook.md                    ← full Provenance operator guide
-  rig/                              ← Tauri app
-    CLAUDE.md                       ← authoritative context for Claude Code
+  rig/
+    CLAUDE.md                         ← authoritative context for Claude Code (read first)
     src-tauri/src/
-      lib.rs                        ← HarnessState + CorpusState setup
+      lib.rs                          ← HarnessState + CorpusState + OrchestratorState (p3)
       commands/
-        harness.rs                  ← 4 read-only SQLite commands
-        provenance.rs               ← Provenance DuckDB commands
-        f2.rs                       ← F2 file index commands
+        harness.rs                    ← 4 read-only SQLite commands
+        orchestrate.rs                ← p3: 4 process management commands
+        provenance.rs
+        f2.rs
     src/
-      App.tsx                       ← routes: /harness, /f2/*, /provenance, /settings
+      App.tsx                         ← routes: /harness, /orchestrator, /f2/*, /provenance
       components/
-        shell/
-          MainArea.tsx              ← controlled/uncontrolled tabs (see patterns)
+        shell/MainArea.tsx            ← controlled/uncontrolled tabs
         modules/
-          harness/
-            RunList.tsx             ← HarnessRoute, RunsContent, EventsContent (live)
-            shared.tsx              ← NotConnected, LoadingShell
-          provenance/               ← all 4 Provenance views + shared.tsx
-          f2/                       ← F2Operations, F2Viewer, WatchedFolders
+          harness/RunList.tsx         ← HarnessRoute + live EventsContent
+          orchestrator/               ← p3: OrchestratorView (to be created)
       hooks/
-        useHarness.ts               ← useHarnessStatus, useRunList,
-                                       useRunEvents (polling), useRunDetail
-        types.ts                    ← all TypeScript interfaces
+        useHarness.ts                 ← polling useRunEvents + 3 other hooks
+        useOrchestrator.ts            ← p3: full state machine (to be created)
+        types.ts                      ← all TypeScript interfaces
+  docs/rig/milestones/
+    p1/                               ← done
+    p2/                               ← done
+    p3/
+      README.md                       ← p3 overview + completion gate
+      protocol.md                     ← JSON schema reference (read before p3-001/002)
+      p3-001-mock-script.md           ← mock_orchestrator.exs spec
+      p3-002-rust-backend.md          ← OrchestratorState + 4 Tauri commands (full code)
+      p3-003-orchestrator-ui.md       ← useOrchestrator hook + OrchestratorView states
+```
 
-aetheris/
-  priv/aetheris.db                  ← harness SQLite (runs, events, orbs, skills)
-  priv/runs/                        ← trajectory JSON files per run
+---
+
+## Prompts for Claude Code (p3)
+
+### p3-001 (run from aetheris-agents/)
+
+```
+Read docs/rig/milestones/p3/p3-001-mock-script.md and implement.
+
+Context:
+- File goes in aetheris-agents/agents/mock_orchestrator.exs
+- Jason is available (aetheris/mix.exs has {:jason, "~> 1.4"})
+- Request is passed via ORCHESTRATOR_REQUEST env var — not CLI args
+- After writing the file, run the manual test from p3-001-mock-script.md
+  to confirm the approve path produces the correct JSON sequence
+```
+
+### p3-002 (run from aetheris-agents/rig/)
+
+```
+Read docs/rig/milestones/p3/protocol.md and
+docs/rig/milestones/p3/p3-002-rust-backend.md and implement.
+
+Context:
+- Run from aetheris-agents/rig/
+- Add OrchestratorState and OrchestratorJob to src-tauri/src/lib.rs
+  alongside the existing HarnessState and CorpusState
+- aetheris_dir is derived from AETHERIS_DB_PATH (parent of priv/) —
+  do not add a second env var
+- Add serde_json = "1" to Cargo.toml if not already present
+- The issue doc has full Rust implementations for all 4 commands —
+  use them verbatim, do not rewrite
+- Add TypeScript types from protocol.md to src/hooks/types.ts and
+  export from src/hooks/index.ts
+- When done: cargo build exits 0, zero warnings
+```
+
+### p3-003 (run from aetheris-agents/rig/, after 001 + 002 merged)
+
+```
+Read docs/rig/milestones/p3/protocol.md and
+docs/rig/milestones/p3/p3-003-orchestrator-ui.md and implement.
+
+Context:
+- Run from aetheris-agents/rig/
+- OrchestratorView is NOT a tabs component — single-view workflow,
+  rendered directly in a padded div in App.tsx (see issue doc)
+- Add Sparkles to iconMap in Sidebar.tsx
+- orchestratorModule goes second in the modules array in registry.ts,
+  after harnessModule
+- No <form> tags, no <textarea> inside a form — onClick/onChange only
+- When done: bun run build exits 0, zero TypeScript errors
 ```
 
 ---
@@ -157,53 +195,40 @@ aetheris/
 ### Rust / Tauri
 
 **`harness_connection_status` returns `Ok`, not `Err`.**
-Unlike all other harness commands (which return `Err("harness not connected")`
-when `AETHERIS_DB_PATH` is absent), `harness_connection_status` returns
-`Ok(HarnessStatus { connected: false, error: Some(...) })`. Check
-`data.connected`, not the Result variant. Documented in `rig/CLAUDE.md`.
+Returns `Ok(HarnessStatus { connected: false, error: Some(...) })` when not
+connected. All other harness commands return `Err("harness not connected")`.
+Check `data.connected`, not the Result. Documented in `rig/CLAUDE.md`.
 
-**`get_harness_conn` helper mirrors `get_corpus_conn`.**
-Both take `state: &'a State<'a, *State>` and return a `MutexGuard`. This is
-the correct pattern for all Tauri command handlers that need DB access.
+**`get_harness_conn` / `get_corpus_conn` pattern.**
+Helper takes `state: &'a State<'a, *State>` → returns `MutexGuard`. Follow
+for all future DB command handlers.
+
+**`OrchestratorState` pattern (p3).**
+Long-running child processes stored as `Arc<Mutex<Child>>` in a job map.
+Reader thread pushes parsed `serde_json::Value` to `Arc<Mutex<Vec>>` buffer.
+Frontend drains buffer via `orchestrate_poll`. `AtomicBool` signals EOF.
 
 ### React / Frontend
 
 **Controlled/uncontrolled `MainArea`.**
-`MainArea` accepts optional `activeTab`/`onTabChange` props. Without them it
-manages tab state internally (all existing routes). With them, the parent owns
-the active tab (Harness route). Use controlled mode whenever a route needs
-cross-tab shared state.
+Optional `activeTab`/`onTabChange` props. Without: internal state (all
+existing routes). With: parent owns tab (Harness route). Use controlled
+when a route needs cross-tab shared state.
 
-**`HarnessRoute` pattern for cross-tab shared state.**
-When a route needs state shared between tabs, create a `*Route` component that
-owns the shared state, wraps `MainArea` with `activeTab`/`onTabChange`, and
-passes data down via props. Do not try to share state inside `Tab[]` factory
-functions.
+**`HarnessRoute` pattern.**
+When a route needs shared state across tabs, create a `*Route` component
+that owns state and wraps `MainArea` with `activeTab`/`onTabChange`.
 
-**Three-effect polling pattern.**
-When a hook needs to poll and self-terminate, use three separate effects:
-1. Sync internal `activelyPolling` state with caller's `polling` option
-2. Watch fetched data for a stop signal (e.g. `run_complete` event); set
-   `activelyPolling(false)` when found
-3. Set up / tear down the `setInterval` based on `activelyPolling`
-
-This separates concerns cleanly and allows the hook to self-terminate
-independently of the caller.
+**Three-effect polling pattern (`useRunEvents`).**
+1. Sync internal `activelyPolling` with caller's option
+2. Watch data for stop signal (`run_complete`); self-terminate
+3. `setInterval` tied to `activelyPolling`
 
 **`loading && !data` for polling-safe skeletons.**
-When a hook does background polling, `loading` is true on every refetch.
-Using `loading` alone to show a skeleton flashes the UI every 2s. Use
-`loading && !data` to show the skeleton only on the initial load, then
-leave existing content in place during background refreshes. Applied in
-`EventsContent` and should be used anywhere a polling hook drives a list.
+Shows skeleton on initial load only. Prevents flash on every poll refetch.
+Use anywhere a polling hook drives a list.
 
-**`useInvoke` args are not in `useCallback` deps (intentional).**
-The shared `useInvoke` helper only lists `command` in deps, not `args`.
-This means dynamic args won't trigger a refetch. For dynamic args, use an
-explicit `useCallback` with the arg in deps — see `useRunEvents` and
-`useRunDetail` for the right pattern.
-
-### Older patterns (still valid)
+### Elixir
 
 **Agent model config (two-level fallback):**
 ```elixir
@@ -212,7 +237,6 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 ```
 
 **`Application.ensure_all_started/1` returns `{:ok, []}` not `:ok`.**
-Match as `{:ok, _} = Application.ensure_all_started(:aetheris)` in `.exs` scripts.
 
 ---
 
@@ -222,24 +246,21 @@ Match as `{:ok, _} = Application.ensure_all_started(:aetheris)` in `.exs` script
 # Open Rig
 cd ~/sandbox/elixirws/aetheris-agents/rig
 export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
+export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb  # optional
 cargo tauri dev
 
-# Run any Provenance agent
+# Test mock orchestrator manually (from aetheris/)
 cd ~/sandbox/elixirws/aetheris
-mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs
+(sleep 3; echo '{"type":"approval","approved":true}') \
+  | ORCHESTRATOR_REQUEST="email payslips" \
+    mix run ../aetheris-agents/agents/mock_orchestrator.exs
+
+# TypeScript build check
+cd ~/sandbox/elixirws/aetheris-agents/rig && bun run build
 
 # Check a run
+cd ~/sandbox/elixirws/aetheris
 mix aetheris inspect <run_id>
 mix aetheris list --limit 5
-
-# Reset test sandbox
-python3 provenance/scripts/create_test_sandbox.py --overwrite
-
-# Regenerate capability matrix
-./scripts/sprint.sh capability_matrix
-
-# TypeScript build check (frontend only, no Tauri env needed)
-cd ~/sandbox/elixirws/aetheris-agents/rig
-bun run build
 ```

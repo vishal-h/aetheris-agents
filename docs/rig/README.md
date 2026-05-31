@@ -14,24 +14,25 @@ is use-case aware.
 
 | Phase | Capability | Status |
 |-------|-----------|--------|
-| p1 | Run inspection — browse past agent runs and their event trajectories | ⬜ |
-| p2 | Live monitoring — watch an active run's events in real time | ⬜ |
-| p3 | Orchestrator — natural language → plan → confirm → execute | ⬜ |
-| p4 | Trajectory explorer — full event detail, search, export | ⬜ |
+| p1 | Run inspection — browse past agent runs and their event trajectories | ✅ |
+| p2 | Live monitoring — watch an active run's events in real time | ✅ |
+| p3 | Orchestrator — natural language → plan → confirm → execute | ✅ |
+| p4 | Trajectory explorer — full event detail, diff, export | ✅ |
 | —  | Provenance corpus dashboard | ✅ (ported from hai-rig) |
 
 ---
 
-## Two data sources
+## Three data sources
 
 ```
-aetheris.db       SQLite — harness state: runs, events, orbs, skills
-corpus.duckdb     DuckDB — Provenance corpus: files, classifications, migrations
+aetheris.db                SQLite — harness state: runs, events, orbs, skills
+priv/runs/*/trajectory.json  JSON — immutable per-run snapshot: events + meta
+corpus.duckdb              DuckDB — Provenance corpus: files, classifications, migrations
 ```
 
-Both are read-only in Rig except the single write path:
-`set_classification_status` (approve/reject) opens a short-lived write
-connection to `corpus.duckdb`.
+`aetheris.db` and the trajectory files are read-only in Rig. `corpus.duckdb`
+has one write path: `set_classification_status` (approve/reject) opens a
+short-lived write connection.
 
 ---
 
@@ -50,6 +51,7 @@ connection to `corpus.duckdb`.
 ```bash
 cd aetheris-agents/rig
 export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
+export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb  # optional
 cargo tauri dev
 ```

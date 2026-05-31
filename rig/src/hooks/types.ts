@@ -185,3 +185,35 @@ export interface RunDetail {
   started_at:  string;
   finished_at: string | null;
 }
+
+// ============================================================================
+// Orchestrator types — matching protocol.md
+// ============================================================================
+
+export interface PlanStep {
+  id:          string;
+  agent:       string;
+  description: string;
+}
+
+export interface OrchestratorPlan {
+  type:    'plan';
+  request: string;
+  steps:   PlanStep[];
+}
+
+export interface PollResult {
+  messages: Record<string, unknown>[];
+  done:     boolean;
+}
+
+export type OrchestratorPhase =
+  | 'idle'
+  | 'planning'
+  | 'plan_ready'
+  | 'executing'
+  | 'done'
+  | 'cancelled'
+  | 'error';
+
+export type StepStatus = 'pending' | 'running' | 'done' | 'failed';

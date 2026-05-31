@@ -3,6 +3,8 @@ mod db;
 mod modules;
 
 use duckdb::{AccessMode, Config};
+use std::collections::HashMap;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
@@ -14,6 +16,19 @@ pub struct CorpusState {
 pub struct HarnessState {
     pub conn: Option<Arc<Mutex<rusqlite::Connection>>>,
     pub path: Option<String>,
+}
+
+pub struct OrchestratorJob {
+    pub child:  Arc<Mutex<std::process::Child>>,
+    pub stdin:  Arc<Mutex<std::process::ChildStdin>>,
+    pub buffer: Arc<Mutex<Vec<serde_json::Value>>>,
+    pub done:   Arc<AtomicBool>,
+}
+
+pub struct OrchestratorState {
+    pub jobs:         Mutex<HashMap<String, OrchestratorJob>>,
+    pub agents_path:  Option<String>,
+    pub aetheris_dir: Option<String>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -44,6 +59,10 @@ pub fn run() {
       commands::harness::harness_list_runs,
       commands::harness::harness_get_events,
       commands::harness::harness_get_run,
+      commands::orchestrate::orchestrate_start,
+      commands::orchestrate::orchestrate_poll,
+      commands::orchestrate::orchestrate_approve,
+      commands::orchestrate::orchestrate_cancel,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -119,6 +138,19 @@ pub fn run() {
       };
 
       app.manage(harness_state);
+
+      let agents_path = std::env::var("AETHERIS_AGENTS_PATH").ok();
+      let aetheris_dir = std::env::var("AETHERIS_DB_PATH").ok().and_then(|p| {
+        std::path::Path::new(&p)
+          .parent()
+          .and_then(|p| p.parent())
+          .map(|p| p.to_string_lossy().to_string())
+      });
+      app.manage(OrchestratorState {
+        jobs:        Mutex::new(HashMap::new()),
+        agents_path,
+        aetheris_dir,
+      });
 
       Ok(())
     })

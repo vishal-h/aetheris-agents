@@ -163,6 +163,26 @@ Then restart the app. Migrations will re-run from scratch.
 
 ---
 
+## Part 3b — Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `PROVENANCE_DB_PATH` | For Provenance module | Absolute path to the Aetheris corpus DuckDB file |
+| `AETHERIS_DB_PATH` | For Harness module | Absolute path to `aetheris.db` (SQLite) — used for run inspection. Also used to derive `aetheris_dir` for the Orchestrator |
+| `AETHERIS_AGENTS_PATH` | For Orchestrator module | Absolute path to the `aetheris-agents/` root directory |
+
+Example `.env` for local dev:
+
+```bash
+export PROVENANCE_DB_PATH=/path/to/corpus.duckdb
+export AETHERIS_DB_PATH=$HOME/sandbox/elixirws/aetheris/priv/aetheris.db
+export AETHERIS_AGENTS_PATH=$HOME/sandbox/elixirws/aetheris-agents
+```
+
+`aetheris_dir` (the working directory for the Mix orchestrator process) is derived automatically from `AETHERIS_DB_PATH`: parent of `priv/` → the aetheris repo root.
+
+---
+
 ## Part 4 — Development Notes
 
 ### Hot reload

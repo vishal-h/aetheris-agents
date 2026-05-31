@@ -32,7 +32,7 @@ git push
 Re-run whenever:
 - A new use case directory is added
 - A new agent file (`.exs`) is added to any use case
-- A new script (`.py`) is added to any use case
+- A new script (`.py` or `.exs`) is added to any use case's `scripts/` directory
 - An existing agent's tool list changes
 - An existing script's one-line docstring changes
 
@@ -79,7 +79,7 @@ git commit -m "docs: update capability matrix"
 ```
 {use_case}/
   agents/    ← .exs agent files
-  scripts/   ← .py scripts
+  scripts/   ← .py and .exs scripts
 ```
 
 **2. Add a sub-agent file:**
@@ -98,6 +98,10 @@ Edit the new file — change these four values in the system_prompt:
 | `section_file` | `"docs/.sections/{use_case}.md"` |
 
 Also update `run_id` and `label`. Keep all other fields unchanged.
+
+> **Note:** Step 3 of the system_prompt already collects both `.py` and `.exs` files
+> from `scripts/`. For `.exs` scripts the sub-agent extracts the purpose from the
+> opening `#` comment rather than a docstring. Do not revert this to `.py` only.
 
 **3. Update the assembler:**
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Tab } from '@/components/shell/TabBar';
 import { MainArea } from '@/components/shell/MainArea';
@@ -157,7 +157,24 @@ interface EventsContentProps {
 
 function EventsContent({ selectedRun }: EventsContentProps) {
   const status = useHarnessStatus();
-  const events = useRunEvents(selectedRun?.run_id ?? null);
+  const events = useRunEvents(
+    selectedRun?.run_id ?? null,
+    { polling: selectedRun?.status === 'running' },
+  );
+  const { isPolling } = events;
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom on new events if already near the bottom
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    if (nearBottom) el.scrollTop = el.scrollHeight;
+  }, [events.data]);
+
+  const isComplete = (events.data ?? []).some((ev) => ev.event_type === 'run_complete');
+  const displayStatus = isComplete ? 'done' : (selectedRun?.status ?? '');
 
   if (status.data && !status.data.connected) return <NotConnected />;
 
@@ -177,23 +194,32 @@ function EventsContent({ selectedRun }: EventsContentProps) {
         <span className="font-medium truncate max-w-xs" title={selectedRun.label}>
           {selectedRun.label}
         </span>
-        <Badge variant={statusBadgeVariant(selectedRun.status)}>{selectedRun.status}</Badge>
+        <Badge variant={statusBadgeVariant(displayStatus)}>{displayStatus}</Badge>
         <span className="text-muted-foreground">
           {selectedRun.model.split('/').pop() ?? selectedRun.model}
         </span>
         <span className="text-muted-foreground">
           Started: {new Date(selectedRun.started_at).toLocaleString()}
         </span>
+        {isPolling && (
+          <span className="flex items-center gap-1.5 text-xs text-green-600">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            Live
+          </span>
+        )}
       </div>
 
-      {events.loading ? (
+      {events.loading && !events.data ? (
         <LoadingShell rows={6} />
       ) : (events.data ?? []).length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-muted-foreground">No events found for this run.</p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 border-b bg-background">
               <tr>

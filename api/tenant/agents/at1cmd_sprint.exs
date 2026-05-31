@@ -12,8 +12,8 @@ at1cmd_id = "#{orb_id}-at1cmd"
 cot1_id   = "#{orb_id}-cot1"
 at1qry_id = "#{orb_id}-at1qry"
 
-model    = System.get_env("API_MODEL") || Application.get_env(:aetheris, :default_model)
-provider = Application.get_env(:aetheris, :default_provider)
+model    = System.get_env("API_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
+provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 %Aetheris.OrbConfig{
   orb_id:         orb_id,

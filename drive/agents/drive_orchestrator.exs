@@ -1,7 +1,7 @@
 agent_root = Path.expand(Path.join([Path.dirname(__ENV__.file), "..", ".."]))
 
-model    = System.get_env("DRIVE_MODEL") || Application.get_env(:aetheris, :default_model)
-provider = Application.get_env(:aetheris, :default_provider)
+model    = System.get_env("DRIVE_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
+provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 %Aetheris.RunConfig{
   run_id:           "drive-orch-#{Aetheris.ID.generate()}",

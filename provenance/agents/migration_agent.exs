@@ -22,8 +22,8 @@ else
   ""
 end
 
-model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
-provider = Application.get_env(:aetheris, :default_provider)
+model    = System.get_env("PROVENANCE_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
+provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 %Aetheris.RunConfig{
   run_id:            "provenance-migrate-#{Aetheris.ID.generate()}",

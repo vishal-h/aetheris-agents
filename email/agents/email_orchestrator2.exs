@@ -1,8 +1,8 @@
 agent_root = Path.expand(Path.join([Path.dirname(__ENV__.file), "..", ".."]))
 month = System.get_env("PAYSLIP_MONTH") || raise "PAYSLIP_MONTH not set"
 
-model    = System.get_env("EMAIL_MODEL") || Application.get_env(:aetheris, :default_model)
-provider = Application.get_env(:aetheris, :default_provider)
+model    = System.get_env("EMAIL_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
+provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 system_prompt = """
 You are a payslip email orchestrator. Stop and report if any step exits non-zero.

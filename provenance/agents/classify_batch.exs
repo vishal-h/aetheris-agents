@@ -3,8 +3,8 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 db_path       = System.get_env("PROVENANCE_DB_PATH")  || raise "PROVENANCE_DB_PATH env var is required"
 taxonomy_path = System.get_env("TAXONOMY_PATH")        || "agents/taxonomy.md"
 
-model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
-provider = Application.get_env(:aetheris, :default_provider)
+model    = System.get_env("PROVENANCE_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
+provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 %Aetheris.RunConfig{
   run_id:           "provenance-classify-#{Aetheris.ID.generate()}",

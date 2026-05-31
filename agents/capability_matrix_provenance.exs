@@ -8,11 +8,14 @@
 
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
+model    = System.get_env("AETHERIS_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.RunConfig{
   run_id:           "cap-matrix-provenance-#{Aetheris.ID.generate()}",
   mode:             :record,
-  provider:         "anthropic",
-  model:            "claude-haiku-4-5-20251001",
+  provider:         provider,
+  model:            model,
   label:            "Capability Matrix -- Provenance",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,

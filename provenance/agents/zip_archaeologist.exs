@@ -3,11 +3,14 @@ agent_root   = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 db_path      = System.get_env("PROVENANCE_DB_PATH") || raise "PROVENANCE_DB_PATH env var is required"
 staging_path = System.get_env("STAGING_PATH") || "priv/zip_staging"
 
+model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.RunConfig{
   run_id:           "provenance-zip-arch-#{Aetheris.ID.generate()}",
   mode:             :record,
-  provider:         "anthropic",
-  model:            "claude-haiku-4-5-20251001",
+  provider:         provider,
+  model:            model,
   label:            "Provenance Zip Archaeologist",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,

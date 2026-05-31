@@ -12,13 +12,18 @@
 provenance_root =
   Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
+# model/provider are baked into the template at registration time — if you change
+# PROVENANCE_MODEL or AETHERIS_MODEL later, re-run this script to update the task.
+model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 task = %Aetheris.Eval.Task{
   id:          "task_#{Aetheris.ID.generate()}",
   name:        "provenance_search",
   description: "corpus-search MCP server responds correctly to an initialize request",
   run_config_template: %{
-    "provider"      => "anthropic",
-    "model"         => "claude-haiku-4-5-20251001",
+    "provider"      => provider,
+    "model"         => model,
     "label"         => "Provenance Search — MCP smoke test (eval)",
     "max_steps"     => 3,
     "tools"         => ["run_command"],

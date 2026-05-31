@@ -20,11 +20,14 @@ lattice_server =
 
 mcp_servers = [corpus_search_server, lattice_server] |> Enum.reject(&is_nil/1)
 
+model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.RunConfig{
   run_id:           "provenance-search-#{Aetheris.ID.generate()}",
   mode:             :record,
-  provider:         "anthropic",
-  model:            "claude-haiku-4-5-20251001",
+  provider:         provider,
+  model:            model,
   label:            "Provenance Search Agent",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,

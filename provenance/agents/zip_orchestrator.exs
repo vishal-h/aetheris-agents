@@ -22,11 +22,14 @@ else
   ""
 end
 
+model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.RunConfig{
   run_id:            "provenance-zip-orch-#{Aetheris.ID.generate()}",
   mode:              :record,
-  provider:          "anthropic",
-  model:             "claude-haiku-4-5-20251001",
+  provider:          provider,
+  model:             model,
   label:             "Provenance Zip Orchestrator",
   sandbox_path:      agent_root,
   overlay_base_dir:  nil,

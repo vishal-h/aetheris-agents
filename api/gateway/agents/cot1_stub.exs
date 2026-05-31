@@ -1,10 +1,13 @@
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), "../.."))
 
+model    = System.get_env("API_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.RunConfig{
   run_id:            "cot1-stub-standalone-#{Aetheris.ID.generate()}",
   mode:              :record,
-  provider:          "anthropic",
-  model:             "claude-haiku-4-5-20251001",
+  provider:          provider,
+  model:             model,
   label:             "cot1_stub — TAP Gateway Stub",
   sandbox_path:      agent_root,
   overlay_base_dir:  nil,

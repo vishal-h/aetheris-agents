@@ -12,6 +12,9 @@ at1cmd_id = "#{orb_id}-at1cmd"
 cot1_id   = "#{orb_id}-cot1"
 at1qry_id = "#{orb_id}-at1qry"
 
+model    = System.get_env("API_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.OrbConfig{
   orb_id:         orb_id,
   max_runtime_ms: 10 * 60 * 1_000,
@@ -19,8 +22,8 @@ at1qry_id = "#{orb_id}-at1qry"
     %Aetheris.RunConfig{
       run_id:           at1cmd_id,
       mode:             :record,
-      provider:         "anthropic",
-      model:            "claude-haiku-4-5-20251001",
+      provider:         provider,
+      model:            model,
       label:            "at1cmd — TAP Tenant Dispatcher",
       sandbox_path:     agent_root,
       overlay_base_dir: nil,
@@ -70,8 +73,8 @@ at1qry_id = "#{orb_id}-at1qry"
     %Aetheris.RunConfig{
       run_id:           cot1_id,
       mode:             :record,
-      provider:         "anthropic",
-      model:            "claude-haiku-4-5-20251001",
+      provider:         provider,
+      model:            model,
       label:            "cot1 — TAP Gateway",
       sandbox_path:     agent_root,
       overlay_base_dir: nil,
@@ -229,8 +232,8 @@ at1qry_id = "#{orb_id}-at1qry"
     %Aetheris.RunConfig{
       run_id:           at1qry_id,
       mode:             :record,
-      provider:         "anthropic",
-      model:            "claude-haiku-4-5-20251001",
+      provider:         provider,
+      model:            model,
       label:            "at1qry — TAP Tenant Collector",
       sandbox_path:     agent_root,
       overlay_base_dir: nil,

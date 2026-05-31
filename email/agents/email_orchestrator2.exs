@@ -1,6 +1,9 @@
 agent_root = Path.expand(Path.join([Path.dirname(__ENV__.file), "..", ".."]))
 month = System.get_env("PAYSLIP_MONTH") || raise "PAYSLIP_MONTH not set"
 
+model    = System.get_env("EMAIL_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 system_prompt = """
 You are a payslip email orchestrator. Stop and report if any step exits non-zero.
 
@@ -20,8 +23,8 @@ Report: template download status, number of emails sent, any failures.
 %Aetheris.RunConfig{
   run_id:           "email-orch-#{Aetheris.ID.generate()}",
   mode:             :record,
-  provider:         "anthropic",
-  model:            "claude-haiku-4-5-20251001",
+  provider:         provider,
+  model:            model,
   label:            "Email Orchestrator",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,

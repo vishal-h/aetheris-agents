@@ -6,11 +6,14 @@ nas_path = System.get_env("PROVENANCE_NAS_PATH") ||
 db_path  = System.get_env("PROVENANCE_DB_PATH") ||
              raise "PROVENANCE_DB_PATH env var is required"
 
+model    = System.get_env("PROVENANCE_MODEL") || Application.get_env(:aetheris, :default_model)
+provider = Application.get_env(:aetheris, :default_provider)
+
 %Aetheris.RunConfig{
   run_id:            "provenance-scan-#{Aetheris.ID.generate()}",
   mode:              :record,
-  provider:          "anthropic",
-  model:             "claude-haiku-4-5-20251001",
+  provider:          provider,
+  model:             model,
   label:             "Provenance Scan Orchestrator",
   sandbox_path:      agent_root,
   overlay_base_dir:  nil,

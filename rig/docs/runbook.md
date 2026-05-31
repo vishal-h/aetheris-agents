@@ -191,6 +191,50 @@ cargo tauri dev
 
 ---
 
+## Part 3c — Harness Module
+
+The Harness module connects to `aetheris.db` and surfaces agent run history.
+It requires `AETHERIS_DB_PATH` to be set (see Part 3b). It has three sidebar sections:
+
+### Runs (`/harness`)
+
+Displays runs grouped by use case. Groups are derived from run label prefixes:
+
+| Group | Prefix |
+|-------|--------|
+| Payslip | `payslip` |
+| Drive | `drive` |
+| Email | `email` |
+| API / Tenant | `api-tenant` |
+| API / Gateway | `api-gateway` |
+| Provenance | `provenance` |
+| Capability Matrix | `cap-matrix` |
+| Unclassified | *(no match)* |
+
+Each group is collapsible and shows 10 runs by default with a **Show N more…** toggle.
+The status filter (All / Running / Done / Failed / Paused) is applied before grouping —
+empty groups disappear entirely.
+
+Clicking a run selects it and switches to the **Events** tab. The **Trajectory** tab
+is also enabled for the selected run.
+
+### Diff (`/diff`)
+
+Side-by-side comparison of two runs. Select Run A and Run B from the dropdowns,
+click **Compare**. Differing metadata rows and step tool paths are highlighted.
+
+### Agents (`/capability-matrix`)
+
+Browsable catalogue parsed from `docs/capability-matrix.md` in the agents repo.
+Requires `AETHERIS_AGENTS_PATH` to be set. Organised by use case:
+
+- **Agents** — filename, display label, tool badges. Click **Run** to navigate to
+  the Orchestrator with `{agent label}: ` pre-filled in the request textarea.
+- **Scripts** — readonly reference: filename and one-line purpose. No launch button.
+  Scripts are called by agents, not run directly.
+
+---
+
 ## Part 4 — Development Notes
 
 ### Hot reload
@@ -218,6 +262,11 @@ The watched folder path doesn't exist or has no readable files. Check the `[WARN
 
 **`cargo build` freezes the machine**
 Use `-j2` or `-j1` to limit parallelism. The DuckDB bundled compile is very CPU/memory intensive.
+
+**Agents section shows error**
+`AETHERIS_AGENTS_PATH` is not set, or `docs/capability-matrix.md` is missing from the agents root.
+Fix: set `AETHERIS_AGENTS_PATH` to the absolute path of the `aetheris-agents/` directory, then
+confirm the file exists at `$AETHERIS_AGENTS_PATH/docs/capability-matrix.md`.
 
 **`@tauri-apps/api` import errors in Vite**
 Run `bun install` — the package may not be installed yet.

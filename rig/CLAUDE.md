@@ -220,6 +220,52 @@ Error form: `invalid args runId for command X: missing required key runId`
 
 ---
 
+## React / Frontend patterns
+
+**`useState(prefill)` seeding from `useLocation().state`.**
+To pre-fill a controlled input on navigation, derive the prefill from `useLocation()`
+before the `useState` call, then pass it as the initial value:
+```typescript
+const location = useLocation();
+const prefill  = (location.state as { prefill?: string } | null)?.prefill ?? '';
+const [request, setRequest] = useState(prefill);
+```
+Seeded once on mount. Do NOT use `useEffect` — that causes a blank→filled flash.
+No-state navigation gives `prefill = ''`; behaviour unchanged.
+Pattern used in `OrchestratorView.tsx`.
+
+**Default-expanded collapsible groups.**
+Use `expanded[label] !== false` (not `=== true`) so groups start expanded without
+initialising the full map. An absent key (`undefined`) evaluates as `true`; setting
+`false` explicitly collapses the group:
+```typescript
+function isGroupExpanded(label: string): boolean {
+  return expanded[label] !== false; // default expanded
+}
+```
+Pattern used in `RunList.tsx`.
+
+**`e.stopPropagation()` on nested clickables.**
+When a `<button>` sits inside a clickable row or container, always call
+`e.stopPropagation()` to prevent the parent `onClick` from also firing:
+```tsx
+<button onClick={(e) => { e.stopPropagation(); toggleShowAll(label); }}>
+  Show more…
+</button>
+```
+Pattern used in `RunList.tsx` show-more button (inside a clickable group-header row).
+
+**Filter before group.**
+Always apply filters to the flat list before calling `groupRuns()`. Empty groups
+disappear naturally. Never filter after grouping — counts and membership would be stale:
+```typescript
+const filtered = runs.filter((r) => statusFilter === 'all' || r.status === statusFilter);
+const groups   = groupRuns(filtered);
+```
+Pattern used in `RunList.tsx`.
+
+---
+
 ## Database gotchas
 
 SQLite and DuckDB have different type systems — do not mix up casting rules between them. SQLite timestamps are TEXT (no cast needed); DuckDB timestamps require `CAST(col AS VARCHAR)`. The rules below apply to DuckDB only.

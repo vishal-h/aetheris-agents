@@ -1,4 +1,5 @@
 import { Fragment, useState, useCallback, useEffect, useRef } from 'react';
+import { useSessionRecord } from '@/hooks/useSessionRecord';
 import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { Tab } from '@/components/shell/TabBar';
 import { MainArea } from '@/components/shell/MainArea';
@@ -151,8 +152,8 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
   const status  = useHarnessStatus();
   const runList = useRunList();
   const [statusFilter, setStatusFilter] = useState('all');
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [showAll,  setShowAll]  = useState<Record<string, boolean>>({});
+  const expanded = useSessionRecord('rig:runs:expanded', false);
+  const showAll  = useSessionRecord('rig:runs:showAll', false);
 
   if (status.data && !status.data.connected) return <NotConnected />;
   if (runList.loading) return <LoadingShell rows={6} />;
@@ -164,21 +165,9 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
   );
   const groups = groupRuns(filtered);
 
-  function isGroupExpanded(label: string): boolean {
-    return expanded[label] !== false; // default expanded
-  }
-
-  function toggleExpanded(label: string) {
-    setExpanded((prev) => ({ ...prev, [label]: !isGroupExpanded(label) }));
-  }
-
-  function toggleShowAll(label: string) {
-    setShowAll((prev) => ({ ...prev, [label]: !(prev[label] ?? false) }));
-  }
-
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b px-4 py-3">
+      <div className="flex items-center gap-2 px-4 py-2 border-b shrink-0">
         <select
           className={SELECT_CLASS}
           value={statusFilter}
@@ -191,10 +180,31 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
           <option value="failed">Failed</option>
           <option value="paused">Paused</option>
         </select>
-        <Button variant="outline" size="sm" onClick={runList.refetch} className="ml-auto">
-          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-          Refresh
-        </Button>
+        <div className="ml-2 flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              expanded.setAll(groups.map((g) => g.label), false);
+              showAll.setAll(groups.map((g) => g.label), false);
+            }}
+          >
+            Collapse all
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => expanded.setAll(groups.map((g) => g.label), true)}
+          >
+            Expand all
+          </Button>
+        </div>
+        <div className="ml-auto">
+          <Button variant="outline" size="sm" onClick={runList.refetch}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {groups.length === 0 ? (
@@ -220,13 +230,13 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
             </thead>
             <tbody>
               {groups.map((group) => {
-                const exp = isGroupExpanded(group.label);
-                const sa  = showAll[group.label] ?? false;
+                const exp = expanded.get(group.label);
+                const sa  = showAll.get(group.label);
                 return (
                   <Fragment key={group.label}>
                     {/* Group header row */}
                     <tr
-                      onClick={() => toggleExpanded(group.label)}
+                      onClick={() => expanded.set(group.label, !exp)}
                       className="cursor-pointer select-none border-b bg-muted/50 transition-colors hover:bg-muted/80"
                     >
                       <td colSpan={7} className="px-4 py-2">
@@ -253,7 +263,7 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
                         <td colSpan={7} className="px-4 py-2">
                           <button
                             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                            onClick={(e) => { e.stopPropagation(); toggleShowAll(group.label); }}
+                            onClick={(e) => { e.stopPropagation(); showAll.set(group.label, !sa); }}
                           >
                             {sa
                               ? 'Show less'

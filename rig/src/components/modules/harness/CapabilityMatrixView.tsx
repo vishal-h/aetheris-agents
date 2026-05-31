@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCapabilityMatrix } from '@/hooks/useCapabilityMatrix';
+import { useSessionRecord } from '@/hooks/useSessionRecord';
 import type { MatrixUseCase, MatrixAgent, MatrixScript } from '@/hooks/types';
 
 // ── Tool badge ────────────────────────────────────────────────────────────────
@@ -58,18 +58,20 @@ function ScriptRow({ script }: { script: MatrixScript }) {
 // ── Use case section ──────────────────────────────────────────────────────────
 function UseCaseSection({
   useCase,
+  open,
+  onToggle,
   onLaunch,
 }: {
   useCase:  MatrixUseCase;
+  open:     boolean;
+  onToggle: () => void;
   onLaunch: (agent: MatrixAgent) => void;
 }) {
-  const [open, setOpen] = useState(true);
-
   return (
     <div className="border rounded-md mb-3">
       <button
         className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-muted/50 transition-colors font-medium text-sm"
-        onClick={() => setOpen((o) => !o)}
+        onClick={onToggle}
       >
         {open
           ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -115,6 +117,7 @@ function UseCaseSection({
 // ── Main view ─────────────────────────────────────────────────────────────────
 export function CapabilityMatrixView() {
   const { matrix, loading, error } = useCapabilityMatrix();
+  const expanded = useSessionRecord('rig:matrix:expanded', false);
   const navigate = useNavigate();
 
   function handleLaunch(agent: MatrixAgent) {
@@ -135,18 +138,46 @@ export function CapabilityMatrixView() {
 
   if (!matrix) return null;
 
+  const titles = matrix.use_cases.map((uc) => uc.title);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-6 py-4 border-b shrink-0">
-        <h2 className="text-base font-semibold">Capability Matrix</h2>
-        {matrix.generated_at && (
-          <p className="text-xs text-muted-foreground mt-0.5">{matrix.generated_at}</p>
-        )}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Capability Matrix</h2>
+            {matrix.generated_at && (
+              <p className="text-xs text-muted-foreground mt-0.5">{matrix.generated_at}</p>
+            )}
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => expanded.setAll(titles, false)}
+            >
+              Collapse all
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => expanded.setAll(titles, true)}
+            >
+              Expand all
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         {matrix.use_cases.map((uc) => (
-          <UseCaseSection key={uc.title} useCase={uc} onLaunch={handleLaunch} />
+          <UseCaseSection
+            key={uc.title}
+            useCase={uc}
+            open={expanded.get(uc.title)}
+            onToggle={() => expanded.set(uc.title, !expanded.get(uc.title))}
+            onLaunch={handleLaunch}
+          />
         ))}
       </div>
     </div>

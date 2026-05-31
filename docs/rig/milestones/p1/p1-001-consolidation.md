@@ -16,7 +16,7 @@ This is the foundation issue — all subsequent p1 work happens in the new locat
 
 ```bash
 # From aetheris-agents/ root:
-cp -r ../hai-rig/. rig/
+cp -r ~/workspaces/hai/hai-rig/. rig/
 ```
 
 Copy everything from `hai-rig/` into a new `rig/` directory at the

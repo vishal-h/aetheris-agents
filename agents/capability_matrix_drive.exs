@@ -42,11 +42,12 @@ provider = Application.get_env(:aetheris, :default_provider)
 
   Step 3: List scripts.
     Call list_dir with path: "drive/scripts"
-    Collect .py filenames only. Skip __init__.py and conftest.py.
+    Collect .py and .exs filenames. Skip __init__.py and conftest.py.
 
-  Step 4: For each .py script:
+  Step 4: For each .py or .exs script:
     Call read_file with path: "drive/scripts/{filename}"
     Read the file and extract the one-line purpose from the opening docstring
+    (for .exs files, use the first non-blank # comment line instead of a docstring)
     (the line immediately after the opening triple-quote, before any blank
     lines or argument descriptions). Example:
       \"\"\"parse_csv.py <csv_path>\\n\\nReads payroll CSV...\"\"\"

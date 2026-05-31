@@ -13,34 +13,42 @@
 │  │                  React Frontend                   │   │
 │  │                                                   │   │
 │  │  Sidebar                                          │   │
-│  │  ├── F2 (existing)                                │   │
-│  │  ├── Harness          ← p1: run inspection        │   │
+│  │  ├── Harness          ← p1/p2/p4                  │   │
+│  │  │   ├── Runs         ← run list + events         │   │
+│  │  │   └── Diff         ← p4: two-run comparison    │   │
 │  │  ├── Orchestrator     ← p3: NL → plan → execute   │   │
+│  │  ├── F2               ← existing                  │   │
 │  │  └── Provenance       ← existing corpus dashboard  │   │
 │  │                                                   │   │
 │  │  Hooks                                            │   │
-│  │  ├── useHarness.ts    ← invoke harness commands   │   │
-│  │  ├── useCorpusOverview.ts (existing)              │   │
-│  │  └── useClassifications.ts (existing)             │   │
+│  │  ├── useHarness.ts        ← runs + events         │   │
+│  │  ├── useTrajectory.ts     ← p4: single run load   │   │
+│  │  ├── useRunDiff.ts        ← p4: two-run diff      │   │
+│  │  ├── useOrchestrator.ts   ← p3: state machine     │   │
+│  │  ├── useCorpusOverview.ts ← existing              │   │
+│  │  └── useClassifications.ts← existing              │   │
 │  └──────────────────────────────────────────────────┘   │
 │                          │ invoke()                      │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │               Tauri Rust Backend                  │   │
 │  │                                                   │   │
-│  │  commands/harness.rs    ← SQLite reads            │   │
-│  │  commands/provenance.rs ← DuckDB reads + 1 write  │   │
-│  │  commands/orchestrate.rs← shells out to mix       │   │
+│  │  commands/harness.rs      ← SQLite reads          │   │
+│  │  commands/trajectory.rs   ← p4: JSON file reads   │   │
+│  │  commands/orchestrate.rs  ← p3: child process     │   │
+│  │  commands/provenance.rs   ← DuckDB reads + write  │   │
 │  │                                                   │   │
-│  │  HarnessState { conn: Option<SqliteConn> }        │   │
-│  │  CorpusState  { conn: Option<DuckdbConn> }        │   │
+│  │  HarnessState      { conn: Option<SqliteConn> }   │   │
+│  │  CorpusState       { conn: Option<DuckdbConn> }   │   │
+│  │  OrchestratorState { jobs: Mutex<HashMap<…>> }    │   │
 │  └──────────────────────────────────────────────────┘   │
-│            │                        │                    │
-│    rusqlite (SQLite)         duckdb-rs (DuckDB)          │
-└────────────┼────────────────────────┼────────────────────┘
-             │                        │
-    aetheris/priv/            corpus.duckdb
-      aetheris.db             (Provenance)
-    (harness state)
+│       │                   │               │              │
+│  rusqlite (SQLite)   duckdb-rs        filesystem         │
+│                      (DuckDB)         (JSON files)       │
+└───────┼───────────────────┼───────────────┼──────────────┘
+        │                   │               │
+  aetheris/priv/      corpus.duckdb   priv/runs/*/
+    aetheris.db        (Provenance)  trajectory.json
+  (harness state)
 ```
 
 ---
@@ -88,20 +96,81 @@ When status = "done" | "failed": stop polling
 ```
 User types: "email payslips to all employees for May 2026"
   ↓
-Rig starts orchestrator.exs via invoke("orchestrate", { request })
+invoke("orchestrate_start", { request })
   ↓
-orchestrator.exs:
-  read_file("docs/capability-matrix.md")
-  → reasons about agents needed
-  → writes plan to temp file
-  → ask_human("Confirm plan?")  ← blocks here
+orchestrate.rs spawns: mix run agents/mock_orchestrator.exs
+  with ORCHESTRATOR_REQUEST env var, stdin/stdout pipes
   ↓
-Rig polls plan temp file → shows plan in UI
-User approves → Rig writes approval → orchestrator continues
+Reader thread pushes newline-delimited JSON to Arc<Mutex<Vec>> buffer
   ↓
-orchestrator.exs executes each agent via run_command
+Frontend polls orchestrate_poll every 1s → drains buffer
   ↓
-Rig shows live event log per agent (Phase 2 monitoring)
+{ type: "plan", steps: [...] } → OrchestratorView shows plan, waits for user
+  ↓
+User approves → invoke("orchestrate_approve", { approved: true })
+  ↓
+orchestrate_approve writes {"type":"approval","approved":true} to stdin
+  ↓
+Script emits step_started / step_complete for each step
+  ↓
+orchestration_complete → phase = "done"
+```
+
+---
+
+## Data Flow — Trajectory viewer (p4)
+
+```
+User selects a run in RunList, switches to Trajectory tab
+  ↓
+useTrajectory(runId) → invoke("trajectory_load", { run_id })
+  ↓
+trajectory.rs reads priv/runs/{run_id}/trajectory.json
+  (path derived: AETHERIS_DB_PATH → parent → parent → priv/runs/…)
+  ↓
+Returns TrajectoryFile { meta, events[] } with parsed payload objects
+  ↓
+TrajectoryView renders:
+  - Meta panel (model, provider, mode, steps, duration, tools,
+    system_prompt, user_prompt) — collapsible
+  - Events grouped by step, each step collapsible
+  - Each event: seq badge + type badge + timestamp + expandable payload JSON
+
+User clicks Export JSON
+  ↓
+invoke("trajectory_export", { run_id })
+  ↓
+trajectory_export opens save dialog → copies trajectory.json to chosen path
+```
+
+---
+
+## Data Flow — Run diff (p4)
+
+```
+User navigates to /diff (Diff section under Harness in sidebar)
+  ↓
+DiffView renders run picker: two dropdowns from harness_list_runs
+  ↓
+User selects Run A and Run B, clicks Compare
+  ↓
+useRunDiff(runIdA, runIdB) → Promise.all([
+  invoke("trajectory_load", { run_id: runIdA }),
+  invoke("trajectory_load", { run_id: runIdB }),
+])
+  ↓
+computeDiff(a, b):
+  - meta_rows: model, provider, mode, step_count, max_steps,
+               total_latency, terminal_reason, tools
+  - step_rows: per-step tool lists (from tool_called events),
+               gaps where one run has no matching step
+  - differs flag per row
+  ↓
+DiffView renders:
+  - Metadata table (3 cols: field | Run A | Run B)
+    highlighted rows where A ≠ B
+  - Step path table (3 cols: step | Run A tools | Run B tools)
+    gaps shown as — for absent steps
 ```
 
 ---
@@ -110,38 +179,51 @@ Rig shows live event log per agent (Phase 2 monitoring)
 
 ```
 aetheris-agents/
-  rig/                        ← Tauri app (moved from hai-rig)
-    CLAUDE.md                 ← updated for new location + harness DB
+  rig/                        ← Tauri app
+    CLAUDE.md                 ← authoritative context for Claude Code
     src-tauri/
       Cargo.toml
       src/
-        lib.rs                ← HarnessState + CorpusState setup
+        lib.rs                ← HarnessState + CorpusState + OrchestratorState
         commands/
           mod.rs
-          f2.rs               ← existing
-          harness.rs          ← new p1
-          provenance.rs       ← existing
-          orchestrate.rs      ← new p3
+          f2.rs
+          harness.rs          ← 4 read-only SQLite commands
+          trajectory.rs       ← p4: trajectory_load + trajectory_export
+          orchestrate.rs      ← p3: 4 process management commands
+          provenance.rs
     src/
-      App.tsx
+      App.tsx                 ← routes: /harness, /diff, /orchestrator, /f2/*, /provenance
       hooks/
-        types.ts              ← shared TypeScript interfaces
-        useHarness.ts         ← new p1
-        useCorpusOverview.ts  ← existing
-        useClassifications.ts ← existing
-        useMigration.ts       ← existing
-        useZipInventory.ts    ← existing
-        useProvenanceStatus.ts← existing
+        types.ts              ← all TypeScript interfaces
+        index.ts              ← re-exports
+        useHarness.ts
+        useTrajectory.ts      ← p4: single-run trajectory load
+        useRunDiff.ts         ← p4: two-run diff computation
+        useOrchestrator.ts    ← p3
+        useCorpusOverview.ts
+        useClassifications.ts
+        useMigration.ts
+        useZipInventory.ts
+        useProvenanceStatus.ts
       components/
         shell/
+          MainArea.tsx        ← controlled/uncontrolled tabs
+          Sidebar.tsx         ← iconMap: Activity, GitCompare, Sparkles, …
         ui/
         modules/
-          f2/                 ← existing
-          harness/            ← new p1
-          orchestrator/       ← new p3
-          provenance/         ← existing
+          harness/
+            RunList.tsx       ← HarnessRoute: Runs + Events + Trajectory tabs
+            TrajectoryView.tsx← p4: meta panel + step-grouped event stream
+            DiffView.tsx      ← p4: run selection + diff tables
+          orchestrator/
+            OrchestratorView.tsx ← p3
+          f2/
+          provenance/
       modules/
-        registry.ts           ← add Harness module p1, Orchestrator p3
+        registry.ts           ← harnessModule (2 sections) + orchestratorModule + …
+  agents/
+    mock_orchestrator.exs     ← p3: deterministic mock for orchestrator pipeline
   docs/
     rig/
       README.md
@@ -149,13 +231,7 @@ aetheris-agents/
       architecture.md
       runbook.md
       milestones/
-        p1/
-          README.md
-          p1-001-consolidation.md
-          p1-002-harness-commands.md
-          p1-003-run-list-ui.md
-        p2/ ...
-        p3/ ...
+        p1/ p2/ p3/ p4/
 ```
 
 ---
@@ -165,9 +241,10 @@ aetheris-agents/
 | Component | Reads | Writes |
 |-----------|-------|--------|
 | Harness commands | `aetheris.db` | Never |
+| Trajectory commands | `priv/runs/*/trajectory.json` | Never (export = copy to user path) |
 | Provenance commands | `corpus.duckdb` | `set_classification_status` only |
-| Orchestrate commands | filesystem (temp files) | plan temp file |
-| Frontend | — | Never touches DB directly |
+| Orchestrate commands | — | stdin of child process |
+| Frontend | — | Never touches DB or files directly |
 
 ---
 
@@ -181,16 +258,35 @@ Exqlite). Rig uses `rusqlite` for harness commands — a separate crate from
 with `OpenFlags::SQLITE_OPEN_READ_ONLY`. The harness owns this database;
 Rig never writes to it.
 
+**Trajectory JSON as the p4 data source, not SQLite.** The `meta` block
+(system_prompt, user_prompt, tools, mode, seed, overlay_changes) is only
+in the trajectory file, not in SQLite. Reading the JSON avoids joins and
+gives the complete picture. The file is written atomically at run completion
+and is immutable thereafter — safe for concurrent reads.
+
+**`payload` type divergence.** `EventRow.payload` (harness.rs) is a raw JSON
+string — the harness stores it that way in SQLite. `TrajectoryEvent.payload`
+(trajectory.rs) is a parsed `serde_json::Value` — the trajectory file has
+structured payloads. Do not conflate these types.
+
+**Trajectory tab in HarnessRoute, Diff as a second sidebar section.**
+Trajectory is contextual to a single selected run — a third tab fits
+naturally. Diff requires two run selections and doesn't fit the tab model;
+it lives at `/diff` as a separate route with its own sidebar entry.
+
+**Diff = metadata + step path only (p4).** Event-level structural diff
+(aligning payload sequences across runs) is deferred. The metadata +
+tool-path comparison answers the primary use case: comparing agent behaviour
+across model or prompt changes.
+
+**Export = file copy, not re-serialisation.** `trajectory_export` copies
+the existing JSON file byte-for-byte. This guarantees fidelity with what
+the harness wrote and avoids any serialisation differences.
+
 **No new harness API.** All run and trajectory data is available in
 `aetheris.db` and `priv/runs/{run_id}/trajectory.json`. Rig reads these
 directly — no changes to the harness code needed.
 
 **Polling, not websockets.** Live monitoring uses 2-second interval polling
-via `useEffect` + `setTimeout`. Simple, reliable, sufficient for the
-event volumes involved. Revisit if latency becomes an issue.
-
-**Orchestrator confirmation via temp file.** The orchestrator agent writes
-its plan to a UUID temp file and blocks on `ask_human`. Rig polls the
-temp file path and surfaces the plan in the UI. User approval writes a
-response file. This avoids any new IPC mechanism — the filesystem is the
-message bus. Revisit for p3 when the full design is finalised.
+via `useEffect` + `setInterval`. Trajectory viewer does not poll — files
+are immutable post-run.

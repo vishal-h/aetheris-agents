@@ -29,12 +29,13 @@
 | m5 | Corpus MCP + search — corpus-search MCP server, search_agent, validation |
 | m6 | Tauri dashboard — corpus overview, classification review, migration + zip status |
 
-### Rig — Phase 1 + Phase 2 complete ✅
+### Rig — Phase 1, 2 and 3 complete ✅
 
 | Phase | Issues | Status |
 |-------|--------|--------|
 | p1 | p1-001 Consolidation, p1-002 Harness DB commands, p1-003 Run list UI | ✅ All done |
 | p2 | p2-001 Polling hook, p2-002 Live events UI | ✅ All done |
+| p3 | p3-001 Mock script, p3-002 Rust backend, p3-003 Orchestrator UI | ✅ All done |
 
 **What p1 delivered:**
 - `aetheris-agents/rig/` — full Tauri app (moved from hai-rig)
@@ -48,6 +49,12 @@
 - Pulsing "Live" indicator while polling
 - Local status badge update on `run_complete` — no extra network call
 
+**What p3 delivered:**
+- `agents/mock_orchestrator.exs` — deterministic Elixir script; stdin/stdout newline-delimited JSON
+- `commands/orchestrate.rs` — 4 commands: start, poll, approve, cancel; reader thread + job map
+- `useOrchestrator` hook — full phase state machine; poll effect self-terminates on terminal phase
+- `OrchestratorView` — single-view workflow (idle → planning → plan_ready → executing → done/cancelled/error)
+
 ### Infrastructure — done
 
 - Model parameterisation: `PROVENANCE_MODEL` → `AETHERIS_MODEL` → hardcoded fallback
@@ -57,30 +64,6 @@
 ---
 
 ## What is in progress
-
-### Rig p3 — Orchestrator
-
-Docs written and committed. Implementation not yet started.
-
-| Issue | Status | Notes |
-|-------|--------|-------|
-| p3-001 Mock script | ⬜ Ready | Elixir; lives in `aetheris-agents/agents/` |
-| p3-002 Rust backend | ⬜ Ready | `commands/orchestrate.rs`, `OrchestratorState` in `lib.rs` |
-| p3-003 Orchestrator UI | ⬜ Blocked on 001+002 | `OrchestratorView`, `useOrchestrator` hook |
-
-**001 and 002 can be implemented in parallel — they share only `protocol.md`.**
-003 needs both merged first.
-
-**Key design decisions (all in `docs/rig/milestones/p3/`):**
-- IPC via stdin/stdout newline-delimited JSON (not temp files)
-- Request passed via `ORCHESTRATOR_REQUEST` env var (not CLI arg — Mix arg parsing is unreliable)
-- `AETHERIS_AGENTS_PATH` — one new env var; `aetheris_dir` derived from existing `AETHERIS_DB_PATH`
-  (parent of `priv/` — no second new var needed)
-- Frontend polls `orchestrate_poll` every 1s (consistent with p2 polling pattern)
-- `OrchestratorRoute` is not a tabs component — single-view workflow, rendered directly
-
-**p3-002 is the hardest piece.** Reader thread + `Arc<Mutex<>>` pattern for the stdout buffer.
-The issue doc has the full Rust code for all 4 commands — Claude Code should use it verbatim.
 
 ### Thread 2 — uc-provenance-validation
 
@@ -94,7 +77,7 @@ Blocked on `ANTHROPIC_API_KEY` available in shell. Steps in `ROADMAP.md`.
 |-------|------|--------|
 | p1 | Consolidation + run list UI | ✅ Complete |
 | p2 | Live monitoring | ✅ Complete |
-| p3 | Orchestrator — NL → plan → confirm → execute | 🔄 Docs done, impl pending |
+| p3 | Orchestrator — NL → plan → confirm → execute | ✅ Complete |
 | p4 | Trajectory explorer — full event detail, search, export | ⬜ |
 
 ---
@@ -118,10 +101,10 @@ aetheris-agents/
         shell/MainArea.tsx            ← controlled/uncontrolled tabs
         modules/
           harness/RunList.tsx         ← HarnessRoute + live EventsContent
-          orchestrator/               ← p3: OrchestratorView (to be created)
+          orchestrator/OrchestratorView.tsx  ← p3: single-view workflow, no MainArea wrapper
       hooks/
         useHarness.ts                 ← polling useRunEvents + 3 other hooks
-        useOrchestrator.ts            ← p3: full state machine (to be created)
+        useOrchestrator.ts            ← p3: full phase state machine
         types.ts                      ← all TypeScript interfaces
   docs/rig/milestones/
     p1/                               ← done
@@ -136,56 +119,17 @@ aetheris-agents/
 
 ---
 
-## Prompts for Claude Code (p3)
+## Prompts for Claude Code (p4)
 
-### p3-001 (run from aetheris-agents/)
+p1, p2, p3 are all complete. p4 (Trajectory Explorer) is the next phase.
+Milestone doc not yet written — create it before starting implementation.
 
-```
-Read docs/rig/milestones/p3/p3-001-mock-script.md and implement.
-
-Context:
-- File goes in aetheris-agents/agents/mock_orchestrator.exs
-- Jason is available (aetheris/mix.exs has {:jason, "~> 1.4"})
-- Request is passed via ORCHESTRATOR_REQUEST env var — not CLI args
-- After writing the file, run the manual test from p3-001-mock-script.md
-  to confirm the approve path produces the correct JSON sequence
-```
-
-### p3-002 (run from aetheris-agents/rig/)
+### p4 kickoff
 
 ```
-Read docs/rig/milestones/p3/protocol.md and
-docs/rig/milestones/p3/p3-002-rust-backend.md and implement.
-
-Context:
-- Run from aetheris-agents/rig/
-- Add OrchestratorState and OrchestratorJob to src-tauri/src/lib.rs
-  alongside the existing HarnessState and CorpusState
-- aetheris_dir is derived from AETHERIS_DB_PATH (parent of priv/) —
-  do not add a second env var
-- Add serde_json = "1" to Cargo.toml if not already present
-- The issue doc has full Rust implementations for all 4 commands —
-  use them verbatim, do not rewrite
-- Add TypeScript types from protocol.md to src/hooks/types.ts and
-  export from src/hooks/index.ts
-- When done: cargo build exits 0, zero warnings
-```
-
-### p3-003 (run from aetheris-agents/rig/, after 001 + 002 merged)
-
-```
-Read docs/rig/milestones/p3/protocol.md and
-docs/rig/milestones/p3/p3-003-orchestrator-ui.md and implement.
-
-Context:
-- Run from aetheris-agents/rig/
-- OrchestratorView is NOT a tabs component — single-view workflow,
-  rendered directly in a padded div in App.tsx (see issue doc)
-- Add Sparkles to iconMap in Sidebar.tsx
-- orchestratorModule goes second in the modules array in registry.ts,
-  after harnessModule
-- No <form> tags, no <textarea> inside a form — onClick/onChange only
-- When done: bun run build exits 0, zero TypeScript errors
+Create docs/rig/milestones/p4/ with README.md and issue docs.
+Goal: full event detail view, event search/filter, and export.
+Base it on the same pattern as p1-003: route issues under milestones/p4/.
 ```
 
 ---
@@ -208,6 +152,36 @@ Long-running child processes stored as `Arc<Mutex<Child>>` in a job map.
 Reader thread pushes parsed `serde_json::Value` to `Arc<Mutex<Vec>>` buffer.
 Frontend drains buffer via `orchestrate_poll`. `AtomicBool` signals EOF.
 
+**Env var delivery for Mix scripts.**
+Pass request data via environment variable (`ORCHESTRATOR_REQUEST`), not CLI args.
+`mix run script.exs arg` passes args to Mix, not to the script — `System.argv()` is
+unreliable in this context. `System.get_env/1` is the correct pattern.
+
+**`aetheris_dir` derived, not configured.**
+The working directory for spawning the Mix process is derived from the existing
+`AETHERIS_DB_PATH`: `Path::new(&path).parent().parent()` (priv/ → aetheris/).
+No second env var needed. `AETHERIS_AGENTS_PATH` is the only new var (points to
+`aetheris-agents/` for the script path).
+
+**`orchestrate_approve` clones the stdin Arc before releasing the jobs lock.**
+The pattern: acquire jobs lock → clone `job.stdin` (Arc clone is cheap) → drop
+the lock → write to stdin. This avoids holding the jobs lock during stdin I/O,
+which would block `orchestrate_poll` (which also acquires the same lock).
+```rust
+let stdin = {
+    let jobs = state.jobs.lock().unwrap();
+    let job  = jobs.get(&job_id).ok_or("job not found")?;
+    job.stdin.clone()  // Arc clone — cheap; jobs lock released here
+};
+// Write without holding the jobs lock:
+let mut guard = stdin.lock().unwrap();
+let result = writeln!(guard, "{}", msg).map_err(|e| format!(...));
+result
+```
+Note: the `let result = ...; result` pattern is required because Rust extends
+temporary `MutexGuard` lifetimes in tail-position expressions, causing borrow
+errors. Binding to a variable forces the guard to drop before the function exits.
+
 ### React / Frontend
 
 **Controlled/uncontrolled `MainArea`.**
@@ -223,6 +197,24 @@ that owns state and wraps `MainArea` with `activeTab`/`onTabChange`.
 1. Sync internal `activelyPolling` with caller's option
 2. Watch data for stop signal (`run_complete`); self-terminate
 3. `setInterval` tied to `activelyPolling`
+
+**Poll effect deps `[jobId, phase, processMessage]` (p3 `useOrchestrator`).**
+`phase` must be in the dependency array. When a terminal phase (`idle`, `done`,
+`cancelled`, `error`) is set, the effect re-runs, hits the early-return guard, and
+the previous interval is cleaned up. Without `phase` in deps, polling would continue
+past terminal states — the effect would never re-run to clear the interval.
+
+**`OrchestratorView` is not a tabs component.**
+Single-view workflow — renders directly into the route's padded div, no `MainArea`
+wrapper. Use this pattern for any future workflow that owns its own layout rather
+than fitting into the tabbed inspector model.
+```tsx
+<Route path="/orchestrator" element={
+  <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto p-8">
+    <OrchestratorView />
+  </div>
+} />
+```
 
 **`loading && !data` for polling-safe skeletons.**
 Shows skeleton on initial load only. Prevents flash on every poll refetch.

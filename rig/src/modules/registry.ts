@@ -1,5 +1,20 @@
 import { Module } from './types';
 
+// Harness — Aetheris agent run inspector
+const harnessModule: Module = {
+  id: 'harness',
+  label: 'Harness',
+  icon: 'Activity',
+  sections: [
+    {
+      id: 'harness-runs',
+      label: 'Runs',
+      icon: 'Activity',
+      path: '/harness',
+    },
+  ],
+};
+
 // F2 - File & Folder module
 const f2Module: Module = {
   id: 'f2',
@@ -37,4 +52,4 @@ const provenanceModule: Module = {
 };
 
 // Module registry - add new modules here
-export const modules: Module[] = [f2Module, provenanceModule];
+export const modules: Module[] = [harnessModule, f2Module, provenanceModule];

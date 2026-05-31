@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
+  Activity,
   FolderSearch,
   ScanSearch,
   ListTree,
@@ -17,6 +18,7 @@ import { cn } from '@/lib/utils';
 
 // Icon resolution map - maps string icon names to lucide-react components
 const iconMap: Record<string, LucideIcon> = {
+  Activity,
   FolderSearch,
   ScanSearch,
   LayoutTree: ListTree,

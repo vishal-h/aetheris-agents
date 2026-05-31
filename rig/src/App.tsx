@@ -3,6 +3,7 @@ import { TopBar } from '@/components/shell/TopBar';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { MainArea } from '@/components/shell/MainArea';
 import { RightPanel } from '@/components/shell/RightPanel';
+import { HarnessRoute } from '@/components/modules/harness/RunList';
 import { F2Operations, F2Viewer, WatchedFoldersSettings } from '@/components/modules/f2';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
@@ -26,8 +27,11 @@ function App() {
         {/* Content area - flex row with MainArea + RightPanel */}
         <div className="flex flex-1 overflow-hidden">
           <Routes>
-            {/* Root redirect to /f2/operations */}
-            <Route path="/" element={<Navigate to="/f2/operations" replace />} />
+            {/* Root redirect to /harness */}
+            <Route path="/" element={<Navigate to="/harness" replace />} />
+
+            {/* Harness — agent run inspector */}
+            <Route path="/harness" element={<HarnessRoute />} />
 
             {/* F2 routes */}
             <Route path="/f2/operations" element={<MainArea tabs={F2Operations()} />} />

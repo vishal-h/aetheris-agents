@@ -11,7 +11,7 @@
 |------|------|---------|
 | `aetheris` | `~/sandbox/elixirws/aetheris/` | Harness (Elixir + Rust) |
 | `aetheris-agents` | `~/sandbox/elixirws/aetheris-agents/` | Agents, scripts, Rig UI, docs |
-| `hai-rig` | `~/workspaces/hai/hai-rig/` | Old standalone Tauri repo (being retired) |
+| `hai-rig` | `~/workspaces/hai/hai-rig/` | Old standalone Tauri repo (retired — do not touch) |
 | test sandbox | `~/sandbox/provenance-test/` | Local corpus for pipeline validation |
 
 ---
@@ -29,16 +29,21 @@
 | m5 | Corpus MCP + search — corpus-search MCP server, search_agent, validation |
 | m6 | Tauri dashboard — corpus overview, classification review, migration + zip status |
 
-### Rig — Phase 1 in progress
+### Rig — Phase 1 complete ✅
 
-Rig is the new name for the Tauri desktop app, now living in
-`aetheris-agents/rig/` (moved from `hai-rig`).
+All three p1 issues done and pushed.
 
 | Issue | Status |
 |-------|--------|
-| p1-001 Consolidation | 🔄 Build compiling (first Rust build, slow — wait for it) |
-| p1-002 Harness DB commands | ⬜ Ready to start after p1-001 |
-| p1-003 Run list UI | ⬜ Ready to start after p1-002 |
+| p1-001 Consolidation | ✅ hai-rig copied to aetheris-agents/rig/, rusqlite added, CLAUDE.md updated |
+| p1-002 Harness DB commands | ✅ HarnessState, 4 Tauri commands, TypeScript types, useHarness.ts hooks |
+| p1-003 Run list UI | ✅ Harness module in sidebar, RunList tabs, controlled MainArea, HarnessRoute |
+
+**P1 completion gate — all met:**
+- Harness tab shows all past agent runs from `aetheris.db`
+- Clicking a run shows its event log
+- "Not connected" placeholder when `AETHERIS_DB_PATH` absent
+- Provenance module unaffected
 
 ### Infrastructure — done
 
@@ -54,16 +59,18 @@ Rig is the new name for the Tauri desktop app, now living in
 
 ## What is in progress
 
-### p1-001 build
+Nothing active. Two threads ready to start:
 
-Claude Code is compiling `aetheris-agents/rig/` with `rusqlite` (bundled feature).
-First build takes 5–8 minutes. When it finishes:
+### Thread 1 — Rig p2 (Live monitoring)
 
-1. Confirm `cargo build` exits 0
-2. Check `.gitignore` covers `rig/src-tauri/target/` and `rig/node_modules/`
-3. Commit and move to p1-002
+Watch an active run's events update in real time. Spec in
+`docs/rig/milestones/p2/`. Not yet written — needs milestone + issue docs
+before implementation.
 
-### Pending: uc-provenance-validation
+**Goal:** polling `harness_get_events` every 2s when a run is `running`,
+auto-scrolling to latest event, stopping when status reaches `done`/`failed`.
+
+### Thread 2 — uc-provenance-validation
 
 Full pipeline validation against the test sandbox. In `ROADMAP.md` under
 Planned. Steps in order:
@@ -76,18 +83,18 @@ Planned. Steps in order:
 6. Search validation (`validate_search.py`, pass rate ≥ 85%)
 7. Eval sprint (`./scripts/sprint.sh eval`)
 
-Blocked on: `ANTHROPIC_API_KEY` available in shell.
+**Blocked on:** `ANTHROPIC_API_KEY` available in shell.
 
 ---
 
 ## What comes next (Rig roadmap)
 
-| Phase | Goal |
-|-------|------|
-| p1 | ✅ Consolidation + run list UI (in progress) |
-| p2 | Live monitoring — watch active runs update in real time |
-| p3 | Orchestrator — NL request → plan → confirm → execute agents |
-| p4 | Trajectory explorer — full event detail, search, export |
+| Phase | Goal | Status |
+|-------|------|--------|
+| p1 | Consolidation + run list UI | ✅ Complete |
+| p2 | Live monitoring — watch active runs in real time | ⬜ Needs milestone docs |
+| p3 | Orchestrator — NL request → plan → confirm → execute agents | ⬜ |
+| p4 | Trajectory explorer — full event detail, search, export | ⬜ |
 
 Phase docs live at `aetheris-agents/docs/rig/milestones/`.
 
@@ -100,59 +107,100 @@ aetheris-agents/
   .env                              ← model defaults (AETHERIS_MODEL etc.)
   docs/
     capability-matrix.md            ← auto-generated, all agents + scripts
-    capability-matrix-runbook.md    ← how to regenerate
     rig/
       README.md                     ← Rig project overview
       specs.md                      ← data model, command shapes, TS types
       architecture.md               ← component map, data flow
       runbook.md                    ← dev setup, env vars, common issues
-      milestones/p1/                ← p1-001, p1-002, p1-003 issues
+      milestones/p1/                ← p1-001, p1-002, p1-003 (all done)
     provenance/
       runbook.md                    ← full Provenance operator guide
-      milestones/                   ← m1–m6 issue files
-  rig/                              ← Tauri app (new location)
-  provenance/
-    agents/                         ← all 7 Provenance agents
-    scripts/                        ← all 16 Provenance scripts
-    mcp/corpus-search/server.py     ← corpus-search MCP server
+  rig/                              ← Tauri app
+    CLAUDE.md                       ← authoritative context for Claude Code
+    src-tauri/src/
+      lib.rs                        ← HarnessState + CorpusState setup
+      commands/
+        harness.rs                  ← 4 read-only SQLite commands
+        provenance.rs               ← Provenance DuckDB commands
+        f2.rs                       ← F2 file index commands
+    src/
+      App.tsx                       ← routes: /harness, /f2/*, /provenance, /settings
+      components/
+        shell/
+          MainArea.tsx              ← controlled/uncontrolled tabs (see patterns)
+        modules/
+          harness/
+            RunList.tsx             ← HarnessRoute + RunsContent + EventsContent
+            shared.tsx              ← NotConnected, LoadingShell
+          provenance/               ← all 4 Provenance views + shared.tsx
+          f2/                       ← F2Operations, F2Viewer, WatchedFolders
+      hooks/
+        useHarness.ts               ← useHarnessStatus, useRunList, useRunEvents, useRunDetail
+        types.ts                    ← all TypeScript interfaces (harness + provenance + f2)
 
 aetheris/
-  config/runtime.exs               ← no model config (removed — agents read env directly)
-  scripts/sprint.sh                 ← sources aetheris-agents/.env at start
   priv/aetheris.db                  ← harness SQLite (runs, events, orbs, skills)
   priv/runs/                        ← trajectory JSON files per run
 ```
 
 ---
 
-## Patterns established
+## Patterns established (this session)
 
-**Agent model config (two-level fallback):**
+**`harness_connection_status` returns `Ok`, not `Err`.**
+Unlike all other harness commands (which return `Err("harness not connected")`
+when `AETHERIS_DB_PATH` is absent), `harness_connection_status` returns
+`Ok(HarnessStatus { connected: false, error: Some(...) })`. Check
+`data.connected`, not the Result variant. This is intentional — a status
+command shouldn't fail when you ask about connection status.
+
+**Controlled/uncontrolled `MainArea`.**
+`MainArea` accepts optional `activeTab`/`onTabChange` props. When omitted,
+it manages tab state internally (uncontrolled mode — all existing routes).
+When provided, the parent owns the active tab (controlled mode — Harness).
+Controlled mode is how you build cross-tab interactions.
+
+**`HarnessRoute` pattern for cross-tab shared state.**
+When a route needs state shared between tabs (e.g. selected run), don't
+put it in `Tab[]` factory functions — that path leads to pain. Instead,
+create a `*Route` component that owns the shared state, wraps `MainArea`
+with `activeTab`/`onTabChange`, and passes data down via props to tab
+content components. See `src/components/modules/harness/RunList.tsx`.
+
+**`get_harness_conn` helper mirrors `get_corpus_conn`.**
+Both take `state: &'a State<'a, *State>` and return a `MutexGuard`. This
+is the correct pattern for Tauri command handlers that need DB access.
+New modules should follow the same shape.
+
+**`useInvoke` args are not in `useCallback` deps (intentional).**
+The shared `useInvoke` helper in `useHarness.ts` and `useCorpusOverview.ts`
+only lists `command` in deps, not `args`. This means dynamic args won't
+trigger a refetch. For fixed args this is correct. For dynamic args (like
+`runId`), use an explicit `useCallback` with the arg in deps — see
+`useRunEvents` and `useRunDetail` for the right pattern.
+
+**Older patterns (still valid):**
+
+Agent model config (two-level fallback):
 ```elixir
 model    = System.get_env("PROVENANCE_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 ```
 
-**Rolling context causes 429 at step N:** switch to `context_strategy: :full`
-for agents running ≤20 steps.
-
-**Aetheris scan worked:** `mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs`
-against the test sandbox produced correct results (26 files, 22 unique, 4 duplicates).
-
-**`Application.ensure_all_started/1` returns `{:ok, []}` not `:ok`.**
+`Application.ensure_all_started/1` returns `{:ok, []}` not `:ok`.
 Match as `{:ok, _} = Application.ensure_all_started(:aetheris)` in `.exs` scripts.
-
-**Tauri Rust SQLite pattern (new in p1):**
-- Use `rusqlite` with `bundled` feature
-- Open read-only: `OpenFlags::SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_NO_MUTEX`
-- `HarnessState { conn: Option<Arc<Mutex<Connection>>> }` — same shape as `CorpusState`
-- `json_extract(config_json, '$.label')` — SQLite built-in JSON, no casting needed
 
 ---
 
 ## Quick commands
 
 ```bash
+# Open Rig
+cd ~/sandbox/elixirws/aetheris-agents/rig
+export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
+export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb  # optional
+cargo tauri dev
+
 # Run any Provenance agent
 cd ~/sandbox/elixirws/aetheris
 mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs
@@ -161,15 +209,9 @@ mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs
 mix aetheris inspect <run_id>
 mix aetheris list --limit 5
 
-# Regenerate capability matrix
-./scripts/sprint.sh capability_matrix
-
 # Reset test sandbox
 python3 provenance/scripts/create_test_sandbox.py --overwrite
 
-# Open Rig (after p1 complete)
-cd ~/sandbox/elixirws/aetheris-agents/rig
-export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
-export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb
-cargo tauri dev
+# Regenerate capability matrix
+./scripts/sprint.sh capability_matrix
 ```

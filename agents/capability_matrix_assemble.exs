@@ -9,6 +9,9 @@
 #
 # Reads:  docs/.sections/*.md  (written by sub-agents)
 # Writes: docs/capability-matrix.md
+#
+# Note: at1cmd.exs appears three times in the api/tenant section — one row per
+# RunConfig inside its OrbConfig. This is correct behaviour, not a bug.
 
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 

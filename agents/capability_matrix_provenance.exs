@@ -16,7 +16,7 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
   label:            "Capability Matrix -- Provenance",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,
-  max_steps:        15,
+  max_steps:        30,
   context_strategy: :full,
   tools:            ["list_dir", "read_file", "write_file"],
   system_prompt:    """

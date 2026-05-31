@@ -188,7 +188,9 @@ Connection opened read-only at startup in `HarnessState`:
   }
 
 If `AETHERIS_DB_PATH` is absent, `conn` is None and all harness commands
-return Err("harness not connected").
+return Err("harness not connected") — **except `harness_connection_status`**,
+which always returns `Ok(HarnessStatus { connected: false, error: Some(...) })`.
+Check `data.connected` to gate the UI, not the Result.
 
 **Never write to aetheris.db.** Open with SQLITE_OPEN_READ_ONLY always.
 

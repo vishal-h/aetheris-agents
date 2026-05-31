@@ -237,10 +237,12 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 ```bash
 # Open Rig
 cd ~/sandbox/elixirws/aetheris-agents/rig
-export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
-export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
-export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb  # optional
+export AETHERIS_DB_PATH=$(realpath ~/sandbox/elixirws/aetheris/priv/aetheris.db)
+export AETHERIS_AGENTS_PATH=$(realpath ~/sandbox/elixirws/aetheris-agents)
+export PROVENANCE_DB_PATH=$(realpath ~/sandbox/provenance-test/corpus.duckdb)  # optional
 cargo tauri dev
+# NOTE: never use bare ~ in env vars — Rust receives the literal string "~/…"
+# and std::env::var returns it unexpanded. Use $(realpath …) or $HOME/…
 
 # Test mock orchestrator manually (from aetheris/)
 cd ~/sandbox/elixirws/aetheris

@@ -171,13 +171,21 @@ Then restart the app. Migrations will re-run from scratch.
 | `AETHERIS_DB_PATH` | For Harness module | Absolute path to `aetheris.db` (SQLite) — used for run inspection. Also used to derive `aetheris_dir` for the Orchestrator |
 | `AETHERIS_AGENTS_PATH` | For Orchestrator module | Absolute path to the `aetheris-agents/` root directory |
 
-Example `.env` for local dev:
+Example for local dev:
 
 ```bash
-export PROVENANCE_DB_PATH=/path/to/corpus.duckdb
-export AETHERIS_DB_PATH=$HOME/sandbox/elixirws/aetheris/priv/aetheris.db
-export AETHERIS_AGENTS_PATH=$HOME/sandbox/elixirws/aetheris-agents
+export AETHERIS_DB_PATH=$(realpath ~/sandbox/elixirws/aetheris/priv/aetheris.db)
+export AETHERIS_AGENTS_PATH=$(realpath ~/sandbox/elixirws/aetheris-agents)
+export PROVENANCE_DB_PATH=$(realpath ~/sandbox/provenance-test/corpus.duckdb)
+cargo tauri dev
 ```
+
+> **Important:** Use `$(realpath ~/…)` or an absolute path — never a bare `~`. The `~`
+> shorthand is expanded by the shell only when it appears as a standalone token. When
+> assigned to an env var (`export FOO=~/bar`), the shell passes the literal string
+> `~/bar` to the Rust process, which has no knowledge of `~`. Rust's `std::env::var`
+> returns the literal value, so `rusqlite` tries to open a file literally named `~`
+> and silently falls back to the app's local data DB. Use `$HOME/…` or `$(realpath …)`.
 
 `aetheris_dir` (the working directory for the Mix orchestrator process) is derived automatically from `AETHERIS_DB_PATH`: parent of `priv/` → the aetheris repo root.
 

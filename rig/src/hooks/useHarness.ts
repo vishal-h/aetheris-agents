@@ -43,10 +43,14 @@ export function useRunList(limit?: number): AsyncState<RunSummary[]> {
   return useInvoke<RunSummary[]>('harness_list_runs', limit !== undefined ? { limit } : undefined);
 }
 
-export function useRunEvents(runId: string | null): AsyncState<EventRow[]> {
+export function useRunEvents(
+  runId: string | null,
+  options?: { polling?: boolean },
+): AsyncState<EventRow[]> & { isPolling: boolean } {
   const [data, setData] = useState<EventRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activelyPolling, setActivelyPolling] = useState(false);
 
   const fetch = useCallback(async () => {
     if (!runId) return;
@@ -62,6 +66,7 @@ export function useRunEvents(runId: string | null): AsyncState<EventRow[]> {
     }
   }, [runId]);
 
+  // Initial fetch on runId change
   useEffect(() => {
     if (!runId) {
       setData(null);
@@ -71,7 +76,26 @@ export function useRunEvents(runId: string | null): AsyncState<EventRow[]> {
     fetch();
   }, [fetch, runId]);
 
-  return { data, loading, error, refetch: fetch };
+  // Sync activelyPolling with caller's intent
+  useEffect(() => {
+    setActivelyPolling(options?.polling ?? false);
+  }, [options?.polling]);
+
+  // Stop polling when run_complete appears in the event stream
+  useEffect(() => {
+    if (!data || !activelyPolling) return;
+    const done = data.some((ev) => ev.event_type === 'run_complete');
+    if (done) setActivelyPolling(false);
+  }, [data, activelyPolling]);
+
+  // Interval-based polling
+  useEffect(() => {
+    if (!activelyPolling || !runId) return;
+    const id = setInterval(fetch, 2000);
+    return () => clearInterval(id);
+  }, [activelyPolling, runId, fetch]);
+
+  return { data, loading, error, refetch: fetch, isPolling: activelyPolling };
 }
 
 export function useRunDetail(runId: string | null): AsyncState<RunDetail> {

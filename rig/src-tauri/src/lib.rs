@@ -11,6 +11,11 @@ pub struct CorpusState {
     pub path: Option<String>,
 }
 
+pub struct HarnessState {
+    pub conn: Option<Arc<Mutex<rusqlite::Connection>>>,
+    pub path: Option<String>,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -35,6 +40,10 @@ pub fn run() {
       commands::provenance::get_system_username,
       commands::provenance::provenance_failed_migrations,
       commands::provenance::provenance_encrypted_zips,
+      commands::harness::harness_connection_status,
+      commands::harness::harness_list_runs,
+      commands::harness::harness_get_events,
+      commands::harness::harness_get_run,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -81,6 +90,35 @@ pub fn run() {
       };
 
       app.manage(corpus_state);
+
+      // Open harness DB read-only if AETHERIS_DB_PATH is set
+      let harness_state = match std::env::var("AETHERIS_DB_PATH") {
+        Ok(path) => {
+          match rusqlite::Connection::open_with_flags(
+            &path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
+              | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+          ) {
+            Ok(conn) => {
+              log::info!("Harness DB opened: {}", path);
+              HarnessState {
+                conn: Some(Arc::new(Mutex::new(conn))),
+                path: Some(path),
+              }
+            }
+            Err(e) => {
+              log::warn!("Cannot open harness DB {}: {}", path, e);
+              HarnessState { conn: None, path: None }
+            }
+          }
+        }
+        Err(_) => {
+          log::info!("AETHERIS_DB_PATH not set — harness commands unavailable");
+          HarnessState { conn: None, path: None }
+        }
+      };
+
+      app.manage(harness_state);
 
       Ok(())
     })

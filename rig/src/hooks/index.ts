@@ -29,3 +29,6 @@ export type { UseDuplicatesResult } from './useDuplicates';
 export type { UseWatchedFoldersResult } from './useWatchedFolders';
 export type { ScanStatus } from './useScanStatus';
 export type { UseProvenanceStatusResult } from './useProvenanceStatus';
+
+export { useHarnessStatus, useRunList, useRunEvents, useRunDetail } from './useHarness';
+export type { HarnessStatus, RunSummary, EventRow, RunDetail } from './types';

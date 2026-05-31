@@ -143,3 +143,45 @@ export interface EncryptedZipRow {
   parent_zip: string | null;
   depth: number;
 }
+
+// ============================================================================
+// Harness types — matching src-tauri/src/commands/harness.rs
+// ============================================================================
+
+export interface HarnessStatus {
+  connected:  boolean;
+  db_path:    string | null;
+  run_count:  number;
+  error:      string | null;
+}
+
+export interface RunSummary {
+  run_id:      string;
+  label:       string;
+  status:      'idle' | 'running' | 'paused' | 'done' | 'failed' | string;
+  provider:    string;
+  model:       string;
+  started_at:  string;
+  finished_at: string | null;
+  step_count:  number;
+  event_count: number;
+}
+
+export interface EventRow {
+  id:          string;
+  run_id:      string;
+  step:        number;
+  seq:         number;
+  event_type:  string;
+  payload:     string;
+  timestamp:   string;
+}
+
+export interface RunDetail {
+  run_id:      string;
+  label:       string;
+  status:      string;
+  config:      string;
+  started_at:  string;
+  finished_at: string | null;
+}

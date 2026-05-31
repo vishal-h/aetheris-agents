@@ -29,21 +29,24 @@
 | m5 | Corpus MCP + search — corpus-search MCP server, search_agent, validation |
 | m6 | Tauri dashboard — corpus overview, classification review, migration + zip status |
 
-### Rig — Phase 1 complete ✅
+### Rig — Phase 1 + Phase 2 complete ✅
 
-All three p1 issues done and pushed.
+| Phase | Issues | Status |
+|-------|--------|--------|
+| p1 | p1-001 Consolidation, p1-002 Harness DB commands, p1-003 Run list UI | ✅ All done |
+| p2 | p2-001 Polling hook, p2-002 Live events UI | ✅ All done |
 
-| Issue | Status |
-|-------|--------|
-| p1-001 Consolidation | ✅ hai-rig copied to aetheris-agents/rig/, rusqlite added, CLAUDE.md updated |
-| p1-002 Harness DB commands | ✅ HarnessState, 4 Tauri commands, TypeScript types, useHarness.ts hooks |
-| p1-003 Run list UI | ✅ Harness module in sidebar, RunList tabs, controlled MainArea, HarnessRoute |
+**What p1 delivered:**
+- `aetheris-agents/rig/` — full Tauri app (moved from hai-rig)
+- `HarnessState` + 4 read-only SQLite commands for `aetheris.db`
+- Harness module in sidebar: Runs tab (table + status filter) and Events tab (event log)
+- Controlled/uncontrolled `MainArea` — supports cross-tab shared state
 
-**P1 completion gate — all met:**
-- Harness tab shows all past agent runs from `aetheris.db`
-- Clicking a run shows its event log
-- "Not connected" placeholder when `AETHERIS_DB_PATH` absent
-- Provenance module unaffected
+**What p2 delivered:**
+- `useRunEvents` polls every 2s when `{ polling: true }` — stops automatically on `run_complete`
+- Events tab auto-scrolls to bottom as new events arrive (smart: respects user scroll position)
+- Pulsing "Live" indicator in the Events header while polling
+- Status badge updates locally to 'done' when `run_complete` detected — no extra network call
 
 ### Infrastructure — done
 
@@ -61,14 +64,15 @@ All three p1 issues done and pushed.
 
 Nothing active. Two threads ready to start:
 
-### Thread 1 — Rig p2 (Live monitoring)
+### Thread 1 — Rig p3 (Orchestrator)
 
-Watch an active run's events update in real time. Spec in
-`docs/rig/milestones/p2/`. Not yet written — needs milestone + issue docs
-before implementation.
+Natural language request → plan → confirm → execute agents. Spec in
+`docs/rig/milestones/p3/`. **Not yet written** — needs milestone + issue docs
+written in Claude.ai before any Claude Code work.
 
-**Goal:** polling `harness_get_events` every 2s when a run is `running`,
-auto-scrolling to latest event, stopping when status reaches `done`/`failed`.
+**Goal:** user types "email payslips for May 2026", orchestrator reads
+capability matrix, reasons about agents needed, writes a plan to a temp file,
+blocks on confirmation, executes on approval, shows live run progress.
 
 ### Thread 2 — uc-provenance-validation
 
@@ -92,8 +96,8 @@ Planned. Steps in order:
 | Phase | Goal | Status |
 |-------|------|--------|
 | p1 | Consolidation + run list UI | ✅ Complete |
-| p2 | Live monitoring — watch active runs in real time | ⬜ Needs milestone docs |
-| p3 | Orchestrator — NL request → plan → confirm → execute agents | ⬜ |
+| p2 | Live monitoring — watch active runs in real time | ✅ Complete |
+| p3 | Orchestrator — NL request → plan → confirm → execute agents | ⬜ Needs milestone docs |
 | p4 | Trajectory explorer — full event detail, search, export | ⬜ |
 
 Phase docs live at `aetheris-agents/docs/rig/milestones/`.
@@ -112,7 +116,9 @@ aetheris-agents/
       specs.md                      ← data model, command shapes, TS types
       architecture.md               ← component map, data flow
       runbook.md                    ← dev setup, env vars, common issues
-      milestones/p1/                ← p1-001, p1-002, p1-003 (all done)
+      milestones/
+        p1/                         ← p1-001, p1-002, p1-003 (all done)
+        p2/                         ← p2-001, p2-002 (all done)
     provenance/
       runbook.md                    ← full Provenance operator guide
   rig/                              ← Tauri app
@@ -130,13 +136,14 @@ aetheris-agents/
           MainArea.tsx              ← controlled/uncontrolled tabs (see patterns)
         modules/
           harness/
-            RunList.tsx             ← HarnessRoute + RunsContent + EventsContent
+            RunList.tsx             ← HarnessRoute, RunsContent, EventsContent (live)
             shared.tsx              ← NotConnected, LoadingShell
           provenance/               ← all 4 Provenance views + shared.tsx
           f2/                       ← F2Operations, F2Viewer, WatchedFolders
       hooks/
-        useHarness.ts               ← useHarnessStatus, useRunList, useRunEvents, useRunDetail
-        types.ts                    ← all TypeScript interfaces (harness + provenance + f2)
+        useHarness.ts               ← useHarnessStatus, useRunList,
+                                       useRunEvents (polling), useRunDetail
+        types.ts                    ← all TypeScript interfaces
 
 aetheris/
   priv/aetheris.db                  ← harness SQLite (runs, events, orbs, skills)
@@ -145,49 +152,66 @@ aetheris/
 
 ---
 
-## Patterns established (this session)
+## Patterns established
+
+### Rust / Tauri
 
 **`harness_connection_status` returns `Ok`, not `Err`.**
 Unlike all other harness commands (which return `Err("harness not connected")`
 when `AETHERIS_DB_PATH` is absent), `harness_connection_status` returns
 `Ok(HarnessStatus { connected: false, error: Some(...) })`. Check
-`data.connected`, not the Result variant. This is intentional — a status
-command shouldn't fail when you ask about connection status.
-
-**Controlled/uncontrolled `MainArea`.**
-`MainArea` accepts optional `activeTab`/`onTabChange` props. When omitted,
-it manages tab state internally (uncontrolled mode — all existing routes).
-When provided, the parent owns the active tab (controlled mode — Harness).
-Controlled mode is how you build cross-tab interactions.
-
-**`HarnessRoute` pattern for cross-tab shared state.**
-When a route needs state shared between tabs (e.g. selected run), don't
-put it in `Tab[]` factory functions — that path leads to pain. Instead,
-create a `*Route` component that owns the shared state, wraps `MainArea`
-with `activeTab`/`onTabChange`, and passes data down via props to tab
-content components. See `src/components/modules/harness/RunList.tsx`.
+`data.connected`, not the Result variant. Documented in `rig/CLAUDE.md`.
 
 **`get_harness_conn` helper mirrors `get_corpus_conn`.**
-Both take `state: &'a State<'a, *State>` and return a `MutexGuard`. This
-is the correct pattern for Tauri command handlers that need DB access.
-New modules should follow the same shape.
+Both take `state: &'a State<'a, *State>` and return a `MutexGuard`. This is
+the correct pattern for all Tauri command handlers that need DB access.
+
+### React / Frontend
+
+**Controlled/uncontrolled `MainArea`.**
+`MainArea` accepts optional `activeTab`/`onTabChange` props. Without them it
+manages tab state internally (all existing routes). With them, the parent owns
+the active tab (Harness route). Use controlled mode whenever a route needs
+cross-tab shared state.
+
+**`HarnessRoute` pattern for cross-tab shared state.**
+When a route needs state shared between tabs, create a `*Route` component that
+owns the shared state, wraps `MainArea` with `activeTab`/`onTabChange`, and
+passes data down via props. Do not try to share state inside `Tab[]` factory
+functions.
+
+**Three-effect polling pattern.**
+When a hook needs to poll and self-terminate, use three separate effects:
+1. Sync internal `activelyPolling` state with caller's `polling` option
+2. Watch fetched data for a stop signal (e.g. `run_complete` event); set
+   `activelyPolling(false)` when found
+3. Set up / tear down the `setInterval` based on `activelyPolling`
+
+This separates concerns cleanly and allows the hook to self-terminate
+independently of the caller.
+
+**`loading && !data` for polling-safe skeletons.**
+When a hook does background polling, `loading` is true on every refetch.
+Using `loading` alone to show a skeleton flashes the UI every 2s. Use
+`loading && !data` to show the skeleton only on the initial load, then
+leave existing content in place during background refreshes. Applied in
+`EventsContent` and should be used anywhere a polling hook drives a list.
 
 **`useInvoke` args are not in `useCallback` deps (intentional).**
-The shared `useInvoke` helper in `useHarness.ts` and `useCorpusOverview.ts`
-only lists `command` in deps, not `args`. This means dynamic args won't
-trigger a refetch. For fixed args this is correct. For dynamic args (like
-`runId`), use an explicit `useCallback` with the arg in deps — see
-`useRunEvents` and `useRunDetail` for the right pattern.
+The shared `useInvoke` helper only lists `command` in deps, not `args`.
+This means dynamic args won't trigger a refetch. For dynamic args, use an
+explicit `useCallback` with the arg in deps — see `useRunEvents` and
+`useRunDetail` for the right pattern.
 
-**Older patterns (still valid):**
+### Older patterns (still valid)
 
-Agent model config (two-level fallback):
+**Agent model config (two-level fallback):**
 ```elixir
 model    = System.get_env("PROVENANCE_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 ```
 
-`Application.ensure_all_started/1` returns `{:ok, []}` not `:ok`.
+**`Application.ensure_all_started/1` returns `{:ok, []}` not `:ok`.**
 Match as `{:ok, _} = Application.ensure_all_started(:aetheris)` in `.exs` scripts.
 
 ---
@@ -214,4 +238,8 @@ python3 provenance/scripts/create_test_sandbox.py --overwrite
 
 # Regenerate capability matrix
 ./scripts/sprint.sh capability_matrix
+
+# TypeScript build check (frontend only, no Tauri env needed)
+cd ~/sandbox/elixirws/aetheris-agents/rig
+bun run build
 ```

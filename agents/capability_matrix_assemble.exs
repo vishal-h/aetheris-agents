@@ -37,6 +37,7 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
       docs/.sections/email.md
       docs/.sections/api_tenant.md
       docs/.sections/api_gateway.md
+      docs/.sections/provenance.md
     If any file is missing, note it and continue.
 
   Step 2: Detect overlaps.
@@ -80,6 +81,10 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
   ---
 
+  {paste docs/.sections/provenance.md content verbatim}
+
+  ---
+
   ## Overlap Report
 
   ### Script name overlaps
@@ -109,6 +114,7 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
   | email    | N | N |
   | api/tenant | N | N |
   | api/gateway | N | N |
+  | provenance | N | N |
   | **Total** | N | N |
 
   **Unique tools across all use cases:** `tool1`, `tool2`, ...

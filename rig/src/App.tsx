@@ -5,6 +5,7 @@ import { MainArea } from '@/components/shell/MainArea';
 import { RightPanel } from '@/components/shell/RightPanel';
 import { HarnessRoute } from '@/components/modules/harness/RunList';
 import { OrchestratorView } from '@/components/modules/orchestrator/OrchestratorView';
+import { DiffView } from '@/components/modules/harness/DiffView';
 import { F2Operations, F2Viewer, WatchedFoldersSettings } from '@/components/modules/f2';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
@@ -33,6 +34,13 @@ function App() {
 
             {/* Harness — agent run inspector */}
             <Route path="/harness" element={<HarnessRoute />} />
+
+            {/* Diff — two-run comparison */}
+            <Route path="/diff" element={
+              <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto">
+                <DiffView />
+              </div>
+            } />
 
             {/* Orchestrator — natural language request + plan approval */}
             <Route path="/orchestrator" element={

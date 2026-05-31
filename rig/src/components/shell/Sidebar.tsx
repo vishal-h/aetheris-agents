@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Activity,
   FolderSearch,
+  GitCompare,
   ScanSearch,
   ListTree,
   LayoutDashboard,
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils';
 const iconMap: Record<string, LucideIcon> = {
   Activity,
   FolderSearch,
+  GitCompare,
   ScanSearch,
   LayoutTree: ListTree,
   LayoutDashboard,

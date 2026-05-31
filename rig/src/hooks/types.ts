@@ -224,6 +224,32 @@ export interface TrajectoryFile {
 }
 
 // ============================================================================
+// Diff types — p4-002
+// ============================================================================
+
+export interface MetaDiffRow {
+  field:   string;
+  a:       string;
+  b:       string;
+  differs: boolean;
+}
+
+export interface StepDiffEntry {
+  step:      number;
+  tools_a:   string[];
+  tools_b:   string[];
+  differs:   boolean;
+  only_in_a: boolean;
+  only_in_b: boolean;
+}
+
+export interface RunDiff {
+  meta_rows:   MetaDiffRow[];
+  step_rows:   StepDiffEntry[];
+  any_differs: boolean;
+}
+
+// ============================================================================
 // Orchestrator types — matching protocol.md
 // ============================================================================
 

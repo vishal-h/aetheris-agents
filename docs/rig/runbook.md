@@ -7,8 +7,12 @@
 | Variable | Required | Description |
 |----------|---------|-------------|
 | `AETHERIS_DB_PATH` | Yes (harness features) | Absolute path to `aetheris/priv/aetheris.db` |
+| `AETHERIS_AGENTS_PATH` | Yes (orchestrator) | Absolute path to `aetheris-agents/` root |
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | Absolute path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | Set `true` to enable corpus-search MCP |
+
+All variables except `CORPUS_SEARCH_MCP_ENABLED` are optional at startup —
+Rig renders "not connected" placeholders for features that require them.
 
 ---
 
@@ -17,16 +21,12 @@
 ```bash
 cd aetheris-agents/rig
 
-# Set env vars
 export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
-export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb
+export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
+export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb  # optional
 
-# Start dev server
 cargo tauri dev
 ```
-
-Both `AETHERIS_DB_PATH` and `PROVENANCE_DB_PATH` are optional at startup —
-Rig renders "not connected" placeholders for features that require them.
 
 ---
 
@@ -56,26 +56,48 @@ mix aetheris run ../aetheris-agents/provenance/agents/scan_orchestrator.exs
 # Open Rig
 cd ~/sandbox/elixirws/aetheris-agents/rig
 export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
+export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 cargo tauri dev
 ```
 
 ---
 
-## Harness module — Run inspection
+## Harness module
 
-The Harness module shows all agent runs recorded in `aetheris.db`.
+The Harness module reads from `aetheris.db` and `priv/runs/*/trajectory.json`.
+It has two sidebar sections: **Runs** and **Diff**.
 
-### What you see
+### Runs — three tabs
 
 **Run list tab:**
 - Label, status badge, model, started at, duration, steps
-- Click any row to open the event log for that run
+- Click any row to select it — enables the Events and Trajectory tabs
 - Refresh button — no auto-refresh
 
-**Event log tab:**
+**Event log tab** (requires a selected run):
 - All events for the selected run, ordered by seq
 - Step number, event type, timestamp, payload preview
 - Colour coding by event type
+- Polls every 2s while the run status is `running`; stops on `run_complete`
+
+**Trajectory tab** (requires a selected run):
+- Reads `priv/runs/{run_id}/trajectory.json` — the harness's immutable snapshot
+- Meta panel (collapsible): model, provider, mode, steps, duration, tools,
+  system prompt, user prompt
+- Events grouped by step; each step group is collapsible (open by default)
+- Click any event row to expand the full pretty-printed JSON payload
+- Export JSON button — copies the trajectory file to a user-chosen path
+
+### Diff
+
+Navigate to the **Diff** section in the sidebar to compare two runs.
+
+- Select Run A and Run B from the dropdowns (same list as the run list tab)
+- Click Compare — loads both trajectory files in parallel
+- Metadata table: model, provider, mode, step count, max steps, total LLM
+  latency, terminal reason, tools — rows that differ are highlighted
+- Step path table: per-step tool calls for each run; gaps where one run has
+  no matching step shown as —
 
 ### Status badges
 
@@ -90,7 +112,37 @@ The Harness module shows all agent runs recorded in `aetheris.db`.
 ### Not connected
 
 If `AETHERIS_DB_PATH` is not set or the file doesn't exist, the Harness
-tab shows a "Not connected" placeholder with the path to set.
+module shows a "Not connected" placeholder with the path to set.
+
+---
+
+## Orchestrator module
+
+The Orchestrator module runs a natural language request through a plan →
+confirm → execute workflow. Requires `AETHERIS_AGENTS_PATH` and
+`AETHERIS_DB_PATH` to be set.
+
+### Workflow
+
+1. Type a request in the textarea and click **Run**
+2. Rig spawns `agents/mock_orchestrator.exs` via `mix run` with the request
+   passed as `ORCHESTRATOR_REQUEST`
+3. After ~2s, a plan appears showing the steps the orchestrator intends to run
+4. Click **Approve** to execute, or **Cancel** to abort
+5. Approved: steps animate through pending → running → done in real time
+6. Done: click **Run another** to reset
+
+### States
+
+| State | What you see |
+|-------|-------------|
+| `idle` | Textarea + Run button |
+| `planning` | Spinner (~2s) |
+| `plan_ready` | Step list + Approve / Cancel |
+| `executing` | Step list with live status icons |
+| `done` | Green checkmark + Run another |
+| `cancelled` | Cancelled message + Run another |
+| `error` | Error message + Run another |
 
 ---
 
@@ -110,21 +162,41 @@ Quick reference:
 
 ### Harness tab shows "Not connected"
 
-**Fix:** Set `AETHERIS_DB_PATH` to the absolute path of `aetheris.db` and
-restart:
+Set `AETHERIS_DB_PATH` and restart:
 ```bash
 export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
 ```
 
 ### Run list is empty
 
-`aetheris.db` exists but has no runs — no agents have been run yet.
-Run any agent via `mix aetheris run` and refresh.
+`aetheris.db` exists but has no runs. Run any agent via `mix aetheris run`
+and refresh.
 
 ### Events table shows no events for a run
 
 The run was recorded but the harness may have crashed before persisting
 events. Check `mix aetheris inspect <run_id>` for details.
+
+### Trajectory tab shows an error for a completed run
+
+The trajectory file may not have been written — this can happen if the
+harness crashed at run completion. Check whether
+`priv/runs/{run_id}/trajectory.json` exists on disk. If absent, the run
+data is only available in SQLite via the Events tab.
+
+### Orchestrator shows "AETHERIS_AGENTS_PATH not set"
+
+Set the variable and restart:
+```bash
+export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
+```
+
+### Orchestrator plan never appears (spinner doesn't resolve)
+
+The mock script failed to start. Temporarily set `stderr` to inherit in
+`orchestrate.rs` (`Stdio::inherit()` instead of `Stdio::null()`) to see
+Mix compile errors. Common cause: `aetheris_dir` is wrong (check
+`AETHERIS_DB_PATH` points to the correct file).
 
 ### cargo tauri dev fails to compile
 
@@ -142,13 +214,13 @@ rusqlite = { version = "...", features = ["bundled"] }
 
 ## Adding a new module
 
-1. Create `src/components/modules/{name}/` with a tab factory function
+1. Create `src/components/modules/{name}/` with component files
 2. Add hooks to `src/hooks/use{Name}.ts`
 3. Add Tauri commands to `src-tauri/src/commands/{name}.rs`
 4. Register commands in `src-tauri/src/lib.rs`
 5. Add route to `src/App.tsx`
-6. Add module entry to `src/modules/registry.ts`
-7. Add TypeScript interfaces to `src/hooks/types.ts`
+6. Add module entry (and icon) to `src/modules/registry.ts` and `Sidebar.tsx`
+7. Add TypeScript interfaces to `src/hooks/types.ts`, export from `index.ts`
 
 Follow the pattern established in `commands/harness.rs` and
 `components/modules/harness/RunList.tsx`.

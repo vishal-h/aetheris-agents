@@ -71,7 +71,34 @@ See `aetheris/docs/aetheris/runbook-ollama-xml.md`.
 
 ## Planned
 
-*(Nothing formally scoped.)*
+### uc-provenance-validation
+
+End-to-end validation of the Provenance pipeline against the test
+sandbox before the real corpus run.
+
+Tasks — complete in order:
+
+1. Taxonomy session — run `taxonomy_session.py` interactively,
+   produce `provenance/agents/taxonomy.md`
+2. Classification — run `classify_orchestrator.exs` against sandbox,
+   validate batches, confidence scores, needs_review handling
+3. Review cycle — export → human edit → import → confirm migration_queue
+4. Migration — run `migration_agent.exs` against sandbox,
+   confirm SHA-256 verification and rollback
+5. Zip archaeology — run `zip_orchestrator.exs` against sandbox,
+   confirm new-to-corpus finds and encrypted escalation
+6. Search validation — `validate_search.py`, pass rate ≥ 85%
+7. Eval sprint — `./scripts/sprint.sh eval`, all tasks pass
+
+**Depends on:** uc-payslip (complete), all Provenance milestones m1–m6
+(complete)
+
+**Blocks:** real corpus run
+
+**Status:** Ready to start. Test sandbox available at
+`~/sandbox/provenance-test/`. Run
+`python3 provenance/scripts/create_test_sandbox.py --overwrite`
+to reset between validation runs.
 
 ---
 

@@ -869,3 +869,59 @@ python3 -m pytest provenance/tests/ -v
 # Scanner unit tests (slow first run — compiles DuckDB)
 cd provenance/scanner && cargo test
 ```
+
+---
+
+## Before going live
+
+Complete all items in this checklist before running Provenance against
+the real corpus.
+
+### Sandbox validation (complete these first)
+
+- [ ] Run taxonomy session against the test sandbox:
+      `python3 provenance/scripts/taxonomy_session.py`
+      Confirm `provenance/agents/taxonomy.md` is produced.
+
+- [ ] Run classification orchestrator against the sandbox:
+      Confirm batches complete, confidence scores are reasonable,
+      low-confidence files get `needs_review` status.
+
+- [ ] Run export → review → import cycle:
+      `export_for_review.py` → edit CSV → `approve_classifications.py`
+      Confirm approved files appear in `migration_queue` view.
+
+- [ ] Run migration agent against the sandbox:
+      Confirm files copied to `/clients/` with SHA-256 verified,
+      `migrations` table populated, rollback works.
+
+- [ ] Run zip archaeology against the sandbox:
+      Confirm 2 new-to-corpus files found, 1 encrypted zip escalates,
+      depth-3 nesting handled correctly.
+
+- [ ] Run search validation:
+      `python3 provenance/scripts/validate_search.py --db $PROVENANCE_DB_PATH`
+      Confirm pass rate ≥ 85%.
+
+- [ ] Run eval sprint:
+      `./scripts/sprint.sh eval`
+      Confirm all four built-in tasks pass.
+
+### Infrastructure (confirm with operator before real corpus run)
+
+- [ ] NAS archive mount confirmed read-only at `/data/archive/`
+- [ ] `/clients/` mounted and writable
+- [ ] `PROVENANCE_DB_PATH` points to the real corpus DuckDB
+- [ ] `PROVENANCE_NAS_PATH` points to the real archive root
+- [ ] Disk space on `/clients/` confirmed sufficient
+      (check: `df -h /clients`)
+- [ ] `ANTHROPIC_API_KEY` set and credits confirmed
+      (check: `mix aetheris doctor`)
+
+### Sign-off
+
+- [ ] Dry run of scan orchestrator: `DRY_RUN=true mix aetheris run ...`
+- [ ] Dry run of classification: `DRY_RUN=true mix aetheris run ...`
+- [ ] Dry run of migration: `DRY_RUN=true mix aetheris run ...`
+- [ ] Stakeholder walkthrough of Tauri dashboard with real data
+- [ ] Firm contact sign-off recorded

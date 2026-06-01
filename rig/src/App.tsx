@@ -8,6 +8,7 @@ import { OrchestratorView } from '@/components/modules/orchestrator/Orchestrator
 import { DiffView } from '@/components/modules/harness/DiffView';
 import { F2Operations, F2Viewer, WatchedFoldersSettings } from '@/components/modules/f2';
 import { CapabilityMatrixView } from '@/components/modules/harness/CapabilityMatrixView';
+import { UsageView } from '@/components/modules/harness/UsageView';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
 import { MigrationStatus } from '@/components/modules/provenance/MigrationStatus';
@@ -47,6 +48,13 @@ function App() {
             <Route path="/capability-matrix" element={
               <div className="flex flex-1 flex-col h-full bg-background overflow-hidden">
                 <CapabilityMatrixView />
+              </div>
+            } />
+
+            {/* Usage — token & cost statistics */}
+            <Route path="/usage" element={
+              <div className="flex flex-1 flex-col h-full bg-background overflow-hidden">
+                <UsageView />
               </div>
             } />
 

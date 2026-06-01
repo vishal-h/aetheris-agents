@@ -6,9 +6,10 @@ const harnessModule: Module = {
   label: 'Harness',
   icon: 'Activity',
   sections: [
-    { id: 'harness-runs',      label: 'Runs',   icon: 'Activity',   path: '/harness'           },
-    { id: 'diff',              label: 'Diff',   icon: 'GitCompare', path: '/diff'              },
-    { id: 'capability-matrix', label: 'Agents', icon: 'Library',    path: '/capability-matrix' },
+    { id: 'harness-runs',      label: 'Runs',   icon: 'Activity',    path: '/harness'           },
+    { id: 'diff',              label: 'Diff',   icon: 'GitCompare',  path: '/diff'              },
+    { id: 'capability-matrix', label: 'Agents', icon: 'Library',     path: '/capability-matrix' },
+    { id: 'usage',             label: 'Usage',  icon: 'TrendingUp',  path: '/usage'             },
   ],
 };
 

@@ -317,3 +317,32 @@ export interface TokenSummary {
   cost_usd:      number | null;
   llm_calls:     number;
 }
+
+// ============================================================================
+// Usage stats — p6-002
+// ============================================================================
+
+export interface ModelUsageRow {
+  model:          string;
+  run_count:      number;
+  input_tokens:   number;
+  output_tokens:  number;
+  total_cost_usd: number;
+  avg_cost_usd:   number;
+}
+
+export interface UseCaseUsageRow {
+  use_case:       string;
+  run_count:      number;
+  total_cost_usd: number;
+}
+
+export interface UsageStats {
+  total_cost_usd:      number;
+  total_runs:          number;
+  instrumented_runs:   number;
+  total_input_tokens:  number;
+  total_output_tokens: number;
+  by_model:            ModelUsageRow[];
+  by_use_case:         UseCaseUsageRow[];
+}

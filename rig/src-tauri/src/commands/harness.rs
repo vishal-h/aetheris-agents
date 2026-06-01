@@ -2,7 +2,7 @@ use crate::HarnessState;
 use rusqlite::params;
 use tauri::State;
 
-fn get_harness_conn<'a>(
+pub(crate) fn get_harness_conn<'a>(
     state: &'a State<'a, HarnessState>,
 ) -> Result<std::sync::MutexGuard<'a, rusqlite::Connection>, String> {
     state

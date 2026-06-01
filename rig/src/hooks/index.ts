@@ -40,5 +40,7 @@ export type { MetaDiffRow, StepDiffEntry, RunDiff } from './types';
 export { useRunDiff } from './useRunDiff';
 export { useCapabilityMatrix } from './useCapabilityMatrix';
 export { useSessionRecord } from './useSessionRecord';
+export { useUsageStats } from './useUsageStats';
 export type { MatrixAgent, MatrixScript, MatrixUseCase, CapabilityMatrix } from './types';
 export type { TokenSummary } from './types';
+export type { ModelUsageRow, UseCaseUsageRow, UsageStats } from './types';

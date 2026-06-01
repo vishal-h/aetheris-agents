@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Plus,
   Sparkles,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 import { modules } from '@/modules/registry';
@@ -32,6 +33,7 @@ const iconMap: Record<string, LucideIcon> = {
   ClipboardCheck,
   Plus,
   Sparkles,
+  TrendingUp,
 };
 
 export function Sidebar() {

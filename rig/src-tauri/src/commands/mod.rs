@@ -4,3 +4,4 @@ pub mod harness;
 pub mod orchestrate;
 pub mod provenance;
 pub mod trajectory;
+pub mod usage;

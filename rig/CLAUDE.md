@@ -220,6 +220,43 @@ Error form: `invalid args runId for command X: missing required key runId`
 
 ---
 
+## Rust / Tauri patterns
+
+**`pub(crate)` on shared helpers.**
+When a helper function is needed by sibling command modules, mark it `pub(crate)` rather
+than `pub`. Avoids leaking internal DB helpers into the public API:
+```rust
+// harness.rs
+pub(crate) fn get_harness_conn<'a>(...) -> ... { ... }
+
+// usage.rs
+use crate::commands::harness::get_harness_conn;
+```
+Pattern used in `harness.rs` / `usage.rs`.
+
+**`json_extract IS NOT NULL` filter for optional payload fields.**
+For optional JSON fields in `payload_json`, filter with `IS NOT NULL` to exclude
+pre-instrumentation rows. Never use `COALESCE` alone — it masks missing data as zero
+and makes instrumented vs. non-instrumented runs indistinguishable:
+```sql
+-- Correct: excludes pre-instrumentation events
+WHERE json_extract(payload_json, '$.cost_usd') IS NOT NULL
+
+-- Wrong: treats missing cost as $0.00, silently inflates aggregates
+COALESCE(json_extract(payload_json, '$.cost_usd'), 0.0)
+```
+Pattern used in `usage.rs` summary, by-model, and by-use-case queries.
+
+**Compute per-run averages in Rust, not SQL `AVG()`.**
+`SQL AVG()` over `llm_responded` events averages per-event cost, not per-run cost.
+Compute the correct per-run average in Rust after the query:
+```rust
+let avg_cost_usd = if run_count > 0 { total_cost_usd / run_count as f64 } else { 0.0 };
+```
+Pattern used in `usage.rs` `ModelUsageRow` construction.
+
+---
+
 ## React / Frontend patterns
 
 **`useState(prefill)` seeding from `useLocation().state`.**
@@ -263,6 +300,24 @@ const filtered = runs.filter((r) => statusFilter === 'all' || r.status === statu
 const groups   = groupRuns(filtered);
 ```
 Pattern used in `RunList.tsx`.
+
+**`hasData` check before aggregating optional payload fields.**
+When summing optional numeric fields from event payloads, check whether any event
+has data before reducing. Return `null` (not `0`) when none do — so `formatCost` /
+`formatTokens` render `—` rather than `$0.0000`:
+```typescript
+const hasData = llmEvents.some((e) => e.payload['cost_usd'] != null);
+if (!hasData) return null;
+const cost_usd = llmEvents.reduce(
+  (sum, e) => sum + ((e.payload['cost_usd'] as number | null) ?? 0), 0
+);
+```
+Pattern used in `TrajectoryView.tsx` (`computeTokenSummary`) and `useRunDiff.ts`.
+
+**`formatCost` / `formatTokens` duplication.**
+These helpers are currently duplicated in `TrajectoryView.tsx`, `UsageView.tsx`, and
+`useRunDiff.ts`. This is acceptable for three locations. Extract to `src/lib/format.ts`
+if they spread to a fourth.
 
 ---
 

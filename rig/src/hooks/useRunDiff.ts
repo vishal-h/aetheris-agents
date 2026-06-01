@@ -6,6 +6,12 @@ function formatTools(tools: string[]): string {
   return tools.length ? tools.join(', ') : '—';
 }
 
+function formatCost(usd: number | null): string {
+  if (usd === null) return '—';
+  if (usd >= 1) return `$${usd.toFixed(2)}`;
+  return `$${usd.toFixed(4)}`;
+}
+
 function computeTotalLatency(traj: TrajectoryFile): number {
   return traj.events
     .filter((e) => e.event_type === 'llm_responded')
@@ -16,6 +22,33 @@ function toolsForStep(traj: TrajectoryFile, step: number): string[] {
   return traj.events
     .filter((e) => e.step === step && e.event_type === 'tool_called')
     .map((e) => (e.payload['tool_name'] as string | undefined) ?? '?');
+}
+
+function computeTotalInputTokens(traj: TrajectoryFile): number | null {
+  const events = traj.events.filter((e) => e.event_type === 'llm_responded');
+  const hasData = events.some((e) => e.payload['input_tokens'] != null);
+  if (!hasData) return null;
+  return events.reduce(
+    (sum, e) => sum + ((e.payload['input_tokens'] as number | null) ?? 0), 0
+  );
+}
+
+function computeTotalOutputTokens(traj: TrajectoryFile): number | null {
+  const events = traj.events.filter((e) => e.event_type === 'llm_responded');
+  const hasData = events.some((e) => e.payload['output_tokens'] != null);
+  if (!hasData) return null;
+  return events.reduce(
+    (sum, e) => sum + ((e.payload['output_tokens'] as number | null) ?? 0), 0
+  );
+}
+
+function computeTotalCost(traj: TrajectoryFile): number | null {
+  const events = traj.events.filter((e) => e.event_type === 'llm_responded');
+  const hasData = events.some((e) => e.payload['cost_usd'] != null);
+  if (!hasData) return null;
+  return events.reduce(
+    (sum, e) => sum + ((e.payload['cost_usd'] as number | null) ?? 0), 0
+  );
 }
 
 function terminalReason(traj: TrajectoryFile): string {
@@ -37,6 +70,13 @@ function computeDiff(a: TrajectoryFile, b: TrajectoryFile): RunDiff {
                         latB ? `${latB.toLocaleString()} ms` : '—'],
     ['Terminal reason', terminalReason(a),           terminalReason(b)],
     ['Tools',           formatTools(a.meta.tools),   formatTools(b.meta.tools)],
+    ['Input tokens',
+      computeTotalInputTokens(a) !== null ? computeTotalInputTokens(a)!.toLocaleString() : '—',
+      computeTotalInputTokens(b) !== null ? computeTotalInputTokens(b)!.toLocaleString() : '—'],
+    ['Output tokens',
+      computeTotalOutputTokens(a) !== null ? computeTotalOutputTokens(a)!.toLocaleString() : '—',
+      computeTotalOutputTokens(b) !== null ? computeTotalOutputTokens(b)!.toLocaleString() : '—'],
+    ['Total cost',     formatCost(computeTotalCost(a)), formatCost(computeTotalCost(b))],
   ];
 
   const meta_rows: MetaDiffRow[] = fields.map(([field, va, vb]) => ({

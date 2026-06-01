@@ -426,6 +426,82 @@ CREATE TABLE settings (
 
 ---
 
+---
+
+## Part 5 — Harness Module: Tauri Commands and TypeScript Interfaces
+
+### 5.1 Tauri Command Shapes
+
+#### `usage_stats_load`
+
+No arguments. Returns `UsageStats`. Uses `HarnessState` connection to `aetheris.db`.
+Runs three `json_extract` aggregate queries against the `events` and `runs` tables.
+Filters all queries with `json_extract(payload_json, '$.cost_usd') IS NOT NULL` to
+exclude pre-instrumentation events.
+
+---
+
+### 5.2 TypeScript Interfaces
+
+```typescript
+// Token / cost summary — computed client-side in TrajectoryView.tsx
+interface TokenSummary {
+  input_tokens:  number | null;  // null for pre-instrumentation runs
+  output_tokens: number | null;
+  cost_usd:      number | null;
+  llm_calls:     number;
+}
+
+// Usage stats — returned by usage_stats_load
+interface ModelUsageRow {
+  model:          string;   // resolved_model from llm_responded payload
+  run_count:      number;
+  input_tokens:   number;
+  output_tokens:  number;
+  total_cost_usd: number;
+  avg_cost_usd:   number;  // total_cost_usd / run_count, computed in Rust
+}
+
+interface UseCaseUsageRow {
+  use_case:       string;  // prefix-matched label or "Unclassified"
+  run_count:      number;
+  total_cost_usd: number;
+}
+
+interface UsageStats {
+  total_cost_usd:      number;
+  total_runs:          number;  // all runs in runs table
+  instrumented_runs:   number;  // runs with at least one cost_usd IS NOT NULL event
+  total_input_tokens:  number;
+  total_output_tokens: number;
+  by_model:            ModelUsageRow[];   // sorted by total_cost_usd DESC
+  by_use_case:         UseCaseUsageRow[]; // sorted by USE_CASE_PREFIXES order
+}
+```
+
+---
+
+### 5.3 Harness Module Structure
+
+```
+src/
+  components/modules/harness/
+    RunList.tsx           — run list grouped by use case (/harness)
+    TrajectoryView.tsx    — event stream + meta panel with token/cost summary
+    DiffView.tsx          — two-run comparison with token/cost/latency rows
+    CapabilityMatrixView.tsx — agent/script catalogue (/capability-matrix)
+    UsageView.tsx         — aggregate usage stats (/usage)
+  hooks/
+    useHarness.ts         — useHarnessStatus, useRunList, useRunEvents, useRunDetail
+    useTrajectory.ts      — useTrajectory
+    useRunDiff.ts         — useRunDiff
+    useCapabilityMatrix.ts — useCapabilityMatrix
+    useUsageStats.ts      — useUsageStats
+    useSessionRecord.ts   — sessionStorage-backed expand/collapse state
+```
+
+---
+
 ## Part 4 — Out of Scope for v1
 
 - User-defined views in F2V (v2)

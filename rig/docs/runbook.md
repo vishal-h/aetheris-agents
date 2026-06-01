@@ -194,7 +194,7 @@ cargo tauri dev
 ## Part 3c — Harness Module
 
 The Harness module connects to `aetheris.db` and surfaces agent run history.
-It requires `AETHERIS_DB_PATH` to be set (see Part 3b). It has three sidebar sections:
+It requires `AETHERIS_DB_PATH` to be set (see Part 3b). It has four sidebar sections:
 
 ### Runs (`/harness`)
 
@@ -216,12 +216,16 @@ The status filter (All / Running / Done / Failed / Paused) is applied before gro
 empty groups disappear entirely.
 
 Clicking a run selects it and switches to the **Events** tab. The **Trajectory** tab
-is also enabled for the selected run.
+is also enabled for the selected run. The Trajectory tab meta panel shows LLM calls,
+input tokens, output tokens, and cost for instrumented runs. Runs before 2026-06-01
+show `—` for token/cost fields.
 
 ### Diff (`/diff`)
 
 Side-by-side comparison of two runs. Select Run A and Run B from the dropdowns,
 click **Compare**. Differing metadata rows and step tool paths are highlighted.
+The metadata table includes Input tokens, Output tokens, and Total cost rows;
+these are highlighted when the values differ between Run A and Run B.
 
 ### Agents (`/capability-matrix`)
 
@@ -232,6 +236,24 @@ Requires `AETHERIS_AGENTS_PATH` to be set. Organised by use case:
   the Orchestrator with `{agent label}: ` pre-filled in the request textarea.
 - **Scripts** — readonly reference: filename and one-line purpose. No launch button.
   Scripts are called by agents, not run directly.
+
+### Usage (`/usage`)
+
+Aggregate token and cost statistics across all instrumented runs (runs after
+the 2026-06-01 harness token/cost instrumentation). Requires `AETHERIS_DB_PATH`.
+
+**Four summary cards:** Total spend, Total runs, Total tokens, Avg cost/run.
+
+**By model table:** model (font-mono), runs, input tokens, output tokens, total
+cost, avg cost per run — sorted by total cost descending.
+
+**By use case table:** use case, runs, total cost — aggregated using the same
+prefix logic as the run list (Payslip, Drive, Email, API / Tenant, API / Gateway,
+Provenance, Capability Matrix, Unclassified).
+
+A **Refresh** button reloads stats on demand. A pre-instrumentation note
+appears when some runs predate the token/cost change. An empty state is shown
+when no instrumented runs exist yet.
 
 ---
 
@@ -267,6 +289,12 @@ Use `-j2` or `-j1` to limit parallelism. The DuckDB bundled compile is very CPU/
 `AETHERIS_AGENTS_PATH` is not set, or `docs/capability-matrix.md` is missing from the agents root.
 Fix: set `AETHERIS_AGENTS_PATH` to the absolute path of the `aetheris-agents/` directory, then
 confirm the file exists at `$AETHERIS_AGENTS_PATH/docs/capability-matrix.md`.
+
+**Usage shows $0.00 / no data**
+All runs predate the token/cost instrumentation (landed 2026-06-01). Earlier runs have
+`NULL` for `cost_usd`, `input_tokens`, and `output_tokens` in their `llm_responded` events
+and are excluded from all aggregates.
+Fix: run any agent against a real Anthropic model, then click **Refresh** in the Usage view.
 
 **`@tauri-apps/api` import errors in Vite**
 Run `bun install` — the package may not be installed yet.

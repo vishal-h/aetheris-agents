@@ -267,6 +267,80 @@ Local builds only target the host OS. To produce all three binaries, use a CI ma
 
 ---
 
+## Harness Module — Data Flows
+
+### Usage View (`/usage`)
+
+```
+User navigates to /usage
+  → UsageView mounts → useUsageStats → invoke("usage_stats_load")
+  → usage.rs: acquires HarnessState connection to aetheris.db
+  → Runs three json_extract queries (summary totals, by_model, by_use_case)
+  → WHERE json_extract(payload_json, '$.cost_usd') IS NOT NULL on all queries
+  → Returns UsageStats { total_cost_usd, total_runs, instrumented_runs,
+                         total_input_tokens, total_output_tokens,
+                         by_model[], by_use_case[] }
+  → UsageView renders: four StatCard components + two <table> sections
+```
+
+### Trajectory Meta Panel (p6-001)
+
+```
+TrajectoryView receives events[] from useTrajectory (already loaded)
+  → computeTokenSummary(events) — pure client-side reduce
+      filters llm_responded events
+      checks hasData = events.some(e => e.payload['cost_usd'] != null)
+      returns all-null TokenSummary if no instrumented events
+  → TokenSummaryRows renders LLM calls / Input tokens / Output tokens / Cost
+      in the existing meta panel grid (below Tools row)
+      formatCost(null) → "—"; formatCost(0.0016) → "$0.0016"
+```
+
+### Diff Cost Rows (p6-003)
+
+```
+useRunDiff loads both trajectories via invoke("trajectory_load")
+  → computeTotalInputTokens / computeTotalOutputTokens / computeTotalCost
+      same hasData + ?? 0 reduce pattern as p6-001
+  → Three rows appended to fields[] in computeDiff:
+      "Input tokens", "Output tokens", "Total cost"
+  → DiffView highlights rows where a !== b (existing MetaDiffRow.differs logic)
+```
+
+### Trust Boundary (Harness reads)
+
+| Command | Reads | Writes |
+|---------|-------|--------|
+| `harness_connection_status` | `runs` (COUNT) | — |
+| `harness_list_runs` | `runs` | — |
+| `harness_get_events` | `events` | — |
+| `harness_get_run` | `runs` | — |
+| `trajectory_load` | `runs`, `events` | — |
+| `trajectory_export` | `runs`, `events` | writes JSON to filesystem |
+| `capability_matrix_load` | filesystem (capability-matrix.md) | — |
+| `usage_stats_load` | `events`, `runs` | — |
+
+All harness commands open `aetheris.db` read-only. No harness command writes to the database.
+
+### Component Map (Harness module)
+
+**Hooks** (`src/hooks/`):
+- `useHarness.ts` — `useHarnessStatus`, `useRunList`, `useRunEvents`, `useRunDetail`
+- `useTrajectory.ts` — `useTrajectory`
+- `useRunDiff.ts` — `useRunDiff`
+- `useCapabilityMatrix.ts` — `useCapabilityMatrix`
+- `useUsageStats.ts` — `useUsageStats`
+- `useSessionRecord.ts` — sessionStorage-backed expand/collapse state
+
+**Views** (`src/components/modules/harness/`):
+- `RunList.tsx` — run list grouped by use case, collapsible, sessionStorage state
+- `TrajectoryView.tsx` — event stream + meta panel (token/cost summary added p6-001)
+- `DiffView.tsx` — two-run comparison (token/cost rows added p6-003)
+- `CapabilityMatrixView.tsx` — agent/script catalogue, collapsible, sessionStorage state
+- `UsageView.tsx` — aggregate usage stats (p6-002)
+
+---
+
 ## Future Considerations
 
 - **Backup/Restore** — export the DuckDB file, import it on another machine

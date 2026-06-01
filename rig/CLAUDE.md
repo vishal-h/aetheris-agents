@@ -218,6 +218,18 @@ snake_case passthrough — camelCase keys are the only form that is consistently
 
 Error form: `invalid args runId for command X: missing required key runId`
 
+**Every key must be camelCase — no exceptions.** `job_id` in Rust → `jobId` in JS.
+`run_id` → `runId`. The error message names the camelCase key Tauri expected, so
+`missing required key jobId` means the invoke call passed `job_id` instead of `jobId`.
+
+After wiring any new command, run this sweep before testing:
+```bash
+grep -rn "invoke(" src/hooks/ src/components/ --include="*.ts" --include="*.tsx" \
+  | grep "_id\|_path\|_dir\|_type\|_name\|_count\|_status"
+```
+Any hit with a snake_case key in the args object is a bug. Known safe exceptions: single-word
+keys (`path`, `status`, `request`, `approved`) never need conversion.
+
 ---
 
 ## Rust / Tauri patterns

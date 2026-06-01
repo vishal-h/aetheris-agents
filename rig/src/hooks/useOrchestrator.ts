@@ -46,7 +46,7 @@ export function useOrchestrator() {
 
     const id = setInterval(async () => {
       try {
-        const result = await invoke<PollResult>('orchestrate_poll', { job_id: jobId });
+        const result = await invoke<PollResult>('orchestrate_poll', { jobId });
         result.messages.forEach(processMessage);
       } catch (e) {
         setError(String(e));
@@ -75,7 +75,7 @@ export function useOrchestrator() {
     if (!jobId) return;
     if (approved) setPhase('executing');
     try {
-      await invoke('orchestrate_approve', { job_id: jobId, approved });
+      await invoke('orchestrate_approve', { jobId, approved });
       if (!approved) setPhase('cancelled');
     } catch (e) {
       setError(String(e));
@@ -85,7 +85,7 @@ export function useOrchestrator() {
 
   const cancel = useCallback(async () => {
     if (!jobId) return;
-    await invoke('orchestrate_cancel', { job_id: jobId }).catch(() => {});
+    await invoke('orchestrate_cancel', { jobId }).catch(() => {});
     setPhase('cancelled');
   }, [jobId]);
 

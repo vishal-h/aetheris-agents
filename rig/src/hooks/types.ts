@@ -306,3 +306,14 @@ export interface CapabilityMatrix {
   use_cases:    MatrixUseCase[];
   generated_at: string | null;
 }
+
+// ============================================================================
+// Token / cost summary — p6-001
+// ============================================================================
+
+export interface TokenSummary {
+  input_tokens:  number | null;
+  output_tokens: number | null;
+  cost_usd:      number | null;
+  llm_calls:     number;
+}

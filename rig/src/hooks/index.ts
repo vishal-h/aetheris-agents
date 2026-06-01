@@ -41,3 +41,4 @@ export { useRunDiff } from './useRunDiff';
 export { useCapabilityMatrix } from './useCapabilityMatrix';
 export { useSessionRecord } from './useSessionRecord';
 export type { MatrixAgent, MatrixScript, MatrixUseCase, CapabilityMatrix } from './types';
+export type { TokenSummary } from './types';

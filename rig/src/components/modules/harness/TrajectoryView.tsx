@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTrajectory } from '@/hooks/useTrajectory';
-import type { TrajectoryEvent } from '@/hooks/types';
+import type { TrajectoryEvent, TokenSummary } from '@/hooks/types';
 
 const EVENT_COLOURS: Record<string, string> = {
   prompt_built:           'bg-blue-100 text-blue-800',
@@ -20,6 +20,58 @@ const EVENT_COLOURS: Record<string, string> = {
 
 function eventColour(type: string): string {
   return EVENT_COLOURS[type] ?? 'bg-muted text-muted-foreground';
+}
+
+// ── Token / cost helpers ──────────────────────────────────────────────────────
+
+function computeTokenSummary(events: TrajectoryEvent[]): TokenSummary {
+  const llmEvents = events.filter((e) => e.event_type === 'llm_responded');
+
+  if (llmEvents.length === 0) {
+    return { input_tokens: null, output_tokens: null, cost_usd: null, llm_calls: 0 };
+  }
+
+  const hasData = llmEvents.some((e) => e.payload['cost_usd'] != null);
+
+  if (!hasData) {
+    return { input_tokens: null, output_tokens: null, cost_usd: null, llm_calls: llmEvents.length };
+  }
+
+  const input_tokens = llmEvents.reduce(
+    (sum, e) => sum + ((e.payload['input_tokens'] as number | null) ?? 0), 0
+  );
+  const output_tokens = llmEvents.reduce(
+    (sum, e) => sum + ((e.payload['output_tokens'] as number | null) ?? 0), 0
+  );
+  const cost_usd = llmEvents.reduce(
+    (sum, e) => sum + ((e.payload['cost_usd'] as number | null) ?? 0), 0
+  );
+
+  return { input_tokens, output_tokens, cost_usd, llm_calls: llmEvents.length };
+}
+
+function formatCost(usd: number | null): string {
+  if (usd === null) return '—';
+  if (usd >= 1) return `$${usd.toFixed(2)}`;
+  return `$${usd.toFixed(4)}`;
+}
+
+function formatTokens(n: number | null): string {
+  if (n === null) return '—';
+  return n.toLocaleString();
+}
+
+function TokenSummaryRows({ events }: { events: TrajectoryEvent[] }) {
+  const summary = computeTokenSummary(events);
+  if (summary.llm_calls === 0) return null;
+  return (
+    <>
+      <MetaRow label="LLM calls"     value={String(summary.llm_calls)} />
+      <MetaRow label="Input tokens"  value={formatTokens(summary.input_tokens)} />
+      <MetaRow label="Output tokens" value={formatTokens(summary.output_tokens)} />
+      <MetaRow label="Cost"          value={formatCost(summary.cost_usd)} />
+    </>
+  );
 }
 
 function EventRow({ event }: { event: TrajectoryEvent }) {
@@ -193,6 +245,7 @@ export function TrajectoryView({ runId }: Props) {
             {duration !== null &&
               <MetaRow label="Duration" value={`${duration}s`} />}
             <MetaRow label="Tools" value={meta.tools.join(', ') || '—'} />
+            <TokenSummaryRows events={events} />
             <div className="col-span-2 mt-1">
               <ExpandableText label="System prompt" text={meta.system_prompt} />
             </div>

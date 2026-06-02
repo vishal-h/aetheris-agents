@@ -14,7 +14,7 @@ pub fn orchestrate_start(
     let aetheris_dir = state.aetheris_dir.as_ref()
         .ok_or("aetheris dir unavailable — is AETHERIS_DB_PATH set?")?;
 
-    let script_path = format!("{}/agents/mock_orchestrator.exs", agents_path);
+    let script_path = format!("{}/agents/orchestrator.exs", agents_path);
 
     let mut child = std::process::Command::new("mix")
         .args(["run", &script_path])

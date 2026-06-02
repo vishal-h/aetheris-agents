@@ -337,6 +337,18 @@ export interface UseCaseUsageRow {
   total_cost_usd: number;
 }
 
+// ============================================================================
+// Agent config — p7-001
+// ============================================================================
+
+export interface AgentConfigEntry {
+  key:    string;
+  label:  string;
+  group:  string;
+  masked: boolean;
+  value?: string;
+}
+
 export interface UsageStats {
   total_cost_usd:      number;
   total_runs:          number;

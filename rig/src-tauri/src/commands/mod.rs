@@ -1,3 +1,4 @@
+pub mod agent_config;
 pub mod capability_matrix;
 pub mod f2;
 pub mod harness;

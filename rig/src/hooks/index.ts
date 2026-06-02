@@ -44,3 +44,5 @@ export { useUsageStats } from './useUsageStats';
 export type { MatrixAgent, MatrixScript, MatrixUseCase, CapabilityMatrix } from './types';
 export type { TokenSummary } from './types';
 export type { ModelUsageRow, UseCaseUsageRow, UsageStats } from './types';
+export { useAgentConfig } from './useAgentConfig';
+export type { AgentConfigEntry } from './types';

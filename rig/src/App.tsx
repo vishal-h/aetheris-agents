@@ -6,7 +6,8 @@ import { RightPanel } from '@/components/shell/RightPanel';
 import { HarnessRoute } from '@/components/modules/harness/RunList';
 import { OrchestratorView } from '@/components/modules/orchestrator/OrchestratorView';
 import { DiffView } from '@/components/modules/harness/DiffView';
-import { F2Operations, F2Viewer, WatchedFoldersSettings } from '@/components/modules/f2';
+import { F2Operations, F2Viewer } from '@/components/modules/f2';
+import { SettingsRoute } from '@/components/modules/settings/SettingsRoute';
 import { CapabilityMatrixView } from '@/components/modules/harness/CapabilityMatrixView';
 import { UsageView } from '@/components/modules/harness/UsageView';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
@@ -83,18 +84,7 @@ function App() {
             />
 
             {/* Settings */}
-            <Route
-              path="/settings"
-              element={
-                <MainArea
-                  tabs={[{
-                    id: 'watched-folders',
-                    label: 'Watched Folders',
-                    content: <WatchedFoldersSettings />,
-                  }]}
-                />
-              }
-            />
+            <Route path="/settings" element={<SettingsRoute />} />
           </Routes>
 
           {/* RightPanel - conditionally rendered based on context */}

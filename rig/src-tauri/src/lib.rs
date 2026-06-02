@@ -25,6 +25,11 @@ pub struct OrchestratorJob {
     pub done:   Arc<AtomicBool>,
 }
 
+pub struct AgentConfigState {
+    pub store_path: std::path::PathBuf,
+    pub cache:      Mutex<HashMap<String, String>>,
+}
+
 pub struct OrchestratorState {
     pub jobs:         Mutex<HashMap<String, OrchestratorJob>>,
     pub agents_path:  Option<String>,
@@ -59,6 +64,9 @@ pub fn run() {
       commands::harness::harness_list_runs,
       commands::harness::harness_get_events,
       commands::harness::harness_get_run,
+      commands::agent_config::agent_config_get_all,
+      commands::agent_config::agent_config_set,
+      commands::agent_config::agent_config_delete,
       commands::orchestrate::orchestrate_start,
       commands::orchestrate::orchestrate_poll,
       commands::orchestrate::orchestrate_approve,
@@ -155,6 +163,22 @@ pub fn run() {
         jobs:        Mutex::new(HashMap::new()),
         agents_path,
         aetheris_dir,
+      });
+
+      let store_path = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data directory: {}", e))?
+        .join("agent-config.json");
+
+      let agent_cache = if store_path.exists() {
+        let raw = std::fs::read_to_string(&store_path).unwrap_or_default();
+        serde_json::from_str::<HashMap<String, String>>(&raw).unwrap_or_default()
+      } else {
+        HashMap::new()
+      };
+
+      app.manage(AgentConfigState {
+        store_path,
+        cache: Mutex::new(agent_cache),
       });
 
       Ok(())

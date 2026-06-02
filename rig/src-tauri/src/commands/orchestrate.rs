@@ -1,4 +1,4 @@
-use crate::OrchestratorState;
+use crate::{AgentConfigState, OrchestratorState};
 use std::io::BufRead;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
@@ -6,8 +6,9 @@ use tauri::State;
 
 #[tauri::command]
 pub fn orchestrate_start(
-    state: State<'_, OrchestratorState>,
-    request: String,
+    state:        State<'_, OrchestratorState>,
+    config_state: State<'_, AgentConfigState>,
+    request:      String,
 ) -> Result<String, String> {
     let agents_path = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
@@ -16,14 +17,21 @@ pub fn orchestrate_start(
 
     let script_path = format!("{}/agents/orchestrator.exs", agents_path);
 
-    let mut child = std::process::Command::new("mix")
-        .args(["run", &script_path])
+    let agent_config = config_state.cache.lock().unwrap().clone();
+
+    let mut cmd = std::process::Command::new("mix");
+    cmd.args(["run", &script_path])
         .env("ORCHESTRATOR_REQUEST", &request)
         .current_dir(aetheris_dir)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .spawn()
+        .stderr(std::process::Stdio::null());
+
+    for (key, value) in &agent_config {
+        cmd.env(key, value);
+    }
+
+    let mut child = cmd.spawn()
         .map_err(|e| format!("spawn failed: {}", e))?;
 
     let stdin  = Arc::new(Mutex::new(child.stdin.take().unwrap()));

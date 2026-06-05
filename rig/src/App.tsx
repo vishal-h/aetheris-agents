@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { TopBar } from '@/components/shell/TopBar';
 import { Sidebar } from '@/components/shell/Sidebar';
@@ -18,6 +19,20 @@ import { useScanStatus } from '@/hooks/useScanStatus';
 
 function App() {
   const { scanning, triggerScan } = useScanStatus();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey && (e.key === 'z' || e.key === 'y')) ||
+        (e.ctrlKey && e.shiftKey && e.key === 'z') ||
+        e.key === 'Escape'
+      ) {
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('keydown', handler, true);
+    return () => document.removeEventListener('keydown', handler, true);
+  }, []);
 
   return (
     <div className="flex flex-col h-screen">

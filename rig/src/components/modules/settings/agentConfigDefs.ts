@@ -26,11 +26,12 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
     masked: false, placeholder: 'payroll@example.com' },
 
   // Google Drive
-  // Value must be the entire service account JSON as a single escaped string.
-  // To prepare: jq -c . your-service-account.json | jq -Rs . | xclip -sel clip
-  // Then paste the result (including the outer quotes) into the field.
-  { key: 'GOOGLE_CREDENTIALS',  label: 'Credentials JSON',  group: 'Google Drive',
-    masked: true,  placeholder: 'paste-your-service-account-json-here' },
+  { key: 'GOOGLE_SERVICE_ACCOUNT',  label: 'Service account key path', group: 'Google Drive',
+    masked: false, placeholder: '/path/to/service-account.json' },
+  { key: 'DRIVE_PAYROLL_FOLDER_ID', label: 'Payroll folder ID',        group: 'Google Drive',
+    masked: false, placeholder: 'Google Drive folder ID containing payroll CSV' },
+  { key: 'DRIVE_OUTPUT_FOLDER_ID',  label: 'Output folder ID',         group: 'Google Drive',
+    masked: false, placeholder: 'Google Drive folder ID for output and email templates' },
 
   // Provenance
   { key: 'PROVENANCE_NAS_PATH', label: 'NAS archive path',  group: 'Provenance',

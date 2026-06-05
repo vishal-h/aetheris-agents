@@ -9,7 +9,7 @@ import type { PlanStep, StepStatus } from '@/hooks/types';
 // ── Config hints — which env vars are relevant for each agent ─────────────────
 
 const STEP_CONFIG_HINTS: Record<string, string[]> = {
-  'drive/agents/drive_orchestrator.exs':               ['GOOGLE_CREDENTIALS'],
+  'drive/agents/drive_orchestrator.exs':               ['GOOGLE_SERVICE_ACCOUNT'],
   'email/agents/email_orchestrator.exs':               ['SMTP_TO', 'SMTP_FROM'],
   'provenance/agents/scan_orchestrator.exs':           ['PROVENANCE_NAS_PATH'],
   'provenance/agents/classification_orchestrator.exs': [],
@@ -47,10 +47,7 @@ function StepCard({ step, index, configValues, status }: StepCardProps) {
   const hints = STEP_CONFIG_HINTS[step.agent] ?? [];
   const configLines = hints
     .filter((k) => configValues[k] !== undefined && configValues[k] !== '')
-    .map((k) => {
-      const v = k === 'GOOGLE_CREDENTIALS' ? '••• configured •••' : configValues[k];
-      return `${k}: ${v}`;
-    });
+    .map((k) => `${k}: ${configValues[k]}`);
 
   return (
     <div className="rounded-md border p-3 flex items-start gap-3">

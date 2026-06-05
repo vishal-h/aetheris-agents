@@ -287,40 +287,14 @@ production credentials.
 | `SMTP_PASSWORD` | SMTP | SMTP password (app password, not login password) |
 | `SMTP_FROM` | SMTP | From address for outgoing email |
 | `SMTP_TO` | SMTP | Finance inbox that receives all payslip emails (all employees send to this address) |
-| `GOOGLE_CREDENTIALS` | Google Drive | Service account JSON (see below) |
+| `GOOGLE_SERVICE_ACCOUNT` | Google Drive | Absolute path to service account JSON key file |
+| `DRIVE_PAYROLL_FOLDER_ID` | Google Drive | Google Drive folder ID containing payroll CSV |
+| `DRIVE_OUTPUT_FOLDER_ID` | Google Drive | Google Drive folder ID for output and email templates |
 | `PROVENANCE_NAS_PATH` | Provenance | Absolute path to the NAS archive root |
-
-### Google Drive credentials
-
-`GOOGLE_CREDENTIALS` must be the **entire service account JSON as a single
-escaped string** — not a file path, not a multi-line JSON object.
-
-To prepare the value from a service account JSON file:
-
-```bash
-jq -c . your-service-account.json | jq -Rs . | xclip -sel clip
-```
-
-This pipeline:
-1. `jq -c .` — compacts the JSON to a single line
-2. `jq -Rs .` — wraps it as a JSON string (adds outer quotes, escapes inner quotes)
-3. `xclip -sel clip` — copies to clipboard
-
-Paste the result **including the outer `"` quotes** into the Credentials JSON field,
-or into the `GOOGLE_CREDENTIALS` key when editing an exported `agent-config.json`.
-
-The stored value will look like:
-```
-"{\"type\":\"service_account\",\"project_id\":\"my-project\",...}"
-```
-
-When the agent script reads it with `System.get_env("GOOGLE_CREDENTIALS")`, it
-receives the raw JSON string, which `Jason.decode!` or Python's `json.loads` can
-parse directly.
 
 ### Export / Import
 
-Use the **Export** button to download all 11 known variable slots as
+Use the **Export** button to download all 13 known variable slots as
 `agent-config.json`. Unset variables are exported with their placeholder hint
 value so the file serves as a self-documenting template. Keys are sorted
 alphabetically.

@@ -257,6 +257,80 @@ when no instrumented runs exist yet.
 
 ---
 
+## Part 3d — Agent Config Settings
+
+The Settings panel (`/settings`) has two tabs: **Watched Folders** and **Agent Config**.
+
+Agent Config stores the env vars that Rig-launched agents need — API keys, SMTP
+credentials, paths — so they do not have to be set in the shell. Values are
+persisted in `agent-config.json` in the app data directory and injected
+automatically when `orchestrate_start` spawns the child process.
+
+```
+~/.local/share/dev.rig.app/agent-config.json   # Linux
+~/Library/Application Support/dev.rig.app/agent-config.json  # macOS
+```
+
+Values are stored in **plaintext**. Do not use this on shared machines for
+production credentials.
+
+### Known variables
+
+| Variable | Group | Description |
+|---|---|---|
+| `AETHERIS_MODEL` | Harness | Default LLM model (e.g. `claude-haiku-4-5-20251001`) |
+| `AETHERIS_PROVIDER` | Harness | Default provider (e.g. `anthropic`) |
+| `ANTHROPIC_API_KEY` | Anthropic | API key for Anthropic models |
+| `SMTP_HOST` | SMTP | SMTP server hostname |
+| `SMTP_PORT` | SMTP | SMTP port (default `587`) |
+| `SMTP_USER` | SMTP | SMTP login username |
+| `SMTP_PASSWORD` | SMTP | SMTP password (app password, not login password) |
+| `SMTP_FROM` | SMTP | From address for outgoing email |
+| `SMTP_TO` | SMTP | Default To address |
+| `GOOGLE_CREDENTIALS` | Google Drive | Service account JSON (see below) |
+| `PROVENANCE_NAS_PATH` | Provenance | Absolute path to the NAS archive root |
+
+### Google Drive credentials
+
+`GOOGLE_CREDENTIALS` must be the **entire service account JSON as a single
+escaped string** — not a file path, not a multi-line JSON object.
+
+To prepare the value from a service account JSON file:
+
+```bash
+jq -c . your-service-account.json | jq -Rs . | xclip -sel clip
+```
+
+This pipeline:
+1. `jq -c .` — compacts the JSON to a single line
+2. `jq -Rs .` — wraps it as a JSON string (adds outer quotes, escapes inner quotes)
+3. `xclip -sel clip` — copies to clipboard
+
+Paste the result **including the outer `"` quotes** into the Credentials JSON field,
+or into the `GOOGLE_CREDENTIALS` key when editing an exported `agent-config.json`.
+
+The stored value will look like:
+```
+"{\"type\":\"service_account\",\"project_id\":\"my-project\",...}"
+```
+
+When the agent script reads it with `System.get_env("GOOGLE_CREDENTIALS")`, it
+receives the raw JSON string, which `Jason.decode!` or Python's `json.loads` can
+parse directly.
+
+### Export / Import
+
+Use the **Export** button to download all 11 known variable slots as
+`agent-config.json`. Unset variables are exported with their placeholder hint
+value so the file serves as a self-documenting template. Keys are sorted
+alphabetically.
+
+Use the **Import** button to load a previously exported or hand-edited JSON file.
+Imported values are merged into the current store (existing keys not present in
+the file are unchanged). A "N values imported." confirmation appears for 3 seconds.
+
+---
+
 ## Part 4 — Development Notes
 
 ### Hot reload

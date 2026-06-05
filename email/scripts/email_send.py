@@ -3,6 +3,7 @@
 import argparse
 import configparser
 import json
+import os
 import re
 import smtplib
 import subprocess
@@ -18,21 +19,55 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 
 def load_config(config_path):
-    """Read SMTP credentials from config_path and return the [smtp] section.
+    """Read SMTP credentials from config_path, falling back to env vars.
 
-    Exits 1 with a clear message if the file is not found or the [smtp]
-    section is missing.
+    Priority: smtp.cfg file (if it exists) → environment variables.
+    This allows Rig-launched agents to inject credentials via env vars
+    without requiring smtp.cfg to be present on disk.
+
+    Exits 1 if neither the file nor the required env vars are available.
     """
     path = Path(config_path)
-    if not path.exists():
-        print(f"Config file not found: {config_path}", file=sys.stderr)
+    if path.exists():
+        cfg = configparser.ConfigParser()
+        cfg.read(path)
+        if "smtp" not in cfg:
+            print(f"[smtp] section missing from {config_path}", file=sys.stderr)
+            sys.exit(1)
+        return cfg["smtp"]
+
+    # Fall back to environment variables
+    host      = os.getenv("SMTP_HOST")
+    port      = os.getenv("SMTP_PORT", "587")
+    username  = os.getenv("SMTP_USER")
+    password  = os.getenv("SMTP_PASSWORD")
+    from_addr = os.getenv("SMTP_FROM") or username
+    to_addr   = os.getenv("SMTP_TO")   or username
+
+    missing = [
+        k for k, v in {
+            "SMTP_HOST": host,
+            "SMTP_USER": username,
+            "SMTP_PASSWORD": password,
+        }.items()
+        if not v
+    ]
+    if missing:
+        print(
+            f"smtp.cfg not found at {config_path} and env vars not set: "
+            f"{', '.join(missing)}",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    cfg = configparser.ConfigParser()
-    cfg.read(path)
-    if "smtp" not in cfg:
-        print(f"[smtp] section missing from {config_path}", file=sys.stderr)
-        sys.exit(1)
-    return cfg["smtp"]
+
+    return {
+        "host":         host,
+        "port":         port,
+        "username":     username,
+        "password":     password,
+        "from_address": from_addr,
+        "to_address":   to_addr,
+    }
 
 
 def get_employees(payroll_csv_path):

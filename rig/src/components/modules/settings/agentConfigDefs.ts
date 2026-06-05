@@ -22,7 +22,7 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
     masked: true,  placeholder: 'app password (not your login password)' },
   { key: 'SMTP_FROM',           label: 'From address',      group: 'SMTP',
     masked: false, placeholder: 'payroll@example.com' },
-  { key: 'SMTP_TO',             label: 'To address',        group: 'SMTP',
+  { key: 'SMTP_TO',             label: 'Payslip delivery address', group: 'SMTP',
     masked: false, placeholder: 'payroll@example.com' },
 
   // Google Drive

@@ -286,7 +286,7 @@ production credentials.
 | `SMTP_USER` | SMTP | SMTP login username |
 | `SMTP_PASSWORD` | SMTP | SMTP password (app password, not login password) |
 | `SMTP_FROM` | SMTP | From address for outgoing email |
-| `SMTP_TO` | SMTP | Default To address |
+| `SMTP_TO` | SMTP | Finance inbox that receives all payslip emails (all employees send to this address) |
 | `GOOGLE_CREDENTIALS` | Google Drive | Service account JSON (see below) |
 | `PROVENANCE_NAS_PATH` | Provenance | Absolute path to the NAS archive root |
 

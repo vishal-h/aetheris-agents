@@ -257,12 +257,14 @@ export interface PlanStep {
   id:          string;
   agent:       string;
   description: string;
+  context?:    string;
 }
 
 export interface OrchestratorPlan {
   type:    'plan';
   request: string;
   steps:   PlanStep[];
+  params?: Record<string, string>;
 }
 
 export interface PollResult {

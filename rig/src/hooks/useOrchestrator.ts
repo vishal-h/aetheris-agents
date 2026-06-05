@@ -8,6 +8,7 @@ export function useOrchestrator() {
   const [phase,        setPhase]        = useState<OrchestratorPhase>('idle');
   const [jobId,        setJobId]        = useState<string | null>(null);
   const [plan,         setPlan]         = useState<OrchestratorPlan | null>(null);
+  const [params,       setParams]       = useState<Record<string, string>>({});
   const [stepStatuses, setStepStatuses] = useState<Record<string, StepStatus>>({});
   const [error,        setError]        = useState<string | null>(null);
 
@@ -15,6 +16,7 @@ export function useOrchestrator() {
     switch (msg.type) {
       case 'plan':
         setPlan(msg as unknown as OrchestratorPlan);
+        setParams((msg.params as Record<string, string>) ?? {});
         setStepStatuses(
           Object.fromEntries(
             (msg.steps as { id: string }[]).map((s) => [s.id, 'pending' as StepStatus])
@@ -93,9 +95,10 @@ export function useOrchestrator() {
     setPhase('idle');
     setJobId(null);
     setPlan(null);
+    setParams({});
     setStepStatuses({});
     setError(null);
   }, []);
 
-  return { phase, plan, stepStatuses, error, start, approve, cancel, reset };
+  return { phase, plan, params, stepStatuses, error, start, approve, cancel, reset };
 }

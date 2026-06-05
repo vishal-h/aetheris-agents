@@ -39,8 +39,12 @@ Respond with a JSON object ONLY — no preamble, no explanation, no markdown.
 
 {
   "steps": [
-    { "id": "step-1", "agent": "relative/path/to/agent.exs", "description": "What this step does" },
-    { "id": "step-2", "agent": "relative/path/to/agent.exs", "description": "What this step does" }
+    {
+      "id": "step-1",
+      "agent": "relative/path/to/agent.exs",
+      "description": "What this step does",
+      "context": "One sentence with specific runtime details — what data, which month, where output goes"
+    }
   ],
   "params": {
     "PAYSLIP_MONTH": "2026-04"
@@ -49,6 +53,10 @@ Respond with a JSON object ONLY — no preamble, no explanation, no markdown.
 
 Agent paths must be relative to the aetheris-agents/ root and must match
 exactly the file paths listed in the capability matrix.
+
+context is a single sentence that makes the step concrete for the user to
+verify. Use the request params and your knowledge of the agent to be specific.
+If there is nothing specific to add, omit the field or use an empty string.
 
 params is a flat map of env var names to values extracted from the request.
 Include only params that are directly relevant to the steps.
@@ -70,9 +78,24 @@ Known params:
 Request: "email payslips to all employees for May 2026"
 {
   "steps": [
-    { "id": "step-1", "agent": "drive/agents/drive_orchestrator.exs",    "description": "Download payroll CSV from Google Drive" },
-    { "id": "step-2", "agent": "payslip/agents/payslip_orchestrator.exs", "description": "Compute and generate payslips for May 2026" },
-    { "id": "step-3", "agent": "email/agents/email_orchestrator.exs",    "description": "Email payslips to all employees" }
+    {
+      "id": "step-1",
+      "agent": "drive/agents/drive_orchestrator.exs",
+      "description": "Download payroll CSV from Google Drive",
+      "context": "Downloads payroll.csv from the configured Google Drive folder to payslip/data/"
+    },
+    {
+      "id": "step-2",
+      "agent": "payslip/agents/payslip_orchestrator.exs",
+      "description": "Compute and generate payslips for May 2026",
+      "context": "Reads payslip/data/payroll.csv, generates PDFs to payslip/output/{employee_id}/2026-05-Payslip.pdf"
+    },
+    {
+      "id": "step-3",
+      "agent": "email/agents/email_orchestrator.exs",
+      "description": "Email payslips to all employees",
+      "context": "Sends May 2026 payslip PDFs to the configured delivery address"
+    }
   ],
   "params": { "PAYSLIP_MONTH": "2026-05" }
 }
@@ -80,7 +103,12 @@ Request: "email payslips to all employees for May 2026"
 Request: "scan the corpus for new files"
 {
   "steps": [
-    { "id": "step-1", "agent": "provenance/agents/scan_orchestrator.exs", "description": "Scan NAS archive and update corpus inventory" }
+    {
+      "id": "step-1",
+      "agent": "provenance/agents/scan_orchestrator.exs",
+      "description": "Scan NAS archive and update corpus inventory",
+      "context": "Walks the NAS archive path, hashes new files, and updates the corpus DuckDB inventory"
+    }
   ],
   "params": {}
 }
@@ -88,7 +116,12 @@ Request: "scan the corpus for new files"
 Request: "classify unclassified documents"
 {
   "steps": [
-    { "id": "step-1", "agent": "provenance/agents/classification_orchestrator.exs", "description": "Classify unclassified corpus documents" }
+    {
+      "id": "step-1",
+      "agent": "provenance/agents/classification_orchestrator.exs",
+      "description": "Classify unclassified corpus documents",
+      "context": "Runs LLM classification on files with status = unclassified and writes proposed labels"
+    }
   ],
   "params": {}
 }
@@ -96,7 +129,12 @@ Request: "classify unclassified documents"
 Request: "enroll students from CSV"
 {
   "steps": [
-    { "id": "step-1", "agent": "api/tenant/agents/at1cmd.exs", "description": "Submit student enrollment intent via TAP protocol" }
+    {
+      "id": "step-1",
+      "agent": "api/tenant/agents/at1cmd.exs",
+      "description": "Submit student enrollment intent via TAP protocol",
+      "context": "Reads the CSV, submits each row as a TAP enrollment intent to the gateway"
+    }
   ],
   "params": {}
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, Eye, EyeOff, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
@@ -19,6 +19,11 @@ interface ConfigRowProps {
 function ConfigRow({ label, envKey, masked, placeholder, value, onSave, onClear }: ConfigRowProps) {
   const [draft,   setDraft]   = useState(value ?? '');
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
   const isSet   = value !== undefined && value !== '';
   const isDirty = draft !== (value ?? '');
 

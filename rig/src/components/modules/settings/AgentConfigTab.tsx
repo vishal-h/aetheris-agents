@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, X } from 'lucide-react';
+import { Download, Eye, EyeOff, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { AGENT_CONFIG_DEFS } from './agentConfigDefs';
@@ -7,15 +7,16 @@ import { AGENT_CONFIG_DEFS } from './agentConfigDefs';
 // ── Single config row ─────────────────────────────────────────────────────────
 
 interface ConfigRowProps {
-  label:   string;
-  envKey:  string;
-  masked:  boolean;
-  value:   string | undefined;
-  onSave:  (key: string, value: string) => void;
-  onClear: (key: string) => void;
+  label:       string;
+  envKey:      string;
+  masked:      boolean;
+  placeholder: string | undefined;
+  value:       string | undefined;
+  onSave:      (key: string, value: string) => void;
+  onClear:     (key: string) => void;
 }
 
-function ConfigRow({ label, envKey, masked, value, onSave, onClear }: ConfigRowProps) {
+function ConfigRow({ label, envKey, masked, placeholder, value, onSave, onClear }: ConfigRowProps) {
   const [draft,   setDraft]   = useState(value ?? '');
   const [visible, setVisible] = useState(false);
   const isSet   = value !== undefined && value !== '';
@@ -34,7 +35,7 @@ function ConfigRow({ label, envKey, masked, value, onSave, onClear }: ConfigRowP
           className="w-full rounded-md border border-input bg-background px-3 py-1.5 pr-8
                      text-sm font-mono focus-visible:outline-none
                      focus-visible:ring-2 focus-visible:ring-ring"
-          placeholder={isSet ? '••••••••' : 'Not set'}
+          placeholder={isSet ? '••••••••' : (placeholder ?? 'Not set')}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
         />
@@ -54,10 +55,7 @@ function ConfigRow({ label, envKey, masked, value, onSave, onClear }: ConfigRowP
 
       <div className="flex gap-1 shrink-0">
         {isDirty && draft !== '' && (
-          <Button
-            size="sm"
-            onClick={() => { onSave(envKey, draft); }}
-          >
+          <Button size="sm" onClick={() => { onSave(envKey, draft); }}>
             Save
           </Button>
         )}
@@ -101,6 +99,7 @@ function ConfigGroup({
             label={def.label}
             envKey={def.key}
             masked={def.masked}
+            placeholder={def.placeholder}
             value={values[def.key]}
             onSave={onSave}
             onClear={onClear}
@@ -114,7 +113,8 @@ function ConfigGroup({
 // ── Main tab ──────────────────────────────────────────────────────────────────
 
 export function AgentConfigTab() {
-  const { values, loading, error, set, remove } = useAgentConfig();
+  const { values, loading, error, set, remove, exportConfig, importConfig } = useAgentConfig();
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -129,6 +129,36 @@ export function AgentConfigTab() {
     return <div className="p-4 text-sm text-red-600">{error}</div>;
   }
 
+  async function handleExport() {
+    const json = await exportConfig();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'agent-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImport() {
+    const input   = document.createElement('input');
+    input.type    = 'file';
+    input.accept  = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        const count = await importConfig(text);
+        setImportMessage(`${count} value${count !== 1 ? 's' : ''} imported.`);
+        setTimeout(() => setImportMessage(null), 3000);
+      } catch (e) {
+        setImportMessage(`Import failed: ${String(e)}`);
+      }
+    };
+    input.click();
+  }
+
   const groups = Array.from(new Set(AGENT_CONFIG_DEFS.map((d) => d.group)));
 
   return (
@@ -139,6 +169,22 @@ export function AgentConfigTab() {
                         px-4 py-3 text-xs text-amber-800 mb-6">
           Values are stored in plaintext on disk in the app data directory.
           Do not store production credentials on shared machines.
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="h-3.5 w-3.5 mr-1.5" />
+            Export
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleImport}>
+            <Upload className="h-3.5 w-3.5 mr-1.5" />
+            Import
+          </Button>
+          {importMessage && (
+            <span className="text-xs text-muted-foreground self-center">
+              {importMessage}
+            </span>
+          )}
         </div>
 
         {groups.map((group) => (

@@ -35,3 +35,28 @@ pub fn agent_config_delete(
     state.cache.lock().unwrap().remove(&key);
     persist(&state)
 }
+
+#[tauri::command]
+pub fn agent_config_export(
+    state: State<'_, AgentConfigState>,
+) -> Result<String, String> {
+    let cache = state.cache.lock().unwrap();
+    serde_json::to_string_pretty(&*cache)
+        .map_err(|e| format!("serialise failed: {}", e))
+}
+
+#[tauri::command]
+pub fn agent_config_import(
+    state:  State<'_, AgentConfigState>,
+    values: HashMap<String, String>,
+) -> Result<usize, String> {
+    let count = values.len();
+    {
+        let mut cache = state.cache.lock().unwrap();
+        for (k, v) in values {
+            cache.insert(k, v);
+        }
+    }
+    persist(&state)?;
+    Ok(count)
+}

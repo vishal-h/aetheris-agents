@@ -342,11 +342,12 @@ export interface UseCaseUsageRow {
 // ============================================================================
 
 export interface AgentConfigEntry {
-  key:    string;
-  label:  string;
-  group:  string;
-  masked: boolean;
-  value?: string;
+  key:          string;
+  label:        string;
+  group:        string;
+  masked:       boolean;
+  placeholder?: string;
+  value?:       string;
 }
 
 export interface UsageStats {

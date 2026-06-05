@@ -67,6 +67,8 @@ pub fn run() {
       commands::agent_config::agent_config_get_all,
       commands::agent_config::agent_config_set,
       commands::agent_config::agent_config_delete,
+      commands::agent_config::agent_config_export,
+      commands::agent_config::agent_config_import,
       commands::orchestrate::orchestrate_start,
       commands::orchestrate::orchestrate_poll,
       commands::orchestrate::orchestrate_approve,

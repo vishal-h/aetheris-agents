@@ -29,5 +29,17 @@ export function useAgentConfig() {
     });
   }, []);
 
-  return { values, loading, error, set, remove, reload: load };
+  const exportConfig = useCallback(async (): Promise<string> => {
+    return invoke<string>('agent_config_export');
+  }, []);
+
+  const importConfig = useCallback(async (json: string): Promise<number> => {
+    const parsed = JSON.parse(json) as Record<string, string>;
+    const count = await invoke<number>('agent_config_import', { values: parsed });
+    const updated = await invoke<Record<string, string>>('agent_config_get_all');
+    setValues(updated);
+    return count;
+  }, []);
+
+  return { values, loading, error, set, remove, reload: load, exportConfig, importConfig };
 }

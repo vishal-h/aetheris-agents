@@ -13,6 +13,8 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
   { key: 'SMTP_PORT',           label: 'Port',              group: 'SMTP',         masked: false },
   { key: 'SMTP_USER',           label: 'Username',          group: 'SMTP',         masked: false },
   { key: 'SMTP_PASSWORD',       label: 'Password',          group: 'SMTP',         masked: true  },
+  { key: 'SMTP_FROM',           label: 'From address',      group: 'SMTP',         masked: false },
+  { key: 'SMTP_TO',             label: 'To address',        group: 'SMTP',         masked: false },
 
   // Google Drive
   { key: 'GOOGLE_CREDENTIALS',  label: 'Credentials JSON',  group: 'Google Drive', masked: true  },

@@ -115,6 +115,7 @@ function ConfigGroup({
 export function AgentConfigTab() {
   const { values, loading, error, set, remove, exportConfig, importConfig } = useAgentConfig();
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [exporting,     setExporting]     = useState(false);
 
   if (loading) {
     return (
@@ -130,6 +131,7 @@ export function AgentConfigTab() {
   }
 
   async function handleExport() {
+    setExporting(true);
     const json = await exportConfig();
     const blob = new Blob([json], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
@@ -138,6 +140,7 @@ export function AgentConfigTab() {
     a.download = 'agent-config.json';
     a.click();
     URL.revokeObjectURL(url);
+    setTimeout(() => setExporting(false), 2000);
   }
 
   async function handleImport() {
@@ -172,9 +175,9 @@ export function AgentConfigTab() {
         </div>
 
         <div className="flex gap-2 mb-6">
-          <Button variant="outline" size="sm" onClick={handleExport}>
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
             <Download className="h-3.5 w-3.5 mr-1.5" />
-            Export
+            {exporting ? 'Exported' : 'Export'}
           </Button>
           <Button variant="outline" size="sm" onClick={handleImport}>
             <Upload className="h-3.5 w-3.5 mr-1.5" />

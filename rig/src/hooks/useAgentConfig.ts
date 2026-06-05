@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { AGENT_CONFIG_DEFS } from '@/components/modules/settings/agentConfigDefs';
 
 export function useAgentConfig() {
   const [values,  setValues]  = useState<Record<string, string>>({});
@@ -30,8 +31,15 @@ export function useAgentConfig() {
   }, []);
 
   const exportConfig = useCallback(async (): Promise<string> => {
-    return invoke<string>('agent_config_export');
-  }, []);
+    const allKeys: Record<string, string> = {};
+    for (const def of AGENT_CONFIG_DEFS) {
+      allKeys[def.key] = values[def.key] ?? def.placeholder ?? '';
+    }
+    const sorted = Object.fromEntries(
+      Object.entries(allKeys).sort(([a], [b]) => a.localeCompare(b))
+    );
+    return JSON.stringify(sorted, null, 2);
+  }, [values]);
 
   const importConfig = useCallback(async (json: string): Promise<number> => {
     const parsed = JSON.parse(json) as Record<string, string>;

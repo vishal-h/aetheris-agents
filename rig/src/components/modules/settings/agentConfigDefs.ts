@@ -28,8 +28,8 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
   // Google Drive
   { key: 'GOOGLE_SERVICE_ACCOUNT', label: 'Service account key path', group: 'Google Drive',
     masked: false, placeholder: '/path/to/service-account.json' },
-  { key: 'DRIVE_ROOT_FOLDER_ID',   label: 'Root folder ID',           group: 'Google Drive',
-    masked: false, placeholder: 'Google Drive folder ID for the payroll root folder',
+  { key: 'DRIVE_ROOT_FOLDER_ID',   label: 'Payslips folder ID',       group: 'Google Drive',
+    masked: false, placeholder: 'Google Drive folder ID for the payslips folder',
     linkPrefix: 'https://drive.google.com/drive/folders/' },
 
   // Provenance

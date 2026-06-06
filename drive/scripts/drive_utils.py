@@ -42,31 +42,21 @@ def find_folder(service, parent_id: str, name: str) -> str | None:
 
 
 def resolve_period_folder(service, root_id: str, payslip_month: str) -> str:
-    """Navigate root → payslips → {period} and return the period folder ID.
+    """Navigate root → {period} and return the period folder ID.
 
-    Fails with a clear error message and sys.exit(1) if any folder in the
-    path does not exist. The period folder must be created manually (or by
-    the upload script) before download scripts can use it.
+    Fails with a clear error message and sys.exit(1) if the period folder
+    does not exist. The period folder must be created manually (or by the
+    upload script) before download scripts can use it.
     """
     import sys
 
     period = period_folder_name(payslip_month)
-
-    payslips_id = find_folder(service, root_id, "payslips")
-    if not payslips_id:
-        print(
-            f"Folder 'payslips' not found under root folder {root_id}.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    period_id = find_folder(service, payslips_id, period)
+    period_id = find_folder(service, root_id, period)
     if not period_id:
         print(
-            f"Period folder '{period}' not found under payslips/. "
+            f"Period folder '{period}' not found under folder {root_id}. "
             f"Create the folder in Drive before running this script.",
             file=sys.stderr,
         )
         sys.exit(1)
-
     return period_id

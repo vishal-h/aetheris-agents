@@ -288,21 +288,21 @@ production credentials.
 | `SMTP_FROM` | SMTP | From address for outgoing email |
 | `SMTP_TO` | SMTP | Finance inbox that receives all payslip emails (all employees send to this address) |
 | `GOOGLE_SERVICE_ACCOUNT` | Google Drive | Absolute path to service account JSON key file |
-| `DRIVE_ROOT_FOLDER_ID` | Google Drive | Folder ID of the payroll root folder in Shared Drive |
+| `DRIVE_ROOT_FOLDER_ID` | Google Drive | Folder ID of the payslips folder in Shared Drive |
 | `PROVENANCE_NAS_PATH` | Provenance | Absolute path to the NAS archive root |
 
 ### Google Drive folder convention
 
-Drive scripts navigate a fixed folder hierarchy under `DRIVE_ROOT_FOLDER_ID`:
+`DRIVE_ROOT_FOLDER_ID` points directly to the payslips folder.
+Drive scripts navigate one level below it to the period folder:
 
 ```
-payroll/                              ← DRIVE_ROOT_FOLDER_ID
-  payslips/
-    {YYYYMM}-{monthname}/             ← derived from PAYSLIP_MONTH
-      payroll.csv                     ← download source
-      payslip_email_template.html     ← email template source
-      {employee_id}/                  ← upload destination
-        {YYYYMM}-Payslip.pdf
+payslips/                             ← DRIVE_ROOT_FOLDER_ID
+  {YYYYMM}-{monthname}/              ← derived from PAYSLIP_MONTH
+    payroll.csv                      ← download source
+    payslip_email_template.html      ← email template source
+    {employee_id}/                   ← upload destination
+      {YYYYMM}-Payslip.pdf
 ```
 
 Period folder naming:
@@ -310,8 +310,8 @@ Period folder naming:
 - `PAYSLIP_MONTH=2026-04` → `202604-april`
 
 The download scripts (`drive_download.py`, `email_download_template.py`) fail
-with a clear error if `payslips/` or the period folder does not exist.
-The upload script (`drive_upload.py`) creates `payslips/{period}` if needed.
+with a clear error if the period folder does not exist.
+The upload script (`drive_upload.py`) creates the period folder if needed.
 
 `PAYSLIP_MONTH` is injected per-invocation by the orchestrator — it is not a
 persistent Agent Config setting.

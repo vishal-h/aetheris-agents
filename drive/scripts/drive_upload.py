@@ -146,8 +146,7 @@ def main():
 
     service = build_service(scopes=UPLOAD_SCOPE)
     period = period_folder_name(payslip_month)
-    payslips_id = find_or_create_folder(service, root_id, "payslips")
-    folder_id   = find_or_create_folder(service, payslips_id, period)
+    folder_id = find_or_create_folder(service, root_id, period)
 
     uploaded = 0
     failed = []

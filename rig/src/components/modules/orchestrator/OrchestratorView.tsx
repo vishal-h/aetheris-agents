@@ -41,9 +41,10 @@ interface StepCardProps {
   index:        number;
   configValues: Record<string, string>;
   status?:      StepStatus;
+  error?:       string;
 }
 
-function StepCard({ step, index, configValues, status }: StepCardProps) {
+function StepCard({ step, index, configValues, status, error }: StepCardProps) {
   const hints = STEP_CONFIG_HINTS[step.agent] ?? [];
   const configLines = hints
     .filter((k) => configValues[k] !== undefined && configValues[k] !== '')
@@ -73,6 +74,9 @@ function StepCard({ step, index, configValues, status }: StepCardProps) {
             ))}
           </div>
         )}
+        {status === 'failed' && error && (
+          <p className="text-xs text-red-600 mt-1 font-mono">{error}</p>
+        )}
       </div>
     </div>
   );
@@ -84,7 +88,7 @@ export function OrchestratorView() {
   const location = useLocation();
   const prefill  = (location.state as { prefill?: string } | null)?.prefill ?? '';
   const [request, setRequest] = useState(prefill);
-  const { phase, plan, params, stepStatuses, error, start, approve, cancel, reset } = useOrchestrator();
+  const { phase, plan, params, stepStatuses, stepErrors, error, start, approve, cancel, reset } = useOrchestrator();
   const { values: configValues } = useAgentConfig();
 
   return (
@@ -149,6 +153,7 @@ export function OrchestratorView() {
                   index={i}
                   configValues={configValues}
                   status={stepStatuses[step.id] ?? 'pending'}
+                  error={stepErrors[step.id]}
                 />
               ))}
             </div>
@@ -168,6 +173,7 @@ export function OrchestratorView() {
                   index={i}
                   configValues={configValues}
                   status={stepStatuses[step.id] ?? 'done'}
+                  error={stepErrors[step.id]}
                 />
               ))}
             </div>
@@ -198,6 +204,7 @@ export function OrchestratorView() {
                   index={i}
                   configValues={configValues}
                   status={stepStatuses[step.id] ?? 'pending'}
+                  error={stepErrors[step.id]}
                 />
               ))}
             </div>

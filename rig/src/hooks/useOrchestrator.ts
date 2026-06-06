@@ -10,6 +10,7 @@ export function useOrchestrator() {
   const [plan,         setPlan]         = useState<OrchestratorPlan | null>(null);
   const [params,       setParams]       = useState<Record<string, string>>({});
   const [stepStatuses, setStepStatuses] = useState<Record<string, StepStatus>>({});
+  const [stepErrors,   setStepErrors]   = useState<Record<string, string>>({});
   const [error,        setError]        = useState<string | null>(null);
 
   const processMessage = useCallback((msg: Record<string, unknown>) => {
@@ -32,6 +33,9 @@ export function useOrchestrator() {
           ...prev,
           [msg.step_id as string]: (msg.status === 'done' ? 'done' : 'failed') as StepStatus,
         }));
+        if (msg.status === 'failed' && msg.error) {
+          setStepErrors((prev) => ({ ...prev, [msg.step_id as string]: msg.error as string }));
+        }
         break;
       case 'orchestration_complete':
         setPhase('done');
@@ -97,8 +101,9 @@ export function useOrchestrator() {
     setPlan(null);
     setParams({});
     setStepStatuses({});
+    setStepErrors({});
     setError(null);
   }, []);
 
-  return { phase, plan, params, stepStatuses, error, start, approve, cancel, reset };
+  return { phase, plan, params, stepStatuses, stepErrors, error, start, approve, cancel, reset };
 }

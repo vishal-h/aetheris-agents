@@ -349,6 +349,7 @@ export interface AgentConfigEntry {
   group:        string;
   masked:       boolean;
   placeholder?: string;
+  linkPrefix?:  string;
   value?:       string;
 }
 

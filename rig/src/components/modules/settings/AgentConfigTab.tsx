@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Eye, EyeOff, Upload, X } from 'lucide-react';
+import { Download, Eye, EyeOff, ExternalLink, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { AGENT_CONFIG_DEFS } from './agentConfigDefs';
@@ -7,16 +7,17 @@ import { AGENT_CONFIG_DEFS } from './agentConfigDefs';
 // ── Single config row ─────────────────────────────────────────────────────────
 
 interface ConfigRowProps {
-  label:       string;
-  envKey:      string;
-  masked:      boolean;
-  placeholder: string | undefined;
-  value:       string | undefined;
-  onSave:      (key: string, value: string) => void;
-  onClear:     (key: string) => void;
+  label:        string;
+  envKey:       string;
+  masked:       boolean;
+  placeholder:  string | undefined;
+  linkPrefix?:  string;
+  value:        string | undefined;
+  onSave:       (key: string, value: string) => void;
+  onClear:      (key: string) => void;
 }
 
-function ConfigRow({ label, envKey, masked, placeholder, value, onSave, onClear }: ConfigRowProps) {
+function ConfigRow({ label, envKey, masked, placeholder, linkPrefix, value, onSave, onClear }: ConfigRowProps) {
   const [draft,   setDraft]   = useState(value ?? '');
   const [visible, setVisible] = useState(false);
 
@@ -58,7 +59,18 @@ function ConfigRow({ label, envKey, masked, placeholder, value, onSave, onClear 
         )}
       </div>
 
-      <div className="flex gap-1 shrink-0">
+      <div className="flex gap-1 shrink-0 items-center">
+        {linkPrefix && isSet && value && (
+          <a
+            href={`${linkPrefix}${value}`}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 text-muted-foreground hover:text-foreground
+                       transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
         {isDirty && draft !== '' && (
           <Button size="sm" onClick={() => { onSave(envKey, draft); }}>
             Save
@@ -105,6 +117,7 @@ function ConfigGroup({
             envKey={def.key}
             masked={def.masked}
             placeholder={def.placeholder}
+            linkPrefix={def.linkPrefix}
             value={values[def.key]}
             onSave={onSave}
             onClear={onClear}

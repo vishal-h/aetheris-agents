@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,25 @@ function ParamsStrip({ params }: { params: Record<string, string> }) {
         <span key={k}>{k} = {v}</span>
       ))}
     </div>
+  );
+}
+
+function linkifyDriveIds(text: string): ReactNode {
+  const parts = text.split(/([A-Za-z0-9_-]{25,})/);
+  return parts.map((part, i) =>
+    /^[A-Za-z0-9_-]{25,}$/.test(part) ? (
+      <a
+        key={i}
+        href={`https://drive.google.com/drive/folders/${part}`}
+        target="_blank"
+        rel="noreferrer"
+        className="underline hover:text-red-800"
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    )
   );
 }
 
@@ -75,7 +94,7 @@ function StepCard({ step, index, configValues, status, error }: StepCardProps) {
           </div>
         )}
         {status === 'failed' && error && (
-          <p className="text-xs text-red-600 mt-1 font-mono">{error}</p>
+          <p className="text-xs text-red-600 mt-1 font-mono">{linkifyDriveIds(error)}</p>
         )}
       </div>
     </div>

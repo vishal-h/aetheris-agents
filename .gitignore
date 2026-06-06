@@ -19,3 +19,6 @@ rig/node_modules/
 # Local env overrides (not committed)
 .env
 .env.local
+
+# Run logs (accumulate locally, not committed)
+payslip/output/runs.log

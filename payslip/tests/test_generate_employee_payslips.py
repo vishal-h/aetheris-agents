@@ -83,3 +83,24 @@ def test_btl_997_consultant_html_and_csv(tmp_path):
 def test_unknown_employee_exits_nonzero(tmp_path):
     result = run_script("BTL_000", tmp_path)
     assert result.returncode != 0
+
+
+@pytest.mark.integration
+def test_runs_log_created_with_correct_fields(tmp_path):
+    result = run_script("BTL_999", tmp_path)
+    assert result.returncode == 0, result.stderr
+
+    log_path = tmp_path / "runs.log"
+    assert log_path.exists(), "runs.log was not created in output dir"
+
+    line = log_path.read_text().strip().splitlines()[0]
+    fields = line.split("\t")
+    assert len(fields) == 5, f"expected 5 tab-separated fields, got: {line!r}"
+
+    timestamp, month_field, employee_field, files_field, output_field = fields
+    assert timestamp.endswith("Z") and "T" in timestamp
+    assert month_field == "month=2026-04"
+    assert employee_field == "employee=BTL_999"
+    # BTL_999 has 2 months → 2 × 2 files (PDF + CSV)
+    assert files_field == "files=4"
+    assert output_field == f"output={os.path.join(str(tmp_path), 'BTL_999')}"

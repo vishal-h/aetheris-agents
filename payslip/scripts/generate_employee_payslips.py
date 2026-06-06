@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import csv
+import datetime
 import json
 import os
 import re
@@ -163,6 +164,7 @@ def main():
     os.makedirs(emp_dir, exist_ok=True)
 
     months_written = []
+    month_files = []
     for month_data in employee["months"]:
         stem = f"{month_data['month_file']}-Payslip"
         html_path = os.path.join(emp_dir, f"{stem}.html")
@@ -177,6 +179,21 @@ def main():
         write_csv(csv_path, employee, month_data)
 
         months_written.append(stem)
+        month_files.append(month_data["month_file"])
+
+    if months_written:
+        timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        log_line = (
+            f"{timestamp}"
+            f"\tmonth={month_files[0]}"
+            f"\temployee={args.employee_id_safe}"
+            f"\tfiles={len(months_written) * 2}"
+            f"\toutput={emp_dir}"
+        )
+        log_path = os.path.join(args.output_dir, "runs.log")
+        os.makedirs(os.path.dirname(os.path.abspath(log_path)), exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as lf:
+            lf.write(log_line + "\n")
 
     print(f"Generated {len(months_written)} payslip(s) for {args.employee_id_safe}.")
     print(f"Files in {os.path.join(args.output_dir, args.employee_id_safe)}{os.sep}:")

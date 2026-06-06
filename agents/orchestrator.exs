@@ -204,8 +204,10 @@ has_tool_failure = fn run_id ->
       |> Map.get("events", [])
       |> Enum.any?(fn e ->
            e["type"] == "tool_result" &&
-           is_integer(e["payload"]["exit_code"]) &&
-           e["payload"]["exit_code"] != 0
+           case Jason.decode(e["payload"]["output"] || "") do
+             {:ok, output} -> is_integer(output["exit_code"]) && output["exit_code"] != 0
+             _             -> false
+           end
          end)
     _ ->
       false

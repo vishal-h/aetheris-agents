@@ -133,5 +133,7 @@ def test_main_exits_0_on_success_and_prints_dest(monkeypatch, tmp_path, capsys):
     with patch(f"{MODULE}.build_service", return_value=make_service(files=[FILE_A])), \
          patch("drive.scripts.drive_utils.resolve_period_folder", return_value="period-folder-id"), \
          patch(f"{MODULE}.MediaIoBaseDownload", side_effect=fake_downloader()):
-        main()
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
     assert dest in capsys.readouterr().out

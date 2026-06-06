@@ -116,6 +116,7 @@ def main():
     download_file(service, file_meta["id"], args.dest)
     print(f"Downloaded: {file_meta['name']} (modified {file_meta['modifiedTime']})")
     print(f"Saved to: {args.dest}")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

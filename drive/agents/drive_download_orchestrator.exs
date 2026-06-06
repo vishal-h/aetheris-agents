@@ -14,15 +14,15 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   max_steps:        4,
   tools:            ["run_command"],
   system_prompt:    """
-  You are a Drive download orchestrator. Execute this single step.
-  Stop and report the error if the step exits non-zero.
+  You are a Drive download orchestrator. Run the command below exactly once.
+  Do not run any other commands. Do not verify or retry.
+  If the command exits non-zero, report the error and stop.
 
-  Step 1 — Download payroll CSV from Drive:
-    command: "python3"
-    args: ["drive/scripts/drive_download.py"]
-  Confirm: exits 0 and prints "Saved to:".
+  command: "python3"
+  args: ["drive/scripts/drive_download.py"]
 
-  Report the filename downloaded and the destination path.
+  The script downloads the payroll CSV and prints "Saved to: <path>".
+  When it exits 0, report the filename and destination path and stop immediately.
   """,
   user_prompt: "Download the payroll CSV from Google Drive."
 }

@@ -112,11 +112,15 @@ def test_main_exits_1_with_stderr_when_template_not_found(monkeypatch, capsys):
 
 
 def test_main_exits_0_on_success_and_prints_dest(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("DRIVE_OUTPUT_FOLDER_ID", "folder-123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     dest = str(tmp_path / "payslip_email_template.html")
     monkeypatch.setattr(sys, "argv", ["email_download_template.py", "--dest", dest])
     with patch(f"{MODULE}.build_service", return_value=make_service(files=[FILE_META])), \
+         patch("drive.scripts.drive_utils.resolve_period_folder", return_value="period-folder-id"), \
          patch(f"{MODULE}.MediaIoBaseDownload", side_effect=fake_downloader()):
-        main()
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
     out = capsys.readouterr().out
     assert dest in out

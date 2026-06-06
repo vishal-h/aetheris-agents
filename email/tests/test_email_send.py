@@ -272,8 +272,9 @@ def test_main_sends_one_email_per_employee_and_prints_summary(
     )
     with patch(f"{MODULE}.get_employees", return_value=EMPLOYEES), \
          patch(f"{MODULE}.send_email"):
-        main()
-
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
     out = capsys.readouterr().out
     assert "2 sent" in out
     assert "0 failed" in out
@@ -299,8 +300,9 @@ def test_main_skips_employee_with_warning_when_pdf_not_found(
     )
     with patch(f"{MODULE}.get_employees", return_value=EMPLOYEES), \
          patch(f"{MODULE}.send_email"):
-        main()
-
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
     out, err = capsys.readouterr()
     assert "BTL_998" in err
     assert "1 sent" in out
@@ -350,4 +352,6 @@ def test_main_exits_0_when_all_sends_succeed(monkeypatch, tmp_path, capsys):
     )
     with patch(f"{MODULE}.get_employees", return_value=EMPLOYEES), \
          patch(f"{MODULE}.send_email"):
-        main()  # must not raise SystemExit
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0

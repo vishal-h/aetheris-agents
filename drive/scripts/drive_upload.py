@@ -54,7 +54,7 @@ def find_or_create_folder(service, parent_id, name):
     )
     response = service.files().list(
         q=query, fields="files(id)", supportsAllDrives=True,
-        includeItemsFromAllDrives=True,
+        includeItemsFromAllDrives=True, corpora="allDrives",
     ).execute()
     files = response.get("files", [])
     if files:
@@ -84,7 +84,7 @@ def upload_file(service, folder_id, file_path):
     )
     response = service.files().list(
         q=query, fields="files(id)", supportsAllDrives=True,
-        includeItemsFromAllDrives=True,
+        includeItemsFromAllDrives=True, corpora="allDrives",
     ).execute()
     existing = response.get("files", [])
     mime = MIME_TYPES.get(file_path.suffix, "application/octet-stream")

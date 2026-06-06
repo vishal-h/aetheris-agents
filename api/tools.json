@@ -1,0 +1,6 @@
+{
+  "manifest_version": "1",
+  "use_case": "api",
+  "description": "TAP protocol — tenant API gateway and command tools; scripts live under tenant/scripts/ and gateway/scripts/, not a flat scripts/ dir",
+  "scripts": []
+}

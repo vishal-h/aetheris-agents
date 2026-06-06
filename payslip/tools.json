@@ -1,0 +1,47 @@
+{
+  "manifest_version": "1",
+  "use_case": "payslip",
+  "description": "Compute net salaries and generate employee payslip PDFs",
+  "scripts": [
+    {
+      "name": "payslip_compute",
+      "file": "scripts/payslip_compute.py",
+      "description": "Compute net salary for all employees from a payroll CSV",
+      "args": [
+        {
+          "name": "csv_path",
+          "type": "file",
+          "required": true,
+          "default": "data/sample_payroll.csv",
+          "description": "Path to payroll CSV"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/payslip_compute.py data/sample_payroll.csv"
+    },
+    {
+      "name": "generate_employee_payslips",
+      "file": "scripts/generate_employee_payslips.py",
+      "description": "Generate PDF payslips for a single employee",
+      "args": [
+        {
+          "name": "employee_id",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Employee ID (e.g. BTL_999)"
+        },
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory to write payslip PDFs into"
+        }
+      ],
+      "output": "files",
+      "example": "python3 scripts/generate_employee_payslips.py BTL_999"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import type { ToolsInventory, SelectedTool, ManifestScript, ScriptResult } from './types';
+import type { ToolsInventory, SelectedTool, ManifestScript, ScriptResult, McpTool } from './types';
 
 export function useTools() {
   const [inventory,  setInventory]  = useState<ToolsInventory | null>(null);
@@ -33,6 +33,12 @@ export function useTools() {
     }
   }, [inventory]);
 
+  const selectMcp = useCallback((tool: McpTool) => {
+    setSelected({ kind: 'mcp', tool });
+    setResult(null);
+    setRunError(null);
+  }, []);
+
   const runScript = useCallback(async (
     use_case: string,
     file:     string,
@@ -64,7 +70,7 @@ export function useTools() {
 
   return {
     inventory, loading, error,
-    selected, selectScript, selectHarness,
+    selected, selectScript, selectHarness, selectMcp,
     running, result, runError, runScript,
     refresh,
   };

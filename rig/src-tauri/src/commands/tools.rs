@@ -126,6 +126,156 @@ fn harness_tools() -> Vec<HarnessTool> {
     ]
 }
 
+// ── MCP types ─────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpServerConfig {
+    pub id:        String,
+    pub label:     String,
+    pub transport: String,
+    pub url:       Option<String>,
+    pub command:   Option<String>,
+    pub args:      Option<Vec<String>>,
+    pub cwd:       Option<String>,
+    pub auth:      String,
+    pub notes:     Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct McpServersFile {
+    #[allow(dead_code)]
+    config_version: String,
+    servers:        Vec<McpServerConfig>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct McpTool {
+    pub server_id:    String,
+    pub server_label: String,
+    pub name:         String,
+    pub description:  String,
+    pub input_schema: Option<serde_json::Value>,
+    pub auth:         String,
+    pub notes:        Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct McpServerGroup {
+    pub server_id:    String,
+    pub server_label: String,
+    pub auth:         String,
+    pub notes:        Option<String>,
+    pub tools:        Vec<McpTool>,
+    pub reachable:    bool,
+}
+
+// ── MCP helper functions ──────────────────────────────────────────────────────
+
+fn load_mcp_servers(agents_path: &str) -> Vec<McpServerConfig> {
+    let path = std::path::Path::new(agents_path)
+        .join("mcp")
+        .join("mcp_servers.json");
+    if !path.exists() { return vec![]; }
+    let raw = std::fs::read_to_string(&path).unwrap_or_default();
+    serde_json::from_str::<McpServersFile>(&raw)
+        .map(|f| f.servers)
+        .unwrap_or_default()
+}
+
+fn parse_tools_list_response(bytes: &[u8], server: &McpServerConfig) -> Vec<McpTool> {
+    let text = String::from_utf8_lossy(bytes);
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() { continue; }
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            if let Some(tools) = val.pointer("/result/tools").and_then(|v| v.as_array()) {
+                return tools.iter().filter_map(|t| {
+                    let name = t.get("name")?.as_str()?.to_string();
+                    let description = t.get("description")
+                        .and_then(|d| d.as_str())
+                        .unwrap_or("(no description)")
+                        .to_string();
+                    Some(McpTool {
+                        server_id:    server.id.clone(),
+                        server_label: server.label.clone(),
+                        name,
+                        description,
+                        input_schema: t.get("inputSchema").cloned(),
+                        auth:         server.auth.clone(),
+                        notes:        server.notes.clone(),
+                    })
+                }).collect();
+            }
+        }
+    }
+    vec![]
+}
+
+fn discover_http_tools(server: &McpServerConfig) -> Vec<McpTool> {
+    let url = match &server.url {
+        Some(u) => format!("{}/mcp", u.trim_end_matches('/')),
+        None    => return vec![],
+    };
+    let body = serde_json::json!({
+        "jsonrpc": "2.0", "id": 1,
+        "method": "tools/list", "params": {}
+    });
+    let output = std::process::Command::new("curl")
+        .args([
+            "-s", "-X", "POST",
+            "-H", "Content-Type: application/json",
+            "-d", &body.to_string(),
+            "--max-time", "5",
+            &url,
+        ])
+        .output();
+    match output {
+        Ok(o) if o.status.success() => parse_tools_list_response(&o.stdout, server),
+        _ => vec![],
+    }
+}
+
+fn discover_stdio_tools(server: &McpServerConfig, agents_path: &str) -> Vec<McpTool> {
+    let command = match &server.command {
+        Some(c) => c,
+        None    => return vec![],
+    };
+    let cwd = server.cwd.as_deref()
+        .map(|c| c.replace("${AETHERIS_AGENTS_PATH}", agents_path))
+        .unwrap_or_else(|| agents_path.to_string());
+
+    let body = {
+        let mut s = serde_json::json!({
+            "jsonrpc": "2.0", "id": 1,
+            "method": "tools/list", "params": {}
+        }).to_string();
+        s.push('\n');
+        s
+    };
+
+    let mut child = match std::process::Command::new(command)
+        .args(server.args.as_deref().unwrap_or(&[]))
+        .current_dir(&cwd)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+    {
+        Ok(c)  => c,
+        Err(_) => return vec![],
+    };
+
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        let _ = stdin.write_all(body.as_bytes());
+    }
+
+    match child.wait_with_output() {
+        Ok(o)  => parse_tools_list_response(&o.stdout, server),
+        Err(_) => vec![],
+    }
+}
+
 // ── Inventory types ───────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize)]
@@ -136,17 +286,10 @@ pub struct UseCaseGroup {
 }
 
 #[derive(Debug, Serialize)]
-pub struct McpToolStub {
-    pub server:      String,
-    pub name:        String,
-    pub description: String,
-}
-
-#[derive(Debug, Serialize)]
 pub struct ToolsInventory {
     pub use_cases: Vec<UseCaseGroup>,
     pub harness:   Vec<HarnessTool>,
-    pub mcp:       Vec<McpToolStub>,
+    pub mcp:       Vec<McpTool>,
 }
 
 // ── ScriptResult ──────────────────────────────────────────────────────────────
@@ -254,11 +397,16 @@ pub fn tools_list_inventory(
         }
     }
 
-    Ok(ToolsInventory {
-        use_cases,
-        harness: harness_tools(),
-        mcp:     vec![],
-    })
+    let mcp_servers = load_mcp_servers(agents_path);
+    let mcp: Vec<McpTool> = mcp_servers.iter()
+        .flat_map(|s| match s.transport.as_str() {
+            "http"  => discover_http_tools(s),
+            "stdio" => discover_stdio_tools(s, agents_path),
+            _       => vec![],
+        })
+        .collect();
+
+    Ok(ToolsInventory { use_cases, harness: harness_tools(), mcp })
 }
 
 #[tauri::command]
@@ -324,7 +472,27 @@ pub fn tools_run_script(
 
 #[tauri::command]
 pub fn tools_list_mcp(
-    _state: tauri::State<'_, crate::ToolsState>,
-) -> Result<Vec<McpToolStub>, String> {
-    Ok(vec![])
+    state: tauri::State<'_, crate::ToolsState>,
+) -> Result<Vec<McpServerGroup>, String> {
+    let agents_path = state.agents_path.as_ref()
+        .ok_or("AETHERIS_AGENTS_PATH not set")?;
+
+    let servers = load_mcp_servers(agents_path);
+
+    Ok(servers.iter().map(|s| {
+        let tools = match s.transport.as_str() {
+            "http"  => discover_http_tools(s),
+            "stdio" => discover_stdio_tools(s, agents_path),
+            _       => vec![],
+        };
+        let reachable = !tools.is_empty();
+        McpServerGroup {
+            server_id:    s.id.clone(),
+            server_label: s.label.clone(),
+            auth:         s.auth.clone(),
+            notes:        s.notes.clone(),
+            tools,
+            reachable,
+        }
+    }).collect())
 }

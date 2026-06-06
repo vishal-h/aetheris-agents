@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useTools } from '@/hooks/useTools';
+import type { McpTool } from '@/hooks/types';
 
 export function ToolTree({ tools }: { tools: ReturnType<typeof useTools> }) {
   const { inventory, loading, error, selected,
-          selectScript, selectHarness, refresh } = tools;
+          selectScript, selectHarness, selectMcp, refresh } = tools;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   if (loading && !inventory) {
@@ -101,18 +102,32 @@ export function ToolTree({ tools }: { tools: ReturnType<typeof useTools> }) {
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1">
             MCP
           </span>
-          <div className="flex flex-col gap-0.5">
-            {inventory.mcp.map((tool) => (
-              <button
-                key={`${tool.server}/${tool.name}`}
-                className="text-left px-2 py-1 rounded text-sm
-                           text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              >
-                <span className="text-xs text-muted-foreground/60">{tool.server}/</span>
-                {tool.name}
-              </button>
-            ))}
-          </div>
+          {Object.entries(
+            inventory.mcp.reduce<Record<string, McpTool[]>>((acc, t) => {
+              (acc[t.server_id] ??= []).push(t);
+              return acc;
+            }, {})
+          ).map(([serverId, serverTools]) => (
+            <div key={serverId} className="mb-1">
+              <span className="text-xs text-muted-foreground/60 px-2 block">
+                {serverTools[0].server_label}
+              </span>
+              {serverTools.map((tool) => (
+                <button
+                  key={tool.name}
+                  onClick={() => selectMcp(tool)}
+                  className={`text-left px-2 py-1 rounded text-sm w-full
+                    ${selected?.kind === 'mcp' && selected.tool.name === tool.name
+                      && selected.tool.server_id === tool.server_id
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    }`}
+                >
+                  {tool.name}
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </div>

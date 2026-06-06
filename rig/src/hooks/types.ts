@@ -406,16 +406,29 @@ export interface HarnessTool {
   notes:       string | null;
 }
 
-export interface McpToolStub {
-  server:      string;
-  name:        string;
-  description: string;
+export interface McpTool {
+  server_id:    string;
+  server_label: string;
+  name:         string;
+  description:  string;
+  input_schema: Record<string, unknown> | null;
+  auth:         string;
+  notes:        string | null;
+}
+
+export interface McpServerGroup {
+  server_id:    string;
+  server_label: string;
+  auth:         string;
+  notes:        string | null;
+  tools:        McpTool[];
+  reachable:    boolean;
 }
 
 export interface ToolsInventory {
   use_cases: UseCaseGroup[];
   harness:   HarnessTool[];
-  mcp:       McpToolStub[];
+  mcp:       McpTool[];
 }
 
 export interface ScriptResult {
@@ -427,4 +440,4 @@ export interface ScriptResult {
 export type SelectedTool =
   | { kind: 'script';  use_case: string; script: ManifestScript }
   | { kind: 'harness'; tool: HarnessTool }
-  | { kind: 'mcp';     tool: McpToolStub };
+  | { kind: 'mcp';     tool: McpTool };

@@ -67,6 +67,20 @@ See `p4-001-manifest-spec.md` for the full `tools.json` schema.
 
 ---
 
+## Known issues
+
+**MCP discovery blocks inventory load (p4-004).** `tools_list_inventory`
+runs HTTP and stdio discovery synchronously. An unreachable server (e.g.
+`google-drive` before OAuth is configured) will cause curl to hit its
+5-second timeout before the inventory returns — the Tools tab appears
+frozen for up to 5s per unreachable server on first load.
+
+Quick fix when this becomes annoying: make MCP discovery lazy. Fetch
+inventory without MCP first, then fire `tools_list_mcp` in a `useEffect`
+after the main inventory resolves and merge the results in.
+
+---
+
 ## Directory
 
 All files for this phase live in:

@@ -1,0 +1,23 @@
+{
+  "config_version": "1",
+  "servers": [
+    {
+      "id": "google-drive",
+      "label": "Google Drive",
+      "transport": "http",
+      "url": "http://localhost:3000",
+      "auth": "oauth2",
+      "notes": "Requires OAuth token. Run mcp/http/google-drive/get_token.py first."
+    },
+    {
+      "id": "node-stdio",
+      "label": "Node stdio stub",
+      "transport": "stdio",
+      "command": "node",
+      "args": ["mcp/stdio/node/index.js"],
+      "cwd": "${AETHERIS_AGENTS_PATH}",
+      "auth": "none",
+      "notes": "Stub server for development."
+    }
+  ]
+}

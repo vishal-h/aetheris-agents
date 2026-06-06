@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, Loader2, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTools } from '@/hooks/useTools';
-import type { ManifestScript, HarnessTool } from '@/hooks/types';
+import type { ManifestScript, HarnessTool, McpTool } from '@/hooks/types';
 
 function buildArgs(script: ManifestScript, values: Record<string, string>): string[] {
   const positional: string[] = [];
@@ -187,6 +187,45 @@ function ScriptDetailPanel({
   );
 }
 
+function McpDetail({ tool }: { tool: McpTool }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <h2 className="text-lg font-semibold">{tool.name}</h2>
+          <span className="text-xs text-muted-foreground/60">{tool.server_label}</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{tool.description}</p>
+      </div>
+
+      {tool.auth !== 'none' && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-200
+                        bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-sm
+                        text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Requires {tool.auth} authentication.
+          {tool.notes && ` ${tool.notes}`}
+        </div>
+      )}
+
+      {tool.input_schema && (
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-medium">Input schema</h3>
+          <pre className="text-xs bg-muted rounded p-3 overflow-x-auto font-mono">
+            {JSON.stringify(tool.input_schema, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      {tool.notes && tool.auth === 'none' && (
+        <p className="text-xs text-muted-foreground border-l-2 pl-3 italic">
+          {tool.notes}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function HarnessDetail({ tool }: { tool: HarnessTool }) {
   return (
     <div className="flex flex-col gap-4">
@@ -248,6 +287,10 @@ export function ToolDetail({ tools }: { tools: ReturnType<typeof useTools> }) {
 
   if (selected.kind === 'harness') {
     return <HarnessDetail tool={selected.tool} />;
+  }
+
+  if (selected.kind === 'mcp') {
+    return <McpDetail tool={selected.tool} />;
   }
 
   return null;

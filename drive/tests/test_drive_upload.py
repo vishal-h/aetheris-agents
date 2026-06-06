@@ -197,7 +197,9 @@ def test_main_exits_0_on_success_and_prints_summary(monkeypatch, tmp_path, capsy
     with patch(f"{MODULE}.build_service"), \
          patch(f"{MODULE}.find_or_create_folder", return_value="folder-id"), \
          patch(f"{MODULE}.upload_file", return_value="file-id"):
-        main()
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
     out = capsys.readouterr().out
     assert "2 uploaded" in out
     assert "0 failed" in out

@@ -165,8 +165,7 @@ def main():
             failed.append(employee_id)
 
     print(f"{uploaded} uploaded, {len(failed)} failed.")
-    if failed:
-        sys.exit(1)
+    sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":

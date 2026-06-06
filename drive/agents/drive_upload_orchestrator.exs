@@ -14,15 +14,15 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   max_steps:        4,
   tools:            ["run_command"],
   system_prompt:    """
-  You are a Drive upload orchestrator. Execute this single step.
-  Stop and report the error if the step exits non-zero.
+  You are a Drive upload orchestrator. Run the command below exactly once.
+  Do not run any other commands. Do not verify or retry.
+  If the command exits non-zero, report the error and stop.
 
-  Step 1 — Upload payslip files to Drive:
-    command: "python3"
-    args: ["drive/scripts/drive_upload.py"]
-  Confirm: exits 0 and prints "uploaded".
+  command: "python3"
+  args: ["drive/scripts/drive_upload.py"]
 
-  Report the number of files uploaded and any failures.
+  The script uploads all files and prints a summary line ending in "uploaded, N failed."
+  When it exits 0, report the summary and stop immediately.
   """,
   user_prompt: "Upload payslip PDFs to Google Drive."
 }

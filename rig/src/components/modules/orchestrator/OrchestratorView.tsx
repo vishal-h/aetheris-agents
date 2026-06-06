@@ -5,6 +5,7 @@ import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOrchestrator } from '@/hooks/useOrchestrator';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
+import { useRequestHistory } from '@/hooks/useRequestHistory';
 import type { PlanStep, StepStatus } from '@/hooks/types';
 
 // ── Config hints — which env vars are relevant for each agent ─────────────────
@@ -111,6 +112,11 @@ export function OrchestratorView() {
   const [request, setRequest] = useState(prefill);
   const { phase, plan, params, stepStatuses, stepErrors, error, start, approve, cancel, reset } = useOrchestrator();
   const { values: configValues } = useAgentConfig();
+  const history = useRequestHistory();
+
+  const suggestions = request.trim().length > 0
+    ? history.history.filter((h) => h.toLowerCase().includes(request.toLowerCase()))
+    : [];
 
   return (
     <div className="flex flex-col items-center">
@@ -119,18 +125,55 @@ export function OrchestratorView() {
         {phase === 'idle' && (
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold">Orchestrator</h2>
-            <textarea
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
-                         placeholder:text-muted-foreground focus-visible:outline-none
-                         focus-visible:ring-2 focus-visible:ring-ring resize-none"
-              rows={3}
-              placeholder="Describe what you want to do…"
-              value={request}
-              onChange={(e) => setRequest(e.target.value)}
-            />
-            <Button onClick={() => start(request)} disabled={!request.trim()}>
+            <div className="relative">
+              <textarea
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
+                           placeholder:text-muted-foreground focus-visible:outline-none
+                           focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                rows={3}
+                placeholder="Describe what you want to do…"
+                value={request}
+                onChange={(e) => setRequest(e.target.value)}
+              />
+              {suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-10
+                                rounded-md border bg-background shadow-sm overflow-hidden">
+                  {suggestions.slice(0, 5).map((h, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="text-sm px-3 py-2 hover:bg-muted/50 text-left w-full"
+                      onClick={() => setRequest(h)}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={() => { history.add(request); start(request); }}
+              disabled={!request.trim()}
+            >
               Run
             </Button>
+            {request.trim().length === 0 && history.history.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-muted-foreground">Recent</p>
+                {history.history.slice(0, 5).map((h, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="text-left text-sm px-2 py-1.5 rounded-md
+                               hover:bg-muted/50 transition-colors text-muted-foreground
+                               hover:text-foreground"
+                    onClick={() => setRequest(h)}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

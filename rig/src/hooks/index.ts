@@ -46,3 +46,4 @@ export type { TokenSummary } from './types';
 export type { ModelUsageRow, UseCaseUsageRow, UsageStats } from './types';
 export { useAgentConfig } from './useAgentConfig';
 export type { AgentConfigEntry } from './types';
+export { useRequestHistory } from './useRequestHistory';

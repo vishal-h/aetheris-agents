@@ -156,15 +156,52 @@ export function OrchestratorView() {
           </div>
         )}
 
-        {phase === 'done' && (
-          <div className="flex flex-col items-center gap-4">
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
-            <p className="font-medium">Done</p>
-            <Button variant="outline" onClick={reset}>Run another</Button>
+        {phase === 'done' && plan && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">Request: {plan.request}</p>
+            <ParamsStrip params={params} />
+            <div className="flex flex-col gap-2">
+              {plan.steps.map((step, i) => (
+                <StepCard
+                  key={step.id}
+                  step={step}
+                  index={i}
+                  configValues={configValues}
+                  status={stepStatuses[step.id] ?? 'done'}
+                />
+              ))}
+            </div>
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <p className="font-medium">Done</p>
+              <Button variant="outline" onClick={reset}>Run another</Button>
+            </div>
           </div>
         )}
 
-        {phase === 'cancelled' && (
+        {phase === 'cancelled' && plan && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">Request: {plan.request}</p>
+            <ParamsStrip params={params} />
+            <div className="flex flex-col gap-2">
+              {plan.steps.map((step, i) => (
+                <StepCard
+                  key={step.id}
+                  step={step}
+                  index={i}
+                  configValues={configValues}
+                  status={stepStatuses[step.id] ?? 'pending'}
+                />
+              ))}
+            </div>
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <p className="text-muted-foreground">Cancelled.</p>
+              <Button variant="outline" onClick={reset}>Run another</Button>
+            </div>
+          </div>
+        )}
+
+        {phase === 'cancelled' && !plan && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-muted-foreground">Cancelled.</p>
             <Button variant="outline" onClick={reset}>Run another</Button>

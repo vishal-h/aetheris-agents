@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { Download, Eye, EyeOff, ExternalLink, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
@@ -61,15 +62,14 @@ function ConfigRow({ label, envKey, masked, placeholder, linkPrefix, value, onSa
 
       <div className="flex gap-1 shrink-0 items-center">
         {linkPrefix && isSet && value && (
-          <a
-            href={`${linkPrefix}${value}`}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
             className="shrink-0 text-muted-foreground hover:text-foreground
                        transition-colors"
+            onClick={() => open(`${linkPrefix}${value}`)}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          </button>
         )}
         {isDirty && draft !== '' && (
           <Button size="sm" onClick={() => { onSave(envKey, draft); }}>

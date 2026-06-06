@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { useLocation } from 'react-router-dom';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,18 +38,17 @@ function ParamsStrip({ params }: { params: Record<string, string> }) {
 }
 
 function linkifyDriveIds(text: string): ReactNode {
-  const parts = text.split(/([A-Za-z0-9_-]{25,})/);
+  const parts = text.split(/([A-Za-z0-9_-]{15,})/);
   return parts.map((part, i) =>
-    /^[A-Za-z0-9_-]{25,}$/.test(part) ? (
-      <a
+    /^[A-Za-z0-9_-]{15,}$/.test(part) ? (
+      <button
         key={i}
-        href={`https://drive.google.com/drive/folders/${part}`}
-        target="_blank"
-        rel="noreferrer"
-        className="underline hover:text-red-800"
+        type="button"
+        className="underline hover:text-red-800 cursor-pointer"
+        onClick={() => open(`https://drive.google.com/drive/folders/${part}`)}
       >
         {part}
-      </a>
+      </button>
     ) : (
       part
     )

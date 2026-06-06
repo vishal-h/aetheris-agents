@@ -72,12 +72,20 @@ def main():
     )
     args = parser.parse_args()
 
-    folder_id = os.environ.get("DRIVE_OUTPUT_FOLDER_ID")
-    if not folder_id:
-        print("DRIVE_OUTPUT_FOLDER_ID environment variable is not set.", file=sys.stderr)
+    from drive.scripts.drive_utils import resolve_period_folder
+
+    root_id = os.environ.get("DRIVE_ROOT_FOLDER_ID")
+    if not root_id:
+        print("DRIVE_ROOT_FOLDER_ID environment variable is not set.", file=sys.stderr)
+        sys.exit(1)
+
+    payslip_month = os.environ.get("PAYSLIP_MONTH")
+    if not payslip_month:
+        print("PAYSLIP_MONTH environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
     service = build_service(scopes=READONLY_SCOPE)
+    folder_id = resolve_period_folder(service, root_id, payslip_month)
 
     file_meta = find_template_file(service, folder_id)
     if file_meta is None:

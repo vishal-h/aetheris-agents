@@ -160,7 +160,7 @@ def test_upload_file_uses_csv_mime_type(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_main_exits_1_when_output_folder_id_not_set(monkeypatch):
-    monkeypatch.delenv("DRIVE_OUTPUT_FOLDER_ID", raising=False)
+    monkeypatch.delenv("DRIVE_ROOT_FOLDER_ID", raising=False)
     monkeypatch.setattr(sys, "argv", ["drive_upload.py"])
     with pytest.raises(SystemExit) as exc:
         main()
@@ -168,7 +168,8 @@ def test_main_exits_1_when_output_folder_id_not_set(monkeypatch):
 
 
 def test_main_exits_1_when_source_dir_not_found(monkeypatch, tmp_path):
-    monkeypatch.setenv("DRIVE_OUTPUT_FOLDER_ID", "folder123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     monkeypatch.setattr(sys, "argv",
                         ["drive_upload.py", "--source", str(tmp_path / "no_such_dir")])
     with pytest.raises(SystemExit) as exc:
@@ -177,7 +178,8 @@ def test_main_exits_1_when_source_dir_not_found(monkeypatch, tmp_path):
 
 
 def test_main_exits_1_when_no_uploadable_files(monkeypatch, tmp_path):
-    monkeypatch.setenv("DRIVE_OUTPUT_FOLDER_ID", "folder123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     monkeypatch.setattr(sys, "argv", ["drive_upload.py", "--source", str(tmp_path)])
     with pytest.raises(SystemExit) as exc:
         main()
@@ -185,14 +187,15 @@ def test_main_exits_1_when_no_uploadable_files(monkeypatch, tmp_path):
 
 
 def test_main_exits_0_on_success_and_prints_summary(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("DRIVE_OUTPUT_FOLDER_ID", "folder123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     emp = tmp_path / "BTL_999"
     emp.mkdir()
     (emp / "2026-04-Payslip.pdf").write_bytes(b"%PDF")
     (emp / "2026-04-Payslip.csv").write_text("id,name\n")
     monkeypatch.setattr(sys, "argv", ["drive_upload.py", "--source", str(tmp_path)])
     with patch(f"{MODULE}.build_service"), \
-         patch(f"{MODULE}.find_or_create_folder", return_value="emp-folder-id"), \
+         patch(f"{MODULE}.find_or_create_folder", return_value="folder-id"), \
          patch(f"{MODULE}.upload_file", return_value="file-id"):
         main()
     out = capsys.readouterr().out
@@ -201,7 +204,8 @@ def test_main_exits_0_on_success_and_prints_summary(monkeypatch, tmp_path, capsy
 
 
 def test_main_exits_1_on_partial_failure_and_reports_employee(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("DRIVE_OUTPUT_FOLDER_ID", "folder123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     for emp_name in ["BTL_998", "BTL_999"]:
         d = tmp_path / emp_name
         d.mkdir()

@@ -288,13 +288,37 @@ production credentials.
 | `SMTP_FROM` | SMTP | From address for outgoing email |
 | `SMTP_TO` | SMTP | Finance inbox that receives all payslip emails (all employees send to this address) |
 | `GOOGLE_SERVICE_ACCOUNT` | Google Drive | Absolute path to service account JSON key file |
-| `DRIVE_PAYROLL_FOLDER_ID` | Google Drive | Google Drive folder ID containing payroll CSV |
-| `DRIVE_OUTPUT_FOLDER_ID` | Google Drive | Google Drive folder ID for output and email templates |
+| `DRIVE_ROOT_FOLDER_ID` | Google Drive | Folder ID of the payroll root folder in Shared Drive |
 | `PROVENANCE_NAS_PATH` | Provenance | Absolute path to the NAS archive root |
+
+### Google Drive folder convention
+
+Drive scripts navigate a fixed folder hierarchy under `DRIVE_ROOT_FOLDER_ID`:
+
+```
+payroll/                              ← DRIVE_ROOT_FOLDER_ID
+  payslips/
+    {YYYYMM}-{monthname}/             ← derived from PAYSLIP_MONTH
+      payroll.csv                     ← download source
+      payslip_email_template.html     ← email template source
+      {employee_id}/                  ← upload destination
+        {YYYYMM}-Payslip.pdf
+```
+
+Period folder naming:
+- `PAYSLIP_MONTH=2026-05` → `202605-may`
+- `PAYSLIP_MONTH=2026-04` → `202604-april`
+
+The download scripts (`drive_download.py`, `email_download_template.py`) fail
+with a clear error if `payslips/` or the period folder does not exist.
+The upload script (`drive_upload.py`) creates `payslips/{period}` if needed.
+
+`PAYSLIP_MONTH` is injected per-invocation by the orchestrator — it is not a
+persistent Agent Config setting.
 
 ### Export / Import
 
-Use the **Export** button to download all 13 known variable slots as
+Use the **Export** button to download all 12 known variable slots as
 `agent-config.json`. Unset variables are exported with their placeholder hint
 value so the file serves as a self-documenting template. Keys are sorted
 alphabetically.

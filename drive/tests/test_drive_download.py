@@ -106,7 +106,7 @@ def test_download_file_calls_get_media_with_correct_file_id(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_main_exits_1_when_drive_folder_id_not_set(monkeypatch):
-    monkeypatch.delenv("DRIVE_PAYROLL_FOLDER_ID", raising=False)
+    monkeypatch.delenv("DRIVE_ROOT_FOLDER_ID", raising=False)
     monkeypatch.setattr(sys, "argv", ["drive_download.py"])
     with pytest.raises(SystemExit) as exc:
         main()
@@ -114,9 +114,11 @@ def test_main_exits_1_when_drive_folder_id_not_set(monkeypatch):
 
 
 def test_main_exits_1_and_prints_stderr_when_no_file_found(monkeypatch, capsys):
-    monkeypatch.setenv("DRIVE_PAYROLL_FOLDER_ID", "folder123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     monkeypatch.setattr(sys, "argv", ["drive_download.py"])
-    with patch(f"{MODULE}.build_service", return_value=make_service(files=[])):
+    with patch(f"{MODULE}.build_service", return_value=make_service(files=[])), \
+         patch("drive.scripts.drive_utils.resolve_period_folder", return_value="period-folder-id"):
         with pytest.raises(SystemExit) as exc:
             main()
     assert exc.value.code == 1
@@ -124,10 +126,12 @@ def test_main_exits_1_and_prints_stderr_when_no_file_found(monkeypatch, capsys):
 
 
 def test_main_exits_0_on_success_and_prints_dest(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("DRIVE_PAYROLL_FOLDER_ID", "folder123")
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root123")
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
     dest = str(tmp_path / "payroll.csv")
     monkeypatch.setattr(sys, "argv", ["drive_download.py", "--dest", dest])
     with patch(f"{MODULE}.build_service", return_value=make_service(files=[FILE_A])), \
+         patch("drive.scripts.drive_utils.resolve_period_folder", return_value="period-folder-id"), \
          patch(f"{MODULE}.MediaIoBaseDownload", side_effect=fake_downloader()):
         main()
     assert dest in capsys.readouterr().out

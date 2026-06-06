@@ -122,9 +122,16 @@ def main():
     )
     args = parser.parse_args()
 
-    folder_id = os.environ.get("DRIVE_OUTPUT_FOLDER_ID")
-    if not folder_id:
-        print("DRIVE_OUTPUT_FOLDER_ID environment variable is not set.", file=sys.stderr)
+    from drive.scripts.drive_utils import period_folder_name
+
+    root_id = os.environ.get("DRIVE_ROOT_FOLDER_ID")
+    if not root_id:
+        print("DRIVE_ROOT_FOLDER_ID environment variable is not set.", file=sys.stderr)
+        sys.exit(1)
+
+    payslip_month = os.environ.get("PAYSLIP_MONTH")
+    if not payslip_month:
+        print("PAYSLIP_MONTH environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
     source = Path(args.source)
@@ -138,6 +145,9 @@ def main():
         sys.exit(1)
 
     service = build_service(scopes=UPLOAD_SCOPE)
+    period = period_folder_name(payslip_month)
+    payslips_id = find_or_create_folder(service, root_id, "payslips")
+    folder_id   = find_or_create_folder(service, payslips_id, period)
 
     uploaded = 0
     failed = []

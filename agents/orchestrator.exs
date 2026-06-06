@@ -191,7 +191,28 @@ end
 
 # ── Execute steps ─────────────────────────────────────────────────────────────
 
-Enum.each(steps, fn step ->
+has_tool_failure = fn run_id ->
+  db_path   = System.get_env("AETHERIS_DB_PATH") || raise "AETHERIS_DB_PATH not set"
+  traj_path = Path.join([
+    db_path |> Path.dirname() |> Path.dirname(),
+    "priv", "runs", run_id, "trajectory.json"
+  ])
+  case File.read(traj_path) do
+    {:ok, raw} ->
+      raw
+      |> Jason.decode!()
+      |> Map.get("events", [])
+      |> Enum.any?(fn e ->
+           e["type"] == "tool_result" &&
+           is_integer(e["payload"]["exit_code"]) &&
+           e["payload"]["exit_code"] != 0
+         end)
+    _ ->
+      false
+  end
+end
+
+Enum.reduce_while(steps, :ok, fn step, _acc ->
   step_id    = step["id"]
   agent_file = step["agent"]
   agent_path = Path.join(agents_path, agent_file)
@@ -202,10 +223,14 @@ Enum.each(steps, fn step ->
   Enum.each(params, fn {k, v} -> System.put_env(k, v) end)
 
   result =
-    with {:ok, config}  <- RunHelpers.load_agent_file(agent_path),
-         {:ok, run_id}  <- Aetheris.start_run(config),
-         {:ok, _result} <- RunHelpers.await_run(run_id, verbose: false) do
-      :ok
+    with {:ok, config}   <- RunHelpers.load_agent_file(agent_path),
+         {:ok, run_id}   <- Aetheris.start_run(config),
+         {:ok, outcome}  <- RunHelpers.await_run(run_id, verbose: false) do
+      if has_tool_failure.(outcome.run_id) do
+        {:error, :tool_failure}
+      else
+        :ok
+      end
     else
       {:error, reason} -> {:error, reason}
     end
@@ -217,6 +242,11 @@ Enum.each(steps, fn step ->
 
   status = if result == :ok, do: "done", else: "failed"
   IO.puts(Jason.encode!(%{type: "step_complete", step_id: step_id, status: status}))
+
+  case result do
+    :ok         -> {:cont, :ok}
+    {:error, _} -> {:halt, :failed}
+  end
 end)
 
 IO.puts(Jason.encode!(%{type: "orchestration_complete", status: "done"}))

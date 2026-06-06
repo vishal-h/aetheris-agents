@@ -36,6 +36,10 @@ pub struct OrchestratorState {
     pub aetheris_dir: Option<String>,
 }
 
+pub struct ToolsState {
+    pub agents_path: Option<String>,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -77,6 +81,10 @@ pub fn run() {
       commands::trajectory::trajectory_export,
       commands::capability_matrix::capability_matrix_load,
       commands::usage::usage_stats_load,
+      commands::tools::tools_list_inventory,
+      commands::tools::tools_read_script,
+      commands::tools::tools_run_script,
+      commands::tools::tools_list_mcp,
     ])
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_dialog::init())
@@ -182,6 +190,10 @@ pub fn run() {
       app.manage(AgentConfigState {
         store_path,
         cache: Mutex::new(agent_cache),
+      });
+
+      app.manage(ToolsState {
+        agents_path: std::env::var("AETHERIS_AGENTS_PATH").ok(),
       });
 
       Ok(())

@@ -362,3 +362,69 @@ export interface UsageStats {
   by_model:            ModelUsageRow[];
   by_use_case:         UseCaseUsageRow[];
 }
+
+// ============================================================================
+// Tools inventory — p4-002
+// ============================================================================
+
+export interface ManifestArg {
+  name:        string;
+  flag?:       string;
+  arg_type:    string;
+  required:    boolean;
+  default:     string | null;
+  description: string;
+}
+
+export interface ManifestScript {
+  name:        string;
+  file:        string;
+  description: string;
+  args:        ManifestArg[];
+  output:      'json' | 'text' | 'files';
+  example:     string;
+  undeclared?: boolean;
+}
+
+export interface UseCaseGroup {
+  use_case:    string;
+  description: string;
+  scripts:     ManifestScript[];
+}
+
+export interface HarnessToolArg {
+  name:        string;
+  arg_type:    string;
+  required:    boolean;
+  description: string;
+}
+
+export interface HarnessTool {
+  name:        string;
+  description: string;
+  args:        HarnessToolArg[];
+  notes:       string | null;
+}
+
+export interface McpToolStub {
+  server:      string;
+  name:        string;
+  description: string;
+}
+
+export interface ToolsInventory {
+  use_cases: UseCaseGroup[];
+  harness:   HarnessTool[];
+  mcp:       McpToolStub[];
+}
+
+export interface ScriptResult {
+  stdout:    string;
+  stderr:    string;
+  exit_code: number;
+}
+
+export type SelectedTool =
+  | { kind: 'script';  use_case: string; script: ManifestScript }
+  | { kind: 'harness'; tool: HarnessTool }
+  | { kind: 'mcp';     tool: McpToolStub };

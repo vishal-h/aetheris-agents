@@ -47,3 +47,14 @@ export type { ModelUsageRow, UseCaseUsageRow, UsageStats } from './types';
 export { useAgentConfig } from './useAgentConfig';
 export type { AgentConfigEntry } from './types';
 export { useRequestHistory } from './useRequestHistory';
+export type {
+  ManifestArg,
+  ManifestScript,
+  UseCaseGroup,
+  HarnessToolArg,
+  HarnessTool,
+  McpToolStub,
+  ToolsInventory,
+  ScriptResult,
+  SelectedTool,
+} from './types';

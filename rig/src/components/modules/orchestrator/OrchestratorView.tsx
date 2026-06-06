@@ -10,6 +10,8 @@ import type { PlanStep, StepStatus } from '@/hooks/types';
 // ── Config hints — which env vars are relevant for each agent ─────────────────
 
 const STEP_CONFIG_HINTS: Record<string, string[]> = {
+  'drive/agents/drive_download_orchestrator.exs':      ['GOOGLE_SERVICE_ACCOUNT', 'DRIVE_ROOT_FOLDER_ID'],
+  'drive/agents/drive_upload_orchestrator.exs':        ['GOOGLE_SERVICE_ACCOUNT', 'DRIVE_ROOT_FOLDER_ID'],
   'drive/agents/drive_orchestrator.exs':               ['GOOGLE_SERVICE_ACCOUNT', 'DRIVE_ROOT_FOLDER_ID'],
   'email/agents/email_orchestrator.exs':               ['SMTP_TO', 'SMTP_FROM'],
   'provenance/agents/scan_orchestrator.exs':           ['PROVENANCE_NAS_PATH'],

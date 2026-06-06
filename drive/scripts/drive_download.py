@@ -55,6 +55,8 @@ def find_payroll_file(service, folder_id):
             orderBy="modifiedTime desc",
             fields="files(id, name, modifiedTime)",
             pageSize=10,
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
         )
         .execute()
     )

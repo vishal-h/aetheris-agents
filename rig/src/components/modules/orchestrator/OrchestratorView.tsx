@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOrchestrator } from '@/hooks/useOrchestrator';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
@@ -171,11 +171,18 @@ export function OrchestratorView() {
                 />
               ))}
             </div>
-            <div className="flex flex-col items-center gap-3 pt-2">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
-              <p className="font-medium">Done</p>
-              <Button variant="outline" onClick={reset}>Run another</Button>
-            </div>
+            {(() => {
+              const anyFailed = Object.values(stepStatuses).some((s) => s === 'failed');
+              return (
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  {anyFailed
+                    ? <AlertCircle className="h-8 w-8 text-amber-500" />
+                    : <CheckCircle2 className="h-8 w-8 text-green-600" />}
+                  <p className="font-medium">{anyFailed ? 'Completed with errors' : 'Done'}</p>
+                  <Button variant="outline" onClick={reset}>Run another</Button>
+                </div>
+              );
+            })()}
           </div>
         )}
 

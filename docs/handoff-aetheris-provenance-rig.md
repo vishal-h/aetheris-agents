@@ -101,7 +101,7 @@
 **p8-002 — Drive folder convention refactor:**
 - `DRIVE_ROOT_FOLDER_ID` replaces `DRIVE_PAYROLL_FOLDER_ID` + `DRIVE_OUTPUT_FOLDER_ID` (two vars → one)
 - `drive/scripts/drive_utils.py`: `period_folder_name()` + `find_folder()` + `resolve_period_folder()`
-- Convention: root → `payslips/` → `{YYYYMM-monthname}/` (e.g. `202605-may`)
+- `DRIVE_ROOT_FOLDER_ID` points directly to the payslips folder; scripts navigate one level below to the period folder (`{YYYYMM-monthname}/`, e.g. `202605-may`)
 - `drive_download.py` and `drive_upload.py` both navigate this tree; `resolve_period_folder` exits 1 if folder absent
 - `drive/tests/test_drive_utils.py`: 5 unit tests for `period_folder_name`
 - `agentConfigDefs.ts`: `GOOGLE_CREDENTIALS` removed; `GOOGLE_SERVICE_ACCOUNT` + `DRIVE_ROOT_FOLDER_ID` added (12 vars total, 5 groups)
@@ -119,6 +119,33 @@
 **Agent config UX (p8):**
 - External link icon in `ConfigRow` when `linkPrefix` is set and value is non-empty — uses `open()` not anchor
 - `tauri-plugin-shell` added to Cargo.toml, registered in `lib.rs`, and declared in `capabilities/default.json`
+
+**p8-004 — Drive agent split:**
+- `drive_orchestrator.exs` split into two single-purpose agents: `drive_download_orchestrator.exs` + `drive_upload_orchestrator.exs`
+- `drive_orchestrator.exs` kept for standalone download + upload workflow (no payslip generation step)
+- `agents/orchestrator.exs` few-shot example for "email payslips" updated to 4-step pipeline:
+  1. `drive/agents/drive_download_orchestrator.exs` — downloads payroll CSV + email template
+  2. `payslip/agents/payslip_orchestrator.exs` — generates PDF payslips
+  3. `drive/agents/drive_upload_orchestrator.exs` — uploads PDFs to Shared Drive
+  4. `email/agents/email_orchestrator.exs` — sends payslip emails
+- `STEP_CONFIG_HINTS` in `OrchestratorView.tsx` updated for all three drive agents
+- All agent system_prompts rewritten: "run exactly once, do not verify or retry" — prevents LLM issuing a second run_command for verification
+- Explicit `sys.exit(0/1)` added to all agent-facing Python scripts (`drive_download.py`, `drive_upload.py`, `email_send.py`, `email_download_template.py`) — forces process termination; without this, unclosed HTTP connections keep the agent spinner running indefinitely
+
+**Drive API fixes (p8):**
+- `find_or_create_folder` in `drive_upload.py`: added `corpora="allDrives"` to `list()` and `supportsAllDrives=True` to `create()` — without `corpora`, Drive API uses `corpora='user'` by default and cannot see existing Shared Drive folders, silently creating duplicate period folders
+- `find_payroll_file` in `drive_download.py`: added `supportsAllDrives=True` + `includeItemsFromAllDrives=True` — same fix, same root cause
+- Upload OAuth scope changed from `drive.file` → `drive` — `drive.file` only sees files the application itself created; it cannot list or find pre-existing folders in a Shared Drive
+- All three required flags for Shared Drive `list()` calls: `corpora="allDrives"`, `supportsAllDrives=True`, `includeItemsFromAllDrives=True`
+
+**Exec server (p8):**
+- `fs_hash` removed from `PERMITTED_COMMANDS` in `aetheris/native/aetheris_exec_server/src/runner.rs` — scanning is now owned by `f2-scanner`
+- `priv/exec_server/aetheris_exec_server` is gitignored; must be rebuilt locally after any `runner.rs` change:
+  ```bash
+  cd ~/sandbox/elixirws/aetheris/native/aetheris_exec_server
+  cargo build --release
+  cp target/release/aetheris_exec_server ../../priv/exec_server/
+  ```
 
 **P8 pending (not yet implemented):**
 - Timestamped output folders (payslip PDFs, email logs written to dated subdirs)
@@ -193,10 +220,14 @@ aetheris-agents/
         useAgentConfig.ts         ← agent config load/set/delete hook (p7)
         types.ts                  ← all TypeScript interfaces; PlanStep.context, OrchestratorPlan.params (p8)
   drive/
+    agents/
+      drive_download_orchestrator.exs  ← p8-004: download payroll CSV + email template only
+      drive_upload_orchestrator.exs    ← p8-004: upload payslip PDFs only
+      drive_orchestrator.exs           ← kept for standalone download+upload workflow
     scripts/
       drive_utils.py              ← period_folder_name, find_folder, resolve_period_folder (p8-002)
-      drive_download.py           ← uses DRIVE_ROOT_FOLDER_ID + PAYSLIP_MONTH (p8-002)
-      drive_upload.py             ← navigates root→payslips→period, find_or_create (p8-002)
+      drive_download.py           ← uses DRIVE_ROOT_FOLDER_ID + PAYSLIP_MONTH; sys.exit(0) (p8-002, p8)
+      drive_upload.py             ← navigates root→period, corpora=allDrives, drive scope; sys.exit(0) (p8-002, p8)
     tests/
       test_drive_utils.py         ← 5 unit tests for period_folder_name (p8-002)
   docs/rig/milestones/
@@ -309,6 +340,38 @@ Models often wrap JSON in code fences despite "JSON only" instructions. Always s
 
 **`System.halt(0)` on early exit in .exs scripts.**
 Use `System.halt(0)` rather than letting the script fall off the end when exiting early (e.g. orchestration_cancelled). The harness may hold open file handles.
+
+### Python / Google Drive API
+
+**Google Drive scope — use `drive` for Shared Drive automation:**
+```python
+# Download scripts — read-only is sufficient
+READONLY_SCOPE = ["https://www.googleapis.com/auth/drive.readonly"]
+
+# Upload script — must list + create folders + upload files
+UPLOAD_SCOPE = ["https://www.googleapis.com/auth/drive"]
+```
+`drive.file` only sees files the application itself created — it cannot list or find
+pre-existing folders in a Shared Drive. Never use `drive.file` for server-side automation.
+
+**All three flags required on every `files().list()` against a Shared Drive:**
+```python
+service.files().list(
+    q=query,
+    corpora="allDrives",            # ← essential; default 'user' cannot see Shared Drives
+    supportsAllDrives=True,
+    includeItemsFromAllDrives=True,
+    fields="files(id, name)",
+).execute()
+```
+`corpora="allDrives"` is the critical missing piece — `supportsAllDrives` + `includeItemsFromAllDrives`
+alone are not sufficient. Omitting `corpora` causes the lookup to return empty, leading to duplicate
+folder creation.
+
+**`sys.exit(0/1)` at the end of every agent-facing script's `main()`:**
+Without an explicit exit, Python keeps HTTP connections open. The Aetheris agent holds its
+`run_command` call open waiting for EOF, causing the Rig spinner to spin indefinitely.
+Always end `main()` with `sys.exit(0)` on success, `sys.exit(1)` on failure.
 
 ### Rust / Tauri
 
@@ -492,10 +555,17 @@ cd ~/sandbox/elixirws/aetheris-agents/rig/src-tauri && cargo build
 # Check agent config store (not sqlite — values in JSON file)
 cat ~/.local/share/dev.rig.app/agent-config.json
 
-# Run full payslip pipeline via Rig Orchestrator
-# 1. Open Settings → Agent Config, set SMTP_HOST / SMTP_USER / SMTP_PASSWORD / SMTP_FROM / SMTP_TO
-# 2. Orchestrator → "generate and email payslips for {month}"
-# 3. Review plan (shows PAYSLIP_MONTH extracted from request), approve
+# Run full payslip pipeline via Rig Orchestrator (4-step)
+# Prerequisites — Settings → Agent Config:
+#   GOOGLE_SERVICE_ACCOUNT  absolute path to service account JSON key file
+#   DRIVE_ROOT_FOLDER_ID    folder ID of the payslips folder in Shared Drive
+#   SMTP_HOST / SMTP_USER / SMTP_PASSWORD / SMTP_FROM / SMTP_TO
+# 1. Orchestrator → type: "generate and email payslips for april 2026" (or any month)
+# 2. Review 4-step plan (PAYSLIP_MONTH extracted automatically), approve
+#    Step 1: drive_download_orchestrator  — downloads payroll.csv + email template
+#    Step 2: payslip_orchestrator         — generates PDF payslips
+#    Step 3: drive_upload_orchestrator    — uploads PDFs to Shared Drive
+#    Step 4: email_orchestrator           — sends payslip emails to finance inbox
 
 # Check a harness run
 cd ~/sandbox/elixirws/aetheris

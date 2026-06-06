@@ -316,6 +316,20 @@ The upload script (`drive_upload.py`) creates the period folder if needed.
 `PAYSLIP_MONTH` is injected per-invocation by the orchestrator — it is not a
 persistent Agent Config setting.
 
+### Google Drive scope requirements
+
+| Script | OAuth Scope | Reason |
+|--------|-------------|--------|
+| `drive_download.py` | `drive.readonly` | Read-only; downloads payroll CSV |
+| `email_download_template.py` | `drive.readonly` | Read-only; downloads email template |
+| `drive_upload.py` | `drive` (full) | Must list, create, and upload in Shared Drive |
+
+`drive.file` is **not** suitable for Shared Drive automation — it only sees files the
+application itself created and cannot list pre-existing folders. Use `drive.readonly`
+for read-only scripts and `drive` for write scripts.
+
+The service account must have "Content Manager" or higher role in the Shared Drive.
+
 ### Export / Import
 
 Use the **Export** button to download all 12 known variable slots as
@@ -370,6 +384,32 @@ Fix: run any agent against a real Anthropic model, then click **Refresh** in the
 
 **`@tauri-apps/api` import errors in Vite**
 Run `bun install` — the package may not be installed yet.
+
+**Upload or email step hangs / agent spinner keeps spinning**
+The Python script is not exiting cleanly — the agent's `run_command` call waits for
+EOF that never arrives. Two causes:
+1. `sys.exit()` missing from `main()` — unclosed HTTP connections keep the process alive.
+2. Agent system_prompt caused the LLM to issue a second `run_command` for verification.
+Fix: All p8-revised scripts end `main()` with `sys.exit(0)` (success) or `sys.exit(1)` (failure).
+If you add a new agent-facing script, always end `main()` with an explicit `sys.exit()`.
+
+**Exec server tool calls timeout / "exec_server not running" in trajectory**
+The exec server binary at `priv/exec_server/aetheris_exec_server` is gitignored and must
+be built locally. It is stale if `runner.rs` was changed (e.g. a new permitted command added).
+Rebuild:
+```bash
+cd ~/sandbox/elixirws/aetheris/native/aetheris_exec_server
+cargo build --release
+cp target/release/aetheris_exec_server ../../priv/exec_server/
+```
+After rebuild, restart the aetheris harness.
+
+**Drive upload creates duplicate period folders**
+The Drive API `list()` call is using `corpora='user'` (the default) — it cannot see existing
+Shared Drive folders even with `supportsAllDrives=True`. All three flags are required:
+`corpora="allDrives"`, `supportsAllDrives=True`, `includeItemsFromAllDrives=True`.
+Without `corpora="allDrives"`, the folder lookup returns empty → new folder is created →
+duplicates accumulate. Check `drive_upload.py` `find_or_create_folder` if this recurs.
 
 ---
 

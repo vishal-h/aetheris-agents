@@ -39,7 +39,16 @@ Emitted when a step finishes. Rig marks that step as `done` or `failed`.
 { "type": "step_complete", "step_id": "step-1", "status": "done" }
 ```
 
-`status` is either `"done"` or `"failed"`.
+On failure, an optional `error` field contains the stderr from the failed
+tool invocation:
+
+```json
+{ "type": "step_complete", "step_id": "step-1", "status": "failed",
+  "error": "Folder '202605-may' not found under payslips/." }
+```
+
+`status` is either `"done"` or `"failed"`. `error` is present only when
+`status` is `"failed"`.
 
 ### `orchestration_complete`
 

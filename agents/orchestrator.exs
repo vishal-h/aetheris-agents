@@ -191,7 +191,7 @@ end
 
 # ── Execute steps ─────────────────────────────────────────────────────────────
 
-has_tool_failure = fn run_id ->
+get_step_result = fn run_id ->
   db_path   = System.get_env("AETHERIS_DB_PATH") || raise "AETHERIS_DB_PATH not set"
   traj_path = Path.join([
     db_path |> Path.dirname() |> Path.dirname(),
@@ -199,18 +199,25 @@ has_tool_failure = fn run_id ->
   ])
   case File.read(traj_path) do
     {:ok, raw} ->
-      raw
-      |> Jason.decode!()
-      |> Map.get("events", [])
-      |> Enum.any?(fn e ->
-           e["type"] == "tool_result" &&
-           case Jason.decode(e["payload"]["output"] || "") do
-             {:ok, output} -> is_integer(output["exit_code"]) && output["exit_code"] != 0
-             _             -> false
-           end
-         end)
+      events = raw |> Jason.decode!() |> Map.get("events", [])
+      failed = Enum.find(events, fn e ->
+        e["type"] == "tool_result" &&
+        case Jason.decode(e["payload"]["output"] || "") do
+          {:ok, output} -> is_integer(output["exit_code"]) && output["exit_code"] != 0
+          _             -> false
+        end
+      end)
+      case failed do
+        nil -> :ok
+        e ->
+          stderr = case Jason.decode(e["payload"]["output"] || "") do
+            {:ok, output} -> output["stderr"] || "Step failed"
+            _             -> "Step failed"
+          end
+          {:error, String.trim(stderr)}
+      end
     _ ->
-      false
+      :ok
   end
 end
 
@@ -228,13 +235,9 @@ Enum.reduce_while(steps, :ok, fn step, _acc ->
     with {:ok, config}   <- RunHelpers.load_agent_file(agent_path),
          {:ok, run_id}   <- Aetheris.start_run(config),
          {:ok, outcome}  <- RunHelpers.await_run(run_id, verbose: false) do
-      if has_tool_failure.(outcome.run_id) do
-        {:error, :tool_failure}
-      else
-        :ok
-      end
+      get_step_result.(outcome.run_id)
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> {:error, inspect(reason)}
     end
 
   Enum.each(original, fn
@@ -242,12 +245,14 @@ Enum.reduce_while(steps, :ok, fn step, _acc ->
     {k, v}   -> System.put_env(k, v)
   end)
 
-  status = if result == :ok, do: "done", else: "failed"
-  IO.puts(Jason.encode!(%{type: "step_complete", step_id: step_id, status: status}))
-
   case result do
-    :ok         -> {:cont, :ok}
-    {:error, _} -> {:halt, :failed}
+    :ok ->
+      IO.puts(Jason.encode!(%{type: "step_complete", step_id: step_id, status: "done"}))
+      {:cont, :ok}
+    {:error, reason} ->
+      IO.puts(Jason.encode!(%{type: "step_complete", step_id: step_id,
+                               status: "failed", error: reason}))
+      {:halt, :failed}
   end
 end)
 

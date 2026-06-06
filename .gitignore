@@ -17,4 +17,5 @@ rig/src-tauri/target/
 rig/node_modules/
 
 # Local env overrides (not committed)
+.env
 .env.local

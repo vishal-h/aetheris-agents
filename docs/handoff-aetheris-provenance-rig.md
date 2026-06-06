@@ -147,8 +147,14 @@
   cp target/release/aetheris_exec_server ../../priv/exec_server/
   ```
 
+**p8-005 — Orchestrator request history:**
+- `useRequestHistory` hook — localStorage under `rig:orchestrator:history`, max 20 entries, deduplicates (same request moves to top)
+- Typeahead dropdown: shown below textarea when input is non-empty and history entries match (case-insensitive substring); max 5 suggestions; clicking populates textarea
+- Recent list: shown below Run button when textarea is empty and history non-empty; max 5 entries; clicking populates textarea
+- `history.add(request)` called in Run button's `onClick` before `start(request)`
+
 **P8 pending (not yet implemented):**
-- Timestamped output folders (payslip PDFs, email logs written to dated subdirs)
+- Timestamped output folders — deprioritised; run log added to `generate_employee_payslips.py` instead
 - Keyboard shortcut verification (Ctrl+Z, Escape in all inputs — fix committed but not end-to-end tested)
 
 ### Infrastructure — done
@@ -161,14 +167,18 @@
 
 ## What comes next
 
-P8 is in progress. Remaining P8 items:
-- Timestamped output folders
+P8 is in progress. Remaining P8 item:
 - Keyboard shortcut end-to-end verification
 
 After P8, candidate priorities:
-- LiteLLM migration (see `docs/aetheris/backlog/litellm-migration.md`)
-- Orchestrator context passing improvements (blackboard-based, multi-step)
-- `eval_runs` surface in Rig (pass rates, token efficiency by model)
+1. **Migrate orchestrator history to `data.db`** — localStorage is ephemeral (cleared on reinstall); move to SQLite for durability and analytics:
+   - Table: `orchestrator_history (id INTEGER PK, request TEXT NOT NULL, created_at TIMESTAMP)`
+   - New Tauri commands: `history_add(request: String) → usize`, `history_list(limit: usize) → Vec<HistoryEntry>`
+   - `useRequestHistory` swaps `localStorage` for `invoke` calls — hook interface stays identical, `OrchestratorView` unchanged
+   - `data.db` is already initialised at startup (`~/.local/share/dev.rig.app/data.db`); add a migration
+   - Survives app reinstalls; queryable for usage analytics
+2. **`eval_runs` surface in Rig** — pass rates, token efficiency by model, using existing `eval_runs` + `eval_baselines` tables in `aetheris.db`
+3. **LiteLLM migration** (see `docs/aetheris/backlog/litellm-migration.md`)
 
 ---
 
@@ -505,6 +515,26 @@ Shows skeleton on initial load only. Prevents flash on every poll refetch.
 **Filter before group.**
 Always apply filters to the flat list before `groupRuns()`. Never filter after grouping.
 
+**localStorage MRU list pattern (`useRequestHistory`).**
+Initialise state lazily from localStorage in the `useState` initialiser (not `useEffect`) to avoid a blank→populated flash. Deduplicate with `filter` before prepending. Cap with `slice`. Write back on every add. Key: `rig:orchestrator:history`.
+```typescript
+const [history, setHistory] = useState<string[]>(() => {
+  try {
+    const raw = localStorage.getItem('rig:orchestrator:history');
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+});
+
+const add = useCallback((request: string) => {
+  setHistory((prev) => {
+    const deduped = [request, ...prev.filter((r) => r !== request)].slice(0, 20);
+    localStorage.setItem('rig:orchestrator:history', JSON.stringify(deduped));
+    return deduped;
+  });
+}, []);
+```
+Same pattern works for any MRU list. When durability across reinstalls matters, migrate to `data.db` (see backlog).
+
 ---
 
 ## Database gotchas
@@ -575,4 +605,27 @@ mix aetheris list --limit 5
 # camelCase sweep — run before testing any new Tauri command
 grep -rn "invoke(" src/hooks/ src/components/ --include="*.ts" --include="*.tsx" \
   | grep "_id\|_path\|_dir\|_type\|_name\|_count\|_status"
+```
+
+---
+
+## Next session starter
+
+```
+Read docs/handoff-aetheris-provenance-rig.md.
+
+Continuing Rig development. P8 is partially complete:
+- Done: plan enrichment, drive folder convention, orchestrator
+  reliability, drive agent split, request history
+- Pending: timestamped output folders (deprioritised in favour of
+  run log), keyboard shortcuts verification
+
+Suggested next priorities:
+1. Migrate orchestrator history from localStorage to data.db
+   (spec in handoff backlog section)
+2. eval_runs surface in Rig — pass rates, token efficiency by model,
+   using existing eval_runs + eval_baselines tables in aetheris.db
+3. LiteLLM migration (see docs/aetheris/backlog/litellm-migration.md)
+
+What would you like to work on?
 ```

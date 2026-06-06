@@ -328,6 +328,21 @@ const groups   = groupRuns(filtered);
 ```
 Pattern used in `RunList.tsx`.
 
+**localStorage MRU list — lazy-init, deduplicate, cap.**
+Initialise state from localStorage in the `useState` initialiser function (not `useEffect`) to avoid a blank→populated flash on mount. Deduplicate with `filter` before prepending. Cap with `slice`. Write back on every mutation:
+```typescript
+const [history, setHistory] = useState<string[]>(() => {
+  try {
+    const raw = localStorage.getItem('key');
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+});
+// In add():
+const deduped = [request, ...prev.filter((r) => r !== request)].slice(0, MAX);
+localStorage.setItem('key', JSON.stringify(deduped));
+```
+Pattern used in `useRequestHistory.ts` (`rig:orchestrator:history`, max 20).
+
 **`hasData` check before aggregating optional payload fields.**
 When summing optional numeric fields from event payloads, check whether any event
 has data before reducing. Return `null` (not `0`) when none do — so `formatCost` /

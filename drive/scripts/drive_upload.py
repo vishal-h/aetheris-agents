@@ -13,7 +13,7 @@ from googleapiclient.http import MediaFileUpload
 
 from drive.scripts.drive_download import build_service
 
-UPLOAD_SCOPE = ["https://www.googleapis.com/auth/drive.file"]
+UPLOAD_SCOPE = ["https://www.googleapis.com/auth/drive"]
 FOLDER_MIME = "application/vnd.google-apps.folder"
 MIME_TYPES = {".pdf": "application/pdf", ".csv": "text/csv"}
 

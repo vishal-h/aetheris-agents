@@ -80,7 +80,7 @@ Request: "email payslips to all employees for May 2026"
   "steps": [
     {
       "id": "step-1",
-      "agent": "drive/agents/drive_orchestrator.exs",
+      "agent": "drive/agents/drive_download_orchestrator.exs",
       "description": "Download payroll CSV from Google Drive",
       "context": "Downloads payroll.csv from the configured Google Drive folder to payslip/data/"
     },
@@ -92,6 +92,12 @@ Request: "email payslips to all employees for May 2026"
     },
     {
       "id": "step-3",
+      "agent": "drive/agents/drive_upload_orchestrator.exs",
+      "description": "Upload payslip PDFs to Google Drive",
+      "context": "Uploads payslip/output/ PDFs to the May 2026 period folder in Drive"
+    },
+    {
+      "id": "step-4",
       "agent": "email/agents/email_orchestrator.exs",
       "description": "Email payslips to all employees",
       "context": "Sends May 2026 payslip PDFs to the configured delivery address"

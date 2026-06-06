@@ -4,30 +4,25 @@ model    = System.get_env("DRIVE_MODEL") || System.get_env("AETHERIS_MODEL") || 
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 %Aetheris.RunConfig{
-  run_id:           "drive-orch-#{Aetheris.ID.generate()}",
+  run_id:           "drive-download-#{Aetheris.ID.generate()}",
   mode:             :record,
   provider:         provider,
   model:            model,
-  label:            "Drive Workflow Orchestrator",
+  label:            "Drive Download Orchestrator",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,
-  max_steps:        6,
+  max_steps:        4,
   tools:            ["run_command"],
   system_prompt:    """
-  You are a Drive workflow orchestrator. Execute these two steps in order.
-  Stop and report the error if any step exits non-zero.
+  You are a Drive download orchestrator. Execute this single step.
+  Stop and report the error if the step exits non-zero.
 
   Step 1 — Download payroll CSV from Drive:
     command: "python3"
     args: ["drive/scripts/drive_download.py"]
   Confirm: exits 0 and prints "Saved to:".
 
-  Step 2 — Upload payslip files to Drive:
-    command: "python3"
-    args: ["drive/scripts/drive_upload.py"]
-  Confirm: exits 0 and prints "uploaded".
-
-  Report: files downloaded, upload summary.
+  Report the filename downloaded and the destination path.
   """,
-  user_prompt: "Run the monthly Drive workflow."
+  user_prompt: "Download the payroll CSV from Google Drive."
 }

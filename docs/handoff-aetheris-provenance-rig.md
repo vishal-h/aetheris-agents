@@ -1,6 +1,6 @@
 # Handoff — Aetheris + Provenance + Rig
 
-**Session date:** 2026-06-05
+**Session date:** 2026-06-06
 **Prepared for:** next Claude session
 
 ---
@@ -40,6 +40,7 @@
 | p5 | Run grouping + Capability matrix | ✅ Complete |
 | p6 | Token & cost surface | ✅ Complete |
 | p7 | Agent config settings | ✅ Complete |
+| p8 | Orchestrator UX + reliability | 🔄 In progress |
 
 **What p1 delivered:**
 - `aetheris-agents/rig/` — full Tauri app (moved from hai-rig)
@@ -83,10 +84,45 @@
 **What p7 delivered:**
 - `AgentConfigState` — HashMap cache loaded from JSON file on startup; `persist()` writes on every change; no plugin needed
 - `agent_config_get_all` / `agent_config_set` / `agent_config_delete` Tauri commands
-- `AgentConfigTab` in Settings panel (second tab alongside Watched Folders); 11 known vars in 5 groups; credential fields masked with show/hide toggle; save/clear per-row; amber plaintext-storage notice
+- `AgentConfigTab` in Settings panel (second tab alongside Watched Folders); credential fields masked with show/hide toggle; save/clear per-row; amber plaintext-storage notice
 - `orchestrate_start` injects all stored values as `.env()` calls before child process spawn
 - `email_send.py`: env var fallback when `smtp.cfg` absent (SMTP_HOST/USER/PASSWORD/FROM/TO)
 - `SMTP_FROM`, `SMTP_TO` added to `agentConfigDefs.ts`
+
+**What p8 delivered (partial — 2026-06-06):**
+
+**p8-001 — Plan view enrichment:**
+- `context` field added to each step in orchestrator LLM output format and all 4 few-shot examples
+- `ParamsStrip` component renders extracted params (e.g. `PAYSLIP_MONTH = 2026-05`) above the step list
+- `STEP_CONFIG_HINTS` map in `OrchestratorView` shows relevant env var values per step
+- `useAgentConfig().values` called in `OrchestratorView` to supply config values to `StepCard`
+- `OrchestratorPlan.params` and `PlanStep.context` added to TypeScript types
+
+**p8-002 — Drive folder convention refactor:**
+- `DRIVE_ROOT_FOLDER_ID` replaces `DRIVE_PAYROLL_FOLDER_ID` + `DRIVE_OUTPUT_FOLDER_ID` (two vars → one)
+- `drive/scripts/drive_utils.py`: `period_folder_name()` + `find_folder()` + `resolve_period_folder()`
+- Convention: root → `payslips/` → `{YYYYMM-monthname}/` (e.g. `202605-may`)
+- `drive_download.py` and `drive_upload.py` both navigate this tree; `resolve_period_folder` exits 1 if folder absent
+- `drive/tests/test_drive_utils.py`: 5 unit tests for `period_folder_name`
+- `agentConfigDefs.ts`: `GOOGLE_CREDENTIALS` removed; `GOOGLE_SERVICE_ACCOUNT` + `DRIVE_ROOT_FOLDER_ID` added (12 vars total, 5 groups)
+- `DRIVE_ROOT_FOLDER_ID` has `linkPrefix` → external link icon in Agent Config UI (uses `tauri-plugin-shell` `open()`)
+
+**p8-003 — Orchestrator reliability:**
+- `get_step_result` function reads trajectory JSON post-run to detect true failures (see Elixir patterns below)
+- `Enum.each` replaced with `Enum.reduce_while` — stops on first failed step, preventing dependent steps from running
+- `step_complete` protocol extended with optional `error` field (stderr string from failed tool_result)
+- `done`/`cancelled` states in `OrchestratorView` now show frozen step list above the final message
+- `stepErrors: Record<string, string>` state in `useOrchestrator`; errors shown inline in `StepCard`
+- `AlertCircle` (amber) shown on done + any failures; `CheckCircle2` (green) on clean completion
+- `linkifyDriveIds` in `OrchestratorView`: regex `/([A-Za-z0-9_-]{15,})/` renders matching tokens as clickable buttons opening Drive URLs in system browser
+
+**Agent config UX (p8):**
+- External link icon in `ConfigRow` when `linkPrefix` is set and value is non-empty — uses `open()` not anchor
+- `tauri-plugin-shell` added to Cargo.toml, registered in `lib.rs`, and declared in `capabilities/default.json`
+
+**P8 pending (not yet implemented):**
+- Timestamped output folders (payslip PDFs, email logs written to dated subdirs)
+- Keyboard shortcut verification (Ctrl+Z, Escape in all inputs — fix committed but not end-to-end tested)
 
 ### Infrastructure — done
 
@@ -98,7 +134,11 @@
 
 ## What comes next
 
-P8 is unplanned. Candidate priorities:
+P8 is in progress. Remaining P8 items:
+- Timestamped output folders
+- Keyboard shortcut end-to-end verification
+
+After P8, candidate priorities:
 - LiteLLM migration (see `docs/aetheris/backlog/litellm-migration.md`)
 - Orchestrator context passing improvements (blackboard-based, multi-step)
 - `eval_runs` surface in Rig (pass rates, token efficiency by model)
@@ -139,8 +179,8 @@ aetheris-agents/
             UsageView.tsx         ← aggregate token + cost stats (p6)
           orchestrator/OrchestratorView.tsx  ← p3: single-view workflow, no MainArea wrapper
           settings/
-            AgentConfigTab.tsx    ← 11-var config UI, masked fields, per-row save/clear (p7)
-            agentConfigDefs.ts    ← 11 known vars in 5 groups (p7)
+            AgentConfigTab.tsx    ← config UI, masked fields, per-row save/clear, external link icon (p7, p8)
+            agentConfigDefs.ts    ← 12 known vars in 5 groups; linkPrefix on DRIVE_ROOT_FOLDER_ID (p8)
             SettingsRoute.tsx     ← two-tab settings wrapper (p7)
       hooks/
         useHarness.ts             ← polling useRunEvents + 3 other hooks
@@ -151,19 +191,19 @@ aetheris-agents/
         useSessionRecord.ts       ← sessionStorage-backed collapse state (p5)
         useUsageStats.ts          ← usage stats hook (p6)
         useAgentConfig.ts         ← agent config load/set/delete hook (p7)
-        types.ts                  ← all TypeScript interfaces
+        types.ts                  ← all TypeScript interfaces; PlanStep.context, OrchestratorPlan.params (p8)
+  drive/
+    scripts/
+      drive_utils.py              ← period_folder_name, find_folder, resolve_period_folder (p8-002)
+      drive_download.py           ← uses DRIVE_ROOT_FOLDER_ID + PAYSLIP_MONTH (p8-002)
+      drive_upload.py             ← navigates root→payslips→period, find_or_create (p8-002)
+    tests/
+      test_drive_utils.py         ← 5 unit tests for period_folder_name (p8-002)
   docs/rig/milestones/
-    p1/ p2/ p3/ p4/ p5/ p6/ p7/  ← all done; each has README + per-issue specs
+    p1/ p2/ p3/ p4/ p5/ p6/ p7/ p8/  ← p1-p7 done; p8 in progress
 ```
 
 ---
-
-## Prompts for next session (P8)
-
-P8 is unplanned. Next priorities:
-- LiteLLM migration (see `docs/aetheris/backlog/litellm-migration.md`)
-- Orchestrator context passing improvements (blackboard-based)
-- `eval_runs` surface in Rig (pass rates, token efficiency by model)
 
 ---
 
@@ -206,6 +246,57 @@ end)
 ```
 Safe because orchestrator steps are sequential (not concurrent). Restore before `step_complete` IO.puts so env is clean for the next step. Sub-agents read env vars via `System.get_env` at `Code.eval_file` time — before the harness loop runs — so this is the only way to pass per-run params.
 
+**`get_step_result` — true failure detection via trajectory (p8-003):**
+`await_run` returns `{:ok, ...}` even when an agent's internal tool calls fail.
+To detect real failures, read the trajectory JSON after the run and find the first
+`tool_result` event with a non-zero `exit_code`:
+```elixir
+get_step_result = fn run_id ->
+  db_path   = System.get_env("AETHERIS_DB_PATH") || raise "AETHERIS_DB_PATH not set"
+  traj_path = Path.join([
+    db_path |> Path.dirname() |> Path.dirname(),
+    "priv", "runs", run_id, "trajectory.json"
+  ])
+  case File.read(traj_path) do
+    {:ok, raw} ->
+      events = raw |> Jason.decode!() |> Map.get("events", [])
+      failed = Enum.find(events, fn e ->
+        e["type"] == "tool_result" &&
+        case Jason.decode(e["payload"]["output"] || "") do
+          {:ok, output} -> is_integer(output["exit_code"]) && output["exit_code"] != 0
+          _             -> false
+        end
+      end)
+      case failed do
+        nil -> :ok
+        e ->
+          stderr = case Jason.decode(e["payload"]["output"] || "") do
+            {:ok, output} -> output["stderr"] || "Step failed"
+            _             -> "Step failed"
+          end
+          {:error, String.trim(stderr)}
+      end
+    _ -> :ok
+  end
+end
+```
+Critical: `e["payload"]["output"]` is a **JSON-encoded string** `{"exit_code":N,"stderr":"...","stdout":""}`.
+It must be decoded with `Jason.decode/1` — do NOT access `e["payload"]["exit_code"]` directly (that key does not exist).
+Trajectory path derivation: `AETHERIS_DB_PATH → Path.dirname → Path.dirname → priv/runs/{run_id}/trajectory.json`
+
+Use `Enum.reduce_while` to stop on first failure:
+```elixir
+result = Enum.reduce_while(plan["steps"], :ok, fn step, _acc ->
+  # ... load and run sub-agent ...
+  case get_step_result.(run_id) do
+    :ok           -> {:cont, :ok}
+    {:error, msg} ->
+      IO.puts(Jason.encode!(%{type: "step_complete", step_id: step["id"], status: "failed", error: msg}))
+      {:halt, :failed}
+  end
+end)
+```
+
 **Markdown fence stripping on LLM JSON responses:**
 ```elixir
 raw_text
@@ -220,6 +311,21 @@ Models often wrap JSON in code fences despite "JSON only" instructions. Always s
 Use `System.halt(0)` rather than letting the script fall off the end when exiting early (e.g. orchestration_cancelled). The harness may hold open file handles.
 
 ### Rust / Tauri
+
+**Tauri plugin permissions must be declared in `capabilities/default.json`.**
+Adding a plugin to `Cargo.toml` and registering it in `lib.rs` is not sufficient.
+The capabilities file also needs explicit permission entries or the plugin's APIs silently fail:
+```json
+{
+  "permissions": [
+    "core:default",
+    "shell:default",
+    "shell:allow-open"
+  ]
+}
+```
+File: `src-tauri/capabilities/default.json`. Each plugin has its own permission identifiers.
+For `tauri-plugin-shell`: `"shell:default"` enables the plugin; `"shell:allow-open"` allows `open()`.
 
 **Tauri v2 `invoke()` keys must be camelCase.**
 Tauri v2 deserializes arguments by converting JS camelCase keys → Rust snake_case.

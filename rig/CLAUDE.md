@@ -234,6 +234,21 @@ keys (`path`, `status`, `request`, `approved`) never need conversion.
 
 ## Rust / Tauri patterns
 
+**Tauri plugin permissions must be declared in `capabilities/default.json`.**
+Adding a plugin to `Cargo.toml` and registering it in `lib.rs` is not sufficient.
+The capabilities file also needs explicit permission entries:
+```json
+{
+  "permissions": [
+    "core:default",
+    "shell:default",
+    "shell:allow-open"
+  ]
+}
+```
+File: `src-tauri/capabilities/default.json`. For `tauri-plugin-shell`: `"shell:default"` enables
+the plugin; `"shell:allow-open"` allows `open()`. Without this, `open()` silently does nothing.
+
 **`pub(crate)` on shared helpers.**
 When a helper function is needed by sibling command modules, mark it `pub(crate)` rather
 than `pub`. Avoids leaking internal DB helpers into the public API:

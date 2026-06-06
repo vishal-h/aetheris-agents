@@ -6,6 +6,7 @@ import { MainArea } from '@/components/shell/MainArea';
 import { RightPanel } from '@/components/shell/RightPanel';
 import { HarnessRoute } from '@/components/modules/harness/RunList';
 import { OrchestratorView } from '@/components/modules/orchestrator/OrchestratorView';
+import { ToolsView } from '@/components/modules/tools/ToolsView';
 import { DiffView } from '@/components/modules/harness/DiffView';
 import { F2Operations, F2Viewer } from '@/components/modules/f2';
 import { SettingsRoute } from '@/components/modules/settings/SettingsRoute';
@@ -78,6 +79,13 @@ function App() {
             <Route path="/orchestrator" element={
               <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto p-8">
                 <OrchestratorView />
+              </div>
+            } />
+
+            {/* Tools — script browser and runner */}
+            <Route path="/tools" element={
+              <div className="flex flex-1 h-full overflow-hidden bg-background">
+                <ToolsView />
               </div>
             } />
 

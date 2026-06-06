@@ -14,6 +14,7 @@ import {
   Plus,
   Sparkles,
   TrendingUp,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { modules } from '@/modules/registry';
@@ -34,6 +35,7 @@ const iconMap: Record<string, LucideIcon> = {
   Plus,
   Sparkles,
   TrendingUp,
+  Wrench,
 };
 
 export function Sidebar() {

@@ -59,5 +59,21 @@ const orchestratorModule: Module = {
   ],
 };
 
+// Tools — script browser and runner
+const toolsModule: Module = {
+  id: 'tools',
+  label: 'Tools',
+  icon: 'Wrench',
+  sections: [
+    { id: 'tools', label: 'Tools', icon: 'Wrench', path: '/tools' },
+  ],
+};
+
 // Module registry - add new modules here
-export const modules: Module[] = [harnessModule, orchestratorModule, f2Module, provenanceModule];
+export const modules: Module[] = [
+  harnessModule,
+  orchestratorModule,
+  toolsModule,
+  f2Module,
+  provenanceModule,
+];

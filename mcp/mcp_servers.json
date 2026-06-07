@@ -18,6 +18,19 @@
       "cwd": "${AETHERIS_AGENTS_PATH}",
       "auth": "none",
       "notes": "Stub server for development."
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "transport": "stdio",
+      "command": "github-mcp-server",
+      "args": ["stdio"],
+      "cwd": "${AETHERIS_AGENTS_PATH}",
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "auth": "env_token",
+      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_TOKEN env var."
     }
   ]
 }

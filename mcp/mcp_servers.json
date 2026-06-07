@@ -30,7 +30,7 @@
         "GITHUB_TOKEN": "${GITHUB_TOKEN}"
       },
       "auth": "env_token",
-      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_TOKEN env var."
+      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_TOKEN env var set in Rig Settings."
     }
   ]
 }

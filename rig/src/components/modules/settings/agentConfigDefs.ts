@@ -35,4 +35,8 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
   // Provenance
   { key: 'PROVENANCE_NAS_PATH', label: 'NAS archive path',  group: 'Provenance',
     masked: false, placeholder: '/your/nas/archive/path' },
+
+  // GitHub
+  { key: 'GITHUB_TOKEN', label: 'Personal access token', group: 'GitHub',
+    masked: true, placeholder: 'ghp_...' },
 ];

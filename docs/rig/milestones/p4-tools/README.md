@@ -79,6 +79,13 @@ Quick fix when this becomes annoying: make MCP discovery lazy. Fetch
 inventory without MCP first, then fire `tools_list_mcp` in a `useEffect`
 after the main inventory resolves and merge the results in.
 
+**`discover_stdio_tools` does not forward `env` from `mcp_servers.json`.**
+Tokens (e.g. `GITHUB_TOKEN`) must be present in Rig's process environment
+at launch — exported in the shell before `cargo tauri dev`. Follow-up:
+read the `env` map in `discover_stdio_tools` and pass each entry via
+`.env(key, value)` on the `Command`, so Rig can manage tokens entirely
+through Settings without requiring a shell export.
+
 ---
 
 ## Directory

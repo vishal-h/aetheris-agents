@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { Download, Eye, EyeOff, ExternalLink, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
+import type { AgentConfigEntry, EnvDep } from '@/hooks/types';
 import { AGENT_CONFIG_DEFS } from './agentConfigDefs';
 
 // ── Single config row ─────────────────────────────────────────────────────────
@@ -130,7 +131,7 @@ function ConfigGroup({
 
 // ── Main tab ──────────────────────────────────────────────────────────────────
 
-export function AgentConfigTab() {
+export function AgentConfigTab({ envDeps = [] }: { envDeps?: EnvDep[] }) {
   const { values, loading, error, set, remove, exportConfig, importConfig } = useAgentConfig();
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [exporting,     setExporting]     = useState(false);
@@ -180,7 +181,12 @@ export function AgentConfigTab() {
     input.click();
   }
 
-  const groups = Array.from(new Set(AGENT_CONFIG_DEFS.map((d) => d.group)));
+  const staticKeys = new Set(AGENT_CONFIG_DEFS.map((d) => d.key));
+  const dynamicDefs: Omit<AgentConfigEntry, 'value'>[] = envDeps
+    .filter((d) => !staticKeys.has(d.key));
+  const allDefs: Omit<AgentConfigEntry, 'value'>[] = [...AGENT_CONFIG_DEFS, ...dynamicDefs];
+
+  const groups = Array.from(new Set(allDefs.map((d) => d.group)));
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -212,7 +218,7 @@ export function AgentConfigTab() {
           <ConfigGroup
             key={group}
             group={group}
-            defs={AGENT_CONFIG_DEFS.filter((d) => d.group === group)}
+            defs={allDefs.filter((d) => d.group === group)}
             values={values}
             onSave={set}
             onClear={remove}

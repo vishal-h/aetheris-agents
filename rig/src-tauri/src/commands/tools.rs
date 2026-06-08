@@ -4,6 +4,15 @@ use std::collections::HashSet;
 // ── Manifest types (mirror tools.json schema) ─────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvDep {
+    pub key:         String,
+    pub label:       String,
+    pub group:       String,
+    pub masked:      bool,
+    pub placeholder: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManifestArg {
     pub name:        String,
     pub flag:        Option<String>,
@@ -24,6 +33,8 @@ pub struct ManifestScript {
     pub example:     String,
     #[serde(default)]
     pub undeclared:  bool,
+    #[serde(default)]
+    pub env:         Vec<EnvDep>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -460,6 +471,7 @@ pub struct ToolsInventory {
     pub use_cases: Vec<UseCaseGroup>,
     pub harness:   Vec<HarnessTool>,
     pub mcp:       Vec<McpTool>,
+    pub env_deps:  Vec<EnvDep>,
 }
 
 // ── ScriptResult ──────────────────────────────────────────────────────────────
@@ -558,6 +570,7 @@ pub fn tools_list_inventory(
                             output:      "text".into(),
                             example:     format!("python3 {}", rel),
                             undeclared:  true,
+                            env:         vec![],
                         });
                     }
                 }
@@ -578,7 +591,19 @@ pub fn tools_list_inventory(
         })
         .collect();
 
-    Ok(ToolsInventory { use_cases, harness: harness_tools(), mcp })
+    let mut env_deps: Vec<EnvDep> = vec![];
+    let mut seen_keys: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for group in &use_cases {
+        for script in &group.scripts {
+            for dep in &script.env {
+                if seen_keys.insert(dep.key.clone()) {
+                    env_deps.push(dep.clone());
+                }
+            }
+        }
+    }
+
+    Ok(ToolsInventory { use_cases, harness: harness_tools(), mcp, env_deps })
 }
 
 #[tauri::command]

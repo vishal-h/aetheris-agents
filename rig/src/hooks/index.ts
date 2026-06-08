@@ -49,6 +49,7 @@ export type { AgentConfigEntry } from './types';
 export { useRequestHistory } from './useRequestHistory';
 export { useTools } from './useTools';
 export type {
+  EnvDep,
   ManifestArg,
   ManifestScript,
   UseCaseGroup,

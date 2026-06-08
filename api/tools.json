@@ -111,6 +111,22 @@
       "file": "gateway/scripts/ping_ct.py",
       "description": "Check connectivity to the ct-api and return latency in milliseconds",
       "args": [],
+      "env": [
+        {
+          "key":         "CT_API_BASE_URL",
+          "label":       "API base URL",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": "https://api.ct.example.com"
+        },
+        {
+          "key":         "CT_API_TOKEN",
+          "label":       "API token",
+          "group":       "ct",
+          "masked":      true,
+          "placeholder": "eyJ..."
+        }
+      ],
       "output": "json",
       "example": "python3 gateway/scripts/ping_ct.py"
     },
@@ -164,6 +180,15 @@
           "description": "Path to vocabulary JSONL file"
         }
       ],
+      "env": [
+        {
+          "key":         "CT_API_TOKEN",
+          "label":       "API token",
+          "group":       "ct",
+          "masked":      true,
+          "placeholder": "eyJ..."
+        }
+      ],
       "output": "json",
       "example": "python3 gateway/scripts/resolve_context.py '{\"intent_type\":\"enroll_students\",\"payload\":[]}' '{}' api/domain/ct.stu.vocabulary.jsonl"
     },
@@ -194,6 +219,22 @@
           "description": "Duplicate handling strategy: return_existing_id, fail, or ignore"
         }
       ],
+      "env": [
+        {
+          "key":         "CT_API_BASE_URL",
+          "label":       "API base URL",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": "https://api.ct.example.com"
+        },
+        {
+          "key":         "CT_API_TOKEN",
+          "label":       "API token",
+          "group":       "ct",
+          "masked":      true,
+          "placeholder": "eyJ..."
+        }
+      ],
       "output": "json",
       "example": "python3 gateway/scripts/direct_call.py create_institution '{\"Name\":\"Test School\"}' return_existing_id"
     },
@@ -222,6 +263,22 @@
           "required": true,
           "default": null,
           "description": "Section name"
+        }
+      ],
+      "env": [
+        {
+          "key":         "CT_API_BASE_URL",
+          "label":       "API base URL",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": "https://api.ct.example.com"
+        },
+        {
+          "key":         "CT_API_TOKEN",
+          "label":       "API token",
+          "group":       "ct",
+          "masked":      true,
+          "placeholder": "eyJ..."
         }
       ],
       "output": "json",
@@ -293,6 +350,57 @@
           "description": "Batch sequence number used in the S3 filename"
         }
       ],
+      "env": [
+        {
+          "key":         "CT_S3_BUCKET",
+          "label":       "S3 bucket",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": ""
+        },
+        {
+          "key":         "CT_S3_REGION",
+          "label":       "S3 region",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": "ap-south-1"
+        },
+        {
+          "key":         "CT_INST_SHORT_CODE",
+          "label":       "Institution short code",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": ""
+        },
+        {
+          "key":         "CT_ENV",
+          "label":       "Environment",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": "dev"
+        },
+        {
+          "key":         "CT_API_TOKEN",
+          "label":       "API token",
+          "group":       "ct",
+          "masked":      true,
+          "placeholder": "eyJ..."
+        },
+        {
+          "key":         "AWS_ACCESS_KEY_ID",
+          "label":       "Access key ID",
+          "group":       "aws",
+          "masked":      false,
+          "placeholder": ""
+        },
+        {
+          "key":         "AWS_SECRET_ACCESS_KEY",
+          "label":       "Secret access key",
+          "group":       "aws",
+          "masked":      true,
+          "placeholder": ""
+        }
+      ],
       "output": "json",
       "example": "python3 gateway/scripts/upload_etl_to_s3.py \"$(python3 gateway/scripts/build_etl_job.py ...)\" 1"
     },
@@ -323,6 +431,15 @@
           "description": "ETL job list content; when supplied, JOB_KEY is used as message_id for idempotent submission"
         }
       ],
+      "env": [
+        {
+          "key":         "CT_RABBITMQ_URL",
+          "label":       "RabbitMQ URL",
+          "group":       "ct",
+          "masked":      true,
+          "placeholder": "amqp://user:password@host/vhost"
+        }
+      ],
       "output": "json",
       "example": "python3 gateway/scripts/submit_to_rmq.py s3://bucket/path/file.etl inst-id-123"
     },
@@ -344,6 +461,15 @@
           "required": true,
           "default": null,
           "description": "Message body to deliver to the waiting agent"
+        }
+      ],
+      "env": [
+        {
+          "key":         "AETHERIS_API_BASE",
+          "label":       "Aetheris API base URL",
+          "group":       "ct",
+          "masked":      false,
+          "placeholder": "http://localhost:4001"
         }
       ],
       "output": "json",

@@ -3,6 +3,7 @@ import { AlertTriangle, ChevronDown, ChevronRight, Loader2, Wrench } from 'lucid
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { useTools } from '@/hooks/useTools';
+import { useAgentConfig } from '@/hooks/useAgentConfig';
 import type { ManifestScript, HarnessTool, McpTool, McpCallResult } from '@/hooks/types';
 
 function buildArgs(script: ManifestScript, values: Record<string, string>): string[] {
@@ -66,6 +67,7 @@ function ScriptDetailPanel({
   script:   ManifestScript;
 }) {
   const { running, result, runError, runScript } = tools;
+  const { values: configValues } = useAgentConfig();
   const [argValues, setArgValues] = useState<Record<string, string>>(
     Object.fromEntries(script.args.map((a) => [a.name, a.default ?? '']))
   );
@@ -77,6 +79,26 @@ function ScriptDetailPanel({
         <h2 className="text-lg font-semibold">{script.name}</h2>
         <p className="text-sm text-muted-foreground">{script.description}</p>
       </div>
+
+      {script.env && script.env.length > 0 && (
+        <div className="flex flex-col gap-1 mb-4">
+          <h3 className="text-sm font-medium">Required config</h3>
+          {script.env.map((dep) => {
+            const isSet = Boolean(configValues[dep.key]);
+            return (
+              <div key={dep.key} className="flex items-center gap-2 text-xs">
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                  isSet ? 'bg-green-500' : 'bg-amber-400'
+                }`} />
+                <code className="font-mono">{dep.key}</code>
+                <span className="text-muted-foreground">
+                  {isSet ? 'set' : 'not set — add in Settings'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {script.undeclared && (
         <div className="flex items-center gap-2 rounded-md border border-amber-200

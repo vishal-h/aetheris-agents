@@ -367,6 +367,14 @@ export interface UsageStats {
 // Tools inventory — p4-002
 // ============================================================================
 
+export interface EnvDep {
+  key:         string;
+  label:       string;
+  group:       string;
+  masked:      boolean;
+  placeholder: string;
+}
+
 export interface ManifestArg {
   name:        string;
   flag?:       string;
@@ -384,6 +392,7 @@ export interface ManifestScript {
   output:      'json' | 'text' | 'files';
   example:     string;
   undeclared?: boolean;
+  env?:        EnvDep[];
 }
 
 export interface UseCaseGroup {
@@ -429,6 +438,7 @@ export interface ToolsInventory {
   use_cases: UseCaseGroup[];
   harness:   HarnessTool[];
   mcp:       McpTool[];
+  env_deps:  EnvDep[];
 }
 
 export interface ScriptResult {

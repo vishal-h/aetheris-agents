@@ -1,8 +1,11 @@
 import { MainArea } from '@/components/shell/MainArea';
 import { WatchedFoldersSettings } from '@/components/modules/f2';
+import { useTools } from '@/hooks/useTools';
 import { AgentConfigTab } from './AgentConfigTab';
 
 export function SettingsRoute() {
+  const { inventory } = useTools();
+
   const tabs = [
     {
       id:      'watched-folders',
@@ -12,7 +15,7 @@ export function SettingsRoute() {
     {
       id:      'agent-config',
       label:   'Agent Config',
-      content: <AgentConfigTab />,
+      content: <AgentConfigTab envDeps={inventory?.env_deps ?? []} />,
     },
   ];
 

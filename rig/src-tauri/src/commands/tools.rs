@@ -420,6 +420,8 @@ fn parse_tool_call_response(bytes: &[u8]) -> Result<McpCallResult, String> {
         let trimmed = line.trim();
         if trimmed.is_empty() { continue; }
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            let id = val.get("id").and_then(|i| i.as_u64());
+            if id != Some(MCP_SESSION_REQUEST_ID) { continue; }
             if val.get("error").is_some() {
                 let msg = val.pointer("/error/message")
                     .and_then(|v| v.as_str())

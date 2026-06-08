@@ -212,6 +212,84 @@ fn parse_tools_list_response(bytes: &[u8], server: &McpServerConfig) -> Vec<McpT
     vec![]
 }
 
+const MCP_INITIALIZE: &str = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"rig","version":"0.1.0"}}}"#;
+const MCP_INITIALIZED: &str = r#"{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}"#;
+
+fn run_stdio_session(
+    server:      &McpServerConfig,
+    agents_path: &str,
+    request:     &serde_json::Value,
+) -> Result<Vec<u8>, String> {
+    use std::io::{BufRead, Write};
+    use std::sync::{Arc, Mutex};
+
+    let command = server.command.as_ref()
+        .ok_or("stdio server has no command")?;
+
+    let cwd = server.cwd.as_deref()
+        .map(|c| c.replace("${AETHERIS_AGENTS_PATH}", agents_path))
+        .unwrap_or_else(|| agents_path.to_string());
+
+    let mut cmd = std::process::Command::new(command);
+    cmd.args(server.args.as_deref().unwrap_or(&[]))
+        .current_dir(&cwd)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null());
+
+    if let Some(env_map) = &server.env {
+        for (k, v) in env_map {
+            let resolved = v.replace(
+                &format!("${{{}}}", k),
+                &std::env::var(k).unwrap_or_default(),
+            );
+            cmd.env(k, resolved);
+        }
+    }
+
+    let mut child = cmd.spawn()
+        .map_err(|e| format!("spawn failed: {}", e))?;
+
+    // Take stdout before writing to stdin — reader thread needs it first
+    let stdout = child.stdout.take()
+        .ok_or("no stdout")?;
+
+    let buffer: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
+    let buf_clone = buffer.clone();
+    let reader = std::thread::spawn(move || {
+        for line in std::io::BufReader::new(stdout).lines() {
+            if let Ok(l) = line {
+                let trimmed = l.trim().to_string();
+                if !trimmed.is_empty() {
+                    buf_clone.lock().unwrap().push(trimmed);
+                }
+            }
+        }
+    });
+
+    if let Some(mut stdin) = child.stdin.take() {
+        writeln!(stdin, "{}", MCP_INITIALIZE)
+            .map_err(|e| format!("stdin write failed: {}", e))?;
+        writeln!(stdin, "{}", MCP_INITIALIZED)
+            .map_err(|e| format!("stdin write failed: {}", e))?;
+        writeln!(stdin, "{}", request)
+            .map_err(|e| format!("stdin write failed: {}", e))?;
+        // Keep stdin alive until the server has had time to process the request
+        // and write its response. Closing stdin immediately causes the server to
+        // exit (via os.Exit) before flushing its stdout buffer.
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            drop(stdin);
+        });
+    }
+
+    reader.join().ok();
+    let _ = child.wait();
+
+    let lines = buffer.lock().unwrap();
+    Ok(lines.join("\n").into_bytes())
+}
+
 fn discover_http_tools(server: &McpServerConfig) -> Vec<McpTool> {
     let url = match &server.url {
         Some(u) => format!("{}/mcp", u.trim_end_matches('/')),
@@ -237,53 +315,16 @@ fn discover_http_tools(server: &McpServerConfig) -> Vec<McpTool> {
 }
 
 fn discover_stdio_tools(server: &McpServerConfig, agents_path: &str) -> Vec<McpTool> {
-    let command = match &server.command {
-        Some(c) => c,
-        None    => return vec![],
-    };
-    let cwd = server.cwd.as_deref()
-        .map(|c| c.replace("${AETHERIS_AGENTS_PATH}", agents_path))
-        .unwrap_or_else(|| agents_path.to_string());
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id":      2,
+        "method":  "tools/list",
+        "params":  {}
+    });
 
-    let body = {
-        let mut s = serde_json::json!({
-            "jsonrpc": "2.0", "id": 1,
-            "method": "tools/list", "params": {}
-        }).to_string();
-        s.push('\n');
-        s
-    };
-
-    let mut cmd = std::process::Command::new(command);
-    cmd.args(server.args.as_deref().unwrap_or(&[]))
-        .current_dir(&cwd)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    if let Some(env_map) = &server.env {
-        for (k, v) in env_map {
-            let resolved = v.replace(
-                &format!("${{{}}}", k),
-                &std::env::var(k).unwrap_or_default(),
-            );
-            cmd.env(k, resolved);
-        }
-    }
-
-    let mut child = match cmd.spawn() {
-        Ok(c)  => c,
-        Err(_) => return vec![],
-    };
-
-    if let Some(mut stdin) = child.stdin.take() {
-        use std::io::Write;
-        let _ = stdin.write_all(body.as_bytes());
-    }
-
-    match child.wait_with_output() {
-        Ok(o)  => parse_tools_list_response(&o.stdout, server),
-        Err(_) => vec![],
+    match run_stdio_session(server, agents_path, &request) {
+        Ok(bytes) => parse_tools_list_response(&bytes, server),
+        Err(_)    => vec![],
     }
 }
 
@@ -325,45 +366,7 @@ fn call_stdio_tool(
     agents_path: &str,
     request:     &serde_json::Value,
 ) -> Result<Vec<u8>, String> {
-    let command = server.command.as_ref()
-        .ok_or("stdio server has no command")?;
-
-    let cwd = server.cwd.as_deref()
-        .map(|c| c.replace("${AETHERIS_AGENTS_PATH}", agents_path))
-        .unwrap_or_else(|| agents_path.to_string());
-
-    let mut msg = request.to_string();
-    msg.push('\n');
-
-    let mut cmd = std::process::Command::new(command);
-    cmd.args(server.args.as_deref().unwrap_or(&[]))
-        .current_dir(&cwd)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null());
-
-    if let Some(env_map) = &server.env {
-        for (k, v) in env_map {
-            let resolved = v.replace(
-                &format!("${{{}}}", k),
-                &std::env::var(k).unwrap_or_default(),
-            );
-            cmd.env(k, resolved);
-        }
-    }
-
-    let mut child = cmd.spawn()
-        .map_err(|e| format!("spawn failed: {}", e))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        use std::io::Write;
-        stdin.write_all(msg.as_bytes())
-            .map_err(|e| format!("stdin write failed: {}", e))?;
-    }
-
-    child.wait_with_output()
-        .map(|o| o.stdout)
-        .map_err(|e| format!("wait failed: {}", e))
+    run_stdio_session(server, agents_path, request)
 }
 
 fn parse_tool_call_response(bytes: &[u8]) -> Result<McpCallResult, String> {

@@ -230,14 +230,18 @@ fn resolve_env_template(template: &str, config: &std::collections::HashMap<Strin
     out
 }
 
+// Fixed id for the actual request within a session; avoids collision with
+// the initialize response (id=1) when the caller also uses id=1.
+const MCP_SESSION_REQUEST_ID: u64 = 99;
+
 fn run_stdio_session(
     server:      &McpServerConfig,
     agents_path: &str,
     request:     &serde_json::Value,
     config:      &std::collections::HashMap<String, String>,
 ) -> Result<Vec<u8>, String> {
-    use std::io::{BufRead, Write};
-    use std::sync::{Arc, Mutex};
+    use std::io::{BufRead, BufReader, Write};
+    use std::sync::mpsc;
 
     let command = server.command.as_ref()
         .ok_or("stdio server has no command")?;
@@ -262,44 +266,67 @@ fn run_stdio_session(
     let mut child = cmd.spawn()
         .map_err(|e| format!("spawn failed: {}", e))?;
 
-    // Take stdout before writing to stdin — reader thread needs it first
     let stdout = child.stdout.take()
         .ok_or("no stdout")?;
 
-    let buffer: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
-    let buf_clone = buffer.clone();
+    // Reader thread sends lines to main thread via channel
+    let (tx, rx) = mpsc::channel::<String>();
     let reader = std::thread::spawn(move || {
-        for line in std::io::BufReader::new(stdout).lines() {
+        for line in BufReader::new(stdout).lines() {
             if let Ok(l) = line {
                 let trimmed = l.trim().to_string();
                 if !trimmed.is_empty() {
-                    buf_clone.lock().unwrap().push(trimmed);
+                    if tx.send(trimmed).is_err() { break; }
                 }
             }
         }
     });
 
-    if let Some(mut stdin) = child.stdin.take() {
+    // Rewrite the request id so it never collides with the initialize response (id=1)
+    let mut actual_request = request.clone();
+    actual_request["id"] = serde_json::json!(MCP_SESSION_REQUEST_ID);
+
+    let output = {
+        let mut stdin = child.stdin.take().ok_or("no stdin")?;
         writeln!(stdin, "{}", MCP_INITIALIZE)
             .map_err(|e| format!("stdin write failed: {}", e))?;
         writeln!(stdin, "{}", MCP_INITIALIZED)
             .map_err(|e| format!("stdin write failed: {}", e))?;
-        writeln!(stdin, "{}", request)
+        writeln!(stdin, "{}", actual_request)
             .map_err(|e| format!("stdin write failed: {}", e))?;
-        // Keep stdin alive until the server has had time to process the request
-        // and write its response. Closing stdin immediately causes the server to
-        // exit (via os.Exit) before flushing its stdout buffer.
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(300));
-            drop(stdin);
-        });
-    }
+
+        // Collect lines until we see the response to our request, then let
+        // stdin drop (closing EOF). This avoids a fixed sleep and handles
+        // servers (like github-mcp-server) that make network calls before
+        // responding (token scope fetch, tool enumeration, etc.).
+        let deadline = std::time::Instant::now()
+            + std::time::Duration::from_secs(15);
+        let mut lines: Vec<String> = Vec::new();
+
+        loop {
+            let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+            if remaining.is_zero() { break; }
+            match rx.recv_timeout(remaining) {
+                Ok(line) => {
+                    let is_response = serde_json::from_str::<serde_json::Value>(&line)
+                        .ok()
+                        .and_then(|v| v.get("id").and_then(|i| i.as_u64()))
+                        .map(|id| id == MCP_SESSION_REQUEST_ID)
+                        .unwrap_or(false);
+                    lines.push(line);
+                    if is_response { break; }
+                }
+                Err(_) => break,
+            }
+        }
+
+        lines.join("\n").into_bytes()
+        // stdin drops here → EOF to server
+    };
 
     reader.join().ok();
     let _ = child.wait();
-
-    let lines = buffer.lock().unwrap();
-    Ok(lines.join("\n").into_bytes())
+    Ok(output)
 }
 
 fn discover_http_tools(server: &McpServerConfig) -> Vec<McpTool> {

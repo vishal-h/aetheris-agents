@@ -27,10 +27,10 @@
       "args": ["stdio"],
       "cwd": "${AETHERIS_AGENTS_PATH}",
       "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       },
       "auth": "env_token",
-      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_TOKEN env var set in Rig Settings."
+      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_PERSONAL_ACCESS_TOKEN env var set in Rig Settings."
     }
   ]
 }

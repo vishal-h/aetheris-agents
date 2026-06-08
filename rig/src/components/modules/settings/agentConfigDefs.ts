@@ -37,6 +37,6 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
     masked: false, placeholder: '/your/nas/archive/path' },
 
   // GitHub
-  { key: 'GITHUB_TOKEN', label: 'Personal access token', group: 'GitHub',
+  { key: 'GITHUB_PERSONAL_ACCESS_TOKEN', label: 'Personal access token', group: 'GitHub',
     masked: true, placeholder: 'ghp_...' },
 ];

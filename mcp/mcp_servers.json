@@ -10,16 +10,6 @@
       "notes": "Requires OAuth token. Run mcp/http/google-drive/get_token.py first."
     },
     {
-      "id": "node-stdio",
-      "label": "Node stdio stub",
-      "transport": "stdio",
-      "command": "node",
-      "args": ["mcp/stdio/node/index.js"],
-      "cwd": "${AETHERIS_AGENTS_PATH}",
-      "auth": "none",
-      "notes": "Stub server for development."
-    },
-    {
       "id": "github",
       "label": "GitHub",
       "transport": "stdio",
@@ -27,10 +17,10 @@
       "args": ["stdio"],
       "cwd": "${AETHERIS_AGENTS_PATH}",
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       },
       "auth": "env_token",
-      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_PERSONAL_ACCESS_TOKEN env var set in Rig Settings."
+      "notes": "Requires github-mcp-server on PATH (go install) and GITHUB_TOKEN env var set in Rig Settings."
     }
   ]
 }

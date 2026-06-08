@@ -215,10 +215,26 @@ fn parse_tools_list_response(bytes: &[u8], server: &McpServerConfig) -> Vec<McpT
 const MCP_INITIALIZE: &str = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"rig","version":"0.1.0"}}}"#;
 const MCP_INITIALIZED: &str = r#"{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}"#;
 
+fn resolve_env_template(template: &str, config: &std::collections::HashMap<String, String>) -> String {
+    let mut out = template.to_string();
+    loop {
+        let start = match out.find("${") { Some(i) => i, None => break };
+        let end   = match out[start..].find('}') { Some(i) => start + i, None => break };
+        let var   = out[start + 2..end].to_string();
+        let val   = config.get(&var)
+            .cloned()
+            .or_else(|| std::env::var(&var).ok())
+            .unwrap_or_default();
+        out = format!("{}{}{}", &out[..start], val, &out[end + 1..]);
+    }
+    out
+}
+
 fn run_stdio_session(
     server:      &McpServerConfig,
     agents_path: &str,
     request:     &serde_json::Value,
+    config:      &std::collections::HashMap<String, String>,
 ) -> Result<Vec<u8>, String> {
     use std::io::{BufRead, Write};
     use std::sync::{Arc, Mutex};
@@ -239,11 +255,7 @@ fn run_stdio_session(
 
     if let Some(env_map) = &server.env {
         for (k, v) in env_map {
-            let resolved = v.replace(
-                &format!("${{{}}}", k),
-                &std::env::var(k).unwrap_or_default(),
-            );
-            cmd.env(k, resolved);
+            cmd.env(k, resolve_env_template(v, config));
         }
     }
 
@@ -314,7 +326,11 @@ fn discover_http_tools(server: &McpServerConfig) -> Vec<McpTool> {
     }
 }
 
-fn discover_stdio_tools(server: &McpServerConfig, agents_path: &str) -> Vec<McpTool> {
+fn discover_stdio_tools(
+    server:      &McpServerConfig,
+    agents_path: &str,
+    config:      &std::collections::HashMap<String, String>,
+) -> Vec<McpTool> {
     let request = serde_json::json!({
         "jsonrpc": "2.0",
         "id":      2,
@@ -322,7 +338,7 @@ fn discover_stdio_tools(server: &McpServerConfig, agents_path: &str) -> Vec<McpT
         "params":  {}
     });
 
-    match run_stdio_session(server, agents_path, &request) {
+    match run_stdio_session(server, agents_path, &request, config) {
         Ok(bytes) => parse_tools_list_response(&bytes, server),
         Err(_)    => vec![],
     }
@@ -365,8 +381,9 @@ fn call_stdio_tool(
     server:      &McpServerConfig,
     agents_path: &str,
     request:     &serde_json::Value,
+    config:      &std::collections::HashMap<String, String>,
 ) -> Result<Vec<u8>, String> {
-    run_stdio_session(server, agents_path, request)
+    run_stdio_session(server, agents_path, request, config)
 }
 
 fn parse_tool_call_response(bytes: &[u8]) -> Result<McpCallResult, String> {
@@ -426,10 +443,12 @@ pub struct ScriptResult {
 
 #[tauri::command]
 pub fn tools_list_inventory(
-    state: tauri::State<'_, crate::ToolsState>,
+    state:        tauri::State<'_, crate::ToolsState>,
+    config_state: tauri::State<'_, crate::AgentConfigState>,
 ) -> Result<ToolsInventory, String> {
     let agents_path = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
+    let config = config_state.cache.lock().unwrap().clone();
 
     let base = std::path::Path::new(agents_path);
     let mut use_cases: Vec<UseCaseGroup> = vec![];
@@ -522,7 +541,7 @@ pub fn tools_list_inventory(
     let mcp: Vec<McpTool> = mcp_servers.iter()
         .flat_map(|s| match s.transport.as_str() {
             "http"  => discover_http_tools(s),
-            "stdio" => discover_stdio_tools(s, agents_path),
+            "stdio" => discover_stdio_tools(s, agents_path, &config),
             _       => vec![],
         })
         .collect();
@@ -593,13 +612,15 @@ pub fn tools_run_script(
 
 #[tauri::command]
 pub fn tools_call_mcp(
-    state:     tauri::State<'_, crate::ToolsState>,
-    server_id: String,
-    tool_name: String,
-    arguments: serde_json::Value,
+    state:        tauri::State<'_, crate::ToolsState>,
+    config_state: tauri::State<'_, crate::AgentConfigState>,
+    server_id:    String,
+    tool_name:    String,
+    arguments:    serde_json::Value,
 ) -> Result<McpCallResult, String> {
     let agents_path = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
+    let config = config_state.cache.lock().unwrap().clone();
 
     let servers = load_mcp_servers(agents_path);
     let server  = servers.iter()
@@ -618,7 +639,7 @@ pub fn tools_call_mcp(
 
     let response_bytes = match server.transport.as_str() {
         "http"  => call_http_tool(server, &request)?,
-        "stdio" => call_stdio_tool(server, agents_path, &request)?,
+        "stdio" => call_stdio_tool(server, agents_path, &request, &config)?,
         other   => return Err(format!("unsupported transport: {}", other)),
     };
 
@@ -627,17 +648,19 @@ pub fn tools_call_mcp(
 
 #[tauri::command]
 pub fn tools_list_mcp(
-    state: tauri::State<'_, crate::ToolsState>,
+    state:        tauri::State<'_, crate::ToolsState>,
+    config_state: tauri::State<'_, crate::AgentConfigState>,
 ) -> Result<Vec<McpServerGroup>, String> {
     let agents_path = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
+    let config = config_state.cache.lock().unwrap().clone();
 
     let servers = load_mcp_servers(agents_path);
 
     Ok(servers.iter().map(|s| {
         let tools = match s.transport.as_str() {
             "http"  => discover_http_tools(s),
-            "stdio" => discover_stdio_tools(s, agents_path),
+            "stdio" => discover_stdio_tools(s, agents_path, &config),
             _       => vec![],
         };
         let reachable = !tools.is_empty();

@@ -437,6 +437,11 @@ export interface ScriptResult {
   exit_code: number;
 }
 
+export interface McpCallResult {
+  content:  unknown;
+  is_error: boolean;
+}
+
 export type SelectedTool =
   | { kind: 'script';  use_case: string; script: ManifestScript }
   | { kind: 'harness'; tool: HarnessTool }

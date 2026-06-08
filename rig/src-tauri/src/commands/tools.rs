@@ -139,6 +139,7 @@ pub struct McpServerConfig {
     pub cwd:       Option<String>,
     pub auth:      String,
     pub notes:     Option<String>,
+    pub env:       Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -253,14 +254,24 @@ fn discover_stdio_tools(server: &McpServerConfig, agents_path: &str) -> Vec<McpT
         s
     };
 
-    let mut child = match std::process::Command::new(command)
-        .args(server.args.as_deref().unwrap_or(&[]))
+    let mut cmd = std::process::Command::new(command);
+    cmd.args(server.args.as_deref().unwrap_or(&[]))
         .current_dir(&cwd)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-    {
+        .stderr(std::process::Stdio::null());
+
+    if let Some(env_map) = &server.env {
+        for (k, v) in env_map {
+            let resolved = v.replace(
+                &format!("${{{}}}", k),
+                &std::env::var(k).unwrap_or_default(),
+            );
+            cmd.env(k, resolved);
+        }
+    }
+
+    let mut child = match cmd.spawn() {
         Ok(c)  => c,
         Err(_) => return vec![],
     };
@@ -274,6 +285,113 @@ fn discover_stdio_tools(server: &McpServerConfig, agents_path: &str) -> Vec<McpT
         Ok(o)  => parse_tools_list_response(&o.stdout, server),
         Err(_) => vec![],
     }
+}
+
+// ── MCP tool call helpers ─────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+pub struct McpCallResult {
+    pub content:  serde_json::Value,
+    pub is_error: bool,
+}
+
+fn call_http_tool(
+    server:  &McpServerConfig,
+    request: &serde_json::Value,
+) -> Result<Vec<u8>, String> {
+    let url = server.url.as_ref()
+        .map(|u| format!("{}/mcp", u.trim_end_matches('/')))
+        .ok_or("HTTP server has no url")?;
+
+    let output = std::process::Command::new("curl")
+        .args([
+            "-s", "-X", "POST",
+            "-H", "Content-Type: application/json",
+            "-d", &request.to_string(),
+            "--max-time", "30",
+            &url,
+        ])
+        .output()
+        .map_err(|e| format!("curl failed: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!("curl exited {}", output.status));
+    }
+    Ok(output.stdout)
+}
+
+fn call_stdio_tool(
+    server:      &McpServerConfig,
+    agents_path: &str,
+    request:     &serde_json::Value,
+) -> Result<Vec<u8>, String> {
+    let command = server.command.as_ref()
+        .ok_or("stdio server has no command")?;
+
+    let cwd = server.cwd.as_deref()
+        .map(|c| c.replace("${AETHERIS_AGENTS_PATH}", agents_path))
+        .unwrap_or_else(|| agents_path.to_string());
+
+    let mut msg = request.to_string();
+    msg.push('\n');
+
+    let mut cmd = std::process::Command::new(command);
+    cmd.args(server.args.as_deref().unwrap_or(&[]))
+        .current_dir(&cwd)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null());
+
+    if let Some(env_map) = &server.env {
+        for (k, v) in env_map {
+            let resolved = v.replace(
+                &format!("${{{}}}", k),
+                &std::env::var(k).unwrap_or_default(),
+            );
+            cmd.env(k, resolved);
+        }
+    }
+
+    let mut child = cmd.spawn()
+        .map_err(|e| format!("spawn failed: {}", e))?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        stdin.write_all(msg.as_bytes())
+            .map_err(|e| format!("stdin write failed: {}", e))?;
+    }
+
+    child.wait_with_output()
+        .map(|o| o.stdout)
+        .map_err(|e| format!("wait failed: {}", e))
+}
+
+fn parse_tool_call_response(bytes: &[u8]) -> Result<McpCallResult, String> {
+    let text = String::from_utf8_lossy(bytes);
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() { continue; }
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            if val.get("error").is_some() {
+                let msg = val.pointer("/error/message")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown error");
+                return Err(format!("MCP error: {}", msg));
+            }
+            if let Some(result) = val.get("result") {
+                let is_error = result.get("isError")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let content = result.get("content")
+                    .cloned()
+                    .unwrap_or_else(|| result.clone());
+                return Ok(McpCallResult { content, is_error });
+            }
+        }
+    }
+
+    Err("no valid JSON-RPC response found".into())
 }
 
 // ── Inventory types ───────────────────────────────────────────────────────────
@@ -468,6 +586,40 @@ pub fn tools_run_script(
         stderr:    String::from_utf8_lossy(&output.stderr).to_string(),
         exit_code: output.status.code().unwrap_or(-1),
     })
+}
+
+#[tauri::command]
+pub fn tools_call_mcp(
+    state:     tauri::State<'_, crate::ToolsState>,
+    server_id: String,
+    tool_name: String,
+    arguments: serde_json::Value,
+) -> Result<McpCallResult, String> {
+    let agents_path = state.agents_path.as_ref()
+        .ok_or("AETHERIS_AGENTS_PATH not set")?;
+
+    let servers = load_mcp_servers(agents_path);
+    let server  = servers.iter()
+        .find(|s| s.id == server_id)
+        .ok_or_else(|| format!("server '{}' not found in mcp_servers.json", server_id))?;
+
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id":      1,
+        "method":  "tools/call",
+        "params":  {
+            "name":      tool_name,
+            "arguments": arguments,
+        }
+    });
+
+    let response_bytes = match server.transport.as_str() {
+        "http"  => call_http_tool(server, &request)?,
+        "stdio" => call_stdio_tool(server, agents_path, &request)?,
+        other   => return Err(format!("unsupported transport: {}", other)),
+    };
+
+    parse_tool_call_response(&response_bytes)
 }
 
 #[tauri::command]

@@ -56,6 +56,7 @@ export type {
   HarnessTool,
   McpTool,
   McpServerGroup,
+  McpCallResult,
   ToolsInventory,
   ScriptResult,
   SelectedTool,

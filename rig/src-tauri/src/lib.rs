@@ -84,6 +84,7 @@ pub fn run() {
       commands::tools::tools_list_inventory,
       commands::tools::tools_read_script,
       commands::tools::tools_run_script,
+      commands::tools::tools_call_mcp,
       commands::tools::tools_list_mcp,
     ])
     .plugin(tauri_plugin_shell::init())

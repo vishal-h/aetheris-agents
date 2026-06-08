@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { AlertTriangle, Loader2, Wrench } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Loader2, Wrench } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { useTools } from '@/hooks/useTools';
-import type { ManifestScript, HarnessTool, McpTool } from '@/hooks/types';
+import type { ManifestScript, HarnessTool, McpTool, McpCallResult } from '@/hooks/types';
 
 function buildArgs(script: ManifestScript, values: Record<string, string>): string[] {
   const positional: string[] = [];
@@ -187,7 +188,43 @@ function ScriptDetailPanel({
   );
 }
 
+function buildArgsSkeleton(schema: Record<string, unknown> | null): string {
+  if (!schema) return '{}';
+  const props = (schema as { properties?: Record<string, unknown>; required?: string[] }).properties ?? {};
+  const required = (schema as { required?: string[] }).required ?? [];
+  const skeleton: Record<string, string> = {};
+  for (const key of required) {
+    if (key in props) skeleton[key] = '';
+  }
+  return JSON.stringify(skeleton, null, 2);
+}
+
 function McpDetail({ tool }: { tool: McpTool }) {
+  const [schemaOpen, setSchemaOpen]   = useState(false);
+  const [argsJson,   setArgsJson]     = useState(() => buildArgsSkeleton(tool.input_schema));
+  const [calling,    setCalling]      = useState(false);
+  const [callResult, setCallResult]   = useState<McpCallResult | null>(null);
+  const [callError,  setCallError]    = useState<string | null>(null);
+
+  async function handleRun() {
+    setCalling(true);
+    setCallResult(null);
+    setCallError(null);
+    try {
+      const parsed = JSON.parse(argsJson);
+      const res = await invoke<McpCallResult>('tools_call_mcp', {
+        serverId:  tool.server_id,
+        toolName:  tool.name,
+        arguments: parsed,
+      });
+      setCallResult(res);
+    } catch (e) {
+      setCallError(String(e));
+    } finally {
+      setCalling(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -198,7 +235,7 @@ function McpDetail({ tool }: { tool: McpTool }) {
         <p className="text-sm text-muted-foreground">{tool.description}</p>
       </div>
 
-      {tool.auth !== 'none' && (
+      {tool.auth !== 'none' && tool.auth !== 'env_token' && (
         <div className="flex items-center gap-2 rounded-md border border-amber-200
                         bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-sm
                         text-amber-800 dark:text-amber-300">
@@ -210,14 +247,69 @@ function McpDetail({ tool }: { tool: McpTool }) {
 
       {tool.input_schema && (
         <div className="flex flex-col gap-1">
-          <h3 className="text-sm font-medium">Input schema</h3>
-          <pre className="text-xs bg-muted rounded p-3 overflow-x-auto font-mono">
-            {JSON.stringify(tool.input_schema, null, 2)}
-          </pre>
+          <button
+            onClick={() => setSchemaOpen((o) => !o)}
+            className="flex items-center gap-1 text-sm font-medium
+                       text-muted-foreground hover:text-foreground"
+          >
+            {schemaOpen
+              ? <ChevronDown  className="h-3.5 w-3.5" />
+              : <ChevronRight className="h-3.5 w-3.5" />}
+            Input schema
+          </button>
+          {schemaOpen && (
+            <pre className="text-xs bg-muted rounded p-3 overflow-x-auto font-mono">
+              {JSON.stringify(tool.input_schema, null, 2)}
+            </pre>
+          )}
         </div>
       )}
 
-      {tool.notes && tool.auth === 'none' && (
+      <div className="border-t" />
+
+      <div className="flex flex-col gap-3">
+        <h3 className="text-sm font-medium">Try</h3>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Arguments (JSON)</label>
+          <textarea
+            className="w-full rounded-md border border-input bg-background
+                       px-3 py-2 text-sm font-mono placeholder:text-muted-foreground
+                       focus-visible:outline-none focus-visible:ring-2
+                       focus-visible:ring-ring resize-y min-h-[100px]"
+            value={argsJson}
+            onChange={(e) => setArgsJson(e.target.value)}
+            spellCheck={false}
+          />
+        </div>
+
+        <Button onClick={handleRun} disabled={calling}>
+          {calling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          {calling ? 'Running…' : 'Run'}
+        </Button>
+
+        {callError && (
+          <p className="text-sm text-red-600">{callError}</p>
+        )}
+
+        {callResult && (
+          <div className="flex flex-col gap-2">
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit
+              ${callResult.is_error
+                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+              }`}>
+              {callResult.is_error ? 'error' : 'ok'}
+            </span>
+            <pre className="text-xs bg-muted rounded p-3 overflow-x-auto
+                            whitespace-pre-wrap max-h-96 overflow-y-auto font-mono">
+              {JSON.stringify(callResult.content, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      {tool.notes && (tool.auth === 'none' || tool.auth === 'env_token') && (
         <p className="text-xs text-muted-foreground border-l-2 pl-3 italic">
           {tool.notes}
         </p>
@@ -290,7 +382,12 @@ export function ToolDetail({ tools }: { tools: ReturnType<typeof useTools> }) {
   }
 
   if (selected.kind === 'mcp') {
-    return <McpDetail tool={selected.tool} />;
+    return (
+      <McpDetail
+        key={`${selected.tool.server_id}/${selected.tool.name}`}
+        tool={selected.tool}
+      />
+    );
   }
 
   return null;

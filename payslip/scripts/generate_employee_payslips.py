@@ -182,7 +182,7 @@ def main():
         month_files.append(month_data["month_file"])
 
     if months_written:
-        timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         log_line = (
             f"{timestamp}"
             f"\tmonth={month_files[0]}"

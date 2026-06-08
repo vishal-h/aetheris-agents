@@ -1,6 +1,41 @@
 {
   "manifest_version": "1",
   "use_case": "drive",
-  "description": "Google Drive file scanning and inventory tools",
-  "scripts": []
+  "description": "Download payroll CSVs and upload payslip PDFs to Google Drive",
+  "scripts": [
+    {
+      "name": "drive_download",
+      "file": "scripts/drive_download.py",
+      "description": "Download the latest payroll CSV from the period folder in Google Drive",
+      "args": [
+        {
+          "name": "dest",
+          "flag": "--dest",
+          "type": "file",
+          "required": false,
+          "default": "payslip/data/payroll.csv",
+          "description": "Local destination path for the downloaded CSV"
+        }
+      ],
+      "output": "text",
+      "example": "python3 scripts/drive_download.py --dest payslip/data/payroll.csv"
+    },
+    {
+      "name": "drive_upload",
+      "file": "scripts/drive_upload.py",
+      "description": "Upload per-employee payslip PDFs and CSVs from payslip/output/ to Google Drive",
+      "args": [
+        {
+          "name": "source",
+          "flag": "--source",
+          "type": "directory",
+          "required": false,
+          "default": "payslip/output/",
+          "description": "Local directory containing per-employee payslip output"
+        }
+      ],
+      "output": "text",
+      "example": "python3 scripts/drive_upload.py --source payslip/output/"
+    }
+  ]
 }

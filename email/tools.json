@@ -1,6 +1,73 @@
 {
   "manifest_version": "1",
   "use_case": "email",
-  "description": "Email composition and dispatch tools",
-  "scripts": []
+  "description": "Download email templates and send payslip emails with PDF attachments via SMTP",
+  "scripts": [
+    {
+      "name": "email_download_template",
+      "file": "scripts/email_download_template.py",
+      "description": "Download the payslip HTML email template from the period folder in Google Drive",
+      "args": [
+        {
+          "name": "dest",
+          "flag": "--dest",
+          "type": "file",
+          "required": false,
+          "default": "email/data/payslip_email_template.html",
+          "description": "Local destination path for the downloaded HTML template"
+        }
+      ],
+      "output": "text",
+      "example": "python3 scripts/email_download_template.py --dest email/data/payslip_email_template.html"
+    },
+    {
+      "name": "email_send",
+      "file": "scripts/email_send.py",
+      "description": "Send payslip emails with PDF attachments to all employees for a given month",
+      "args": [
+        {
+          "name": "month",
+          "flag": "--month",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Payslip month in YYYY-MM format (e.g. 2026-05)"
+        },
+        {
+          "name": "template",
+          "flag": "--template",
+          "type": "file",
+          "required": false,
+          "default": "email/data/payslip_email_template.html",
+          "description": "Path to HTML email template"
+        },
+        {
+          "name": "config",
+          "flag": "--config",
+          "type": "file",
+          "required": false,
+          "default": "email/data/smtp.cfg",
+          "description": "Path to SMTP config file (falls back to SMTP_* env vars if absent)"
+        },
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "payslip/output/",
+          "description": "Root directory containing per-employee payslip PDFs"
+        },
+        {
+          "name": "payroll_csv",
+          "flag": "--payroll-csv",
+          "type": "file",
+          "required": false,
+          "default": "payslip/data/payroll.csv",
+          "description": "Path to payroll CSV used to resolve the employee list"
+        }
+      ],
+      "output": "text",
+      "example": "python3 scripts/email_send.py --month 2026-05"
+    }
+  ]
 }

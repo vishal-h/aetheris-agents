@@ -1,6 +1,353 @@
 {
   "manifest_version": "1",
   "use_case": "api",
-  "description": "TAP protocol — tenant API gateway and command tools; scripts live under tenant/scripts/ and gateway/scripts/, not a flat scripts/ dir",
-  "scripts": []
+  "description": "TAP protocol — tenant intent packaging and gateway ETL execution tools",
+  "scripts": [
+    {
+      "name": "parse_csv",
+      "file": "tenant/scripts/parse_csv.py",
+      "description": "Parse a student enrollment CSV into a normalised JSON array",
+      "args": [
+        {
+          "name": "csv_path",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Path to student enrollment CSV"
+        }
+      ],
+      "output": "json",
+      "example": "python3 tenant/scripts/parse_csv.py api/data/sample_students.csv"
+    },
+    {
+      "name": "package_intent",
+      "file": "tenant/scripts/package_intent.py",
+      "description": "Package normalised student rows into a TAP intent packet for enroll_students",
+      "args": [
+        {
+          "name": "rows_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "JSON array of normalised student rows (output of parse_csv.py)"
+        },
+        {
+          "name": "user_intent",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Original user intent string describing the operation"
+        },
+        {
+          "name": "intent_id",
+          "flag": "--intent-id",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Override the auto-generated intent ID"
+        },
+        {
+          "name": "correlation_id",
+          "flag": "--correlation-id",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Override the auto-generated correlation ID"
+        },
+        {
+          "name": "seq",
+          "flag": "--seq",
+          "type": "integer",
+          "required": false,
+          "default": "1",
+          "description": "Batch sequence number"
+        },
+        {
+          "name": "source_file",
+          "flag": "--source-file",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Source file name recorded in provenance metadata"
+        }
+      ],
+      "output": "json",
+      "example": "python3 tenant/scripts/package_intent.py '[{\"name\":\"Alice\"}]' 'enroll students from data.csv'"
+    },
+    {
+      "name": "extract_skill_hints",
+      "file": "tenant/scripts/extract_skill_hints.py",
+      "description": "Extract skill hints from a trajectory JSON export for injection into subsequent runs",
+      "args": [
+        {
+          "name": "trajectory_json",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Path to trajectory JSON exported from mix aetheris trajectory --export"
+        }
+      ],
+      "output": "json",
+      "example": "python3 tenant/scripts/extract_skill_hints.py api/data/trajectory.json"
+    },
+    {
+      "name": "gap_analysis",
+      "file": "tenant/scripts/gap_analysis.py",
+      "description": "Analyse a TAP result packet and report non-idempotent and failed records",
+      "args": [
+        {
+          "name": "result_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "TAP result packet as a JSON string (output of stub_cot1.py or cot1)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 tenant/scripts/gap_analysis.py '{\"records\":[]}'"
+    },
+    {
+      "name": "ping_ct",
+      "file": "gateway/scripts/ping_ct.py",
+      "description": "Check connectivity to the ct-api and return latency in milliseconds",
+      "args": [],
+      "output": "json",
+      "example": "python3 gateway/scripts/ping_ct.py"
+    },
+    {
+      "name": "validate_intent",
+      "file": "gateway/scripts/validate_intent.py",
+      "description": "Validate a TAP intent packet against the vocabulary doc",
+      "args": [
+        {
+          "name": "intent_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "TAP intent packet as a JSON string"
+        },
+        {
+          "name": "vocabulary_jsonl",
+          "type": "file",
+          "required": true,
+          "default": "api/domain/ct.stu.vocabulary.jsonl",
+          "description": "Path to vocabulary JSONL file"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/validate_intent.py '{\"intent_type\":\"enroll_students\",\"payload\":[]}' api/domain/ct.stu.vocabulary.jsonl"
+    },
+    {
+      "name": "resolve_context",
+      "file": "gateway/scripts/resolve_context.py",
+      "description": "Resolve execution context (inst_id, course_map, term_name) needed to process an intent",
+      "args": [
+        {
+          "name": "intent_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "TAP intent packet as a JSON string"
+        },
+        {
+          "name": "context_json",
+          "type": "string",
+          "required": true,
+          "default": "{}",
+          "description": "Prior context JSON from setup intents; pass '{}' if none"
+        },
+        {
+          "name": "vocabulary_jsonl",
+          "type": "file",
+          "required": true,
+          "default": "api/domain/ct.stu.vocabulary.jsonl",
+          "description": "Path to vocabulary JSONL file"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/resolve_context.py '{\"intent_type\":\"enroll_students\",\"payload\":[]}' '{}' api/domain/ct.stu.vocabulary.jsonl"
+    },
+    {
+      "name": "direct_call",
+      "file": "gateway/scripts/direct_call.py",
+      "description": "Execute a direct-mode API call for setup capabilities (create_institution, create_course)",
+      "args": [
+        {
+          "name": "capability",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Capability name: create_institution or create_course"
+        },
+        {
+          "name": "payload_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "API request payload as a JSON string"
+        },
+        {
+          "name": "on_duplicate",
+          "type": "string",
+          "required": true,
+          "default": "return_existing_id",
+          "description": "Duplicate handling strategy: return_existing_id, fail, or ignore"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/direct_call.py create_institution '{\"Name\":\"Test School\"}' return_existing_id"
+    },
+    {
+      "name": "lookup_existing",
+      "file": "gateway/scripts/lookup_existing.py",
+      "description": "Search ct-api for an existing student by name, course, and section",
+      "args": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Student full name"
+        },
+        {
+          "name": "course_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Course name as it appears in ct-api"
+        },
+        {
+          "name": "sec_name",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Section name"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/lookup_existing.py \"Alice Smith\" \"B.Tech\" \"A\""
+    },
+    {
+      "name": "build_etl_job",
+      "file": "gateway/scripts/build_etl_job.py",
+      "description": "Build an ETL job list from a TAP intent, mapping payload fields to API call lines",
+      "args": [
+        {
+          "name": "intent_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "TAP intent packet as a JSON string"
+        },
+        {
+          "name": "context_json",
+          "type": "string",
+          "required": true,
+          "default": "{}",
+          "description": "Resolved context JSON (inst_id, course_map, term_name)"
+        },
+        {
+          "name": "behaviour_jsonl",
+          "type": "file",
+          "required": true,
+          "default": "api/domain/ct.stu.behaviour.jsonl",
+          "description": "Path to behaviour JSONL file"
+        }
+      ],
+      "output": "text",
+      "example": "python3 gateway/scripts/build_etl_job.py '{\"intent_type\":\"enroll_students\",\"payload\":[]}' '{}' api/domain/ct.stu.behaviour.jsonl"
+    },
+    {
+      "name": "stub_cot1",
+      "file": "gateway/scripts/stub_cot1.py",
+      "description": "Generate a mock TAP result packet for a given intent (for testing without a live gateway)",
+      "args": [
+        {
+          "name": "intent_json",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "TAP intent packet as a JSON string"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/stub_cot1.py '{\"intent_type\":\"enroll_students\",\"payload\":[]}'"
+    },
+    {
+      "name": "upload_etl_to_s3",
+      "file": "gateway/scripts/upload_etl_to_s3.py",
+      "description": "Upload an ETL job list to S3 and return the S3 path",
+      "args": [
+        {
+          "name": "etl_content",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "ETL job list content (output of build_etl_job.py)"
+        },
+        {
+          "name": "seq",
+          "type": "string",
+          "required": false,
+          "default": "1",
+          "description": "Batch sequence number used in the S3 filename"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/upload_etl_to_s3.py \"$(python3 gateway/scripts/build_etl_job.py ...)\" 1"
+    },
+    {
+      "name": "submit_to_rmq",
+      "file": "gateway/scripts/submit_to_rmq.py",
+      "description": "Publish an ETL job message to RabbitMQ pointing to an S3 file",
+      "args": [
+        {
+          "name": "s3_path",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "S3 path to the uploaded ETL file (output of upload_etl_to_s3.py)"
+        },
+        {
+          "name": "inst_id",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Institution ID (client_id)"
+        },
+        {
+          "name": "etl_content",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "ETL job list content; when supplied, JOB_KEY is used as message_id for idempotent submission"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/submit_to_rmq.py s3://bucket/path/file.etl inst-id-123"
+    },
+    {
+      "name": "notify_at1qry",
+      "file": "gateway/scripts/notify_at1qry.py",
+      "description": "POST to the Aetheris resume endpoint to wake at1qry after a gateway result",
+      "args": [
+        {
+          "name": "at1qry_run_id",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Run ID of the at1qry agent to resume"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Message body to deliver to the waiting agent"
+        }
+      ],
+      "output": "json",
+      "example": "python3 gateway/scripts/notify_at1qry.py run-abc-123 \"result ready\""
+    }
+  ]
 }

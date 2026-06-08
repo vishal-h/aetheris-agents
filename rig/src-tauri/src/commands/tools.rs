@@ -257,6 +257,9 @@ fn run_stdio_session(
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null());
 
+    for (key, value) in config {
+        cmd.env(key, value);
+    }
     if let Some(env_map) = &server.env {
         for (k, v) in env_map {
             cmd.env(k, resolve_env_template(v, config));
@@ -606,13 +609,15 @@ pub fn tools_read_script(
 
 #[tauri::command]
 pub fn tools_run_script(
-    state:    tauri::State<'_, crate::ToolsState>,
-    use_case: String,
-    file:     String,
-    args:     Vec<String>,
+    state:        tauri::State<'_, crate::ToolsState>,
+    config_state: tauri::State<'_, crate::AgentConfigState>,
+    use_case:     String,
+    file:         String,
+    args:         Vec<String>,
 ) -> Result<ScriptResult, String> {
-    let agents_path = state.agents_path.as_ref()
+    let agents_path  = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
+    let agent_config = config_state.cache.lock().unwrap().clone();
 
     let use_case_dir  = std::path::Path::new(agents_path).join(&use_case);
     let script_path   = use_case_dir.join(&file);
@@ -625,11 +630,14 @@ pub fn tools_run_script(
         return Err("path traversal rejected".into());
     }
 
-    let output = std::process::Command::new("python3")
-        .arg(&canonical_script)
+    let mut cmd = std::process::Command::new("python3");
+    cmd.arg(&canonical_script)
         .args(&args)
-        .current_dir(&use_case_dir)
-        .output()
+        .current_dir(&use_case_dir);
+    for (key, value) in &agent_config {
+        cmd.env(key, value);
+    }
+    let output = cmd.output()
         .map_err(|e| format!("spawn failed: {}", e))?;
 
     Ok(ScriptResult {

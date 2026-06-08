@@ -15,6 +15,7 @@ from Rig and see live output.
 | 003 | [Tools UI](p4-003-tools-ui.md) | 002 | Two-panel view: tree + detail/run panel |
 | 004 | [MCP discovery](p4-004-mcp-discovery.md) | 002 | HTTP + stdio MCP tool enumeration |
 | 005 | [MCP Try panel](p4-005-mcp-try-panel.md) | 004 | JSON textarea + Run button + response output for MCP tools |
+| 006 | [MCP stdio handshake](p4-006-mcp-stdio-handshake.md) | 005 | MCP initialize handshake + reader thread fix for stdio transport |
 
 001 is pure JSON/docs — can be done immediately.
 002 and 003 are the core delivery; 004 is additive and non-blocking.

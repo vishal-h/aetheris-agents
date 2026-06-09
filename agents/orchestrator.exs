@@ -237,10 +237,21 @@ Enum.reduce_while(steps, :ok, fn step, _acc ->
   original = Enum.map(params, fn {k, _} -> {k, System.get_env(k)} end)
   Enum.each(params, fn {k, v} -> System.put_env(k, v) end)
 
+  await_with_timeout = fn run_id ->
+    task = Task.async(fn -> RunHelpers.await_run(run_id, verbose: false) end)
+    case Task.yield(task, 300_000) do
+      {:ok, {:ok, outcome}}   -> {:ok, outcome}
+      {:ok, {:error, reason}} -> {:error, reason}
+      nil ->
+        Task.shutdown(task, :brutal_kill)
+        {:error, "step timed out after 5 minutes"}
+    end
+  end
+
   result =
-    with {:ok, config}   <- RunHelpers.load_agent_file(agent_path),
-         {:ok, run_id}   <- Aetheris.start_run(config),
-         {:ok, outcome}  <- RunHelpers.await_run(run_id, verbose: false) do
+    with {:ok, config}  <- RunHelpers.load_agent_file(agent_path),
+         {:ok, run_id}  <- Aetheris.start_run(config),
+         {:ok, outcome} <- await_with_timeout.(run_id) do
       get_step_result.(outcome.run_id)
     else
       {:error, reason} -> {:error, inspect(reason)}

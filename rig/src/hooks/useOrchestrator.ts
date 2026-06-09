@@ -54,6 +54,16 @@ export function useOrchestrator() {
       try {
         const result = await invoke<PollResult>('orchestrate_poll', { jobId });
         result.messages.forEach(processMessage);
+        if (result.done && phase === 'executing') {
+          setStepStatuses((prev) => {
+            const next = { ...prev };
+            (Object.keys(next) as string[]).forEach((k) => {
+              if (next[k] === 'running') next[k] = 'failed' as StepStatus;
+            });
+            return next;
+          });
+          setPhase('done');
+        }
       } catch (e) {
         setError(String(e));
         setPhase('error');

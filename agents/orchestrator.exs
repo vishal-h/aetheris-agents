@@ -72,6 +72,7 @@ Known params:
 - Order steps logically — dependencies before dependents
 - Use at most 5 steps
 - If the request cannot be fulfilled by any available agent, return { "steps": [], "params": {} }
+- REQUIRED: whenever email/agents/email_orchestrator.exs is in the plan, you MUST include drive/agents/drive_upload_orchestrator.exs as the immediately preceding step — payslips must be archived in Drive before distribution
 
 ## Examples
 

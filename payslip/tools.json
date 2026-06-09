@@ -14,6 +14,22 @@
           "required": true,
           "default": "data/sample_payroll.csv",
           "description": "Path to payroll CSV"
+        },
+        {
+          "name": "config",
+          "flag": "--config",
+          "type": "file",
+          "required": false,
+          "default": "data/payroll_config.json",
+          "description": "Path to payroll config JSON"
+        },
+        {
+          "name": "employee_id",
+          "flag": "--employee-id",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Filter output to a single employee ID"
         }
       ],
       "output": "json",

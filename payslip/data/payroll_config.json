@@ -1,0 +1,19 @@
+{
+  "config_version": "1",
+  "stipend_threshold": 25000,
+  "consultant_type_value": "consultant",
+  "regular_breakdown": {
+    "basic_pct":      0.50,
+    "hra_pct":        0.50,
+    "lta_fixed":      3000.00,
+    "wfh_fixed":      3000.00,
+    "flexi_residual": true
+  },
+  "labels": {
+    "e_sal":           "Base Salary",
+    "d_pt":            "Professional Tax",
+    "d_tds":           "TDS",
+    "d_tds_94j":       "TDS (94J)",
+    "d_loan_recovery": "Loan Recovery"
+  }
+}

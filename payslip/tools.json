@@ -48,6 +48,14 @@
           "description": "Employee ID (e.g. BTL_999)"
         },
         {
+          "name": "csv",
+          "flag": "--csv",
+          "type": "file",
+          "required": false,
+          "default": "data/sample_payroll.csv",
+          "description": "Path to payroll CSV (use data/payroll.csv after drive_download)"
+        },
+        {
           "name": "output_dir",
           "flag": "--output-dir",
           "type": "directory",

@@ -9,9 +9,11 @@ import subprocess
 import sys
 
 
-def run_compute(employee_id_safe):
+def run_compute(employee_id_safe, csv_path):
     result = subprocess.run(
-        ["python3", "scripts/payslip_compute.py", "data/payroll.csv",
+        ["python3", "scripts/payslip_compute.py",
+         csv_path,
+         "--config", "data/payroll_config.json",
          "--employee-id", employee_id_safe],
         capture_output=True, text=True
     )
@@ -149,9 +151,11 @@ def main():
     parser.add_argument("employee_id_safe", help="Employee ID (safe form, e.g. BTL_999)")
     parser.add_argument("--output-dir", dest="output_dir", default="output",
                         help="Base output directory (default: output)")
+    parser.add_argument("--csv", dest="csv_path", default="data/sample_payroll.csv",
+                        help="Path to payroll CSV (default: data/sample_payroll.csv)")
     args = parser.parse_args()
 
-    data = run_compute(args.employee_id_safe)
+    data = run_compute(args.employee_id_safe, args.csv_path)
     employees = data.get("employees", [])
     if not employees:
         print(f"No data returned for {args.employee_id_safe}.", file=sys.stderr)

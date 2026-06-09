@@ -80,8 +80,9 @@ def get_employees(payroll_csv_path):
     Exits 1 if the subprocess returns a non-zero exit code or stdout is not
     valid JSON.
     """
+    config_path = str(Path(payroll_csv_path).parent / "payroll_config.json")
     result = subprocess.run(
-        ["python3", "payslip/scripts/payslip_compute.py", payroll_csv_path],
+        ["python3", "payslip/scripts/payslip_compute.py", "--config", config_path, payroll_csv_path],
         capture_output=True,
         text=True,
     )

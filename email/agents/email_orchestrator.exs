@@ -18,15 +18,15 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   Do not run any other commands. Do not verify or retry.
   If any command exits non-zero, report the error and stop.
 
-  command 1: "python3"
-  args: ["email/scripts/email_download_template.py"]
-  The script downloads the email template and prints "Saved to: <path>". When it exits 0, proceed.
+  Step 1:
+    Run: python3 email/scripts/email_download_template.py
+    The script downloads the email template and prints "Saved to: <path>". When it exits 0, proceed.
 
-  command 2: "python3"
-  args: ["email/scripts/email_send.py", "--month", "<PAYSLIP_MONTH>"]
-  Substitute the actual PAYSLIP_MONTH value from the environment (e.g. "2026-04").
-  The script sends all emails and prints "N sent, N failed.". When it exits 0, stop immediately
-  and report the sent/failed summary.
+  Step 2:
+    Run: python3 email/scripts/email_send.py --month <VALUE>
+    Replace <VALUE> with the actual PAYSLIP_MONTH env var value (e.g. "2026-04").
+    The script sends all emails and prints "N sent, N failed.".
+    When it exits 0, stop and report the sent/failed summary.
   """,
   user_prompt: "Send payslip emails for the month passed as PAYSLIP_MONTH."
 }

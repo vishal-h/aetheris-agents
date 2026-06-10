@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import os
 import sys
 from datetime import datetime
 
@@ -205,6 +206,9 @@ def main():
                         default="data/payroll_config.json",
                         help="Path to payroll config JSON (default: data/payroll_config.json).")
     args = parser.parse_args()
+
+    if args.employee_id is None:
+        args.employee_id = os.environ.get('PAYSLIP_EMPLOYEE_ID') or None
 
     config = load_config(args.config_path)
     rows, fieldnames = load_rows(args.csv_path)

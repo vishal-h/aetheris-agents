@@ -20,15 +20,10 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   Workflow — follow these steps in order:
 
-  1. Check the PAYSLIP_EMPLOYEE_ID environment variable.
+  1. Run: python3 scripts/payslip_compute.py data/payroll.csv
 
-     If PAYSLIP_EMPLOYEE_ID is set and non-empty:
-       Run: python3 scripts/payslip_compute.py data/payroll.csv --employee-id <PAYSLIP_EMPLOYEE_ID>
-       This returns a single employee. Proceed with just that one.
-
-     If PAYSLIP_EMPLOYEE_ID is not set or empty:
-       Run: python3 scripts/payslip_compute.py data/payroll.csv
-       This returns all employees. Proceed with all of them.
+     The script reads PAYSLIP_EMPLOYEE_ID from the environment automatically.
+     If set, it returns only that employee. If not set, it returns all employees.
 
      Parse the JSON output. Extract the list of employees.
      Each employee has an "employee_id_safe" field (e.g. "BTL_999").
@@ -45,7 +40,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
      Call run_command with:
        command: "python3"
-       args: ["scripts/generate_employee_payslips.py", "{id}"]
+       args: ["scripts/generate_employee_payslips.py", "{id}", "--csv", "data/payroll.csv"]
 
      Wait for the command to complete and report its output.
      ---

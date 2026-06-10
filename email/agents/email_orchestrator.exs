@@ -20,11 +20,13 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   Step 1:
     Run: python3 email/scripts/email_download_template.py
+    timeout_ms: 120000
     The script downloads the email template from the payroll/templates/ folder
     in Drive and prints "Saved to: <path>". When it exits 0, proceed.
 
   Step 2:
     Run: python3 email/scripts/email_send.py
+    timeout_ms: 300000
     The script reads PAYSLIP_MONTH and PAYSLIP_EMPLOYEE_ID from the environment automatically.
     It sends the relevant emails and prints "N sent, N failed.".
     When it exits 0, stop and report the sent/failed summary.

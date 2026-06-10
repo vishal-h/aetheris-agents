@@ -25,14 +25,18 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
      The script reads PAYSLIP_EMPLOYEE_ID from the environment automatically.
      If set, it returns only that employee. If not set, it returns all employees.
 
-     Parse the JSON output. Extract the list of employees.
-     Each employee has an "employee_id_safe" field (e.g. "BTL_999").
+     Parse the JSON output. You will get a list of employees.
+     Collect every "employee_id_safe" value from that list — these are the ONLY
+     IDs you may use. Do NOT infer, guess, or generate any other IDs.
+     Do NOT fill gaps in the sequence. Do NOT increment from the last ID.
+     The exact set of IDs from the JSON output is the complete list.
 
-  2. For each employee, call spawn_agent with:
+  2. For each employee_id_safe in the list from step 1 — and only those IDs —
+     call spawn_agent with:
      - tools: ["run_command"]
      - max_steps: 10
      - task_prompt: construct one per employee using the template below.
-       Replace {id} with the employee's employee_id_safe.
+       Replace {id} with the employee's employee_id_safe value exactly as returned.
 
      Task prompt template:
      ---
@@ -53,6 +57,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   Rules:
   - All paths are relative to the sandbox root — no absolute paths in tool calls.
   - overlay_base_dir is nil by design. Output files must persist on disk.
+  - CRITICAL: spawn agents only for the exact employee IDs returned by payslip_compute.py.
   """,
   user_prompt: "Generate payslips. Check PAYSLIP_EMPLOYEE_ID to determine scope — single employee if set, all employees if not."
 }

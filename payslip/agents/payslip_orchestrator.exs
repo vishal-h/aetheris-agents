@@ -21,7 +21,16 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   Workflow — follow these steps in order:
 
-  1. Run: python3 scripts/payslip_compute.py data/payroll.csv
+  1. Check the PAYSLIP_EMPLOYEE_ID environment variable.
+
+     If PAYSLIP_EMPLOYEE_ID is set and non-empty:
+       Run: python3 scripts/payslip_compute.py data/payroll.csv --employee-id <PAYSLIP_EMPLOYEE_ID>
+       This returns a single employee. Proceed with just that one.
+
+     If PAYSLIP_EMPLOYEE_ID is not set or empty:
+       Run: python3 scripts/payslip_compute.py data/payroll.csv
+       This returns all employees. Proceed with all of them.
+
      Parse the JSON output. Extract the list of employees.
      Each employee has an "employee_id_safe" field (e.g. "BTL_999").
 
@@ -51,5 +60,5 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   - All paths are relative to the sandbox root — no absolute paths in tool calls.
   - overlay_base_dir is nil by design. Output files must persist on disk.
   """,
-  user_prompt: "Generate payslips for all employees in data/payroll.csv."
+  user_prompt: "Generate payslips. Check PAYSLIP_EMPLOYEE_ID to determine scope — single employee if set, all employees if not."
 }

@@ -195,10 +195,19 @@ def main():
         default="payslip/data/payroll.csv",
         help="Path to payroll CSV file",
     )
+    parser.add_argument(
+        "--employee-id", dest="employee_id", default=None,
+        help="If set, send email only for this employee ID (e.g. BTL_999).",
+    )
     args = parser.parse_args()
 
     config = load_config(args.config)
     employees = get_employees(args.payroll_csv)
+    if args.employee_id:
+        employees = [e for e in employees if e["employee_id_safe"] == args.employee_id]
+        if not employees:
+            print(f"Employee '{args.employee_id}' not found in payroll CSV.", file=sys.stderr)
+            sys.exit(1)
     month_display = datetime.strptime(args.month, "%Y-%m").strftime("%B %Y")
 
     sent = 0

@@ -355,3 +355,82 @@ def test_main_exits_0_when_all_sends_succeed(monkeypatch, tmp_path, capsys):
         with pytest.raises(SystemExit) as exc:
             main()
     assert exc.value.code == 0
+
+
+# ---------------------------------------------------------------------------
+# --employee-id filter
+# ---------------------------------------------------------------------------
+
+def test_employee_id_filter_matches(monkeypatch, tmp_path, capsys):
+    cfg = make_cfg_file(tmp_path)
+    tmpl = make_template_file(tmp_path)
+    make_pdf(tmp_path, "BTL_999", "2026-04")
+
+    monkeypatch.setattr(
+        sys, "argv",
+        [
+            "email_send.py", "--month", "2026-04",
+            "--config", str(cfg),
+            "--template", str(tmpl),
+            "--output-dir", str(tmp_path / "output"),
+            "--payroll-csv", "payslip/data/payroll.csv",
+            "--employee-id", "BTL_999",
+        ],
+    )
+    sent_to = []
+    with patch(f"{MODULE}.get_employees", return_value=EMPLOYEES), \
+         patch(f"{MODULE}.send_email", side_effect=lambda cfg, subj, body, pdf: sent_to.append(str(pdf))):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
+    assert len(sent_to) == 1
+    assert "BTL_999" in sent_to[0]
+    out = capsys.readouterr().out
+    assert "1 sent" in out
+
+
+def test_employee_id_filter_not_found(monkeypatch, tmp_path, capsys):
+    cfg = make_cfg_file(tmp_path)
+    tmpl = make_template_file(tmp_path)
+
+    monkeypatch.setattr(
+        sys, "argv",
+        [
+            "email_send.py", "--month", "2026-04",
+            "--config", str(cfg),
+            "--template", str(tmpl),
+            "--output-dir", str(tmp_path / "output"),
+            "--payroll-csv", "payslip/data/payroll.csv",
+            "--employee-id", "BTL_000",
+        ],
+    )
+    with patch(f"{MODULE}.get_employees", return_value=EMPLOYEES):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 1
+    assert "BTL_000" in capsys.readouterr().err
+
+
+def test_no_employee_id_filter(monkeypatch, tmp_path, capsys):
+    cfg = make_cfg_file(tmp_path)
+    tmpl = make_template_file(tmp_path)
+    for emp in EMPLOYEES:
+        make_pdf(tmp_path, emp["employee_id_safe"], "2026-04")
+
+    monkeypatch.setattr(
+        sys, "argv",
+        [
+            "email_send.py", "--month", "2026-04",
+            "--config", str(cfg),
+            "--template", str(tmpl),
+            "--output-dir", str(tmp_path / "output"),
+            "--payroll-csv", "payslip/data/payroll.csv",
+        ],
+    )
+    with patch(f"{MODULE}.get_employees", return_value=EMPLOYEES), \
+         patch(f"{MODULE}.send_email"):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "2 sent" in out

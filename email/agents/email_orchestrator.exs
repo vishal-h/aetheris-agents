@@ -23,9 +23,11 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
     The script downloads the email template and prints "Saved to: <path>". When it exits 0, proceed.
 
   Step 2:
-    Run: python3 email/scripts/email_send.py --month <VALUE>
-    Replace <VALUE> with the actual PAYSLIP_MONTH env var value (e.g. "2026-04").
-    The script sends all emails and prints "N sent, N failed.".
+    Run: python3 email/scripts/email_send.py --month <PAYSLIP_MONTH>
+    Replace <PAYSLIP_MONTH> with the actual PAYSLIP_MONTH env var value (e.g. "2026-04").
+    If PAYSLIP_EMPLOYEE_ID env var is set and non-empty, also pass:
+      --employee-id <PAYSLIP_EMPLOYEE_ID>
+    The script sends the relevant emails and prints "N sent, N failed.".
     When it exits 0, stop and report the sent/failed summary.
   """,
   user_prompt: "Send payslip emails for the month passed as PAYSLIP_MONTH."

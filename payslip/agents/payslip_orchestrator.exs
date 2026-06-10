@@ -4,60 +4,35 @@ model    = System.get_env("PAYSLIP_MODEL") || System.get_env("AETHERIS_MODEL") |
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
 %Aetheris.RunConfig{
-  run_id:            "payslip-orch-#{Aetheris.ID.generate()}",
-  mode:              :record,
-  provider:          provider,
-  model:             model,
-  label:             "Payslip Orchestrator",
-  sandbox_path:      agent_root,
-  overlay_base_dir:  nil,
-  max_steps:         30,
-  max_spawn_depth:   2,
-  context_strategy:  :full,
-  tools:             ["run_command", "spawn_agent", "wait_for_all"],
+  run_id:           "payslip-orch-#{Aetheris.ID.generate()}",
+  mode:             :record,
+  provider:         provider,
+  model:            model,
+  label:            "Payslip Orchestrator",
+  sandbox_path:     agent_root,
+  overlay_base_dir: nil,
+  max_steps:        4,
+  context_strategy: :full,
+  tools:            ["run_command"],
   system_prompt: """
   You are a payslip generation orchestrator for Bitloka Solutions Private Limited.
 
-  Workflow — follow these steps in order:
+  Run this command exactly once:
 
-  1. Run: python3 scripts/payslip_compute.py data/payroll.csv
+    command: "python3"
+    args: ["scripts/generate_employee_payslips.py", "--csv", "data/payroll.csv"]
+    timeout_ms: 300000
 
-     The script reads PAYSLIP_EMPLOYEE_ID from the environment automatically.
-     If set, it returns only that employee. If not set, it returns all employees.
+  The script reads PAYSLIP_EMPLOYEE_ID from the environment automatically.
+  If set, it generates payslips for that one employee only.
+  If not set, it generates payslips for all employees in the CSV.
 
-     Parse the JSON output. You will get a list of employees.
-     Collect every "employee_id_safe" value from that list — these are the ONLY
-     IDs you may use. Do NOT infer, guess, or generate any other IDs.
-     Do NOT fill gaps in the sequence. Do NOT increment from the last ID.
-     The exact set of IDs from the JSON output is the complete list.
-
-  2. For each employee_id_safe in the list from step 1 — and only those IDs —
-     call spawn_agent with:
-     - tools: ["run_command"]
-     - max_steps: 10
-     - task_prompt: construct one per employee using the template below.
-       Replace {id} with the employee's employee_id_safe value exactly as returned.
-
-     Task prompt template:
-     ---
-     Generate payslips for employee {id}.
-
-     Call run_command with:
-       command: "python3"
-       args: ["scripts/generate_employee_payslips.py", "{id}", "--csv", "data/payroll.csv"]
-
-     Wait for the command to complete and report its output.
-     ---
-
-  3. Collect all run_ids returned by spawn_agent calls.
-     Call wait_for_all with the full list and timeout_ms: 300000.
-
-  4. Report: total employees processed, total months generated, any failures.
+  When the command exits 0, report the summary line from its output.
+  If it exits non-zero, report the error and stop.
 
   Rules:
-  - All paths are relative to the sandbox root — no absolute paths in tool calls.
-  - overlay_base_dir is nil by design. Output files must persist on disk.
-  - CRITICAL: spawn agents only for the exact employee IDs returned by payslip_compute.py.
+  - Run the command exactly once. Do not loop, retry, or run per-employee.
+  - All paths are relative to the sandbox root.
   """,
-  user_prompt: "Generate payslips. Check PAYSLIP_EMPLOYEE_ID to determine scope — single employee if set, all employees if not."
+  user_prompt: "Generate payslips. The script handles all employees automatically."
 }

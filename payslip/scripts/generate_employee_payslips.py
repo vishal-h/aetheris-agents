@@ -9,14 +9,15 @@ import subprocess
 import sys
 
 
-def run_compute(employee_id_safe, csv_path):
-    result = subprocess.run(
-        ["python3", "scripts/payslip_compute.py",
-         csv_path,
-         "--config", "data/payroll_config.json",
-         "--employee-id", employee_id_safe],
-        capture_output=True, text=True
-    )
+def run_compute(csv_path, employee_id_safe=None):
+    cmd = [
+        "python3", "scripts/payslip_compute.py",
+        csv_path,
+        "--config", "data/payroll_config.json",
+    ]
+    if employee_id_safe:
+        cmd += ["--employee-id", employee_id_safe]
+    result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr, file=sys.stderr)
         sys.exit(result.returncode)
@@ -144,27 +145,9 @@ def convert_to_pdf(html_path, pdf_path):
         sys.exit(result.returncode)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Generate HTML payslips and per-month PDFs for one employee."
-    )
-    parser.add_argument("employee_id_safe", help="Employee ID (safe form, e.g. BTL_999)")
-    parser.add_argument("--output-dir", dest="output_dir", default="output",
-                        help="Base output directory (default: output)")
-    parser.add_argument("--csv", dest="csv_path", default="data/sample_payroll.csv",
-                        help="Path to payroll CSV (default: data/sample_payroll.csv)")
-    args = parser.parse_args()
-
-    data = run_compute(args.employee_id_safe, args.csv_path)
-    employees = data.get("employees", [])
-    if not employees:
-        print(f"No data returned for {args.employee_id_safe}.", file=sys.stderr)
-        sys.exit(1)
-    employee = employees[0]
-
-    template = read_template()
-
-    emp_dir = os.path.join(args.output_dir, args.employee_id_safe)
+def generate_for_employee(employee, template, output_dir):
+    emp_id = employee["employee_id_safe"]
+    emp_dir = os.path.join(output_dir, emp_id)
     os.makedirs(emp_dir, exist_ok=True)
 
     months_written = []
@@ -172,8 +155,8 @@ def main():
     for month_data in employee["months"]:
         stem = f"{month_data['month_file']}-Payslip"
         html_path = os.path.join(emp_dir, f"{stem}.html")
-        pdf_path = os.path.join(emp_dir, f"{stem}.pdf")
-        csv_path = os.path.join(emp_dir, f"{stem}.csv")
+        pdf_path  = os.path.join(emp_dir, f"{stem}.pdf")
+        csv_path  = os.path.join(emp_dir, f"{stem}.csv")
 
         html = generate_html(template, employee, month_data)
         with open(html_path, "w", encoding="utf-8") as f:
@@ -186,26 +169,62 @@ def main():
         month_files.append(month_data["month_file"])
 
     if months_written:
-        timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        timestamp  = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         month_range = f"{month_files[-1]}:{month_files[0]}" if len(month_files) > 1 else month_files[0]
         log_line = (
             f"{timestamp}"
             f"\tmonths={month_range}"
-            f"\temployee={args.employee_id_safe}"
+            f"\temployee={emp_id}"
             f"\tfiles={len(months_written) * 3}"
             f"\toutput={emp_dir}"
         )
-        log_path = os.path.join(args.output_dir, "runs.log")
+        log_path = os.path.join(output_dir, "runs.log")
         os.makedirs(os.path.dirname(os.path.abspath(log_path)), exist_ok=True)
         with open(log_path, "a", encoding="utf-8") as lf:
             lf.write(log_line + "\n")
 
-    print(f"Generated {len(months_written)} payslip(s) for {args.employee_id_safe}.")
-    print(f"Files in {os.path.join(args.output_dir, args.employee_id_safe)}{os.sep}:")
+    print(f"Generated {len(months_written)} payslip(s) for {emp_id}.")
     for stem in months_written:
         print(f"  {stem}.html")
         print(f"  {stem}.pdf")
         print(f"  {stem}.csv")
+
+    return len(months_written)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate HTML payslips and per-month PDFs for one or all employees."
+    )
+    parser.add_argument("employee_id_safe", nargs="?", default=None,
+                        help="Employee ID (safe form, e.g. BTL_999). "
+                             "Omit to process all employees (reads PAYSLIP_EMPLOYEE_ID env var).")
+    parser.add_argument("--output-dir", dest="output_dir", default="output",
+                        help="Base output directory (default: output)")
+    parser.add_argument("--csv", dest="csv_path", default="data/sample_payroll.csv",
+                        help="Path to payroll CSV (default: data/sample_payroll.csv)")
+    args = parser.parse_args()
+
+    if args.employee_id_safe is None:
+        args.employee_id_safe = os.environ.get("PAYSLIP_EMPLOYEE_ID") or None
+
+    data      = run_compute(args.csv_path, args.employee_id_safe)
+    employees = data.get("employees", [])
+
+    if not employees:
+        if args.employee_id_safe:
+            print(f"Employee '{args.employee_id_safe}' not found.", file=sys.stderr)
+        else:
+            print("No employees found in payroll CSV.", file=sys.stderr)
+        sys.exit(1)
+
+    template     = read_template()
+    total_months = 0
+
+    for employee in employees:
+        total_months += generate_for_employee(employee, template, args.output_dir)
+
+    print(f"\nDone: {len(employees)} employee(s), {total_months} payslip(s) generated.")
 
 
 if __name__ == "__main__":

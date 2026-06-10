@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download payslip_email_template.html from the Shared Drive output folder."""
+"""Download payslip_email_template.html from the Shared Drive templates folder."""
 import argparse
 import os
 import sys
@@ -72,24 +72,23 @@ def main():
     )
     args = parser.parse_args()
 
-    from drive.scripts.drive_utils import resolve_period_folder
+    from drive.scripts.drive_utils import find_folder
 
     root_id = os.environ.get("DRIVE_ROOT_FOLDER_ID")
     if not root_id:
         print("DRIVE_ROOT_FOLDER_ID environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    payslip_month = os.environ.get("PAYSLIP_MONTH")
-    if not payslip_month:
-        print("PAYSLIP_MONTH environment variable is not set.", file=sys.stderr)
+    service = build_service(scopes=READONLY_SCOPE)
+
+    templates_folder_id = find_folder(service, root_id, "templates")
+    if templates_folder_id is None:
+        print("'templates' folder not found under DRIVE_ROOT_FOLDER_ID.", file=sys.stderr)
         sys.exit(1)
 
-    service = build_service(scopes=READONLY_SCOPE)
-    folder_id = resolve_period_folder(service, root_id, payslip_month)
-
-    file_meta = find_template_file(service, folder_id)
+    file_meta = find_template_file(service, templates_folder_id)
     if file_meta is None:
-        print(f"{TEMPLATE_NAME} not found in Drive folder.", file=sys.stderr)
+        print(f"{TEMPLATE_NAME} not found in templates folder.", file=sys.stderr)
         sys.exit(1)
 
     download_template(service, file_meta["id"], args.dest)

@@ -20,7 +20,8 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   Step 1:
     Run: python3 email/scripts/email_download_template.py
-    The script downloads the email template and prints "Saved to: <path>". When it exits 0, proceed.
+    The script downloads the email template from the payroll/templates/ folder
+    in Drive and prints "Saved to: <path>". When it exits 0, proceed.
 
   Step 2:
     Run: python3 email/scripts/email_send.py --month <PAYSLIP_MONTH>

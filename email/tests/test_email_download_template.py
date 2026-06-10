@@ -124,3 +124,40 @@ def test_main_exits_0_on_success_and_prints_dest(monkeypatch, tmp_path, capsys):
     assert exc.value.code == 0
     out = capsys.readouterr().out
     assert dest in out
+
+
+def test_templates_folder_not_found(monkeypatch, capsys):
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
+    monkeypatch.setattr(sys, "argv", ["email_download_template.py"])
+    with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
+         patch("drive.scripts.drive_utils.find_folder", return_value=None):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 1
+    assert "'templates' folder not found" in capsys.readouterr().err
+
+
+def test_template_file_not_found(monkeypatch, capsys):
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
+    monkeypatch.setattr(sys, "argv", ["email_download_template.py"])
+    with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
+         patch("drive.scripts.drive_utils.find_folder", return_value="templates-folder-id"), \
+         patch(f"{MODULE}.find_template_file", return_value=None):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 1
+    assert "not found in templates folder" in capsys.readouterr().err
+
+
+def test_payslip_month_not_required(monkeypatch, tmp_path):
+    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
+    monkeypatch.delenv("PAYSLIP_MONTH", raising=False)
+    dest = str(tmp_path / "payslip_email_template.html")
+    monkeypatch.setattr(sys, "argv", ["email_download_template.py", "--dest", dest])
+    with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
+         patch("drive.scripts.drive_utils.find_folder", return_value="templates-folder-id"), \
+         patch(f"{MODULE}.find_template_file", return_value=FILE_META), \
+         patch(f"{MODULE}.download_template"):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0

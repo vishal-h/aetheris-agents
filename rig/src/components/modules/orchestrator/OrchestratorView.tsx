@@ -17,6 +17,17 @@ const STEP_CONFIG_HINTS: Record<string, string[]> = {
   'email/agents/email_orchestrator.exs':               ['SMTP_TO', 'SMTP_FROM'],
   'provenance/agents/scan_orchestrator.exs':           ['PROVENANCE_NAS_PATH'],
   'provenance/agents/classification_orchestrator.exs': [],
+  'payslip/agents/payslip_pipeline.exs': [
+    'PAYSLIP_MONTH',
+    'PAYSLIP_START_STEP',
+    'PAYSLIP_EMPLOYEE_ID',
+    'DRIVE_ROOT_FOLDER_ID',
+    'DRIVE_TEMPLATES_FOLDER_ID',
+    'GOOGLE_SERVICE_ACCOUNT',
+    'SMTP_HOST',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+  ],
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────

@@ -34,6 +34,14 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
   { key: 'DRIVE_TEMPLATES_FOLDER_ID', label: 'Templates folder ID', group: 'Google Drive',
     masked: false, placeholder: 'Google Drive folder ID for payroll/templates/' },
 
+  // Payslip pipeline
+  { key: 'PAYSLIP_MONTH',       label: 'Payslip month',   group: 'Payslip',
+    masked: false, placeholder: '2026-05' },
+  { key: 'PAYSLIP_START_STEP',  label: 'Start from step', group: 'Payslip',
+    masked: false, placeholder: '1' },
+  { key: 'PAYSLIP_EMPLOYEE_ID', label: 'Employee ID',     group: 'Payslip',
+    masked: false, placeholder: 'BTL_999 — leave blank for all' },
+
   // Provenance
   { key: 'PROVENANCE_NAS_PATH', label: 'NAS archive path',  group: 'Provenance',
     masked: false, placeholder: '/your/nas/archive/path' },

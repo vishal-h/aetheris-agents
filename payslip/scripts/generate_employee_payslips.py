@@ -187,11 +187,12 @@ def main():
 
     if months_written:
         timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        month_range = f"{month_files[-1]}:{month_files[0]}" if len(month_files) > 1 else month_files[0]
         log_line = (
             f"{timestamp}"
-            f"\tmonth={month_files[0]}"
+            f"\tmonths={month_range}"
             f"\temployee={args.employee_id_safe}"
-            f"\tfiles={len(months_written) * 2}"
+            f"\tfiles={len(months_written) * 3}"
             f"\toutput={emp_dir}"
         )
         log_path = os.path.join(args.output_dir, "runs.log")

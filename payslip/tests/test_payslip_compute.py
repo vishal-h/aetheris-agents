@@ -1,5 +1,6 @@
 import pytest
 from payslip.scripts.payslip_compute import (
+    col_label,
     compute_month,
     month_file,
     group_by_employee,
@@ -117,8 +118,9 @@ def test_arrears_detected_and_appended():
     row = make_row(**{arrears_col: "5000"})
     result = compute_month(row, DEFAULT_CONFIG, EXTRA_COLS, DEDUCTIONS_COLS, [arrears_col])
     labels = [e["label"] for e in result["earnings"]]
-    assert "Arrears" in labels
-    arrears_entry = next(e for e in result["earnings"] if e["label"] == "Arrears")
+    expected_label = col_label(arrears_col, {})
+    assert expected_label in labels
+    arrears_entry = next(e for e in result["earnings"] if e["label"] == expected_label)
     assert arrears_entry["amount"] == 5000.0
 
 

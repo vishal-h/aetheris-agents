@@ -15,9 +15,10 @@ def _float(val):
         return 0.0
 
 
-def get_earnings_cols(fieldnames):
+def get_earnings_cols(fieldnames, config=None):
     """All e_* columns except e_sal (includes arrears)."""
-    return [f for f in fieldnames if f.startswith('e_') and f != 'e_sal']
+    ignore = (config or {}).get('ignore_earnings_cols', [])
+    return [f for f in fieldnames if f.startswith('e_') and f != 'e_sal' and f not in ignore]
 
 
 def get_deductions_cols(fieldnames):
@@ -32,7 +33,12 @@ def col_label(col, label_map):
     if col in label_map:
         return label_map[col]
     name = col[2:] if col.startswith(('e_', 'd_')) else col
-    return name.replace('_', ' ').title()
+    parts = name.split('_')
+    tokens = [
+        token.upper() if (len(token) <= 3 and token.isalpha()) else token.title()
+        for token in parts
+    ]
+    return ' '.join(tokens)
 
 
 def load_config(config_path):
@@ -99,7 +105,7 @@ def compute_month(row, config, extra_cols, deductions_cols, arrears_cols):
     for col in arrears_cols:
         val = _float(row.get(col, ''))
         if val:
-            earnings.append({'label': 'Arrears', 'amount': val})
+            earnings.append({'label': col_label(col, label_map), 'amount': val})
 
     deductions = []
     for col in deductions_cols:
@@ -128,6 +134,8 @@ def compute_month(row, config, extra_cols, deductions_cols, arrears_cols):
 def group_by_employee(rows, config, extra_cols, deductions_cols, arrears_cols):
     employees = {}
     for row in rows:
+        if not row.get('name', '').strip() or not row.get('email', '').strip():
+            continue
         raw_id  = row['employee_id'].strip()
         safe_id = sanitise_id(raw_id)
         if safe_id not in employees:
@@ -140,7 +148,7 @@ def group_by_employee(rows, config, extra_cols, deductions_cols, arrears_cols):
                 'email':            row['email'].strip(),
                 'pan':              row['pan'].strip(),
                 'doj':              row['doj'].strip(),
-                'work_mode':        row['work_mode'].strip(),
+                'work_mode':        row.get('work_mode', '').strip() or 'Hybrid',
                 'account_number':   row['account_number'].strip(),
                 'months':           [],
             }
@@ -172,8 +180,8 @@ def build_output(rows, config, extra_cols, deductions_cols, arrears_cols, filter
 def load_rows(csv_path):
     with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        rows = list(reader)
         fieldnames = list(reader.fieldnames) if reader.fieldnames else []
+        rows = list(reader)
     return rows, fieldnames
 
 
@@ -194,7 +202,7 @@ def main():
         print("No e_/d_ columns found. Did you rename the CSV headers?", file=sys.stderr)
         sys.exit(1)
 
-    all_e_cols      = get_earnings_cols(fieldnames)
+    all_e_cols      = get_earnings_cols(fieldnames, config)
     arrears_cols    = get_arrears_cols(fieldnames)
     extra_cols      = [c for c in all_e_cols if c not in set(arrears_cols)]
     deductions_cols = get_deductions_cols(fieldnames)

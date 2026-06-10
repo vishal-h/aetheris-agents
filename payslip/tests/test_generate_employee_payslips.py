@@ -99,8 +99,8 @@ def test_runs_log_created_with_correct_fields(tmp_path):
 
     timestamp, month_field, employee_field, files_field, output_field = fields
     assert timestamp.endswith("Z") and "T" in timestamp
-    assert month_field == "month=2026-04"
+    assert month_field == "months=2026-03:2026-04"
     assert employee_field == "employee=BTL_999"
-    # BTL_999 has 2 months → 2 × 2 files (PDF + CSV)
-    assert files_field == "files=4"
+    # BTL_999 has 2 months → 2 × 3 files (HTML + PDF + CSV)
+    assert files_field == "files=6"
     assert output_field == f"output={os.path.join(str(tmp_path), 'BTL_999')}"

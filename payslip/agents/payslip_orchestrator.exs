@@ -11,7 +11,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   label:             "Payslip Orchestrator",
   sandbox_path:      agent_root,
   overlay_base_dir:  nil,
-  max_steps:         20,
+  max_steps:         30,
   max_spawn_depth:   2,
   context_strategy:  :full,
   tools:             ["run_command", "spawn_agent", "wait_for_all"],

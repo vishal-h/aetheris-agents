@@ -13,8 +13,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   overlay_base_dir:  nil,
   max_steps:         20,
   max_spawn_depth:   2,
-  context_strategy:  :rolling,
-  max_context_steps: 6,
+  context_strategy:  :full,
   tools:             ["run_command", "spawn_agent", "wait_for_all"],
   system_prompt: """
   You are a payslip generation orchestrator for Bitloka Solutions Private Limited.

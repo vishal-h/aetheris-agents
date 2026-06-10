@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 """Shared utilities for Drive folder navigation."""
-from datetime import datetime
 
 
 def period_folder_name(payslip_month: str) -> str:
-    """Convert PAYSLIP_MONTH to a period folder name.
+    """Return the period folder name for payslip_month.
 
-    Examples:
-        "2026-05" → "202605-may"
-        "2026-04" → "202604-april"
-
-    Raises ValueError if payslip_month is not in YYYY-MM format.
+    Example:
+        "2026-05" → "2026-05"
     """
-    dt = datetime.strptime(payslip_month, "%Y-%m")
-    return dt.strftime("%Y%m-") + dt.strftime("%B").lower()
+    return payslip_month
 
 
 def find_folder(service, parent_id: str, name: str) -> str | None:

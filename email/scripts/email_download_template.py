@@ -72,19 +72,12 @@ def main():
     )
     args = parser.parse_args()
 
-    from drive.scripts.drive_utils import find_folder
-
-    root_id = os.environ.get("DRIVE_ROOT_FOLDER_ID")
-    if not root_id:
-        print("DRIVE_ROOT_FOLDER_ID environment variable is not set.", file=sys.stderr)
+    templates_folder_id = os.environ.get("DRIVE_TEMPLATES_FOLDER_ID")
+    if not templates_folder_id:
+        print("DRIVE_TEMPLATES_FOLDER_ID environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
     service = build_service(scopes=READONLY_SCOPE)
-
-    templates_folder_id = find_folder(service, root_id, "templates")
-    if templates_folder_id is None:
-        print("'templates' folder not found under DRIVE_ROOT_FOLDER_ID.", file=sys.stderr)
-        sys.exit(1)
 
     file_meta = find_template_file(service, templates_folder_id)
     if file_meta is None:

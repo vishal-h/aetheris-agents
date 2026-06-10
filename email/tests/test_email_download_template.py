@@ -93,8 +93,8 @@ def test_download_template_creates_parent_directories(tmp_path):
 # main
 # ---------------------------------------------------------------------------
 
-def test_main_exits_1_when_drive_folder_id_not_set(monkeypatch):
-    monkeypatch.delenv("DRIVE_OUTPUT_FOLDER_ID", raising=False)
+def test_main_exits_1_when_templates_folder_id_not_set(monkeypatch):
+    monkeypatch.delenv("DRIVE_TEMPLATES_FOLDER_ID", raising=False)
     monkeypatch.setattr(sys, "argv", ["email_download_template.py"])
     with pytest.raises(SystemExit) as exc:
         main()
@@ -102,9 +102,10 @@ def test_main_exits_1_when_drive_folder_id_not_set(monkeypatch):
 
 
 def test_main_exits_1_with_stderr_when_template_not_found(monkeypatch, capsys):
-    monkeypatch.setenv("DRIVE_OUTPUT_FOLDER_ID", "folder-123")
+    monkeypatch.setenv("DRIVE_TEMPLATES_FOLDER_ID", "templates-folder-id")
     monkeypatch.setattr(sys, "argv", ["email_download_template.py"])
-    with patch(f"{MODULE}.build_service", return_value=make_service(files=[])):
+    with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
+         patch(f"{MODULE}.find_template_file", return_value=None):
         with pytest.raises(SystemExit) as exc:
             main()
     assert exc.value.code == 1
@@ -112,12 +113,11 @@ def test_main_exits_1_with_stderr_when_template_not_found(monkeypatch, capsys):
 
 
 def test_main_exits_0_on_success_and_prints_dest(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
-    monkeypatch.setenv("PAYSLIP_MONTH", "2026-04")
+    monkeypatch.setenv("DRIVE_TEMPLATES_FOLDER_ID", "templates-folder-id")
     dest = str(tmp_path / "payslip_email_template.html")
     monkeypatch.setattr(sys, "argv", ["email_download_template.py", "--dest", dest])
-    with patch(f"{MODULE}.build_service", return_value=make_service(files=[FILE_META])), \
-         patch("drive.scripts.drive_utils.resolve_period_folder", return_value="period-folder-id"), \
+    with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
+         patch(f"{MODULE}.find_template_file", return_value=FILE_META), \
          patch(f"{MODULE}.MediaIoBaseDownload", side_effect=fake_downloader()):
         with pytest.raises(SystemExit) as exc:
             main()
@@ -126,22 +126,10 @@ def test_main_exits_0_on_success_and_prints_dest(monkeypatch, tmp_path, capsys):
     assert dest in out
 
 
-def test_templates_folder_not_found(monkeypatch, capsys):
-    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
-    monkeypatch.setattr(sys, "argv", ["email_download_template.py"])
-    with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
-         patch("drive.scripts.drive_utils.find_folder", return_value=None):
-        with pytest.raises(SystemExit) as exc:
-            main()
-    assert exc.value.code == 1
-    assert "'templates' folder not found" in capsys.readouterr().err
-
-
 def test_template_file_not_found(monkeypatch, capsys):
-    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
+    monkeypatch.setenv("DRIVE_TEMPLATES_FOLDER_ID", "templates-folder-id")
     monkeypatch.setattr(sys, "argv", ["email_download_template.py"])
     with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
-         patch("drive.scripts.drive_utils.find_folder", return_value="templates-folder-id"), \
          patch(f"{MODULE}.find_template_file", return_value=None):
         with pytest.raises(SystemExit) as exc:
             main()
@@ -150,12 +138,11 @@ def test_template_file_not_found(monkeypatch, capsys):
 
 
 def test_payslip_month_not_required(monkeypatch, tmp_path):
-    monkeypatch.setenv("DRIVE_ROOT_FOLDER_ID", "root-123")
+    monkeypatch.setenv("DRIVE_TEMPLATES_FOLDER_ID", "templates-folder-id")
     monkeypatch.delenv("PAYSLIP_MONTH", raising=False)
     dest = str(tmp_path / "payslip_email_template.html")
     monkeypatch.setattr(sys, "argv", ["email_download_template.py", "--dest", dest])
     with patch(f"{MODULE}.build_service", return_value=MagicMock()), \
-         patch("drive.scripts.drive_utils.find_folder", return_value="templates-folder-id"), \
          patch(f"{MODULE}.find_template_file", return_value=FILE_META), \
          patch(f"{MODULE}.download_template"):
         with pytest.raises(SystemExit) as exc:

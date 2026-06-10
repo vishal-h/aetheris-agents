@@ -20,6 +20,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   command: "python3"
   args: ["drive/scripts/drive_upload.py"]
+  timeout_ms: 300000
 
   The script uploads all files and prints a summary line ending in "uploaded, N failed."
   When it exits 0, report the summary and stop immediately.

@@ -20,6 +20,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   command: "python3"
   args: ["drive/scripts/drive_download.py"]
+  timeout_ms: 120000
 
   The script downloads the payroll CSV and prints "Saved to: <path>".
   When it exits 0, report the filename and destination path and stop immediately.

@@ -65,6 +65,9 @@ If no params are needed, return "params": {}.
 Known params:
 - PAYSLIP_MONTH: month in YYYY-MM format, extracted from the request
   (e.g. "april 2026" → "2026-04", "may 2026" → "2026-05")
+- PAYSLIP_EMPLOYEE_ID: employee ID when the request targets a single employee
+  (e.g. "for BTL_01" → "BTL_01", "employee BTL_999" → "BTL_999")
+  Omit this param when the request is for all employees.
 
 ## Rules
 
@@ -105,6 +108,37 @@ Request: "email payslips to all employees for May 2026"
     }
   ],
   "params": { "PAYSLIP_MONTH": "2026-05" }
+}
+
+Request: "email may 2026 payslip for BTL_01"
+{
+  "steps": [
+    {
+      "id": "step-1",
+      "agent": "drive/agents/drive_download_orchestrator.exs",
+      "description": "Download payroll CSV from Google Drive",
+      "context": "Downloads payroll.csv from the configured Google Drive folder to payslip/data/"
+    },
+    {
+      "id": "step-2",
+      "agent": "payslip/agents/payslip_orchestrator.exs",
+      "description": "Compute and generate payslip for BTL_01 for May 2026",
+      "context": "Reads payslip/data/payroll.csv, generates PDF to payslip/output/BTL_01/2026-05-Payslip.pdf"
+    },
+    {
+      "id": "step-3",
+      "agent": "drive/agents/drive_upload_orchestrator.exs",
+      "description": "Upload payslip PDF to Google Drive",
+      "context": "Uploads payslip/output/BTL_01/ PDF to the May 2026 period folder in Drive"
+    },
+    {
+      "id": "step-4",
+      "agent": "email/agents/email_orchestrator.exs",
+      "description": "Email payslip to BTL_01",
+      "context": "Sends May 2026 payslip PDF for BTL_01 to the configured delivery address"
+    }
+  ],
+  "params": { "PAYSLIP_MONTH": "2026-05", "PAYSLIP_EMPLOYEE_ID": "BTL_01" }
 }
 
 Request: "scan the corpus for new files"

@@ -31,6 +31,8 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
   { key: 'DRIVE_ROOT_FOLDER_ID',   label: 'Payslips folder ID',       group: 'Google Drive',
     masked: false, placeholder: 'Google Drive folder ID for the payslips folder',
     linkPrefix: 'https://drive.google.com/drive/folders/' },
+  { key: 'DRIVE_TEMPLATES_FOLDER_ID', label: 'Templates folder ID', group: 'Google Drive',
+    masked: false, placeholder: 'Google Drive folder ID for payroll/templates/' },
 
   // Provenance
   { key: 'PROVENANCE_NAS_PATH', label: 'NAS archive path',  group: 'Provenance',

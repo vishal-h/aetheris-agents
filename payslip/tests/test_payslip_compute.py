@@ -162,3 +162,9 @@ def test_month_file_apr_2026():
 
 def test_month_file_dec_2024():
     assert month_file("Dec 2024") == "2024-12"
+
+
+def test_month_file_iso_date_format():
+    # Real payroll CSV from Sheets exports month as YYYY-MM-DD (e.g. 2026-05-01)
+    assert month_file("2026-05-01") == "2026-05"
+    assert month_file("2024-12-01") == "2024-12"

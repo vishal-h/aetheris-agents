@@ -51,7 +51,18 @@ def load_config(config_path):
 
 
 def parse_month(month_str):
-    return datetime.strptime(month_str.strip(), "%b %Y")
+    month_str = month_str.strip()
+    # Try '%b %Y' format first (e.g., 'Jan 2026')
+    try:
+        return datetime.strptime(month_str, "%b %Y")
+    except ValueError:
+        pass
+    # Then try '%Y-%m-%d' format (e.g., '2026-05-01')
+    try:
+        return datetime.strptime(month_str, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"Unable to parse month string: {month_str}. Expected '%b %Y' (e.g., 'Jan 2026') or '%Y-%m-%d' (e.g., '2026-05-01')")
+
 
 
 def month_file(month_str):

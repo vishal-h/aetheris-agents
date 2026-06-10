@@ -174,7 +174,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Send payslip emails with PDF attachments."
     )
-    parser.add_argument("--month", required=True, help="Month in YYYY-MM format")
+    parser.add_argument("--month", default=None, help="Month in YYYY-MM format")
     parser.add_argument(
         "--template",
         default="email/data/payslip_email_template.html",
@@ -200,6 +200,15 @@ def main():
         help="If set, send email only for this employee ID (e.g. BTL_999).",
     )
     args = parser.parse_args()
+
+    if args.month is None:
+        args.month = os.environ.get("PAYSLIP_MONTH")
+    if not args.month:
+        print("--month or PAYSLIP_MONTH env var is required.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.employee_id is None:
+        args.employee_id = os.environ.get("PAYSLIP_EMPLOYEE_ID") or None
 
     config = load_config(args.config)
     employees = get_employees(args.payroll_csv)

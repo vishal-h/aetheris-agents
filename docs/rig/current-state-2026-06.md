@@ -745,3 +745,42 @@ wired in `App.tsx:110` but has no corresponding entry in `registry.ts` and
 therefore no sidebar item. Settings is reached by a separate mechanism (likely
 a gear icon or menu item in the shell), not via the module sidebar. No module
 section is missing from the sidebar; the route is reachable but not listed.
+
+---
+
+## §10 Resolution Log
+
+**Resolved 2026-06-11** — All 18 stale items from §10 addressed in a single
+doc-fix pass. Changes:
+
+| # | Resolution |
+|---|-----------|
+| 1 | `architecture.md` data flow: `mock_orchestrator.exs` → `orchestrator.exs` |
+| 2 | `architecture.md` component map + repo layout: added Tools, Settings, UsageView, CapabilityMatrixView, AgentConfig, all 9 hooks, all 8 commands |
+| 3 | `specs.md §8` module structure: added `tools/`, `settings/`, `harness/UsageView.tsx`, `harness/CapabilityMatrixView.tsx`, `harness/shared.tsx` |
+| 4 | `specs.md §2` skills: `tool_sequence` → `tool_sequence_json` |
+| 5 | `specs.md §2` skills: added `source_run_ids_json` |
+| 6 | `specs.md §2` runs: added `label TEXT` column + `DEFAULT 'running'` |
+| 7 | `specs.md §2` orbs: added `agent_statuses` column |
+| 8 | `specs.md §6` event types: expanded from 10 to 21; added all undocumented types |
+| 9 | `specs.md §6` llm_called/llm_responded: added `cost_usd` field |
+| 10 | `specs.md §5` TypeScript types: added note listing all 52+ types; pointer to `types.ts` |
+| 11 | `specs.md §5` + `protocol.md`: `PlanStep.context?` added |
+| 12 | `specs.md §5` + `protocol.md`: `OrchestratorPlan.params?` added |
+| 13 | `runbook.md`: Payslip added to config groups list |
+| 14 | `specs.md §1`: `GITHUB_PERSONAL_ACCESS_TOKEN` added |
+| 15 | `specs.md §1`: `AETHERIS_PROVIDER` added |
+| 16 | `architecture.md`: `OrchestratorState` updated with all 3 fields |
+| 17 | `architecture.md` trust boundary: added agent_config, capability_matrix, usage, tools rows; flagged `tools.rs` as code-executing |
+| 18 | `docs/rig/README.md`: milestone table updated; p4–p8 + orchestrator all marked ✅ |
+
+**Additional fixes in same pass:**
+- `runbook.md`: added troubleshooting entry for trajectory "read failed"
+- `docs/rig/README.md`: added link to current-state-2026-06.md
+- Phase READMEs (p1–p7): added `Status: IMPLEMENTED` headers
+- `p8/README.md`: created
+- `orchestrator/README.md`: created
+- `p2-001-polling-hook.md`: clarified "three new effects" — final implementation is 5 total
+- `docs/handoff-aetheris-provenance-rig.md`: prepended SUPERSEDED banner
+- `architecture.md`: documented `/settings` sidebar oddity + `trajectory.rs` env var oddity (Part C)
+- `rig/src/hooks/types.ts` (Part B): `LlmRespondedPayload` interface, `TrajectoryMeta.resumed?`, `finished_at` JSDoc, payload divergence JSDoc

@@ -1,5 +1,7 @@
 # Phase 5 — Run Grouping + Capability Matrix
 
+**Status: IMPLEMENTED**
+
 **Goal:** Make the run list navigable at scale, and surface the agent/script
 inventory as a launchable catalogue.
 

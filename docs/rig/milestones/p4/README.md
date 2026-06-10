@@ -1,5 +1,7 @@
 # Phase 4 — Trajectory Explorer
 
+**Status: IMPLEMENTED**
+
 **Goal:** Surface the trajectory as a first-class artefact. Inspect any run's
 full event stream with complete payload detail. Compare two runs side by side
 to understand how model choice, prompt changes, or reruns affect agent

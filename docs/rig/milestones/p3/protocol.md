@@ -17,11 +17,22 @@ Emitted once after the planning delay. Rig transitions from `planning` to
   "type": "plan",
   "request": "the original user request",
   "steps": [
-    { "id": "step-1", "agent": "scan_agent.exs",   "description": "Scan corpus for relevant files" },
-    { "id": "step-2", "agent": "report_agent.exs",  "description": "Generate summary report" }
-  ]
+    {
+      "id": "step-1",
+      "agent": "scan_agent.exs",
+      "description": "Scan corpus for relevant files",
+      "context": "optional execution context shown under the step card"
+    },
+    { "id": "step-2", "agent": "report_agent.exs", "description": "Generate summary report" }
+  ],
+  "params": { "PAYSLIP_MONTH": "2026-05" }
 }
 ```
+
+The `context` field on each step and the top-level `params` object are
+optional. `context` is displayed as italic text below the step description
+in the plan view. `params` is displayed as a monospace strip below the
+request heading.
 
 ### `step_started`
 
@@ -124,12 +135,14 @@ export interface PlanStep {
   id:          string;
   agent:       string;
   description: string;
+  context?:    string;   // optional; shown as italic under step description
 }
 
 export interface OrchestratorPlan {
   type:    'plan';
   request: string;
   steps:   PlanStep[];
+  params?: Record<string, string>;  // optional; shown as strip below request
 }
 
 export interface PollResult {

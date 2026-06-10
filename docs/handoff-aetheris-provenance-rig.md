@@ -1,5 +1,9 @@
 # Handoff — Aetheris + Provenance + Rig
 
+> **SUPERSEDED** — This handoff doc was written 2026-06-08 and is now out of date.
+> The authoritative current-state reference is
+> `docs/rig/current-state-2026-06.md` (code-verified, 2026-06-11).
+
 **Session date:** 2026-06-08
 **Prepared for:** next Claude session
 

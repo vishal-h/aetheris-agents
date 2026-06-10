@@ -1,5 +1,7 @@
 # Phase 1 — Consolidation + Run Inspection
 
+**Status: IMPLEMENTED**
+
 **Goal:** Tauri app lives in `aetheris-agents/rig/`, and you can browse all
 past agent runs and their event trajectories without touching a terminal.
 

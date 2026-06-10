@@ -18,9 +18,17 @@ is use-case aware.
 | p1 | Run inspection — browse past agent runs and their event trajectories | ✅ |
 | p2 | Live monitoring — watch an active run's events in real time | ✅ |
 | p3 | Orchestrator — natural language → plan → confirm → execute | ✅ |
+| p4 | Trajectory viewer + run diff — compare tool paths across runs | ✅ |
 | p4-tools | Tools explorer — browse, inspect, and run scripts + MCP tools | ✅ |
-| p5–p8 | TBD — see `docs/rig/milestones/` | ⬜ |
+| p5 | Run grouping + capability matrix — use-case overview + Run shortcuts | ✅ |
+| p6 | Token/cost surface — per-run and aggregate cost/token stats | ✅ |
+| p7 | Agent config + settings — env var config store with import/export | ✅ |
+| p8 | Orchestrator reliability — step errors, Drive split, cancel, config hints | ✅ |
+| orchestrator | Real orchestrator agent — LLM-driven plan generation | ✅ |
 | — | Provenance corpus dashboard | ✅ (ported from hai-rig) |
+
+See `docs/rig/current-state-2026-06.md` for a code-verified reality check
+of all milestones and known doc drift.
 
 ---
 
@@ -65,5 +73,6 @@ cargo tauri dev
 - `docs/rig/specs.md` — data model, Tauri command shapes, TypeScript types
 - `docs/rig/architecture.md` — component map and data flow
 - `docs/rig/runbook.md` — dev setup, env vars, common issues
+- `docs/rig/current-state-2026-06.md` — code-verified snapshot (authoritative)
 - `docs/rig/milestones/` — phase READMEs and issue files
 - `agent-config-reference.md` — agent config architecture, adding new keys

@@ -1,5 +1,7 @@
 # Phase 4 — Tools Explorer
 
+**Status: IMPLEMENTED** — MCP Try panel included (beyond original scope).
+
 **Goal:** Browse every script, harness tool, and MCP tool available in the
 Aetheris ecosystem. Inspect signatures. Run scripts with custom args directly
 from Rig and see live output.

@@ -186,7 +186,7 @@ To add a new config key: add one line to `agentConfigDefs.ts` — the
 row appears automatically in Settings. See `agent-config-reference.md`
 for full documentation.
 
-Current groups: Harness, Anthropic, SMTP, Google Drive, Provenance, GitHub.
+Current groups: Harness, Anthropic, SMTP, Google Drive, Payslip, GitHub.
 
 ---
 
@@ -228,6 +228,22 @@ events. Check `mix aetheris inspect <run_id>` for details.
 ```bash
 export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 ```
+
+### Trajectory tab shows "read failed" or blank for a completed run
+
+The trajectory file is written atomically at run completion. If the run
+finished too recently (< 1s) or the harness crashed mid-write, the file
+may be absent or truncated.
+
+**Check:** `ls -la ~/sandbox/elixirws/aetheris/priv/runs/<run_id>/` — the
+file should be `trajectory.json`, not `trajectory.json.tmp`.
+
+**If `.tmp` exists**, the write was interrupted. The `.tmp` file is partial
+and cannot be recovered — the run data is still in `aetheris.db` (Events tab).
+
+**If the file exists** but Rig reports a read error, check
+`AETHERIS_DB_PATH` — `trajectory.rs` derives the run directory from it;
+a wrong path will produce a misleading error.
 
 ### MCP Try panel returns initialize response instead of tool result
 

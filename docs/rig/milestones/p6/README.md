@@ -1,5 +1,7 @@
 # Phase 6 — Token & Cost Surface
 
+**Status: IMPLEMENTED**
+
 **Goal:** Surface token counts, cost, and usage statistics from instrumented
 runs. All data comes from `events.payload_json` via `json_extract` — no
 trajectory file reads needed.

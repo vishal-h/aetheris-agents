@@ -12,34 +12,50 @@
 │  ┌──────────────────────────────────────────────────┐   │
 │  │                  React Frontend                   │   │
 │  │                                                   │   │
-│  │  Sidebar                                          │   │
-│  │  ├── Harness          ← p1/p2/p4                  │   │
+│  │  Sidebar (registry.ts)                            │   │
+│  │  ├── Harness          ← p1/p2/p4/p5/p6           │   │
 │  │  │   ├── Runs         ← run list + events         │   │
-│  │  │   └── Diff         ← p4: two-run comparison    │   │
+│  │  │   ├── Diff         ← p4: two-run comparison    │   │
+│  │  │   ├── Agents       ← p5: capability matrix     │   │
+│  │  │   └── Usage        ← p6: token/cost stats      │   │
 │  │  ├── Orchestrator     ← p3: NL → plan → execute   │   │
+│  │  ├── Tools            ← p4-tools: scripts + MCP   │   │
 │  │  ├── F2               ← existing                  │   │
 │  │  └── Provenance       ← existing corpus dashboard  │   │
+│  │  (Settings at /settings — shell only, no sidebar) │   │
 │  │                                                   │   │
-│  │  Hooks                                            │   │
+│  │  Hooks (20 files)                                 │   │
 │  │  ├── useHarness.ts        ← runs + events         │   │
 │  │  ├── useTrajectory.ts     ← p4: single run load   │   │
 │  │  ├── useRunDiff.ts        ← p4: two-run diff      │   │
 │  │  ├── useOrchestrator.ts   ← p3: state machine     │   │
-│  │  ├── useCorpusOverview.ts ← existing              │   │
-│  │  └── useClassifications.ts← existing              │   │
+│  │  ├── useCapabilityMatrix.ts← p5: matrix load      │   │
+│  │  ├── useUsageStats.ts     ← p6: cost aggregates   │   │
+│  │  ├── useAgentConfig.ts    ← p7: env var config    │   │
+│  │  ├── useTools.ts          ← p4-tools: inventory   │   │
+│  │  ├── useRequestHistory.ts ← p3: MRU list          │   │
+│  │  └── (+ 11 F2/Provenance hooks)                   │   │
 │  └──────────────────────────────────────────────────┘   │
 │                          │ invoke()                      │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │               Tauri Rust Backend                  │   │
 │  │                                                   │   │
-│  │  commands/harness.rs      ← SQLite reads          │   │
-│  │  commands/trajectory.rs   ← p4: JSON file reads   │   │
-│  │  commands/orchestrate.rs  ← p3: child process     │   │
-│  │  commands/provenance.rs   ← DuckDB reads + write  │   │
+│  │  commands/harness.rs        ← SQLite reads (4)    │   │
+│  │  commands/trajectory.rs     ← JSON file reads (2) │   │
+│  │  commands/orchestrate.rs    ← child process (4)   │   │
+│  │  commands/agent_config.rs   ← config store (5)    │   │
+│  │  commands/capability_matrix.rs ← matrix parse (1) │   │
+│  │  commands/usage.rs          ← cost aggregates (1) │   │
+│  │  commands/tools.rs          ← scripts + MCP (5)   │   │
+│  │  commands/provenance.rs     ← DuckDB reads + write│   │
 │  │                                                   │   │
 │  │  HarnessState      { conn: Option<SqliteConn> }   │   │
 │  │  CorpusState       { conn: Option<DuckdbConn> }   │   │
-│  │  OrchestratorState { jobs: Mutex<HashMap<…>> }    │   │
+│  │  OrchestratorState { jobs:        Mutex<HashMap>, │   │
+│  │                      agents_path: Option<String>, │   │
+│  │                      aetheris_dir: Option<String>}│   │
+│  │  AgentConfigState  { store_path, cache: Mutex<…> }│   │
+│  │  ToolsState        { agents_path: Option<String> }│   │
 │  └──────────────────────────────────────────────────┘   │
 │       │                   │               │              │
 │  rusqlite (SQLite)   duckdb-rs        filesystem         │
@@ -98,7 +114,8 @@ User types: "email payslips to all employees for May 2026"
   ↓
 invoke("orchestrate_start", { request })
   ↓
-orchestrate.rs spawns: mix run agents/mock_orchestrator.exs
+orchestrate.rs spawns: mix run agents/orchestrator.exs
+  (LLM-driven; agents/mock_orchestrator.exs kept for regression only)
   with ORCHESTRATOR_REQUEST env var, stdin/stdout pipes
   ↓
 Reader thread pushes newline-delimited JSON to Arc<Mutex<Vec>> buffer
@@ -184,28 +201,42 @@ aetheris-agents/
     src-tauri/
       Cargo.toml
       src/
-        lib.rs                ← HarnessState + CorpusState + OrchestratorState
+        lib.rs                ← 6 state structs + 42 command registrations
         commands/
           mod.rs
           f2.rs
           harness.rs          ← 4 read-only SQLite commands
           trajectory.rs       ← p4: trajectory_load + trajectory_export
           orchestrate.rs      ← p3: 4 process management commands
+          agent_config.rs     ← p7: 5 config commands (get/set/del/export/import)
+          capability_matrix.rs← p5: 1 command — parses capability-matrix.md
+          usage.rs            ← p6: 1 command — aggregates cost/tokens from events
+          tools.rs            ← p4-tools: 5 commands (list/read/run + MCP)
           provenance.rs
     src/
-      App.tsx                 ← routes: /harness, /diff, /orchestrator, /f2/*, /provenance
+      App.tsx                 ← 11 routes: /harness /diff /capability-matrix /usage
+                              ←   /orchestrator /tools /f2/* /provenance /settings
       hooks/
-        types.ts              ← all TypeScript interfaces
+        types.ts              ← all TypeScript interfaces (52+ exports)
         index.ts              ← re-exports
         useHarness.ts
         useTrajectory.ts      ← p4: single-run trajectory load
         useRunDiff.ts         ← p4: two-run diff computation
-        useOrchestrator.ts    ← p3
+        useOrchestrator.ts    ← p3: full state machine
+        useCapabilityMatrix.ts← p5: matrix load
+        useUsageStats.ts      ← p6: cost/token aggregates
+        useAgentConfig.ts     ← p7: env var config CRUD
+        useTools.ts           ← p4-tools: inventory + MCP
+        useRequestHistory.ts  ← p3: localStorage MRU list
         useCorpusOverview.ts
         useClassifications.ts
         useMigration.ts
         useZipInventory.ts
         useProvenanceStatus.ts
+        useFileIndex.ts
+        useDuplicates.ts
+        useWatchedFolders.ts
+        useSessionRecord.ts
       components/
         shell/
           MainArea.tsx        ← controlled/uncontrolled tabs
@@ -213,25 +244,37 @@ aetheris-agents/
         ui/
         modules/
           harness/
-            RunList.tsx       ← HarnessRoute: Runs + Events + Trajectory tabs
-            TrajectoryView.tsx← p4: meta panel + step-grouped event stream
-            DiffView.tsx      ← p4: run selection + diff tables
+            RunList.tsx          ← HarnessRoute: Runs + Events + Trajectory tabs
+            TrajectoryView.tsx   ← p4: meta panel + step-grouped event stream
+            DiffView.tsx         ← p4: run selection + diff tables
+            CapabilityMatrixView.tsx ← p5: collapsible agent/script matrix
+            UsageView.tsx        ← p6: cost summary + by-model/use-case tables
           orchestrator/
-            OrchestratorView.tsx ← p3
+            OrchestratorView.tsx ← p3: all 7 phases
+          tools/
+            ToolsView.tsx        ← p4-tools: wrapper
+            ToolTree.tsx         ← left-panel tree (scripts + MCP)
+            ToolDetail.tsx       ← right panel (args form + Run button)
+          settings/
+            AgentConfigTab.tsx   ← p7: grouped env var config
+            agentConfigDefs.ts   ← key definitions (Harness/Anthropic/SMTP/Drive/Payslip/GitHub)
           f2/
           provenance/
       modules/
-        registry.ts           ← harnessModule (2 sections) + orchestratorModule + …
+        registry.ts           ← 5 modules: harness (4 sections) + orchestrator
+                              ←   + tools + f2 + provenance
   agents/
-    mock_orchestrator.exs     ← p3: deterministic mock for orchestrator pipeline
+    orchestrator.exs          ← p3: LLM-driven orchestrator (real agent, Anthropic API)
+    mock_orchestrator.exs     ← p3: deterministic mock kept for regression testing
   docs/
     rig/
       README.md
       specs.md
       architecture.md
       runbook.md
+      current-state-2026-06.md ← code-verified reality check (authoritative)
       milestones/
-        p1/ p2/ p3/ p4/
+        p1/ p2/ p3/ p4/ p4-tools/ p5/ p6/ p7/ p8/ orchestrator/
 ```
 
 ---
@@ -243,7 +286,11 @@ aetheris-agents/
 | Harness commands | `aetheris.db` | Never |
 | Trajectory commands | `priv/runs/*/trajectory.json` | Never (export = copy to user path) |
 | Provenance commands | `corpus.duckdb` | `set_classification_status` only |
-| Orchestrate commands | — | stdin of child process |
+| Orchestrate commands | — | stdin of child process; spawns `orchestrator.exs` |
+| Agent config commands | `~/.local/share/dev.rig.app/agent-config.json` | `agent_config_set/delete/import` |
+| Capability matrix commands | `docs/capability-matrix.md` | Never |
+| Usage commands | `aetheris.db` (events table) | Never |
+| Tools commands | scripts under `AETHERIS_AGENTS_PATH`; MCP servers via stdio | **Executes arbitrary local code** (`tools_run_script`, `tools_call_mcp`) |
 | Frontend | — | Never touches DB or files directly |
 
 ---
@@ -290,3 +337,18 @@ directly — no changes to the harness code needed.
 **Polling, not websockets.** Live monitoring uses 2-second interval polling
 via `useEffect` + `setInterval`. Trajectory viewer does not poll — files
 are immutable post-run.
+
+**`/settings` is not in the sidebar registry.** `App.tsx` has a `/settings`
+route rendering `SettingsRoute` (which hosts `AgentConfigTab`), but `registry.ts`
+has no entry for it. The settings page is reachable by navigating directly —
+it does not appear in the sidebar. This is intentional: config is a support
+operation, not a primary workflow.
+
+**`trajectory.rs` re-reads `AETHERIS_DB_PATH` from env instead of using
+`HarnessState`.** The command signature receives `_state: State<HarnessState>`
+but ignores it, deriving the trajectory path from the env var directly
+(`std::env::var("AETHERIS_DB_PATH")`). This mirrors what `lib.rs` does at
+startup — same var, same derivation — so there is no divergence in practice.
+The reason is that `trajectory.rs` needs the file path, not the open SQLite
+connection stored in `HarnessState`, and reading the env var is simpler than
+adding a separate field to the state struct.

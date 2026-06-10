@@ -1,5 +1,8 @@
 # Phase 7 — Agent Config Settings
 
+**Status: IMPLEMENTED** — 5 commands delivered (spec said 3); includes
+`agent_config_export` + `agent_config_import` beyond original scope.
+
 **Goal:** Let users configure the env vars that Rig-launched agents need —
 API keys, SMTP credentials, paths — through the settings panel. Values
 persist across sessions and are automatically injected when the Orchestrator

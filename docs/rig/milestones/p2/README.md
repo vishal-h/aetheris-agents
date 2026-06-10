@@ -1,5 +1,7 @@
 # Phase 2 — Live Monitoring
 
+**Status: IMPLEMENTED**
+
 **Goal:** Watch an active agent run's events update in real time, without
 leaving the Events tab or clicking Refresh.
 

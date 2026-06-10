@@ -173,6 +173,7 @@ export interface EventRow {
   step:        number;
   seq:         number;
   event_type:  string;
+  /** Raw JSON string from SQLite payload_json column — parse before use. */
   payload:     string;
   timestamp:   string;
 }
@@ -197,6 +198,7 @@ export interface TrajectoryMeta {
   step_count:      number;
   max_steps:       number;
   started_at:      string;
+  /** Empty string when the run was interrupted before completion (Rust unwrap_or default). */
   finished_at:     string;
   tools:           string[];
   system_prompt:   string;
@@ -204,6 +206,8 @@ export interface TrajectoryMeta {
   sandbox_path:    string;
   seed:            string | null;
   overlay_changes: unknown[];
+  /** Only present when true — written by the harness for resumed runs. */
+  resumed?:        boolean;
 }
 
 export interface TrajectoryEvent {
@@ -212,8 +216,30 @@ export interface TrajectoryEvent {
   seq:         number;
   step:        number;
   event_type:  string;
-  payload:     Record<string, unknown>;   // parsed object — NOT a raw string
+  /** Inlined JSON object from the trajectory file — NOT a raw string (contrast with EventRow.payload). */
+  payload:     Record<string, unknown>;
   timestamp:   string;
+}
+
+/**
+ * Shape of TrajectoryEvent.payload / parsed EventRow.payload
+ * when event_type === 'llm_responded'.
+ *
+ * Cast opt-in: `event.payload as LlmRespondedPayload`.
+ * input_tokens / output_tokens / cost_usd are null for stub/Ollama runs
+ * or pre-instrumentation Anthropic runs.
+ */
+export interface LlmRespondedPayload {
+  response_type:      string;
+  resolved_model:     string | null;
+  input_tokens:       number | null;
+  output_tokens:      number | null;
+  cost_usd:           number | null;
+  latency_ms:         number;
+  tool_name?:         string | null;
+  tool_input?:        Record<string, unknown> | null;
+  raw_response:       string | null;
+  system_fingerprint: string | null;
 }
 
 export interface TrajectoryFile {

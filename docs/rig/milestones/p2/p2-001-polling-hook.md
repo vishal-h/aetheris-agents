@@ -27,6 +27,10 @@ const [activelyPolling, setActivelyPolling] = useState(false);
 
 **Three new effects (add alongside the existing fetch effect):**
 
+_Note: the final `useHarness.ts` implementation has 5 `useEffect` hooks in total —
+the three below plus the pre-existing fetch effect and a fifth effect for local status
+sync (deriving `displayStatus` from the event stream independent of `runs.status`)._
+
 Effect 1 — sync `activelyPolling` with caller's intent:
 ```typescript
 useEffect(() => {

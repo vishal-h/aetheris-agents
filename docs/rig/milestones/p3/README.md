@@ -1,5 +1,8 @@
 # Phase 3 — Orchestrator
 
+**Status: IMPLEMENTED** — full pipeline including real LLM-driven
+`agents/orchestrator.exs`; `agents/mock_orchestrator.exs` kept for regression.
+
 **Goal:** Type a natural language request, confirm a plan, watch it execute.
 Backed by a deterministic mock script so the full UI pipeline can be built
 and tested without a real LLM orchestrator.

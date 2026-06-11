@@ -456,6 +456,20 @@ def _parse_payload_fields_from_specs(
     return result
 
 
+def _evaluate_payload_fields(
+    event_type: str, field_map: dict[str, bool], seen_keys: set[str]
+) -> None:
+    check = "payload_fields"
+    for field, is_optional in field_map.items():
+        if field not in seen_keys:
+            if is_optional:
+                _info(check, f"{event_type}.{field} optional in specs.md §6 — not yet observed in DB")
+            else:
+                _fail(check, f"{event_type}.{field} in specs.md §6 but not seen in DB")
+    for key in sorted(seen_keys - set(field_map)):
+        _info(check, f"{event_type}.{key} in DB events but not listed in specs.md §6")
+
+
 def check_payload_fields() -> None:
     check = "payload_fields"
 
@@ -505,14 +519,7 @@ def check_payload_fields() -> None:
                 ).fetchall()
             }
 
-            for field, is_optional in field_map.items():
-                if field not in seen_keys:
-                    if is_optional:
-                        _info(check, f"{event_type}.{field} optional in specs.md §6 — not yet observed in DB")
-                    else:
-                        _fail(check, f"{event_type}.{field} in specs.md §6 but not seen in DB")
-            for key in sorted(seen_keys - set(field_map)):
-                _info(check, f"{event_type}.{key} in DB events but not listed in specs.md §6")
+            _evaluate_payload_fields(event_type, field_map, seen_keys)
     finally:
         conn.close()
 

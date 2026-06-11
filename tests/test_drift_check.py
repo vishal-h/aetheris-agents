@@ -347,14 +347,7 @@ def test_payload_fields_optional_absent_no_fail():
     fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
     assert fields is not None
     # Simulate: DB has cost_usd but not stop_reason
-    seen_keys = {"cost_usd"}
-    field_map = fields["llm_responded"]
-    for field, is_optional in field_map.items():
-        if field not in seen_keys:
-            if is_optional:
-                drift_check._info("payload_fields", f"llm_responded.{field} optional — not yet observed")
-            else:
-                drift_check._fail("payload_fields", f"llm_responded.{field} not seen in DB")
+    drift_check._evaluate_payload_fields("llm_responded", fields["llm_responded"], {"cost_usd"})
     assert not fails_of("payload_fields"), "optional absent field must not FAIL"
 
 
@@ -364,14 +357,7 @@ def test_payload_fields_optional_present_passes():
     fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
     assert fields is not None
     # Simulate: DB has both fields
-    seen_keys = {"cost_usd", "stop_reason"}
-    field_map = fields["llm_responded"]
-    for field, is_optional in field_map.items():
-        if field not in seen_keys:
-            if is_optional:
-                drift_check._info("payload_fields", f"llm_responded.{field} optional — not yet observed")
-            else:
-                drift_check._fail("payload_fields", f"llm_responded.{field} not seen in DB")
+    drift_check._evaluate_payload_fields("llm_responded", fields["llm_responded"], {"cost_usd", "stop_reason"})
     assert not fails_of("payload_fields"), "optional field present should not FAIL"
 
 
@@ -381,14 +367,7 @@ def test_payload_fields_required_absent_still_fails():
     fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
     assert fields is not None
     # Simulate: DB has stop_reason but NOT cost_usd (required)
-    seen_keys = {"stop_reason"}
-    field_map = fields["llm_responded"]
-    for field, is_optional in field_map.items():
-        if field not in seen_keys:
-            if is_optional:
-                drift_check._info("payload_fields", f"llm_responded.{field} optional — not yet observed")
-            else:
-                drift_check._fail("payload_fields", f"llm_responded.{field} not seen in DB")
+    drift_check._evaluate_payload_fields("llm_responded", fields["llm_responded"], {"stop_reason"})
     assert fails_of("payload_fields"), "required field absent must FAIL"
 
 

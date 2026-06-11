@@ -108,7 +108,7 @@ All P3 components now exist in code:
 **IMPLEMENTED**
 
 - `commands/usage.rs` — 197 lines; `usage_stats_load` aggregates from `events` table via SQLite `json_extract`
-  - Reads `cost_usd` from `llm_called` events (line 40-46)
+  - Reads `cost_usd` from `llm_responded` events (line 45: `WHERE type = 'llm_responded'`)
   - Reads `input_tokens`, `output_tokens` (lines 69-74)
   - Computes per-run average in Rust, not SQL (line 87-88)
   - Filters `json_extract(payload_json, '$.cost_usd') IS NOT NULL` to exclude pre-instrumentation rows
@@ -128,8 +128,8 @@ P7 specified 3 commands (`get_all`, `set`, `delete`). Code has 5:
 
 - `commands/agent_config.rs` — 5 commands at lines 14, 21, 31, 40, 49:
   - `agent_config_get_all`, `agent_config_set`, `agent_config_delete` — as specified
-  - `agent_config_export` — writes config to a file (beyond spec)
-  - `agent_config_import` — reads config from a file (beyond spec)
+  - `agent_config_export` — returns serialized JSON String (no path arg; caller handles persistence)
+  - `agent_config_import` — takes `HashMap<String,String>`, returns `usize` count imported
 - `AgentConfigState` in `lib.rs:28-31` — `store_path` + `cache: Mutex<HashMap<String,String>>`
 - Store location: `~/.local/share/dev.rig.app/agent-config.json`
 - `components/modules/settings/AgentConfigTab.tsx` — 7.8KB; grouped by category, masked fields
@@ -138,7 +138,9 @@ P7 specified 3 commands (`get_all`, `set`, `delete`). Code has 5:
 - `hooks/useAgentConfig.ts` — 53 lines
 - `hooks/useRequestHistory.ts` — 25 lines; localStorage MRU list for orchestrator requests
 - All config values injected as env vars at orchestrator spawn: `orchestrate.rs:30-32`
-- Types: `AgentConfigEntry` — `types.ts`
+- `AgentConfigEntry` (`types.ts:372`) is TypeScript-only — assembled by `useAgentConfig.ts` from
+  `agentConfigDefs.ts` (hardcoded metadata) merged with the `HashMap<String,String>` returned by
+  `agent_config_get_all`; no corresponding Rust struct exists
 
 ---
 
@@ -406,8 +408,8 @@ Rig reads none of these tables. They are harness-internal.
 | `context_summarised` | ✗ | In code, not in docs |
 
 **Payload drift in specs.md section 6:**
-- `cost_usd` is emitted in `llm_called` and `llm_responded` payloads (`execution/loop.ex:251,281`; computed by `execution/pricing.ex`) but is **not listed** in specs.md section 6 payload columns
-- `usage.rs` successfully reads `cost_usd` via `json_extract` — the data is present in the DB
+- `cost_usd` is emitted in `llm_responded` payloads only (`execution/loop.ex:241-284`; computed by `execution/pricing.ex`); `llm_called` payload is `{"model"}` only (`loop.ex:178`). Not listed in specs.md section 6.
+- `usage.rs` successfully reads `cost_usd` from `llm_responded` events via `json_extract` — the data is present in the DB
 
 ---
 
@@ -468,8 +470,7 @@ Rig reads none of these tables. They are harness-internal.
 
 **Current state:** Mostly working.
 
-- `cost_usd` is emitted in `llm_called` payloads by the harness (`execution/loop.ex:251,281`), not just `llm_responded`. `usage.rs:40-46` aggregates via `json_extract(payload_json, '$.cost_usd')` from the `events` table.
-- `input_tokens` is in `llm_called`; `output_tokens` is in `llm_responded` (`event.ex:16-17` and confirmed by `eval/runner.ex:226-227`).
+- `cost_usd`, `input_tokens`, and `output_tokens` are all in `llm_responded` payloads (`execution/loop.ex:241-284`); `llm_called` payload contains only `{"model"}` (`loop.ex:178`). `usage.rs:45` aggregates via `json_extract(payload_json, '$.cost_usd')` filtering `WHERE type = 'llm_responded'`.
 - `UsageView` shows per-run avg cost, total cost, by-model and by-use-case breakdowns.
 - **Gap:** `harness_list_runs` does NOT include cost or token totals in `RunSummary` — they are not aggregated in the run list SQL. Adding them requires joining `events` and using `SUM(json_extract(...))` with a `IS NOT NULL` guard, same as `usage.rs`.
 - Pricing for unknown models returns `cost_usd: nil` (`pricing.ex:21`), displayed as `—`.
@@ -784,3 +785,8 @@ doc-fix pass. Changes:
 - `docs/handoff-aetheris-provenance-rig.md`: prepended SUPERSEDED banner
 - `architecture.md`: documented `/settings` sidebar oddity + `trajectory.rs` env var oddity (Part C)
 - `rig/src/hooks/types.ts` (Part B): `LlmRespondedPayload` interface, `TrajectoryMeta.resumed?`, `finished_at` JSDoc, payload divergence JSDoc
+
+**Report errata fixed 2026-06-11** (found during d82cf7e specs.md review):
+- §1/P6: `cost_usd` is in `llm_responded` events, not `llm_called`; `usage.rs:45` filters `WHERE type = 'llm_responded'`
+- §8 payload-drift + Gap A: same correction — `llm_called` payload is `{"model"}` only (`loop.ex:178`); `cost_usd`/`input_tokens`/`output_tokens` are all `llm_responded`-only (`loop.ex:241-284`)
+- §1/P7: `agent_config_export` returns `String` (no path arg); `agent_config_import` takes `HashMap<String,String>` → `usize`; `AgentConfigEntry` is TypeScript-only, no Rust struct

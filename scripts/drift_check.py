@@ -419,7 +419,14 @@ def check_routes() -> None:
 # Check 6: payload_fields                                                      #
 # --------------------------------------------------------------------------- #
 
-def _parse_payload_fields_from_specs(text: str, check: str) -> dict[str, list[str]] | None:
+def _parse_payload_fields_from_specs(
+    text: str, check: str
+) -> dict[str, dict[str, bool]] | None:
+    """Return {event_type: {field_name: is_optional}}.
+
+    A field suffixed with ? in the cell (e.g. `stop_reason?`) is optional:
+    the check will not FAIL when it is absent from sampled DB events.
+    """
     m = _require_section(
         text,
         r"## 6\. Event Type Reference(.*?)(?=\n## |\Z)",
@@ -429,13 +436,17 @@ def _parse_payload_fields_from_specs(text: str, check: str) -> dict[str, list[st
     if not m:
         return None
 
-    result: dict[str, list[str]] = {}
+    result: dict[str, dict[str, bool]] = {}
     for row in re.finditer(r"^\| `(\w+)` \| (.*?) \|$", m.group(1), re.MULTILINE):
         event_type  = row.group(1)
         fields_cell = row.group(2)
         # Strip enum values listed after " — " (e.g. `reason` — `done` | `failed`)
         fields_part = fields_cell.split(" — ")[0]
-        fields = re.findall(r"`(\w+)`", fields_part)
+        # `field?` → optional; `field` → required
+        fields = {
+            name.rstrip("?"): name.endswith("?")
+            for name in re.findall(r"`(\w+\??)`", fields_part)
+        }
         if fields:
             result[event_type] = fields
 
@@ -475,7 +486,7 @@ def check_payload_fields() -> None:
         return
 
     try:
-        for event_type, field_names in doc_fields.items():
+        for event_type, field_map in doc_fields.items():
             count = conn.execute(
                 "SELECT COUNT(*) FROM events WHERE type = ?", (event_type,)
             ).fetchone()[0]
@@ -494,10 +505,13 @@ def check_payload_fields() -> None:
                 ).fetchall()
             }
 
-            for field in field_names:
+            for field, is_optional in field_map.items():
                 if field not in seen_keys:
-                    _fail(check, f"{event_type}.{field} in specs.md §6 but not seen in DB")
-            for key in sorted(seen_keys - set(field_names)):
+                    if is_optional:
+                        _info(check, f"{event_type}.{field} optional in specs.md §6 — not yet observed in DB")
+                    else:
+                        _fail(check, f"{event_type}.{field} in specs.md §6 but not seen in DB")
+            for key in sorted(seen_keys - set(field_map)):
                 _info(check, f"{event_type}.{key} in DB events but not listed in specs.md §6")
     finally:
         conn.close()

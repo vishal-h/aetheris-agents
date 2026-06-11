@@ -306,12 +306,23 @@ _SPECS_S6_PAYLOAD_SAMPLE = """
 
 """
 
+_SPECS_S6_OPTIONAL_SAMPLE = """
+## 6. Event Type Reference
+
+| Event type | Payload fields (key ones) |
+|-----------|--------------------------|
+| `llm_responded` | `cost_usd`, `stop_reason?` |
+
+"""
+
 
 def test_parse_payload_fields_from_specs():
     fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_PAYLOAD_SAMPLE, "test")
     assert fields is not None
     assert "llm_responded" in fields
+    # required fields parse as is_optional=False
     assert "cost_usd" in fields["llm_responded"]
+    assert fields["llm_responded"]["cost_usd"] is False
     assert "latency_ms" in fields["llm_responded"]
     assert "tool_called" in fields
     assert "tool_name" in fields["tool_called"]
@@ -321,6 +332,64 @@ def test_parse_payload_fields_from_specs():
     # enum values listed after " — " must not be extracted as payload fields
     assert "agent_finished" not in fields["run_complete"]
     assert "max_steps_reached" not in fields["run_complete"]
+
+
+def test_parse_payload_fields_optional_flag():
+    fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
+    assert fields is not None
+    assert fields["llm_responded"]["cost_usd"] is False   # required
+    assert fields["llm_responded"]["stop_reason"] is True  # optional; ? stripped from key
+
+
+def test_payload_fields_optional_absent_no_fail():
+    """Optional field missing from DB events must not produce FAIL — only INFO."""
+    reset()
+    fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
+    assert fields is not None
+    # Simulate: DB has cost_usd but not stop_reason
+    seen_keys = {"cost_usd"}
+    field_map = fields["llm_responded"]
+    for field, is_optional in field_map.items():
+        if field not in seen_keys:
+            if is_optional:
+                drift_check._info("payload_fields", f"llm_responded.{field} optional — not yet observed")
+            else:
+                drift_check._fail("payload_fields", f"llm_responded.{field} not seen in DB")
+    assert not fails_of("payload_fields"), "optional absent field must not FAIL"
+
+
+def test_payload_fields_optional_present_passes():
+    """Optional field present in DB events validates the same as a required field."""
+    reset()
+    fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
+    assert fields is not None
+    # Simulate: DB has both fields
+    seen_keys = {"cost_usd", "stop_reason"}
+    field_map = fields["llm_responded"]
+    for field, is_optional in field_map.items():
+        if field not in seen_keys:
+            if is_optional:
+                drift_check._info("payload_fields", f"llm_responded.{field} optional — not yet observed")
+            else:
+                drift_check._fail("payload_fields", f"llm_responded.{field} not seen in DB")
+    assert not fails_of("payload_fields"), "optional field present should not FAIL"
+
+
+def test_payload_fields_required_absent_still_fails():
+    """Regression guard: required field absent from DB must still FAIL."""
+    reset()
+    fields = drift_check._parse_payload_fields_from_specs(_SPECS_S6_OPTIONAL_SAMPLE, "test")
+    assert fields is not None
+    # Simulate: DB has stop_reason but NOT cost_usd (required)
+    seen_keys = {"stop_reason"}
+    field_map = fields["llm_responded"]
+    for field, is_optional in field_map.items():
+        if field not in seen_keys:
+            if is_optional:
+                drift_check._info("payload_fields", f"llm_responded.{field} optional — not yet observed")
+            else:
+                drift_check._fail("payload_fields", f"llm_responded.{field} not seen in DB")
+    assert fails_of("payload_fields"), "required field absent must FAIL"
 
 
 def test_payload_fields_anchor_missing_is_fail():

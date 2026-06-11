@@ -491,6 +491,8 @@ See `rig/src/hooks/types.ts` for the canonical source.
 
 Authoritative source: `../aetheris/lib/aetheris/trajectory/event.ex:14-35`.
 
+A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift check reports INFO when absent rather than FAIL.
+
 | Event type | Payload fields (key ones) |
 |-----------|--------------------------|
 | `prompt_built` | `system_prompt`, `user_prompt`, `context_hash`, `message_count` |

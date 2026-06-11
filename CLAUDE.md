@@ -193,6 +193,8 @@ milestone README Status: lines.
 **When to run:** after any Rig milestone, after adding commands, event types, env vars,
 routes, or DB tables. Zero FAIL findings and zero WARN findings required before committing.
 
+**Optional payload fields:** suffix with `?` in the §6 table cell (e.g. `` `stop_reason?` ``) to allow the field to be absent from current DB events without triggering a FAIL. The drift check emits INFO instead. Add the `?` suffix when the field is valid but not yet emitted by the harness version in use; the INFO firing is the trigger to drop the `?` and promote the field to required.
+
 **Tests:** `python3 -m pytest tests/test_drift_check.py -v`
 
 ---

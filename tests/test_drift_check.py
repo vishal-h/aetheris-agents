@@ -416,6 +416,97 @@ def test_milestone_status_with_status_line_passes(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# project_knowledge — behaviour tests                                          #
+# --------------------------------------------------------------------------- #
+
+_MANIFEST_SAMPLE = """\
+# Project Knowledge Manifest
+
+| export name | repo path | repo | commit | last changed |
+|-------------|-----------|------|--------|--------------|
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `abc1234` | 2026-06-11 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `def5678` | 2026-06-11 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-11 |
+"""
+
+_MANIFEST_ZERO_ROWS = """\
+# Project Knowledge Manifest
+
+No table here.
+"""
+
+
+def test_project_knowledge_manifest_absent_is_warn(tmp_path):
+    reset()
+    orig = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = tmp_path / "nonexistent.md"
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig
+    assert warns_of("project_knowledge"), "expected WARN when manifest absent"
+    assert not fails_of("project_knowledge")
+
+
+def test_project_knowledge_zero_rows_is_fail(tmp_path):
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_ZERO_ROWS)
+    orig = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig
+    assert fails_of("project_knowledge"), "expected FAIL when zero rows parsed"
+
+
+def test_project_knowledge_stale_entry_is_warn(tmp_path, monkeypatch):
+    """A manifest commit that differs from git HEAD must produce WARN."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    # Patch git to always return a hash different from the manifest values
+    monkeypatch.setattr(drift_check, "_git_head_hash", lambda repo_dir, path: "zzz9999")
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    assert warns_of("project_knowledge"), "expected WARN for stale entry"
+    assert not fails_of("project_knowledge")
+
+
+def test_project_knowledge_fresh_entries_pass(tmp_path, monkeypatch):
+    """All manifest commits matching git HEAD must produce PASS."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    # Return the exact commit hash from the manifest for each call
+    commit_map = {"docs/rig/specs.md": "abc1234", "CLAUDE.md": "def5678"}
+    monkeypatch.setattr(
+        drift_check, "_git_head_hash",
+        lambda repo_dir, path: commit_map.get(path, "abc1234"),
+    )
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    assert not warns_of("project_knowledge")
+    assert not fails_of("project_knowledge")
+    assert passes_of("project_knowledge")
+
+
+# --------------------------------------------------------------------------- #
 # Integration — run all checks against live repo                               #
 # --------------------------------------------------------------------------- #
 

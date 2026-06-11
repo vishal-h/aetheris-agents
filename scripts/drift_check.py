@@ -16,12 +16,14 @@ Checks:
   env_vars         — Rust env::var() calls vs specs.md §1 and runbook.md
   routes           — registry.ts paths vs App.tsx Route paths
   payload_fields   — live DB payload sampling vs specs.md §6 (skipped if DB absent)
-  milestone_status — docs/rig/milestones/*/README.md has Status: line
+  milestone_status    — docs/rig/milestones/*/README.md has Status: line
+  project_knowledge   — project-knowledge-manifest.md commit hashes vs git HEAD (WARN if stale)
 """
 
 import argparse
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -44,6 +46,7 @@ RIG_SRC_TAURI = RIG_ROOT / "src-tauri" / "src"
 REGISTRY_TS   = RIG_ROOT / "src" / "modules" / "registry.ts"
 APP_TSX       = RIG_ROOT / "src" / "App.tsx"
 MILESTONES_DIR = REPO_ROOT / "docs" / "rig" / "milestones"
+MANIFEST_MD    = REPO_ROOT / "docs" / "project-knowledge-manifest.md"
 
 # --------------------------------------------------------------------------- #
 # Findings                                                                     #
@@ -556,6 +559,72 @@ def check_milestone_status() -> None:
         _ok(check, f"{len(milestone_dirs)} milestone READMEs all have Status: lines")
 
 # --------------------------------------------------------------------------- #
+# Check 8: project_knowledge                                                   #
+# --------------------------------------------------------------------------- #
+
+# Regex for manifest data rows:
+#   | `export-name` | `repo/path` | repo-name | `abc1234` | YYYY-MM-DD |
+# Rows with _(this export)_ as commit are skipped (manifest self-reference).
+_MANIFEST_ROW_RE = re.compile(
+    r"^\| `[^`]+` \| `([^`]+)` \| (\S+) \| `([0-9a-f]{5,})`",
+    re.MULTILINE,
+)
+
+_REPO_DIR_MAP = {
+    "aetheris-agents": REPO_ROOT,
+    "aetheris":        HARNESS_ROOT,
+}
+
+
+def _git_head_hash(repo_dir: Path, path: str) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%h", "--", path],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        return result.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def check_project_knowledge() -> None:
+    check = "project_knowledge"
+
+    if not MANIFEST_MD.exists():
+        _warn(check, f"docs/project-knowledge-manifest.md not found — skipping staleness check")
+        return
+
+    text = MANIFEST_MD.read_text(encoding="utf-8")
+    rows = _MANIFEST_ROW_RE.findall(text)  # [(repo_path, repo_name, commit), ...]
+
+    if not rows:
+        _fail(check, "zero data rows parsed from project-knowledge-manifest.md")
+        return
+
+    stale: list[str] = []
+    for repo_path, repo_name, manifest_commit in rows:
+        repo_dir = _REPO_DIR_MAP.get(repo_name)
+        if repo_dir is None:
+            _warn(check, f"unknown repo name {repo_name!r} in manifest — cannot verify {repo_path}")
+            continue
+
+        current = _git_head_hash(repo_dir, repo_path)
+        if current is None:
+            _warn(check, f"{repo_path}: git log failed — cannot verify")
+            continue
+
+        if current != manifest_commit:
+            _warn(check, f"{repo_path} stale — manifest={manifest_commit} current={current}")
+            stale.append(repo_path)
+
+    if not stale:
+        _ok(check, f"{len(rows)} manifest entries all match git HEAD")
+
+
+# --------------------------------------------------------------------------- #
 # Main                                                                         #
 # --------------------------------------------------------------------------- #
 
@@ -567,6 +636,7 @@ CHECKS = [
     check_routes,
     check_payload_fields,
     check_milestone_status,
+    check_project_knowledge,
 ]
 
 _CHECK_NAMES = {fn.__name__.replace("check_", ""): fn for fn in CHECKS}

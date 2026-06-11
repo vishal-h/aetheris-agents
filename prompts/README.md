@@ -14,6 +14,7 @@ result as running it once. They do not assume any prior conversation context.
 | File | Task | Issue |
 |------|------|-------|
 | `bl-002-refresh-project-knowledge.md` | Assemble the Claude.ai project-knowledge bundle and update the manifest | [#43](https://github.com/vishal-h/aetheris-agents/issues/43) |
+| `reality-check.md` | Ground-truth snapshot of Rig current state from source code | — |
 
 ---
 
@@ -21,28 +22,30 @@ result as running it once. They do not assume any prior conversation context.
 
 | Prompt | When to run | Trigger |
 |--------|-------------|---------|
-| `bl-002-refresh-project-knowledge.md` | At every milestone end | Completing a Rig milestone (p-series) or agents milestone (m-series) |
-| `bl-002-refresh-project-knowledge.md` | Before any handoff session | Starting a new Claude.ai conversation that will span multiple sessions |
-| `bl-002-refresh-project-knowledge.md` | On staleness detection | Any session where `docs/project-knowledge-manifest.md` commit hashes differ from `git log -1 --format=%h -- <path>` |
+| `reality-check.md` | At every milestone boundary | Completing or starting a Rig milestone (p-series) |
+| `reality-check.md` | After an extended gap | Returning to the project after ~2 weeks away |
+| `bl-002-refresh-project-knowledge.md` | At every milestone end | After `reality-check.md` produces a new current-state doc |
+| `bl-002-refresh-project-knowledge.md` | Before any handoff session | Starting a new Claude.ai conversation spanning multiple sessions |
+| `bl-002-refresh-project-knowledge.md` | On staleness detection | When the `project_knowledge` drift check emits WARN findings |
 
-### Staleness check (run at the start of a new session if uncertain)
+---
+
+## Staleness check
+
+Project-knowledge staleness is now covered by the `project_knowledge` check
+in `scripts/drift_check.py` (check 8). Run it to detect stale manifest entries:
 
 ```bash
-BASE=~/sandbox/elixirws/aetheris-agents
-HARNESS=~/sandbox/elixirws/aetheris
+# From aetheris-agents/ root
+AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db \
+  python3 scripts/drift_check.py
 
-# Compare each manifest row against current HEAD
-while IFS='|' read -r export_name repo_path repo commit rest; do
-  repo_path=$(echo "$repo_path" | xargs)
-  repo=$(echo "$repo" | xargs)
-  commit=$(echo "$commit" | xargs | tr -d '`')
-  [ "$repo" = "aetheris-agents" ] && dir="$BASE" || dir="$HARNESS"
-  current=$(git -C "$dir" log -1 --format=%h -- "$repo_path" 2>/dev/null)
-  [ "$current" != "$commit" ] && echo "STALE  $repo_path ($commit → $current)"
-done < <(grep '^\| \`' "$BASE/docs/project-knowledge-manifest.md")
+# Or via sprint.sh (from aetheris/)
+./scripts/sprint.sh drift_check
 ```
 
-If the script prints any `STALE` lines, run `bl-002-refresh-project-knowledge.md`.
+Any `[WARN] project_knowledge:` line means one or more manifest entries are
+stale — run `bl-002-refresh-project-knowledge.md` to refresh.
 
 ---
 

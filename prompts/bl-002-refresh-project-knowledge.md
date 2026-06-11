@@ -50,8 +50,12 @@ The manifest's "export name" column must match these names exactly.
 Do NOT modify file contents — copies only. The manifest itself is
 part of the bundle (copy it in after writing it).
 
-Step 4 — Commit the manifest (only the manifest — the bundle in /tmp
-is ephemeral) with message "BL-002: project-knowledge manifest".
+Step 4 — Commit the manifest only if its content changed. Run:
+  git diff --quiet docs/project-knowledge-manifest.md
+If the diff is non-empty, stage and commit docs/project-knowledge-manifest.md
+only (not the bundle) with message "BL-002: project-knowledge manifest".
+If the diff is empty, print "manifest unchanged — nothing to commit" and
+skip the commit. The bundle in /tmp is ephemeral either way.
 
 Step 5 — Print for the human:
   - the bundle path and an ls of it

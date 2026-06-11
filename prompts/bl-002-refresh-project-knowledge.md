@@ -28,13 +28,27 @@ the bundle by default.
 
 Step 2 — Create docs/project-knowledge-manifest.md. A short header
 explaining purpose (drift detection for Claude.ai project knowledge;
-see BL-002), then one table:
+see BL-002), then one table with EXACT formatting (check 8 of
+drift_check.py parses this; deviation = FAIL on zero rows):
+
   | export name | repo path | repo | commit | last changed |
-Per file: commit = git log -1 --format=%h -- <path> run in the
-OWNING repo (use ../aetheris for the harness file — its hashes come
-from that repo's history, not this one's); last changed = the commit
-date. Add a final line: "Exported: <today's date> at
-aetheris-agents <HEAD short hash> / aetheris <HEAD short hash>."
+  |-------------|-----------|------|--------|--------------|
+  | `<export-name>` | `<repo/path>` | <repo-name> | `<short-hash>` | <YYYY-MM-DD> |
+
+Formatting rules:
+- export name in backticks; repo path in backticks; repo name BARE
+  (aetheris-agents or aetheris); commit as backticked short hash.
+- The manifest's own row uses _(this export)_ in the commit column
+  (unbackticked, not a hash) — drift_check skips it by design.
+- Per file: commit = git log -1 --format=%h -- <path> run in the
+  OWNING repo (use ../aetheris for the harness file — its hashes come
+  from that repo's history, not this one's); last changed = the
+  commit date.
+- Add a final line after the table: "Exported: <today's date> at
+  aetheris-agents <HEAD short hash> / aetheris <HEAD short hash>."
+- After writing, run: python3 scripts/drift_check.py --check project_knowledge
+  Confirm PASS before proceeding to Step 3. If it FAILs on zero rows,
+  the formatting is wrong — fix the table before continuing.
 
 Step 3 — Assemble the bundle at /tmp/claude-project-export/ (fresh
 directory, delete if exists). Copy each file with a FLATTENED,
@@ -68,6 +82,9 @@ Step 5 — Print for the human:
     session detects staleness.
 
 Constraints: read-only outside docs/project-knowledge-manifest.md and
-/tmp/claude-project-export/. Run drift_check.py once at the end to
-confirm nothing regressed (the manifest is a new doc; no check covers
-it — confirm exit 0 anyway).
+/tmp/claude-project-export/. Run drift_check.py (with AETHERIS_DB_PATH
+set) once at the end to confirm exit 0 and zero WARN. The project_knowledge
+check (check 8) now covers the manifest — a PASS there is also the BL-001
+clean baseline capture. Append the summary line to
+docs/rig/current-state-2026-06.md as:
+  "Drift baseline <YYYY-MM-DD>: <summary line from drift_check output>"

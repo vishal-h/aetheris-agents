@@ -52,6 +52,13 @@ function payloadPreview(payload: string): string {
 const SELECT_CLASS =
   'h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
+// A running run with no events for this long is shown as "stalled?"
+const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+function staleMinsAgo(lastEventAt: string, now: number): number {
+  return Math.floor((now - new Date(lastEventAt).getTime()) / 60_000);
+}
+
 // ============================================================================
 // Run grouping
 // ============================================================================
@@ -111,9 +118,16 @@ function visibleRuns(group: RunGroup, showAll: boolean): RunSummary[] {
 interface RunRowProps {
   run:      RunSummary;
   onSelect: (run: RunSummary) => void;
+  now:      number;
 }
 
-function RunRow({ run, onSelect }: RunRowProps) {
+function RunRow({ run, onSelect, now }: RunRowProps) {
+  const stalled =
+    run.status === 'running' &&
+    run.last_event_at != null &&
+    now - new Date(run.last_event_at).getTime() > STALE_THRESHOLD_MS;
+  const mins = stalled && run.last_event_at ? staleMinsAgo(run.last_event_at, now) : 0;
+
   return (
     <tr
       onClick={() => onSelect(run)}
@@ -123,7 +137,17 @@ function RunRow({ run, onSelect }: RunRowProps) {
         {run.label.length > 45 ? run.label.slice(0, 45) + '…' : run.label}
       </td>
       <td className="px-4 py-2">
-        <Badge variant={statusBadgeVariant(run.status)}>{run.status}</Badge>
+        {stalled ? (
+          <span
+            className="inline-flex items-center gap-1.5"
+            title={`No events for ${mins}m — process may have died`}
+          >
+            <Badge variant="warning">running</Badge>
+            <span className="text-xs font-medium text-amber-600">stalled?</span>
+          </span>
+        ) : (
+          <Badge variant={statusBadgeVariant(run.status)}>{run.status}</Badge>
+        )}
       </td>
       <td className="px-4 py-2 text-muted-foreground">
         {run.model.split('/').pop() ?? run.model}
@@ -136,6 +160,9 @@ function RunRow({ run, onSelect }: RunRowProps) {
       </td>
       <td className="px-4 py-2 text-right tabular-nums">{run.step_count}</td>
       <td className="px-4 py-2 text-right tabular-nums">{run.event_count}</td>
+      <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+        {run.total_cost_usd != null ? `$${run.total_cost_usd.toFixed(4)}` : '—'}
+      </td>
     </tr>
   );
 }
@@ -154,6 +181,13 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const expanded = useSessionRecord('rig:runs:expanded', false);
   const showAll  = useSessionRecord('rig:runs:showAll', false);
+
+  // Re-evaluate staleness every 60s without refetching data
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   if (status.data && !status.data.connected) return <NotConnected />;
   if (runList.loading) return <LoadingShell rows={6} />;
@@ -226,6 +260,7 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Duration</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Steps</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Events</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Cost</th>
               </tr>
             </thead>
             <tbody>
@@ -239,7 +274,7 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
                       onClick={() => expanded.set(group.label, !exp)}
                       className="cursor-pointer select-none border-b bg-muted/50 transition-colors hover:bg-muted/80"
                     >
-                      <td colSpan={7} className="px-4 py-2">
+                      <td colSpan={8} className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           {exp
                             ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -254,13 +289,13 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
 
                     {/* Run rows */}
                     {exp && visibleRuns(group, sa).map((run) => (
-                      <RunRow key={run.run_id} run={run} onSelect={onSelectRun} />
+                      <RunRow key={run.run_id} run={run} onSelect={onSelectRun} now={now} />
                     ))}
 
                     {/* Show more / show less */}
                     {exp && group.runs.length > DEFAULT_SHOW && (
                       <tr className="border-b">
-                        <td colSpan={7} className="px-4 py-2">
+                        <td colSpan={8} className="px-4 py-2">
                           <button
                             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                             onClick={(e) => { e.stopPropagation(); showAll.set(group.label, !sa); }}

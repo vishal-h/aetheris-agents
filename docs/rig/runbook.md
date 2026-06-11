@@ -84,13 +84,14 @@ The Harness module shows all agent runs recorded in `aetheris.db`.
 
 ### Status badges
 
-| Status | Colour |
-|--------|--------|
-| `done` | Green |
-| `running` | Amber (animated) |
-| `failed` | Red |
-| `paused` | Blue |
-| `idle` | Grey |
+| Status | Colour | Notes |
+|--------|--------|-------|
+| `done` | Green | |
+| `running` | Amber | pulsing "Live" indicator while events are streaming |
+| `running` + "stalled?" | Amber + amber text | no events for >5 min; process may have died |
+| `failed` | Red | |
+| `paused` | Blue | |
+| `idle` | Grey | |
 
 ### Not connected
 
@@ -228,6 +229,24 @@ events. Check `mix aetheris inspect <run_id>` for details.
 ```bash
 export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 ```
+
+### Run list shows "stalled?" next to a running badge
+
+A run is flagged "stalled?" when `status = 'running'` in the DB but no events
+have arrived for more than 5 minutes. This means the `mix` process likely died
+mid-run and the harness did not get a chance to update the status.
+
+**Verify:** `mix aetheris inspect <run_id>` — if the last event is old and no
+new events arrive, the process is dead.
+
+**The harness does not automatically mark these runs as failed.** Rig detects
+the condition display-only; no DB write occurs. The status in `aetheris.db`
+remains `running` permanently unless the harness is restarted and a cleanup
+sweep runs (no such sweep currently exists in the harness).
+
+**Distinguish from paused runs:** a run in `wait_for_event` state is paused
+legitimately — it will also show no new events, but `mix aetheris inspect`
+will show a `agent_waiting` event as the latest. Treat these differently.
 
 ### Trajectory tab shows "read failed" or blank for a completed run
 

@@ -156,15 +156,17 @@ export interface HarnessStatus {
 }
 
 export interface RunSummary {
-  run_id:      string;
-  label:       string;
-  status:      'idle' | 'running' | 'paused' | 'done' | 'failed' | string;
-  provider:    string;
-  model:       string;
-  started_at:  string;
-  finished_at: string | null;
-  step_count:  number;
-  event_count: number;
+  run_id:         string;
+  label:          string;
+  status:         'idle' | 'running' | 'paused' | 'done' | 'failed' | string;
+  provider:       string;
+  model:          string;
+  started_at:     string;
+  finished_at:    string | null;
+  step_count:     number;
+  event_count:    number;
+  last_event_at:  string | null;
+  total_cost_usd: number | null;
 }
 
 export interface EventRow {

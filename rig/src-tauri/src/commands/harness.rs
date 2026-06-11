@@ -54,15 +54,17 @@ pub fn harness_connection_status(state: State<'_, HarnessState>) -> Result<Harne
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct RunSummary {
-    pub run_id:      String,
-    pub label:       String,
-    pub status:      String,
-    pub provider:    String,
-    pub model:       String,
-    pub started_at:  String,
-    pub finished_at: Option<String>,
-    pub step_count:  i64,
-    pub event_count: i64,
+    pub run_id:         String,
+    pub label:          String,
+    pub status:         String,
+    pub provider:       String,
+    pub model:          String,
+    pub started_at:     String,
+    pub finished_at:    Option<String>,
+    pub step_count:     i64,
+    pub event_count:    i64,
+    pub last_event_at:  Option<String>,
+    pub total_cost_usd: Option<f64>,
 }
 
 #[tauri::command]
@@ -86,7 +88,11 @@ pub fn harness_list_runs(
             r.started_at,
             r.finished_at,
             COALESCE((SELECT MAX(e.step)   FROM events e WHERE e.run_id = r.run_id), 0) AS step_count,
-            COALESCE((SELECT COUNT(*)      FROM events e WHERE e.run_id = r.run_id), 0) AS event_count
+            COALESCE((SELECT COUNT(*)      FROM events e WHERE e.run_id = r.run_id), 0) AS event_count,
+            (SELECT MAX(e.timestamp) FROM events e WHERE e.run_id = r.run_id)            AS last_event_at,
+            (SELECT SUM(CASE WHEN e.type = 'llm_responded'
+                             THEN json_extract(e.payload_json, '$.cost_usd') END)
+             FROM events e WHERE e.run_id = r.run_id)                                    AS total_cost_usd
         FROM runs r
         ORDER BY r.started_at DESC
         LIMIT ?
@@ -96,15 +102,17 @@ pub fn harness_list_runs(
     let rows = stmt
         .query_map(params![limit], |row| {
             Ok(RunSummary {
-                run_id:      row.get(0)?,
-                label:       row.get(1)?,
-                status:      row.get(2)?,
-                provider:    row.get(3)?,
-                model:       row.get(4)?,
-                started_at:  row.get(5)?,
-                finished_at: row.get(6)?,
-                step_count:  row.get(7)?,
-                event_count: row.get(8)?,
+                run_id:         row.get(0)?,
+                label:          row.get(1)?,
+                status:         row.get(2)?,
+                provider:       row.get(3)?,
+                model:          row.get(4)?,
+                started_at:     row.get(5)?,
+                finished_at:    row.get(6)?,
+                step_count:     row.get(7)?,
+                event_count:    row.get(8)?,
+                last_event_at:  row.get(9)?,
+                total_cost_usd: row.get(10)?,
             })
         })
         .map_err(|e| format!("query error: {}", e))?;

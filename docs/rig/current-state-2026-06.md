@@ -474,6 +474,7 @@ Rig reads none of these tables. They are harness-internal.
 - `UsageView` shows per-run avg cost, total cost, by-model and by-use-case breakdowns.
 - **Gap:** `harness_list_runs` does NOT include cost or token totals in `RunSummary` — they are not aggregated in the run list SQL. Adding them requires joining `events` and using `SUM(json_extract(...))` with a `IS NOT NULL` guard, same as `usage.rs`.
 - Pricing for unknown models returns `cost_usd: nil` (`pricing.ex:21`), displayed as `—`.
+- **Rig-side addressed:** `total_cost_usd` added to `harness_list_runs` query and `RunSummary`; rendered in run list Cost column (`RunList.tsx`). Harness-side token totals per-run remain absent from `RunSummary`.
 
 ### B. Stale/stuck run detection
 
@@ -483,6 +484,7 @@ Rig reads none of these tables. They are harness-internal.
 - `run_checkpoints` table stores last-known-good state but no TTL or heartbeat is written to it on a timer.
 - Rig has no stuck-run indicator. The cheapest signal would be: `SELECT run_id, MAX(timestamp) as last_event FROM events WHERE run_id IN (SELECT run_id FROM runs WHERE status = 'running') GROUP BY run_id` — if `now() - last_event > threshold`, the run is suspect.
 - `RunList.tsx` shows live amber badge for `status = 'running'` runs but no staleness indicator.
+- **Rig-side addressed:** `last_event_at` added to `RunSummary`; `RunList.tsx` renders "stalled?" marker with 5-minute threshold and 60s re-evaluation interval. Harness-side watchdog (auto-marking crashed runs failed) remains absent.
 
 ### C. Replay/fork from step
 

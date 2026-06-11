@@ -788,6 +788,8 @@ doc-fix pass. Changes:
 - `architecture.md`: documented `/settings` sidebar oddity + `trajectory.rs` env var oddity (Part C)
 - `rig/src/hooks/types.ts` (Part B): `LlmRespondedPayload` interface, `TrajectoryMeta.resumed?`, `finished_at` JSDoc, payload divergence JSDoc
 
+**Drift baseline 2026-06-11:** 8 PASS  0 FAIL  0 WARN  12 INFO (aetheris-agents `09a74c2`, AETHERIS_DB_PATH set). First clean run post all parser fixes (paren-depth, payload `?` marker, `_evaluate_payload_fields`, project_knowledge check 8).
+
 **Report errata fixed 2026-06-11** (found during d82cf7e specs.md review):
 - §1/P6: `cost_usd` is in `llm_responded` events, not `llm_called`; `usage.rs:45` filters `WHERE type = 'llm_responded'`
 - §8 payload-drift + Gap A: same correction — `llm_called` payload is `{"model"}` only (`loop.ex:178`); `cost_usd`/`input_tokens`/`output_tokens` are all `llm_responded`-only (`loop.ex:241-284`)

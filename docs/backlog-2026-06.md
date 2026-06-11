@@ -32,21 +32,49 @@ There is no recorded genuinely-clean run.
 
 ---
 
-### BL-002 — Refresh Claude project knowledge files (#43)
+### BL-002 — Refresh Claude project knowledge files (all three scopes) (#43)
 **Size:** S · **Priority:** now
 
 The Claude.ai project still carries the 2026-05-31 snapshot (superseded
 handoff, pre-fix specs/architecture/runbook). This staleness is what
-triggered the entire reality-check exercise.
+triggered the entire reality-check exercise. The refresh must cover all
+three scopes, not just Rig:
 
-- Replace with: current `specs.md`, `architecture.md`, `runbook.md`,
-  `protocol.md`, repo `CLAUDE.md`, and `current-state-2026-06.md`.
-- Drop the superseded handoff (its banner already points at the
-  current-state doc).
+**Rig** (replaces current stale set):
+- `docs/rig/specs.md`, `docs/rig/architecture.md`, `docs/rig/runbook.md`,
+  `docs/rig/milestones/p3/protocol.md`, `docs/rig/current-state-2026-06.md`
+- `rig/CLAUDE.md` if conversations will touch Rig implementation
+  (it is the authoritative Claude Code context for that subtree)
+
+**aetheris-agents repo** (mostly new additions):
+- Repo-root `CLAUDE.md` (refresh — now carries the doc-sync DoD)
+- `docs/agent-creation-guide.md` (CLAUDE.md names it the authoritative
+  agent-building reference; currently absent from project knowledge)
+- `docs/capability-matrix.md` (what agents exist; orchestrator plans
+  from it; needed for any "which agent does X" conversation)
+- `docs/backlog-2026-06.md` (this file)
+
+**aetheris (harness)** (currently zero representation):
+- `aetheris/CLAUDE.md` if it exists (verify) — the harness-side Claude
+  Code contract. Harness *source* facts (schema, event types, trajectory
+  format) are deliberately NOT exported raw; they live verified in
+  `current-state-2026-06.md` §7/§8/3.1 and the corrected specs.md.
+
+**Drops:** the superseded handoff (banner already redirects) and
+`docs/rig/README.md` (redundant with architecture + current-state).
+
+**Manifest:** add `docs/project-knowledge-manifest.md` — one table:
+file → commit hash at export. Refresh the manifest with every export.
+This makes project-knowledge staleness mechanically detectable: the
+next reality-check (or a future drift_check check) compares manifest
+hashes against `git log -1 --format=%h -- <file>`.
+
 - Convention going forward: refresh at the same boundaries the
-  reality-check prompt runs at (milestone end / before handoff).
+  reality-check prompt runs at (milestone end / before handoff), and
+  the manifest is part of the export, not optional.
 
-**Done when:** project knowledge matches HEAD.
+**Done when:** project knowledge matches HEAD for all three scopes and
+the manifest exists in-repo.
 
 ---
 

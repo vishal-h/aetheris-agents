@@ -8,6 +8,7 @@
 |----------|---------|-------------|
 | `AETHERIS_DB_PATH` | Yes (harness features) | Absolute path to `aetheris/priv/aetheris.db` |
 | `AETHERIS_AGENTS_PATH` | Yes (tools features) | Absolute path to `aetheris-agents/` root |
+| `AETHERIS_PROVIDER` | No | Default LLM provider for agents (`anthropic`); not read by Rig itself |
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | Absolute path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | Set `true` to enable corpus-search MCP |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No (GitHub MCP) | PAT for GitHub MCP server — or set in Rig Settings |

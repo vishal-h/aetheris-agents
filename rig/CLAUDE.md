@@ -477,6 +477,21 @@ cargo tauri build
 
 ---
 
+## Doc sync
+
+After adding Tauri commands, event types, env vars, routes, or DB tables, run the
+drift checker to verify specs.md/runbook.md are still accurate:
+
+```bash
+# From aetheris-agents/ root
+python3 scripts/drift_check.py
+```
+
+Zero FAIL findings required. See root `CLAUDE.md` → "Definition of done — doc sync"
+for the full policy and check list.
+
+---
+
 ## Current Focus
 
 ### Provenance dashboard (active)

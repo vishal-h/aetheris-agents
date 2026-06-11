@@ -172,6 +172,32 @@ Each line is a self-contained JSON record. `record_type` is the discriminator. B
 
 ---
 
+## Definition of done — doc sync
+
+`docs/rig/specs.md`, `docs/rig/runbook.md`, and `docs/rig/architecture.md` must
+stay in sync with the Rig source code. Use the drift checker to verify:
+
+```bash
+# From aetheris-agents/ root
+python3 scripts/drift_check.py
+
+# Or via sprint.sh (from aetheris/)
+./scripts/sprint.sh drift_check
+```
+
+**Checks run:** event types (event.ex ↔ specs.md §6), Tauri commands (lib.rs ↔ specs.md §4),
+DB schema (store.ex ↔ specs.md §2), env vars (Rust code ↔ specs.md §1 ↔ runbook.md),
+routes (registry.ts ↔ App.tsx), payload field sampling (live DB ↔ specs.md §6),
+milestone README Status: lines.
+
+**When to run:** after any Rig milestone, after adding commands, event types, env vars,
+routes, or DB tables. Zero FAIL findings required before committing. WARN findings for
+undocumented f2/provenance commands are expected and acceptable.
+
+**Tests:** `python3 -m pytest tests/test_drift_check.py -v`
+
+---
+
 ## Key docs to read for each use case
 
 | Use case | Read first |

@@ -253,23 +253,15 @@ All take `key: String` / `value: String` as appropriate. Store path:
 
 | Command | Args | Returns |
 |---------|------|---------|
-| `agent_config_get_all` | — | `Vec<AgentConfigEntry>` (merged defs + stored values) |
+| `agent_config_get_all` | — | `HashMap<String, String>` (raw stored values) |
 | `agent_config_set` | `key`, `value` | `()` |
 | `agent_config_delete` | `key` | `()` |
-| `agent_config_export` | `path` (file path) | `()` — writes JSON file |
-| `agent_config_import` | `path` (file path) | `()` — merges JSON file into store |
+| `agent_config_export` | — | `String` (serialized JSON — no path; returned to caller) |
+| `agent_config_import` | `values: HashMap<String, String>` | `usize` (count imported) |
 
-```rust
-pub struct AgentConfigEntry {
-    pub key:         String,
-    pub label:       String,
-    pub group:       String,
-    pub masked:      bool,
-    pub placeholder: Option<String>,
-    pub link_prefix: Option<String>,
-    pub value:       Option<String>,
-}
-```
+`AgentConfigEntry` is a TypeScript-side type (`types.ts:372`) assembled by
+`useAgentConfig.ts` from `agentConfigDefs.ts` (hardcoded field metadata) merged
+with the HashMap returned by `agent_config_get_all`. No corresponding Rust struct exists.
 
 ### Capability matrix command (`commands/capability_matrix.rs`) — p5
 
@@ -470,7 +462,7 @@ Authoritative source: `../aetheris/lib/aetheris/trajectory/event.ex:14-35`.
 | Event type | Payload fields (key ones) |
 |-----------|--------------------------|
 | `prompt_built` | `system_prompt`, `user_prompt`, `context_hash`, `message_count` |
-| `llm_called` | `model`, `provider`, `input_tokens`, `cost_usd` |
+| `llm_called` | `model` |
 | `llm_responded` | `response_type`, `output_tokens`, `latency_ms`, `resolved_model`, `cost_usd`, `input_tokens`, `raw_response`, `system_fingerprint` |
 | `tool_called` | `tool_name`, `tool_input`, `source`, `server_id` |
 | `tool_result` | `tool_name`, `output`, `exit_code`, `fs_hash`, `duration_ms` |
@@ -491,10 +483,9 @@ Authoritative source: `../aetheris/lib/aetheris/trajectory/event.ex:14-35`.
 | `pre_tool_result` | intermediate result before tool execution |
 | `context_summarised` | rolling-context summary was applied |
 
-**Note on `cost_usd`:** `llm_called` emits `cost_usd` (computed by
-`execution/pricing.ex`); `llm_responded` also carries `cost_usd` for
-convenience. For unknown models, `cost_usd` is `null`. `usage.rs` reads
-`cost_usd` from `llm_called` events via `json_extract`.
+**Note on `cost_usd`:** `cost_usd` is computed by `execution/pricing.ex` and
+emitted in `llm_responded` payloads. For unknown models, `cost_usd` is `null`.
+`usage.rs` reads `cost_usd` from `llm_responded` events via `json_extract`.
 
 ---
 

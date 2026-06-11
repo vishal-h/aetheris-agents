@@ -5,7 +5,11 @@ what commit they were exported. Its purpose is drift detection: a future session
 can compare the `commit` column against `git log -1 --format=%h -- <path>` in
 the owning repo to determine whether the project knowledge is stale.
 
-See **BL-002** in `docs/backlog-2026-06.md` for the refresh convention.
+Check 8 of `scripts/drift_check.py` (`project_knowledge`) parses this table
+automatically and emits WARN for any stale entry. See **BL-002** in
+`docs/backlog-2026-06.md` for the refresh convention and
+`prompts/bl-002-refresh-project-knowledge.md` for the exact row format.
+
 Refresh trigger: milestone end, or before any handoff session.
 
 ---
@@ -27,4 +31,4 @@ Refresh trigger: milestone end, or before any handoff session.
 
 ---
 
-Exported: 2026-06-11 at aetheris-agents `d825ddd` / aetheris `bd2c3d8`.
+Exported: 2026-06-11 at aetheris-agents `ff60ebb` / aetheris `bd2c3d8`.

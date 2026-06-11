@@ -52,11 +52,14 @@ function payloadPreview(payload: string): string {
 const SELECT_CLASS =
   'h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-// A running run with no events for this long is shown as "stalled?"
+// A running run with no activity for this long is shown as "stalled?"
 const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
-function staleMinsAgo(lastEventAt: string, now: number): number {
-  return Math.floor((now - new Date(lastEventAt).getTime()) / 60_000);
+// Both event.timestamp and runs.started_at are written by the harness via
+// DateTime.to_iso8601 (store.ex:1019, 1512) — always Z-suffixed UTC ISO 8601.
+// new Date() parses them correctly without timezone ambiguity.
+function staleMinsAgo(referenceAt: string, now: number): number {
+  return Math.floor((now - new Date(referenceAt).getTime()) / 60_000);
 }
 
 // ============================================================================
@@ -122,11 +125,13 @@ interface RunRowProps {
 }
 
 function RunRow({ run, onSelect, now }: RunRowProps) {
+  // Fall back to started_at when no events have been persisted yet (run crashed
+  // before writing its first event — last_event_at is NULL in that case).
+  const referenceAt = run.last_event_at ?? run.started_at;
   const stalled =
     run.status === 'running' &&
-    run.last_event_at != null &&
-    now - new Date(run.last_event_at).getTime() > STALE_THRESHOLD_MS;
-  const mins = stalled && run.last_event_at ? staleMinsAgo(run.last_event_at, now) : 0;
+    now - new Date(referenceAt).getTime() > STALE_THRESHOLD_MS;
+  const mins = stalled ? staleMinsAgo(referenceAt, now) : 0;
 
   return (
     <tr

@@ -305,6 +305,36 @@ pub struct UsageStats {
 `tools_run_script` executes the named Python script as a subprocess. This is
 the only Rig command that runs arbitrary code from the agent repo.
 
+### F2 commands (`commands/f2.rs`) — pre-existing, shapes documented in code
+
+| Command |
+|---------|
+| `f2_get_watched_folders` |
+| `f2_add_watched_folder` |
+| `f2_toggle_watched_folder` |
+| `f2_remove_watched_folder` |
+| `f2_trigger_scan` |
+| `f2_get_file_index` |
+| `f2_get_file_count` |
+| `f2_get_duplicates` |
+| `f2_get_duplicate_stats` |
+
+### Provenance commands (`commands/provenance.rs`) — pre-existing, shapes documented in code
+
+| Command |
+|---------|
+| `provenance_corpus_summary` |
+| `provenance_client_breakdown` |
+| `provenance_scan_runs` |
+| `provenance_classification_list` |
+| `provenance_set_classification_status` |
+| `provenance_migration_summary` |
+| `provenance_zip_inventory` |
+| `provenance_duplicate_groups` |
+| `provenance_failed_migrations` |
+| `provenance_encrypted_zips` |
+| `get_system_username` |
+
 ---
 
 ## 5. TypeScript Interfaces
@@ -468,7 +498,7 @@ Authoritative source: `../aetheris/lib/aetheris/trajectory/event.ex:14-35`.
 | `llm_responded` | `response_type`, `output_tokens`, `latency_ms`, `resolved_model`, `cost_usd`, `input_tokens`, `raw_response`, `system_fingerprint` |
 | `tool_called` | `tool_name`, `tool_input`, `source`, `server_id` |
 | `tool_result` | `tool_name`, `output`, `exit_code`, `fs_hash`, `duration_ms` |
-| `error` | `reason`, `step`, `retryable` |
+| `error` | `reason` |
 | `run_complete` | `reason` — `agent_finished` \| `max_steps_reached` \| `error` |
 | `step_complete` | `step` |
 | `agent_message_sent` | `message_id`, `to_run_id`, `content` |
@@ -478,9 +508,9 @@ Authoritative source: `../aetheris/lib/aetheris/trajectory/event.ex:14-35`.
 | `loop_detected` | emitted when the harness detects a tool-call loop |
 | `escalation_requested` | multi-agent: agent is requesting human escalation |
 | `escalation_responded` | response to an escalation request |
-| `agent_waiting` | run entered wait state (e.g. `wait_for_event`) |
+| `agent_waiting` | `condition`, `timeout_ms` |
 | `agent_resumed` | run resumed from wait state |
-| `agent_spawned` | child run created via `spawn_agent` |
+| `agent_spawned` | `child_run_id`, `spawn_depth` |
 | `agent_tree_joined` | child run completed; parent resuming |
 | `pre_tool_result` | intermediate result before tool execution |
 | `context_summarised` | rolling-context summary was applied |

@@ -318,6 +318,9 @@ def test_parse_payload_fields_from_specs():
     assert "tool_input" in fields["tool_called"]
     assert "run_complete" in fields
     assert "reason" in fields["run_complete"]
+    # enum values listed after " — " must not be extracted as payload fields
+    assert "agent_finished" not in fields["run_complete"]
+    assert "max_steps_reached" not in fields["run_complete"]
 
 
 def test_payload_fields_anchor_missing_is_fail():

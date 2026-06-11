@@ -20,7 +20,6 @@ Checks:
 """
 
 import argparse
-import json
 import os
 import re
 import sys
@@ -434,7 +433,9 @@ def _parse_payload_fields_from_specs(text: str, check: str) -> dict[str, list[st
     for row in re.finditer(r"^\| `(\w+)` \| (.*?) \|$", m.group(1), re.MULTILINE):
         event_type  = row.group(1)
         fields_cell = row.group(2)
-        fields = re.findall(r"`(\w+)`", fields_cell)
+        # Strip enum values listed after " — " (e.g. `reason` — `done` | `failed`)
+        fields_part = fields_cell.split(" — ")[0]
+        fields = re.findall(r"`(\w+)`", fields_part)
         if fields:
             result[event_type] = fields
 
@@ -475,21 +476,23 @@ def check_payload_fields() -> None:
 
     try:
         for event_type, field_names in doc_fields.items():
-            cur = conn.execute(
-                "SELECT payload_json FROM events WHERE type = ? LIMIT 50",
-                (event_type,),
-            )
-            rows = cur.fetchall()
-            if not rows:
+            count = conn.execute(
+                "SELECT COUNT(*) FROM events WHERE type = ?", (event_type,)
+            ).fetchone()[0]
+            if count == 0:
                 _info(check, f"no {event_type!r} events in DB — cannot verify payload fields")
                 continue
 
-            seen_keys: set[str] = set()
-            for row in rows:
-                try:
-                    seen_keys.update(json.loads(row["payload_json"]).keys())
-                except (json.JSONDecodeError, TypeError, AttributeError):
-                    pass
+            # Use json_each to get all distinct payload keys across every event
+            seen_keys: set[str] = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT DISTINCT je.key"
+                    " FROM events e, json_each(e.payload_json) je"
+                    " WHERE e.type = ?",
+                    (event_type,),
+                ).fetchall()
+            }
 
             for field in field_names:
                 if field not in seen_keys:

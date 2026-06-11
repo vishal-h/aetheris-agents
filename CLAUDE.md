@@ -191,8 +191,7 @@ routes (registry.ts ↔ App.tsx), payload field sampling (live DB ↔ specs.md �
 milestone README Status: lines.
 
 **When to run:** after any Rig milestone, after adding commands, event types, env vars,
-routes, or DB tables. Zero FAIL findings required before committing. WARN findings for
-undocumented f2/provenance commands are expected and acceptable.
+routes, or DB tables. Zero FAIL findings and zero WARN findings required before committing.
 
 **Tests:** `python3 -m pytest tests/test_drift_check.py -v`
 

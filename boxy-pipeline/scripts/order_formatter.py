@@ -13,6 +13,7 @@ import openpyxl
 
 SHEET_NAME = "2000 Order Form"
 FIRST_DATA_ROW = 12
+TEMPLATE_LAST_ROW = 67  # last pre-filled row in the template; rows beyond this are the SUM row
 
 # Column positions (1-indexed, matching the Order Form layout)
 COL_LINE = 1    # A — line number
@@ -86,7 +87,7 @@ def write_order_form(
         line_num += 1
 
     # Clear stale template formulas in rows beyond what we wrote
-    for r in range(row, 68):
+    for r in range(row, TEMPLATE_LAST_ROW + 1):
         for c in range(COL_ITEM, COL_SPECIAL + 1):
             ws.cell(r, c).value = None
 

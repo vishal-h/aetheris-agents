@@ -9,6 +9,8 @@
 | `AETHERIS_DB_PATH` | Yes (harness features) | — | Path to `aetheris/priv/aetheris.db`; also used by `trajectory.rs` to derive run directory |
 | `AETHERIS_AGENTS_PATH` | Yes (orchestrator/tools) | — | Path to `aetheris-agents/` root; used by orchestrate.rs, tools.rs, capability_matrix.rs |
 | `AETHERIS_PROVIDER` | No | `anthropic` | Default LLM provider passed to every `.exs` agent; not read by Rig Rust code directly |
+| `AETHERIS_API_URL` | Yes (playground features) | — | Base URL of the running aetheris harness API (e.g. `http://localhost:4001`); read by `commands/playground.rs` |
+| `AETHERIS_API_TOKEN` | Yes (playground features) | — | Bearer token matching one of `AETHERIS_PLAYGROUND_TOKENS` configured in the harness; read by `commands/playground.rs` |
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | — | Path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | — | Not read by Rig Rust; intended for the `search_agent.exs` file when the corpus-search MCP is active |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No | — | Stored in `agent-config.json`; injected as env var when orchestrator spawns agents — not read from env directly by Rig |
@@ -335,6 +337,18 @@ the only Rig command that runs arbitrary code from the agent repo.
 | `provenance_encrypted_zips` |
 | `get_system_username` |
 
+### Playground commands (`commands/playground.rs`) — m-playground-p2
+
+| Command | Input | Output |
+|---------|-------|--------|
+| `playground_connection_status` | — | `PlaygroundStatus` |
+| `playground_get_policy` | — | `PlaygroundPolicy` |
+| `playground_get_sandboxes` | — | `PlaygroundSandboxes` |
+| `playground_submit_run` | `{ request: PlaygroundSubmitRequest }` | `PlaygroundSubmitResult` |
+| `playground_run_status` | `{ runId: String }` | `PlaygroundRunStatus` |
+
+(Types are in `src/hooks/types.ts`.)
+
 ---
 
 ## 5. TypeScript Interfaces
@@ -562,6 +576,8 @@ rig/src/components/modules/
   settings/                  ← p7 (route: /settings, no sidebar entry)
     AgentConfigTab.tsx       ← grouped env var config (masked fields)
     agentConfigDefs.ts       ← key definitions: Harness/Anthropic/SMTP/Drive/Payslip/GitHub
+  playground/                ← m-playground-p2
+    RunComposer.tsx          ← Run Composer panel: policy, sandbox, prompt, submit, status
   provenance/                ← existing
     CorpusOverview.tsx
     ClassificationReview.tsx

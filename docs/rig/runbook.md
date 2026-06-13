@@ -9,6 +9,8 @@
 | `AETHERIS_DB_PATH` | Yes (harness features) | Absolute path to `aetheris/priv/aetheris.db` |
 | `AETHERIS_AGENTS_PATH` | Yes (tools features) | Absolute path to `aetheris-agents/` root |
 | `AETHERIS_PROVIDER` | No | Default LLM provider for agents (`anthropic`); not read by Rig itself |
+| `AETHERIS_API_URL` | Yes (playground features) | Base URL of the running aetheris harness API (e.g. `http://localhost:4001`) |
+| `AETHERIS_API_TOKEN` | Yes (playground features) | Bearer token — must match one entry in `AETHERIS_PLAYGROUND_TOKENS` on the harness side |
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | Absolute path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | Set `true` to enable corpus-search MCP |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No (GitHub MCP) | PAT for GitHub MCP server — or set in Rig Settings |
@@ -201,6 +203,84 @@ Quick reference:
 - Classification review: approve/reject proposed classifications
 - Migration status: progress by client
 - Zip inventory: processed/encrypted/pending counts
+
+---
+
+## Playground module — Run Composer
+
+The Playground module lets Rig users submit agent runs to a running aetheris
+harness API without needing repo access or a local Elixir environment.
+
+### Enabling the harness API
+
+Set in aetheris `config/runtime.exs`:
+
+```elixir
+config :aetheris, api_enabled: true
+config :aetheris, api_port: 4001
+config :aetheris, api_bind: {127, 0, 0, 1}   # default: localhost only
+```
+
+`api_bind` defaults to localhost. Binding all interfaces (`{0, 0, 0, 0}`) is an
+explicit opt-in; see Trust model section below.
+
+### Generating a token
+
+Add to aetheris config:
+
+```elixir
+config :aetheris, :playground_tokens, ["your-token-here"]
+```
+
+Or via env: `AETHERIS_PLAYGROUND_TOKENS=your-token-here` (comma-separated for
+multiple). Set `AETHERIS_API_TOKEN` in Rig's env to the same value.
+
+### Matching env var example
+
+```bash
+# Harness side
+AETHERIS_PLAYGROUND_TOKENS=tok-abc ./scripts/run_server.sh
+
+# Rig side
+AETHERIS_API_URL=http://localhost:4001
+AETHERIS_API_TOKEN=tok-abc
+cargo tauri dev
+```
+
+### Exposing beyond localhost (reverse proxy)
+
+Change `api_bind: {0, 0, 0, 0}` or a specific IP for VPN/private interface.
+Note: once `api_bind` is opened, `GET /api/runs/*` endpoints leak run labels and
+timing — operators on shared networks may wish to front them with proxy auth.
+
+### Trust model — `run_command` and secrets
+
+- `run_command` is not in the default playground allowlist. Enabling it grants
+  shell-equivalent access to all bearer token holders — they can execute arbitrary
+  commands with the harness process's UID.
+- If `run_command` is enabled, or if `openrouter` is in the provider allowlist, the
+  harness startup environment must not contain `ANTHROPIC_API_KEY`,
+  `OPENROUTER_API_KEY`, or other secrets accessible to playground token holders.
+  Use a dedicated harness process with a scoped environment.
+- Playground tokens that enable `run_command` are equivalent to SSH keys — issue
+  only to fully-trusted team members and rotate on personnel changes.
+
+### Reverse proxy note
+
+Behind a reverse proxy, `conn.remote_ip` in auth-rejection logs is the proxy's
+address, not the client's. `X-Forwarded-For` must not be naively trusted without
+explicit trusted-proxy configuration (deferred to p3).
+
+### Overlay retention
+
+Per-run overlay upper directories are not automatically cleaned up (tracked: issue
+#84). Retention and cleanup tooling is planned for p3.
+
+### Overlay isolation is Linux-only
+
+The overlay mechanism uses `libc::mount` + user namespaces. On non-Linux hosts the
+worker fails open and writes reach the real sandbox path. Production deployments
+should run on Linux.
 
 ---
 

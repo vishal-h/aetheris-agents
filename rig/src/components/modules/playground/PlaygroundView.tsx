@@ -51,8 +51,8 @@ function PlaygroundNotConnected({ error }: PlaygroundNotConnectedProps) {
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Set <code className="rounded bg-muted px-1">PLAYGROUND_API_URL</code> and{' '}
-            <code className="rounded bg-muted px-1">PLAYGROUND_API_TOKEN</code> and restart.
+            Set <code className="rounded bg-muted px-1">AETHERIS_API_URL</code> and{' '}
+            <code className="rounded bg-muted px-1">AETHERIS_API_TOKEN</code> and restart.
           </p>
         )}
       </div>
@@ -641,13 +641,18 @@ function ComposerForm() {
               <label className="text-sm font-medium" htmlFor="pg-context-strategy">
                 Context strategy <span className="text-muted-foreground font-normal">(optional)</span>
               </label>
-              <input
+              <select
                 id="pg-context-strategy"
                 className={INPUT_CLASS}
-                placeholder="e.g. rolling"
                 value={contextStrategy}
                 onChange={(e) => setContextStrategy(e.target.value)}
-              />
+              >
+                <option value="">— default —</option>
+                {/* Harness enum — closed set, not server-configured */}
+                {(['full', 'rolling', 'summarise'] as const).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
           </div>
 

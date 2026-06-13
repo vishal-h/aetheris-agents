@@ -11,6 +11,6 @@
 # pytest — test runner for all three layers (unit, integration, e2e).
 
 pdfplumber>=0.11.9
-pandas>=3.0.2
+pandas>=2.0.0
 openpyxl>=3.1.5
 pytest>=8.0.0

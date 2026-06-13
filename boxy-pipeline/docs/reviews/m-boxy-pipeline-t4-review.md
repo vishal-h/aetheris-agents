@@ -1,4 +1,14 @@
-# Review — m-boxy-pipeline t4 — pipeline CLI
+# Review — m-boxy-pipeline t4 — pipeline CLI — round 1
+
+## Summary
+
+| # | Severity | Status |
+|---|---|---|
+| 1 | non-blocking | fixed ✓ — §t4 done-check threshold corrected in milestone doc |
+| 2 | non-blocking | fixed ✓ — `_parse_finish` promoted to `parse_finish` in catalog_resolver |
+| 3 | non-blocking | backlog — fixture skip guard for absent sample files (no CI yet) |
+
+**t4 approved for merge.**
 
 ## Done-check output
 

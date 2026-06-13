@@ -507,7 +507,8 @@ python3 main.py \
 ```
 
 Expected: summary printed to stdout, `output/Joey_Kitchen_V2_order_form.xlsx`
-created, exit code 0. Summary must show ≥10 resolved items.
+created, exit code 0. Summary must show ≥10 total items (27 for Joey kitchen;
+7 have catalog matches).
 
 **Claude-code prompt.**
 > Implement `main.py` per `docs/m-boxy-pipeline.md §t4`.

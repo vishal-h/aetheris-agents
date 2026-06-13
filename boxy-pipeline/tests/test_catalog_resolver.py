@@ -10,7 +10,7 @@ from catalog_resolver import (
     _extract_cabinet_type,
     _is_upper,
     _parse_dimensions,
-    _parse_finish,
+    parse_finish,
     _resolve_component,
     load_catalog,
     resolve,
@@ -60,21 +60,21 @@ def _make_base_item(**kwargs) -> CatalogItem:
 
 
 # ---------------------------------------------------------------------------
-# _parse_finish
+# parse_finish
 # ---------------------------------------------------------------------------
 
 
 def test_parse_finish_valid():
-    assert _parse_finish("2001:Ivory White:2000") == ("2001", "Ivory White", "2000")
+    assert parse_finish("2001:Ivory White:2000") == ("2001", "Ivory White", "2000")
 
 
 def test_parse_finish_preserves_colons_in_name():
-    assert _parse_finish("2004:Mingo Oak:2000") == ("2004", "Mingo Oak", "2000")
+    assert parse_finish("2004:Mingo Oak:2000") == ("2004", "Mingo Oak", "2000")
 
 
 def test_parse_finish_invalid_raises():
     with pytest.raises(ValueError):
-        _parse_finish("2001-Ivory White")
+        parse_finish("2001-Ivory White")
 
 
 # ---------------------------------------------------------------------------

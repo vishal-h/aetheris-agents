@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 
-from catalog_resolver import _parse_finish, resolve as resolve_catalog
+from catalog_resolver import parse_finish, resolve as resolve_catalog
 from order_formatter import write_order_form
 from plan_extractor import extract_pdfs
 from schema import PipelineResult, ResolvedItem
@@ -96,8 +96,8 @@ def main() -> None:
             print(f"Error: {label} not found: {p}", file=sys.stderr)
             sys.exit(1)
 
-    upper_finish = _parse_finish(args.upper_finish)
-    lower_finish = _parse_finish(args.lower_finish)
+    upper_finish = parse_finish(args.upper_finish)
+    lower_finish = parse_finish(args.lower_finish)
 
     try:
         run_pipeline(

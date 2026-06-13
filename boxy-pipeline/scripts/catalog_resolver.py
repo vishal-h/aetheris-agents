@@ -21,7 +21,7 @@ from schema import CatalogItem, PlanComponent, ResolvedItem
 _COLOR_HEADER_RE = re.compile(r"^\*{0,2}(\d{4})$")
 
 
-def _parse_finish(spec: str) -> tuple[str, str, str]:
+def parse_finish(spec: str) -> tuple[str, str, str]:
     """Parse "2001:Ivory White:2000" → (color_code, color_name, series)."""
     parts = spec.split(":", 2)
     if len(parts) != 3:
@@ -244,8 +244,8 @@ def main() -> None:
     parser.add_argument("--lower-finish", required=True, metavar="CODE:NAME:SERIES")
     args = parser.parse_args()
 
-    upper_finish = _parse_finish(args.upper_finish)
-    lower_finish = _parse_finish(args.lower_finish)
+    upper_finish = parse_finish(args.upper_finish)
+    lower_finish = parse_finish(args.lower_finish)
 
     raw = sys.stdin.read()
     try:

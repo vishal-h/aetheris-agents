@@ -31,6 +31,21 @@ TEMPLATE_FILE = SAMPLES_DIR / "Updated_Boxy_MSRP_Sales_Order_Form.xlsx"
 
 
 @pytest.fixture()
+def multi_sheet_template(tmp_path: Path) -> Path:
+    """Template with multiple sheets — verifies sheet stripping."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "2000 Order Form"
+    ws.cell(11, COL_ITEM).value = "*ITEM"
+    wb.create_sheet("1000 Price List")
+    wb.create_sheet("2000 Price List")
+    wb.create_sheet("3000 Order Form")
+    path = tmp_path / "multi_template.xlsx"
+    wb.save(path)
+    return path
+
+
+@pytest.fixture()
 def minimal_template(tmp_path: Path) -> Path:
     """Minimal workbook with a '2000 Order Form' sheet for unit tests."""
     wb = openpyxl.Workbook()
@@ -91,6 +106,17 @@ def _unresolved_item(code: str = "BLB42FHL", drawing: str = "El1", qty: int = 1)
         "match_confidence": "unresolved",
         "match_notes": None,
     }
+
+
+# ---------------------------------------------------------------------------
+# Sheet stripping
+# ---------------------------------------------------------------------------
+
+
+def test_output_has_single_sheet(multi_sheet_template, tmp_path):
+    write_order_form([], multi_sheet_template, "test", tmp_path)
+    wb = openpyxl.load_workbook(tmp_path / "test_order_form.xlsx")
+    assert wb.sheetnames == ["2000 Order Form"]
 
 
 # ---------------------------------------------------------------------------
@@ -421,3 +447,43 @@ def test_cli_unresolved_items_flagged(tmp_path):
         and "UNRESOLVED - manual review required" in str(ws.cell(r, COL_SPECIAL).value)
     ]
     assert len(unresolved_flagged) >= 1, "Expected at least one unresolved item flagged"
+
+
+@pytest.mark.integration
+def test_no_stale_formulas_beyond_used_rows(tmp_path):
+    """Rows 42–67 must be blank after formatter clears the unused template range."""
+    elevation_pdf = SAMPLES_DIR / "Joey-_Kitchen_2D_Plans_V2.pdf"
+    floor_pdf = SAMPLES_DIR / "Joey-_Kitchen_Plan_V2.pdf"
+
+    t1 = subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "plan_extractor.py"),
+         str(elevation_pdf), str(floor_pdf)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+    )
+    t2 = subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "catalog_resolver.py"),
+         "--catalog", str(TEMPLATE_FILE),
+         "--upper-finish", "2001:Ivory White:2000",
+         "--lower-finish", "2004:Mingo Oak:2000"],
+        input=t1.stdout, capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+    )
+    t3 = subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "order_formatter.py"),
+         "--template", str(TEMPLATE_FILE),
+         "--project", "Joey_Kitchen_V2",
+         "--output-dir", str(tmp_path)],
+        input=t2.stdout, capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+    )
+    assert t3.returncode == 0
+
+    wb = openpyxl.load_workbook(tmp_path / "Joey_Kitchen_V2_order_form.xlsx")
+    ws = wb["2000 Order Form"]
+
+    # Joey kitchen: 27 items + 3 fees → rows 12–41 used; rows 42–67 must be blank
+    stale = [
+        (r, c, ws.cell(r, c).value)
+        for r in range(42, 68)
+        for c in range(COL_ITEM, COL_SPECIAL + 1)
+        if ws.cell(r, c).value is not None
+    ]
+    assert not stale, f"Stale values in unused rows: {stale[:5]}"

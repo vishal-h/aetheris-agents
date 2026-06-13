@@ -41,6 +41,8 @@ def write_order_form(
     Returns the path of the written file.
     """
     wb = openpyxl.load_workbook(template_path)
+    for sheet_name in [s for s in wb.sheetnames if s != SHEET_NAME]:
+        del wb[sheet_name]
     ws = wb[SHEET_NAME]
 
     row = FIRST_DATA_ROW
@@ -82,6 +84,11 @@ def write_order_form(
             ws.cell(row, col).value = None
         row += 1
         line_num += 1
+
+    # Clear stale template formulas in rows beyond what we wrote
+    for r in range(row, 68):
+        for c in range(COL_ITEM, COL_SPECIAL + 1):
+            ws.cell(r, c).value = None
 
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / f"{project_name}_order_form.xlsx"

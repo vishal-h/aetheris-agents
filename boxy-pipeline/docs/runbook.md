@@ -142,8 +142,11 @@ The output Excel file opens directly in the Boxy Sales Order Form format:
 - Rows 12–38: line items (cabinet codes, color, qty, unit price, amount formula)
 - Rows 39–41: fee placeholder rows (Assembly Fee, Modification Fee, Delivery Fee)
   — fill in manually before submission
-- Rows 42–67: blank template rows (VLOOKUP evaluates to "" — leave as-is)
+- Rows 42–67: blank — formatter clears all cells in this range; no VLOOKUP formulas
 - Row 68: subtotal (`=SUM($F12:$F67)`)
+
+The output file contains only the `2000 Order Form` sheet; all Price List and other
+Order Form sheets from the template are stripped before saving.
 
 Items with `match_confidence: "unresolved"` appear in the form with a blank Color
 and Unit Price, and `"UNRESOLVED - manual review required"` in the Special Request

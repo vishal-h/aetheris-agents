@@ -69,11 +69,22 @@ const toolsModule: Module = {
   ],
 };
 
+// Playground — Run Composer panel
+const playgroundModule: Module = {
+  id: 'playground',
+  label: 'Playground',
+  icon: 'FlaskConical',
+  sections: [
+    { id: 'playground', label: 'Composer', icon: 'FlaskConical', path: '/playground' },
+  ],
+};
+
 // Module registry - add new modules here
 export const modules: Module[] = [
   harnessModule,
   orchestratorModule,
   toolsModule,
+  playgroundModule,
   f2Module,
   provenanceModule,
 ];

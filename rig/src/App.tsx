@@ -16,6 +16,7 @@ import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
 import { MigrationStatus } from '@/components/modules/provenance/MigrationStatus';
 import { ZipStatus } from '@/components/modules/provenance/ZipStatus';
+import { PlaygroundView } from '@/components/modules/playground/PlaygroundView';
 import { useScanStatus } from '@/hooks/useScanStatus';
 
 function App() {
@@ -105,6 +106,13 @@ function App() {
                 ]} />
               }
             />
+
+            {/* Playground — Run Composer */}
+            <Route path="/playground" element={
+              <div className="flex flex-1 h-full overflow-hidden bg-background">
+                <PlaygroundView />
+              </div>
+            } />
 
             {/* Settings */}
             <Route path="/settings" element={<SettingsRoute />} />

@@ -203,8 +203,9 @@ From `rig/src/modules/registry.ts`:
 | Tools | `tools` | Tools (`/tools`) | 1 |
 | F2 | `f2` | Operations (`/f2/operations`), Viewer (`/f2/viewer`) | 2 |
 | Provenance | `provenance` | Dashboard (`/provenance`) | 1 |
+| Playground | `playground` | Composer (`/playground`) | 1 |
 
-The sidebar order is: Harness → Orchestrator → Tools → F2 → Provenance.
+The sidebar order is: Harness → Orchestrator → Tools → Playground → F2 → Provenance.
 
 `architecture.md` component map is missing: Tools module, Usage section, Agents (capability matrix) section, Settings.
 
@@ -212,7 +213,7 @@ The sidebar order is: Harness → Orchestrator → Tools → F2 → Provenance.
 
 ## 4. Tauri Command Inventory
 
-42 commands registered in `lib.rs:46-89`.
+47 commands registered in `lib.rs`.
 
 | Module | Commands | Spec said |
 |--------|----------|-----------|
@@ -225,14 +226,15 @@ The sidebar order is: Harness → Orchestrator → Tools → F2 → Provenance.
 | capability_matrix | 1 (`capability_matrix_load`) | P5: 1 ✓ |
 | usage | 1 (`usage_stats_load`) | P6: 1 ✓ |
 | tools | 5 (`tools_list_inventory`, `tools_read_script`, `tools_run_script`, `tools_call_mcp`, `tools_list_mcp`) | P4-tools: 4 + 1 extra |
+| playground | 5 (`playground_connection_status`, `playground_get_policy`, `playground_get_sandboxes`, `playground_submit_run`, `playground_run_status`) | m-playground-p2: 5 ✓ |
 
-**specs.md section 4** documents only the harness, trajectory, and orchestrator commands. The agent_config, capability_matrix, usage, and tools command shapes are undocumented there.
+**specs.md section 4** documents harness, trajectory, orchestrator, and playground commands. The agent_config, capability_matrix, usage, and tools command shapes are undocumented there.
 
 ---
 
 ## 5. Hooks and types.ts
 
-### Hooks (20 files in `rig/src/hooks/`)
+### Hooks (21 files in `rig/src/hooks/`)
 
 | Hook | Lines | Purpose |
 |------|-------|---------|
@@ -254,8 +256,9 @@ The sidebar order is: Harness → Orchestrator → Tools → F2 → Provenance.
 | `useFileIndex.ts` | 62 | F2 file index |
 | `useDuplicates.ts` | 54 | F2 duplicate groups |
 | `useWatchedFolders.ts` | 85 | F2 watched folders |
+| `usePlayground.ts` | 181 | Playground: connection status, policy, sandboxes, submit, run status, MRU history |
 | `useSessionRecord.ts` | 26 | Session recording |
-| `types.ts` | 458 | All TypeScript interfaces (52+ exports) |
+| `types.ts` | 574 | All TypeScript interfaces (52+ exports + 11 playground types) |
 
 ### types.ts additions vs specs.md section 5
 
@@ -422,6 +425,8 @@ Rig reads none of these tables. They are harness-internal.
 | `AETHERIS_DB_PATH` | `lib.rs:139`, `trajectory.rs:25` | Opens harness SQLite; derives aetheris_dir for orchestrator CWD |
 | `AETHERIS_AGENTS_PATH` | `lib.rs:167`, `lib.rs:197`, `capability_matrix.rs:31` | Agent repo root for orchestrator + tools + capability matrix |
 | `PROVENANCE_DB_PATH` | `lib.rs:111` | Opens corpus DuckDB read-only |
+| `AETHERIS_API_URL` | `commands/playground.rs` | Base URL of running aetheris harness API (e.g. `http://localhost:4001`) |
+| `AETHERIS_API_TOKEN` | `commands/playground.rs` | Bearer token matching `AETHERIS_PLAYGROUND_TOKENS` on the harness side |
 | `USER` / `USERNAME` | `provenance.rs:11-12` | Display name in Provenance tab |
 
 ### Documented but NOT directly read by Rig

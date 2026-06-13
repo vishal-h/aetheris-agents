@@ -8,7 +8,7 @@ All file references verified against code as of `docs/rig/current-state-2026-06.
 Sizes: **S** < half a day · **M** a day or two · **L** milestone-sized (gets its
 own `docs/rig/milestones/` directory and issue docs before implementation).
 
-GitHub issues: #42–#50 on vishal-h/aetheris-agents.
+GitHub issues: #42–#51 on vishal-h/aetheris-agents.
 
 ---
 
@@ -236,14 +236,100 @@ section mentions strict mode.
 
 ---
 
+## boxy-pipeline
+
+### BL-010 — Clean order_formatter output: strip extra sheets and clear stale template formulas (#51)
+**Size:** S · **Priority:** now
+
+Two output defects observed on first real run:
+
+1. **Extra sheets in output xlsx.** `--template` and `--catalog` point to the
+   same file (`Updated_Boxy_MSRP_Sales_Order_Form.xlsx`), which contains all
+   five `{N}000 Price List` and `{N}000 Order Form` sheets. openpyxl loads and
+   saves the whole workbook, so the output carries all those sheets. Only
+   `2000 Order Form` should be in the output file.
+
+2. **`#NAME?` errors in unused template rows.** The template has VLOOKUP
+   formulas pre-filled in rows 12–67. The formatter writes items into rows
+   12–N, but rows N+1 through 67 retain the original VLOOKUP formulas. When
+   openpyxl saves the workbook, named-range references in those formulas break,
+   producing `#NAME?` errors visible in Excel.
+
+**Fix (both in `scripts/order_formatter.py`):**
+- After loading the template workbook, delete all sheets except `2000 Order Form`.
+- After writing all line items and fee placeholder rows, clear all cells in
+  columns B–K (cols 2–11) for rows `(last_written_row + 1)` through `67`. Set to `None`.
+
+**Touches.**
+- `scripts/order_formatter.py`
+- `tests/test_order_formatter.py` — add tests: output has exactly one sheet;
+  no `#NAME?` errors beyond last written row (`@pytest.mark.integration`)
+- `docs/runbook.md` — update §"Understanding the output": rows beyond fee
+  placeholders are now blank, not VLOOKUP
+
+**Do not generate.**
+- Changes to any other script
+- Changes to `schema.py`
+
+**Done-check.**
+```bash
+cd aetheris-agents/boxy-pipeline
+pip install -r requirements.txt -q
+python3 -m pytest tests/test_order_formatter.py -v
+python3 main.py \
+  --drawings data/samples/Joey-_Kitchen_2D_Plans_V2.pdf \
+             data/samples/Joey-_Kitchen_Plan_V2.pdf \
+  --catalog  data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
+  --template data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
+  --project  Joey_Kitchen_V2 \
+  --upper-finish "2001:Ivory White:2000" \
+  --lower-finish "2004:Mingo Oak:2000"
+python3 -c "
+import openpyxl
+wb = openpyxl.load_workbook('output/Joey_Kitchen_V2_order_form.xlsx')
+print('Sheets:', wb.sheetnames)
+assert wb.sheetnames == ['2000 Order Form'], 'Expected exactly one sheet'
+ws = wb.active
+errors = [(r, c, ws.cell(r,c).value) for r in range(31,68) for c in range(1,12)
+          if ws.cell(r,c).value and '#NAME?' in str(ws.cell(r,c).value)]
+assert not errors, f'#NAME? errors found: {errors}'
+print('OK — one sheet, no #NAME? errors')
+"
+```
+
+**Claude-code prompt.**
+> Fix two output defects in `scripts/order_formatter.py` per
+> `docs/backlog-2026-06.md §BL-010`.
+>
+> 1. After loading the template workbook with openpyxl, delete all sheets
+>    except `"2000 Order Form"` before writing any data.
+> 2. After writing all line items and fee placeholder rows, clear all cells
+>    in columns B–K (cols 2–11) for rows `(last_written_row + 1)` through
+>    `67` by setting each cell's value to `None`.
+>
+> Update `tests/test_order_formatter.py`:
+> - Unit test: output workbook has exactly one sheet named `"2000 Order Form"`.
+> - Integration test (`@pytest.mark.integration`): no cell in rows 31–67
+>   contains a string with `"#NAME?"` after a full pipe run.
+>
+> Update `docs/runbook.md` §"Understanding the output": replace the note
+> about rows 42–67 retaining VLOOKUP formulas with a note that all rows
+> beyond the fee placeholders are blank.
+>
+> Run the done-check from §BL-010 and include actual output (including the
+> Python verification snippet result) in your review packet.
+
+---
+
 ## Suggested order
 
 | Order | Ticket | Why first |
 |-------|--------|-----------|
 | 1 | BL-001, BL-002 | Minutes each; locks in everything just built |
-| 2 | BL-003 | The five orphaned rows are sitting test fixtures; pairs with shipped stalled? marker |
-| 3 | BL-005 | Small, immediate daily-use value |
-| 4 | BL-009 | One-line change once baseline holds |
-| 5 | BL-004 | Trivial, batch with any harness.rs touch |
-| 6 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
+| 2 | BL-010 | First real run revealed output defects; fix before next client demo |
+| 3 | BL-003 | The five orphaned rows are sitting test fixtures; pairs with shipped stalled? marker |
+| 4 | BL-005 | Small, immediate daily-use value |
+| 5 | BL-009 | One-line change once baseline holds |
+| 6 | BL-004 | Trivial, batch with any harness.rs touch |
+| 7 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
 | — | BL-006 | Fires on its own trigger |

@@ -26,7 +26,7 @@ Refresh trigger: milestone end, or before any handoff session.
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `e91820c` | 2026-05-24 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b4a0eb8` | 2026-06-10 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `d825ddd` | 2026-06-11 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `5a6b1cf` | 2026-06-13 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `cdb6a21` | 2026-06-13 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-11 |
 
 ---

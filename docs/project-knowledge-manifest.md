@@ -16,9 +16,9 @@ Refresh trigger: milestone end, or before any handoff session.
 
 | export name | repo path | repo | commit | last changed |
 |-------------|-----------|------|--------|--------------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `7ded982` | 2026-06-11 |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `e324b11` | 2026-06-13 |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
-| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
+| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `e324b11` | 2026-06-13 |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `86fde40` | 2026-06-13 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |

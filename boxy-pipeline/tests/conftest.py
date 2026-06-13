@@ -19,6 +19,7 @@ def pytest_collection_modifyitems(config, items):
     samples_present = (
         (_SAMPLES_DIR / "Joey-_Kitchen_2D_Plans_V2.pdf").exists()
         and (_SAMPLES_DIR / "Joey-_Kitchen_Plan_V2.pdf").exists()
+        and (_SAMPLES_DIR / "Updated_Boxy_MSRP_Sales_Order_Form.xlsx").exists()
     )
     if samples_present:
         return

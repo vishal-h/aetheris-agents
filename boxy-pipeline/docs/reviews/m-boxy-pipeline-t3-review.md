@@ -74,7 +74,7 @@ Fee placeholders: 3 rows
 
 ```
 22 passed, 0 failed — tests/test_order_formatter.py
-(full suite result pending)
+98 passed, 0 failed — full suite (t1 + t2 + t3)
 ```
 
 ---

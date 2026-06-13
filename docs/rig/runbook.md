@@ -27,6 +27,8 @@ export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
 export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb      # optional
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...                             # optional, or set in Settings
+export AETHERIS_API_URL=http://localhost:4001  # optional: enables Playground module
+export AETHERIS_API_TOKEN=tok-abc              # optional: see Playground module section
 
 # Start dev server
 cargo tauri dev
@@ -246,6 +248,39 @@ AETHERIS_API_URL=http://localhost:4001
 AETHERIS_API_TOKEN=tok-abc
 cargo tauri dev
 ```
+
+### Starting Rig against the playground API
+
+With the harness API running, start Rig with the two additional env vars:
+
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/rig
+
+export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
+export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
+export AETHERIS_API_URL=http://localhost:4001
+export AETHERIS_API_TOKEN=tok-abc   # must match AETHERIS_PLAYGROUND_TOKENS
+
+cargo tauri dev
+```
+
+The Playground sidebar entry (FlaskConical icon) appears once Rig starts.
+The Composer form is shown only when the connection gate passes — if it shows
+"not connected", check that both `AETHERIS_API_URL` and `AETHERIS_API_TOKEN`
+are set and that the harness is listening (`curl -s http://localhost:4001/api/playground/policy -H "Authorization: Bearer tok-abc"`).
+
+**Full e2e flow:**
+1. Fill in provider, model, sandbox, system prompt in the Composer form.
+2. Submit — the returned `run_id` appears with a "Check status" button.
+3. Click "Check status" to poll on demand (no background polling).
+4. Switch to **Harness → Runs** to see the run in RunList and open its trajectory.
+
+**Violation testing:** Submit with `max_steps` above the policy cap — the
+Composer renders each violation's field and message as a structured list, not
+a raw error string.
+
+**MRU:** Recent submissions persist in localStorage across restarts. The list
+appears below the form after the first submission.
 
 ### Exposing beyond localhost (reverse proxy)
 

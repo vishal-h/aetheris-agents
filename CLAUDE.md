@@ -96,7 +96,7 @@ Each use case follows:
   output/           # gitignored; .gitkeep committed
 ```
 
-Current use cases: `payslip`, `drive`, `email`, `api` (uc-api-agent / TAP protocol).
+Current use cases: `payslip`, `drive`, `email`, `api` (uc-api-agent / TAP protocol), `boxy-pipeline` (pure Python; no Aetheris agent).
 
 ### Agent files
 
@@ -144,6 +144,7 @@ cot1_id   = "#{orb_id}-cot1"
 - **`--output-dir` flag** on generation scripts (default `"output"`); lets tests write to `tmp_path`.
 - **`cwd=USE_CASE_ROOT`** in subprocess calls from tests so `data/` and `scripts/` resolve correctly.
 - **No `__init__.py`** in use-case directories whose name collides with stdlib packages. Use `conftest.py` to insert `scripts/` into `sys.path` instead.
+- **Done-check thresholds:** set numeric thresholds (e.g. "≥N resolved items") only after running the pipeline against actual sample data. Estimating before examining output consistently produces wrong numbers and requires a correction commit.
 
 ### conftest.py pattern
 
@@ -157,6 +158,8 @@ def pytest_configure(config):
 ```
 
 Integration tests that require external tools (wkhtmltopdf, etc.) get `@pytest.mark.integration` and are auto-skipped if the tool is absent.
+
+When multiple integration tests share an expensive setup (e.g. running the full pipeline once), extract it into a `@pytest.fixture(scope="module")` rather than repeating the subprocess chain in each test body.
 
 ### Domain documents (api/ use case)
 
@@ -207,5 +210,6 @@ routes, or DB tables. Zero FAIL findings and zero WARN findings required before 
 | drive | `drive/docs/t3-implementation-notes.md` |
 | email | `email/docs/t3-implementation-notes.md` |
 | api (TAP) | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
+| boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/runbook.md` |
 
 The `docs/agent-creation-guide.md` is the authoritative reference for building new agents.

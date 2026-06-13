@@ -108,13 +108,20 @@ pub fn playground_connection_status(
 ) -> Result<PlaygroundStatus, String> {
     match (&state.api_url, &state.api_token) {
         (Some(url), Some(_token)) => {
-            // Probe the policy endpoint: a 200 or 401 both mean the server is up;
-            // a connection error means it is not.
+            // Probe the policy endpoint without auth: a 200 or 401 both mean
+            // the server is up; a connection error means it is not.
+            // Intentionally unauthenticated — we want to distinguish
+            // "server unreachable" from "wrong token"; adding the bearer
+            // header would collapse both into a 401.
+            // Per-call client is intentional: low-frequency probe, no
+            // connection pooling needed.
             let client = reqwest::blocking::Client::new();
             match client
                 .get(format!("{}/api/playground/policy", url))
                 .send()
             {
+                // 200 (authed) or 401 (unauthed probe) both confirm the server
+                // is reachable — connected = true either way.
                 Ok(_) => Ok(PlaygroundStatus {
                     connected: true,
                     api_url:   Some(url.clone()),
@@ -149,6 +156,7 @@ pub fn playground_get_policy(
     state: State<'_, PlaygroundState>,
 ) -> Result<PlaygroundPolicy, String> {
     let (url, token) = require_connection(&state)?;
+    // Intentional: low-frequency command, per-call client is acceptable.
     let client = reqwest::blocking::Client::new();
 
     let resp = client
@@ -174,6 +182,7 @@ pub fn playground_get_sandboxes(
     state: State<'_, PlaygroundState>,
 ) -> Result<PlaygroundSandboxes, String> {
     let (url, token) = require_connection(&state)?;
+    // Intentional: low-frequency command, per-call client is acceptable.
     let client = reqwest::blocking::Client::new();
 
     let resp = client
@@ -203,6 +212,7 @@ pub fn playground_submit_run(
     request: PlaygroundSubmitRequest,
 ) -> Result<PlaygroundSubmitResult, String> {
     let (url, token) = require_connection(&state)?;
+    // Intentional: low-frequency command, per-call client is acceptable.
     let client = reqwest::blocking::Client::new();
 
     let resp = client
@@ -236,6 +246,7 @@ pub fn playground_run_status(
     run_id: String,
 ) -> Result<PlaygroundRunStatus, String> {
     let (url, token) = require_connection(&state)?;
+    // Intentional: low-frequency command, per-call client is acceptable.
     let client = reqwest::blocking::Client::new();
 
     let resp = client

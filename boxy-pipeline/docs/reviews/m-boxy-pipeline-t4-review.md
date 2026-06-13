@@ -39,8 +39,8 @@ a pipeline bug.
 ## Test results
 
 ```
-5 passed, 0 failed — tests/test_pipeline.py
-(full suite result pending)
+5 passed, 0 failed   — tests/test_pipeline.py
+103 passed, 0 failed — full suite (t1 + t2 + t3 + t4)
 ```
 
 Tests:

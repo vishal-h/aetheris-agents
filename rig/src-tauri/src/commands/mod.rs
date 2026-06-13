@@ -3,6 +3,7 @@ pub mod capability_matrix;
 pub mod f2;
 pub mod harness;
 pub mod orchestrate;
+pub mod playground;
 pub mod provenance;
 pub mod tools;
 pub mod trajectory;

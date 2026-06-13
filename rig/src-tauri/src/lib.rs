@@ -40,6 +40,8 @@ pub struct ToolsState {
     pub agents_path: Option<String>,
 }
 
+pub use commands::playground::PlaygroundState;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -86,6 +88,11 @@ pub fn run() {
       commands::tools::tools_run_script,
       commands::tools::tools_call_mcp,
       commands::tools::tools_list_mcp,
+      commands::playground::playground_connection_status,
+      commands::playground::playground_get_policy,
+      commands::playground::playground_get_sandboxes,
+      commands::playground::playground_submit_run,
+      commands::playground::playground_run_status,
     ])
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_dialog::init())
@@ -195,6 +202,13 @@ pub fn run() {
 
       app.manage(ToolsState {
         agents_path: std::env::var("AETHERIS_AGENTS_PATH").ok(),
+      });
+
+      // Playground API connection (AETHERIS_API_URL + AETHERIS_API_TOKEN).
+      // Token is read here in Rust and never forwarded to the frontend.
+      app.manage(PlaygroundState {
+        api_url:   std::env::var("AETHERIS_API_URL").ok(),
+        api_token: std::env::var("AETHERIS_API_TOKEN").ok(),
       });
 
       Ok(())

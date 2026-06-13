@@ -484,3 +484,91 @@ export type SelectedTool =
   | { kind: 'script';  use_case: string; script: ManifestScript }
   | { kind: 'harness'; tool: HarnessTool }
   | { kind: 'mcp';     tool: McpTool };
+
+// ============================================================================
+// Playground types — matching src-tauri/src/commands/playground.rs
+// Token is never present in any of these types (read server-side in Rust only).
+// ============================================================================
+
+export interface PlaygroundStatus {
+  connected: boolean;
+  api_url:   string | null;
+  error:     string | null;
+}
+
+export interface PolicyCaps {
+  max_steps:        number | null;
+  max_spawn_depth:  number | null;
+  max_tokens:       number | null;
+  max_prompt_chars: number | null;
+}
+
+export interface PolicyDefaults {
+  max_steps:        number | null;
+  max_spawn_depth:  number | null;
+  context_strategy: string | null;
+  tools:            string[] | null;
+  user_prompt:      string | null;
+}
+
+export interface PlaygroundPolicy {
+  providers: string[];
+  models:    Record<string, string[]>;
+  tools:     string[];
+  caps:      PolicyCaps;
+  defaults:  PolicyDefaults;
+}
+
+export interface SandboxEntry {
+  id:          string;
+  description: string;
+}
+
+export interface PlaygroundSandboxes {
+  sandboxes: SandboxEntry[];
+}
+
+export interface PlaygroundSubmitRequest {
+  sandbox_id:        string;
+  provider:          string;
+  model:             string;
+  system_prompt:     string;
+  user_prompt?:      string;
+  tools?:            string[];
+  max_steps?:        number;
+  max_spawn_depth?:  number;
+  max_tokens?:       number;
+  label?:            string;
+  context_strategy?: string;
+  max_context_steps?: number;
+  temperature?:      number;
+  top_p?:            number;
+}
+
+export interface PlaygroundSubmitResult {
+  run_id: string;
+}
+
+export interface PlaygroundRunStatus {
+  run_id:      string;
+  status:      string;
+  step_count:  number;
+  started_at:  string;
+  finished_at: string | null;
+  label:       string | null;
+}
+
+/** Structured error body returned by the API on 422 policy violations. */
+export interface PlaygroundApiError {
+  error: {
+    code:        string;
+    message:     string;
+    violations?: PlaygroundViolation[];
+  };
+}
+
+export interface PlaygroundViolation {
+  field:   string;
+  code:    string;
+  message: string;
+}

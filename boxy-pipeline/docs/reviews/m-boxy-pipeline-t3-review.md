@@ -1,4 +1,14 @@
-# Review — m-boxy-pipeline t3 — order formatter
+# Review — m-boxy-pipeline t3 — order formatter — round 1
+
+## Summary
+
+| # | Severity | Status |
+|---|---|---|
+| 1 | non-blocking | noted — integration test duplication; fixture pattern for t4 |
+| 2 | non-blocking | noted — t4 must pass `pipeline_result.resolved` to `write_order_form`, not full struct |
+| 3 | question | resolved ✓ — rows 42–67 VLOOKUP retention is intentional |
+
+**t3 approved for merge.**
 
 ## Done-check results
 
@@ -76,6 +86,25 @@ Fee placeholders: 3 rows
 22 passed, 0 failed — tests/test_order_formatter.py
 98 passed, 0 failed — full suite (t1 + t2 + t3)
 ```
+
+---
+
+## Round-1 findings
+
+**Finding 1 — Integration test duplication (non-blocking, deferred to t4)**
+The four integration tests each repeat the full t1→t2 subprocess chain (~20 lines
+each). A shared `@pytest.fixture` that runs the pipe once and returns the open
+workbook would eliminate the duplication. Pattern to apply in `test_main.py` (t4).
+
+**Finding 2 — `write_order_form` takes `list[dict]`, not `PipelineResult` (non-blocking)**
+Intentional for t3 — the formatter is called directly from the t2 pipe. When `main.py`
+(t4) wires the pipeline, it must extract `.resolved` from the `PipelineResult` before
+calling `write_order_form`. No change needed in `order_formatter.py`.
+
+**Finding 3 — Rows 42–67 retain template VLOOKUP formulas (answered)**
+Intentional. Those rows are beyond the 27 items + 3 fees we write. Since col B (ITEM)
+is empty, the VLOOKUP evaluates to `""` — the rows appear blank to the reviewer.
+The `=SUM($F12:$F67)` subtotal in F68 sums correctly. On record; no fix needed.
 
 ---
 

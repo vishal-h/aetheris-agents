@@ -1,0 +1,7 @@
+# Client data — never commit
+data/*
+!data/.gitkeep
+
+# Generated output — local only
+output/*
+!output/.gitkeep

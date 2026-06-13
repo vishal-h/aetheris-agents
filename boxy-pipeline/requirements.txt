@@ -1,0 +1,16 @@
+# boxy-pipeline dependencies
+#
+# pdfplumber — extracts embedded text from 20-20 PDF drawings.
+#   Do NOT replace with pytesseract/pdf2image; the 20-20 PDFs have
+#   embedded text (not scanned images). OCR is unnecessary and slower.
+#
+# pandas — reads Boxy MSRP Excel catalog (Price List sheets).
+#   openpyxl is the pandas xlsx engine; also used directly by
+#   order_formatter.py to write formulas into the Order Form sheet.
+#
+# pytest — test runner for all three layers (unit, integration, e2e).
+
+pdfplumber>=0.11.9
+pandas>=3.0.2
+openpyxl>=3.1.5
+pytest>=8.0.0

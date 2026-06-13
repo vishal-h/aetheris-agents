@@ -322,8 +322,9 @@ python3 scripts/plan_extractor.py \
 
 Expected: JSON array of `ResolvedItem` dicts. `DB30` resolves to
 `DB30-2004` with `match_confidence: "exact"`. Appliance codes
-(`KFNF 9959 iDE`, `G 7186 SCVi`) appear as `unresolved`. At least 10
-`exact` matches present.
+(`KFNF 9959 iDE`, `G 7186 SCVi`) appear as `unresolved`. At least 4
+`exact` matches present (`W2739`, `DB30`, `DB21`, `SB42`); all three
+appliance codes (`DA 6698 W`, `G 7186 SCVi`, `KFNF 9959 iDE`) unresolved.
 
 **Claude-code prompt.**
 > Implement `scripts/catalog_resolver.py` per `docs/m-boxy-pipeline.md §t2`.

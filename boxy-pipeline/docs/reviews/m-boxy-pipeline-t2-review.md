@@ -4,8 +4,9 @@
 
 | # | Severity | Status |
 |---|---|---|
-| 1 | **doc error** | noted — done-check "≥10 exact matches" is unachievable with this data |
-| 2 | non-blocking | col-index discrepancy between milestone doc and actual Excel |
+| 1 | **doc error** | fixed ✓ — milestone doc done-check updated to "≥4 exact matches" |
+| 2 | non-blocking | noted — col-index discrepancy documented in implementation notes |
+| 3 | **question** | resolved ✓ — `DA 6698 W` emits two separate unresolved records (one per drawing) |
 
 ---
 
@@ -25,67 +26,58 @@ unresolved: 20   (BLB42FHL ×3, USF330 ×3, USF357 ×2, DA 6698 W ×2, and other
 | `DB30` has `match_confidence: "exact"` | ✓ |
 | `KFNF 9959 iDE` is `unresolved` | ✓ |
 | `G 7186 SCVi` is `unresolved` | ✓ |
-| At least 10 `exact` matches present | ✗ — 4 achieved (see Finding 1) |
+| At least 4 `exact` matches (corrected threshold) | ✓ |
 
 ---
 
-## Finding 1 — "≥10 exact matches" is unachievable (doc error)
+## Finding 1 — "≥10 exact matches" was wrong (doc error, fixed)
 
-The done-check requires at least 10 exact matches. The actual Boxy MSRP catalog
-contains entries for only 6 of the 20 distinct t1 codes (4 exact, 2 fuzzy).
-The remaining 14 are 20-20-specific codes or appliance codes with no Boxy
-catalog equivalent.
+The original done-check required at least 10 exact matches. The actual Boxy MSRP
+catalog contains entries for only 6 of the 20 distinct t1 codes (4 exact, 2 fuzzy).
+The remaining 14 are 20-20-specific codes or appliance codes with no Boxy equivalent.
 
-**Why the discrepancy:** The milestone doc was written against the expected
-project scope, not the specific Joey kitchen drawings. The six catalog-matching
-codes cover the Boxy cabinetry that actually appears in the drawings:
-
-```
-W2739     → W2739-2001   (exact — wall cabinet, upper finish)
-DB30      → DB30-2004    (exact — normalized from 3DB30, lower finish)
-DB21      → DB21-2004    (exact — normalized from 3DB21, lower finish)
-SB42      → SB42-2004    (exact — sink base, lower finish)
-W2424-24  → W2424-2001   (fuzzy — strip -24 suffix)
-W2439-24  → W2439-2001   (fuzzy — strip -24 suffix, appears on El2 and El4)
-```
+`docs/m-boxy-pipeline.md §t2` done-check updated to:
+> "At least 4 `exact` matches present (`W2739`, `DB30`, `DB21`, `SB42`); all three
+> appliance codes (`DA 6698 W`, `G 7186 SCVi`, `KFNF 9959 iDE`) unresolved."
 
 The unresolved codes fall into three categories:
 - **20-20 accessories/fillers:** `USF330`, `USF357`, `WEP42`, `BLB42FHL`, `BPBC12`,
-  `BPBC9`, `OVB36`, `CKT36`, `FSEP2493`, `SUW2418-24`, `WP3612-24HK` — these are
-  20-20 Design product codes with no Boxy equivalents
-- **Appliances:** `DA 6698 W`, `G 7186 SCVi`, `KFNF 9959 iDE` — dishwasher, oven, 
-  refrigerator (correct — these should be unresolved)
+  `BPBC9`, `OVB36`, `CKT36`, `FSEP2493`, `SUW2418-24`, `WP3612-24HK`
+- **Appliances:** `DA 6698 W`, `G 7186 SCVi`, `KFNF 9959 iDE` (correct — unresolved)
 
-The "exact" confidence threshold in the done-check assumes a catalog that matches
-the plan codes 1:1. The actual Joey kitchen uses a significant number of
-non-Boxy items.
-
----
-
-## Finding 2 — Column index discrepancy (non-blocking)
-
-The milestone doc states "col 2 = item code, col 3 = description" (1-indexed from the
-visible data columns NO., Image, Item, Description). The actual 0-indexed pandas column
-indices are col 4 = Item code, col 5 = Description. The implementation uses the actual
-indices; the doc's column numbering counts from `NO.` as column 1, skipping cols 0-1
-(branding/empty).
+**Cross-ticket note:** Both t1 ("≥15 codes") and t2 ("≥10 exact matches") had
+done-check thresholds set during milestone drafting before the sample files were
+examined. Going forward: don't write numeric done-check thresholds before running
+the script against the actual inputs.
 
 ---
 
-## Resolution approach
+## Finding 2 — Column index discrepancy (non-blocking, documented)
 
-The `DB30 → exact` requirement is met via the catalog normalization index:
-`3DB30` in the catalog is indexed under both `"3DB30"` (raw) and `"DB30"` (normalized,
-leading-digit stripped). When plan code `DB30` is looked up, it hits the `"DB30"` key
-in the index and is classified as `"exact"` — the base code matched exactly at the
-normalized level.
-
-SKUs are constructed as `{matched_code}-{color_code}` using the plan-side matched code,
-so `DB30` resolves to `DB30-2004` (not `3DB30-2004`), matching the done-check expectation.
+The milestone doc states "col 2 = item code, col 3 = description" (1-indexed from
+`NO.`). Actual 0-indexed pandas positions: col 4 = Item code, col 5 = Description.
+Implementation uses actual indices. Detail in implementation notes.
 
 ---
 
-## Full resolution table
+## Finding 3 — `DA 6698 W` per-drawing behaviour (resolved)
+
+`DA 6698 W` (dishwasher) appears on both `El3` and `floor_plan`. The resolver
+processes each `PlanComponent` independently → **two separate `unresolved`
+`ResolvedItem` records** in t2 output:
+
+```
+drawing='El3',         confidence='unresolved'
+drawing='floor_plan',  confidence='unresolved'
+```
+
+The resolution table below summarises by distinct code; `t2` output has 27 records
+total. **t3 implication:** the formatter will receive two line items for `DA 6698 W`
+and should emit both.
+
+---
+
+## Full resolution table (distinct codes)
 
 | Code | Drawing(s) | Confidence | SKU |
 |------|-----------|-----------|-----|

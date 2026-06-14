@@ -7,9 +7,19 @@ physically overlap in the PDF coordinate space, producing garbled character
 blends that no text-splitting algorithm can recover.
 
 **Evidence from Joey kitchen:**
-- Page 1 (floor plan / El1): 1 garbled token `'DCW243U9SRF339W2439'`
-- Pages 2–4 (El2–El4): 0 garbled tokens
-- Lost codes: `W0939L`, `W0939R` (map to `W0939-2001` in Boxy catalog, $105.46 each)
+- El1 (Joey-_Kitchen_2D_Plans_V2.pdf page 0): 1 garbled token `'DCW243U9SRF339W2439'`
+- El2–El4 (pages 1–3): 0 garbled tokens
+- Floor plan (Joey-_Kitchen_Plan_V2.pdf): 3 garbled tokens (`WEWP94W32E9LP42`,
+  `WEWP94329RDCW2439R`, `FSEP2F4S9E6P2496`)
+
+**W0939L / W0939R — implementation finding:** these codes were originally listed as
+recoverable "lost codes." Investigation during implementation confirmed they do **not**
+appear in either design PDF — not in the text layer (confirmed at all x_tolerance
+values) and not as visual labels in the rendered images. They appear in SO86708 because
+they were specified separately from the drawings (likely verbally or from a prior spec
+sheet). This is operationally relevant for **milestone 2 reconciliation**: when matching
+SO line items against drawing codes, `W0939-2001` will have no drawing counterpart and
+must be treated as an SO-only item rather than an unresolved drawing code.
 
 **The fix:** when a page has ≥1 garbled token (len > 12, no regex match), render
 that page as an image and pass it to the Claude vision API to extract cabinet

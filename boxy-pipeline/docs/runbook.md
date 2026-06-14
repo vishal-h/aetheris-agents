@@ -9,6 +9,9 @@ Operational guide for the boxy-pipeline use case. For design background, see
 
 - Python 3.12 (mise-managed — check `mise.toml` at repo root)
 - Sample files at `boxy-pipeline/data/samples/` (gitignored — never commit)
+- `ANTHROPIC_API_KEY` set in the environment — required by `plan_extractor.py`
+  for the vision fallback (garbled label detection). Text-layer extraction works
+  without it, but overlapping-label regions are skipped with a warning.
 
 ```bash
 cd aetheris-agents/boxy-pipeline

@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+
+
 @dataclass
 class PlanComponent:
     code: str           # raw code from drawing, e.g. "DB30", "BLB42FHL", "W2739"
@@ -44,3 +46,69 @@ class PipelineResult:
     source_drawings: list[str]
     catalog_file: str
     extracted_at: str   # ISO datetime
+
+
+# ---------------------------------------------------------------------------
+# Data layer types (boxy-pipeline-1a)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CatalogEntry:
+    """One item from the extracted catalog — all series, all colors."""
+    sku: str                    # e.g. "W2739-2001"
+    base_code: str              # e.g. "W2739" (leading-digit stripped)
+    raw_code: str               # as it appears in the Excel, e.g. "W2739"
+    series: str                 # "1000" … "5000"
+    color_code: str             # "2001", "2004", etc.
+    color_name: str             # "Ivory White", "Mingo Oak", etc.
+    description: str
+    cabinet_type: str           # first segment before comma
+    width_in: Optional[float]
+    height_in: Optional[float]
+    depth_in: Optional[float]
+    msrp: float
+    mapped_20_20_codes: list[str]   # known 20-20 equivalents; empty at extraction time
+    notes: Optional[str]            # free-text annotation; None at extraction time
+    catalog_version: str        # ISO date of extraction, e.g. "2026-06-14"
+    source_file: str            # basename of the source Excel
+
+
+@dataclass
+class SOLineItem:
+    """One line item from a Boxy Sales Order PDF."""
+    line: int
+    sku: str                    # e.g. "3DB30-2004"
+    description: str
+    qty: int
+    unit_price: float
+    amount: float
+    special_request: Optional[str]
+    is_fee: bool                # True for Assembly Fee, Delivery fee, etc.
+    is_accessory: bool          # True for Accs-* items
+
+
+@dataclass
+class SOHeader:
+    order_number: str           # e.g. "SO86708"
+    order_date: str             # ISO date
+    customer: str
+    bill_to: str
+    ship_to: str
+    estimate_number: Optional[str]
+    payment_term: Optional[str]
+    po_number: Optional[str]
+    account_manager: Optional[str]
+    ship_date: Optional[str]
+    memo: Optional[str]
+
+
+@dataclass
+class SalesOrder:
+    header: SOHeader
+    line_items: list[SOLineItem]
+    subtotal: float
+    tax_total: float
+    total: float
+    source_file: str
+    extracted_at: str           # ISO datetime

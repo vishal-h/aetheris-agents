@@ -4,6 +4,7 @@
 Outputs a JSON array of PlanComponent dicts to stdout.
 """
 import anthropic
+import argparse
 import base64
 import json
 import os
@@ -332,12 +333,50 @@ def extract_pdfs(pdf_paths: list[Path]) -> list[PlanComponent]:
     return _filter_floor_plan_fragments(list(seen.values()))
 
 
+def _write_plan_jsonl(
+    components: list[PlanComponent],
+    pdf_paths: list[Path],
+    project: str,
+    output_dir: Path,
+) -> Path:
+    """Write PlanComponent list to {output_dir}/{project}/plan.jsonl."""
+    import datetime
+    out_dir = output_dir / project
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "plan.jsonl"
+    with open(out_path, "w") as f:
+        meta = {
+            "_meta": True,
+            "project": project,
+            "source_drawings": [p.name for p in pdf_paths],
+            "extracted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        f.write(json.dumps(meta) + "\n")
+        for c in components:
+            f.write(json.dumps(asdict(c)) + "\n")
+    return out_path
+
+
 def main() -> None:
-    if len(sys.argv) < 2:
-        print("Usage: plan_extractor.py <pdf> [<pdf> ...]", file=sys.stderr)
+    parser = argparse.ArgumentParser(
+        description="Extract cabinet codes from 20-20 kitchen design PDFs."
+    )
+    parser.add_argument("pdfs", nargs="+", type=Path, metavar="PDF")
+    parser.add_argument(
+        "--output", type=Path, default=None, metavar="DIR",
+        help="If given, write plan.jsonl to DIR/{project}/plan.jsonl",
+    )
+    parser.add_argument(
+        "--project", default=None, metavar="NAME",
+        help="Project name (required when --output is given)",
+    )
+    args = parser.parse_args()
+
+    if args.output is not None and args.project is None:
+        print("Error: --project is required when --output is given", file=sys.stderr)
         sys.exit(1)
 
-    paths = [Path(p) for p in sys.argv[1:]]
+    paths = args.pdfs
     missing = [p for p in paths if not p.exists()]
     if missing:
         for p in missing:
@@ -347,6 +386,9 @@ def main() -> None:
     try:
         components = extract_pdfs(paths)
         print(json.dumps([asdict(c) for c in components], indent=2))
+        if args.output is not None:
+            out_path = _write_plan_jsonl(components, paths, args.project, args.output)
+            print(f"Plan:       {out_path}", file=sys.stderr)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)

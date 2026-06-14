@@ -12,6 +12,7 @@ from plan_extractor import (
     _filter_floor_plan_fragments,
     _is_garbled,
     _token_to_code,
+    _write_plan_jsonl,
     extract_pdfs,
 )
 from schema import PlanComponent
@@ -452,3 +453,57 @@ def test_vision_codes_filtered_through_token_to_code(monkeypatch):
 
     assert "DCW2439R" in codes, "Valid vision code DCW2439R must be kept"
     assert "F33" not in codes,  "Noise code F33 must be filtered out"
+
+
+# ---------------------------------------------------------------------------
+# _write_plan_jsonl unit tests
+# ---------------------------------------------------------------------------
+
+
+def test_write_plan_jsonl_metadata_header(tmp_path):
+    """First line of plan.jsonl must be a valid metadata record."""
+    import json
+    components = [
+        PlanComponent(code="DB30",     drawing="El1", qty=1, notes=None),
+        PlanComponent(code="BLB42FHL", drawing="El3", qty=2, notes=None),
+    ]
+    pdf_paths = [
+        USE_CASE_ROOT / "data" / "samples" / "Joey-_Kitchen_2D_Plans_V2.pdf",
+        USE_CASE_ROOT / "data" / "samples" / "Joey-_Kitchen_Plan_V2.pdf",
+    ]
+    out_path = _write_plan_jsonl(components, pdf_paths, "test_proj", tmp_path)
+    assert out_path == tmp_path / "test_proj" / "plan.jsonl"
+    lines = out_path.read_text().strip().splitlines()
+    meta = json.loads(lines[0])
+    assert meta["_meta"] is True
+    assert meta["project"] == "test_proj"
+    assert meta["source_drawings"] == [
+        "Joey-_Kitchen_2D_Plans_V2.pdf",
+        "Joey-_Kitchen_Plan_V2.pdf",
+    ]
+    assert "extracted_at" in meta
+
+
+def test_write_plan_jsonl_records(tmp_path):
+    """Each PlanComponent must appear as a JSON record after the metadata line."""
+    import json
+    components = [
+        PlanComponent(code="DB30",     drawing="El1", qty=1, notes=None),
+        PlanComponent(code="BLB42FHL", drawing="El3", qty=2, notes=None),
+    ]
+    out_path = _write_plan_jsonl(components, [], "proj", tmp_path)
+    lines = out_path.read_text().strip().splitlines()
+    records = [json.loads(l) for l in lines[1:]]
+    assert len(records) == 2
+    codes = {r["code"] for r in records}
+    assert codes == {"DB30", "BLB42FHL"}
+    blb = next(r for r in records if r["code"] == "BLB42FHL")
+    assert blb["drawing"] == "El3"
+    assert blb["qty"] == 2
+
+
+def test_write_plan_jsonl_creates_output_dir(tmp_path):
+    """Output directory is created if it does not exist."""
+    nested = tmp_path / "deep" / "nested"
+    out_path = _write_plan_jsonl([], [], "proj", nested)
+    assert out_path.exists()

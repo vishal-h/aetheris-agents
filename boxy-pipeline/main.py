@@ -101,17 +101,44 @@ def _aggregate(
     )
 
 
+def _load_plan_jsonl(path: Path) -> tuple[list[PlanComponent], list[str]]:
+    """Load PlanComponents from a plan.jsonl file.
+
+    Returns (components, source_drawings).
+    Skips the metadata header line (_meta: true).
+    """
+    components = []
+    source_drawings: list[str] = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            obj = json.loads(line)
+            if obj.get("_meta"):
+                source_drawings = obj.get("source_drawings", [])
+                continue
+            components.append(PlanComponent(**obj))
+    return components, source_drawings
+
+
 def run_pipeline(
-    drawings: list[Path],
+    drawings: list[Path] | None,
     catalog: Path,
     template: Path,
     project: str,
     upper_finish: tuple[str, str, str],
     lower_finish: tuple[str, str, str],
     output_dir: Path,
+    plan_jsonl: Path | None = None,
     dry_run: bool = False,
 ) -> PipelineResult:
-    components = extract_pdfs(drawings)
+    if plan_jsonl:
+        components, _ = _load_plan_jsonl(plan_jsonl)
+        print(f"Loaded {len(components)} components from {plan_jsonl}")
+    else:
+        components = extract_pdfs(drawings)
+
     resolved = resolve_catalog(components, catalog, upper_finish, lower_finish)
     pipeline_result = _aggregate(resolved, project, str(catalog))
 
@@ -126,7 +153,10 @@ def run_pipeline(
         1 for r in pipeline_result.resolved if r.match_confidence != "unresolved"
     )
     print(f"Project:    {project}")
-    print(f"Drawings:   {len(drawings)} file(s)")
+    if plan_jsonl:
+        print(f"Plan:       {plan_jsonl}")
+    else:
+        print(f"Drawings:   {len(drawings)} file(s)")
     print(f"Items:      {len(pipeline_result.resolved)} total, {catalog_matched} resolved, "
           f"{len(pipeline_result.unresolved_codes)} unresolved codes")
     print(f"Subtotal:   ${pipeline_result.subtotal:,.2f}")
@@ -137,7 +167,13 @@ def run_pipeline(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Boxy kitchen pipeline.")
-    parser.add_argument("--drawings", required=True, nargs="+", type=Path, metavar="PDF")
+    parser.add_argument("--drawings", nargs="+", type=Path, metavar="PDF", default=None)
+    parser.add_argument("--plan", type=Path, default=None, metavar="JSONL",
+                        help=(
+                            "Path to a pre-extracted plan.jsonl "
+                            "(from plan_extractor.py --output). "
+                            "Skips PDF extraction. Mutually exclusive with --drawings."
+                        ))
     parser.add_argument("--catalog", required=True, type=Path, metavar="XLSX")
     parser.add_argument("--template", required=True, type=Path, metavar="XLSX")
     parser.add_argument("--project", required=True, metavar="NAME")
@@ -148,10 +184,21 @@ def main() -> None:
                         help="Print PipelineResult JSON; do not write xlsx")
     args = parser.parse_args()
 
-    for p in args.drawings:
-        if not p.exists():
-            print(f"Error: drawing not found: {p}", file=sys.stderr)
-            sys.exit(1)
+    if args.plan and args.drawings:
+        print("Error: --plan and --drawings are mutually exclusive", file=sys.stderr)
+        sys.exit(1)
+    if not args.plan and not args.drawings:
+        print("Error: one of --plan or --drawings is required", file=sys.stderr)
+        sys.exit(1)
+
+    if args.drawings:
+        for p in args.drawings:
+            if not p.exists():
+                print(f"Error: drawing not found: {p}", file=sys.stderr)
+                sys.exit(1)
+    if args.plan and not args.plan.exists():
+        print(f"Error: plan not found: {args.plan}", file=sys.stderr)
+        sys.exit(1)
     for label, p in (("catalog", args.catalog), ("template", args.template)):
         if not p.exists():
             print(f"Error: {label} not found: {p}", file=sys.stderr)
@@ -163,6 +210,7 @@ def main() -> None:
     try:
         run_pipeline(
             drawings=args.drawings,
+            plan_jsonl=args.plan,
             catalog=args.catalog,
             template=args.template,
             project=args.project,

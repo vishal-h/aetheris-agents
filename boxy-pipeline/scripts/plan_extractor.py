@@ -272,13 +272,15 @@ def _filter_floor_plan_fragments(components: list[PlanComponent]) -> list[PlanCo
     """Suppress floor_plan codes that are garbled fragments of elevation codes.
 
     The floor plan is a dense spatial diagram where overlapping PDF text streams
-    produce partial tokens. Two fragment patterns are detected:
+    produce partial tokens. Three fragment patterns are detected:
 
     1. Proper suffix: floor_plan code is a trailing substring of a longer
        elevation code (e.g. B42FHL ← BLB42FHL).
     2. One-char-shifted suffix: dropping the first character of the floor_plan
        code gives a suffix of a strictly longer elevation code (e.g. EEP2493:
        drop E → EP2493, and FSEP2493 ends with EP2493).
+    3. Proper prefix: floor_plan code is a leading substring of a longer
+       elevation code (e.g. BPBC1 ← BPBC12).
 
     Exact same-length cross-drawing matches (e.g. DA 6698 W on both El3 and
     floor_plan) are never suppressed.
@@ -296,6 +298,11 @@ def _filter_floor_plan_fragments(components: list[PlanComponent]) -> list[PlanCo
                 len(other) > len(code) and other.endswith(code[1:])
                 for other in elevation_codes
             ):
+                continue
+            # Pattern 3: proper prefix of a longer elevation code
+            # e.g. BPBC1 suppressed because BPBC12.startswith(BPBC1) and len > len
+            if any(len(other) > len(code) and other.startswith(code)
+                   for other in elevation_codes):
                 continue
         result.append(c)
     return result

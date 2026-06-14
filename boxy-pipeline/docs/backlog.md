@@ -7,7 +7,7 @@ status (`open`, `in-progress`, `done`) and a reference to where it was surfaced.
 
 ## BL-015 — Tighten `_CABINET_RE` to require ≥2 digits
 
-**Status:** open
+**Status:** done — resolved by `m-boxy-pipeline-1a-prefix-fragment-patch.md` (Pattern 3)
 **Surfaced in:** vision prompt patch review (round 1)
 
 **Problem.** `_CABINET_RE` pattern B allows `[0-9]{1,4}` (≥1 digit), so

@@ -204,6 +204,32 @@ def test_filter_suppresses_eep2493_as_fsep2493_fragment():
     assert "EEP2493" not in codes
 
 
+def test_filter_suppresses_prefix_fragment():
+    """BPBC1 on floor_plan is suppressed when BPBC12 is on an elevation."""
+    components = [
+        PlanComponent(code="BPBC12", drawing="El3",        qty=1, notes=None),
+        PlanComponent(code="BPBC1",  drawing="floor_plan", qty=1, notes=None),
+        PlanComponent(code="DB30",   drawing="El1",        qty=1, notes=None),
+    ]
+    result = _filter_floor_plan_fragments(components)
+    codes = {c.code for c in result}
+    assert "BPBC12" in codes,     "BPBC12 (elevation) must be kept"
+    assert "BPBC1"  not in codes, "BPBC1 (prefix fragment) must be suppressed"
+    assert "DB30"   in codes,     "DB30 (elevation) must be kept"
+
+
+def test_filter_does_not_suppress_prefix_on_elevation():
+    """A code that is a prefix of another must NOT be suppressed if it's on an elevation."""
+    components = [
+        PlanComponent(code="BPBC12", drawing="El3", qty=1, notes=None),
+        PlanComponent(code="BPBC1",  drawing="El3", qty=1, notes=None),
+    ]
+    result = _filter_floor_plan_fragments(components)
+    codes = {c.code for c in result}
+    assert "BPBC12" in codes
+    assert "BPBC1"  in codes, "BPBC1 on elevation must NOT be suppressed"
+
+
 # ---------------------------------------------------------------------------
 # Integration: full extraction against real sample PDFs
 # ---------------------------------------------------------------------------

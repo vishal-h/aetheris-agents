@@ -16,7 +16,61 @@ sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 from catalog_resolver import parse_finish, resolve as resolve_catalog
 from order_formatter import write_order_form
 from plan_extractor import extract_pdfs
-from schema import PipelineResult, ResolvedItem
+from schema import PipelineResult, PlanComponent, ResolvedItem
+
+_CONFIDENCE_RANK = {"exact": 0, "fuzzy": 1, "unresolved": 2}
+
+
+def _consolidate(resolved: list[ResolvedItem]) -> list[ResolvedItem]:
+    """Consolidate ResolvedItems by code across drawings.
+
+    Groups items by component.code. For each group, sums qty, picks the
+    best catalog_item and match_confidence, merges match_notes, and sets
+    component.drawing to "multiple" when the code appeared on >1 drawing.
+    """
+    from collections import defaultdict
+    groups: dict[str, list[ResolvedItem]] = defaultdict(list)
+    for item in resolved:
+        groups[item.component.code].append(item)
+
+    consolidated = []
+    for code, items in groups.items():
+        total_qty = sum(i.qty for i in items)
+        drawings = {i.component.drawing for i in items}
+
+        best_item = next(
+            (i for i in items if i.catalog_item is not None), items[0]
+        )
+        unit_price = best_item.unit_price
+
+        best_confidence = min(
+            items, key=lambda i: _CONFIDENCE_RANK.get(i.match_confidence, 99)
+        ).match_confidence
+
+        notes = list(dict.fromkeys(
+            n for i in items if i.match_notes
+            for n in [i.match_notes]
+        ))
+        merged_notes = "; ".join(notes) if notes else None
+
+        consolidated_component = PlanComponent(
+            code=code,
+            drawing="multiple" if len(drawings) > 1 else next(iter(drawings)),
+            qty=total_qty,
+            notes=None,
+        )
+
+        consolidated.append(ResolvedItem(
+            component=consolidated_component,
+            catalog_item=best_item.catalog_item,
+            qty=total_qty,
+            unit_price=unit_price,
+            line_total=unit_price * total_qty,
+            match_confidence=best_confidence,
+            match_notes=merged_notes,
+        ))
+
+    return consolidated
 
 
 def _aggregate(
@@ -24,16 +78,21 @@ def _aggregate(
     project_name: str,
     catalog_file: str,
 ) -> PipelineResult:
+    consolidated = _consolidate(resolved)
     unresolved_codes = sorted({
         r.component.code
-        for r in resolved
+        for r in consolidated
         if r.match_confidence == "unresolved"
     })
-    subtotal = sum(r.line_total for r in resolved)
-    source_drawings = sorted({r.component.drawing for r in resolved})
+    subtotal = sum(r.line_total for r in consolidated)
+    source_drawings = sorted({
+        d
+        for r in resolved
+        for d in [r.component.drawing]
+    })
     return PipelineResult(
         project_name=project_name,
-        resolved=resolved,
+        resolved=consolidated,
         unresolved_codes=unresolved_codes,
         subtotal=subtotal,
         source_drawings=source_drawings,
@@ -63,10 +122,12 @@ def run_pipeline(
     resolved_dicts = [asdict(r) for r in pipeline_result.resolved]
     out_path = write_order_form(resolved_dicts, template, project, output_dir)
 
-    catalog_matched = sum(1 for r in resolved if r.match_confidence != "unresolved")
+    catalog_matched = sum(
+        1 for r in pipeline_result.resolved if r.match_confidence != "unresolved"
+    )
     print(f"Project:    {project}")
     print(f"Drawings:   {len(drawings)} file(s)")
-    print(f"Items:      {len(resolved)} total, {catalog_matched} resolved, "
+    print(f"Items:      {len(pipeline_result.resolved)} total, {catalog_matched} resolved, "
           f"{len(pipeline_result.unresolved_codes)} unresolved codes")
     print(f"Subtotal:   ${pipeline_result.subtotal:,.2f}")
     print(f"Output:     {out_path}")

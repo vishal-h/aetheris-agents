@@ -8,6 +8,9 @@ from pathlib import Path
 import openpyxl
 import pytest
 
+from main import _consolidate
+from schema import CatalogItem, PlanComponent, ResolvedItem
+
 USE_CASE_ROOT = Path(__file__).parent.parent
 SAMPLES_DIR = USE_CASE_ROOT / "data" / "samples"
 CATALOG_FILE = SAMPLES_DIR / "Updated_Boxy_MSRP_Sales_Order_Form.xlsx"
@@ -23,6 +26,88 @@ _BASE_ARGS = [
     "--upper-finish", "2001:Ivory White:2000",
     "--lower-finish", "2004:Mingo Oak:2000",
 ]
+
+
+def _make_resolved(code, drawing, qty, confidence="unresolved",
+                   unit_price=0.0, catalog_item=None, notes=None):
+    return ResolvedItem(
+        component=PlanComponent(code=code, drawing=drawing, qty=qty, notes=None),
+        catalog_item=catalog_item,
+        qty=qty,
+        unit_price=unit_price,
+        line_total=unit_price * qty,
+        match_confidence=confidence,
+        match_notes=notes,
+    )
+
+
+# ---------------------------------------------------------------------------
+# _consolidate unit tests
+# ---------------------------------------------------------------------------
+
+
+def test_consolidate_sums_qty_across_drawings():
+    """BLB42FHL on El1 (qty=1), El3 (qty=2), El4 (qty=1) → consolidated qty=4."""
+    items = [
+        _make_resolved("BLB42FHL", "El1", 1),
+        _make_resolved("BLB42FHL", "El3", 2),
+        _make_resolved("BLB42FHL", "El4", 1),
+    ]
+    result = _consolidate(items)
+    assert len(result) == 1
+    assert result[0].qty == 4
+    assert result[0].component.drawing == "multiple"
+
+
+def test_consolidate_single_drawing_keeps_drawing_name():
+    """A code on only one drawing keeps that drawing name."""
+    items = [_make_resolved("DB30", "El1", 1)]
+    result = _consolidate(items)
+    assert result[0].component.drawing == "El1"
+
+
+def test_consolidate_picks_best_confidence():
+    """exact beats fuzzy beats unresolved."""
+    items = [
+        _make_resolved("W2439-24", "El2", 1, confidence="fuzzy"),
+        _make_resolved("W2439-24", "El4", 1, confidence="exact"),
+    ]
+    result = _consolidate(items)
+    assert result[0].match_confidence == "exact"
+
+
+def test_consolidate_recomputes_line_total():
+    """line_total = unit_price × consolidated qty."""
+    items = [
+        _make_resolved("DB21", "El4", 2, confidence="exact", unit_price=1026.4),
+    ]
+    result = _consolidate(items)
+    assert result[0].line_total == pytest.approx(1026.4 * 2)
+
+
+def test_consolidate_merges_notes():
+    """Notes from different drawings are merged, deduplicated."""
+    items = [
+        _make_resolved("W2439-24", "El2", 1, notes="matched as W2439 after suffix strip"),
+        _make_resolved("W2439-24", "El4", 1, notes="matched as W2439 after suffix strip"),
+    ]
+    result = _consolidate(items)
+    assert result[0].match_notes == "matched as W2439 after suffix strip"
+
+
+def test_consolidate_preserves_distinct_codes():
+    """Different codes are not merged."""
+    items = [
+        _make_resolved("DB30",     "El1", 1),
+        _make_resolved("BLB42FHL", "El1", 1),
+    ]
+    result = _consolidate(items)
+    assert len(result) == 2
+
+
+# ---------------------------------------------------------------------------
+# Integration tests
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")

@@ -49,7 +49,7 @@ Output:     output/Joey_Kitchen_V2_order_form.xlsx
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--drawings <pdf> [<pdf> ...]` | yes | One or more 20-20 PDF drawings |
-| `--catalog <xlsx>` | yes | Boxy MSRP Excel file (Price List sheets) |
+| `--catalog <xlsx_or_jsonl>` | yes | Boxy MSRP Excel file (Price List sheets) **or** pre-extracted `data/catalog.jsonl`; auto-detected by `.jsonl` extension |
 | `--template <xlsx>` | yes | Boxy Order Form template (may be same file as catalog) |
 | `--project <name>` | yes | Project name; used as output filename stem |
 | `--upper-finish <code:name:series>` | yes | Finish spec for wall cabinets, e.g. `"2001:Ivory White:2000"` |
@@ -94,6 +94,63 @@ python3 scripts/order_formatter.py \
 ```
 
 Reads `ResolvedItem` JSON from stdin; writes `output/{project}_order_form.xlsx`.
+
+---
+
+## Data layer
+
+Scripts that build or read the persistent data files (stored under `data/`,
+gitignored — never commit).
+
+**catalog_extractor — build catalog.jsonl**
+
+```bash
+cd aetheris-agents/boxy-pipeline
+python3 scripts/catalog_extractor.py \
+  --catalog data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
+  --output  data/catalog.jsonl
+```
+
+Reads all Price List sheets from the Excel template; writes one JSON record per
+SKU × color combination to `data/catalog.jsonl` (4,594 entries for the Joey
+project catalog). Run once per catalog version. Subsequent pipeline runs can pass
+`data/catalog.jsonl` to `--catalog` instead of the Excel file — same results,
+faster startup.
+
+**so_extractor — parse a sales order PDF**
+
+```bash
+python3 scripts/so_extractor.py \
+  --so         data/samples/SO86708_Aria_Joey.pdf \
+  --project    joey \
+  --output-dir data/projects/
+```
+
+Extracts line items, header, and totals from a Boxy PDF sales order; writes
+`data/projects/{project}/sales_order.json`.
+
+**main.py — full pipeline using JSONL catalog**
+
+```bash
+python3 main.py \
+  --drawings data/samples/Joey-_Kitchen_2D_Plans_V2.pdf \
+             data/samples/Joey-_Kitchen_Plan_V2.pdf \
+  --catalog  data/catalog.jsonl \
+  --template data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
+  --project  Joey_Kitchen_V2 \
+  --upper-finish "2001:Ivory White:2000" \
+  --lower-finish "2004:Mingo Oak:2000"
+```
+
+Passing `data/catalog.jsonl` instead of the Excel file skips pandas/openpyxl
+overhead on each run. The `--template` flag still requires the Excel file — it
+is used only by `order_formatter.py` for the output sheet structure, not for
+catalog lookup.
+
+**Enrichment note**: `catalog.jsonl` includes `mapped_20_20_codes` and `notes`
+fields for future manual enrichment. Re-running `catalog_extractor.py` regenerates
+the file from Excel and overwrites any hand-edits — merge before re-extracting if
+enrichment data needs to be preserved.
 
 ---
 

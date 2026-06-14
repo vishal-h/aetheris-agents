@@ -96,7 +96,7 @@ Each use case follows:
   output/           # gitignored; .gitkeep committed
 ```
 
-Current use cases: `payslip`, `drive`, `email`, `api` (uc-api-agent / TAP protocol), `boxy-pipeline` (pure Python; no Aetheris agent).
+Current use cases: `payslip`, `drive`, `email`, `api` (uc-api-agent / TAP protocol), `boxy-pipeline` (pure Python; no Aetheris agent — includes data layer scripts for catalog and sales order extraction).
 
 ### Agent files
 
@@ -210,6 +210,6 @@ routes, or DB tables. Zero FAIL findings and zero WARN findings required before 
 | drive | `drive/docs/t3-implementation-notes.md` |
 | email | `email/docs/t3-implementation-notes.md` |
 | api (TAP) | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
-| boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/runbook.md` |
+| boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/m-boxy-pipeline-1a.md`, `boxy-pipeline/docs/runbook.md` |
 
 The `docs/agent-creation-guide.md` is the authoritative reference for building new agents.

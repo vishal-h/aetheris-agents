@@ -56,6 +56,8 @@ Integration tests (`@pytest.mark.integration`) require the sample files in
 | `scripts/catalog_resolver.py` | t2 — resolve codes against Boxy MSRP catalog → `ResolvedItem` JSON |
 | `scripts/order_formatter.py` | t3 — write populated Boxy Order Form xlsx |
 | `scripts/schema.py` | canonical dataclasses; no logic |
+| `scripts/catalog_extractor.py` | data layer — extract all SKU × color entries from Excel → `data/catalog.jsonl` |
+| `scripts/so_extractor.py` | data layer — parse Boxy sales order PDF → `data/projects/{name}/sales_order.json` |
 | `main.py` | t4 — CLI wiring all three together |
 
 Each script can also be run standalone and piped:
@@ -63,7 +65,7 @@ Each script can also be run standalone and piped:
 ```bash
 python3 scripts/plan_extractor.py data/samples/*.pdf \
   | python3 scripts/catalog_resolver.py \
-      --catalog data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
+      --catalog data/catalog.jsonl \  # or .xlsx — auto-detected by extension
       --upper-finish "2001:Ivory White:2000" \
       --lower-finish "2004:Mingo Oak:2000" \
   | python3 scripts/order_formatter.py \

@@ -110,6 +110,28 @@ gitignored — never commit).
 before running the full pipeline — text-layer extraction works without it, but
 overlapping label regions on floor plan pages will be skipped with a warning.
 
+**plan_extractor — persist per-drawing extraction to plan.jsonl**
+
+```bash
+cd aetheris-agents/boxy-pipeline
+python3 scripts/plan_extractor.py \
+  data/samples/Joey-_Kitchen_2D_Plans_V2.pdf \
+  data/samples/Joey-_Kitchen_Plan_V2.pdf \
+  --project joey \
+  --output  data/projects/
+```
+
+Writes one `PlanComponent` JSON record per line to
+`data/projects/{project}/plan.jsonl`, preceded by a metadata header
+(`_meta`, `project`, `source_drawings`, `extracted_at`). Records are
+raw per-drawing pairs — not consolidated — to preserve full provenance
+for M2 reconciliation.
+
+Stdout still emits the JSON array unchanged (pipe-compatible). The output
+path is printed to **stderr** (`Plan: data/projects/joey/plan.jsonl`),
+not stdout, so it does not interfere with piped consumers. Use `2>&1` to
+see it in a terminal alongside the JSON array.
+
 **catalog_extractor — build catalog.jsonl**
 
 ```bash

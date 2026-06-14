@@ -237,6 +237,47 @@ def test_resolve_prefers_series_match():
     assert r.unit_price == pytest.approx(1188.4)
 
 
+def test_resolve_zero_pads_three_digit_code():
+    """W939 → W0939 via zero-padding normalisation → fuzzy match."""
+    item = _make_wall_item(
+        sku="W0939-2001",
+        description='Wall Cabinet, 9"W × 39"H × 12"D, 1 Door',
+        width_in=9.0,
+    )
+    index = {"W0939": [item]}
+    comp = PlanComponent(code="W939", drawing="El1", qty=1, notes=None)
+    r = _resolve_component(comp, index, UPPER_FINISH, LOWER_FINISH)
+    assert r.match_confidence == "fuzzy"
+    assert r.catalog_item is not None
+    assert r.catalog_item.sku == "W0939-2001"
+    assert r.match_notes is not None
+    assert "zero-padding" in r.match_notes
+
+
+def test_resolve_zero_pads_with_lr_suffix():
+    """W939L → zero-pad → W0939L; suffix strip → W0939 → fuzzy match."""
+    item = _make_wall_item(
+        sku="W0939-2001",
+        description='Wall Cabinet, 9"W × 39"H × 12"D, 1 Door',
+        width_in=9.0,
+    )
+    index = {"W0939": [item]}
+    comp = PlanComponent(code="W939L", drawing="El1", qty=1, notes=None)
+    r = _resolve_component(comp, index, UPPER_FINISH, LOWER_FINISH)
+    assert r.match_confidence == "fuzzy"
+    assert r.catalog_item is not None
+
+
+def test_resolve_four_digit_code_not_zero_padded():
+    """W2739 (4 digits) must not be zero-padded to W02739."""
+    item = _make_wall_item(sku="W2739-2001", description='Wall Cabinet, 27"W × 39"H × 12"D')
+    index = {"W2739": [item]}
+    comp = PlanComponent(code="W2739", drawing="El1", qty=1, notes=None)
+    r = _resolve_component(comp, index, UPPER_FINISH, LOWER_FINISH)
+    assert r.match_confidence == "exact"
+    assert r.catalog_item.sku == "W2739-2001"
+
+
 # ---------------------------------------------------------------------------
 # Integration tests — require data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx
 # ---------------------------------------------------------------------------

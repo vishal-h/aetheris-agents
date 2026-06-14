@@ -221,6 +221,26 @@ def _resolve_component(
                         match_confidence = "fuzzy"
                         match_notes = f"matched as {norm_stripped} after suffix and prefix strip"
 
+    # 4. Zero-pad 3-digit numeric part → 4-digit (e.g. W939 → W0939, W939L → W0939L)
+    # 20-20 drawings omit the leading zero that Boxy catalog uses.
+    if catalog_items is None:
+        zero_padded = re.sub(r'^([A-Z]{1,4})(\d{3})([A-Z]{0,4})$', r'\g<1>0\g<2>\g<3>', code)
+        if zero_padded != code:
+            if zero_padded in index:
+                matched_code = zero_padded
+                catalog_items = index[zero_padded]
+                match_confidence = "fuzzy"
+                match_notes = f"matched as {zero_padded} after zero-padding numeric part"
+            else:
+                # Also try stripping trailing L/R suffix before zero-padding
+                # e.g. W939L → W939 → W0939
+                base = re.sub(r'[LR]$', '', zero_padded)
+                if base != zero_padded and base in index:
+                    matched_code = base
+                    catalog_items = index[base]
+                    match_confidence = "fuzzy"
+                    match_notes = f"matched as {base} after zero-padding and suffix strip (was {code})"
+
     if catalog_items is None or matched_code is None:
         return ResolvedItem(
             component=component,

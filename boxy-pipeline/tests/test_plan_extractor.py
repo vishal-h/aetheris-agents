@@ -359,6 +359,15 @@ def test_vision_fallback_fires_and_cleans_garbled_tokens():
     missing = required - codes
     assert not missing, f"Required codes lost after vision fallback: {missing}"
 
+    # Noise from vision hallucinations must not appear.
+    # Only codes that cannot come from the text layer are assertable here:
+    # BPBC1 (5 chars, matches _CABINET_RE) and WEP429 (6 chars, matches
+    # _CABINET_RE) are excluded — they appear in the text layer and are not
+    # vision-specific. CRT30 and DB2USF are hallucinations absent from both
+    # the text layer and a well-prompted vision pass.
+    for noise in ["CRT30", "DB2USF"]:
+        assert noise not in codes, f"Vision noise {noise!r} must not appear in output"
+
 
 # ---------------------------------------------------------------------------
 # Vision code validation unit test

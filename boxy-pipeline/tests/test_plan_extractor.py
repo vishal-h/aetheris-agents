@@ -358,3 +358,62 @@ def test_vision_fallback_fires_and_cleans_garbled_tokens():
     required = {"DB30", "BLB42FHL", "W2739", "SB42", "USF330"}
     missing = required - codes
     assert not missing, f"Required codes lost after vision fallback: {missing}"
+
+
+# ---------------------------------------------------------------------------
+# Vision code validation unit test
+# ---------------------------------------------------------------------------
+
+
+def test_vision_codes_filtered_through_token_to_code(monkeypatch):
+    """Vision-returned codes must pass _token_to_code validation.
+
+    Noise like 'F33' (too short) must be dropped.
+    Valid codes like 'DCW2439R' must be kept.
+    """
+    import plan_extractor
+
+    monkeypatch.setattr(
+        plan_extractor,
+        "_extract_codes_via_vision",
+        lambda **kwargs: ["DCW2439R", "F33", "W2439"],
+    )
+    monkeypatch.setattr(
+        plan_extractor,
+        "_is_garbled",
+        lambda token: token == "FAKEGARBLD12345",
+    )
+
+    if not SAMPLES_AVAILABLE:
+        pytest.skip("Sample files not available")
+
+    import pdfplumber
+
+    class FakePage:
+        def __init__(self, real_page):
+            self._real = real_page
+            self.width = real_page.width
+            self.height = real_page.height
+
+        def extract_text(self):
+            return self._real.extract_text()
+
+        def extract_words(self, **kwargs):
+            words = self._real.extract_words(**kwargs)
+            words.append({
+                'text': 'FAKEGARBLD12345',
+                'x0': 100.0, 'top': 200.0,
+                'x1': 200.0, 'bottom': 215.0,
+            })
+            return words
+
+    with pdfplumber.open(ELEVATION_PDF) as pdf:
+        fake_page = FakePage(pdf.pages[0])
+        _label, codes = plan_extractor._extract_page_codes(
+            fake_page,
+            pdf_path=ELEVATION_PDF,
+            page_index=0,
+        )
+
+    assert "DCW2439R" in codes, "Valid vision code DCW2439R must be kept"
+    assert "F33" not in codes,  "Noise code F33 must be filtered out"

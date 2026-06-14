@@ -143,7 +143,10 @@ def _extract_codes_via_vision(
         )
         return []
 
-    bbox = _union_bbox(garbled_words, page_width, page_height, padding=60.0)
+    # 120pt padding (up from 60): the garbled region on El1 has overlapping labels
+    # visually present ~80pt below the token bbox. 60pt padding cropped them out.
+    # 120pt captures the full label neighbourhood in all directions.
+    bbox = _union_bbox(garbled_words, page_width, page_height, padding=120.0)
     png_bytes = _render_crop_as_png(pdf_path, page_index, bbox)
     image_data = base64.standard_b64encode(png_bytes).decode("utf-8")
 
@@ -240,7 +243,11 @@ def _extract_page_codes(
                 page_width=float(page.width),
                 page_height=float(page.height),
             )
-            codes.extend(vision_codes)
+            # Validate vision codes through the same filter as text-layer tokens
+            for raw in vision_codes:
+                code = _token_to_code(raw)
+                if code:
+                    codes.append(code)
         except Exception as exc:
             print(
                 f"Warning: vision fallback failed for {label}: {exc}",

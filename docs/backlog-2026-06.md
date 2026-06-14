@@ -8,7 +8,7 @@ All file references verified against code as of `docs/rig/current-state-2026-06.
 Sizes: **S** < half a day · **M** a day or two · **L** milestone-sized (gets its
 own `docs/rig/milestones/` directory and issue docs before implementation).
 
-GitHub issues: #42–#53 on vishal-h/aetheris-agents.
+GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 
 ---
 
@@ -395,6 +395,65 @@ strategy` before handing to claude-code.
 
 ---
 
+### BL-013 — Parameterise column x-boundaries in `so_extractor.py` (#54)
+**Size:** S–M · **Priority:** before processing a second SO PDF
+
+`so_extractor.py` has four hardcoded x-boundary constants (`_QTY_X_MAX`,
+`_SPECIAL_X`, `_RATE_X`, `_AMOUNT_X`) calibrated from SO86708_Aria_Joey.pdf.
+A different Boxy SO template (different page margins, font, or column widths)
+could shift columns enough to mis-assign words to the wrong column bucket.
+
+**Fix:** detect column boundaries dynamically from the table header row
+(`Quantity`, `Item`, `Special`, `Rate`, `Amount`) on the first page, rather
+than using hardcoded constants. Use the header word x0 positions plus a
+configurable margin to compute the bucket ranges at runtime.
+
+**Touches.**
+- `scripts/so_extractor.py` — replace four constants with a
+  `_detect_col_bounds(page)` function
+- `tests/test_so_extractor.py` — add unit test for `_detect_col_bounds` using
+  a minimal mock page
+
+**Do not generate.**
+- Changes to `schema.py` or any other script
+
+**Done-check.**
+```bash
+cd aetheris-agents/boxy-pipeline
+python3 -m pytest tests/test_so_extractor.py -v
+# SO86708 extraction must still produce 34 items, $8,099.54
+python3 scripts/so_extractor.py \
+  --so data/samples/SO86708_Aria_Joey.pdf \
+  --project joey --output-dir data/projects/
+```
+
+---
+
+### BL-014 — Parse Bill To and Ship To addresses separately in `_parse_header` (#55)
+**Size:** S · **Priority:** low (before multi-customer use)
+
+`so_extractor._parse_header` currently sets both `bill_to` and `ship_to` to
+the customer company name (extracted from the first line of the address block).
+The `SOHeader` schema has distinct fields for a reason: real SOs may bill to
+one address and ship to another. SO86708 happens to use the same company name
+for both, so the approximation is invisible in the done-check.
+
+**Fix:** use word x-coordinate extraction on the address block (the three
+columns below "Bill To | Ship To | Customer") to separately capture the Bill
+To address (x < ~200) and Ship To address (~200 < x < ~370), including
+multi-line street/city/state/zip.
+
+**Touches.**
+- `scripts/so_extractor.py` — extend `_parse_header` with coordinate-based
+  address block parsing
+- `tests/test_so_extractor.py` — add integration tests: `bill_to` contains
+  "Brokaw" (the SO86708 bill-to street), `ship_to` contains "Laurel"
+
+**Do not generate.**
+- Changes to `schema.py` or any other script
+
+---
+
 ## Suggested order
 
 | Order | Ticket | Why first |
@@ -407,5 +466,7 @@ strategy` before handing to claude-code.
 | 6 | BL-011 | Refactor before more scripts share the helpers |
 | 7 | BL-004 | Trivial, batch with any harness.rs touch |
 | 8 | BL-012 | Design decision first; implement after 1a t3 merges |
-| 9 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
+| 9 | BL-013 | Needed before testing a second SO template |
+| 10 | BL-014 | Low-effort address fix; do with BL-013 pass |
+| 11 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
 | — | BL-006 | Fires on its own trigger |

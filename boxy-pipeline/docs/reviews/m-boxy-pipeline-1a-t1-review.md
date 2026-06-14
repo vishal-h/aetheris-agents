@@ -1,4 +1,14 @@
-# Review — m-boxy-pipeline-1a t1 — catalog extractor + schema additions
+# Review — m-boxy-pipeline-1a t1 — catalog extractor + schema additions — round 1
+
+## Summary
+
+| # | Severity | Status |
+|---|---|---|
+| 1 | non-blocking | backlog → BL-011 (parsing_utils.py extraction) |
+| 2 | non-blocking | fixed ✓ — extra blank line in schema.py removed |
+| 3 | non-blocking | backlog → BL-012 (enrichment merge strategy) |
+
+**t1 approved for merge.**
 
 ## Done-check output
 

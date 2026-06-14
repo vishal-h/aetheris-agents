@@ -3,7 +3,6 @@ from typing import Optional
 
 
 
-
 @dataclass
 class PlanComponent:
     code: str           # raw code from drawing, e.g. "DB30", "BLB42FHL", "W2739"

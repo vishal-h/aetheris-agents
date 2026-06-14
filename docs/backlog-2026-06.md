@@ -8,7 +8,7 @@ All file references verified against code as of `docs/rig/current-state-2026-06.
 Sizes: **S** < half a day · **M** a day or two · **L** milestone-sized (gets its
 own `docs/rig/milestones/` directory and issue docs before implementation).
 
-GitHub issues: #42–#51 on vishal-h/aetheris-agents.
+GitHub issues: #42–#53 on vishal-h/aetheris-agents.
 
 ---
 
@@ -319,6 +319,80 @@ print('OK — one sheet, no #NAME? errors')
 > Run the done-check from §BL-010 and include actual output (including the
 > Python verification snippet result) in your review packet.
 
+### BL-011 — Extract shared parsing helpers into `scripts/parsing_utils.py` (#52)
+**Size:** S · **Priority:** before next catalog/resolver change
+
+`_parse_dimensions`, `_extract_cabinet_type`, `_parse_color_columns`, and
+`_color_name_from_header` are duplicated verbatim between
+`catalog_resolver.py` and `catalog_extractor.py` (noted in t1 review,
+m-boxy-pipeline-1a). A bug fix in one won't propagate to the other.
+
+**Fix:** extract all four helpers into `scripts/parsing_utils.py`; import
+from both scripts. No logic changes — pure refactor.
+
+**Touches.**
+- `scripts/parsing_utils.py` (new)
+- `scripts/catalog_resolver.py` (import from parsing_utils; remove local copies)
+- `scripts/catalog_extractor.py` (import from parsing_utils; remove local copies)
+- `tests/test_parsing_utils.py` (new — move or copy the relevant unit tests
+  from `test_catalog_resolver.py` and `test_catalog_extractor.py`)
+
+**Do not generate.**
+- Any logic change to the helpers
+- Changes to `schema.py`, `main.py`, `order_formatter.py`, `plan_extractor.py`
+
+**Done-check.**
+```bash
+cd aetheris-agents/boxy-pipeline
+pip install -r requirements.txt -q
+python3 -m pytest tests/ -v
+# All existing tests must pass unchanged
+# parsing_utils.py must be the only location of the four helpers
+grep -rn "_parse_dimensions\|_extract_cabinet_type\|_parse_color_columns\|_color_name_from_header" \
+  scripts/catalog_resolver.py scripts/catalog_extractor.py
+# Expected: only import lines, no function definitions
+```
+
+**Depends on:** BL-010 merged (clean baseline before refactor)
+
+---
+
+### BL-012 — Catalog enrichment merge strategy (#53)
+**Size:** S–M · **Priority:** before anyone enriches `catalog.jsonl`
+
+`catalog_extractor.py` currently overwrites `catalog.jsonl` on every run.
+Once `mapped_20_20_codes` or `notes` fields are manually populated, a
+re-extraction would silently discard all enrichment. No merge logic exists.
+
+**Design options (decide before implementing):**
+
+**Option A — Merge on re-extraction.** If `catalog.jsonl` already exists,
+read it first, build a `{sku → enrichment}` index, then re-extract from
+Excel and carry forward non-empty `mapped_20_20_codes` and non-None `notes`
+from the existing file. Write the merged result.
+
+**Option B — Separate enrichment file.** Keep `catalog.jsonl` as a
+pure extraction artifact (always overwritable). Store enrichment in a
+separate `data/catalog-enrichment.jsonl` keyed by SKU. The resolver merges
+at load time. Enrichment file is committed (it's hand-maintained, not
+generated).
+
+**Option C — Versioned files, no overwrite.** `catalog_extractor.py` always
+writes `catalog-{YYYY-MM-DD}.jsonl`; never overwrites. `catalog.jsonl` is a
+symlink or a manually updated pointer. Enrichment lives in the dated file and
+is carried forward manually when updating.
+
+**Recommendation:** Option B. Cleanest separation of concerns — extraction
+is always safe to re-run; enrichment is a human-maintained artifact that
+belongs in git. The resolver's `load_catalog_jsonl` merges the two at load
+time (after t3 lands).
+
+**This ticket requires a design decision before implementation.** Capture the
+chosen option and rationale in `docs/m-boxy-pipeline-1a.md §Enrichment
+strategy` before handing to claude-code.
+
+**Depends on:** m-boxy-pipeline-1a t3 merged (resolver reads JSONL)
+
 ---
 
 ## Suggested order
@@ -330,6 +404,8 @@ print('OK — one sheet, no #NAME? errors')
 | 3 | BL-003 | The five orphaned rows are sitting test fixtures; pairs with shipped stalled? marker |
 | 4 | BL-005 | Small, immediate daily-use value |
 | 5 | BL-009 | One-line change once baseline holds |
-| 6 | BL-004 | Trivial, batch with any harness.rs touch |
-| 7 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
+| 6 | BL-011 | Refactor before more scripts share the helpers |
+| 7 | BL-004 | Trivial, batch with any harness.rs touch |
+| 8 | BL-012 | Design decision first; implement after 1a t3 merges |
+| 9 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
 | — | BL-006 | Fires on its own trigger |

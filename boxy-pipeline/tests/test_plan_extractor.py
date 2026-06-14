@@ -71,6 +71,9 @@ def test_cabinet_re_matches_known_codes(token):
         "Design",               # plain word
         "F933",                 # single letter + 3 digits — fragment, not a real code
         "B42FHL",               # single letter + digits + letters — fragment of BLB42FHL
+        "WEPWEP42",             # garbled overlap — two WEP42 labels blended
+        "W939RDCW2439R",        # garbled overlap — W939R + DCW2439R blended
+        "WEP4WEP42",            # garbled overlap — partial blend
     ],
 )
 def test_cabinet_re_rejects_non_codes(token):
@@ -93,6 +96,15 @@ def test_token_to_code_rejects_short():
 def test_token_to_code_returns_none_for_plain_word():
     assert _token_to_code("Filler") is None
     assert _token_to_code("conditions.") is None
+
+
+def test_token_to_code_rejects_garbled_overlap_tokens():
+    """Garbled overlap tokens must not produce false cabinet codes."""
+    garbled = ["WEPWEP42", "W939RDCW2439R", "WEP4WEP42", "WEP429FDCW2439R"]
+    for token in garbled:
+        assert _token_to_code(token) is None, (
+            f"Garbled overlap token {token!r} should not match"
+        )
 
 
 # ---------------------------------------------------------------------------

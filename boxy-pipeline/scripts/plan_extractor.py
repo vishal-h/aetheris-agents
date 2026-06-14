@@ -52,7 +52,13 @@ def _drawing_label(page_text: str) -> str:
 
 
 def _token_to_code(token: str) -> str | None:
-    """Return a cabinet code if token matches, else None."""
+    """Return a cabinet code if token matches, else None.
+
+    Known limitation: spatially overlapping labels in 20-20 floor plans
+    may produce garbled tokens (e.g. "WEPWEP42") that do not match.
+    These are correctly discarded — the same codes appear in the elevation
+    drawings where labels do not overlap.
+    """
     # Strip leading/trailing punctuation; remove embedded dots (e.g. "CKT.36")
     cleaned = token.strip("\"'.,;:()[]").replace(".", "")
     if len(cleaned) < _MIN_CODE_LEN:
@@ -65,7 +71,14 @@ def _token_to_code(token: str) -> str | None:
 def _extract_page_codes(page) -> tuple[str, list[str]]:
     """Return (drawing_label, list_of_codes) for one page."""
     text = page.extract_text() or ""
-    words = page.extract_words(x_tolerance=3, y_tolerance=3)
+    # x_tolerance=1 (down from 3): keeps spatially overlapping cabinet labels
+    # as separate tokens rather than merging them into garbled strings like
+    # "WEPWEP42". At tolerance=3, pdfplumber merges words within 3pt —
+    # too aggressive for dense 20-20 floor plans where labels physically overlap.
+    # Note: garbled tokens from partial character blending are not recoverable
+    # by text splitting and are correctly discarded as non-matches.
+    # All real codes appear cleanly in the elevation drawings (El1–El4).
+    words = page.extract_words(x_tolerance=1, y_tolerance=3)
 
     label = _drawing_label(text)
     codes: list[str] = []

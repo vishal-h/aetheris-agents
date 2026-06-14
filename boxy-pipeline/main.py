@@ -135,7 +135,7 @@ def run_pipeline(
 ) -> PipelineResult:
     if plan_jsonl:
         components, _ = _load_plan_jsonl(plan_jsonl)
-        print(f"Loaded {len(components)} components from {plan_jsonl}")
+        print(f"Loaded {len(components)} components from {plan_jsonl}", file=sys.stderr)
     else:
         components = extract_pdfs(drawings)
 

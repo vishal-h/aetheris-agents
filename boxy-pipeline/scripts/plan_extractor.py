@@ -3,7 +3,10 @@
 
 Outputs a JSON array of PlanComponent dicts to stdout.
 """
+import anthropic
+import base64
 import json
+import os
 import re
 import sys
 from dataclasses import asdict
@@ -68,16 +71,145 @@ def _token_to_code(token: str) -> str | None:
     return None
 
 
-def _extract_page_codes(page) -> tuple[str, list[str]]:
-    """Return (drawing_label, list_of_codes) for one page."""
+def _is_garbled(token: str) -> bool:
+    """Return True if token looks like a garbled overlap of multiple labels."""
+    cleaned = token.strip("\"'.,;:()[]").replace(".", "")
+    return len(cleaned) > 12 and not _CABINET_RE.fullmatch(cleaned)
+
+
+def _union_bbox(
+    bboxes: list[dict],
+    page_width: float,
+    page_height: float,
+    padding: float = 60.0,
+) -> tuple[float, float, float, float]:
+    """Return padded union of all bounding boxes, clamped to page dimensions."""
+    x0     = max(0.0,         min(b['x0']     for b in bboxes) - padding)
+    top    = max(0.0,         min(b['top']     for b in bboxes) - padding)
+    x1     = min(page_width,  max(b['x1']     for b in bboxes) + padding)
+    bottom = min(page_height, max(b['bottom'] for b in bboxes) + padding)
+    return x0, top, x1, bottom
+
+
+def _render_crop_as_png(
+    pdf_path: Path,
+    page_index: int,
+    bbox: tuple[float, float, float, float],
+    scale: float = 2.0,
+) -> bytes:
+    """Render a cropped region of a PDF page to PNG bytes.
+
+    bbox is in PDF points (same coordinate system as pdfplumber word dicts).
+    scale=2.0 gives ~144 DPI output.
+    """
+    import pypdfium2 as pdfium
+    from io import BytesIO
+
+    pdf = pdfium.PdfDocument(str(pdf_path))
+    page = pdf[page_index]
+    bitmap = page.render(scale=scale)
+    pil_image = bitmap.to_pil()
+
+    x0, top, x1, bottom = bbox
+    crop = pil_image.crop((
+        max(0, int(x0 * scale)),
+        max(0, int(top * scale)),
+        int(x1 * scale),
+        int(bottom * scale),
+    ))
+    buf = BytesIO()
+    crop.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _extract_codes_via_vision(
+    pdf_path: Path,
+    page_index: int,
+    drawing_label: str,
+    garbled_words: list[dict],
+    page_width: float,
+    page_height: float,
+) -> list[str]:
+    """Call Claude vision API on a cropped garbled region; return cabinet codes.
+
+    Sends only the padded bounding box union of garbled tokens — not the full
+    page. Requires ANTHROPIC_API_KEY; returns [] if not set.
+    """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print(
+            f"Warning: ANTHROPIC_API_KEY not set — skipping vision fallback "
+            f"for {drawing_label}",
+            file=sys.stderr,
+        )
+        return []
+
+    bbox = _union_bbox(garbled_words, page_width, page_height, padding=60.0)
+    png_bytes = _render_crop_as_png(pdf_path, page_index, bbox)
+    image_data = base64.standard_b64encode(png_bytes).decode("utf-8")
+
+    client = anthropic.Anthropic()
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/png",
+                        "data": image_data,
+                    },
+                },
+                {
+                    "type": "text",
+                    "text": (
+                        "This is a cropped region of a 20-20 kitchen design drawing "
+                        "where cabinet labels overlap. Extract all cabinet component "
+                        "codes visible in the image. "
+                        "Cabinet codes are short uppercase alphanumeric strings like "
+                        "W0939L, W0939R, DCW2439R, WEP42, BLB42FHL, DB30, USF330. "
+                        "Return ONLY a JSON array of strings, one per code. "
+                        "Example: [\"W0939L\", \"W0939R\", \"DCW2439R\"]. "
+                        "Do not include dimension numbers, annotations, or non-cabinet text. "
+                        "Do not include any explanation — only the JSON array."
+                    ),
+                },
+            ],
+        }],
+    )
+    raw = response.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-z]*\n?", "", raw)
+        raw = re.sub(r"\n?```$", "", raw)
+    try:
+        codes = json.loads(raw)
+        return [c for c in codes if isinstance(c, str) and c.strip()]
+    except json.JSONDecodeError:
+        print(
+            f"Warning: vision fallback returned non-JSON for {drawing_label}: {raw!r}",
+            file=sys.stderr,
+        )
+        return []
+
+
+def _extract_page_codes(
+    page,
+    pdf_path: Path | None = None,
+    page_index: int = 0,
+) -> tuple[str, list[str]]:
+    """Return (drawing_label, list_of_codes) for one page.
+
+    If garbled tokens are detected (overlapping labels in floor plan),
+    sends a targeted crop of the garbled region to the vision API and
+    merges results with the text-layer extraction.
+    """
     text = page.extract_text() or ""
     # x_tolerance=1 (down from 3): keeps spatially overlapping cabinet labels
     # as separate tokens rather than merging them into garbled strings like
     # "WEPWEP42". At tolerance=3, pdfplumber merges words within 3pt —
     # too aggressive for dense 20-20 floor plans where labels physically overlap.
-    # Note: garbled tokens from partial character blending are not recoverable
-    # by text splitting and are correctly discarded as non-matches.
-    # All real codes appear cleanly in the elevation drawings (El1–El4).
     words = page.extract_words(x_tolerance=1, y_tolerance=3)
 
     label = _drawing_label(text)
@@ -88,11 +220,32 @@ def _extract_page_codes(page) -> tuple[str, list[str]]:
         if m.group(3) not in _ANNOT_ABBREVS:
             codes.append(f"{m.group(1)} {m.group(2)} {m.group(3)}")
 
-    # Cabinet codes from individual word tokens
+    # Cabinet codes from individual word tokens; collect garbled words
+    garbled_words = []
     for w in words:
         code = _token_to_code(w["text"])
         if code:
             codes.append(code)
+        elif _is_garbled(w["text"]):
+            garbled_words.append(w)
+
+    # Vision fallback for pages with garbled tokens
+    if garbled_words and pdf_path is not None:
+        try:
+            vision_codes = _extract_codes_via_vision(
+                pdf_path=pdf_path,
+                page_index=page_index,
+                drawing_label=label,
+                garbled_words=garbled_words,
+                page_width=float(page.width),
+                page_height=float(page.height),
+            )
+            codes.extend(vision_codes)
+        except Exception as exc:
+            print(
+                f"Warning: vision fallback failed for {label}: {exc}",
+                file=sys.stderr,
+            )
 
     return label, codes
 
@@ -137,8 +290,8 @@ def extract_pdfs(pdf_paths: list[Path]) -> list[PlanComponent]:
 
     for path in pdf_paths:
         with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                label, codes = _extract_page_codes(page)
+            for page_index, page in enumerate(pdf.pages):
+                label, codes = _extract_page_codes(page, pdf_path=path, page_index=page_index)
                 for code in codes:
                     key = (label, code)
                     if key in seen:

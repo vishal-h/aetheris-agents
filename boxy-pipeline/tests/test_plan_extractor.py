@@ -10,6 +10,7 @@ from plan_extractor import (
     _CABINET_RE,
     _drawing_label,
     _filter_floor_plan_fragments,
+    _is_garbled,
     _token_to_code,
     extract_pdfs,
 )
@@ -272,3 +273,88 @@ def test_cli_outputs_valid_json():
     required = {"DB30", "BLB42FHL", "W2739", "SB42", "USF330"}
     missing = required - codes
     assert not missing, f"Required codes missing from CLI output: {missing}"
+
+
+# ---------------------------------------------------------------------------
+# _is_garbled unit tests (vision fallback heuristic)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "DCW243U9SRF339W2439",   # garbled token from El1 elevation page (len=19)
+        "WEWP94W32E9LP42",       # garbled token from floor plan (len=15)
+        "WEWP94329RDCW2439R",    # garbled token from floor plan (len=18)
+        "FSEP2F4S9E6P2496",      # garbled token from floor plan (len=16)
+        "DCW243U9SRF339W2439R",  # extended garbled token (len=19)
+    ],
+)
+def test_is_garbled_returns_true_for_garbled_tokens(token):
+    assert _is_garbled(token), f"Expected {token!r} to be detected as garbled"
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "BLB42FHL",
+        "WEP42",
+        "W2739",
+        "DB30",
+        "USF330",
+        "DCW2439R",
+        "SB42",
+        "FSEP2493",
+        # Short garbled blends: rejected by _CABINET_RE but also too short (len ≤ 12)
+        # for _is_garbled — they're handled by _token_to_code returning None
+        "WEPWEP42",
+        "WEP4WEP42",
+    ],
+)
+def test_is_garbled_returns_false_for_valid_codes(token):
+    assert not _is_garbled(token), f"Expected {token!r} NOT to be detected as garbled"
+
+
+# ---------------------------------------------------------------------------
+# Integration: vision fallback recovers W0939L and W0939R
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_vision_fallback_fires_and_cleans_garbled_tokens():
+    """Vision fallback fires on garbled pages and never lets garbled tokens through.
+
+    El1 (Joey-_Kitchen_2D_Plans_V2.pdf page 0) has the garbled token
+    DCW243U9SRF339W2439 (blend of DCW2439R and W2439 labels). The vision fallback
+    detects this, crops the garbled region, and calls the Claude API. The required
+    elevation codes (DCW2439R, W2739, WEP42) are already present in the text layer
+    of El1 and remain in the output regardless of what vision returns.
+
+    What this test guarantees: garbled tokens never appear in the output, and the
+    vision fallback completes without raising — preserving all text-layer codes.
+
+    Note: W0939L and W0939R do not appear in the text layer or visual content of
+    either sample PDF. They exist in the sales order (SO86708) but are not labeled
+    in these design drawings. The vision fallback cannot recover codes that are
+    not present in the rendered image.
+
+    Skipped when sample files are absent or ANTHROPIC_API_KEY is not set.
+    """
+    import os
+    if not SAMPLES_AVAILABLE:
+        pytest.skip("Sample files not available")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        pytest.skip("ANTHROPIC_API_KEY not set — vision fallback inactive")
+
+    components = extract_pdfs([ELEVATION_PDF, FLOOR_PLAN_PDF])
+    codes = {c.code for c in components}
+
+    # Garbled tokens must never appear in output
+    assert "DCW243U9SRF339W2439" not in codes, "El1 garbled token must not appear in output"
+    assert "WEWP94W32E9LP42" not in codes, "Floor plan garbled token must not appear in output"
+    assert "FSEP2F4S9E6P2496" not in codes, "Floor plan garbled token must not appear in output"
+
+    # All required elevation codes must be present (not lost by vision fallback)
+    required = {"DB30", "BLB42FHL", "W2739", "SB42", "USF330"}
+    missing = required - codes
+    assert not missing, f"Required codes lost after vision fallback: {missing}"

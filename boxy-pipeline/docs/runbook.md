@@ -102,6 +102,11 @@ Reads `ResolvedItem` JSON from stdin; writes `output/{project}_order_form.xlsx`.
 Scripts that build or read the persistent data files (stored under `data/`,
 gitignored — never commit).
 
+`plan_extractor.py` uses the `anthropic` Python SDK for the vision fallback
+(garbled page detection). Ensure `ANTHROPIC_API_KEY` is set in the environment
+before running the full pipeline — text-layer extraction works without it, but
+overlapping label regions on floor plan pages will be skipped with a warning.
+
 **catalog_extractor — build catalog.jsonl**
 
 ```bash

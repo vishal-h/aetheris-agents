@@ -74,12 +74,54 @@ def _color_name_from_header(header: str, fallback: str) -> str:
     return lines[1].strip() if len(lines) > 1 else fallback
 
 
+def load_catalog_jsonl(path: Path) -> dict[str, list[CatalogItem]]:
+    """Load catalog from a JSONL file; return code → [CatalogItem] index.
+
+    Reads the output of catalog_extractor.py (one CatalogEntry JSON per line).
+    Builds the same dual-keyed index as load_catalog: both raw_code and
+    base_code are indexed so that plan code "DB30" resolves via the catalog
+    entry stored as raw_code="3DB30" / base_code="DB30".
+
+    Faster than load_catalog (Excel) for pipeline runs — no pandas/openpyxl
+    overhead, just sequential JSON reads.
+    """
+    index: dict[str, list[CatalogItem]] = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            entry = json.loads(line)
+            item = CatalogItem(
+                sku=entry['sku'],
+                series=entry['series'],
+                color_code=entry['color_code'],
+                color_name=entry['color_name'],
+                description=entry['description'],
+                cabinet_type=entry['cabinet_type'],
+                width_in=entry['width_in'],
+                height_in=entry['height_in'],
+                depth_in=entry['depth_in'],
+                msrp=entry['msrp'],
+            )
+            raw_code = entry['raw_code']
+            base_code = entry['base_code']
+            index.setdefault(raw_code, []).append(item)
+            if base_code != raw_code:
+                index.setdefault(base_code, []).append(item)
+    return index
+
+
 def load_catalog(path: Path) -> dict[str, list[CatalogItem]]:
     """Load all Price List sheets; return code → [CatalogItem] index.
 
     Both raw catalog codes and leading-digit-stripped codes are indexed so that
     plan code "DB30" (which doesn't exist verbatim in the catalog) resolves via
     the normalized form of catalog entry "3DB30".
+
+    Deprecated: prefer load_catalog_jsonl for pipeline runs. This Excel path
+    is retained as a fallback for environments where catalog.jsonl has not yet
+    been generated.
     """
     xl = pd.ExcelFile(path)
     index: dict[str, list[CatalogItem]] = {}
@@ -233,13 +275,16 @@ def resolve(
     upper_finish: tuple[str, str, str],
     lower_finish: tuple[str, str, str],
 ) -> list[ResolvedItem]:
-    index = load_catalog(catalog_path)
+    if catalog_path.suffix.lower() == '.jsonl':
+        index = load_catalog_jsonl(catalog_path)
+    else:
+        index = load_catalog(catalog_path)
     return [_resolve_component(c, index, upper_finish, lower_finish) for c in components]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Resolve plan codes against Boxy catalog.")
-    parser.add_argument("--catalog", required=True, type=Path, metavar="XLSX")
+    parser.add_argument("--catalog", required=True, type=Path, metavar="XLSX_OR_JSONL")
     parser.add_argument("--upper-finish", required=True, metavar="CODE:NAME:SERIES")
     parser.add_argument("--lower-finish", required=True, metavar="CODE:NAME:SERIES")
     args = parser.parse_args()

@@ -169,8 +169,9 @@ def _extract_codes_via_vision(
     # Strip markdown fences (model sometimes wraps output despite instructions)
     raw = re.sub(r"^```[a-z]*\n?", "", raw)
     raw = re.sub(r"\n?```$", "", raw)
-    # If model included reasoning text before the JSON, extract the array
-    m = re.search(r'\[.*\]', raw, re.DOTALL)
+    # If model included reasoning text before the JSON, extract the array.
+    # Non-greedy inner match avoids spanning two separate arrays if present.
+    m = re.search(r'\[(?:[^\[\]]|\[.*?\])*\]', raw, re.DOTALL)
     if m:
         raw = m.group(0)
     try:

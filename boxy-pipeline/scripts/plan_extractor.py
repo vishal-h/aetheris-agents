@@ -78,30 +78,17 @@ def _is_garbled(token: str) -> bool:
     return len(cleaned) > 12 and not _CABINET_RE.fullmatch(cleaned)
 
 
-def _union_bbox(
-    bboxes: list[dict],
-    page_width: float,
-    page_height: float,
-    padding: float = 60.0,
-) -> tuple[float, float, float, float]:
-    """Return padded union of all bounding boxes, clamped to page dimensions."""
-    x0     = max(0.0,         min(b['x0']     for b in bboxes) - padding)
-    top    = max(0.0,         min(b['top']     for b in bboxes) - padding)
-    x1     = min(page_width,  max(b['x1']     for b in bboxes) + padding)
-    bottom = min(page_height, max(b['bottom'] for b in bboxes) + padding)
-    return x0, top, x1, bottom
-
-
-def _render_crop_as_png(
+def _render_full_page_as_png(
     pdf_path: Path,
     page_index: int,
-    bbox: tuple[float, float, float, float],
-    scale: float = 2.0,
+    scale: float = 1.5,
 ) -> bytes:
-    """Render a cropped region of a PDF page to PNG bytes.
+    """Render a full PDF page to PNG bytes.
 
-    bbox is in PDF points (same coordinate system as pdfplumber word dicts).
-    scale=2.0 gives ~144 DPI output.
+    scale=1.5 gives ~108 DPI — sufficient for vision model label recognition
+    while keeping image size manageable (~100KB for a 20-20 elevation page).
+    Full page preferred over crop: gives spatial context that helps the model
+    disambiguate overlapping labels.
     """
     import pypdfium2 as pdfium
     from io import BytesIO
@@ -110,16 +97,8 @@ def _render_crop_as_png(
     page = pdf[page_index]
     bitmap = page.render(scale=scale)
     pil_image = bitmap.to_pil()
-
-    x0, top, x1, bottom = bbox
-    crop = pil_image.crop((
-        max(0, int(x0 * scale)),
-        max(0, int(top * scale)),
-        int(x1 * scale),
-        int(bottom * scale),
-    ))
     buf = BytesIO()
-    crop.save(buf, format="PNG")
+    pil_image.save(buf, format="PNG")
     return buf.getvalue()
 
 
@@ -127,14 +106,12 @@ def _extract_codes_via_vision(
     pdf_path: Path,
     page_index: int,
     drawing_label: str,
-    garbled_words: list[dict],
-    page_width: float,
-    page_height: float,
 ) -> list[str]:
-    """Call Claude vision API on a cropped garbled region; return cabinet codes.
+    """Call Claude vision API on a full rendered page; return cabinet codes.
 
-    Sends only the padded bounding box union of garbled tokens — not the full
-    page. Requires ANTHROPIC_API_KEY; returns [] if not set.
+    Sends the full page (not a crop) — spatial context improves label
+    recognition in regions where labels overlap.
+    Requires ANTHROPIC_API_KEY; returns [] if not set.
     """
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print(
@@ -144,11 +121,7 @@ def _extract_codes_via_vision(
         )
         return []
 
-    # 120pt padding (up from 60): the garbled region on El1 has overlapping labels
-    # visually present ~80pt below the token bbox. 60pt padding cropped them out.
-    # 120pt captures the full label neighbourhood in all directions.
-    bbox = _union_bbox(garbled_words, page_width, page_height, padding=120.0)
-    png_bytes = _render_crop_as_png(pdf_path, page_index, bbox)
+    png_bytes = _render_full_page_as_png(pdf_path, page_index)
     image_data = base64.standard_b64encode(png_bytes).decode("utf-8")
 
     client = anthropic.Anthropic()
@@ -169,13 +142,12 @@ def _extract_codes_via_vision(
                 {
                     "type": "text",
                     "text": (
-                        "This is a cropped region of a 20-20 kitchen design drawing "
-                        "where cabinet labels overlap. Extract all cabinet component "
-                        "codes visible in the image.\n\n"
+                        "This is a 20-20 kitchen design drawing where cabinet "
+                        "labels overlap. Extract all cabinet component codes "
+                        "visible in the image.\n\n"
                         "Cabinet codes follow this strict format:\n"
-                        "- 1–4 uppercase letters, followed by\n"
-                        "- 2–4 digits, optionally followed by\n"
-                        "- 0–4 uppercase letters (e.g. L, R, FHL)\n"
+                        "- 1-4 uppercase letters, followed by 2-4 digits, "
+                        "optionally followed by 0-4 uppercase letters\n"
                         "- Minimum 4 characters total\n"
                         "- Examples: W0939L, W0939R, DCW2439R, WEP42, "
                         "BLB42FHL, DB30, USF330, W2739\n\n"
@@ -186,24 +158,28 @@ def _extract_codes_via_vision(
                         "(e.g. DA 6698 W, G 7186 SCVi)\n"
                         "- Do NOT include partial codes or fragments\n"
                         "- Do NOT include annotation text (Filler, BEP, etc.)\n\n"
-                        "Return ONLY a JSON array of strings, one code per element. "
-                        "Example: [\"W0939L\", \"W0939R\", \"DCW2439R\"]. "
-                        "No explanation — only the JSON array."
+                        "Return ONLY a JSON array of strings, one code per "
+                        "element. No explanation — only the JSON array."
                     ),
                 },
             ],
         }],
     )
     raw = response.content[0].text.strip()
-    if raw.startswith("```"):
-        raw = re.sub(r"^```[a-z]*\n?", "", raw)
-        raw = re.sub(r"\n?```$", "", raw)
+    # Strip markdown fences (model sometimes wraps output despite instructions)
+    raw = re.sub(r"^```[a-z]*\n?", "", raw)
+    raw = re.sub(r"\n?```$", "", raw)
+    # If model included reasoning text before the JSON, extract the array
+    m = re.search(r'\[.*\]', raw, re.DOTALL)
+    if m:
+        raw = m.group(0)
     try:
         codes = json.loads(raw)
         return [c for c in codes if isinstance(c, str) and c.strip()]
     except json.JSONDecodeError:
         print(
-            f"Warning: vision fallback returned non-JSON for {drawing_label}: {raw!r}",
+            f"Warning: vision fallback returned non-JSON for {drawing_label}: "
+            f"{raw[:80]!r}",
             file=sys.stderr,
         )
         return []
@@ -251,9 +227,6 @@ def _extract_page_codes(
                 pdf_path=pdf_path,
                 page_index=page_index,
                 drawing_label=label,
-                garbled_words=garbled_words,
-                page_width=float(page.width),
-                page_height=float(page.height),
             )
             # Validate vision codes through the same filter as text-layer tokens
             for raw in vision_codes:

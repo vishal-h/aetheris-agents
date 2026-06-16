@@ -55,7 +55,7 @@ No additional credentials — pure transforms, no network.
 
 | Variable | Required | Description |
 |---|---|---|
-| `EDUX_SINK` | yes (t6+) | Sink selection: `direct` → upsert into Postgres; `export` → write JSONL for ct-edux ingest |
+| `EDUX_SINK` | no (default: `export`) | Sink selection: `direct` → upsert into Postgres; `export` → write JSONL for ct-edux ingest |
 | `EDUX_DATABASE_URL` | `direct` only | PostgreSQL connection string for the `gws_cse` database |
 | `EDUX_TERMS_FILE` | no | Override path to terms file (default: `data/terms.txt`) |
 

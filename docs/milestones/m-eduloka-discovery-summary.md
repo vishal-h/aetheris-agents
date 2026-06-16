@@ -27,8 +27,8 @@ multi-provider, enrichment-capable, orchestrated pipeline.
 
 | Ticket | Deliverable |
 |--------|-------------|
-| t1 | `fetch.py` — 4 provider adapters (CSE, Exa, Serper, DataForSEO) |
-| t2 | `fetch_{cse,exa,serper,dataforseo}.py` — provider-specific fetchers |
+| t1 | `fetch.py` + `fetch_base.py` + `fetch_cse.py` + `fetch_exa.py` — core fetch loop, CSE + Exa adapters |
+| t2 | `fetch_serper.py` + `fetch_dataforseo.py` — Serper + DataForSEO adapters |
 | t3 | `mappers.py` + `map.py` — bronze→silver; `EduxRecord` schema |
 | t4 | `enrichers.py` + `enrich.py` — versioned enrichers; silver→gold |
 | t5 | `upsert_institute.py` — direct Postgres sink; faithful `gws_cse` DDL |
@@ -67,12 +67,12 @@ runs.
 | Test file | Count | Notes |
 |-----------|-------|-------|
 | test_fetch.py | 25 | offline; DuckDB integration (1) auto-skips if absent |
-| test_map.py | — | — |
-| test_enrich.py | — | — |
+| test_map.py | 15 | fully offline |
+| test_enrich.py | 14 | fully offline |
 | test_upsert.py | 9 | 6 offline + 3 integration (auto-skip w/o EDUX_DATABASE_URL) |
 | test_export.py | 12 | fully offline |
-| test_list_terms.py | 17 | unit + CLI + slug |
-| **Total** | **88** | **+ 3 integration skips** |
+| test_list_terms.py | 16 | unit + CLI + slug |
+| **Total** | **88 pass / 91 collected** | **+ 3 integration skips** |
 
 Sprint: `./scripts/sprint.sh eduloka` — 8/8 checks, no live API or DB required.
 

@@ -33,6 +33,14 @@
           "description": "Number of results to fetch"
         },
         {
+          "name": "start",
+          "flag": "--start",
+          "type": "integer",
+          "required": false,
+          "default": "1",
+          "description": "1-indexed result offset (for pagination)"
+        },
+        {
           "name": "output_dir",
           "flag": "--output-dir",
           "type": "directory",

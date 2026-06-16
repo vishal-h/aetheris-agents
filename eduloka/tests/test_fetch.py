@@ -233,6 +233,22 @@ def test_dataforseo_start_slice(monkeypatch):
     assert [i["url"] for i in items] == ["https://annauniv.edu"]
 
 
+def test_dataforseo_null_result_returns_empty(monkeypatch):
+    # DataForSEO returns "result": null on task-level errors (auth, quota, bad params).
+    # Must return [] rather than raising TypeError (which would break the stdout contract).
+    monkeypatch.setattr(fetch_dataforseo, "http_post_json",
+                        lambda *a, **k: {"tasks": [{"result": None}]})
+    items = fetch_dataforseo.DataForSeoFetcher().fetch("iit")
+    assert items == []
+
+
+def test_dataforseo_null_items_returns_empty(monkeypatch):
+    monkeypatch.setattr(fetch_dataforseo, "http_post_json",
+                        lambda *a, **k: {"tasks": [{"result": [{"items": None}]}]})
+    items = fetch_dataforseo.DataForSeoFetcher().fetch("iit")
+    assert items == []
+
+
 def test_dataforseo_missing_credentials_raise(monkeypatch):
     monkeypatch.delenv("DATAFORSEO_LOGIN", raising=False)
     with pytest.raises(fetch_base.SearchError):

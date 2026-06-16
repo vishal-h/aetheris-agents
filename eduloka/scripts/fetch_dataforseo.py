@@ -3,6 +3,11 @@
 Pure prepaid billing. No result offset — over-fetch and slice by start.
 Only `type == "organic"` items are returned; ads, knowledge panels, etc. are dropped.
 
+Country defaults to India when the ISO code is not in _LOCATION_MAP (DataForSEO
+uses location_name strings, not ISO codes). Unknown codes fall back to "India"
+silently — this is intentional for the India-focused eduloka pipeline. Pass a
+`country` value present in _LOCATION_MAP to target another market explicitly.
+
 DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD must be set.
 """
 
@@ -48,10 +53,15 @@ class DataForSeoFetcher(Fetcher):
         }]
         headers = {"Authorization": self._auth}
         body = http_post_json(ENDPOINT, headers, payload)
-        all_items = (
-            body.get("tasks", [{}])[0]
-                .get("result", [{}])[0]
-                .get("items", [])
-        )
+        # Use `or []` (not `get(k, [])`) so that explicit null values — which
+        # DataForSEO returns on task-level errors like auth/quota failures —
+        # are also treated as empty rather than causing a TypeError on indexing.
+        tasks = body.get("tasks") or []
+        if not tasks:
+            return []
+        results = tasks[0].get("result") or []
+        if not results:
+            return []
+        all_items = results[0].get("items") or []
         organic = [i for i in all_items if i.get("type") == "organic"]
         return organic[start - 1:][:num]

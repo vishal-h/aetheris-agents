@@ -1,4 +1,4 @@
-"""Stage-1 fetch tests (t1: cse + exa; t2 adds serper + dataforseo).
+"""Stage-1 fetch tests (t1: cse + exa; t2: serper + dataforseo).
 
 The single http_get_json / http_post_json choke points are monkeypatched so
 tests run offline with no credentials or network.
@@ -13,7 +13,9 @@ import pytest
 
 import fetch_base
 import fetch_cse
+import fetch_dataforseo
 import fetch_exa
+import fetch_serper
 
 USE_CASE_ROOT = Path(__file__).parent.parent
 
@@ -48,6 +50,23 @@ EXA_BODY = {
     ]
 }
 
+SERPER_BODY = {
+    "organic": [
+        {"title": "IIT Madras", "link": "https://iitm.ac.in", "snippet": "tech", "position": 1},
+        {"title": "Anna University", "link": "https://annauniv.edu", "snippet": "uni", "position": 2},
+    ]
+}
+
+DATAFORSEO_BODY = {
+    "tasks": [{"result": [{"items": [
+        {"type": "organic", "title": "IIT Madras", "url": "https://iitm.ac.in",
+         "description": "tech", "rank_absolute": 1},
+        {"type": "people_also_ask", "title": "ignored"},
+        {"type": "organic", "title": "Anna University", "url": "https://annauniv.edu",
+         "description": "uni", "rank_absolute": 2},
+    ]}]}]
+}
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -55,7 +74,8 @@ EXA_BODY = {
 
 @pytest.fixture(autouse=True)
 def _creds(monkeypatch):
-    for k in ("GWS_CSE_API_KEY", "GWS_CSE_ENGINE_ID", "EXA_API_KEY"):
+    for k in ("GWS_CSE_API_KEY", "GWS_CSE_ENGINE_ID", "EXA_API_KEY",
+              "SERPER_API_KEY", "DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"):
         monkeypatch.setenv(k, "test-key")
 
 
@@ -141,6 +161,82 @@ def test_missing_cse_credentials_raise(monkeypatch):
 def test_unknown_provider_raises():
     with pytest.raises(fetch_base.SearchError):
         fetch_base.get_fetcher("bing")
+
+
+# ---------------------------------------------------------------------------
+# Serper tests
+# ---------------------------------------------------------------------------
+
+def test_serper_returns_raw_organic(monkeypatch):
+    monkeypatch.setattr(fetch_serper, "http_post_json", lambda *a, **k: SERPER_BODY)
+    items = fetch_serper.SerperFetcher().fetch("iit")
+    assert [i["link"] for i in items] == ["https://iitm.ac.in", "https://annauniv.edu"]
+    assert "position" in items[0]  # raw, unmapped
+
+
+def test_serper_page_param(monkeypatch):
+    captured = {}
+
+    def fake_post(url, headers, payload, **k):
+        captured["page"] = payload["page"]
+        return SERPER_BODY
+
+    monkeypatch.setattr(fetch_serper, "http_post_json", fake_post)
+    fetch_serper.SerperFetcher().fetch("iit", start=11, num=10)
+    assert captured["page"] == 2  # (11-1)//10 + 1
+
+
+def test_serper_country_gl_param(monkeypatch):
+    captured = {}
+
+    def fake_post(url, headers, payload, **k):
+        captured["gl"] = payload["gl"]
+        return SERPER_BODY
+
+    monkeypatch.setattr(fetch_serper, "http_post_json", fake_post)
+    fetch_serper.SerperFetcher().fetch("iit", country="US")
+    assert captured["gl"] == "us"
+
+
+def test_serper_missing_credentials_raise(monkeypatch):
+    monkeypatch.delenv("SERPER_API_KEY", raising=False)
+    with pytest.raises(fetch_base.SearchError):
+        fetch_serper.SerperFetcher()
+
+
+# ---------------------------------------------------------------------------
+# DataForSEO tests
+# ---------------------------------------------------------------------------
+
+def test_dataforseo_filters_non_organic_raw(monkeypatch):
+    monkeypatch.setattr(fetch_dataforseo, "http_post_json", lambda *a, **k: DATAFORSEO_BODY)
+    items = fetch_dataforseo.DataForSeoFetcher().fetch("iit")
+    assert [i["url"] for i in items] == ["https://iitm.ac.in", "https://annauniv.edu"]
+    assert all(i["type"] == "organic" for i in items)
+
+
+def test_dataforseo_overfetch_depth(monkeypatch):
+    captured = {}
+
+    def fake_post(url, headers, payload, **k):
+        captured["depth"] = payload[0]["depth"]
+        return DATAFORSEO_BODY
+
+    monkeypatch.setattr(fetch_dataforseo, "http_post_json", fake_post)
+    fetch_dataforseo.DataForSeoFetcher().fetch("iit", start=3, num=5)
+    assert captured["depth"] == 7  # (3-1) + 5
+
+
+def test_dataforseo_start_slice(monkeypatch):
+    monkeypatch.setattr(fetch_dataforseo, "http_post_json", lambda *a, **k: DATAFORSEO_BODY)
+    items = fetch_dataforseo.DataForSeoFetcher().fetch("iit", start=2, num=10)
+    assert [i["url"] for i in items] == ["https://annauniv.edu"]
+
+
+def test_dataforseo_missing_credentials_raise(monkeypatch):
+    monkeypatch.delenv("DATAFORSEO_LOGIN", raising=False)
+    with pytest.raises(fetch_base.SearchError):
+        fetch_dataforseo.DataForSeoFetcher()
 
 
 # ---------------------------------------------------------------------------

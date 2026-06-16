@@ -29,11 +29,23 @@ Set via shell export or Rig agent config (§"Agent config" below).
 | `GWS_CSE_ENGINE_ID` | cse | Programmable Search Engine ID (`cx`) |
 | `GWS_CSE_REFERER` | cse (optional) | HTTP Referer header — only if the key is referer-restricted |
 | `EXA_API_KEY` | exa | Exa API key |
+| `SERPER_API_KEY` | serper | Serper API key |
+| `DATAFORSEO_LOGIN` | dataforseo | DataForSEO account login (email) |
+| `DATAFORSEO_PASSWORD` | dataforseo | DataForSEO account password |
 
 **CSE notes:**
 - Free tier: 100 queries/day. Shared with any other CSE usage on the key.
 - Sunset: **2027-01-01**. CSE is the free baseline until then; paid providers (serper, dataforseo, exa) are available as drop-in replacements.
 - Same credentials as the legacy `ct-edux` app (`GWS_CSE_API_KEY`, `GWS_CSE_ENGINE_ID`).
+
+**Serper notes:**
+- Prepaid 6-month billing. Closest paid match to CSE results (Google SERP).
+- Paginates by page number (`page=1` = results 1–num; `page=2` = num+1–2·num).
+
+**DataForSEO notes:**
+- Pure prepaid credits (charged per task). Cheapest per-query of the paid three.
+- Uses the live/advanced Google organic endpoint. No result offset — over-fetches and slices.
+- Login is the account email; password is the account password (not an API key).
 
 ### Stage-2 (map) and stage-3 (enrich)
 
@@ -71,6 +83,15 @@ python3 scripts/fetch.py --provider cse --term "iit.ac.in" --num 10
 # Exa — semantic, full page text
 export EXA_API_KEY=...
 python3 scripts/fetch.py --provider exa --term "iit.ac.in" --num 10
+
+# Serper — paid Google SERP (prepaid 6-month credits)
+export SERPER_API_KEY=...
+python3 scripts/fetch.py --provider serper --term "iit.ac.in" --num 10
+
+# DataForSEO — paid Google SERP (prepaid per-query credits)
+export DATAFORSEO_LOGIN=...
+export DATAFORSEO_PASSWORD=...
+python3 scripts/fetch.py --provider dataforseo --term "iit.ac.in" --num 10
 ```
 
 Output: `data/raw/{provider}.jsonl` (one envelope per line: `provider`,

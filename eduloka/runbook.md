@@ -246,11 +246,18 @@ python3 -m pytest tests/ -v -m "not integration"
 
 | Path | Stage | Notes |
 |---|---|---|
-| `data/raw/{provider}.jsonl` | bronze | Provider-native envelopes; append-only |
-| `data/raw/provider={p}/dt={date}/` | bronze (partition) | Hive-partitioned; DuckDB-queryable |
-| `data/edux/{provider}.jsonl` | silver | EduxRecord JSON; re-mappable without re-querying |
-| `data/gold/{provider}.jsonl` | gold | EduxRecord + namespaced enrichment; analytics-ready |
-| `data/export/{provider}.jsonl` | export | gws_cse-shaped rows; ct-edux ingest handoff |
+| `data/raw/{provider}.jsonl` | bronze (flat) | Provider-native envelopes; append-only; default fetch output |
+| `data/raw/{slug}/{provider}.jsonl` | bronze (per-term) | Per-term isolation used by the orchestrator (parallel sub-agents) |
+| `data/raw/provider={p}/dt={date}/{slug}.jsonl` | bronze (Hive) | Partitioned output; `fetch.py --partition`; queryable by DuckDB/Athena |
+| `data/edux/{slug}.jsonl` | silver | EduxRecord JSON; re-mappable without re-querying |
+| `data/gold/{slug}.jsonl` | gold | EduxRecord + namespaced enrichment; analytics-ready |
+| `data/export/{slug}.jsonl` | export | gws_cse-shaped rows; ct-edux ingest handoff |
+
+**Bronze layout note:** the orchestrator uses the per-term layout (`data/raw/{slug}/`),
+not the Hive partition tree. The `--partition` flag produces a separate Hive tree
+intended for analytics workloads (DuckDB, Athena). These are two distinct layouts;
+the Hive tree must be populated separately via manual or batch `--partition` fetch
+runs — it is not populated by a normal pipeline run.
 
 `data/terms.txt` is **committed config** — it is not gitignored.
 

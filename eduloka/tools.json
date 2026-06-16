@@ -1,0 +1,245 @@
+{
+  "manifest_version": "1",
+  "use_case": "eduloka",
+  "description": "Institute discovery pipeline — provider-swappable medallion pipeline landing in gws_cse",
+  "scripts": [
+    {
+      "name": "fetch",
+      "file": "scripts/fetch.py",
+      "description": "Fetch search results for a term and write provider-native JSONL to the bronze layer",
+      "args": [
+        {
+          "name": "provider",
+          "flag": "--provider",
+          "type": "string",
+          "required": false,
+          "default": "$SEARCH_PROVIDER",
+          "description": "Provider: cse, serper, dataforseo, or exa"
+        },
+        {
+          "name": "term",
+          "flag": "--term",
+          "type": "string",
+          "required": true,
+          "default": null,
+          "description": "Search term (e.g. iit.ac.in)"
+        },
+        {
+          "name": "num",
+          "flag": "--num",
+          "type": "integer",
+          "required": false,
+          "default": "10",
+          "description": "Number of results to fetch"
+        },
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "data/raw/",
+          "description": "Output directory (default: data/raw/ under use-case root)"
+        },
+        {
+          "name": "partition",
+          "flag": "--partition",
+          "type": "boolean",
+          "required": false,
+          "default": null,
+          "description": "Write to Hive-partitioned path provider=P/dt=YYYY-MM-DD/ instead of flat"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/fetch.py --provider exa --term iit.ac.in --num 10"
+    },
+    {
+      "name": "map",
+      "file": "scripts/map.py",
+      "description": "Map provider-native bronze JSONL to EduxRecord silver JSONL",
+      "args": [
+        {
+          "name": "in_path",
+          "flag": "--in",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Input bronze JSONL file"
+        },
+        {
+          "name": "out_path",
+          "flag": "--out",
+          "type": "string",
+          "required": false,
+          "default": "data/edux/{stem}.jsonl",
+          "description": "Output silver JSONL path (default: data/edux/<stem>.jsonl)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/map.py --in data/raw/iit.ac.in/exa.jsonl --out data/edux/iit.ac.in.jsonl"
+    },
+    {
+      "name": "enrich",
+      "file": "scripts/enrich.py",
+      "description": "Enrich EduxRecord silver JSONL with namespaced enrichment payloads to produce gold JSONL",
+      "args": [
+        {
+          "name": "in_path",
+          "flag": "--in",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Input silver JSONL file"
+        },
+        {
+          "name": "out_path",
+          "flag": "--out",
+          "type": "string",
+          "required": false,
+          "default": "data/gold/{stem}.jsonl",
+          "description": "Output gold JSONL path (default: data/gold/<stem>.jsonl)"
+        },
+        {
+          "name": "enrichers",
+          "flag": "--enrichers",
+          "type": "string",
+          "required": false,
+          "default": "domain,keywords",
+          "description": "Comma-separated list of enrichers to apply"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/enrich.py --in data/edux/iit.ac.in.jsonl --out data/gold/iit.ac.in.jsonl"
+    },
+    {
+      "name": "export_institute",
+      "file": "scripts/export_institute.py",
+      "description": "Export gold JSONL as gws_cse-shaped JSONL for ct-edux ingest (sink B — no DB required)",
+      "args": [
+        {
+          "name": "in_path",
+          "flag": "--in",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Input gold JSONL file"
+        },
+        {
+          "name": "out_path",
+          "flag": "--out",
+          "type": "string",
+          "required": false,
+          "default": "data/export/{stem}.jsonl",
+          "description": "Output export JSONL path (default: data/export/<stem>.jsonl)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/export_institute.py --in data/gold/iit.ac.in.jsonl"
+    },
+    {
+      "name": "upsert_institute",
+      "file": "scripts/upsert_institute.py",
+      "description": "Upsert gold JSONL into the Postgres gws_cse table (sink A — requires EDUX_DATABASE_URL)",
+      "args": [
+        {
+          "name": "in_path",
+          "flag": "--in",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Input gold JSONL file"
+        },
+        {
+          "name": "db_url",
+          "flag": "--db",
+          "type": "string",
+          "required": false,
+          "default": "$EDUX_DATABASE_URL",
+          "description": "PostgreSQL connection string (overrides EDUX_DATABASE_URL)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/upsert_institute.py --in data/gold/iit.ac.in.jsonl"
+    },
+    {
+      "name": "list_terms",
+      "file": "scripts/list_terms.py",
+      "description": "Read data/terms.txt and return the term list with filesystem-safe slugs as JSON",
+      "args": [
+        {
+          "name": "terms_file",
+          "flag": "--terms-file",
+          "type": "file",
+          "required": false,
+          "default": "data/terms.txt",
+          "description": "Path to terms file (overrides EDUX_TERMS_FILE env var)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/list_terms.py"
+    },
+    {
+      "name": "edux_record",
+      "file": "scripts/edux_record.py",
+      "description": "EduxRecord dataclass — shared schema and projection functions imported by map/enrich/upsert/export",
+      "args": [],
+      "output": "text",
+      "example": "python3 -c \"from edux_record import EduxRecord; print(EduxRecord(link='https://iitm.ac.in').to_gws_cse())\""
+    },
+    {
+      "name": "enrichers",
+      "file": "scripts/enrichers.py",
+      "description": "Enricher registry (domain TLD, keyword extraction) — imported by enrich.py",
+      "args": [],
+      "output": "text",
+      "example": "python3 -c \"from enrichers import ENRICHERS; print(list(ENRICHERS))\""
+    },
+    {
+      "name": "mappers",
+      "file": "scripts/mappers.py",
+      "description": "Raw-to-EduxRecord mapper functions per provider — imported by map.py",
+      "args": [],
+      "output": "text",
+      "example": "python3 -c \"from mappers import MAPPERS; print(list(MAPPERS))\""
+    },
+    {
+      "name": "fetch_base",
+      "file": "scripts/fetch_base.py",
+      "description": "Base fetcher classes, SearchError, and provider registry — imported by fetch.py",
+      "args": [],
+      "output": "text",
+      "example": "python3 -c \"from fetch_base import PROVIDERS; print(PROVIDERS)\""
+    },
+    {
+      "name": "fetch_cse",
+      "file": "scripts/fetch_cse.py",
+      "description": "Google Custom Search (CSE) fetcher — registered in fetch_base.PROVIDERS as 'cse'",
+      "args": [],
+      "output": "text",
+      "example": "python3 scripts/fetch.py --provider cse --term iit.ac.in"
+    },
+    {
+      "name": "fetch_exa",
+      "file": "scripts/fetch_exa.py",
+      "description": "Exa semantic search fetcher — registered in fetch_base.PROVIDERS as 'exa'",
+      "args": [],
+      "output": "text",
+      "example": "python3 scripts/fetch.py --provider exa --term iit.ac.in"
+    },
+    {
+      "name": "fetch_serper",
+      "file": "scripts/fetch_serper.py",
+      "description": "Serper Google SERP fetcher — registered in fetch_base.PROVIDERS as 'serper'",
+      "args": [],
+      "output": "text",
+      "example": "python3 scripts/fetch.py --provider serper --term iit.ac.in"
+    },
+    {
+      "name": "fetch_dataforseo",
+      "file": "scripts/fetch_dataforseo.py",
+      "description": "DataForSEO Google organic fetcher — registered in fetch_base.PROVIDERS as 'dataforseo'",
+      "args": [],
+      "output": "text",
+      "example": "python3 scripts/fetch.py --provider dataforseo --term iit.ac.in"
+    }
+  ]
+}

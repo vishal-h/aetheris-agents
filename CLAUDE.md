@@ -145,6 +145,9 @@ cot1_id   = "#{orb_id}-cot1"
 - **`cwd=USE_CASE_ROOT`** in subprocess calls from tests so `data/` and `scripts/` resolve correctly.
 - **No `__init__.py`** in use-case directories whose name collides with stdlib packages. Use `conftest.py` to insert `scripts/` into `sys.path` instead.
 - **Done-check thresholds:** set numeric thresholds (e.g. "≥N resolved items") only after running the pipeline against actual sample data. Estimating before examining output consistently produces wrong numbers and requires a correction commit.
+- **Slugification belongs in Python, not the LLM.** When file paths depend on user-supplied strings (search terms, names), implement a `slug_term()` function in a script that returns a filesystem-safe slug. The orchestrator calls the script once, receives pre-computed slugs alongside the original values, and passes both to sub-agents — the LLM does string substitution only, never derives slugs itself.
+- **Explicit sink selection with fail-fast.** When a pipeline supports multiple operational sinks (e.g., DB upsert vs. file export), select via an env var resolved at agent eval time. A required-but-absent credential must `raise` immediately — never silently fall back to a different sink. Regression-guard the raise in sprint with a hermetic env check: `env -u MISSING_VAR SINK=mode mix run --eval ...`.
+- **Parallel sub-agent file isolation.** When an orchestrator spawns parallel sub-agents that each write files for the same logical output, give each sub-agent a per-term directory (e.g., `data/raw/{slug}/`) rather than a shared flat directory. Without isolation, parallel agents silently overwrite each other's output.
 
 ### conftest.py pattern
 
@@ -211,5 +214,6 @@ routes, or DB tables. Zero FAIL findings and zero WARN findings required before 
 | email | `email/docs/t3-implementation-notes.md` |
 | api (TAP) | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
 | boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/m-boxy-pipeline-1a.md`, `boxy-pipeline/docs/runbook.md` |
+| eduloka | `eduloka/runbook.md`, `docs/milestones/m-eduloka-discovery-summary.md` |
 
 The `docs/agent-creation-guide.md` is the authoritative reference for building new agents.

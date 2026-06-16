@@ -83,13 +83,15 @@ until needed. GWS_CSE_REFERER is optional (only for a referer-restricted key).
   mapping is isolated per provider in `mappers.py` to make corrections a
   one-spot edit.
 
-## Partition mode (t7 — datalake readiness)
+## Partition mode (datalake readiness)
 
 Pass `--partition` to `fetch.py` to write Hive-partitioned bronze paths:
 
-    data/raw/provider=exa/dt=2026-06-16/edu.in.jsonl
+    data/raw/provider=exa/dt=2026-06-16/iit.ac.in.jsonl
+    data/raw/provider=exa/dt=2026-06-16/engineering-college-karnataka.jsonl
 
-The flat default (`data/raw/exa.jsonl`) is unchanged without the flag. DuckDB
-can query the partitioned tree directly:
+The term is slugified before use as a filename: spaces → dashes, slashes/colons
+removed. The flat default (`data/raw/exa.jsonl`) is unchanged without the flag.
+DuckDB can query the partitioned tree directly:
 
     duckdb -c "select count(*) from read_json_auto('data/raw/provider=*/dt=*/*.jsonl')"

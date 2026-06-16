@@ -145,10 +145,20 @@ python3 scripts/fetch.py --provider dataforseo --term "iit.ac.in" --num 10
 Output: `data/raw/{provider}.jsonl` (one envelope per line: `provider`,
 `term`, `fetched_at`, `raw`). JSON summary to stdout; errors to stderr.
 
-Partitioned bronze output (t7 — for datalake/analytics):
+**Partitioned bronze output** (`--partition` flag):
 ```bash
 python3 scripts/fetch.py --provider cse --term "iit.ac.in" --partition
 # writes to data/raw/provider=cse/dt=YYYY-MM-DD/iit.ac.in.jsonl
+
+python3 scripts/fetch.py --provider exa --term "engineering college" --partition
+# term slug used as filename: engineering-college.jsonl
+# writes to data/raw/provider=exa/dt=YYYY-MM-DD/engineering-college.jsonl
+```
+
+Term slugs replace unsafe characters (spaces, slashes, colons) with dashes so
+the filename is safe across filesystems. DuckDB can query the partitioned tree:
+```bash
+duckdb -c "select count(*) from read_json_auto('eduloka/data/raw/provider=*/dt=*/*.jsonl')"
 ```
 
 ---

@@ -6,11 +6,47 @@ import subprocess
 import sys
 from pathlib import Path
 
-from list_terms import load_terms
+from list_terms import load_terms, slug_term
 
 USE_CASE_ROOT = Path(__file__).parent.parent
 SCRIPT = USE_CASE_ROOT / "scripts" / "list_terms.py"
 
+
+# ---------------------------------------------------------------------------
+# slug_term
+# ---------------------------------------------------------------------------
+
+def test_slug_domain_unchanged():
+    assert slug_term("iit.ac.in") == "iit.ac.in"
+
+def test_slug_spaces_become_dashes():
+    assert slug_term("engineering college Karnataka") == "engineering-college-karnataka"
+
+def test_slug_slash_replaced():
+    assert slug_term("nit/raipur.ac.in") == "nit-raipur.ac.in"
+
+def test_slug_colon_replaced():
+    assert slug_term("term:value") == "term-value"
+
+def test_slug_multiple_spaces_collapsed():
+    assert slug_term("a  b") == "a-b"
+
+def test_slug_strips_leading_trailing():
+    assert slug_term("  iit.ac.in  ") == "iit.ac.in"
+
+def test_slug_empty_returns_term():
+    assert slug_term("") == "term"
+    assert slug_term("---") == "term"
+
+def test_slug_no_slash_in_result():
+    slug = slug_term("any/slash:colon term")
+    assert "/" not in slug
+    assert "\\" not in slug
+
+
+# ---------------------------------------------------------------------------
+# load_terms
+# ---------------------------------------------------------------------------
 
 def test_load_filters_blank_lines(tmp_path):
     f = tmp_path / "terms.txt"
@@ -46,6 +82,8 @@ def test_cli_default_terms_file():
     assert data["status"] == "ok"
     assert data["count"] >= 1
     assert isinstance(data["terms"], list)
+    assert isinstance(data["slugs"], list)
+    assert len(data["slugs"]) == len(data["terms"])
 
 
 def test_cli_custom_terms_file(tmp_path):

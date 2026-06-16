@@ -1,7 +1,11 @@
 """list_terms.py — read data/terms.txt and return the term list as JSON.
 
 Reads the configured terms file, strips blank lines and # comments, and prints:
-  {"status": "ok", "terms": [...], "count": N}
+  {"status": "ok", "terms": [...], "slugs": [...], "count": N}
+
+Each slug in "slugs" is the filesystem-safe version of the corresponding term
+(same index). Use the slug for path construction; use the original term for API
+queries.
 
 File precedence: --terms-file flag > EDUX_TERMS_FILE env var > data/terms.txt.
 
@@ -15,10 +19,25 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
 _USE_CASE_ROOT = Path(__file__).parent.parent
+
+
+def slug_term(term: str) -> str:
+    """Return a filesystem-safe slug for a search term.
+
+    Dots are preserved (safe in filenames; common in domain terms like iit.ac.in).
+    Spaces, slashes, colons, and other unsafe characters become dashes.
+    """
+    slug = term.lower().strip()
+    slug = re.sub(r'[/\\:*?"<>|]', '-', slug)
+    slug = re.sub(r'\s+', '-', slug)
+    slug = re.sub(r'-{2,}', '-', slug)
+    slug = slug.strip('-')
+    return slug or "term"
 
 
 def load_terms(path: Path) -> list[str]:
@@ -47,7 +66,8 @@ def main() -> None:
         sys.exit(1)
 
     terms = load_terms(path)
-    print(json.dumps({"status": "ok", "terms": terms, "count": len(terms)}))
+    slugs = [slug_term(t) for t in terms]
+    print(json.dumps({"status": "ok", "terms": terms, "slugs": slugs, "count": len(terms)}))
 
 
 if __name__ == "__main__":

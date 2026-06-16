@@ -259,6 +259,69 @@ def test_dataforseo_missing_credentials_raise(monkeypatch):
 # CLI smoke test
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Partition path construction (t7)
+# ---------------------------------------------------------------------------
+
+def test_partition_path_uses_slug():
+    from fetch import _make_output_path
+    path = _make_output_path(Path("/base"), "exa",
+                             "engineering college Karnataka", "2026-06-16",
+                             partition=True)
+    assert path == Path("/base/provider=exa/dt=2026-06-16/engineering-college-karnataka.jsonl")
+
+
+def test_partition_path_no_slash_in_filename():
+    from fetch import _make_output_path
+    path = _make_output_path(Path("/base"), "cse", "nit/raipur.ac.in", "2026-06-16",
+                             partition=True)
+    assert "/" not in path.name
+
+
+def test_partition_path_domain_term_unchanged():
+    from fetch import _make_output_path
+    path = _make_output_path(Path("/base"), "exa", "iit.ac.in", "2026-06-16",
+                             partition=True)
+    assert path.name == "iit.ac.in.jsonl"
+
+
+def test_flat_path_uses_provider():
+    from fetch import _make_output_path
+    path = _make_output_path(Path("/base"), "exa", "any term", "2026-06-16",
+                             partition=False)
+    assert path == Path("/base/exa.jsonl")
+
+
+# ---------------------------------------------------------------------------
+# DuckDB integration (skip if duckdb absent)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def duckdb_cmd():
+    import shutil
+    if shutil.which("duckdb") is None:
+        pytest.skip("duckdb not found")
+    return "duckdb"
+
+
+@pytest.mark.integration
+def test_duckdb_reads_partitioned_jsonl(tmp_path, duckdb_cmd):
+    partition_dir = tmp_path / "provider=exa" / "dt=2026-06-16"
+    partition_dir.mkdir(parents=True)
+    record = {"provider": "exa", "term": "iit.ac.in",
+              "fetched_at": "2026-06-16T00:00:00+00:00", "raw": {}}
+    (partition_dir / "iit.ac.in.jsonl").write_text(json.dumps(record) + "\n")
+
+    query = f"select count(*) as n from read_json_auto('{tmp_path}/provider=*/dt=*/*.jsonl')"
+    result = subprocess.run([duckdb_cmd, "-c", query], capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "1" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# CLI smoke test
+# ---------------------------------------------------------------------------
+
 def test_cli_no_provider_exits_1_with_json_envelope():
     result = subprocess.run(
         [sys.executable, str(USE_CASE_ROOT / "scripts" / "fetch.py"), "--term", "edu.in"],

@@ -2,7 +2,7 @@
 """Stage-1 fetch CLI.
 
 Fetches search results for a term and appends provider-native JSONL to
-data/raw/{provider}.jsonl (or a partitioned path with --partition, t7).
+data/raw/{provider}.jsonl (or a Hive-partitioned path with --partition).
 JSON summary to stdout; errors to stderr; exit 0 / 1.
 
 Envelope shape: {"status": "ok"|"error", "out": <path>, ...} — matches
@@ -20,8 +20,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from fetch_base import PROVIDERS, SearchError, get_fetcher
+from list_terms import slug_term  # noqa: E402
 
 _USE_CASE_ROOT = Path(__file__).parent.parent
+
+
+def _make_output_path(base: Path, provider: str, term: str, dt: str, *, partition: bool) -> Path:
+    """Return the output file path for a fetch run."""
+    if partition:
+        return base / f"provider={provider}" / f"dt={dt}" / f"{slug_term(term)}.jsonl"
+    return base / f"{provider}.jsonl"
 
 
 def main() -> None:
@@ -63,16 +71,8 @@ def main() -> None:
     dt_partition = fetched_at[:10]  # YYYY-MM-DD from UTC timestamp
 
     base = args.output_dir or (_USE_CASE_ROOT / "data" / "raw")
-    if args.partition:
-        out_dir = base / f"provider={provider}" / f"dt={dt_partition}"
-        # TODO(t7): sanitize term into a filename slug (spaces, slashes, colons unsafe)
-        filename = f"{args.term}.jsonl"
-    else:
-        out_dir = base
-        filename = f"{provider}.jsonl"
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / filename
+    out_path = _make_output_path(base, provider, args.term, dt_partition, partition=args.partition)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "a") as f:
         for item in items:

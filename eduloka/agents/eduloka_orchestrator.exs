@@ -43,20 +43,24 @@ Step 1 — Load terms.
   Call run_command with:
     command: "python3"
     args: ["scripts/list_terms.py"]
-  Parse the JSON output. Extract the list from the "terms" key.
+  Parse the JSON output. Extract:
+    - "terms"  — original terms (used for API queries)
+    - "slugs"  — filesystem-safe versions (used for all paths)
+  Both lists are the same length; terms[i] and slugs[i] are a pair.
   If status is "error" or count is 0, report the error and stop.
 
 Step 2 — Spawn one sub-agent per term.
-  For each term T in the list, call spawn_agent with:
+  For each pair (T=terms[i], S=slugs[i]), call spawn_agent with:
     tools: ["run_command"]
     max_steps: 20
-    task_prompt: (use the template below — replace <TERM> with the actual term)
+    task_prompt: (use the template below — replace <TERM> with T and <SLUG> with S)
 
   Sub-agent task prompt template:
   ===
   You are an eduloka pipeline worker. Process ONE search term to completion.
 
-  Term:     <TERM>
+  Term (for API):  <TERM>
+  Slug (for paths): <SLUG>
   Provider: #{provider}
   Sink:     #{edux_sink} (script: scripts/#{sink_script})
 
@@ -66,35 +70,35 @@ Step 2 — Spawn one sub-agent per term.
     Call run_command with:
       command: "python3"
       args: ["scripts/fetch.py", "--provider", "#{provider}", "--term", "<TERM>",
-             "--output-dir", "data/raw/<TERM>"]
-    On success the raw file is: data/raw/<TERM>/#{provider}.jsonl
+             "--output-dir", "data/raw/<SLUG>"]
+    On success the raw file is: data/raw/<SLUG>/#{provider}.jsonl
     If status is "error", report the error and stop.
 
   Step B — Map to edux format:
     Call run_command with:
       command: "python3"
       args: ["scripts/map.py",
-             "--in",  "data/raw/<TERM>/#{provider}.jsonl",
-             "--out", "data/edux/<TERM>.jsonl"]
+             "--in",  "data/raw/<SLUG>/#{provider}.jsonl",
+             "--out", "data/edux/<SLUG>.jsonl"]
     If status is "error" or "partial", report and stop.
 
   Step C — Enrich:
     Call run_command with:
       command: "python3"
       args: ["scripts/enrich.py",
-             "--in",  "data/edux/<TERM>.jsonl",
-             "--out", "data/gold/<TERM>.jsonl"]
+             "--in",  "data/edux/<SLUG>.jsonl",
+             "--out", "data/gold/<SLUG>.jsonl"]
     If status is "error" or "partial", report and stop.
 
   Step D — Sink:
     Call run_command with:
       command: "python3"
       args: ["scripts/#{sink_script}",
-             "--in", "data/gold/<TERM>.jsonl"]
+             "--in", "data/gold/<SLUG>.jsonl"]
     Report the full output (status, count, out path).
 
   After completing all four steps, report:
-    "term: <TERM> — done. Sink status: <status from Step D>."
+    "term: <TERM> (slug: <SLUG>) — done. Sink status: <status from Step D>."
   ===
 
 Step 3 — Wait for all sub-agents.
@@ -110,12 +114,15 @@ Step 4 — Report results.
 Rules:
 - Use the exact run_command format (command: and args: as separate fields).
   Never put "python3" inside args — command: "python3", args: ["scripts/..."].
+- All paths use the slug, not the raw term.
 - All paths are relative to the sandbox root.
 - overlay_base_dir is nil; output files must persist on disk.
 - If wait_for_all reports failures, report which terms failed and stop.
   Do not investigate, explore files, or retry manually.
 """
 
+# max_steps: list_terms(1) + spawn N(N) + wait_for_all(1) + report(1) + buffer(3).
+# Set to 50 to handle up to ~44 terms without hitting the ceiling.
 %Aetheris.RunConfig{
   run_id:            "eduloka-orch-#{Aetheris.ID.generate()}",
   mode:              :record,
@@ -124,7 +131,7 @@ Rules:
   label:             "Eduloka Orchestrator",
   sandbox_path:      agent_root,
   overlay_base_dir:  nil,
-  max_steps:         20,
+  max_steps:         50,
   max_spawn_depth:   2,
   context_strategy:  :full,
   tools:             ["run_command", "spawn_agent", "wait_for_all"],

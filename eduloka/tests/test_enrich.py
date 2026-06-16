@@ -145,6 +145,27 @@ def test_enrich_cli_missing_input_exits_1(tmp_path):
     assert json.loads(result.stdout)["status"] == "error"
 
 
+def test_enrich_cli_reprocesses_on_version_bump(tmp_path, monkeypatch):
+    # Simulate a stale _v=0 entry — enrich.py must overwrite it with _v=1.
+    stale = json.dumps({
+        "link": "https://iitm.ac.in", "title": "IIT", "snippet": "s", "status": 1,
+        "enrichment": {"keywords": {"terms": ["old"], "_by": "keywords",
+                                    "_at": "2026-01-01T00:00:00+00:00", "_v": 0}},
+    })
+    in_file = tmp_path / "stale.jsonl"
+    out_file = tmp_path / "gold.jsonl"
+    in_file.write_text(stale + "\n")
+    result = subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "enrich.py"),
+         "--in", str(in_file), "--out", str(out_file), "--enrichers", "keywords"],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+    )
+    assert result.returncode == 0
+    rec = json.loads(out_file.read_text().splitlines()[0])
+    assert rec["enrichment"]["keywords"]["_v"] == ENRICHER_VERSIONS["keywords"]
+    assert rec["enrichment"]["keywords"]["terms"] != ["old"]  # re-enriched
+
+
 def test_enrich_cli_partial_on_bad_line(tmp_path):
     good = json.dumps({"link": "https://iitm.ac.in", "title": "IIT", "snippet": "s",
                         "enrichment": {}, "status": 1})

@@ -36,8 +36,10 @@ def _stamp(payload: dict, name: str) -> dict:
 
 def _enrich_record(record: EduxRecord, enricher_names: list[str]) -> None:
     for name in enricher_names:
-        if name in record.enrichment:
-            continue  # idempotent: already enriched by this worker
+        # Skip if already enriched at the current version; re-enrich on version bump.
+        existing = record.enrichment.get(name)
+        if existing and existing.get("_v") == ENRICHER_VERSIONS[name]:
+            continue
         fn = ENRICHERS[name]
         payload = fn(record)
         record.enrichment[name] = _stamp(payload, name)

@@ -105,6 +105,41 @@ python3 scripts/fetch.py --provider cse --term "iit.ac.in" --partition
 
 ---
 
+## Running upsert (t5)
+
+### Apply the migration
+
+Run once against the existing `ct-edux` `gws_cse` database. The migration is
+idempotent (`IF NOT EXISTS`) — safe to re-apply.
+
+```bash
+export EDUX_DATABASE_URL="postgresql://user:pass@host:5432/dbname"
+psql "$EDUX_DATABASE_URL" -f eduloka/data/migrations/0001_add_enrichment_jsonb.sql
+```
+
+**Zero-migration fallback:** if applying the migration is blocked, the
+`enrichment` data can be folded into the existing `metatags` JSONB column
+under an `_edux` key (see `edux_record.py` docstring). This avoids any schema
+change until the migration can be applied.
+
+### Run upsert
+
+```bash
+cd aetheris-agents/eduloka
+export EDUX_DATABASE_URL="postgresql://user:pass@host:5432/dbname"
+
+# From gold (preferred — enrichment populated)
+python3 scripts/upsert_institute.py --in data/gold/exa.jsonl
+
+# From edux silver (enrichment empty; fills in later via enrich)
+python3 scripts/upsert_institute.py --in data/edux/cse.jsonl
+```
+
+Output: `{"status": "ok"|"partial", "upserted": N, "skipped": M, ...}`.
+Exit 1 on partial (some lines failed) or error.
+
+---
+
 ## Running tests
 
 ```bash

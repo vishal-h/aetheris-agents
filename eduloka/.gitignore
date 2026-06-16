@@ -2,6 +2,7 @@
 data/raw/
 data/edux/
 data/gold/
+data/export/
 
 # Generated output (keep sentinel)
 output/*

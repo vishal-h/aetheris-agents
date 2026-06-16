@@ -51,11 +51,16 @@ Set via shell export or Rig agent config (§"Agent config" below).
 
 No additional credentials — pure transforms, no network.
 
-### Stage-5 upsert (t5)
+### Stage-5 operational sink
 
 | Variable | Required | Description |
 |---|---|---|
-| `EDUX_DATABASE_URL` | yes | PostgreSQL connection string for the `gws_cse` database |
+| `EDUX_SINK` | yes (t6+) | Sink selection: `direct` → upsert into Postgres; `export` → write JSONL for ct-edux ingest |
+| `EDUX_DATABASE_URL` | `direct` only | PostgreSQL connection string for the `gws_cse` database |
+
+`EDUX_SINK` is read by the orchestrator (t6). Running `upsert_institute.py` directly without
+`EDUX_DATABASE_URL` exits 1 with `{"status": "error"}`; it never silently writes an export file
+instead. Running `export_institute.py` requires no DB credentials.
 
 ---
 
@@ -105,24 +110,12 @@ python3 scripts/fetch.py --provider cse --term "iit.ac.in" --partition
 
 ---
 
-## Running upsert (t5)
+## Running the operational sink (t5 / t5b)
 
-### Apply the migration
+Two sink scripts share the same `to_gws_cse()` row projection. The orchestrator
+(t6) selects between them via `EDUX_SINK`.
 
-Run once against the existing `ct-edux` `gws_cse` database. The migration is
-idempotent (`IF NOT EXISTS`) — safe to re-apply.
-
-```bash
-export EDUX_DATABASE_URL="postgresql://user:pass@host:5432/dbname"
-psql "$EDUX_DATABASE_URL" -f eduloka/data/migrations/0001_add_enrichment_jsonb.sql
-```
-
-**Zero-migration fallback:** if applying the migration is blocked, the
-`enrichment` data can be folded into the existing `metatags` JSONB column
-under an `_edux` key (see `edux_record.py` docstring). This avoids any schema
-change until the migration can be applied.
-
-### Run upsert
+### Sink A — direct upsert into Postgres (t5)
 
 ```bash
 cd aetheris-agents/eduloka
@@ -137,6 +130,47 @@ python3 scripts/upsert_institute.py --in data/edux/cse.jsonl
 
 Output: `{"status": "ok"|"partial", "upserted": N, "skipped": M, ...}`.
 Exit 1 on partial (some lines failed) or error.
+
+#### Migration
+
+The `enrichment` column is owned by ct-edux Ecto migrations (companion
+workstream, issue #65). Apply via the ct-edux migration path.
+
+**Emergency fallback only:** if the ct-edux migration is blocked, apply
+`0001_add_enrichment_jsonb.sql` manually:
+
+```bash
+psql "$EDUX_DATABASE_URL" -f eduloka/data/migrations/0001_add_enrichment_jsonb.sql
+```
+
+`0000_create_gws_cse_clone.sql` is test-only — it clones the live DDL for the
+`eduloka_test` DB. Do not apply it to any production or staging database.
+
+### Sink B — export JSONL for ct-edux ingest (t5b)
+
+Use when the ct-edux Postgres DB is unreachable from the agent. Output files
+land in `data/export/` (gitignored) and are consumed by ct-edux via
+`GwsCseApi.upsert/1` (companion workstream).
+
+```bash
+cd aetheris-agents/eduloka
+
+# From gold (preferred)
+python3 scripts/export_institute.py --in data/gold/exa.jsonl
+# writes data/export/exa.jsonl
+
+# Explicit output path
+python3 scripts/export_institute.py --in data/gold/exa.jsonl --out /tmp/exa_export.jsonl
+```
+
+Output: `{"status": "ok"|"partial", "exported": N, "skipped": M, "out": path}`.
+Exit 1 on partial or error.
+
+**ct-edux handoff:** copy or move `data/export/*.jsonl` to the ct-edux host and
+run its ingest task against the file. The row shape (`link`, `title`, `snippet`,
+`image`, `search_term`, `status`, `metatags`, `enrichment`) is the
+cross-repo contract — both this export and the direct upsert produce the same
+column set from `to_gws_cse()`.
 
 ---
 
@@ -163,6 +197,7 @@ python3 -m pytest tests/ -v -m "not integration"
 | `data/raw/provider={p}/dt={date}/` | bronze (partition) | Hive-partitioned; DuckDB-queryable |
 | `data/edux/{provider}.jsonl` | silver | EduxRecord JSON; re-mappable without re-querying |
 | `data/gold/{provider}.jsonl` | gold | EduxRecord + namespaced enrichment; analytics-ready |
+| `data/export/{provider}.jsonl` | export | gws_cse-shaped rows; ct-edux ingest handoff |
 
 `data/terms.txt` is **committed config** — it is not gitignored.
 

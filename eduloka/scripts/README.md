@@ -93,5 +93,3 @@ The flat default (`data/raw/exa.jsonl`) is unchanged without the flag. DuckDB
 can query the partitioned tree directly:
 
     duckdb -c "select count(*) from read_json_auto('data/raw/provider=*/dt=*/*.jsonl')"
-
-    python3 -m pytest tests/ -q

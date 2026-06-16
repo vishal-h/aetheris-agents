@@ -156,5 +156,5 @@ def test_cli_no_provider_exits_1_with_json_envelope():
     )
     assert result.returncode == 1
     data = json.loads(result.stdout)
-    assert data["ok"] is False
+    assert data["status"] == "error"
     assert "provider" in data["error"]

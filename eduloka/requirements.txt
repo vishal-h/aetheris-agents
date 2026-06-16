@@ -1,0 +1,5 @@
+# t1–t4: stdlib only (urllib, json, abc, dataclasses, datetime)
+# t5 adds:
+#   psycopg[binary]>=3.1
+# No additional dependencies through t4 — run `pip install -r requirements.txt`
+# to satisfy any future additions without re-checking this note.

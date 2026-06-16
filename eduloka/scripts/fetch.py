@@ -4,6 +4,9 @@
 Fetches search results for a term and appends provider-native JSONL to
 data/raw/{provider}.jsonl (or a partitioned path with --partition, t7).
 JSON summary to stdout; errors to stderr; exit 0 / 1.
+
+Envelope shape: {"status": "ok"|"error", "out": <path>, ...} — matches
+the map/enrich CLIs so the t6 orchestrator has one stdout parser.
 """
 
 from __future__ import annotations
@@ -12,19 +15,20 @@ import argparse
 import json
 import os
 import sys
-from datetime import date
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from fetch_base import SearchError, get_fetcher
+from fetch_base import PROVIDERS, SearchError, get_fetcher
 
 _USE_CASE_ROOT = Path(__file__).parent.parent
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch search results to JSONL.")
-    parser.add_argument("--provider", default=None,
-                        help="Provider name (default: $SEARCH_PROVIDER)")
+    parser.add_argument("--provider", default=None, choices=list(PROVIDERS),
+                        metavar="PROVIDER",
+                        help=f"Provider ({', '.join(PROVIDERS)}; default: $SEARCH_PROVIDER)")
     parser.add_argument("--term", required=True, help="Search term")
     parser.add_argument("--start", type=int, default=1, metavar="N",
                         help="Start offset, 1-indexed (default: 1)")
@@ -40,13 +44,13 @@ def main() -> None:
 
     provider = args.provider or os.environ.get("SEARCH_PROVIDER")
     if not provider:
-        print(json.dumps({"ok": False, "error": "no provider — set --provider or SEARCH_PROVIDER"}))
+        print(json.dumps({"status": "error", "error": "no provider — set --provider or SEARCH_PROVIDER"}))
         sys.exit(1)
 
     try:
         fetcher = get_fetcher(provider)
     except SearchError as exc:
-        print(json.dumps({"ok": False, "error": str(exc)}))
+        print(json.dumps({"status": "error", "error": str(exc)}))
         sys.exit(1)
 
     try:
@@ -55,9 +59,13 @@ def main() -> None:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    dt_partition = fetched_at[:10]  # YYYY-MM-DD from UTC timestamp
+
     base = args.output_dir or (_USE_CASE_ROOT / "data" / "raw")
     if args.partition:
-        out_dir = base / f"provider={provider}" / f"dt={date.today().isoformat()}"
+        out_dir = base / f"provider={provider}" / f"dt={dt_partition}"
+        # TODO(t7): sanitize term into a filename slug (spaces, slashes, colons unsafe)
         filename = f"{args.term}.jsonl"
     else:
         out_dir = base
@@ -71,17 +79,17 @@ def main() -> None:
             envelope = {
                 "provider": provider,
                 "term": args.term,
-                "fetched_at": date.today().isoformat(),
+                "fetched_at": fetched_at,
                 "raw": item,
             }
             f.write(json.dumps(envelope) + "\n")
 
     print(json.dumps({
-        "ok": True,
+        "status": "ok",
         "provider": provider,
         "term": args.term,
         "count": len(items),
-        "output": str(out_path),
+        "out": str(out_path),
     }))
 
 

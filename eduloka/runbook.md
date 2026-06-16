@@ -114,7 +114,7 @@ python3 -m pytest tests/ -v -m "not integration"
 
 ## Troubleshooting
 
-**`{"ok": false, "error": "no provider …"}`** — set `--provider` or
+**`{"status": "error", "error": "no provider …"}`** — set `--provider` or
 `SEARCH_PROVIDER`.
 
 **`GWS_CSE_API_KEY / GWS_CSE_ENGINE_ID not set`** — export both before running

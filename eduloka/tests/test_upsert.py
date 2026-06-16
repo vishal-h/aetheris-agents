@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from edux_record import EduxRecord
-from upsert_institute import _row
+from upsert_institute import _row, _adapt
 
 USE_CASE_ROOT = Path(__file__).parent.parent
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -36,16 +36,15 @@ def test_row_keys_match_gws_cse_columns():
     assert set(row) == {"link", "title", "snippet", "image", "search_term", "status", "metatags", "enrichment"}
 
 
-def test_row_metatags_is_json_string():
+def test_row_metatags_is_list():
+    # _row() returns Python-native types; metatags is a list, not a JSON string.
     row = _row(_rec())
-    parsed = json.loads(row["metatags"])
-    assert isinstance(parsed, list)
+    assert isinstance(row["metatags"], list)
 
 
-def test_row_enrichment_is_json_string():
+def test_row_enrichment_is_dict():
     row = _row(_rec())
-    parsed = json.loads(row["enrichment"])
-    assert isinstance(parsed, dict)
+    assert isinstance(row["enrichment"], dict)
 
 
 def test_row_excludes_text():
@@ -123,6 +122,46 @@ def test_upsert_and_rerun_idempotent(db_url, tmp_path):
     with psycopg.connect(db_url) as conn, conn.cursor() as cur:
         cur.execute("DELETE FROM gws_cse WHERE link = %s",
                     ("https://test-eduloka-upsert.example.com",))
+        conn.commit()
+
+
+@pytest.mark.integration
+def test_status_not_clobbered_on_conflict(db_url, tmp_path):
+    import psycopg
+
+    link = "https://test-eduloka-status.example.com"
+    rec = EduxRecord(link=link, title="T", snippet="s", search_term="edu.in", status=1,
+                     metatags=[], enrichment={})
+    in_file = tmp_path / "gold.jsonl"
+    in_file.write_text(json.dumps(rec.to_dict()) + "\n")
+
+    # First upsert — inserts with status=1.
+    subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "upsert_institute.py"),
+         "--in", str(in_file)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+        env={**os.environ, "EDUX_DATABASE_URL": db_url},
+    )
+    # Manually flip status to 0 (soft-delete).
+    with psycopg.connect(db_url) as conn, conn.cursor() as cur:
+        cur.execute("UPDATE gws_cse SET status = 0 WHERE link = %s", (link,))
+        conn.commit()
+
+    # Second upsert (re-discovery) — must NOT restore status to 1.
+    subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "upsert_institute.py"),
+         "--in", str(in_file)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+        env={**os.environ, "EDUX_DATABASE_URL": db_url},
+    )
+    with psycopg.connect(db_url) as conn, conn.cursor() as cur:
+        cur.execute("SELECT status FROM gws_cse WHERE link = %s", (link,))
+        row = cur.fetchone()
+        assert row[0] == 0  # status preserved
+
+    # Cleanup.
+    with psycopg.connect(db_url) as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM gws_cse WHERE link = %s", (link,))
         conn.commit()
 
 

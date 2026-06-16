@@ -13,6 +13,7 @@ import json
 import sys
 from pathlib import Path
 
+_USE_CASE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 
 from mappers import map_envelope  # noqa: E402
@@ -21,13 +22,17 @@ from mappers import map_envelope  # noqa: E402
 def _run(in_path: Path, out_path: Path) -> dict:
     lines = [l for l in in_path.read_text().splitlines() if l.strip()]
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    records = []
+    records, skipped, errors = [], 0, []
     for line in lines:
-        env = json.loads(line)
-        rec = map_envelope(env)
-        records.append(rec.to_dict())
+        try:
+            env = json.loads(line)
+            rec = map_envelope(env)
+            records.append(rec.to_dict())
+        except Exception as exc:  # noqa: BLE001
+            skipped += 1
+            errors.append(str(exc))
     out_path.write_text("\n".join(json.dumps(r) for r in records) + ("\n" if records else ""))
-    return {"mapped": len(records), "out": str(out_path)}
+    return {"mapped": len(records), "skipped": skipped, "errors": errors, "out": str(out_path)}
 
 
 def main() -> None:
@@ -42,11 +47,14 @@ def main() -> None:
         sys.exit(1)
 
     stem = in_path.stem
-    out_path = Path(args.out_path) if args.out_path else Path("data/edux") / f"{stem}.jsonl"
+    out_path = Path(args.out_path) if args.out_path else _USE_CASE_ROOT / "data" / "edux" / f"{stem}.jsonl"
 
     try:
         result = _run(in_path, out_path)
-        print(json.dumps({"status": "ok", **result}))
+        status = "partial" if result["skipped"] else "ok"
+        print(json.dumps({"status": status, **result}))
+        if result["skipped"]:
+            sys.exit(1)
     except Exception as exc:  # noqa: BLE001
         print(json.dumps({"status": "error", "error": str(exc)}))
         sys.exit(1)

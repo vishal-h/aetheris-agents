@@ -35,6 +35,7 @@ class EduxRecord:
     fetched_at: str | None = None
     metatags: list = field(default_factory=list)
     enrichment: dict = field(default_factory=dict)
+    status: int = 1
 
     def to_dict(self) -> dict:
         return {
@@ -48,6 +49,7 @@ class EduxRecord:
             "fetched_at": self.fetched_at,
             "metatags": list(self.metatags),
             "enrichment": dict(self.enrichment),
+            "status": self.status,
         }
 
     def to_gws_cse(self) -> dict:
@@ -59,7 +61,7 @@ class EduxRecord:
             "snippet": self.snippet,
             "image": self.image,
             "search_term": self.search_term,
-            "status": 1,
+            "status": self.status,
             "metatags": list(self.metatags) + [provenance],
             "enrichment": dict(self.enrichment),
         }

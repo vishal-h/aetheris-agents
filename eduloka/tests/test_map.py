@@ -173,3 +173,24 @@ def test_map_cli_missing_input_exits_1():
     assert result.returncode == 1
     data = json.loads(result.stdout)
     assert data["status"] == "error"
+
+
+def test_map_cli_partial_on_bad_line(tmp_path):
+    # One valid cse envelope + one corrupt line — should map 1, skip 1, status "partial".
+    good = json.dumps({"provider": "cse", "term": "edu.in", "fetched_at": "2026-06-14T09:00:00+00:00",
+                       "raw": {"title": "IIT", "link": "https://iitm.ac.in"}})
+    in_file = tmp_path / "mixed.jsonl"
+    out_file = tmp_path / "out.jsonl"
+    in_file.write_text(good + "\n" + "{not valid json\n")
+    result = subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "map.py"),
+         "--in", str(in_file), "--out", str(out_file)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT),
+    )
+    assert result.returncode == 1  # partial exits 1
+    data = json.loads(result.stdout)
+    assert data["status"] == "partial"
+    assert data["mapped"] == 1
+    assert data["skipped"] == 1
+    records = [json.loads(l) for l in out_file.read_text().splitlines() if l.strip()]
+    assert len(records) == 1  # good record still written

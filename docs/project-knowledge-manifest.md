@@ -22,9 +22,9 @@ Refresh trigger: milestone end, or before any handoff session.
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `4afb21f` | 2026-06-13 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `5c79444` | 2026-06-14 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `6e54fa6` | 2026-06-16 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `e91820c` | 2026-05-24 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b4a0eb8` | 2026-06-10 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `6e54fa6` | 2026-06-16 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `201dcc2` | 2026-06-14 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `cdb6a21` | 2026-06-13 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-11 |

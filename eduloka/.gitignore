@@ -1,0 +1,10 @@
+# Provider-native raw records — never commit client/API data
+data/raw/
+data/edux/
+data/gold/
+
+# Generated output (keep sentinel)
+output/*
+!output/.gitkeep
+
+# data/terms.txt is committed config — intentionally NOT excluded

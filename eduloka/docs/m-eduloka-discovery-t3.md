@@ -1,0 +1,52 @@
+# t3 — Stage-2 map (silver) + edux contract
+
+> Ticket extracted from `eduloka/milestone.md`. Canonical source is
+> `milestone.md`; this file is a working reference for implementation.
+
+**Depends on.** t1 merged (t2 optional — cse+exa fixtures are sufficient for
+the done-check).
+
+**Scope.** After this ticket `edux_record.py` defines the edux schema and its
+`to_gws_cse()` projection, and `map.py` transforms a raw JSONL file into edux
+records at `data/edux/{provider}.jsonl`. Mappers are pure; one per provider; the
+`cse` mapper populates `image`/`metatags` from real pagemap, the others
+best-effort.
+
+**Contract refs.** `eduloka/scripts/edux_record.py` (the schema — canonical in
+code); `eduloka/scripts/README.md` §"edux structure", §"Caveats"; legacy
+`gws_cse` schema (the column set `to_gws_cse()` must match).
+
+**Touches.** `eduloka/scripts/edux_record.py`, `mappers.py`, `map.py`;
+`eduloka/tests/test_map.py`; `eduloka/tests/fixtures/{cse,exa}.raw.jsonl`.
+
+**Do not generate.** No enrichment (slots stay empty; t4 fills them). Do not
+push full `text` into `to_gws_cse()`. No `gws_cse` migration here (t5).
+
+**Runbook update rule.** No new env/config — no runbook touch.
+
+**Done-check.**
+```bash
+python3 -m pytest eduloka/tests/test_map.py -q
+python3 eduloka/scripts/map.py --in eduloka/tests/fixtures/cse.raw.jsonl --out /tmp/edux.jsonl
+python3 -c "import json; r=json.loads(open('/tmp/edux.jsonl').readline()); assert r['image'] and r['metatags']"  # cse pagemap populated
+```
+
+**Claude-code prompt.**
+> Land stage-2 map from the spike: `edux_record.py`, `mappers.py` (four pure
+> per-provider mappers — the `cse` mapper pulls `image` from
+> `pagemap.cse_image` and `metatags` from `pagemap.metatags`), `map.py`. The
+> field set and `to_gws_cse()` columns are defined in `edux_record.py` and must
+> match legacy `gws_cse` — do not restate or alter them. Commit the cse+exa raw
+> fixtures. Run the done-check; include output.
+
+**Spike reference.** `edux_record.py`, `mappers.py`, `map.py`, `test_map.py` —
+at `/tmp/eduloka/` (reference only; rebuild against the contract). Note: the
+spike's `sample.*.jsonl` files are demonstrations, not fixtures. Commit real
+fixtures under `tests/fixtures/` this ticket.
+
+**Spike gotcha.** CSE is the only provider returning real
+`pagemap.cse_image`/`metatags`; the other three mappers are best-effort for
+those fields.
+
+**Implementation notes.** → `eduloka/docs/t3-implementation-notes.md` (write
+after ticket closes).

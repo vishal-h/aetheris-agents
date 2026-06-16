@@ -1,0 +1,47 @@
+# t8 — Doc + tools.json + drift sync (milestone-end)
+
+> Ticket extracted from `eduloka/milestone.md`. Canonical source is
+> `milestone.md`; this file is a working reference for implementation.
+
+**Depends on.** t1–t7 merged; all done-checks passing.
+
+**Scope.** After this ticket `eduloka/tools.json` declares every script,
+`README.md`/`runbook.md` are complete, the capability matrix includes eduloka,
+the drift checker reports zero FAIL, and a milestone summary exists. Doc-sync
+ticket (methodology §6 runbook rule, §7 ritual).
+
+**Contract refs.** tools.json schema —
+`docs/rig/milestones/p4-tools/p4-001-manifest-spec.md`; `rig/docs/runbook.md`
+§"Adding a tools.json manifest"; `docs/milestone-methodology.md` §7;
+`docs/capability-matrix.md`.
+
+**Touches.** `eduloka/tools.json`; `eduloka/README.md`, `runbook.md` (final);
+`docs/capability-matrix.md` (eduloka row);
+`docs/milestones/m-eduloka-discovery-summary.md`.
+
+**Do not generate.** No new behaviour — docs and manifest only. Do not restate
+contracts in the README; link to the scripts README and contract docs.
+
+**Runbook update rule.** Sync-only. A missing runbook entry is a defect in the
+originating ticket — file it back, do not paper over it here.
+
+**Done-check.**
+```bash
+python3 -m pytest eduloka/tests/ -q                 # full suite green
+python3 scripts/drift_check.py                       # zero FAIL, zero WARN
+python3 -c "import json,glob,os; m=json.load(open('eduloka/tools.json')); declared={os.path.basename(s['path']) for s in m['scripts']}; actual={os.path.basename(p) for p in glob.glob('eduloka/scripts/*.py')}; assert actual<=declared, actual-declared"
+```
+
+**Claude-code prompt.**
+> Author `eduloka/tools.json` declaring every script per the manifest schema so
+> none shows the amber undeclared badge. Final pass on `eduloka/README.md` and
+> `runbook.md` (link contracts, do not restate). Add the eduloka row to
+> `docs/capability-matrix.md`. Run the drift checker to zero FAIL/WARN; write
+> `docs/milestones/m-eduloka-discovery-summary.md` (shipped / deferred / open
+> questions for the Phase-2 surfacing milestone). Run the done-check; include
+> output.
+
+**Spike reference.** No spike — docs and manifest only.
+
+**Implementation notes.** → `eduloka/docs/t8-implementation-notes.md` (write
+after ticket closes).

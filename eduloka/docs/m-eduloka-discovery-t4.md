@@ -1,0 +1,44 @@
+# t4 — Stage-3 enrich (gold) + enricher versioning
+
+> Ticket extracted from `eduloka/milestone.md`. Canonical source is
+> `milestone.md`; this file is a working reference for implementation.
+
+**Depends on.** t3 merged.
+
+**Scope.** After this ticket `enrichers.py` is a registry of pure
+`record -> payload` functions and `enrich.py` writes each under
+`enrichment[name]` stamped `_by`/`_at`/`_v`, idempotent per namespace,
+producing `data/gold/{provider}.jsonl`.
+
+**Contract refs.** `eduloka/scripts/README.md` §"Enrichment workers";
+`eduloka/scripts/edux_record.py` (the `enrichment` jsonb bag);
+`aetheris-agents/CLAUDE.md` §"Python script conventions".
+
+**Touches.** `eduloka/scripts/enrichers.py`, `enrich.py`;
+`eduloka/tests/test_enrich.py`; `eduloka/tests/fixtures/exa.edux.jsonl`.
+
+**Do not generate.** No LLM/network enrichers — the two deterministic examples
+only. No cross-namespace writes.
+
+**Runbook update rule.** No new env/config — no runbook touch.
+
+**Done-check.**
+```bash
+python3 -m pytest eduloka/tests/test_enrich.py -q
+python3 eduloka/scripts/enrich.py --in eduloka/tests/fixtures/exa.edux.jsonl --out /tmp/gold.jsonl
+python3 -c "import json; r=json.loads(open('/tmp/gold.jsonl').readline()); assert '_v' in r['enrichment']['keywords']"
+```
+
+**Claude-code prompt.**
+> Land stage-3 from the spike, adding a per-namespace `_v` to each enricher
+> payload. Enrichers are pure; `enrich.py` does the namespaced, idempotent
+> write per README §"Enrichment workers". Keep the two examples
+> deterministic/offline. Commit the edux fixture. Run the done-check; include
+> output.
+
+**Spike reference.** `enrichers.py`, `enrich.py`, `test_enrich.py` — at
+`/tmp/eduloka/` (reference only; rebuild against the contract, and add `_v` per
+the scope above).
+
+**Implementation notes.** → `eduloka/docs/t4-implementation-notes.md` (write
+after ticket closes).

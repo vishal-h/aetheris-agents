@@ -57,10 +57,11 @@ No additional credentials — pure transforms, no network.
 |---|---|---|
 | `EDUX_SINK` | yes (t6+) | Sink selection: `direct` → upsert into Postgres; `export` → write JSONL for ct-edux ingest |
 | `EDUX_DATABASE_URL` | `direct` only | PostgreSQL connection string for the `gws_cse` database |
+| `EDUX_TERMS_FILE` | no | Override path to terms file (default: `data/terms.txt`) |
 
-`EDUX_SINK` is read by the orchestrator (t6). Running `upsert_institute.py` directly without
-`EDUX_DATABASE_URL` exits 1 with `{"status": "error"}`; it never silently writes an export file
-instead. Running `export_institute.py` requires no DB credentials.
+`EDUX_SINK` is read by the orchestrator at eval time. Running the orchestrator with
+`EDUX_SINK=direct` and no `EDUX_DATABASE_URL` raises immediately — it never silently
+falls back to export. Running `export_institute.py` directly requires no DB credentials.
 
 ---
 
@@ -72,6 +73,48 @@ Anthropic, SMTP, Google Drive, Payslip, GitHub. Eduloka keys needed:
 `SEARCH_PROVIDER`, `GWS_CSE_API_KEY`, `GWS_CSE_ENGINE_ID`,
 `GWS_CSE_REFERER` (optional), `EXA_API_KEY`, `EDUX_DATABASE_URL` (t5),
 `SERPER_API_KEY` (t2), `DATAFORSEO_LOGIN` (t2), `DATAFORSEO_PASSWORD` (t2).
+
+---
+
+## Terms file
+
+`data/terms.txt` is committed config — edit it to change which search terms the
+pipeline runs against. One term per line; blank lines and `#` comments are ignored.
+
+```bash
+# Show current terms
+python3 scripts/list_terms.py
+
+# Use a custom file (also via EDUX_TERMS_FILE env var)
+python3 scripts/list_terms.py --terms-file /path/to/custom_terms.txt
+```
+
+---
+
+## Running the orchestrator (t6)
+
+The orchestrator drives the full pipeline: `list_terms → [fetch → map → enrich → sink]`
+one sub-agent per term, all in parallel.
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+
+# Export sink (no DB required — writes data/export/*.jsonl)
+export SEARCH_PROVIDER=exa
+export EXA_API_KEY=...
+export EDUX_SINK=export
+mix aetheris run ../aetheris-agents/eduloka/agents/eduloka_orchestrator.exs
+
+# Direct sink (upsert to Postgres)
+export SEARCH_PROVIDER=cse
+export GWS_CSE_API_KEY=...
+export GWS_CSE_ENGINE_ID=...
+export EDUX_SINK=direct
+export EDUX_DATABASE_URL="postgresql://user:pass@host:5432/dbname"
+mix aetheris run ../aetheris-agents/eduloka/agents/eduloka_orchestrator.exs
+```
+
+The orchestrator fails at eval time if `EDUX_SINK=direct` and `EDUX_DATABASE_URL` is unset.
 
 ---
 

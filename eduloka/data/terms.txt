@@ -1,0 +1,6 @@
+# eduloka search terms — one domain term per line
+# blank lines and lines starting with # are ignored
+# edit this file to change which institutes are discovered
+iit.ac.in
+nit.ac.in
+iisc.ac.in

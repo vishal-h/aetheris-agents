@@ -9,6 +9,10 @@
 > engine, usable until 2027-01-01). This split the stage-1 fetch ticket in two
 > (t1 core+cse+exa, t2 serp) under the §6 sizing rule; downstream tickets
 > renumbered.
+> r3: operational write is now a two-backend **sink** — direct DB (t5, primary)
+> and export-to-ct-edux handoff (t5b, fallback when the DB isn't reachable),
+> selected by explicit config. The `enrichment` column + an ingest path move to
+> ct-edux's repo (companion workstream, separate session). t6–t8 unchanged.
 
 ## Goal
 
@@ -58,10 +62,11 @@ built in, this milestone.
 ## Ticket sequence
 
 t1 fetch core + cse + exa → t2 fetch serp (serper, dataforseo) → t3 map (silver,
-4 mappers) → t4 enrich (gold) → t5 upsert (operational) → t6 orchestrator +
-harness wiring → t7 datalake readiness → t8 doc/drift sync. t1–t5 are
-pure-Python and independently testable; t6 wires them under the harness; t7–t8
-close out analytics-readiness and canonical-doc sync.
+4 mappers) → t4 enrich (gold) → t5 direct sink + DB verify → t5b export sink
+(handoff) → t6 orchestrator + harness wiring → t7 datalake readiness → t8
+doc/drift sync. t1–t4 and t5b are pure-Python and independently testable; t5
+needs a faithful `gws_cse` clone (now verified); t6 wires them under the harness;
+t7–t8 close out analytics-readiness and canonical-doc sync.
 
 ---
 
@@ -218,12 +223,16 @@ python3 -c "import json; r=json.loads(open('/tmp/gold.jsonl').readline()); asser
 
 ---
 
-### t5 — Operational upsert + `gws_cse` enrichment migration
+### t5 — Operational sink (A): direct DB upsert
 
-**Scope.** After this ticket `upsert_institute.py` writes `to_gws_cse()` rows
-into Postgres `gws_cse` (link-keyed upsert, legacy semantics), and one additive,
-idempotent migration adds a nullable `enrichment jsonb` column. The live site is
-unaffected.
+**Scope.** The **direct** backend of the operational sink (the export backend is
+t5b). `upsert_institute.py` writes `to_gws_cse()` rows
+into Postgres `gws_cse` (link-keyed upsert, legacy Ecto semantics), and one
+additive, idempotent migration adds a nullable `enrichment jsonb` column. The
+live site is unaffected. Used when the DB is reachable + creds present;
+otherwise the operator selects the t5b export backend. (Status: merged —
+B1–B3 verified against a faithful `gws_cse` clone, `\d` confirms `metatags
+jsonb[]` + NOT NULL timestamps.)
 
 **Contract refs.** `ct-edux` `lib/gws/cse.ex` (`upsert/1` semantics, columns);
 `eduloka/scripts/edux_record.py` (`to_gws_cse()` output);
@@ -258,14 +267,81 @@ psql "$EDUX_DATABASE_URL" -f eduloka/data/migrations/0001_add_enrichment_jsonb.s
 
 ---
 
+### t5b — Operational sink (B): export handoff to ct-edux
+
+**Scope.** The **export** backend of the operational sink — the fallback when
+the ct-edux DB isn't reachable from the agent. `export_institute.py` reads
+edux/gold JSONL and writes `to_gws_cse()`-shaped rows as JSONL to
+`data/export/{stem}.jsonl`, which ct-edux ingests via its own
+`GwsCseApi.upsert/1` (companion workstream below). Sink selection across t5/t5b
+is **explicit** (`EDUX_SINK=direct|export`, resolved by the orchestrator) — a
+direct run with no reachable DB errors; it never silently writes an export
+file instead.
+
+**Contract refs.** `eduloka/scripts/edux_record.py` (`to_gws_cse()` — the export
+row shape, the single projection authority shared with t5); `aetheris-agents/
+CLAUDE.md` §"Python script conventions". The export-row format + the
+`enrichment` column are the cross-repo contract with the companion workstream.
+
+**Touches.** `eduloka/scripts/export_institute.py` (reuses `to_gws_cse()`
+directly — does **not** re-derive the projection); `eduloka/tests/
+test_export.py` (offline — no DB); `eduloka/.gitignore` (`data/export/`);
+`eduloka/runbook.md` (`EDUX_SINK` selection + export path + ct-edux handoff).
+
+**Do not generate.** No DB access in this script (that's t5). Do not duplicate
+`to_gws_cse()` logic — import it. No silent direct↔export fallback.
+
+**Runbook update rule.** Introduces `EDUX_SINK` selection and the export
+artifact location; documents the ct-edux handoff (what consumes the export).
+Note that the `enrichment` column is owned by ct-edux's Ecto migrations
+(companion workstream); eduloka's `0001_*.sql` is demoted to a documented
+emergency-only fallback, and `0000_*.sql` is test-clone-only.
+
+**Done-check.**
+```bash
+python3 -m pytest eduloka/tests/test_export.py -q                       # offline, no DB
+python3 scripts/export_institute.py --in eduloka/tests/fixtures/exa.edux.jsonl --out /tmp/export.jsonl
+python3 -c "import json; r=json.loads(open('/tmp/export.jsonl').readline()); assert set(r) >= {'link','metatags','enrichment','status'} and 'text' not in r"
+```
+
+**Claude-code prompt.**
+> Add `export_institute.py`: read edux/gold JSONL, project each line via
+> `EduxRecord.to_gws_cse()` (import it — do not reimplement), write the rows as
+> JSONL to `data/export/{stem}.jsonl`. Same `{"status": …}` envelope + per-line
+> resilience as the other stages. No DB. Wire `EDUX_SINK` selection so the
+> orchestrator (t6) picks direct vs export explicitly; a misconfigured direct
+> run errors rather than falling back. Document the handoff in `eduloka/
+> runbook.md`. Run the done-check; include output.
+
+---
+
+### Companion workstream — ct-edux ingest (separate repo / session)
+
+Not an eduloka ticket (different repo, tracked in its own session). Captured here
+so it has a spec. Two pieces, with the cross-repo contract being **(a)** the
+export-row format = JSONL of `to_gws_cse()` dicts and **(b)** the `enrichment`
+column:
+
+1. **Ecto migration** in ct-edux adding `add :enrichment, :map` (jsonb) to
+   `gws_cse` — the canonical owner of the column, so `schema_migrations` tracks
+   it. eduloka's `0001_*.sql` is only an emergency fallback.
+2. **Ingest task** in ct-edux that reads an eduloka export JSONL and upserts each
+   row via the existing `Edux.Db.GwsCseApi.upsert/1` — Ecto then handles the
+   `jsonb[]` metatags, the NOT NULL timestamps, and status semantics natively
+   (which is why the export path has none of t5's B1–B3).
+
+---
+
 ### t6 — Orchestrator agent + harness wiring
 
 **Scope.** After this ticket `agents/eduloka_orchestrator.exs` drives the full
-pipeline (fetch → map → enrich → upsert) over a term list using `run_command` +
+pipeline (fetch → map → enrich → **sink**) over a term list using `run_command` +
 `spawn_agent` + `wait_for_all`, a capability-matrix agent file exists, and a
 `sprint.sh` case runs the pipeline end-to-end against fixtures. The term list is
 loaded from a committed, editable config file (`data/terms.txt`) via
-`list_terms.py` — never hardcoded in the agent.
+`list_terms.py` — never hardcoded in the agent. The final stage is the direct
+upsert (t5) or the export handoff (t5b), chosen by explicit `EDUX_SINK` — no
+silent fallback.
 
 **Contract refs.** `docs/agent-creation-guide.md` §"Orchestrator patterns",
 §"Standard RunConfig fields", §"Runtime parameters in orchestrators",
@@ -285,8 +361,9 @@ scripts do, the agent orchestrates. No `read_file`/`write_file` in the tool set.
 Include the "report failures and stop" rule.
 
 **Runbook update rule.** Introduces the terms-file config (`data/terms.txt`,
-overridable via `EDUX_TERMS_FILE`) and the `SEARCH_PROVIDER` selection per run.
-Document the terms file (how to edit it) and the run invocation.
+overridable via `EDUX_TERMS_FILE`), the `SEARCH_PROVIDER` selection, and the
+`EDUX_SINK` (direct|export) selection per run. Document the terms file (how to
+edit it) and the run invocation.
 
 **Done-check.**
 ```bash

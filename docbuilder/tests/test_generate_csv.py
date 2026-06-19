@@ -134,7 +134,7 @@ def test_special_chars_quoted(tmp_path):
     out = tmp_path / "out.csv"
     generate_csv(spec, out)
     text = out.read_text()
-    assert '"say ""hello"""' in text or '"say \\"hello\\""' in text or 'say "hello"' in text
+    assert '"say ""hello"""' in text
 
 
 # --- CLI integration ---

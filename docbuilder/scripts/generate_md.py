@@ -23,7 +23,6 @@ def generate_md(doc_spec, output_path):
         lines.append(f"## {sheet['name']}")
         lines.append("")
         rows = sheet["rows"]
-        ncols = len(sheet["columns"]) if sheet["columns"] else (len(rows[0]["cells"]) if rows else 0)
         header_written = False
 
         for row in rows:

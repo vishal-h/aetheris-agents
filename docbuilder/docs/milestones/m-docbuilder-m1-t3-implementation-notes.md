@@ -29,9 +29,15 @@ numeric column) are left as strings. This is a renderer-side concern; it does
 not violate the doc spec contract ("renderers must not compute anything") —
 type coercion for correct rendering is not computation.
 
-**Note for t4/t5:** The same issue applies to any renderer that applies
-numeric formatting. Each renderer must handle the string→numeric coercion
-independently.
+**Known limitation:** non-convertible strings (e.g. a blank `unit_price` cell)
+are silently left as strings. The cell will render as left-aligned text inside
+a right-aligned numeric column — a subtle visual defect with no warning.
+Consistent with `compute_doc.py` silently skipping non-numeric values in
+aggregates. Candidate for a renderer-level stderr warning in m2.
+
+**Note for t4/t5:** The same coercion and the same silent-failure behaviour
+applies to any renderer that handles numeric formatting. Each renderer must
+handle it independently.
 
 ### openpyxl read-back: `250.0` becomes `250`
 

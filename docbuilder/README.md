@@ -71,33 +71,94 @@ Not in m1: template registry, conversational editing, delivery (email/Drive).
 
 ---
 
-### m2 — Template registry + delivery ✦ *backlog*
+### m2 — Template registry + base files + LLM-assisted selection ✦ *backlog*
 
-**Goal:** tenant templates managed centrally, not as flat files checked into
-the repo. Output delivered to Drive or email automatically.
+**Goal:** tenant templates managed centrally. Base files (`.docx`, `.xlsx`)
+carry branding — headers, footers, logos, fonts, colours. The LLM selects
+the right doc type and variant from a known catalogue. Output delivered
+automatically.
 
 Scope:
-- Template registry: Drive folder (one subfolder per tenant) or lightweight
-  DB table — fetch template by `(tenant_id, doc_type, version)` at run time
+
+**Template registry:**
+- Registry: Drive folder (one subfolder per tenant) or lightweight DB table
+- Each tenant has a catalogue of doc types: `proposal`, `invoice`, `rfq`, etc.
+- Each doc type has: a JSON config (`proposal_v1.json`) + optional base files
+  per format (`proposal_v1.docx`, `proposal_v1.xlsx`)
 - Template versioning: slug-based (`proposal_v1`, `proposal_v2`); old versions
   remain runnable
-- `fetch_template.py` — resolves and downloads the correct template
+- `list_templates.py` — returns available `{doc_type, variants, description}`
+  for a given tenant; used by the orchestrator to give the LLM the catalogue
+- `fetch_template.py` — fetches a specific template JSON + base file by
+  `(tenant_id, doc_type, variant)`
+- Runbook: tenant onboarding procedure
+
+**Base file support in renderers:**
+- Renderers check for a base file (`{doc_type}_{version}.docx` /
+  `{doc_type}_{version}.xlsx`) alongside the JSON config
+- If present: open it as the starting workbook/document (inherits branding,
+  header, footer, logo, named styles, print settings)
+- If absent: create fresh (current m1 behaviour — preserved as fallback)
+- `generate_docx.py`: `Document("base.docx")` instead of `Document()`
+- `generate_xlsx.py`: `openpyxl.load_workbook("base.xlsx")` instead of
+  `Workbook()`; sheet names in the base file must match the template's
+  sheet names or be cleared/replaced
+
+**LLM template selection (Options A + B):**
+
+Option A — caller provides `doc_type`; LLM selects `base_variant`:
+- Orchestrator calls `list_templates.py` to get available variants
+- LLM receives: `doc_type` (known), variant catalogue, context (customer
+  name, deal type, tone)
+- LLM picks variant and justifies choice in structured JSON:
+  `{doc_type, variant, rationale}`
+- Scripts do everything after that
+
+Option B — caller provides context; LLM derives `doc_type` + `variant`:
+- Orchestrator calls `list_templates.py` for the full tenant catalogue
+- LLM receives: context (deal description, customer, amount), full catalogue
+  with descriptions
+- LLM picks `{doc_type, variant, rationale}`
+- Input: `DOCBUILDER_CONTEXT` env var (structured JSON with deal fields)
+
+Both A and B are in m2. Classification is LLM work; template fetch and
+rendering are scripts.
+
+**Delivery:**
 - Drive upload integration (reuse `drive/scripts/drive_upload.py` pattern)
 - Email delivery integration (reuse `email/scripts/email_send.py` pattern)
-- Multi-source data: template `data_sources` array supports >1 entry; orchestrator calls `fetch_data.py` once per source; `compute_doc.py` receives all results and merges/joins before applying the template
-- Runbook: tenant onboarding procedure (how to add a template to the registry)
 
-Not in m2: conversational template editing.
+**Multi-source data:**
+- Template `data_sources` array supports >1 entry
+- Orchestrator calls `fetch_data.py` once per source
+- `compute_doc.py` receives all results and merges/joins before applying
+  the template
+
+Not in m2: natural language requests, conversational template editing.
 
 ---
 
-### m3 — Conversational template editing ✦ *backlog*
+### m3 — NL requests + conversational template editing ✦ *backlog*
 
-**Goal:** users can refine a template via natural language. Each instruction
-produces a structured patch. Patches are logged in a JSONL edit trail.
-Re-render happens automatically after each accepted change.
+**Goal:** Option C — user provides a natural language request; the LLM
+extracts data fields, selects the template, and fills values. Users can
+also refine a generated document via natural language instructions.
 
 Scope:
+
+**Natural language request handling (Option C):**
+- Input: freeform text — "Generate a formal quote for Acme for 40 days of
+  consulting at £1,200/day including our standard payment terms"
+- LLM extracts: structured data fields (customer, line items, amounts,
+  terms), infers `doc_type` + `variant`
+- Extracted fields feed into the existing `compute_doc.py` pipeline
+- Ambiguity handling: LLM asks clarifying questions before rendering if
+  required fields are missing or ambiguous
+- Reliability gate: extracted fields shown to the user for confirmation
+  before rendering — LLM extraction errors must not silently produce a
+  wrong customer-facing document
+
+**Conversational template editing:**
 - **Patch schema** — atomic operations:
   `set_bold`, `set_align`, `set_column_width`, `add_aggregate_row`,
   `set_merge_range`, `add_logo`, `reorder_columns`, `rename_column`, etc.
@@ -107,9 +168,8 @@ Scope:
 - `replay_template.py` — reconstructs current template from base + JSONL log
 - Conversational agent: reads current template + user instruction → emits
   patch JSON → calls `patch_template.py` → calls renderer for preview
-- Ambiguity handling: agent asks for clarification on underspecified
-  instructions ("make it look more professional" → agent must clarify or
-  decompose into concrete ops)
+- Ambiguity handling: agent clarifies underspecified instructions before
+  applying patches
 - Save path: accepted patches written to JSONL log; template registry updated
   (m2 dependency)
 
@@ -131,6 +191,9 @@ Not in m3: multi-user collaboration on templates, approval workflows.
 | Transformation lives in `compute_doc.py` | Column mapping, joins, aggregations, derived fields are all deterministic logic that belongs in compute. Renderers receive pre-computed values and must not compute anything. |
 | Multi-source is m2, not m1 | The template schema includes a `data_sources` array from day one (no breaking change later), but m1 validates that the array has exactly one entry. Multi-source fetch + merge lands in m2 once the single-source pipeline is proven. |
 | PDF renderer: weasyprint for m1 | Pure Python, no system dependencies beyond the package. reportlab is backlog — the doc spec contract means switching is a single-script swap with no upstream impact. |
+| Base files carry branding; JSON config carries structure | `.docx`/`.xlsx` base files hold headers, footers, logos, named styles. JSON templates define sheets, columns, aggregates. Keeping them separate means branding can change without touching data config and vice versa. |
+| LLM selects doc type + variant; scripts do everything after | Classification (which template to use) is ambiguous, context-dependent LLM work. Fetch, compute, render are deterministic. The LLM outputs a small structured JSON `{doc_type, variant, rationale}`; all downstream steps are scripted. |
+| NL request extraction (Option C) requires a confirmation gate | LLM-extracted data fields must be shown to the user before rendering. A silently wrong customer-facing document is worse than no document. Gate is mandatory in m3; no silent rendering on extraction alone. |
 
 ---
 
@@ -145,7 +208,9 @@ aetheris-agents/
       sample_data.csv             ← committed (anonymised)
       templates/
         {tenant_id}/
-          {doc_type}_v{N}.json    ← flat-file templates (m1)
+          {doc_type}_v{N}.json    ← structure + data config (m1 flat file)
+          {doc_type}_v{N}.docx    ← branding base file, optional (m2)
+          {doc_type}_v{N}.xlsx    ← branding base file, optional (m2)
       .gitignore                  ← excludes real data, output/
     docs/
       t*-implementation-notes.md
@@ -161,6 +226,8 @@ aetheris-agents/
       generate_json.py
       generate_xml.py
       generate_md.py
+      list_templates.py           ← m2: catalogue for LLM selection
+      fetch_template.py           ← m2: fetches JSON config + base file
     tests/
       conftest.py
       test_compute_doc.py

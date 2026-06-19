@@ -71,8 +71,15 @@ the column headers). In a Word document these are better represented as a
 heading paragraph above the table, which is what the sheet-level `add_heading`
 already provides. `merge_ranges` are silently ignored in this renderer — the
 semantic equivalent (a title above the table) is handled by the heading. This
-is a deliberate simplification and should be noted in the t8 docs if a reviewer
-flags the absence.
+is a deliberate simplification.
+
+**Known limitation (flag for t8 docs sync):** the heading text used is
+`sheet["name"]` (e.g. "Line Items"), not the `merge_ranges[].value` (e.g.
+"B2B Project Proposal — Line Items"). These are different strings. Template
+authors who rely on the merge_range value appearing as the table title in docx
+output will be surprised. xlsx faithfully renders the merge_range value; docx
+substitutes the sheet name. t5 (HTML) is the only renderer that can express
+merge_range values faithfully via `<th colspan="N">`.
 
 ---
 

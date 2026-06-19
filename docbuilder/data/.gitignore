@@ -1,0 +1,9 @@
+# Real client data — never commit; only sample_data.csv is committed (anonymised fixture)
+*.csv
+!sample_data.csv
+
+# Real client templates — never commit; only data/templates/demo/ is committed
+templates/*/
+!templates/demo/
+templates/demo/*/
+!templates/demo/proposal_v1.json

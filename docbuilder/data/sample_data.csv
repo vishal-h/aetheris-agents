@@ -1,0 +1,11 @@
+item_code,description,quantity,unit_price,total
+SRV-001,Initial Consultation and Requirements Gathering,2,1500.00,3000.00
+SRV-002,System Architecture Design,1,2500.00,2500.00
+SRV-003,Backend API Development,40,150.00,6000.00
+SRV-004,Frontend UI Development,30,130.00,3900.00
+SRV-005,Database Design and Migration,8,175.00,1400.00
+SRV-006,Integration Testing,12,120.00,1440.00
+SRV-007,User Acceptance Testing Support,5,110.00,550.00
+SRV-008,Deployment and Go-Live Support,3,200.00,600.00
+SRV-009,Documentation and Handover,4,125.00,500.00
+SRV-010,Post-Launch Support (30 days),1,1200.00,1200.00

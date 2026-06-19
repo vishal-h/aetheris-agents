@@ -363,6 +363,7 @@ change with no upstream impact.
 **Touches.**
 - `docbuilder/scripts/generate_pdf.py` (new)
 - `docbuilder/tests/test_generate_pdf.py` (new)
+- `docbuilder/docs/milestones/m-docbuilder-m1-t5-implementation-notes.md` (new — write after done-check passes)
 
 **Done-check.**
 ```bash
@@ -387,6 +388,11 @@ python3 -m pytest tests/test_generate_pdf.py -v
 > Tests: assert file exists and size > 0. Mark integration; skip if
 > weasyprint not installed.
 >
+> After done-check passes, write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t5-implementation-notes.md`
+> covering any weasyprint-specific gotchas, HTML template decisions, and
+> anything relevant for the t6 renderers or the t7 orchestrator.
+>
 > Run the done-check and include its output in the review packet.
 
 ---
@@ -408,8 +414,11 @@ format. Tests for each.
 - `docbuilder/tests/test_generate_json.py` (new)
 - `docbuilder/tests/test_generate_xml.py` (new)
 - `docbuilder/tests/test_generate_md.py` (new)
+- `docbuilder/docs/milestones/m-docbuilder-m1-t6-implementation-notes.md` (new — write after done-check passes)
 
 **Do not generate.** Do not combine these into a single script.
+
+**Runbook update rule.** No new env vars or startup steps in this ticket — no runbook update required.
 
 **Done-check.**
 ```bash
@@ -445,6 +454,11 @@ python3 -m pytest tests/test_generate_csv.py tests/test_generate_json.py \
 > Tests: all use `tmp_path`; assert file exists; assert content spot-checks
 > (correct row count, expected cell value present). No external deps needed.
 >
+> After done-check passes, write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t6-implementation-notes.md`
+> covering any per-format decisions (e.g. how multi-sheet CSV was handled,
+> what JSON output shape was chosen) and anything t7 needs to know.
+>
 > Run the done-check and include its output in the review packet.
 
 ---
@@ -466,6 +480,7 @@ Rules section); §"Pre-flight checklist".
 - `docbuilder/agents/docbuilder_orchestrator.exs` (new)
 - `docbuilder/runbook.md` (new — env vars, how to run, troubleshooting)
 - `../aetheris/scripts/sprint.sh` (add `docbuilder` case)
+- `docbuilder/docs/milestones/m-docbuilder-m1-t7-implementation-notes.md` (new — write after done-check passes)
 
 **Do not generate.** No new Python scripts in this ticket.
 
@@ -512,6 +527,11 @@ ls -lh ../aetheris-agents/docbuilder/output/
 >
 > Add the `docbuilder` sprint case to `sprint.sh`.
 >
+> After done-check passes, write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t7-implementation-notes.md`
+> covering orchestrator design decisions, any system prompt iteration that
+> was needed, and anything the t8 docs sync should know.
+>
 > Run the done-check and include its output in the review packet.
 
 ---
@@ -527,9 +547,9 @@ questions are all resolved.
 aetheris-agents CLAUDE.md doc-sync DoD.
 
 **Touches.**
-- `docs/capability-matrix.md` (add docbuilder section — run the generator)
+- `docs/capability-matrix.md` (update — run the generator)
 - `docbuilder/README.md` (close all open questions)
-- `docbuilder/milestone.md` (this file — add milestone summary section)
+- `docbuilder/milestone.md` (add milestone summary section at bottom)
 
 **Done-check.**
 ```bash
@@ -541,19 +561,30 @@ mix aetheris run ../aetheris-agents/agents/capability_matrix.exs
 grep -A 5 "docbuilder" ../aetheris-agents/docs/capability-matrix.md
 
 # Confirm no open questions remain in README
-grep "Open questions" ../aetheris-agents/docbuilder/README.md
+grep -c "~~" ../aetheris-agents/docbuilder/README.md  # all questions struck-through
+
+# Confirm all implementation notes files exist
+ls ../aetheris-agents/docbuilder/docs/milestones/
 ```
 
 **Claude-code prompt.**
 > Read `CLAUDE.md`, `docs/milestone-methodology.md` §7, and
 > `docbuilder/README.md` before starting.
 >
-> Perform the t8 docs sync per scope above. Regenerate the capability
-> matrix. Resolve all remaining open questions in `docbuilder/README.md`
-> (replace the open questions section with a "Decisions" subsection
-> recording what was chosen and why). Write the milestone summary at the
-> bottom of `docbuilder/milestone.md` (what shipped, what was deferred,
-> surprises, open items for m2).
+> Also read all implementation notes files committed during this milestone:
+> `docbuilder/docs/milestones/m-docbuilder-m1-t1-implementation-notes.md`
+> through `m-docbuilder-m1-t7-implementation-notes.md`. These are the
+> primary input for the milestone summary — do not restate the diffs,
+> synthesise the decisions and open threads across tickets.
+>
+> Perform the t8 docs sync per scope above:
+> - Regenerate the capability matrix.
+> - Resolve all remaining open questions in `docbuilder/README.md`
+>   (replace the open questions section with a "Decisions" subsection).
+> - Write the milestone summary at the bottom of `docbuilder/milestone.md`
+>   covering: what shipped, what was deferred (with → m2/m3 refs), surprises
+>   or findings that recurred across tickets (candidates for CLAUDE.md
+>   promotion per methodology §7), and open items for m2.
 >
 > Run the done-check and include its output in the review packet.
 

@@ -454,12 +454,18 @@ python3 -m pytest tests/test_generate_csv.py tests/test_generate_json.py \
 > Tests: all use `tmp_path`; assert file exists; assert content spot-checks
 > (correct row count, expected cell value present). No external deps needed.
 >
+> Also read `docbuilder/docs/milestones/m-docbuilder-m1-t5-implementation-notes.md`
+> §"t6 notes" before writing any code — it contains format-specific decisions
+> already made.
+>
 > After done-check passes, write
 > `docbuilder/docs/milestones/m-docbuilder-m1-t6-implementation-notes.md`
 > covering any per-format decisions (e.g. how multi-sheet CSV was handled,
 > what JSON output shape was chosen) and anything t7 needs to know.
 >
-> Run the done-check and include its output in the review packet.
+> **Review packet must open with the full done-check output block** (pipeline
+> file listing + complete `pytest -v` output with individual test names,
+> PASSED/FAILED, and elapsed time). Do not submit the packet without it.
 
 ---
 
@@ -532,7 +538,9 @@ ls -lh ../aetheris-agents/docbuilder/output/
 > covering orchestrator design decisions, any system prompt iteration that
 > was needed, and anything the t8 docs sync should know.
 >
-> Run the done-check and include its output in the review packet.
+> **Review packet must open with the full done-check output block** (syntax
+> check output + full sprint run output + `ls -lh` of output files). Do not
+> submit the packet without it.
 
 ---
 

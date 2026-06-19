@@ -399,6 +399,54 @@ rusqlite = { version = "...", features = ["bundled"] }
 
 ---
 
+## Docbuilder use case
+
+Run the docbuilder pipeline (data → formatted document) via sprint or direct.
+
+### Required env vars
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DOCBUILDER_TENANT` | Tenant name — selects `data/templates/{tenant}/` | `demo` |
+| `DOCBUILDER_DOC_TYPE` | Document type — selects the template file | `proposal` |
+| `DOCBUILDER_VERSION` | Template version string | `v1` |
+| `DOCBUILDER_DATA_PATH` | Path to input CSV, relative to `docbuilder/` root | `data/sample_data.csv` |
+
+### Sprint invocation
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+
+DOCBUILDER_TENANT=demo \
+DOCBUILDER_DOC_TYPE=proposal \
+DOCBUILDER_VERSION=v1 \
+DOCBUILDER_DATA_PATH=data/sample_data.csv \
+./scripts/sprint.sh docbuilder
+```
+
+### Expected output files
+
+After a successful run, `aetheris-agents/docbuilder/output/` contains:
+
+```
+pipeline_raw.json      # intermediate — raw fetch output
+pipeline_spec.json     # intermediate — computed doc spec
+proposal_v1.xlsx       # ~8 KB
+proposal_v1.pdf        # ~30 KB
+```
+
+Formats depend on `output_formats` in the template. `demo/proposal_v1.json` specifies `["xlsx", "pdf"]`.
+
+### Common failure modes
+
+**`DOCBUILDER_TENANT not set` on eval** — all four `DOCBUILDER_*` vars must be exported before `mix aetheris run` or `mix run --eval`. The orchestrator raises immediately if any are absent.
+
+**Output files missing after run** — check that `overlay_base_dir: nil` is set in the orchestrator. If output appeared under `priv/runs/*/upper/`, overlay was enabled and files were discarded.
+
+**`python3 python3 script.py` in run log** — LLM duplicated the executable in both `command:` and `args:`. Re-run; the system prompt guard should prevent recurrence. See `docbuilder/runbook.md` §"Common failure modes" for the full list.
+
+---
+
 ## Adding a new module
 
 1. Create `src/components/modules/{name}/` with component files

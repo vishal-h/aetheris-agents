@@ -234,3 +234,7 @@ The orchestrator cannot pipe a JSON payload to a script's stdin via `run_command
 **Review packets must include the full done-check output block, opened first.**
 A packet without done-check output (test names + PASSED/FAILED + elapsed time + pipeline file listing) is returned unreviewed. The done-check output goes at the top of the packet — not after the diff. This was raised at t4 (blocking) and recurred at t5 and t6 (pipeline file listing absent). The milestone doc prompts for packets now include an explicit "Review packet must open with the full done-check output block" instruction.
 `Source: m-docbuilder-m1 t4, t5, t6`
+
+**Implementation notes are a required deliverable, not optional — commit before submitting the review packet.**
+A packet missing an implementation notes file is returned unreviewed. The notes file must be committed (not just written) before the packet is sent. For docs-only tickets (no scripts, no agents) a brief notes file is still required: capture decisions made, open items forwarded, and anything that does not survive in the code itself.
+`Source: m-docbuilder-m1 t1 (F1 blocking), t8 (F1 — accepted without it for docs ticket)`

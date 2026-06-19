@@ -183,20 +183,12 @@ aetheris-agents/
 
 ---
 
-## Open questions (to resolve before or during m1)
+## m1 scope decisions
 
-~~1. **Data source interface** — for m1, does `fetch_data.py` support only
-   local CSV/JSON, or also a simple HTTP GET? Decide before t1.~~
-   **Resolved:** m1 supports local CSV/JSON only. `fetch_data.py` does not
-   transform. HTTP sources and multi-source joins are m2.
+All open questions from the start of m1 have been resolved:
 
-~~2. **PDF renderer** — weasyprint (HTML → PDF, pure Python) vs reportlab
-   (programmatic, more control). weasyprint is simpler for m1 if output
-   quality is acceptable.~~
-   **Resolved:** weasyprint for m1. reportlab backlog (m2 or later).
-
-~~3. **Multi-format in one run** — does the orchestrator render all formats
-   listed in the template's `output_formats` array in sequence, or does
-   the caller specify which format at invocation time? Sequence is simpler.~~
-   **Resolved:** orchestrator renders all formats in `output_formats` in
-   sequence. No per-invocation override in m1.
+| Question | Decision |
+|----------|----------|
+| Data source interface | m1 supports local CSV/JSON only. `fetch_data.py` does not transform. HTTP sources and multi-source joins are m2. |
+| PDF renderer | weasyprint for m1. Pure Python, no system dependencies. reportlab is backlog — the doc spec contract means swapping is a single-script change. |
+| Multi-format in one run | Orchestrator renders all formats listed in `output_formats` in sequence. No per-invocation format override in m1. |

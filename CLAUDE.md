@@ -217,5 +217,20 @@ routes, or DB tables. Zero FAIL findings and zero WARN findings required before 
 | api (TAP) | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
 | boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/m-boxy-pipeline-1a.md`, `boxy-pipeline/docs/runbook.md` |
 | eduloka | `eduloka/runbook.md`, `docs/milestones/m-eduloka-discovery-summary.md` |
+| docbuilder | `docbuilder/runbook.md`, `docbuilder/milestone.md` |
 
 The `docs/agent-creation-guide.md` is the authoritative reference for building new agents.
+
+---
+
+## Learning — m1-docbuilder
+
+Findings that recurred across ≥2 tickets in the docbuilder m1 milestone, promoted per methodology §7.
+
+**`run_command` has no stdin parameter — generation scripts must also accept `--input FILE`.**
+The orchestrator cannot pipe a JSON payload to a script's stdin via `run_command`. Any script that reads JSON from stdin must also accept `--input FILE` before it can be called from a `run_command` orchestrator. The first attempt using `sh -c "cat file | python3 script.py"` was unreliable — the LLM timed out on the pipe. See `agent-creation-guide.md` §"Common failure modes".
+`Source: m-docbuilder-m1 t7`
+
+**Review packets must include the full done-check output block, opened first.**
+A packet without done-check output (test names + PASSED/FAILED + elapsed time + pipeline file listing) is returned unreviewed. The done-check output goes at the top of the packet — not after the diff. This was raised at t4 (blocking) and recurred at t5 and t6 (pipeline file listing absent). The milestone doc prompts for packets now include an explicit "Review packet must open with the full done-check output block" instruction.
+`Source: m-docbuilder-m1 t4, t5, t6`

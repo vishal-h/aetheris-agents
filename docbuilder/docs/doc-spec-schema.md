@@ -199,3 +199,22 @@ Output of `compute_doc.py` for `demo/proposal_v1` with 2-row source data:
 - `header_row` tells the renderer which physical row to write the header row to (after placing any `merge_ranges` rows first).
 - `aggregate` rows are written after all `data` rows (position=bottom) or before them (position=top). The order in the `rows` array is the display order — renderers must not reorder.
 - Summary sheet `data` rows (from `summary_rows`) are plain data rows. Renderers apply no special styling beyond the per-cell `bold` and `align` values.
+- All renderer scripts accept the doc spec via **stdin** (default) or via `--input FILE` (path to a saved doc spec JSON). The `--input` flag is required when calling renderers from `run_command` (which has no stdin parameter).
+
+---
+
+## Format characteristics
+
+Not all formats can express every doc spec feature. Template authors should be aware of these per-format limitations:
+
+| Feature | xlsx | pdf | docx | csv | json | xml | md |
+|---------|------|-----|------|-----|------|-----|----|
+| merge_ranges value | ✅ merged cells | ✅ `<th colspan>` | ⚠ sheet name used | — dropped | — dropped | — dropped | — dropped |
+| bold per cell | ✅ | ✅ | ✅ | — | — | — | ✅ `**...**` |
+| alignment per cell | ✅ | ✅ | ✅ | — | — | — | — |
+| aggregate row border | ✅ thin top | ✅ CSS border | ✅ bold only | — | — | — | — |
+| row type metadata | ✅ visual | ✅ visual | ✅ visual | — | — dropped | ✅ `type` attr | — |
+| numeric formatting | ✅ `#,##0.00` | — string | — string | — string | native | — string | — string |
+| multi-sheet | ✅ tabs | ✅ sections | ✅ sections | ✅ `# Sheet:` | ✅ array | ✅ `<sheet>` | ✅ `##` headings |
+
+Legend: ✅ = supported and correct, ⚠ = partially supported (see note), — = not applicable or silently dropped.

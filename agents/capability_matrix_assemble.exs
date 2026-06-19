@@ -44,6 +44,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
       docs/.sections/api_tenant.md
       docs/.sections/api_gateway.md
       docs/.sections/provenance.md
+      docs/.sections/docbuilder.md
     If any file is missing, note it and continue.
 
   Step 2: Detect overlaps.
@@ -91,6 +92,10 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   ---
 
+  {paste docs/.sections/docbuilder.md content verbatim}
+
+  ---
+
   ## Overlap Report
 
   ### Script name overlaps
@@ -121,6 +126,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   | api/tenant | N | N |
   | api/gateway | N | N |
   | provenance | N | N |
+  | docbuilder | N | N |
   | **Total** | N | N |
 
   **Unique tools across all use cases:** `tool1`, `tool2`, ...

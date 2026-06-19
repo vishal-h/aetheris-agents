@@ -432,6 +432,21 @@ Sub-agent has `message_count: 0`. `spawn_agent` maps `task_prompt` to
 since T0). If you see this on an older Aetheris version, check that
 `spawn_agent.ex` sets `user_prompt: "Begin."`.
 
+### run_command has no stdin parameter — scripts must accept --input FILE
+
+`run_command` cannot pipe data to a script's stdin. If your orchestrator needs
+to pass a JSON payload (e.g. a doc spec) to a generation script, the script
+must also accept `--input FILE` so the orchestrator can write the payload with
+`write_file` first, then call the script with `--input output/payload.json`.
+
+Attempting to use `sh -c "cat file | python3 script.py"` is fragile — the LLM
+does not follow this pattern reliably and the script will hang waiting for stdin.
+
+**Rule:** any script that reads JSON from stdin must also support `--input FILE`
+before it can be called from an orchestrator via `run_command`.
+
+`Source: m-docbuilder-m1 t7`
+
 ### GenServer timeout on run_command
 
 The sub-agent is passing a massive inline script via `python3 -c "..."`.

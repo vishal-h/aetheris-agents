@@ -67,10 +67,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--filename", default="document")
+    parser.add_argument("--input", default=None, help="doc spec JSON file path (default: stdin)")
     args = parser.parse_args()
 
     try:
-        doc_spec = json.load(sys.stdin)
+        src = open(args.input, encoding="utf-8") if args.input else sys.stdin
+        doc_spec = json.load(src)
     except Exception as e:
         print(json.dumps({"status": "error", "error": str(e)}), file=sys.stderr)
         sys.exit(1)

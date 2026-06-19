@@ -2,8 +2,6 @@
 *.csv
 !sample_data.csv
 
-# Real client templates — never commit; only data/templates/demo/ is committed
+# Real client templates — never commit; demo/ tenant is committed in full
 templates/*/
 !templates/demo/
-templates/demo/*/
-!templates/demo/proposal_v1.json

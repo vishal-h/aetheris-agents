@@ -118,25 +118,37 @@ the key is echoed in the output so `compute_doc.py` can identify it.
 Fails with exit 1 if the file is missing or unparseable.
 
 `compute_doc.py`: owns **all transformation logic**. Reads the template JSON
-and one or more raw source JSON files (m1: exactly one). Applies column
-mapping (`source_field` → column), computes aggregate row values (sums,
-counts, averages), derives merge cell coordinates, resolves bold/align flags
-per cell, and emits a **doc spec JSON** to stdout. The doc spec is complete
-and format-agnostic: renderers receive pre-computed values and must not
-compute or transform anything.
+and one or more raw source JSON files (m1: exactly one). Processes sheets
+in **two passes** — this is required by the `summary_rows` design introduced
+in t1:
+- Pass 1: data-bearing sheets (`source_key` non-null) — apply column mapping
+  (`source_field` → column), compute `aggregate_rows` values (sums, counts,
+  averages), derive merge cell coordinates, resolve bold/align flags per cell.
+- Pass 2: summary sheets (`source_key` null) — resolve `summary_rows` entries
+  by referencing the pre-computed aggregate values from Pass 1 sheets.
+  `aggregate_ref` rows look up their value from the named source sheet and
+  column. `static` rows are passed through directly.
+
+The doc spec emitted is complete and format-agnostic: renderers receive
+pre-computed cell values with bold/align flags and must not compute anything.
 
 **Contract refs.** agent-creation-guide.md §"Script design" (one
 responsibility per script; stdout is the contract; exit codes); §"Scripts
 must be runnable standalone"; README.md §"Design decisions"
-(fetch/transform split; multi-source is m2).
+(fetch/transform split; multi-source is m2); `docbuilder/docs/template-schema.md`
+(authoritative — do not restate schema here).
 
 **Touches.**
+- `docbuilder/docs/milestones/m-docbuilder-m1-t1-implementation-notes.md`
+  (new — **write this first**, backfilling the t1 audit trail; see prompt)
 - `docbuilder/scripts/fetch_data.py` (new)
 - `docbuilder/scripts/compute_doc.py` (new)
 - `docbuilder/tests/conftest.py` (new)
 - `docbuilder/tests/test_fetch_data.py` (new)
 - `docbuilder/tests/test_compute_doc.py` (new)
 - `docbuilder/docs/doc-spec-schema.md` (new — documents doc spec JSON fields)
+- `docbuilder/docs/milestones/m-docbuilder-m1-t2-implementation-notes.md`
+  (new — write at end of session before done-check)
 
 **Do not generate.** No agent files, no renderer scripts in this ticket.
 Do not add transformation logic to `fetch_data.py`.
@@ -148,10 +160,18 @@ cd aetheris-agents/docbuilder
 # fetch_data standalone
 python3 scripts/fetch_data.py --key main data/sample_data.csv | python3 -m json.tool
 
-# full pipeline
+# full pipeline — Line Items sheet + Summary sheet both appear in output
 python3 scripts/fetch_data.py --key main data/sample_data.csv > /tmp/raw.json
 python3 scripts/compute_doc.py data/templates/demo/proposal_v1.json /tmp/raw.json \
   | python3 -m json.tool
+
+# Verify both sheets present and Summary sheet has pre-computed values
+python3 scripts/fetch_data.py --key main data/sample_data.csv > /tmp/raw.json
+python3 scripts/compute_doc.py data/templates/demo/proposal_v1.json /tmp/raw.json \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); \
+    sheets=[s['name'] for s in d['sheets']]; \
+    assert sheets == ['Line Items', 'Summary'], sheets; \
+    print('sheets OK:', sheets)"
 
 # Tests
 python3 -m pytest tests/test_fetch_data.py tests/test_compute_doc.py -v
@@ -159,34 +179,63 @@ python3 -m pytest tests/test_fetch_data.py tests/test_compute_doc.py -v
 
 **Claude-code prompt.**
 > Read `docs/agent-creation-guide.md` (full), `CLAUDE.md`,
-> `docbuilder/docs/template-schema.md`, and README.md §"Design decisions"
+> `docbuilder/docs/template-schema.md` (authoritative schema — do not
+> restate or paraphrase it), and `docbuilder/README.md` §"Design decisions"
 > before writing any code.
 >
-> Implement `fetch_data.py` and `compute_doc.py` per t2 scope.
+> Also read `docs/reviews/m-docbuilder-m1-t1-review.md` — it contains
+> three findings from the t1 review that this session must address.
 >
-> `fetch_data.py`: accepts `--key KEY` and one positional path arg.
-> Outputs `{"key": KEY, "rows": [...]}` to stdout. Rows are dicts
-> (CSV header → value). No filtering, no renaming, no computation.
-> Errors to stderr, exit 1.
+> **First action — before any scripts:** write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t1-implementation-notes.md`.
+> This backfills the missing t1 audit trail (t1 review finding 1, blocking).
+> Content must cover:
+> - The `summary_rows` vs `aggregate_rows` design decision: why two distinct
+>   keys were used (data-sheet aggregates vs cross-sheet summary references),
+>   and the downstream implication (two-pass processing required in t2).
+> - The `source_key: null` pattern for summary sheets.
+> - Anything else that required a decision during t1 that is not obvious
+>   from reading the diff.
+> Per aetheris-agents--CLAUDE.md §"Implementation notes": do not restate
+> the diff; capture only context that does not survive in the code itself.
 >
-> `compute_doc.py`: accepts template path and one or more raw source JSON
-> paths as positional args (m1 validates exactly one; error if more).
-> Outputs a doc spec JSON to stdout. The doc spec includes: `title`,
-> `output_formats`, and for each sheet: `name`, `columns` (with
-> `bold`, `align`, `width` resolved), `rows` (header + data + aggregate,
-> each row is an array of `{value, bold, align}` cell objects),
-> `merge_ranges` as `{sheet, row, col_start, col_end}` objects.
-> All aggregate values (sums, counts, etc.) are pre-computed here.
-> Renderers must not compute anything.
+> **Implement `fetch_data.py`**: accepts `--key KEY` and one positional
+> path arg. Outputs `{"key": KEY, "rows": [...]}` to stdout. Rows are
+> dicts (CSV header → value for CSV; array elements for JSON). No
+> filtering, no renaming, no computation. Errors to stderr, exit 1.
 >
-> Write `docbuilder/docs/doc-spec-schema.md` documenting the full doc spec
-> format with types and examples.
+> **Implement `compute_doc.py`**: accepts template path and one or more
+> raw source JSON paths as positional args (m1 validates exactly one;
+> error and exit 1 if more). Two-pass processing as described in scope:
+> - Pass 1: data-bearing sheets (`source_key` non-null). For each sheet,
+>   map raw rows through `columns[].source_field`, resolve bold/align per
+>   cell, compute all `aggregate_rows` values. Store computed aggregates
+>   keyed by `(sheet_name, column_source_field, function)` for Pass 2.
+> - Pass 2: summary sheets (`source_key` null). For `aggregate_ref` rows,
+>   look up the pre-computed value from Pass 1 store. For `static` rows,
+>   pass through label and value directly.
+> Output doc spec JSON to stdout. Each row in the spec is an array of
+> `{"value": ..., "bold": bool, "align": "left"|"right"|"center"}` cell
+> objects. Renderers must not compute anything.
 >
-> Write pytest unit tests covering: correct column mapping via `source_field`,
-> aggregate computation (sum, count, avg), merge range derivation, missing
-> source field handling (exit 1), multi-source rejection (exit 1 in m1).
+> **Write `docbuilder/docs/doc-spec-schema.md`**: full doc spec format
+> with field types and one complete example (the demo proposal output).
+>
+> **Write pytest unit tests** covering: correct column mapping via
+> `source_field`, aggregate computation (sum, count, avg), two-pass
+> summary sheet resolution (`aggregate_ref` and `static`), merge range
+> derivation, missing source field (exit 1), multi-source rejection
+> (exit 1 in m1), `summary_rows` referencing a non-existent source sheet
+> (exit 1).
+>
+> **Last action — after done-check passes:** write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t2-implementation-notes.md`
+> covering decisions made, deviations from scope (if any), and anything
+> t3–t4 renderers need to know about the doc spec shape.
 >
 > Run the done-check and include its output in the review packet.
+> Review packet must contain: ticket ID + scope statement, diff,
+> both implementation notes files, done-check output.
 
 ---
 
@@ -204,6 +253,7 @@ flag on generation scripts"; §"Scripts must be runnable standalone".
 **Touches.**
 - `docbuilder/scripts/generate_xlsx.py` (new)
 - `docbuilder/tests/test_generate_xlsx.py` (new)
+- `docbuilder/docs/milestones/m-docbuilder-m1-t3-implementation-notes.md` (new — write after done-check passes)
 
 **Do not generate.** No other renderer scripts in this ticket.
 
@@ -246,6 +296,11 @@ python3 -m pytest tests/test_generate_xlsx.py -v
 > integration tests with `@pytest.mark.integration` and skip if openpyxl
 > not installed (conftest pattern from agent-creation-guide.md).
 >
+> After done-check passes, write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t3-implementation-notes.md`
+> covering openpyxl-specific decisions, any doc spec fields that needed
+> clarification, and anything t4–t5 renderers should know.
+>
 > Run the done-check and include its output in the review packet.
 
 ---
@@ -261,6 +316,7 @@ bold header row, alignment per cell, aggregate row distinguished (bold).
 **Touches.**
 - `docbuilder/scripts/generate_docx.py` (new)
 - `docbuilder/tests/test_generate_docx.py` (new)
+- `docbuilder/docs/milestones/m-docbuilder-m1-t4-implementation-notes.md` (new — write after done-check passes)
 
 **Done-check.**
 ```bash
@@ -286,6 +342,9 @@ python3 -m pytest tests/test_generate_docx.py -v
 >
 > Tests: assert file exists; open with python-docx and check table count,
 > header cell text, row count. Skip if python-docx not installed.
+>
+> After done-check passes, write
+> `docbuilder/docs/milestones/m-docbuilder-m1-t4-implementation-notes.md`.
 >
 > Run the done-check and include its output in the review packet.
 

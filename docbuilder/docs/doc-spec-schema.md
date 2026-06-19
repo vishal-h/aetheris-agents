@@ -32,6 +32,7 @@ and must not re-compute or re-derive anything.
 ## Column
 
 Each entry in `Sheet.columns`. Renderer-only metadata — no row data here.
+`bold` and `align` are intentionally absent: they are encoded per-cell in every `Row.cells` entry and are the sole source of truth for renderers.
 
 | Field | Type | Description |
 |-------|------|-------------|

@@ -96,7 +96,7 @@ Each entry in `AggregateRow.aggregates`.
 | Field | Type | Required | Description | Example |
 |-------|------|----------|-------------|---------|
 | `column` | string | yes | `source_field` value of the column to aggregate. | `"total"` |
-| `function` | string | yes | Aggregation function. Values: `"sum"`, `"count"`, `"avg"`. | `"sum"` |
+| `function` | string | yes | Aggregation function. Values: `"sum"`, `"count"`, `"avg"`. `count` counts non-empty values (blanks excluded); `sum`/`avg` skip non-numeric values silently. | `"sum"` |
 
 ---
 

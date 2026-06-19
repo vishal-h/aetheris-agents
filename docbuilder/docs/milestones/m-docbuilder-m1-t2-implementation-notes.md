@@ -36,7 +36,8 @@ numbers. Non-integer floats are left as floats.
 
 Allows both two-step usage (`fetch_data.py ... > /tmp/raw.json && compute_doc.py ... /tmp/raw.json`)
 and piped usage (`fetch_data.py ... | compute_doc.py ... -`). The `-` path reads
-from stdin once.
+from stdin once. The t2 done-check uses the temp-file form; t3–t7 done-checks use
+the pipe form — both are valid. The pipe form is preferred for brevity in later tickets.
 
 ### Aggregate store uses raw rows, not a pre-keyed dict
 

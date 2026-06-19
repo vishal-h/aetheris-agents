@@ -22,3 +22,7 @@ rig/node_modules/
 
 # Run logs (accumulate locally, not committed)
 payslip/output/runs.log
+
+# Claude Code — local-only
+.claude/settings.local.json
+.claude/worktrees/

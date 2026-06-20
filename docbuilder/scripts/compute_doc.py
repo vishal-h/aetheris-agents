@@ -36,12 +36,13 @@ def _cell(value, bold, align):
 def compute_doc(template, sources):
     """
     template: parsed template dict
-    sources:  dict of key -> list of row dicts
+    sources:  dict of key -> list of row dicts (one entry per provided source)
     returns:  doc spec dict
-    """
-    if len(template["data_sources"]) > 1:
-        raise ValueError("m1 supports exactly one data_source")
 
+    Multiple data sources are supported: each sheet's ``source_key`` selects
+    the source it reads from. A ``source_key`` that is not present in the
+    provided sources raises ValueError (exit 1 at the CLI).
+    """
     for fmt in template.get("output_formats", []):
         if fmt not in VALID_FORMATS:
             raise ValueError(f"unknown output_format '{fmt}'")

@@ -11,7 +11,7 @@ Every field is documented below with type, required/optional, and an example val
 |-------|------|----------|-------------|---------|
 | `template_id` | string | yes | Unique slug: `{tenant}/{doc_type}_v{N}` | `"demo/proposal_v1"` |
 | `title` | string | yes | Human-readable document title; used as the document heading | `"B2B Project Proposal"` |
-| `data_sources` | array of [DataSource](#datasource) | yes | Ordered list of data sources. **m1: exactly one entry required.** | see below |
+| `data_sources` | array of [DataSource](#datasource) | yes | Ordered list of data sources. One or more entries; each sheet's `source_key` selects the source it reads from. The orchestrator fetches one raw JSON per entry and passes them all to `compute_doc.py`. | see below |
 | `output_formats` | array of string | yes | Formats to render in sequence. Valid values: `"xlsx"`, `"docx"`, `"pdf"`, `"csv"`, `"json"`, `"xml"`, `"md"` | `["xlsx", "docx", "pdf"]` |
 | `sheets` | array of [Sheet](#sheet) | yes | Ordered list of sheets/sections. Each sheet becomes one tab in xlsx, one table in docx, etc. | see below |
 | `table_style` | string | no | docx table style name applied by `generate_docx.py`. Default: `"Table Grid"`. Lets a base file's custom named style drive table appearance. | `"Table Grid"` |
@@ -24,9 +24,10 @@ Every field is documented below with type, required/optional, and an example val
 > the doc spec in t5, and the renderers consume them in t2 (`data_col_start`),
 > t3 (`table_style`), and t7 (`narrative`).
 
-> **m1 constraint:** `compute_doc.py` rejects templates where `data_sources` has more than one entry
-> (exits 1 with `{"status": "error", "error": "m1 supports exactly one data_source"}`).
-> Multi-source support lands in m2 — the schema is forward-compatible.
+> **Multi-source (m2a):** `data_sources` may contain more than one entry. Each data-bearing
+> sheet selects its source via `source_key`. Not every declared source must be consumed by a
+> sheet — a source can be declared for the orchestrator to fetch even if only some sheets read
+> it. A `source_key` that names a source not present at compute time exits 1 (see Validation rules).
 
 ---
 
@@ -248,7 +249,7 @@ A fixed label/value pair — not derived from data.
 
 | Rule | Error |
 |------|-------|
-| `data_sources` has more than one entry | `"m1 supports exactly one data_source"` (exit 1) |
+| A sheet's `source_key` names a source not present in the provided sources | `"source key '{key}' not found in provided sources"` (exit 1) |
 | A `source_field` referenced by a column is absent from the raw data rows | `"source_field '{field}' not found in source '{key}'"` (exit 1) |
 | A `summary_row.aggregate.source_sheet` name does not match any sheet `name` | `"source_sheet '{name}' not found"` (exit 1) |
 | `output_formats` contains an unrecognised format string | `"unknown output_format '{fmt}'"` (exit 1) |

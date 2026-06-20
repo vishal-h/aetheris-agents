@@ -284,13 +284,41 @@ def test_sheet_order_preserved():
 
 # --- error cases ---
 
-def test_multi_source_rejected():
-    tmpl = _tmpl(data_sources=[
-        {"key": "a", "type": "csv", "path": "a.csv"},
-        {"key": "b", "type": "csv", "path": "b.csv"},
-    ])
-    with pytest.raises(ValueError, match="m1 supports exactly one data_source"):
-        compute_doc(tmpl, {"a": [], "b": []})
+def test_multi_source_two_sheets():
+    # Two sources, two data-bearing sheets each reading a different source.
+    tmpl = _tmpl(
+        data_sources=[
+            {"key": "a", "type": "csv", "path": "a.csv"},
+            {"key": "b", "type": "csv", "path": "b.csv"},
+        ],
+        sheets=[
+            _sheet("A", source_key="a", columns=[
+                {"name": "X", "source_field": "x", "type": "string",
+                 "bold": False, "align": "left", "width": 10}]),
+            _sheet("B", source_key="b", columns=[
+                {"name": "Y", "source_field": "y", "type": "string",
+                 "bold": False, "align": "left", "width": 10}]),
+        ],
+    )
+    spec = compute_doc(tmpl, {"a": [{"x": "ax"}], "b": [{"y": "by"}]})
+    assert [s["name"] for s in spec["sheets"]] == ["A", "B"]
+    a_data = [r for r in spec["sheets"][0]["rows"] if r["type"] == "data"]
+    b_data = [r for r in spec["sheets"][1]["rows"] if r["type"] == "data"]
+    assert a_data[0]["cells"][0]["value"] == "ax"
+    assert b_data[0]["cells"][0]["value"] == "by"
+
+
+def test_source_key_not_provided_raises():
+    # A sheet referencing a source_key absent from the provided sources exits 1.
+    tmpl = _tmpl(
+        data_sources=[
+            {"key": "a", "type": "csv", "path": "a.csv"},
+            {"key": "b", "type": "csv", "path": "b.csv"},
+        ],
+        sheets=[_sheet("B", source_key="b")],
+    )
+    with pytest.raises(ValueError, match="source key 'b' not found in provided sources"):
+        compute_doc(tmpl, {"a": []})  # 'b' not provided
 
 
 def test_missing_source_field_raises():
@@ -417,23 +445,56 @@ def test_cli_summary_sheet_resolves_aggregates(tmp_path):
     assert data[3]["cells"][0]["value"] == "Notes"
 
 
-def test_cli_multi_source_exits_1(tmp_path):
-    multi = {
-        "template_id": "x", "title": "X",
-        "data_sources": [
-            {"key": "a", "type": "csv", "path": "a.csv"},
-            {"key": "b", "type": "csv", "path": "b.csv"},
-        ],
-        "output_formats": ["csv"],
-        "sheets": [],
-    }
-    tmpl = tmp_path / "multi.json"
-    tmpl.write_text(json.dumps(multi))
-    src = tmp_path / "src.json"
-    src.write_text(json.dumps({"key": "a", "rows": []}))
+def test_cli_multi_source_succeeds(tmp_path):
+    # The demo template now declares two sources; passing both raw files to
+    # compute_doc succeeds and yields the two demo sheets.
+    main = subprocess.run(
+        [sys.executable, "scripts/fetch_data.py", "--key", "main",
+         "data/sample_data.csv"],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    summary = subprocess.run(
+        [sys.executable, "scripts/fetch_data.py", "--key", "summary",
+         "data/sample_data_summary.csv"],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    raw_main = tmp_path / "raw_main.json"
+    raw_main.write_text(main.stdout)
+    raw_summary = tmp_path / "raw_summary.json"
+    raw_summary.write_text(summary.stdout)
 
     result = subprocess.run(
-        [sys.executable, "scripts/compute_doc.py", str(tmpl), str(src)],
+        [sys.executable, "scripts/compute_doc.py",
+         "data/templates/demo/proposal_v1.json",
+         str(raw_main), str(raw_summary)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    assert result.returncode == 0, result.stderr
+    spec = json.loads(result.stdout)
+    assert [s["name"] for s in spec["sheets"]] == ["Line Items", "Summary"]
+
+
+def test_cli_unprovided_source_key_exits_1(tmp_path):
+    # A template whose sheet references a source_key that is not provided exits 1.
+    tmpl = {
+        "template_id": "x", "title": "X",
+        "data_sources": [{"key": "b", "type": "csv", "path": "b.csv"}],
+        "output_formats": ["csv"],
+        "sheets": [{
+            "name": "B", "source_key": "b",
+            "columns": [{"name": "Y", "source_field": "y", "type": "string",
+                         "bold": False, "align": "left", "width": 10}],
+            "merge_ranges": [],
+        }],
+    }
+    tmpl_path = tmp_path / "t.json"
+    tmpl_path.write_text(json.dumps(tmpl))
+    src = tmp_path / "src.json"
+    src.write_text(json.dumps({"key": "a", "rows": []}))  # provides 'a', not 'b'
+
+    result = subprocess.run(
+        [sys.executable, "scripts/compute_doc.py", str(tmpl_path), str(src)],
         capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
     )
     assert result.returncode == 1
+    assert "source key 'b' not found" in result.stderr

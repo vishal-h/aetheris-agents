@@ -6,6 +6,11 @@
       "key": "main",
       "type": "csv",
       "path": "docbuilder/data/sample_data.csv"
+    },
+    {
+      "key": "summary",
+      "type": "csv",
+      "path": "docbuilder/data/sample_data_summary.csv"
     }
   ],
   "output_formats": ["xlsx", "docx", "pdf"],

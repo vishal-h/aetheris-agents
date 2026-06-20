@@ -315,8 +315,8 @@ aetheris-agents/
       fetch_template.py           ← m2b: fetches from Drive
     tests/
       ...
-    docs/milestone-m1.md
-    docs/milestone-m2a.md         ← m2a milestone doc (to be created)
+    docs/m1-milestone.md
+    docs/m2a-milestone.md         ← m2a milestone doc
     README.md
     runbook.md
 ```

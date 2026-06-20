@@ -63,8 +63,9 @@ fetch_steps =
     """
       A#{i}. Fetch source "#{s.key}":
             run_command  command: "python3"
-                         args: ["scripts/fetch_data.py", "--key", "#{s.key}", "#{s.path}"]
-            Then save it: write_file  path: "#{s.raw_file}"  content: <exact stdout from the fetch>
+                         args: ["scripts/fetch_data.py", "--key", "#{s.key}", "#{s.path}", "--output", "#{s.raw_file}"]
+            This writes #{s.raw_file} and prints only that path. Do NOT write_file it
+            yourself — the script already wrote it.
     """
   end)
   |> Enum.join("\n")
@@ -155,8 +156,11 @@ Rules:
 - Execute the commands exactly as written. Do not add, drop, or reorder arguments.
 - If any script returns exit code 1, report its stderr and stop. Do not retry or
   investigate manually.
-- Do not construct or modify JSON yourself. The scripts produce all data; write_file
-  must save the exact stdout string captured from the preceding command.
+- Each `--output FILE` call writes its result directly to that file and prints ONLY the
+  path. Do NOT re-run a script without `--output` to view its content, and do NOT write
+  any helper/scratch script — use the file the script already wrote and proceed to the
+  next step.
+- Do not construct or modify JSON yourself. The scripts produce all data.
 - Do not pass "python3" inside the args array — it is already the command field.
 """
 
@@ -170,7 +174,7 @@ Rules:
   overlay_base_dir: nil,
   max_steps:        30,
   context_strategy: :full,
-  tools:            ["run_command", "write_file"],
+  tools:            ["run_command"],
   system_prompt:    system_prompt,
   user_prompt:      "Run the document generation pipeline."
 }

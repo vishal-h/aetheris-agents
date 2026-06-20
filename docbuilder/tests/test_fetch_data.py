@@ -85,3 +85,23 @@ def test_cli_sample_data_has_10_rows():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert len(data["rows"]) == 10
+
+
+def test_cli_output_flag_writes_file(tmp_path):
+    # --output FILE writes the raw JSON to the file and prints only the path.
+    csv = tmp_path / "d.csv"
+    csv.write_text("name,qty\nalpha,10\n")
+    out_file = tmp_path / "raw.json"
+    result = subprocess.run(
+        [sys.executable, "scripts/fetch_data.py", "--key", "test", str(csv),
+         "--output", str(out_file)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    assert result.returncode == 0, result.stderr
+    # stdout is the path only, not the JSON blob
+    assert result.stdout.strip() == str(out_file)
+    assert "\"rows\"" not in result.stdout
+    # the file holds the raw JSON
+    data = json.loads(out_file.read_text())
+    assert data["key"] == "test"
+    assert data["rows"] == [{"name": "alpha", "qty": "10"}]

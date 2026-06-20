@@ -257,10 +257,16 @@ DOCBUILDER_DATA_PATH=data/sample_data.csv \
 DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","date":"20 Jun 2026"}' \
 ./scripts/sprint.sh docbuilder
 
-# After sprint: confirm no scratch files in docbuilder/
-find ../aetheris-agents/docbuilder -name "*.py" -newer ../aetheris-agents/docbuilder/scripts/fetch_data.py \
-  ! -path "*/output/*" ! -path "*/__pycache__/*" ! -path "*/tests/*" ! -path "*/scripts/*"
-# Expected: empty output (no scratch scripts created)
+# After sprint: confirm no scratch files in docbuilder/ (exhaustive, location-based —
+# more reliable than a -newer timestamp heuristic: list any .py outside known dirs)
+find ../aetheris-agents/docbuilder -name "*.py" \
+  ! -path "*/output/*" \
+  ! -path "*/__pycache__/*" \
+  ! -path "*/tests/*" \
+  ! -path "*/scripts/*" \
+  ! -path "*/agents/*" \
+  ! -path "*/docs/*"
+# Expected: empty — any output here is a scratch file the orchestrator created
 ```
 
 **claude-code-prompt.**

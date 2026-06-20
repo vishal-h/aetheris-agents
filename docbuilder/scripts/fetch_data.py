@@ -22,6 +22,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--key", default="main")
     parser.add_argument("path")
+    parser.add_argument("--output", default=None,
+                        help="write the raw JSON to FILE and print only the path "
+                             "(default: print the raw JSON to stdout)")
     args = parser.parse_args()
 
     p = Path(args.path)
@@ -42,7 +45,12 @@ def main():
         print(json.dumps({"status": "error", "error": str(e)}), file=sys.stderr)
         sys.exit(1)
 
-    print(json.dumps({"key": args.key, "rows": rows}))
+    out = json.dumps({"key": args.key, "rows": rows})
+    if args.output:
+        Path(args.output).write_text(out, encoding="utf-8")
+        print(args.output)
+    else:
+        print(out)
 
 
 if __name__ == "__main__":

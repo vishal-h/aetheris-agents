@@ -34,16 +34,54 @@ fetch_data.py          ← pulls ONE source, outputs raw JSON as-is (no transfor
 compute_doc.py         ← merges sources, transforms, applies template → doc spec JSON
     │
     ▼
+render_template.py     ← (m2a, PDF only) substitutes variables into Markdown template
+    │                     → combined HTML (prose + tables) for weasyprint
+    ▼
 generate_{format}.py   ← deterministic renderer → output file
+    │                     xlsx/docx: opens base file if present, writes into it
+    │                     pdf: weasyprint from HTML (plain or Markdown-rendered)
+    ▼
+output file            ← branded, data-filled document
 ```
 
 The **doc spec JSON** is the handoff contract between compute and render.
 It captures document structure, data, and formatting intent — independently
 of output format.
 
-**Template JSON** (one per tenant/doc-type, flat file in m1, registry in m2)
-defines: sheets/sections, column order, merge regions, aggregate positions,
-bold/alignment rules, output format(s) requested.
+---
+
+## Template model
+
+Each tenant/doc-type has a template bundle — a set of files in
+`data/templates/{tenant_id}/`:
+
+| File | Purpose | Formats |
+|---|---|---|
+| `{doc_type}_v{N}.json` | Structure: sheets, columns, aggregates, data sources | all |
+| `{doc_type}_v{N}.docx` | Branding base file: header, footer, logo, styles | docx |
+| `{doc_type}_v{N}.xlsx` | Branding base file: logo row, named styles, sheet layout | xlsx |
+| `{doc_type}_v{N}.md.template` | Prose narrative with `{{variable}}` placeholders | pdf |
+| `{doc_type}_v{N}.css` | Brand styles: fonts, colours, `@page` header/footer | pdf |
+| `catalogue.json` | Doc type catalogue for LLM selection (m2a+) | — |
+
+**The split:** JSON carries structure and data mapping. Base files (docx/xlsx)
+carry visual identity. Markdown template + CSS carry prose and PDF branding.
+Each can evolve independently.
+
+**Row alignment convention (xlsx base files):** `header_row` in the JSON
+template must equal the first empty row in the base file. Rows above
+`header_row` are owned by the base file (branding); rows from `header_row`
+down are owned by the renderer (data). An optional `data_col_start` field
+(default: 1) controls which column data writing begins at.
+
+**PDF rendering modes:**
+- *Structured mode* (m1, current): `_build_html()` generates HTML directly
+  from the doc spec. No Markdown template needed.
+- *Narrative mode* (m2a): `render_template.py` reads the `.md.template`,
+  substitutes `{{variables}}` and `{{>table_partial}}` placeholders, applies
+  `.css` for branding, outputs combined HTML → weasyprint.
+- Both modes produce the same weasyprint input — `generate_pdf.py` is
+  unchanged.
 
 ---
 
@@ -73,46 +111,60 @@ Not in m1: template registry, conversational editing, delivery (email/Drive).
 
 ### m2a — Template foundations ✦ *backlog — build next*
 
-**Goal:** branded output, queryable template catalogue, multi-source data.
-All deterministic — no LLM selection yet. Independently shippable.
-End state: a branded proposal with company logo in the header, generated
-from two data sources, stored as a flat file alongside the JSON config.
+**Goal:** branded output, queryable template catalogue, multi-source data,
+Markdown+CSS narrative PDF. All deterministic — no LLM selection yet.
+Independently shippable.
 
 Scope:
 
-**Base file support in renderers:**
-- Base files (`.docx`, `.xlsx`) committed alongside JSON config:
-  `data/templates/{tenant}/{doc_type}_v{N}.docx` / `.xlsx`
+**Base file support in xlsx + docx renderers:**
+- Base files (`.docx`, `.xlsx`) committed alongside JSON config
 - Renderers check for a base file at runtime; open it if present, create
   fresh if absent (m1 fallback preserved)
-- `generate_docx.py`: `Document("base.docx")` instead of `Document()`
+- `generate_docx.py`: `Document("base.docx")` instead of `Document()`;
+  new optional `"table_style"` field in template JSON (default: `"Table Grid"`)
 - `generate_xlsx.py`: `openpyxl.load_workbook("base.xlsx")` instead of
-  `Workbook()`; template sheet names must match or be cleared/replaced
-- `generate_pdf.py`: base file not applicable (HTML intermediate); CSS
-  variables or a `base_styles.css` file per tenant covers branding
+  `Workbook()`; writes from `header_row` downward, preserving branding rows
+  above; new optional `"data_col_start"` field in template JSON (default: 1)
 - Demo base files committed: `demo/proposal_v1.docx`, `demo/proposal_v1.xlsx`
-  with placeholder logo, header/footer, brand colour
+
+**Markdown + CSS for PDF (narrative mode):**
+- `{doc_type}_v{N}.md.template` — prose with `{{variable}}` scalar
+  substitutions and `{{>sheet_name}}` table partials
+- `{doc_type}_v{N}.css` — brand styles: fonts, colours, `@page` rules
+  for PDF header/footer/margins; replaces hardcoded CSS in `_build_html()`
+- `render_template.py` — new script: reads `.md.template`, substitutes
+  scalar variables from a context JSON, replaces table partials with HTML
+  tables rendered from the doc spec, applies `.css`, outputs combined HTML
+  to stdout
+- `generate_pdf.py` updated: if `.md.template` exists for the template,
+  calls `render_template.py` pipeline; otherwise falls back to structured
+  mode (`_build_html()` — m1 behaviour preserved)
+- Demo files committed: `demo/proposal_v1.md.template`,
+  `demo/proposal_v1.css`
 
 **Template catalogue:**
 - `data/templates/{tenant}/catalogue.json` — lists available doc types,
-  variants, and descriptions for the tenant; committed flat file in m2a,
-  Drive-hosted in m2b
-- `list_templates.py` — reads `catalogue.json` for a given tenant; outputs
-  structured JSON; used by the orchestrator in m2b for LLM selection
+  variants, and descriptions; committed flat file in m2a, Drive-hosted in m2b
+- `list_templates.py` — reads `catalogue.json`; outputs structured JSON;
+  used by orchestrator in m2b for LLM selection
 
 **Multi-source data:**
-- Template `data_sources` array supports >1 entry (schema was
-  forward-compatible from m1)
-- Orchestrator calls `fetch_data.py` once per source, writes each to a
-  temp file
 - `compute_doc.py` updated: accepts multiple source JSON paths; merges/joins
   before applying template
+- Orchestrator calls `fetch_data.py` once per source
 - Demo template updated with a two-source example
 
 **Orchestrator updated:**
-- Reads base file path from template and passes to renderer via `--base-file`
-  flag (new optional flag on generate scripts)
+- Reads base file paths from template bundle and passes to renderers via
+  `--base-file` (xlsx/docx) and `--template-dir` (pdf) flags
 - Calls `fetch_data.py` N times for multi-source templates
+
+**Template schema additions (m2a):**
+- `"table_style"` — optional string, docx renderer table style
+  (default: `"Table Grid"`)
+- `"data_col_start"` — optional integer, xlsx first data column
+  (default: 1)
 
 Not in m2a: LLM selection, Drive registry, delivery.
 
@@ -218,6 +270,10 @@ Not in m3: multi-user collaboration on templates, approval workflows.
 | Registry storage: Drive folder (m2b) | Drive is self-contained, reuses existing `drive/` scripts, templates are editable files. No schema needed. Natural fit since m2b delivers via Drive anyway. |
 | LLM selects doc type + variant; scripts do everything after | Classification (which template to use) is ambiguous, context-dependent LLM work. Fetch, compute, render are deterministic. The LLM outputs a small structured JSON `{doc_type, variant, rationale}`; all downstream steps are scripted. |
 | NL request extraction (Option C) requires a confirmation gate | LLM-extracted data fields must be shown to the user before rendering. A silently wrong customer-facing document is worse than no document. Gate is mandatory in m3; no silent rendering on extraction alone. |
+| Markdown + CSS for PDF narrative (m2a) | Structured mode (`_build_html()`) suits tabular data. Narrative mode (`.md.template` + `.css`) suits prose-heavy documents. Both feed weasyprint — `generate_pdf.py` is unchanged. The two modes coexist: structured is the fallback when no `.md.template` exists. |
+| `header_row` convention for xlsx base files | `header_row` in the template JSON must equal the first empty row in the base file. Rows above are owned by the base file (branding); rows from `header_row` down are owned by the renderer. No named range needed — `header_row` is the single source of truth, editable in JSON. |
+| `data_col_start` optional field | Controls which column the renderer starts writing data into. Allows base files with a label or index column at column A that the renderer should not overwrite. Default: 1 (first column). |
+| `table_style` optional field (docx) | Makes the docx table style configurable per template rather than hardcoded as `"Table Grid"`. Allows base files with custom named styles to drive table appearance. Default: `"Table Grid"`. |
 
 ---
 
@@ -234,9 +290,11 @@ aetheris-agents/
         {tenant_id}/
           catalogue.json          ← doc type catalogue (m2a flat file)
           {doc_type}_v{N}.json    ← structure + data config
-          {doc_type}_v{N}.docx    ← branding base file, optional (m2a)
-          {doc_type}_v{N}.xlsx    ← branding base file, optional (m2a)
-      .gitignore                  ← excludes real data, output/
+          {doc_type}_v{N}.docx    ← branding base file (m2a, optional)
+          {doc_type}_v{N}.xlsx    ← branding base file (m2a, optional)
+          {doc_type}_v{N}.md.template  ← PDF prose narrative (m2a, optional)
+          {doc_type}_v{N}.css     ← PDF brand styles (m2a, optional)
+      .gitignore
     docs/
       milestones/
       reviews/
@@ -245,6 +303,7 @@ aetheris-agents/
     scripts/
       fetch_data.py
       compute_doc.py
+      render_template.py          ← m2a: Markdown+CSS → HTML for PDF
       generate_xlsx.py
       generate_docx.py
       generate_pdf.py
@@ -256,9 +315,9 @@ aetheris-agents/
       fetch_template.py           ← m2b: fetches from Drive
     tests/
       ...
-    milestone.md                  ← m1 milestone doc
-    docs/m2a-milestone.md         ← m2a milestone doc
-    README.md                     ← this file
+    docs/milestone-m1.md
+    docs/milestone-m2a.md         ← m2a milestone doc (to be created)
+    README.md
     runbook.md
 ```
 

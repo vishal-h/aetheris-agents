@@ -23,6 +23,25 @@ Optional overrides:
 
 ---
 
+## Python dependencies
+
+The renderer scripts need these third-party packages in the mise Python env:
+
+```bash
+python3 -m pip install openpyxl python-docx weasyprint markdown
+```
+
+- `openpyxl` — `generate_xlsx.py`
+- `python-docx` — `generate_docx.py`
+- `weasyprint` — `generate_pdf.py`
+- `markdown` — `render_template.py` (narrative-mode PDF)
+
+> A pinned `requirements.txt` is added at m2a t10. Until then, tests for a renderer
+> whose dependency is missing **skip** (via `pytest.importorskip`) rather than fail —
+> so a missing package is silent. Install the list above for a complete run.
+
+---
+
 ## How to run
 
 ### Via sprint.sh (recommended)

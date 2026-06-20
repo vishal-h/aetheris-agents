@@ -691,6 +691,11 @@ print('PDF magic bytes: OK')
 >   provided: call `render_template.py` as a subprocess (via `subprocess.run`)
 >   with `--template`, `--css`, `--context`, `--spec` args. Capture stdout
 >   as the HTML string. Pass to `weasyprint.HTML(string=html).write_pdf()`.
+>   Note: `render_template.py` takes `--spec PATH` (or `--spec -` for stdin),
+>   **not** `--input` — write the doc spec to a temp file (the m1 write-to-temp
+>   pattern) and pass `--spec <temp file>`, or pipe it via `--spec -`. Resolve
+>   `--template`/`--css` from the `narrative` block's `template_file`/`css_file`
+>   under `--template-dir`.
 > - Otherwise: call `_build_html(doc_spec)` as before (structured mode).
 >
 > Do not inline `render_template.py` logic — call it as a subprocess. This
@@ -887,7 +892,11 @@ print('list_templates: OK')
 matrix (new scripts: `render_template.py`, `list_templates.py`). Update
 `docbuilder/README.md` decisions section if any were revised. Update
 `rig--runbook.md` with m2a additions. Write milestone summary. Promote any
-CLAUDE.md learning candidates from t1–t9 reviews.
+CLAUDE.md learning candidates from t1–t9 reviews. Two small cleanups carried
+from the t6 review: add a pinned `docbuilder/requirements.txt` (F1), and factor
+the duplicated table markup out of `render_template._render_table` /
+`generate_pdf._build_html` into a shared `scripts/_table_html.py` helper (F2),
+keeping the full test suite green.
 
 **Contract refs.** `milestone-methodology.md` §7 (milestone-end ritual);
 `aetheris-agents/CLAUDE.md` §"Doc-sync DoD".
@@ -899,6 +908,11 @@ CLAUDE.md learning candidates from t1–t9 reviews.
 - `rig--runbook.md` (m2a additions: `DOCBUILDER_CONTEXT`, multi-source,
   narrative PDF)
 - `CLAUDE.md` (learning promotions if findings recurred ≥2 tickets)
+- `docbuilder/requirements.txt` (new — pin renderer deps: `openpyxl`,
+  `python-docx`, `weasyprint`, `markdown==3.10.2`; from t6 review F1)
+- `docbuilder/scripts/_table_html.py` (new — shared table markup helper to
+  dedupe `render_template._render_table` / `generate_pdf._build_html`; from
+  t6 review F2) + update both scripts to import it
 - `docbuilder/docs/milestones/m-docbuilder-m2a-t10-implementation-notes.md` (new)
 
 **Done-check.**

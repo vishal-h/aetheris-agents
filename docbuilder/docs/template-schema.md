@@ -11,7 +11,7 @@ Every field is documented below with type, required/optional, and an example val
 |-------|------|----------|-------------|---------|
 | `template_id` | string | yes | Unique slug: `{tenant}/{doc_type}_v{N}` | `"demo/proposal_v1"` |
 | `title` | string | yes | Human-readable document title; used as the document heading | `"B2B Project Proposal"` |
-| `data_sources` | array of [DataSource](#datasource) | yes | Ordered list of data sources. One or more entries; each sheet's `source_key` selects the source it reads from. The orchestrator fetches one raw JSON per entry and passes them all to `compute_doc.py`. | see below |
+| `data_sources` | array of [DataSource](#datasource) | yes | Ordered list of data sources. One or more entries; each sheet's `source_key` selects the source it reads from. The orchestrator fetches one raw JSON per entry and passes them all to `compute_doc.py`. A source not referenced by any sheet is permitted — it is fetched by the orchestrator but not consumed. | see below |
 | `output_formats` | array of string | yes | Formats to render in sequence. Valid values: `"xlsx"`, `"docx"`, `"pdf"`, `"csv"`, `"json"`, `"xml"`, `"md"` | `["xlsx", "docx", "pdf"]` |
 | `sheets` | array of [Sheet](#sheet) | yes | Ordered list of sheets/sections. Each sheet becomes one tab in xlsx, one table in docx, etc. | see below |
 | `table_style` | string | no | docx table style name applied by `generate_docx.py`. Default: `"Table Grid"`. Lets a base file's custom named style drive table appearance. | `"Table Grid"` |

@@ -780,6 +780,12 @@ ls -lh ../aetheris-agents/docbuilder/output/proposal_v1.*
 > For multi-source: `compute_doc.py` receives all raw source files as
 > positional args after the template path.
 >
+> Note (per the t4 decision): the demo declares two sources (`main`, `summary`)
+> but the `Summary` sheet derives from `summary_rows`, so the `summary` source is
+> fetched and passed to `compute_doc.py` yet **not consumed by any sheet**. This is
+> intentional, not a bug — fetch every declared source regardless of whether a sheet
+> reads it. Do not "optimise" by skipping the unconsumed source.
+>
 > Update the sprint.sh docbuilder case to verify xlsx, docx, and pdf
 > outputs all exist (currently only verifies xlsx and pdf).
 >

@@ -1,0 +1,70 @@
+/* proposal_v1.css — brand stylesheet for narrative-mode PDF (weasyprint).
+   Paired with proposal_v1.md.template. Loaded by render_template.py (t6)
+   and rendered to PDF by generate_pdf.py (t7). */
+
+@page {
+  size: A4;
+  margin: 20mm;
+
+  @top-left {
+    content: "[ LOGO ]";
+    color: #1F4E79;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+  @top-right {
+    content: "Company Name";
+    color: #1F4E79;
+    font-size: 9pt;
+  }
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+    color: #666666;
+    font-size: 8pt;
+  }
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  color: #222222;
+  line-height: 1.4;
+}
+
+h1 {
+  color: #1F4E79;
+  font-weight: bold;
+  font-size: 20pt;
+  margin: 0 0 4pt 0;
+}
+
+h2 {
+  color: #1F4E79;
+  font-weight: bold;
+  font-size: 13pt;
+  margin: 16pt 0 6pt 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 6pt 0;
+}
+
+th {
+  background-color: #1F4E79;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: left;
+  padding: 4pt 6pt;
+}
+
+td {
+  border: 1px solid #cccccc;
+  padding: 3pt 6pt;
+}
+
+.aggregate td {
+  font-weight: bold;
+  border-top: 2px solid #1F4E79;
+}

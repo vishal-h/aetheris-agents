@@ -78,8 +78,8 @@ update it here); `docbuilder/README.md` §"Template model", §"Design decisions"
 **Touches.**
 - `docbuilder/docs/template-schema.md` (update — add three new fields)
 - `docbuilder/data/templates/demo/proposal_v1.json` (add `table_style`,
-  `data_col_start`, `narrative` block; update `data_sources` to two entries
-  for multi-source demo)
+  `data_col_start`, `narrative` block; `data_sources` stays at one entry —
+  the second entry is added in t4 alongside the guard removal)
 - `docbuilder/data/templates/demo/proposal_v1.md.template` (new)
 - `docbuilder/data/templates/demo/proposal_v1.css` (new)
 - `docbuilder/data/sample_data_summary.csv` (new — second source for demo)
@@ -94,9 +94,10 @@ this ticket.
 ```bash
 cd aetheris-agents/docbuilder
 
-# Template JSON is valid
+# Template JSON is valid (data_sources stays at 1 in t1; second source added in t4)
 python3 -c "import json; t=json.load(open('data/templates/demo/proposal_v1.json')); \
   print('data_sources:', len(t['data_sources'])); \
+  assert len(t['data_sources']) == 1, 'data_sources must stay at 1 until t4'; \
   print('table_style:', t.get('table_style', 'NOT SET')); \
   print('data_col_start:', t.get('data_col_start', 'NOT SET')); \
   print('narrative:', 'present' if t.get('narrative') else 'NOT SET')"
@@ -133,15 +134,15 @@ grep -c "{{" data/templates/demo/proposal_v1.md.template
 >
 > **proposal_v1.json:** Add `"table_style": "Table Grid"`,
 > `"data_col_start": 1`, and a `"narrative"` block pointing to
-> `proposal_v1.md.template` and `proposal_v1.css`. Update `data_sources`
-> to two entries: the existing `main` (sample_data.csv) and a new `summary`
-> (sample_data_summary.csv). The `summary` source will be used by the
-> Summary sheet in t4.
+> `proposal_v1.md.template` and `proposal_v1.css`. Leave `data_sources`
+> at its single `main` entry — the second `summary` source is wired in at
+> t4 when the multi-source guard is removed (the schema change and guard
+> removal land together so the build stays green through t2/t3).
 >
 > **sample_data_summary.csv:** Create with 3-4 rows of anonymised summary
 > metrics that complement the line items (e.g. total_items, total_value,
-> currency, valid_until). These will feed the Summary sheet in the
-> multi-source demo.
+> currency, valid_until). The file is committed now (t4 needs it) but is
+> not referenced by the template until t4.
 >
 > **proposal_v1.md.template:** Create a realistic B2B proposal cover +
 > intro section in Markdown. Must include:
@@ -344,8 +345,10 @@ JSON files. In m1, the m1 single-source constraint (exit 1 if >1 source)
 is removed. Each sheet's `source_key` now maps to whichever source in the
 provided sources dict has that key. The doc spec output is unchanged — only
 the input side changes. Update `template-schema.md` validation rules to
-remove the m1 single-source restriction. All existing tests must pass;
-add multi-source tests.
+remove the m1 single-source restriction. Wire the second `summary` data
+source into `proposal_v1.json` here — the schema change and the guard
+removal land together (deferred from t1 to keep t2/t3 green). All existing
+tests must pass; add multi-source tests.
 
 **Contract refs.** `docbuilder/docs/template-schema.md` §"Validation rules"
 (remove m1 constraint); `docbuilder/docs/doc-spec-schema.md` §"Renderer
@@ -354,6 +357,8 @@ contract" (unchanged); `agent-creation-guide.md` §"Script design".
 **Touches.**
 - `docbuilder/scripts/compute_doc.py` (update — remove single-source guard,
   accept N source paths)
+- `docbuilder/data/templates/demo/proposal_v1.json` (add the second
+  `summary` data source entry — deferred from t1)
 - `docbuilder/docs/template-schema.md` (update validation rules table —
   remove m1 single-source row)
 - `docbuilder/tests/test_compute_doc.py` (add multi-source tests)
@@ -405,6 +410,12 @@ print('Multi-source: OK')
 > Update `template-schema.md` validation rules: remove the
 > `"data_sources has more than one entry → exit 1"` row. Add a new row:
 > `"source_key references a key not present in provided sources → exit 1"`.
+>
+> Wire the second source into `proposal_v1.json` (deferred from t1): add a
+> `summary` entry to `data_sources` pointing at `data/sample_data_summary.csv`.
+> Decide whether the Summary sheet should consume it directly (set its
+> `source_key` to `"summary"` with mapped columns) or keep deriving from
+> `summary_rows` — document the choice in the t4 implementation notes.
 >
 > Add tests:
 > - Two sources provided, two sheets each using a different source → both

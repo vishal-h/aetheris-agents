@@ -12,8 +12,17 @@ Every field is documented below with type, required/optional, and an example val
 | `template_id` | string | yes | Unique slug: `{tenant}/{doc_type}_v{N}` | `"demo/proposal_v1"` |
 | `title` | string | yes | Human-readable document title; used as the document heading | `"B2B Project Proposal"` |
 | `data_sources` | array of [DataSource](#datasource) | yes | Ordered list of data sources. **m1: exactly one entry required.** | see below |
-| `output_formats` | array of string | yes | Formats to render in sequence. Valid values: `"xlsx"`, `"docx"`, `"pdf"`, `"csv"`, `"json"`, `"xml"`, `"md"` | `["xlsx", "pdf"]` |
+| `output_formats` | array of string | yes | Formats to render in sequence. Valid values: `"xlsx"`, `"docx"`, `"pdf"`, `"csv"`, `"json"`, `"xml"`, `"md"` | `["xlsx", "docx", "pdf"]` |
 | `sheets` | array of [Sheet](#sheet) | yes | Ordered list of sheets/sections. Each sheet becomes one tab in xlsx, one table in docx, etc. | see below |
+| `table_style` | string | no | docx table style name applied by `generate_docx.py`. Default: `"Table Grid"`. Lets a base file's custom named style drive table appearance. | `"Table Grid"` |
+| `data_col_start` | integer | no | xlsx first data column (1-based). Columns left of this are owned by the base file (e.g. a label/index column the renderer must not overwrite). Default: `1`. | `1` |
+| `narrative` | [Narrative](#narrative) | no | PDF narrative-mode config. When present and a `--template-dir` is supplied, `generate_pdf.py` renders prose via `render_template.py` (Markdown + CSS) instead of the structured `_build_html()` path. Absent → structured mode (m1 behaviour). | see below |
+
+> **m2a additions (`table_style`, `data_col_start`, `narrative`):** all three are
+> optional and backward-compatible. A template omitting them renders exactly as in m1.
+> They are introduced as schema fields in t1; `compute_doc.py` passes them through to
+> the doc spec in t5, and the renderers consume them in t2 (`data_col_start`),
+> t3 (`table_style`), and t7 (`narrative`).
 
 > **m1 constraint:** `compute_doc.py` rejects templates where `data_sources` has more than one entry
 > (exits 1 with `{"status": "error", "error": "m1 supports exactly one data_source"}`).
@@ -30,6 +39,23 @@ Each entry in `data_sources`.
 | `key` | string | yes | Identifier used by `Sheet.source_key` to reference this source. Must be unique within the template. | `"main"` |
 | `type` | string | yes | Source type. m1 values: `"csv"`, `"json"`. | `"csv"` |
 | `path` | string | yes | Path to the data file, relative to the aetheris-agents sandbox root. | `"docbuilder/data/sample_data.csv"` |
+
+---
+
+## Narrative
+
+The optional top-level `narrative` block. Enables PDF narrative mode. Filenames are
+relative to the template directory (`data/templates/{tenant}/`), resolved by
+`generate_pdf.py` via its `--template-dir` argument.
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| `template_file` | string | yes | Markdown template filename. Contains `{{variable}}` scalar placeholders and `{{>Sheet Name}}` table partials. | `"proposal_v1.md.template"` |
+| `css_file` | string | yes | Stylesheet filename applied to the rendered HTML (fonts, colours, `@page` header/footer). | `"proposal_v1.css"` |
+
+> Table partials reference sheets by their `name` (the renderer matches case-insensitively),
+> e.g. `{{>Line Items}}` resolves to the "Line Items" sheet. Use the exact sheet name so the
+> partial resolves — a slug like `{{>line_items}}` will not match a sheet named `Line Items`.
 
 ---
 
@@ -148,7 +174,13 @@ A fixed label/value pair — not derived from data.
       "path": "docbuilder/data/sample_data.csv"
     }
   ],
-  "output_formats": ["xlsx", "pdf"],
+  "output_formats": ["xlsx", "docx", "pdf"],
+  "table_style": "Table Grid",
+  "data_col_start": 1,
+  "narrative": {
+    "template_file": "proposal_v1.md.template",
+    "css_file": "proposal_v1.css"
+  },
   "sheets": [
     {
       "name": "Line Items",

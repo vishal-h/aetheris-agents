@@ -1,0 +1,27 @@
+# {{title}}
+
+**Prepared for:** {{client_name}}
+**Date:** {{date}}
+
+---
+
+## Overview
+
+Thank you for the opportunity to submit this proposal. The following sections
+set out the scope of work, line-item pricing, and a summary of commercial
+terms for your review.
+
+## Line Items
+
+{{>Line Items}}
+
+## Summary
+
+{{>Summary}}
+
+## Terms & Conditions
+
+Prices are quoted in USD and are valid for 30 days from the date of issue.
+Work commences upon written acceptance of this proposal. Payment terms are
+Net 30 from invoice date unless otherwise agreed in writing. This proposal is
+confidential and intended solely for the named recipient.

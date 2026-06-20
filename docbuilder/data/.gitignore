@@ -1,6 +1,7 @@
-# Real client data — never commit; only sample_data.csv is committed (anonymised fixture)
+# Real client data — never commit; only anonymised sample fixtures are committed
 *.csv
 !sample_data.csv
+!sample_data_summary.csv
 
 # Real client templates — never commit; demo/ tenant is committed in full
 templates/*/
@@ -9,3 +10,7 @@ templates/*/
 # Demo base files (branding) — committed alongside the JSON config (m2a)
 !templates/demo/proposal_v1.xlsx
 !templates/demo/proposal_v1.docx
+
+# Demo narrative-mode template files (m2a)
+!templates/demo/proposal_v1.md.template
+!templates/demo/proposal_v1.css

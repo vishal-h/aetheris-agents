@@ -8,7 +8,13 @@
       "path": "docbuilder/data/sample_data.csv"
     }
   ],
-  "output_formats": ["xlsx", "pdf"],
+  "output_formats": ["xlsx", "docx", "pdf"],
+  "table_style": "Table Grid",
+  "data_col_start": 1,
+  "narrative": {
+    "template_file": "proposal_v1.md.template",
+    "css_file": "proposal_v1.css"
+  },
   "sheets": [
     {
       "name": "Line Items",

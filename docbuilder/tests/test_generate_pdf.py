@@ -231,3 +231,66 @@ def test_cli_pdf_magic_bytes(tmp_path):
     )
     assert render.returncode == 0
     assert (tmp_path / "prop.pdf").read_bytes()[:4] == b"%PDF"
+
+
+# --- narrative mode (m2a t7) ---
+
+DEMO = USE_CASE_ROOT / "data" / "templates" / "demo"
+
+
+@pytest.mark.integration
+def test_structured_mode_no_warning(tmp_path, simple_spec, capsys):
+    # No narrative block → structured mode, no warning.
+    out = tmp_path / "out.pdf"
+    generate_pdf(simple_spec, out)
+    assert out.read_bytes()[:4] == b"%PDF"
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.integration
+def test_narrative_present_without_template_dir_falls_back(tmp_path, simple_spec, capsys):
+    # narrative present but no template_dir → structured fallback + stderr warning.
+    simple_spec["narrative"] = {
+        "template_file": "proposal_v1.md.template", "css_file": "proposal_v1.css"}
+    out = tmp_path / "out.pdf"
+    generate_pdf(simple_spec, out, template_dir=None)
+    assert out.read_bytes()[:4] == b"%PDF"
+    assert "template-dir" in capsys.readouterr().err
+
+
+@pytest.mark.integration
+def test_narrative_mode_direct(tmp_path, simple_spec):
+    # narrative block + template_dir → HTML via render_template.py → PDF.
+    # simple_spec has "Line Items" and "Summary" sheets, matching the demo
+    # md.template's {{>Line Items}} / {{>Summary}} partials.
+    simple_spec["narrative"] = {
+        "template_file": "proposal_v1.md.template", "css_file": "proposal_v1.css"}
+    out = tmp_path / "narr.pdf"
+    generate_pdf(simple_spec, out, template_dir=str(DEMO),
+                 context='{"title":"T","client_name":"Acme Corp","date":"20 Jun 2026"}')
+    assert out.read_bytes()[:4] == b"%PDF"
+    assert out.stat().st_size > 0
+
+
+@pytest.mark.integration
+def test_cli_narrative_mode(tmp_path):
+    # Full pipeline: the demo doc spec carries `narrative` (t5 pass-through);
+    # passing --template-dir triggers narrative rendering.
+    fetch = subprocess.run(
+        [sys.executable, "scripts/fetch_data.py", "data/sample_data.csv"],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    compute = subprocess.run(
+        [sys.executable, "scripts/compute_doc.py",
+         "data/templates/demo/proposal_v1.json", "-"],
+        input=fetch.stdout, capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    render = subprocess.run(
+        [sys.executable, "scripts/generate_pdf.py",
+         "--template-dir", "data/templates/demo",
+         "--context", '{"title":"B2B Proposal","client_name":"Acme Corp","date":"20 Jun 2026"}',
+         "--output-dir", str(tmp_path), "--filename", "narr"],
+        input=compute.stdout, capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    assert render.returncode == 0, render.stderr
+    assert (tmp_path / "narr.pdf").read_bytes()[:4] == b"%PDF"

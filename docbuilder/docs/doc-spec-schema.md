@@ -13,7 +13,15 @@ and must not re-compute or re-derive anything.
 | `title` | string | Document title, passed through from the template. |
 | `template_id` | string | Template identifier (`{tenant}/{doc_type}_v{N}`). |
 | `output_formats` | array of string | Formats to render, passed through from the template. |
+| `table_style` | string | docx table style name (passed through from the template; default `"Table Grid"`). Consumed by `generate_docx.py`; ignored by other renderers. |
+| `data_col_start` | integer | xlsx first data column, 1-based (passed through from the template; default `1`). Consumed by `generate_xlsx.py`; ignored by other renderers. |
+| `narrative` | object or null | PDF narrative-mode config `{template_file, css_file}` (passed through from the template; `null` when absent). Consumed by `generate_pdf.py` in narrative mode; ignored by other renderers. |
 | `sheets` | array of [Sheet](#sheet) | Ordered list of sheets, in template order. |
+
+> `table_style`, `data_col_start`, and `narrative` are always present in the doc spec
+> (with the defaults above) so renderers can read them unconditionally. Each renderer
+> consumes only the field(s) relevant to its format and ignores the rest. See
+> `template-schema.md` for the authoritative field definitions.
 
 ---
 

@@ -196,6 +196,9 @@ def compute_doc(template, sources):
         "title": template["title"],
         "template_id": template["template_id"],
         "output_formats": template["output_formats"],
+        "table_style": template.get("table_style", "Table Grid"),
+        "data_col_start": template.get("data_col_start", 1),
+        "narrative": template.get("narrative"),
         "sheets": output_sheets,
     }
 

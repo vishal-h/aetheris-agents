@@ -282,6 +282,29 @@ def test_sheet_order_preserved():
     assert [s["name"] for s in spec["sheets"]] == ["A", "B"]
 
 
+# --- top-level field pass-through (m2a t5) ---
+
+def test_passthrough_defaults_when_absent():
+    # A template omitting the m2a fields → doc spec carries the defaults.
+    tmpl = _tmpl(sheets=[_sheet("S")])
+    spec = compute_doc(tmpl, {"main": []})
+    assert spec["table_style"] == "Table Grid"
+    assert spec["data_col_start"] == 1
+    assert spec["narrative"] is None
+
+
+def test_passthrough_values_when_present():
+    # Explicit m2a fields flow through to the doc spec unchanged.
+    tmpl = _tmpl(sheets=[_sheet("S")])
+    tmpl["table_style"] = "Light List Accent 1"
+    tmpl["data_col_start"] = 2
+    tmpl["narrative"] = {"template_file": "p.md.template", "css_file": "p.css"}
+    spec = compute_doc(tmpl, {"main": []})
+    assert spec["table_style"] == "Light List Accent 1"
+    assert spec["data_col_start"] == 2
+    assert spec["narrative"] == {"template_file": "p.md.template", "css_file": "p.css"}
+
+
 # --- error cases ---
 
 def test_multi_source_two_sheets():

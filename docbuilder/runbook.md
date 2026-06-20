@@ -11,15 +11,35 @@ Operational guide for the docbuilder pipeline.
 | `DOCBUILDER_TENANT` | Tenant name — selects the template directory under `data/templates/` | `demo` |
 | `DOCBUILDER_DOC_TYPE` | Document type — selects the template file | `proposal` |
 | `DOCBUILDER_VERSION` | Template version string | `v1` |
-| `DOCBUILDER_DATA_PATH` | Path to the input CSV, relative to the docbuilder/ sandbox root | `data/sample_data.csv` |
+| `DOCBUILDER_DATA_PATH` | Path to the input CSV for the `main` source, relative to the docbuilder/ sandbox root | `data/sample_data.csv` |
 | `ANTHROPIC_API_KEY` | Anthropic API key for the LLM | _(set in shell)_ |
 
 Optional overrides:
 
-| Variable | Default |
-|----------|---------|
-| `AETHERIS_MODEL` | `claude-haiku-4-5-20251001` |
-| `AETHERIS_PROVIDER` | `anthropic` |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DOCBUILDER_CONTEXT` | `{}` | Inline JSON of scalar variables for narrative-mode PDF (`{{title}}`, `{{client_name}}`, `{{date}}`, …). Unset/empty resolves to `{}`. |
+| `AETHERIS_MODEL` | `claude-haiku-4-5-20251001` | — |
+| `AETHERIS_PROVIDER` | `anthropic` | — |
+
+### Multi-source data
+
+The orchestrator reads `data_sources` from the template and fetches **one raw JSON
+per source** (`output/pipeline_raw_{key}.json`), then passes them all to
+`compute_doc.py`. The `main` source uses `DOCBUILDER_DATA_PATH`; other sources use
+their template `path` (the leading `docbuilder/` is stripped to make it
+sandbox-relative). A source declared in the template but not read by any sheet is
+still fetched — that is intentional, not a bug (e.g. the demo's `summary` source: the
+Summary sheet derives from `summary_rows`, so `summary` is fetched but unconsumed).
+
+### Base files & narrative mode
+
+- If a base file `data/templates/{tenant}/{doc_type}_{version}.{xlsx,docx}` exists,
+  the orchestrator passes `--base-file` to that renderer so branding (logo, header,
+  footer, styles) is preserved.
+- If the template has a `narrative` block, the orchestrator passes `--template-dir
+  data/templates/{tenant}` and `--context "$DOCBUILDER_CONTEXT"` to `generate_pdf.py`,
+  which renders the PDF from the Markdown narrative template + CSS.
 
 ---
 
@@ -88,14 +108,18 @@ mix run --eval \
 After a successful run, `docbuilder/output/` will contain:
 
 ```
-output/pipeline_raw.json      # intermediate — raw fetch output
-output/pipeline_spec.json     # intermediate — computed doc spec
-output/proposal_v1.xlsx
-output/proposal_v1.pdf
+output/pipeline_raw_main.json     # intermediate — raw fetch output (one per source)
+output/pipeline_raw_summary.json   # intermediate — second source (demo)
+output/pipeline_spec.json          # intermediate — computed doc spec
+output/proposal_v1.xlsx            # branded (base file applied)
+output/proposal_v1.docx            # branded (base file applied)
+output/proposal_v1.pdf             # narrative mode (Markdown template + CSS)
 ```
 
 The formats generated depend on the `output_formats` array in the template. The
-`demo/proposal_v1.json` template specifies `["xlsx", "pdf"]`.
+`demo/proposal_v1.json` template specifies `["xlsx", "docx", "pdf"]`. xlsx/docx open
+their base files when present; pdf uses narrative mode when the template has a
+`narrative` block and `--template-dir` is supplied.
 
 ---
 

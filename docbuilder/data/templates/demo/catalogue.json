@@ -1,0 +1,18 @@
+{
+  "tenant_id": "demo",
+  "doc_types": [
+    {
+      "doc_type": "proposal",
+      "description": "B2B project proposal with line items and summary",
+      "variants": [
+        {
+          "version": "v1",
+          "label": "Standard",
+          "output_formats": ["xlsx", "docx", "pdf"],
+          "has_base_files": {"xlsx": true, "docx": true},
+          "has_narrative": true
+        }
+      ]
+    }
+  ]
+}

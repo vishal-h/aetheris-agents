@@ -14,3 +14,6 @@ templates/*/
 # Demo narrative-mode template files (m2a)
 !templates/demo/proposal_v1.md.template
 !templates/demo/proposal_v1.css
+
+# Demo template catalogue (m2a)
+!templates/demo/catalogue.json

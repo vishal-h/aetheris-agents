@@ -772,7 +772,11 @@ ls -lh ../aetheris-agents/docbuilder/output/proposal_v1.*
 >
 > Update `docbuilder_orchestrator.exs` per t8 scope:
 >
-> Add `DOCBUILDER_CONTEXT` env var (optional; default `"{}"`).
+> Add `DOCBUILDER_CONTEXT` env var (optional; default `"{}"`). When the env var
+> is unset/empty, resolve it to the literal `"{}"` before passing it on — pass
+> `--context "{}"` to `generate_pdf.py`, never an empty string (an empty
+> `--context` would fail `json.loads` in `render_template.py`). In Elixir:
+> `System.get_env("DOCBUILDER_CONTEXT") || "{}"` (and treat `""` as absent).
 >
 > Read the template JSON after the compute step to determine:
 > - `data_sources` array → call `fetch_data.py` once per source, write

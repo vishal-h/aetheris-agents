@@ -896,11 +896,13 @@ print('list_templates: OK')
 matrix (new scripts: `render_template.py`, `list_templates.py`). Update
 `docbuilder/README.md` decisions section if any were revised. Update
 `rig--runbook.md` with m2a additions. Write milestone summary. Promote any
-CLAUDE.md learning candidates from t1–t9 reviews. Two small cleanups carried
-from the t6 review: add a pinned `docbuilder/requirements.txt` (F1), and factor
-the duplicated table markup out of `render_template._render_table` /
-`generate_pdf._build_html` into a shared `scripts/_table_html.py` helper (F2),
-keeping the full test suite green.
+CLAUDE.md learning candidates from t1–t9 reviews. Three cleanups carried from
+reviews: add a pinned `docbuilder/requirements.txt` (t6 F1); factor the duplicated
+table markup out of `render_template._render_table` / `generate_pdf._build_html`
+into a shared `scripts/_table_html.py` helper (t6 F2); and add `--output FILE` to
+`compute_doc.py` so the orchestrator writes the doc spec directly (no large-blob
+`write_file`) — simplify the orchestrator prompt accordingly and re-run the sprint
+(t9 review / t8 robustness signal). Keep the full test suite green.
 
 **Contract refs.** `milestone-methodology.md` §7 (milestone-end ritual);
 `aetheris-agents/CLAUDE.md` §"Doc-sync DoD".
@@ -917,6 +919,11 @@ keeping the full test suite green.
 - `docbuilder/scripts/_table_html.py` (new — shared table markup helper to
   dedupe `render_template._render_table` / `generate_pdf._build_html`; from
   t6 review F2) + update both scripts to import it
+- `docbuilder/scripts/compute_doc.py` (add `--output FILE`: write doc spec to the
+  file and print only the path; stdout default preserved; from t9 review / t8 signal)
+- `docbuilder/agents/docbuilder_orchestrator.exs` (use `compute_doc.py --output
+  output/pipeline_spec.json`; drop the spec `write_file` step) + re-run the sprint
+- `docbuilder/tests/test_compute_doc.py` (add a `--output FILE` test)
 - `docbuilder/docs/milestones/m-docbuilder-m2a-t10-implementation-notes.md` (new)
 
 **Done-check.**

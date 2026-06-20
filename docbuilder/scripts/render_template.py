@@ -14,7 +14,6 @@ as generate_pdf.py's _build_html), run the result through python-markdown
 """
 
 import argparse
-import html as _html
 import json
 import re
 import sys
@@ -22,54 +21,13 @@ from pathlib import Path
 
 import markdown
 
+from _table_html import render_table
+
 # {{variable}} — scalar substitution. \w+ deliberately excludes {{>...}} partials
 # (the '>' and spaces in a sheet name never match \w+), so the two are disjoint.
 VAR_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 # {{>Sheet Name}} — table partial. Sheet names may contain spaces.
 PARTIAL_RE = re.compile(r"\{\{>\s*([^}]+?)\s*\}\}")
-
-
-def _esc(value):
-    return _html.escape(str(value) if value is not None else "")
-
-
-def _render_table(sheet):
-    """Render one doc-spec sheet as an HTML <table>. Mirrors the per-sheet table
-    markup of generate_pdf.py's _build_html: merge_ranges as <th colspan> rows,
-    aggregate rows get class='aggregate', cells carry inline text-align/font-weight."""
-    n_cols = len(sheet["columns"])
-    parts = ["<table>"]
-
-    for mr in sheet.get("merge_ranges", []):
-        colspan = mr["col_end"] - mr["col_start"] + 1
-        pre = mr["col_start"] - 1
-        post = n_cols - mr["col_end"]
-        row = "<tr>"
-        if pre:
-            row += f"<td colspan='{pre}'></td>"
-        row += (
-            f"<th colspan='{colspan}' "
-            f"style='text-align:center;font-weight:bold;'>"
-            f"{_esc(mr['value'])}</th>"
-        )
-        if post:
-            row += f"<td colspan='{post}'></td>"
-        row += "</tr>"
-        parts.append(row)
-
-    for row in sheet["rows"]:
-        cls = " class='aggregate'" if row["type"] == "aggregate" else ""
-        parts.append(f"<tr{cls}>")
-        for cell in row["cells"]:
-            fw = "bold" if cell["bold"] else "normal"
-            parts.append(
-                f"<td style='text-align:{cell['align']};font-weight:{fw};'>"
-                f"{_esc(cell['value'])}</td>"
-            )
-        parts.append("</tr>")
-
-    parts.append("</table>")
-    return "".join(parts)
 
 
 def _warn(message):
@@ -93,7 +51,7 @@ def render_template(template_text, context, doc_spec, css_path):
         if sheet is None:
             _warn(f"unknown sheet partial '{name}' replaced with empty string")
             return ""
-        return _render_table(sheet)
+        return render_table(sheet)
 
     text = VAR_RE.sub(_sub_var, template_text)
     text = PARTIAL_RE.sub(_sub_partial, text)

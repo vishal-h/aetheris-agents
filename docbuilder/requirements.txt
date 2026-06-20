@@ -1,0 +1,8 @@
+# docbuilder renderer dependencies (mise-managed Python 3.12).
+# Install: python3 -m pip install -r docbuilder/requirements.txt
+# Tests for a renderer whose dependency is missing skip via pytest.importorskip,
+# so a missing package is silent — install all of these for a complete run.
+openpyxl==3.1.5      # generate_xlsx.py
+python-docx==1.2.0   # generate_docx.py
+weasyprint==69.0     # generate_pdf.py
+markdown==3.10.2     # render_template.py (narrative-mode PDF)

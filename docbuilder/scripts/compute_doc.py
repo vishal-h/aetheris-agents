@@ -208,6 +208,9 @@ def main():
     parser.add_argument("template_path")
     parser.add_argument("source_paths", nargs="+",
                         help="raw source JSON paths, or '-' for stdin")
+    parser.add_argument("--output", default=None,
+                        help="write the doc spec JSON to FILE and print only the path "
+                             "(default: print the doc spec to stdout)")
     args = parser.parse_args()
 
     try:
@@ -226,7 +229,12 @@ def main():
 
         sources = {s["key"]: s["rows"] for s in source_dicts}
         doc_spec = compute_doc(template, sources)
-        print(json.dumps(doc_spec, indent=2))
+        out = json.dumps(doc_spec, indent=2)
+        if args.output:
+            Path(args.output).write_text(out, encoding="utf-8")
+            print(args.output)
+        else:
+            print(out)
     except ValueError as e:
         print(json.dumps({"status": "error", "error": str(e)}), file=sys.stderr)
         sys.exit(1)

@@ -109,7 +109,7 @@ Not in m1: template registry, conversational editing, delivery (email/Drive).
 
 ---
 
-### m2a — Template foundations ✦ *backlog — build next*
+### m2a — Template foundations ✦ *done*
 
 **Goal:** branded output, queryable template catalogue, multi-source data,
 Markdown+CSS narrative PDF. All deterministic — no LLM selection yet.

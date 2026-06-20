@@ -960,4 +960,78 @@ python3 -m pytest docbuilder/tests/ -v --tb=short 2>&1 | tail -5
 
 ## Milestone summary
 
-_(written by claude-code at milestone end, after t10)_
+### What shipped
+
+| Ticket | Artifact | One-line |
+|--------|----------|----------|
+| t1 | Schema fields + demo assets | `table_style`, `data_col_start`, `narrative`, per-sheet `header_row` (explicit override); `proposal_v1.md.template` + `.css`; `sample_data_summary.csv` |
+| t2 | `generate_xlsx.py` base files | `--base-file` opens an existing workbook; `compute_doc` honours explicit `header_row`; merge_ranges above `header_row` skipped so branding survives |
+| t3 | `generate_docx.py` base files + `table_style` | `--base-file` appends after the cover; defensive style application (degrade, don't crash) |
+| t4 | `compute_doc.py` multi-source | removed the m1 single-source guard; N sources keyed by `source_key`; declared-but-unconsumed sources allowed |
+| t5 | `compute_doc.py` pass-through | `table_style` / `data_col_start` / `narrative` flow template → doc spec |
+| t6 | `render_template.py` | Markdown + CSS → HTML; `{{var}}` + `{{>Sheet}}` partials; new `markdown` dep |
+| t7 | `generate_pdf.py` narrative mode | shells to `render_template.py` when `narrative` + `--template-dir`; structured fallback preserved |
+| t8 | Orchestrator + sprint | eval-time template resolution → concrete enumerated steps; multi-source fetch, base files, narrative; sprint verifies xlsx/docx/pdf |
+| t9 | Catalogue + `list_templates.py` | `catalogue.json` + reader; standalone foundation for m2b LLM selection |
+| t10 | Docs sync + cleanups | capability matrix regen, `requirements.txt`, `_table_html.py` shared helper, `compute_doc.py --output FILE`, this summary |
+
+**End state:** a sprint run produces a branded `proposal_v1.{xlsx,docx,pdf}` (logo/header/footer, styled fonts) from two data sources, with the PDF rendered via a Markdown narrative template + CSS. Full suite: 168 tests passing.
+
+---
+
+### What was deferred
+
+| Item | Target |
+|------|--------|
+| LLM template selection (Options A/B); orchestrator calls `list_templates.py` | → m2b |
+| Drive template registry; `fetch_template.py` | → m2b |
+| Drive upload / email delivery | → m2b |
+| Natural-language requests (Option C); confirmation gate | → m3 |
+| Conversational template editing (patch schema, JSONL edit log) | → m3 |
+| Sources outside `docbuilder/` (path-strip only handles the `docbuilder/` prefix) | → m2b (Drive fetch) |
+
+---
+
+### Surprises and cross-cutting findings
+
+**Eval-time template resolution (orchestrator pattern evolution).** The m1 orchestrator
+had the LLM read `output_formats` from the doc spec at runtime and decide what to render.
+The m2a orchestrator resolves the template at **eval time** (`Jason.decode!` +
+`File.exists?`) and emits a concrete, enumerated command list — the Elixir config code
+"decides" (which sources to fetch, which renderers get base files / narrative), the LLM
+"executes". This is the cleaner application of "scripts do, agents decide" at the
+orchestrator level, and the right default for deterministic pipelines.
+
+**Large-stdout `write_file` is fragile for LLMs → `--output FILE`.** The t8 sprint left
+behind 8 `/tmp` scratch scripts: the agent couldn't reliably re-emit the ~8K doc-spec JSON
+as a `write_file` `content:` field, so it improvised. Fixed at t10 by adding
+`compute_doc.py --output FILE` (writes the spec directly, prints only the path). Promoted
+to CLAUDE.md as the write-side complement to the m1 `--input FILE` rule.
+
+**Declared-but-unconsumed data source is a valid pattern.** The demo declares a `summary`
+source that the Summary sheet doesn't read (it uses `summary_rows`/cross-sheet
+`aggregate_ref`). `compute_doc` requires only *referenced* sources to be provided; the
+orchestrator fetches every declared source regardless. "The orchestrator fetches
+infrastructure; the template decides what to render."
+
+**Base-file asset gaps recur until the placeholder is regenerated.** The committed demo
+base files lacked named styles (`Heading 1`, `Table Grid`) and consistent per-sheet
+branding; this was flagged across t1–t3 before the regeneration commit (878b90e). Renderers
+degrade gracefully, but the asset must carry the styles before the sprint. Promoted to
+CLAUDE.md.
+
+**Two-step field rollout.** New optional doc-spec fields landed as "renderer reads with a
+default" first (t2/t3) and "`compute_doc` passes through" later (t5), keeping each ticket
+green and backward-compatible. Promoted to CLAUDE.md.
+
+---
+
+### Open items for m2b
+
+- Wire `list_templates.py` into the orchestrator; LLM selects `{doc_type, variant}` (Options A/B).
+- Drive registry + `fetch_template.py`; `list_templates.py` reads from Drive (its `--templates-dir`/loader is the seam).
+- Delivery (Drive upload, email).
+- Narrative-mode context as a potential injection point once context is LLM-selected (t8 review F2) — sanitise / validate before substitution.
+- `list_templates.py` error messages expose internal filesystem paths — revisit for multi-tenant logging (t9 review F2).
+- `generate_json.py` still drops row `type` (carried from m1); revisit if m2b consumers need it.
+- Orchestrator over-inspection: even after `--output` (scratch 8→1), the agent ran `compute_doc` a second time (bare) to view the spec. Strengthen the "don't investigate" rule and/or add `fetch_data.py --output FILE` so PHASE A also drops its `write_file`; re-verify.

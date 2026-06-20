@@ -497,6 +497,32 @@ def test_cli_multi_source_succeeds(tmp_path):
     assert [s["name"] for s in spec["sheets"]] == ["Line Items", "Summary"]
 
 
+def test_cli_output_flag_writes_file(tmp_path):
+    # --output FILE writes the doc spec to the file and prints only the path.
+    fetch = subprocess.run(
+        [sys.executable, "scripts/fetch_data.py", "--key", "main",
+         "data/sample_data.csv"],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    raw = tmp_path / "raw.json"
+    raw.write_text(fetch.stdout)
+    spec_file = tmp_path / "spec.json"
+
+    result = subprocess.run(
+        [sys.executable, "scripts/compute_doc.py",
+         "data/templates/demo/proposal_v1.json", str(raw),
+         "--output", str(spec_file)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    assert result.returncode == 0, result.stderr
+    # stdout is just the path, not the JSON blob
+    assert result.stdout.strip() == str(spec_file)
+    assert "\"sheets\"" not in result.stdout
+    # the file holds the full doc spec
+    spec = json.loads(spec_file.read_text())
+    assert [s["name"] for s in spec["sheets"]] == ["Line Items", "Summary"]
+
+
 def test_cli_unprovided_source_key_exits_1(tmp_path):
     # A template whose sheet references a source_key that is not provided exits 1.
     tmpl = {

@@ -410,7 +410,8 @@ Run the docbuilder pipeline (data → formatted document) via sprint or direct.
 | `DOCBUILDER_TENANT` | Tenant name — selects `data/templates/{tenant}/` | `demo` |
 | `DOCBUILDER_DOC_TYPE` | Document type — selects the template file | `proposal` |
 | `DOCBUILDER_VERSION` | Template version string | `v1` |
-| `DOCBUILDER_DATA_PATH` | Path to input CSV, relative to `docbuilder/` root | `data/sample_data.csv` |
+| `DOCBUILDER_DATA_PATH` | Path to the `main` source CSV, relative to `docbuilder/` root | `data/sample_data.csv` |
+| `DOCBUILDER_CONTEXT` | (optional, m2a) Inline JSON of scalar vars for narrative-mode PDF; unset/empty → `{}` | `{"title":"…","client_name":"…","date":"…"}` |
 
 ### Sprint invocation
 
@@ -421,21 +422,30 @@ DOCBUILDER_TENANT=demo \
 DOCBUILDER_DOC_TYPE=proposal \
 DOCBUILDER_VERSION=v1 \
 DOCBUILDER_DATA_PATH=data/sample_data.csv \
+DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","date":"20 Jun 2026"}' \
 ./scripts/sprint.sh docbuilder
 ```
+
+### m2a pipeline behaviour
+
+- **Multi-source:** the orchestrator reads `data_sources` from the template, fetches one raw JSON per source (`pipeline_raw_{key}.json`), and passes them all to `compute_doc.py`. A declared source not read by any sheet is still fetched (intentional).
+- **Base files:** if `data/templates/{tenant}/{doc_type}_{version}.{xlsx,docx}` exists, it is opened as the branded base (logo/header/footer/styles preserved) via `--base-file`.
+- **Narrative PDF:** if the template has a `narrative` block, the PDF is rendered from a Markdown template + CSS (`render_template.py`) using `--template-dir` and `--context "$DOCBUILDER_CONTEXT"`.
 
 ### Expected output files
 
 After a successful run, `aetheris-agents/docbuilder/output/` contains:
 
 ```
-pipeline_raw.json      # intermediate — raw fetch output
-pipeline_spec.json     # intermediate — computed doc spec
-proposal_v1.xlsx       # ~8 KB
-proposal_v1.pdf        # ~30 KB
+pipeline_raw_main.json     # intermediate — one per data source
+pipeline_raw_summary.json  # intermediate — second demo source
+pipeline_spec.json         # intermediate — computed doc spec (compute_doc --output)
+proposal_v1.xlsx           # branded (base file applied)
+proposal_v1.docx           # branded (base file applied)
+proposal_v1.pdf            # narrative mode (Markdown template + CSS)
 ```
 
-Formats depend on `output_formats` in the template. `demo/proposal_v1.json` specifies `["xlsx", "pdf"]`.
+Formats depend on `output_formats` in the template. `demo/proposal_v1.json` specifies `["xlsx", "docx", "pdf"]`.
 
 ### Common failure modes
 

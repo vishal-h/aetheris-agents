@@ -1,5 +1,4 @@
 import argparse
-import html as _html
 import json
 import os
 import subprocess
@@ -9,11 +8,9 @@ from pathlib import Path
 
 import weasyprint
 
+from _table_html import esc, render_table
+
 _RENDER_TEMPLATE = Path(__file__).parent / "render_template.py"
-
-
-def _esc(value):
-    return _html.escape(str(value) if value is not None else "")
 
 
 def _build_html(doc_spec):
@@ -30,42 +27,12 @@ def _build_html(doc_spec):
 
     title = doc_spec.get("title")
     if title:
-        parts.append(f"<h1>{_esc(title)}</h1>")
+        parts.append(f"<h1>{esc(title)}</h1>")
 
     for sheet in doc_spec["sheets"]:
-        n_cols = len(sheet["columns"])
-        parts.append(f"<h2>{_esc(sheet['name'])}</h2><table>")
-
-        # merge_ranges: rendered as <th colspan="N"> rows above the data rows
-        for mr in sheet.get("merge_ranges", []):
-            colspan = mr["col_end"] - mr["col_start"] + 1
-            pre = mr["col_start"] - 1
-            post = n_cols - mr["col_end"]
-            row = "<tr>"
-            if pre:
-                row += f"<td colspan='{pre}'></td>"
-            row += (
-                f"<th colspan='{colspan}' "
-                f"style='text-align:center;font-weight:bold;'>"
-                f"{_esc(mr['value'])}</th>"
-            )
-            if post:
-                row += f"<td colspan='{post}'></td>"
-            row += "</tr>"
-            parts.append(row)
-
-        for row in sheet["rows"]:
-            cls = " class='aggregate'" if row["type"] == "aggregate" else ""
-            parts.append(f"<tr{cls}>")
-            for cell in row["cells"]:
-                fw = "bold" if cell["bold"] else "normal"
-                parts.append(
-                    f"<td style='text-align:{cell['align']};font-weight:{fw};'>"
-                    f"{_esc(cell['value'])}</td>"
-                )
-            parts.append("</tr>")
-
-        parts.append("</table>")
+        # structured mode prepends a sheet heading; the table markup itself is shared.
+        parts.append(f"<h2>{esc(sheet['name'])}</h2>")
+        parts.append(render_table(sheet))
 
     parts.append("</body></html>")
     return "".join(parts)

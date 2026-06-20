@@ -186,10 +186,11 @@ long-lived worker, kill stale workers and re-run:
 pkill -f aetheris_worker
 ```
 
-### Stale `output/pipeline_raw.json` or `output/pipeline_spec.json`
+### Stale `output/pipeline_raw_*.json` or `output/pipeline_spec.json`
 
-These files are overwritten on each run. If a partial run left stale
+These intermediates are overwritten on each run (one `pipeline_raw_{key}.json`
+per data source, plus `pipeline_spec.json`). If a partial run left stale
 intermediates, delete them before re-running:
 ```bash
-rm -f docbuilder/output/pipeline_raw.json docbuilder/output/pipeline_spec.json
+rm -f docbuilder/output/pipeline_raw_*.json docbuilder/output/pipeline_spec.json
 ```

@@ -238,3 +238,21 @@ A packet without done-check output (test names + PASSED/FAILED + elapsed time + 
 **Implementation notes are a required deliverable, not optional — commit before submitting the review packet.**
 A packet missing an implementation notes file is returned unreviewed. The notes file must be committed (not just written) before the packet is sent. For docs-only tickets (no scripts, no agents) a brief notes file is still required: capture decisions made, open items forwarded, and anything that does not survive in the code itself.
 `Source: m-docbuilder-m1 t1 (F1 blocking), t8 (F1 — accepted without it for docs ticket)`
+
+---
+
+## Learning — m2a-docbuilder
+
+Findings that recurred across ≥2 tickets in the docbuilder m2a milestone, promoted per methodology §7.
+
+**LLM orchestrators can't reliably round-trip large stdout through `write_file` — give scripts an `--output FILE` (or `--spec FILE`) flag so they write directly.** This is the write-side complement to the m1 `--input FILE` rule. When the orchestrator must capture a script's large stdout (e.g. an ~8K doc-spec JSON) and re-emit it verbatim as a `write_file` `content:` field, the LLM improvises (it wrote `/tmp` scratch scripts instead). Add an `--output FILE` flag: the script writes its payload to the file and prints only the path; the orchestrator passes the path downstream and never handles the blob. Reserve `write_file` for small content the LLM can reproduce exactly.
+`Source: m-docbuilder-m2a t6/t7 (render_template `--spec FILE`), t8/t9/t10 (compute_doc `--output FILE`)`
+
+**A new optional doc-spec/template field lands in two steps: the renderer reads it with a fallback default first, `compute_doc` passes it through later.** Add the field to the consuming renderer with `doc_spec.get("field", default)` so it is testable and backward-compatible immediately (tests inject the field directly); wire the `compute_doc` pass-through in a later ticket. When the pass-through lands, the renderer needs no change and live output is unchanged because the demo's values match the prior defaults.
+`Source: m-docbuilder-m2a t2 (data_col_start), t3 (table_style), t5 (pass-through)`
+
+**Committed demo/tenant base files must carry the standard named styles and consistent branding across all sheets before the sprint runs.** A placeholder base file built from a minimal template lacks styles like `Heading 1`/`Table Grid`, so renderers fall back (warnings, gridless tables) and branding is asymmetric across sheets. Renderers should degrade rather than crash, but the asset must be regenerated with the needed styles + per-sheet branding before the milestone sprint — otherwise the gap is re-flagged every ticket.
+`Source: m-docbuilder-m2a t1, t2, t3 (base-file gap flagged across four tickets)`
+
+**Before re-flagging a carried review finding as "still open", verify it is actually unresolved.** A finding resolved in an earlier commit was re-flagged as open in two later reviews; each time the correction (already fixed in `<commit>`) had to be recorded. Check the current source/commit history for the fix before carrying a finding forward.
+`Source: m-docbuilder-m2a t5, t7 (t4 F1 re-flagged after resolution in 6d1d382)`

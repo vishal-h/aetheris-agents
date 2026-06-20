@@ -70,7 +70,8 @@ fetch_steps =
   |> Enum.join("\n")
 
 compute_args =
-  ["scripts/compute_doc.py", template_rel] ++ raw_files
+  ["scripts/compute_doc.py", template_rel] ++
+    raw_files ++ ["--output", "output/pipeline_spec.json"]
 
 render_args = fn fmt ->
   extra =
@@ -138,8 +139,8 @@ PHASE A — Fetch each data source and save its raw JSON.
 PHASE B — Compute the doc spec from the template and ALL raw source files.
   B1. run_command  command: "python3"
                    args: #{inspect(compute_args)}
-      Capture the full stdout (a JSON object — the doc spec).
-  B2. Save it:  write_file  path: "output/pipeline_spec.json"  content: <exact stdout from B1>
+      This writes the doc spec to output/pipeline_spec.json and prints only that
+      path to stdout. Do NOT write_file the spec yourself — the script wrote it.
 
 PHASE C — Render each output format from the saved doc spec.
 #{render_steps}

@@ -146,9 +146,25 @@ do not import directly).
 **Touches.**
 - `docbuilder/scripts/fetch_template.py` (new)
 - `docbuilder/scripts/list_templates.py` (update — Drive fallback)
+- `docbuilder/data/templates/demo/proposal/v1/proposal_v1.*` (new — nested demo
+  bundle for the local fallback; see Option A below)
 - `docbuilder/tests/test_fetch_template.py` (new)
 - `docbuilder/tests/test_list_templates.py` (update — Drive path tests)
 - `docbuilder/docs/milestones/m-docbuilder-m2b-t2-implementation-notes.md` (new)
+
+**Pre-flight (from t1 review).**
+- Install `google-api-python-client` in the mise env before implementing
+  (`python3 -m pip install google-api-python-client`); add it to
+  `requirements.txt` at t8. `fetch_template.py` and `upload_output.py` need it.
+- **Nested vs flat layout — Option A (resolved at t1 review):** the Drive bundle is
+  nested (`{tenant}/templates/{doc_type}/{version}/`) but the committed m2a demo is
+  flat (`data/templates/demo/proposal_v1.json`). Add a **nested demo bundle** at
+  `data/templates/demo/proposal/v1/proposal_v1.{json,docx,xlsx,md.template,css}`
+  (copies of the flat files) for `fetch_template.py`'s local-fallback tests. Leave the
+  flat files untouched — the m2a orchestrator still uses them directly via its
+  eval-time `template_rel` path. Clean separation: flat = m2a direct path, nested =
+  m2b fetch_template local fallback. (See `docs/drive-structure.md` §"Local vs Drive
+  layout".)
 
 **Do not generate.** Do not modify any renderer scripts or the orchestrator
 in this ticket.

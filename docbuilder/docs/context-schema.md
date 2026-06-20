@@ -84,7 +84,10 @@ Minimal (required fields only; Option B — LLM derives the doc type):
 ## Validation
 
 There is no central validator script. Each consuming script validates the fields it
-requires and exits 1 with a JSON error on stderr if one is missing:
+requires and exits 1 with a JSON error on stderr if one is missing.
+
+> This table reflects m2b scope. **Scripts are the authoritative source** — consult a
+> script's `main()` argparse/validation block if in doubt.
 
 | Script | Requires |
 |--------|----------|

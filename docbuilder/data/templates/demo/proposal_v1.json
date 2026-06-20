@@ -19,6 +19,7 @@
     {
       "name": "Line Items",
       "source_key": "main",
+      "header_row": 3,
       "merge_ranges": [
         {
           "row": 1,
@@ -84,6 +85,7 @@
     {
       "name": "Summary",
       "source_key": null,
+      "header_row": 3,
       "merge_ranges": [
         {
           "row": 1,

@@ -67,6 +67,7 @@ Each entry in `sheets`.
 |-------|------|----------|-------------|---------|
 | `name` | string | yes | Sheet/section name. Becomes the worksheet tab name in xlsx. | `"Line Items"` |
 | `source_key` | string or null | yes | Key of the `DataSource` this sheet reads from. `null` for summary sheets that derive all values from `summary_rows`. | `"main"` |
+| `header_row` | integer | no | Explicit 1-based row at which the renderer writes the column-header row (data follows below). When present, it **overrides** the value `compute_doc.py` would otherwise compute from `merge_ranges` (`max(merge_range.row) + 1`, or `1` if none). Set this to the first renderer-owned row when a base file occupies the rows above it — see README §"Row alignment convention". | `3` |
 | `columns` | array of [Column](#column) | yes | Column definitions, left to right. | see below |
 | `merge_ranges` | array of [MergeRange](#mergerange) | no | Merged header cells. Typically row 1. | see below |
 | `aggregate_rows` | array of [AggregateRow](#aggregaterow) | no | Computed rows appended above or below data rows. Used when `source_key` is non-null. | see below |
@@ -185,6 +186,7 @@ A fixed label/value pair — not derived from data.
     {
       "name": "Line Items",
       "source_key": "main",
+      "header_row": 3,
       "merge_ranges": [
         {"row": 1, "col_start": 1, "col_end": 5, "value": "B2B Project Proposal — Line Items"}
       ],
@@ -210,6 +212,7 @@ A fixed label/value pair — not derived from data.
     {
       "name": "Summary",
       "source_key": null,
+      "header_row": 3,
       "merge_ranges": [
         {"row": 1, "col_start": 1, "col_end": 2, "value": "Proposal Summary"}
       ],

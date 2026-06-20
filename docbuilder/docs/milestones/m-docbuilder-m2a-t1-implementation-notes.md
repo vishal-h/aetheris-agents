@@ -105,3 +105,40 @@ t2 starts from a known state rather than rediscovering it.
 - t6/t7 (narrative): partials are `{{>Line Items}}` / `{{>Summary}}`; scalar vars are
   `{{title}}`, `{{client_name}}`, `{{date}}`. CSS uses weasyprint `@page` margin boxes
   for header (`[ LOGO ]` / `Company Name`) and footer (page counter).
+
+---
+
+## Addendum — round-1 review resolution (header_row)
+
+The round-1 review (`docs/reviews/m-docbuilder-m2a-t1-review.md`) raised the row-ownership
+finding above as **blocking** and chose **Option A**: make `header_row` an explicit
+per-sheet template field. Resolved in this ticket (doc/asset only — no Python changes,
+keeping t1 within "no scripts"):
+
+- `template-schema.md`: added `header_row` as an optional per-sheet field (overrides the
+  value computed from `merge_ranges`); full example shows `header_row: 3` on both sheets.
+- `proposal_v1.json`: added `"header_row": 3` to the `Line Items` and `Summary` sheets.
+- t1 done-check now asserts every sheet has `header_row == 3`.
+
+Confirmed base-file layout (via openpyxl cell+fill inspection) that motivates `3`:
+`Line Items` row 1 = logo (`[ LOGO ]` + `Company Name`, fill `D6E4F0`), row 2 = navy
+separator (fill `1F4E79`, no value), row 3 = styled header row (fill `E9EFF7`). So rows
+1–2 are base-file-owned branding and the renderer's header belongs at row 3.
+
+**Functional honouring of `header_row` is t2's job, not t1's.** The field is inert until
+`compute_doc.py` reads it — t1 leaves `compute_doc.py` computing `header_row` (still emits
+`2` for the demo), so the field is present but not yet consumed, and the 123 existing
+tests are unaffected. The milestone's t2 scope was updated to (a) honour the explicit
+`header_row` in `compute_doc.py` (the minimal carve-out from the "don't touch compute_doc"
+rule) and (b) assert `Item Code` at row 3 in its base-file done-check.
+
+**Summary base sheet is under-built.** The committed `Summary` base sheet has only a single
+styled row (row 1, fill `E9EFF7`) — no logo/navy branding rows like `Line Items`. With
+`header_row: 3` the renderer will leave rows 1–2 largely empty for Summary. t2 should
+flesh out the `Summary` base sheet's branding rows to match `Line Items`, or accept the
+gap for the placeholder. Flagged for t2.
+
+Two non-blocking review notes also actioned: the milestone t1 touches list now records the
+`output_formats` → `["xlsx","docx","pdf"]` change and the new `header_row` field (audit
+trail complete); the missing-diff note is process guidance for t2 onward (the t2+ packets
+will include diffs).

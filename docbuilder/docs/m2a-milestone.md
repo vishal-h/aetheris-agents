@@ -62,10 +62,13 @@ template for the PDF cover and CSS for brand styles.
 
 ### t1 — Template schema update + demo assets
 
-**Scope.** Update `template-schema.md` and `proposal_v1.json` with three new
+**Scope.** Update `template-schema.md` and `proposal_v1.json` with four new
 optional fields: `table_style` (docx table style name), `data_col_start`
-(xlsx first data column, 1-based), and a `narrative` block for PDF mode
-(`template_file`, `css_file`). Commit the four new demo template files:
+(xlsx first data column, 1-based), a `narrative` block for PDF mode
+(`template_file`, `css_file`), and a per-sheet `header_row` explicit override
+(set to `3` for the demo so the renderer writes below the base file's two
+branding rows; honoured by `compute_doc.py` in t2). Also extend the demo's
+`output_formats` to `["xlsx", "docx", "pdf"]`. Commit the four new demo template files:
 `proposal_v1.md.template`, `proposal_v1.css`, and update the existing
 `proposal_v1.docx` and `proposal_v1.xlsx` base files (already committed
 as placeholders — verify `header_row: 3` alignment matches).
@@ -76,10 +79,12 @@ multi-source demo in t4.
 update it here); `docbuilder/README.md` §"Template model", §"Design decisions".
 
 **Touches.**
-- `docbuilder/docs/template-schema.md` (update — add three new fields)
+- `docbuilder/docs/template-schema.md` (update — add four new fields:
+  `table_style`, `data_col_start`, `narrative`, per-sheet `header_row`)
 - `docbuilder/data/templates/demo/proposal_v1.json` (add `table_style`,
-  `data_col_start`, `narrative` block; `data_sources` stays at one entry —
-  the second entry is added in t4 alongside the guard removal)
+  `data_col_start`, `narrative` block, per-sheet `header_row: 3`; extend
+  `output_formats` to `["xlsx", "docx", "pdf"]`; `data_sources` stays at one
+  entry — the second entry is added in t4 alongside the guard removal)
 - `docbuilder/data/templates/demo/proposal_v1.md.template` (new)
 - `docbuilder/data/templates/demo/proposal_v1.css` (new)
 - `docbuilder/data/sample_data_summary.csv` (new — second source for demo)
@@ -100,7 +105,9 @@ python3 -c "import json; t=json.load(open('data/templates/demo/proposal_v1.json'
   assert len(t['data_sources']) == 1, 'data_sources must stay at 1 until t4'; \
   print('table_style:', t.get('table_style', 'NOT SET')); \
   print('data_col_start:', t.get('data_col_start', 'NOT SET')); \
-  print('narrative:', 'present' if t.get('narrative') else 'NOT SET')"
+  print('narrative:', 'present' if t.get('narrative') else 'NOT SET'); \
+  print('header_row per sheet:', [s.get('header_row', 'NOT SET') for s in t['sheets']]); \
+  assert all(s.get('header_row') == 3 for s in t['sheets']), 'each sheet needs header_row: 3'"
 
 # New files exist
 ls -lh data/templates/demo/
@@ -131,10 +138,16 @@ grep -c "{{" data/templates/demo/proposal_v1.md.template
 > - `narrative` (object, optional) — PDF narrative mode config:
 >   `{"template_file": "{doc_type}_v{N}.md.template",
 >    "css_file": "{doc_type}_v{N}.css"}`
+> - `header_row` (integer, optional, per-sheet) — explicit 1-based row at which
+>   the renderer writes the column-header row, overriding the value computed
+>   from `merge_ranges`. Set the demo's sheets to `3` so the renderer writes
+>   below the base file's two branding rows (logo row 1, navy separator row 2).
+>   `compute_doc.py` honours it in t2 (falls back to the computed value when absent).
 >
 > **proposal_v1.json:** Add `"table_style": "Table Grid"`,
-> `"data_col_start": 1`, and a `"narrative"` block pointing to
-> `proposal_v1.md.template` and `proposal_v1.css`. Leave `data_sources`
+> `"data_col_start": 1`, a `"narrative"` block pointing to
+> `proposal_v1.md.template` and `proposal_v1.css`, and `"header_row": 3` on
+> each sheet. Extend `output_formats` to `["xlsx", "docx", "pdf"]`. Leave `data_sources`
 > at its single `main` entry — the second `summary` source is wired in at
 > t4 when the multi-source guard is removed (the schema change and guard
 > removal land together so the build stays green through t2/t3).
@@ -173,32 +186,45 @@ grep -c "{{" data/templates/demo/proposal_v1.md.template
 
 ### t2 — generate_xlsx.py: base file support
 
-**Scope.** Update `generate_xlsx.py` to open a base file when one is
-provided via `--base-file PATH`. When the base file is present: open it
-with `openpyxl.load_workbook()`, locate existing sheets by name, and write
-data starting at `header_row` (honoring `data_col_start`). When absent:
-current m1 behaviour (create fresh `Workbook()`). All existing tests must
-continue to pass.
+**Scope.** Two changes. (1) Teach `compute_doc.py` to honour an explicit
+per-sheet `header_row` from the template (added in t1): use it when present,
+fall back to the computed `max(merge_range.row) + 1` when absent. This is the
+enabler for base-file alignment — the renderer consumes the doc spec, so the
+doc spec's `header_row` must already be `3` for the demo. (2) Update
+`generate_xlsx.py` to open a base file when one is provided via `--base-file
+PATH`: open it with `openpyxl.load_workbook()`, locate existing sheets by name,
+and write data starting at `header_row` (honoring `data_col_start`). When
+`--base-file` is absent: current m1 behaviour (create fresh `Workbook()`).
+All existing tests must continue to pass.
+
+> The explicit-`header_row` change to `compute_doc.py` is carved out of the
+> usual "do not modify compute_doc" rule because it is the minimal enabler for
+> this ticket's base-file alignment and was the t1 review's blocking finding.
+> Keep it to honouring the field + a test; no other compute_doc behaviour changes.
 
 **Contract refs.** `docbuilder/docs/doc-spec-schema.md` §"Renderer contract";
+`docbuilder/docs/template-schema.md` (`header_row`, `data_col_start`);
 `docbuilder/README.md` §"Row alignment convention", §"Design decisions"
 (`header_row` anchor, `data_col_start`); `agent-creation-guide.md` §"Script
 design" (backward compatibility, `--input FILE` pattern).
 
 **Touches.**
+- `docbuilder/scripts/compute_doc.py` (update — honour explicit per-sheet `header_row`)
 - `docbuilder/scripts/generate_xlsx.py` (update)
+- `docbuilder/tests/test_compute_doc.py` (add explicit-`header_row` test)
 - `docbuilder/tests/test_generate_xlsx.py` (add base file tests)
 - `docbuilder/docs/milestones/m-docbuilder-m2a-t2-implementation-notes.md` (new)
 
-**Do not generate.** Do not modify `compute_doc.py`, the template schema,
-or any other renderer script in this ticket.
+**Do not generate.** Do not modify the template schema or any renderer script
+other than `generate_xlsx.py`. The only permitted `compute_doc.py` change is
+honouring the explicit `header_row` field (above).
 
 **Done-check.**
 ```bash
 cd aetheris-agents/docbuilder
 
-# Existing tests still pass
-python3 -m pytest tests/test_generate_xlsx.py -v
+# Existing tests still pass (compute_doc honours explicit header_row; xlsx base files)
+python3 -m pytest tests/test_compute_doc.py tests/test_generate_xlsx.py -v
 
 # Base file round-trip: branding row survives
 python3 scripts/fetch_data.py data/sample_data.csv \
@@ -211,12 +237,16 @@ python3 -c "
 import openpyxl
 wb = openpyxl.load_workbook('output/proposal_v1_branded.xlsx')
 ws = wb['Line Items']
-# Row 1 col 1 should still be the logo placeholder from base file
-print('Row 1 A1:', ws.cell(1,1).value)
-# Row 2 col 2 should be 'Company Name'
-print('Row 1 B1:', ws.cell(1,2).value)
-# Row 3 col 1 should be the column header written by renderer
-print('Row 3 A3:', ws.cell(3,1).value)
+# Row 1 A1 should still be the logo placeholder from the base file
+print('A1:', ws.cell(1,1).value)
+assert ws.cell(1,1).value == '[ LOGO ]', 'base file logo row overwritten'
+# B1 should still be 'Company Name' (merged B1:E1 in the base file)
+print('B1:', ws.cell(1,2).value)
+assert ws.cell(1,2).value == 'Company Name', 'base file company name overwritten'
+# Row 3 A3 should be the first column header written by the renderer (header_row=3)
+print('A3:', ws.cell(3,1).value)
+assert ws.cell(3,1).value == 'Item Code', 'header not written at row 3'
+print('base-file alignment: OK')
 "
 ```
 
@@ -224,11 +254,20 @@ print('Row 3 A3:', ws.cell(3,1).value)
 > Read `docs/agent-creation-guide.md` §"Script design",
 > `docbuilder/docs/doc-spec-schema.md` §"Renderer contract",
 > `docbuilder/README.md` §"Row alignment convention" and §"Design decisions",
-> `docbuilder/docs/template-schema.md` (for `data_col_start`),
-> and `docbuilder/docs/milestones/m-docbuilder-m1-t3-implementation-notes.md`
+> `docbuilder/docs/template-schema.md` (for `header_row` and `data_col_start`),
+> `docbuilder/docs/milestones/m-docbuilder-m2a-t1-implementation-notes.md`
+> (the row-ownership finding), and
+> `docbuilder/docs/milestones/m-docbuilder-m1-t3-implementation-notes.md`
 > before writing any code.
 >
-> Update `generate_xlsx.py` per t2 scope:
+> **First, `compute_doc.py`:** where `header_row` is computed
+> (`header_row = max(merge_rows) + 1 if merge_rows else 1`), honour an explicit
+> override — `sheet.get("header_row", computed)`. Both Pass 1 and Pass 2 build
+> sheets, so apply it in both. Add a `test_compute_doc.py` test: a template sheet
+> with `"header_row": 3` produces a doc spec sheet with `header_row == 3`; absent →
+> the computed value. No other compute_doc changes.
+>
+> **Then update `generate_xlsx.py` per t2 scope:**
 >
 > Add `--base-file PATH` optional argument (default: None). When provided:
 > - Open with `openpyxl.load_workbook(args.base_file)` instead of

@@ -1,0 +1,156 @@
+{
+  "template_id": "demo/proposal_v1",
+  "title": "B2B Project Proposal",
+  "data_sources": [
+    {
+      "key": "main",
+      "type": "csv",
+      "path": "docbuilder/data/sample_data.csv"
+    },
+    {
+      "key": "summary",
+      "type": "csv",
+      "path": "docbuilder/data/sample_data_summary.csv"
+    }
+  ],
+  "output_formats": ["xlsx", "docx", "pdf"],
+  "table_style": "Table Grid",
+  "data_col_start": 1,
+  "narrative": {
+    "template_file": "proposal_v1.md.template",
+    "css_file": "proposal_v1.css"
+  },
+  "sheets": [
+    {
+      "name": "Line Items",
+      "source_key": "main",
+      "header_row": 3,
+      "merge_ranges": [
+        {
+          "row": 1,
+          "col_start": 1,
+          "col_end": 5,
+          "value": "B2B Project Proposal — Line Items"
+        }
+      ],
+      "columns": [
+        {
+          "name": "Item Code",
+          "source_field": "item_code",
+          "type": "string",
+          "bold": false,
+          "align": "left",
+          "width": 12
+        },
+        {
+          "name": "Description",
+          "source_field": "description",
+          "type": "string",
+          "bold": false,
+          "align": "left",
+          "width": 35
+        },
+        {
+          "name": "Quantity",
+          "source_field": "quantity",
+          "type": "number",
+          "bold": false,
+          "align": "right",
+          "width": 10
+        },
+        {
+          "name": "Unit Price",
+          "source_field": "unit_price",
+          "type": "currency",
+          "bold": false,
+          "align": "right",
+          "width": 12
+        },
+        {
+          "name": "Total",
+          "source_field": "total",
+          "type": "currency",
+          "bold": true,
+          "align": "right",
+          "width": 14
+        }
+      ],
+      "aggregate_rows": [
+        {
+          "position": "bottom",
+          "label": "TOTAL",
+          "label_column": "description",
+          "aggregates": [
+            {"column": "quantity", "function": "sum"},
+            {"column": "total", "function": "sum"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Summary",
+      "source_key": null,
+      "header_row": 3,
+      "merge_ranges": [
+        {
+          "row": 1,
+          "col_start": 1,
+          "col_end": 2,
+          "value": "Proposal Summary"
+        }
+      ],
+      "columns": [
+        {
+          "name": "Metric",
+          "source_field": null,
+          "type": "string",
+          "bold": true,
+          "align": "left",
+          "width": 22
+        },
+        {
+          "name": "Value",
+          "source_field": null,
+          "type": "string",
+          "bold": false,
+          "align": "right",
+          "width": 18
+        }
+      ],
+      "summary_rows": [
+        {
+          "type": "aggregate_ref",
+          "label": "Total Line Items",
+          "aggregate": {
+            "source_sheet": "Line Items",
+            "column": "item_code",
+            "function": "count"
+          }
+        },
+        {
+          "type": "aggregate_ref",
+          "label": "Total Quantity",
+          "aggregate": {
+            "source_sheet": "Line Items",
+            "column": "quantity",
+            "function": "sum"
+          }
+        },
+        {
+          "type": "aggregate_ref",
+          "label": "Total Value (USD)",
+          "aggregate": {
+            "source_sheet": "Line Items",
+            "column": "total",
+            "function": "sum"
+          }
+        },
+        {
+          "type": "static",
+          "label": "Notes",
+          "value": "Thank you for your business. Prices are valid for 30 days."
+        }
+      ]
+    }
+  ]
+}

@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from list_templates import load_catalogue
+import list_templates
+from list_templates import load_catalogue, resolve_catalogue
 
 USE_CASE_ROOT = Path(__file__).parent.parent
 TEMPLATES_DIR = USE_CASE_ROOT / "data" / "templates"
@@ -76,3 +77,25 @@ def test_cli_custom_templates_dir(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["tenant_id"] == "acme"
+
+
+# --- Drive routing (m2b) ---
+
+def test_resolve_catalogue_flat_when_no_drive_id():
+    # No drive_id → flat local file (m2a behaviour preserved).
+    cat = resolve_catalogue("demo", TEMPLATES_DIR, None)
+    assert cat["tenant_id"] == "demo"
+
+
+def test_resolve_catalogue_uses_drive_when_id_set(monkeypatch):
+    # drive_id present → the Drive loader is used (mocked; no creds needed).
+    calls = {}
+
+    def fake_drive(tenant_id, drive_id):
+        calls["args"] = (tenant_id, drive_id)
+        return {"tenant_id": tenant_id, "doc_types": [], "_source": "drive"}
+
+    monkeypatch.setattr(list_templates, "load_catalogue_drive", fake_drive)
+    cat = resolve_catalogue("demo", TEMPLATES_DIR, "DRIVE_ROOT_123")
+    assert cat["_source"] == "drive"
+    assert calls["args"] == ("demo", "DRIVE_ROOT_123")

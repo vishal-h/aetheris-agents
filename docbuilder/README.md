@@ -49,7 +49,7 @@ bold/alignment rules, output format(s) requested.
 
 ## Milestone Roadmap
 
-### m1 — Core doc builder ✦ *build first*
+### m1 — Core doc builder ✦ *done*
 
 **Goal:** end-to-end working pipeline. Data in, formatted document out.
 Flat-file templates. Single orchestrator agent. All output formats supported.
@@ -71,70 +71,92 @@ Not in m1: template registry, conversational editing, delivery (email/Drive).
 
 ---
 
-### m2 — Template registry + base files + LLM-assisted selection ✦ *backlog*
+### m2a — Template foundations ✦ *backlog — build next*
 
-**Goal:** tenant templates managed centrally. Base files (`.docx`, `.xlsx`)
-carry branding — headers, footers, logos, fonts, colours. The LLM selects
-the right doc type and variant from a known catalogue. Output delivered
-automatically.
+**Goal:** branded output, queryable template catalogue, multi-source data.
+All deterministic — no LLM selection yet. Independently shippable.
+End state: a branded proposal with company logo in the header, generated
+from two data sources, stored as a flat file alongside the JSON config.
 
 Scope:
 
-**Template registry:**
-- Registry: Drive folder (one subfolder per tenant) or lightweight DB table
-- Each tenant has a catalogue of doc types: `proposal`, `invoice`, `rfq`, etc.
-- Each doc type has: a JSON config (`proposal_v1.json`) + optional base files
-  per format (`proposal_v1.docx`, `proposal_v1.xlsx`)
-- Template versioning: slug-based (`proposal_v1`, `proposal_v2`); old versions
-  remain runnable
-- `list_templates.py` — returns available `{doc_type, variants, description}`
-  for a given tenant; used by the orchestrator to give the LLM the catalogue
-- `fetch_template.py` — fetches a specific template JSON + base file by
-  `(tenant_id, doc_type, variant)`
-- Runbook: tenant onboarding procedure
-
 **Base file support in renderers:**
-- Renderers check for a base file (`{doc_type}_{version}.docx` /
-  `{doc_type}_{version}.xlsx`) alongside the JSON config
-- If present: open it as the starting workbook/document (inherits branding,
-  header, footer, logo, named styles, print settings)
-- If absent: create fresh (current m1 behaviour — preserved as fallback)
+- Base files (`.docx`, `.xlsx`) committed alongside JSON config:
+  `data/templates/{tenant}/{doc_type}_v{N}.docx` / `.xlsx`
+- Renderers check for a base file at runtime; open it if present, create
+  fresh if absent (m1 fallback preserved)
 - `generate_docx.py`: `Document("base.docx")` instead of `Document()`
 - `generate_xlsx.py`: `openpyxl.load_workbook("base.xlsx")` instead of
-  `Workbook()`; sheet names in the base file must match the template's
-  sheet names or be cleared/replaced
+  `Workbook()`; template sheet names must match or be cleared/replaced
+- `generate_pdf.py`: base file not applicable (HTML intermediate); CSS
+  variables or a `base_styles.css` file per tenant covers branding
+- Demo base files committed: `demo/proposal_v1.docx`, `demo/proposal_v1.xlsx`
+  with placeholder logo, header/footer, brand colour
+
+**Template catalogue:**
+- `data/templates/{tenant}/catalogue.json` — lists available doc types,
+  variants, and descriptions for the tenant; committed flat file in m2a,
+  Drive-hosted in m2b
+- `list_templates.py` — reads `catalogue.json` for a given tenant; outputs
+  structured JSON; used by the orchestrator in m2b for LLM selection
+
+**Multi-source data:**
+- Template `data_sources` array supports >1 entry (schema was
+  forward-compatible from m1)
+- Orchestrator calls `fetch_data.py` once per source, writes each to a
+  temp file
+- `compute_doc.py` updated: accepts multiple source JSON paths; merges/joins
+  before applying template
+- Demo template updated with a two-source example
+
+**Orchestrator updated:**
+- Reads base file path from template and passes to renderer via `--base-file`
+  flag (new optional flag on generate scripts)
+- Calls `fetch_data.py` N times for multi-source templates
+
+Not in m2a: LLM selection, Drive registry, delivery.
+
+---
+
+### m2b — LLM selection + Drive registry + delivery ✦ *backlog*
+
+**Goal:** LLM picks the right doc type and variant from the catalogue.
+Templates and base files fetched from Drive at runtime. Output delivered
+to Drive or email automatically.
+
+Depends on: m2a (catalogue, base file support).
+
+Scope:
+
+**Drive registry:**
+- Templates and base files move from flat files to Drive (one subfolder
+  per tenant)
+- `fetch_template.py` — downloads JSON config + base file from Drive by
+  `(tenant_id, doc_type, variant)`; caches locally for the run
+- `list_templates.py` updated: reads from Drive rather than flat
+  `catalogue.json`
+- Runbook: tenant onboarding procedure (how to add a template to Drive)
 
 **LLM template selection (Options A + B):**
 
-Option A — caller provides `doc_type`; LLM selects `base_variant`:
-- Orchestrator calls `list_templates.py` to get available variants
-- LLM receives: `doc_type` (known), variant catalogue, context (customer
-  name, deal type, tone)
-- LLM picks variant and justifies choice in structured JSON:
-  `{doc_type, variant, rationale}`
-- Scripts do everything after that
+Option A — caller provides `doc_type`; LLM selects variant:
+- `DOCBUILDER_DOC_TYPE` set by caller; `DOCBUILDER_CONTEXT` provides
+  context (customer name, deal type, tone)
+- Orchestrator calls `list_templates.py`, passes catalogue + context to LLM
+- LLM outputs `{doc_type, variant, rationale}` as structured JSON
+- Scripts fetch and render from there
 
-Option B — caller provides context; LLM derives `doc_type` + `variant`:
-- Orchestrator calls `list_templates.py` for the full tenant catalogue
-- LLM receives: context (deal description, customer, amount), full catalogue
-  with descriptions
-- LLM picks `{doc_type, variant, rationale}`
-- Input: `DOCBUILDER_CONTEXT` env var (structured JSON with deal fields)
-
-Both A and B are in m2. Classification is LLM work; template fetch and
-rendering are scripts.
+Option B — caller provides context only; LLM derives both:
+- `DOCBUILDER_CONTEXT` contains deal fields; no `DOCBUILDER_DOC_TYPE`
+- LLM receives full tenant catalogue + context, picks `{doc_type, variant}`
+- Same downstream pipeline
 
 **Delivery:**
-- Drive upload integration (reuse `drive/scripts/drive_upload.py` pattern)
-- Email delivery integration (reuse `email/scripts/email_send.py` pattern)
+- Drive upload (reuse `drive/scripts/drive_upload.py`)
+- Email delivery (reuse `email/scripts/email_send.py`)
+- Orchestrator extended: select → fetch → fetch_data → compute → render → deliver
 
-**Multi-source data:**
-- Template `data_sources` array supports >1 entry
-- Orchestrator calls `fetch_data.py` once per source
-- `compute_doc.py` receives all results and merges/joins before applying
-  the template
-
-Not in m2: natural language requests, conversational template editing.
+Not in m2b: natural language requests, conversational template editing.
 
 ---
 
@@ -192,6 +214,8 @@ Not in m3: multi-user collaboration on templates, approval workflows.
 | Multi-source is m2, not m1 | The template schema includes a `data_sources` array from day one (no breaking change later), but m1 validates that the array has exactly one entry. Multi-source fetch + merge lands in m2 once the single-source pipeline is proven. |
 | PDF renderer: weasyprint for m1 | Pure Python, no system dependencies beyond the package. reportlab is backlog — the doc spec contract means switching is a single-script swap with no upstream impact. |
 | Base files carry branding; JSON config carries structure | `.docx`/`.xlsx` base files hold headers, footers, logos, named styles. JSON templates define sheets, columns, aggregates. Keeping them separate means branding can change without touching data config and vice versa. |
+| Base files committed in m2a, Drive-hosted in m2b | Same pattern as JSON configs in m1 — flat files first, registry second. Renderer base file support is the m2a work; where files come from is a registry concern that lands in m2b. |
+| Registry storage: Drive folder (m2b) | Drive is self-contained, reuses existing `drive/` scripts, templates are editable files. No schema needed. Natural fit since m2b delivers via Drive anyway. |
 | LLM selects doc type + variant; scripts do everything after | Classification (which template to use) is ambiguous, context-dependent LLM work. Fetch, compute, render are deterministic. The LLM outputs a small structured JSON `{doc_type, variant, rationale}`; all downstream steps are scripted. |
 | NL request extraction (Option C) requires a confirmation gate | LLM-extracted data fields must be shown to the user before rendering. A silently wrong customer-facing document is worse than no document. Gate is mandatory in m3; no silent rendering on extraction alone. |
 
@@ -208,12 +232,14 @@ aetheris-agents/
       sample_data.csv             ← committed (anonymised)
       templates/
         {tenant_id}/
-          {doc_type}_v{N}.json    ← structure + data config (m1 flat file)
-          {doc_type}_v{N}.docx    ← branding base file, optional (m2)
-          {doc_type}_v{N}.xlsx    ← branding base file, optional (m2)
+          catalogue.json          ← doc type catalogue (m2a flat file)
+          {doc_type}_v{N}.json    ← structure + data config
+          {doc_type}_v{N}.docx    ← branding base file, optional (m2a)
+          {doc_type}_v{N}.xlsx    ← branding base file, optional (m2a)
       .gitignore                  ← excludes real data, output/
     docs/
-      t*-implementation-notes.md
+      milestones/
+      reviews/
     output/
       .gitkeep
     scripts/
@@ -226,15 +252,12 @@ aetheris-agents/
       generate_json.py
       generate_xml.py
       generate_md.py
-      list_templates.py           ← m2: catalogue for LLM selection
-      fetch_template.py           ← m2: fetches JSON config + base file
+      list_templates.py           ← m2a: reads catalogue.json
+      fetch_template.py           ← m2b: fetches from Drive
     tests/
-      conftest.py
-      test_compute_doc.py
-      test_generate_xlsx.py
-      test_generate_docx.py
       ...
-    milestone.md                  ← m1 milestone doc (canonical)
+    milestone.md                  ← m1 milestone doc
+    docs/m2a-milestone.md         ← m2a milestone doc
     README.md                     ← this file
     runbook.md
 ```
@@ -250,12 +273,20 @@ aetheris-agents/
 
 ---
 
-## m1 scope decisions
+## Open questions (to resolve before or during m1)
 
-All open questions from the start of m1 have been resolved:
+~~1. **Data source interface** — for m1, does `fetch_data.py` support only
+   local CSV/JSON, or also a simple HTTP GET? Decide before t1.~~
+   **Resolved:** m1 supports local CSV/JSON only. `fetch_data.py` does not
+   transform. HTTP sources and multi-source joins are m2.
 
-| Question | Decision |
-|----------|----------|
-| Data source interface | m1 supports local CSV/JSON only. `fetch_data.py` does not transform. HTTP sources and multi-source joins are m2. |
-| PDF renderer | weasyprint for m1. Pure Python, no system dependencies. reportlab is backlog — the doc spec contract means swapping is a single-script change. |
-| Multi-format in one run | Orchestrator renders all formats listed in `output_formats` in sequence. No per-invocation format override in m1. |
+~~2. **PDF renderer** — weasyprint (HTML → PDF, pure Python) vs reportlab
+   (programmatic, more control). weasyprint is simpler for m1 if output
+   quality is acceptable.~~
+   **Resolved:** weasyprint for m1. reportlab backlog (m2 or later).
+
+~~3. **Multi-format in one run** — does the orchestrator render all formats
+   listed in the template's `output_formats` array in sequence, or does
+   the caller specify which format at invocation time? Sequence is simpler.~~
+   **Resolved:** orchestrator renders all formats in `output_formats` in
+   sequence. No per-invocation override in m1.

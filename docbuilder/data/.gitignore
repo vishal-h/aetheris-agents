@@ -5,3 +5,7 @@
 # Real client templates — never commit; demo/ tenant is committed in full
 templates/*/
 !templates/demo/
+
+# Demo base files (branding) — committed alongside the JSON config (m2a)
+!templates/demo/proposal_v1.xlsx
+!templates/demo/proposal_v1.docx

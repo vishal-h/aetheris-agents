@@ -145,6 +145,8 @@ do not import directly).
 
 **Touches.**
 - `docbuilder/scripts/fetch_template.py` (new)
+- `docbuilder/scripts/_drive.py` (new — shared Drive auth/navigation/download helper;
+  also used by `list_templates.py` here and `upload_output.py` in t5)
 - `docbuilder/scripts/list_templates.py` (update — Drive fallback)
 - `docbuilder/data/templates/demo/proposal/v1/proposal_v1.*` (new — nested demo
   bundle for the local fallback; see Option A below)
@@ -363,6 +365,9 @@ service account auth as `drive/scripts/drive_upload.py`.
 
 **Touches.**
 - `docbuilder/scripts/upload_output.py` (new)
+- `docbuilder/scripts/_drive.py` (update — add `find_or_create_folder` for the
+  `{tenant}/output/` target; reuse `build_service` with the RW scope. From t2 review:
+  add Drive plumbing here, not inline in `upload_output.py`.)
 - `docbuilder/tests/test_upload_output.py` (new — integration tests only,
   marked `@pytest.mark.integration`, skipped when `DRIVE_DOCBUILDER_ID` absent)
 - `docbuilder/docs/milestones/m-docbuilder-m2b-t5-implementation-notes.md` (new)
@@ -541,6 +546,11 @@ find ../aetheris-agents/docbuilder -name "*.py" \
 >
 > **PHASE A–C** (fetch data, compute, render): same as m2a but use cache
 > dir for `--base-file` and `--template-dir`. File prefix = `{doc_type}_{variant}`.
+> The bundle's `{doc_type}_{version}.json` carries repo-root-relative
+> `data_sources[].path` values (`docbuilder/data/...`). Per the t2 review, resolve
+> them **Option (a):** strip the leading `docbuilder/` at eval time (the same
+> source-path strip the m2a orchestrator already does) before issuing the fetch
+> commands — do not rewrite the bundle JSON on disk.
 >
 > **PHASE D — Rename:**
 > - Call `rename_output.py --output-dir output --filename-prefix {prefix}
@@ -592,8 +602,17 @@ from t1–t7 reviews. Write milestone summary.
 - `docs/rig/runbook.md` (m2b additions: new env vars, Drive structure, LLM
   selection, delivery)
 - `CLAUDE.md` (learning promotions from ≥2-ticket findings)
-- `docbuilder/requirements.txt` (add `google-api-python-client` if not present)
+- `docbuilder/requirements.txt` (add `google-api-python-client`)
+- `docbuilder/scripts/_drive.py` + `drive/scripts/*` (from t2 review F2: settle the
+  canonical service-account env var on `GOOGLE_SERVICE_ACCOUNT_FILE` — the explicit m2b
+  name — and align the legacy `drive/` scripts to it, not the other direction)
 - `docbuilder/docs/milestones/m-docbuilder-m2b-t8-implementation-notes.md` (new)
+
+> Capability matrix note: the regen must include the new m2b scripts
+> (`fetch_template.py`, `rename_output.py`, `upload_output.py`, `email_send_review.py`)
+> and list `_drive.py` as a shared helper (same row style as `_table_html.py`). The
+> `capability_matrix_docbuilder.exs` `max_steps` may need another bump as the script
+> count grows (it was raised to 30 at m2a t10).
 
 **Done-check.**
 ```bash

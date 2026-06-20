@@ -116,7 +116,8 @@ def compute_doc(template, sources):
             (agg_top if agg_def["position"] == "top" else agg_bottom).append(agg_row)
 
         merge_rows = [mr["row"] for mr in sheet.get("merge_ranges", [])]
-        header_row = max(merge_rows) + 1 if merge_rows else 1
+        computed_header_row = max(merge_rows) + 1 if merge_rows else 1
+        header_row = sheet.get("header_row", computed_header_row)
 
         all_rows = (
             [{"type": "header", "cells": header_cells}]
@@ -176,7 +177,8 @@ def compute_doc(template, sources):
             data_rows.append({"type": "data", "cells": cells})
 
         merge_rows = [mr["row"] for mr in sheet.get("merge_ranges", [])]
-        header_row = max(merge_rows) + 1 if merge_rows else 1
+        computed_header_row = max(merge_rows) + 1 if merge_rows else 1
+        header_row = sheet.get("header_row", computed_header_row)
 
         output_map[sheet["name"]] = {
             "name": sheet["name"],

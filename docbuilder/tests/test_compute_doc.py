@@ -23,7 +23,7 @@ def _tmpl(sheets=None, data_sources=None, output_formats=None):
 
 
 def _sheet(name, source_key="main", columns=None, aggregate_rows=None,
-           merge_ranges=None, summary_rows=None):
+           merge_ranges=None, summary_rows=None, header_row=None):
     s = {
         "name": name,
         "source_key": source_key,
@@ -37,6 +37,8 @@ def _sheet(name, source_key="main", columns=None, aggregate_rows=None,
         s["aggregate_rows"] = aggregate_rows
     if summary_rows is not None:
         s["summary_rows"] = summary_rows
+    if header_row is not None:
+        s["header_row"] = header_row
     return s
 
 
@@ -143,6 +145,36 @@ def test_header_row_no_merge():
     tmpl = _tmpl(sheets=[_sheet("S")])
     spec = compute_doc(tmpl, {"main": []})
     assert spec["sheets"][0]["header_row"] == 1
+
+
+def test_header_row_explicit_override():
+    # Explicit header_row wins over the value computed from merge_ranges
+    # (merge on row 1 would otherwise compute header_row == 2).
+    tmpl = _tmpl(sheets=[_sheet(
+        "S",
+        merge_ranges=[{"row": 1, "col_start": 1, "col_end": 2, "value": "Title"}],
+        header_row=3,
+    )])
+    spec = compute_doc(tmpl, {"main": []})
+    assert spec["sheets"][0]["header_row"] == 3
+
+
+def test_header_row_explicit_override_summary_sheet():
+    # Override also applies to summary sheets (Pass 2).
+    tmpl = _tmpl(sheets=[_sheet(
+        "Sum",
+        source_key=None,
+        columns=[
+            {"name": "Metric", "source_field": None, "type": "string",
+             "bold": True, "align": "left", "width": 10},
+            {"name": "Value", "source_field": None, "type": "string",
+             "bold": False, "align": "right", "width": 10},
+        ],
+        summary_rows=[{"type": "static", "label": "Notes", "value": "x"}],
+        header_row=3,
+    )])
+    spec = compute_doc(tmpl, {})
+    assert spec["sheets"][0]["header_row"] == 3
 
 
 # --- two-pass: summary sheets ---

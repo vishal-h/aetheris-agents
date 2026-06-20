@@ -12,6 +12,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from generate_docx import generate_docx
 
 USE_CASE_ROOT = Path(__file__).parent.parent
+DEMO_DOCX = USE_CASE_ROOT / "data" / "templates" / "demo" / "proposal_v1.docx"
 
 
 # --- fixture ---
@@ -320,3 +321,113 @@ def test_cli_proposal_line_items_row_count(tmp_path):
     assert table.rows[0].cells[0].text == "Item Code"
     assert table.rows[1].cells[0].text == "SRV-001"
     assert table.rows[11].cells[1].text == "TOTAL"
+
+
+# --- table_style (m2a t3) ---
+
+@pytest.mark.integration
+def test_table_style_defaults_to_table_grid(tmp_path, simple_spec):
+    # No table_style in doc spec → default "Table Grid".
+    out = tmp_path / "out.docx"
+    generate_docx(simple_spec, out)
+    doc = Document(str(out))
+    assert doc.tables[0].style.name == "Table Grid"
+
+
+@pytest.mark.integration
+def test_table_style_from_doc_spec(tmp_path, simple_spec):
+    # Explicit table_style is read from the doc spec and applied.
+    simple_spec["table_style"] = "Light List Accent 1"
+    out = tmp_path / "out.docx"
+    generate_docx(simple_spec, out)
+    doc = Document(str(out))
+    assert doc.tables[0].style.name == "Light List Accent 1"
+
+
+@pytest.mark.integration
+def test_unknown_table_style_degrades(tmp_path, simple_spec, capsys):
+    # An unknown style must not crash — warn on stderr, leave default formatting.
+    simple_spec["table_style"] = "No Such Style 9000"
+    out = tmp_path / "out.docx"
+    generate_docx(simple_spec, out)
+    assert out.exists()
+    err = capsys.readouterr().err
+    assert "No Such Style 9000" in err
+
+
+# --- base file support (m2a t3) ---
+
+@pytest.mark.integration
+def test_base_file_absent_creates_fresh_document(tmp_path, simple_spec):
+    out = tmp_path / "fresh.docx"
+    generate_docx(simple_spec, out, base_file=None)
+    doc = Document(str(out))
+    # fresh document carries the doc title heading
+    titles = [p for p in doc.paragraphs if p.style.name == "Title"]
+    assert len(titles) == 1
+
+
+@pytest.mark.integration
+def test_base_file_header_preserved(tmp_path, simple_spec):
+    out = tmp_path / "branded.docx"
+    generate_docx(simple_spec, out, base_file=str(DEMO_DOCX))
+    doc = Document(str(out))
+    header_text = doc.sections[0].header.paragraphs[0].text
+    assert "[ LOGO ]" in header_text
+    assert "Company Name" in header_text
+
+
+@pytest.mark.integration
+def test_base_file_tables_appended(tmp_path, simple_spec):
+    out = tmp_path / "branded.docx"
+    generate_docx(simple_spec, out, base_file=str(DEMO_DOCX))
+    doc = Document(str(out))
+    # two sheets → two tables appended to the base body
+    assert len(doc.tables) == 2
+    assert doc.tables[0].rows[0].cells[0].text == "Code"
+
+
+@pytest.mark.integration
+def test_base_file_title_not_duplicated(tmp_path, simple_spec):
+    # Base file already carries the cover title; base mode must not add another.
+    out = tmp_path / "branded.docx"
+    generate_docx(simple_spec, out, base_file=str(DEMO_DOCX))
+    doc = Document(str(out))
+    # the fresh-mode title heading uses style "Title"; in base mode none is added
+    title_headings = [p for p in doc.paragraphs if p.style and p.style.name == "Title"]
+    assert title_headings == []
+
+
+@pytest.mark.integration
+def test_base_file_missing_styles_degrade(tmp_path, simple_spec):
+    # The demo base file lacks 'Heading 1' and 'Table Grid' styles — rendering
+    # must still succeed (defensive fallback), producing the tables.
+    out = tmp_path / "branded.docx"
+    generate_docx(simple_spec, out, base_file=str(DEMO_DOCX))
+    assert out.exists() and out.stat().st_size > 0
+    doc = Document(str(out))
+    assert len(doc.tables) == 2
+
+
+@pytest.mark.integration
+def test_cli_base_file_flag(tmp_path):
+    fetch = subprocess.run(
+        [sys.executable, "scripts/fetch_data.py", "data/sample_data.csv"],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    compute = subprocess.run(
+        [sys.executable, "scripts/compute_doc.py",
+         "data/templates/demo/proposal_v1.json", "-"],
+        input=fetch.stdout, capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    render = subprocess.run(
+        [sys.executable, "scripts/generate_docx.py",
+         "--base-file", "data/templates/demo/proposal_v1.docx",
+         "--output-dir", str(tmp_path), "--filename", "branded"],
+        input=compute.stdout, capture_output=True, text=True, cwd=str(USE_CASE_ROOT)
+    )
+    assert render.returncode == 0, render.stderr
+    doc = Document(str(tmp_path / "branded.docx"))
+    assert len(doc.tables) == 2
+    header_text = doc.sections[0].header.paragraphs[0].text
+    assert "[ LOGO ]" in header_text

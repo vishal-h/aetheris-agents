@@ -414,9 +414,9 @@ python3 -m pytest tests/ --tb=short 2>&1 | tail -5
 
 **Scope.** New script `email_send_review.py` — sends a review email to
 `DOCBUILDER_REVIEW_EMAIL` with subject `[REVIEW] {client_name} {doc_type} — {date}`,
-body including the external `client_email` recipient and Drive links to the
-uploaded files, and the output files as attachments (if under 10MB total;
-otherwise Drive links only). Uses SMTP pattern from `email/scripts/email_send.py`.
+and a body including the external `client_email` recipient and the Drive links to the
+uploaded files. **Links-only — no attachments** (the files live in Drive; the reviewer
+opens the links). Uses SMTP pattern from `email/scripts/email_send.py`.
 
 **Contract refs.** `docbuilder/docs/context-schema.md` (required fields:
 `client_name`, `client_email`, `date`); `agent-creation-guide.md` §"Script design";
@@ -445,18 +445,18 @@ python3 -m pytest tests/ --tb=short 2>&1 | tail -5
 > `email/scripts/email_send.py` (for the SMTP auth + send pattern)
 > before writing any code.
 >
-> Implement `email_send_review.py`:
-> - Args: `--context` (inline JSON), `--files` (local file paths, optional),
->   `--drive-links` (JSON array of `{filename, drive_url}`, optional).
+> Implement `email_send_review.py` (links-only — no attachments, no size check):
+> - Args: `--context` (inline JSON), `--drive-links` (JSON array of
+>   `{filename, drive_url}`, optional; default `[]`).
 > - Required context fields: `client_name`, `client_email`, `date`.
 > - Reads `DOCBUILDER_REVIEW_EMAIL` (required), `SMTP_HOST`, `SMTP_PORT`,
 >   `SMTP_USER`, `SMTP_PASSWORD` (same as `email_send.py`).
 > - Subject: `[REVIEW] {client_name} {doc_type} — {date}`
 >   (`doc_type` from context or `"document"` if absent).
-> - Body: "Please review the attached document(s) for {client_name} and
->   forward to {client_email} if approved.\n\nDrive links:\n{links}"
-> - Attaches files if provided and total size < 10MB; otherwise body
->   contains Drive links only.
+> - Body: "Please review the document(s) for {client_name} and forward to
+>   {client_email} if approved.\n\nDrive links:\n{links}" (each link a
+>   `- {filename}: {drive_url}` line; `(none)` when empty).
+> - Plain-text email (`MIMEText`); no MIME attachment encoding.
 > - Prints `{"status": "sent", "recipient": REVIEW_EMAIL}` to stdout.
 >   Exit 1 on failure.
 > - Mark integration tests; skip without SMTP env vars.

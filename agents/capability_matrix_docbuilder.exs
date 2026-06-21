@@ -40,7 +40,9 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
   Step 3: List scripts.
     Call list_dir with path: "docbuilder/scripts"
-    Collect .py filenames. Skip __init__.py and conftest.py.
+    Collect ALL .py filenames, INCLUDING underscore-prefixed shared helpers like
+    `_drive.py` and `_table_html.py` — those are shared utilities, not private; they
+    belong in the table. Skip only __init__.py and conftest.py.
 
   Step 4: For each .py script:
     Call read_file with path: "docbuilder/scripts/{filename}"

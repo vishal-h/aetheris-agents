@@ -19,15 +19,16 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 def build_service(scopes=None):
     """Build and return an authenticated Drive v3 service.
 
-    Reads the service account key path from GOOGLE_SERVICE_ACCOUNT.
-    Exits 1 with a clear message if the variable is not set.
+    Reads the service account key path from GOOGLE_SERVICE_ACCOUNT_FILE (the
+    canonical name), falling back to the legacy GOOGLE_SERVICE_ACCOUNT.
+    Exits 1 with a clear message if neither is set.
     Defaults to drive.readonly scope; pass *scopes* to override.
     """
     if scopes is None:
         scopes = SCOPES
-    key_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT")
+    key_path = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE") or os.environ.get("GOOGLE_SERVICE_ACCOUNT")
     if not key_path:
-        print("GOOGLE_SERVICE_ACCOUNT environment variable is not set.", file=sys.stderr)
+        print("GOOGLE_SERVICE_ACCOUNT_FILE (or GOOGLE_SERVICE_ACCOUNT) is not set.", file=sys.stderr)
         sys.exit(1)
     creds = service_account.Credentials.from_service_account_file(key_path, scopes=scopes)
     return build("drive", "v3", credentials=creds, cache_discovery=False)

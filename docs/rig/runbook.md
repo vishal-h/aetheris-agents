@@ -403,15 +403,24 @@ rusqlite = { version = "...", features = ["bundled"] }
 
 Run the docbuilder pipeline (data → formatted document) via sprint or direct.
 
-### Required env vars
+### Required env vars (m2b)
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DOCBUILDER_TENANT` | Tenant name — selects `data/templates/{tenant}/` | `demo` |
-| `DOCBUILDER_DOC_TYPE` | Document type — selects the template file | `proposal` |
-| `DOCBUILDER_VERSION` | Template version string | `v1` |
-| `DOCBUILDER_DATA_PATH` | Path to the `main` source CSV, relative to `docbuilder/` root | `data/sample_data.csv` |
-| `DOCBUILDER_CONTEXT` | (optional, m2a) Inline JSON of scalar vars for narrative-mode PDF; unset/empty → `{}` | `{"title":"…","client_name":"…","date":"…"}` |
+| `DOCBUILDER_TENANT` | Tenant subtree (`data/templates/{tenant}/` locally, or the Drive subtree) | `demo` |
+| `DOCBUILDER_CONTEXT` | The single input blob — inline JSON of all run fields (see `docbuilder/docs/context-schema.md`). Required: `title`, `client_name`, `client_email`, `date`; optional `doc_type` (Option A) | `{"title":"…","client_name":"Acme Corp","client_email":"ops@acme.example","date":"2026-06-20"}` |
+
+> **Retired in m2b:** `DOCBUILDER_DOC_TYPE`, `DOCBUILDER_VERSION`, `DOCBUILDER_DATA_PATH`
+> (m1/m2a). The doc type/variant now come from `DOCBUILDER_CONTEXT` + the catalogue (LLM
+> selection); data-source paths come from the template.
+
+Optional — delivery (each PHASE skips when its var is absent):
+
+| Variable | Description |
+|----------|-------------|
+| `DRIVE_DOCBUILDER_ID` | `docbuilder` Shared Drive root id → PHASE E uploads to `{tenant}/output/` and `list_templates`/`fetch_template` read from Drive |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | Service-account JSON for Drive auth (falls back to legacy `GOOGLE_SERVICE_ACCOUNT`) |
+| `DOCBUILDER_REVIEW_EMAIL` + `SMTP_*` | Review alias + SMTP creds → PHASE F emails the review |
 
 ### Sprint invocation
 
@@ -419,37 +428,36 @@ Run the docbuilder pipeline (data → formatted document) via sprint or direct.
 cd ~/sandbox/elixirws/aetheris
 
 DOCBUILDER_TENANT=demo \
-DOCBUILDER_DOC_TYPE=proposal \
-DOCBUILDER_VERSION=v1 \
-DOCBUILDER_DATA_PATH=data/sample_data.csv \
-DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","date":"20 Jun 2026"}' \
+DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_email":"ops@acme.example","date":"2026-06-20"}' \
 ./scripts/sprint.sh docbuilder
+# add DRIVE_DOCBUILDER_ID / GOOGLE_SERVICE_ACCOUNT_FILE / DOCBUILDER_REVIEW_EMAIL / SMTP_*
+# to exercise PHASE E (upload) and PHASE F (email).
 ```
 
-### m2a pipeline behaviour
+### m2b pipeline behaviour
 
-- **Multi-source:** the orchestrator reads `data_sources` from the template, fetches one raw JSON per source (`pipeline_raw_{key}.json`), and passes them all to `compute_doc.py`. A declared source not read by any sheet is still fetched (intentional).
-- **Base files:** if `data/templates/{tenant}/{doc_type}_{version}.{xlsx,docx}` exists, it is opened as the branded base (logo/header/footer/styles preserved) via `--base-file`.
-- **Narrative PDF:** if the template has a `narrative` block, the PDF is rendered from a Markdown template + CSS (`render_template.py`) using `--template-dir` and `--context "$DOCBUILDER_CONTEXT"`.
+- **PHASE 0 — selection:** `list_templates.py` → LLM picks `{doc_type, variant}` → `fetch_template.py` downloads the bundle (Drive cache, or committed local nested bundle in dev).
+- **PHASE A–C:** multi-source fetch (one raw JSON per source; template paths with the leading `docbuilder/` stripped), compute, render (xlsx/docx base files + narrative PDF), against the fetched bundle.
+- **PHASE D — rename:** outputs → `{client_name_slug}_{doc_type}_{date}.{ext}`.
+- **PHASE E/F (conditional):** upload to Drive / email the review alias — skipped with a notice when their creds are absent (dev verifies PHASE 0–D).
 
 ### Expected output files
 
 After a successful run, `aetheris-agents/docbuilder/output/` contains:
 
 ```
-pipeline_raw_main.json     # intermediate — one per data source
-pipeline_raw_summary.json  # intermediate — second demo source
-pipeline_spec.json         # intermediate — computed doc spec (compute_doc --output)
-proposal_v1.xlsx           # branded (base file applied)
-proposal_v1.docx           # branded (base file applied)
-proposal_v1.pdf            # narrative mode (Markdown template + CSS)
+template_cache_path.txt              # PHASE 0 — bundle path
+pipeline_raw_main.json               # PHASE A — one per data source
+pipeline_raw_summary.json            # PHASE A — second demo source
+pipeline_spec.json                   # PHASE B — computed doc spec
+acme_corp_proposal_2026-06-20.{xlsx,docx,pdf}  # PHASE C+D — branded, renamed
+renamed.json                         # PHASE D — {original, renamed} pairs
+uploaded.json                        # PHASE E — {filename, drive_file_id, drive_url} (Drive only)
 ```
-
-Formats depend on `output_formats` in the template. `demo/proposal_v1.json` specifies `["xlsx", "docx", "pdf"]`.
 
 ### Common failure modes
 
-**`DOCBUILDER_TENANT not set` on eval** — all four `DOCBUILDER_*` vars must be exported before `mix aetheris run` or `mix run --eval`. The orchestrator raises immediately if any are absent.
+**`DOCBUILDER_TENANT not set` on eval** — `DOCBUILDER_TENANT` and `DOCBUILDER_CONTEXT` must be set before `mix aetheris run` / `mix run --eval`. The orchestrator raises if `DOCBUILDER_TENANT` is absent.
 
 **Output files missing after run** — check that `overlay_base_dir: nil` is set in the orchestrator. If output appeared under `priv/runs/*/upper/`, overlay was enabled and files were discarded.
 

@@ -170,7 +170,7 @@ Not in m2a: LLM selection, Drive registry, delivery.
 
 ---
 
-### m2b — LLM selection + Drive registry + delivery ✦ *backlog — build next*
+### m2b — LLM selection + Drive registry + delivery ✦ *done*
 
 **Goal:** templates and base files fetched from Drive at runtime. LLM picks
 the right doc type and variant from the catalogue. Output renamed and uploaded

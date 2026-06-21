@@ -19,7 +19,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   label:            "cap-matrix: docbuilder",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,
-  max_steps:        30,
+  max_steps:        50,
   context_strategy: :full,
   tools:            ["list_dir", "read_file", "write_file"],
   system_prompt:    """

@@ -661,4 +661,76 @@ python3 -m pytest docbuilder/tests/ --tb=short 2>&1 | tail -5
 
 ## Milestone summary
 
-_(written by claude-code at milestone end, after t8)_
+### What shipped
+
+| Ticket | Artifact | One-line |
+|--------|----------|----------|
+| t1 | `context-schema.md` + `drive-structure.md` | `DOCBUILDER_CONTEXT` schema (source of truth) + `docbuilder` Shared Drive tenant-first layout + onboarding |
+| t2 | `fetch_template.py` + `list_templates.py` Drive + `_drive.py` | wide-fetch bundle from Drive (local nested fallback); catalogue Drive-or-flat; shared Drive helper |
+| t3 | `fetch_data.py --output` + orchestrator PHASE A hardening | last `write_file` removed → `tools: ["run_command"]`; scratch 8→1→0 |
+| t4 | `rename_output.py` | `{client_name_slug}_{doc_type}_{date}.{ext}`; returns `{original, renamed}` paths |
+| t5 | `upload_output.py` (+ `_drive` upload helpers) | upload renamed outputs to `{tenant}/output/`; update-in-place |
+| t6 | `email_send_review.py` | links-only review email to the internal alias |
+| t7 | full orchestrator (PHASE 0 + A–F) + sprint + runbook | LLM selection, fetch bundle, render, rename, conditional upload/email |
+| t8 | docs sync + capability matrix + cleanups | this summary; CLAUDE.md promotions; `requirements.txt`; env-var reconcile |
+
+**End state:** from a single `DOCBUILDER_CONTEXT` blob, the orchestrator lists the
+catalogue, the LLM selects `{doc_type, variant}`, fetches the template bundle, renders
+branded xlsx/docx/pdf, renames to the deliverable convention, and (with creds) uploads to
+Drive + emails an internal review alias. Full suite: 202 passing, 3 integration tests
+skipped without creds. Orchestrator scratch artifacts: **0**.
+
+---
+
+### What was deferred
+
+| Item | Target |
+|------|--------|
+| Natural-language requests (Option C) + confirmation gate | → m3 |
+| Conversational template editing (patch schema, JSONL edit log) | → m3 |
+| Tauri form for `DOCBUILDER_CONTEXT` | → future |
+| Multi-variant runtime selection (downstream waits on the LLM choice) | → future (m2b demo is single-variant; eval-time resolution suffices) |
+| `email_send_review --drive-links-file` (pre-bake PHASE F; remove the one LLM file-read) | → follow-up |
+| `rename_output.py --dry-run` (remove the Elixir slug replica in the orchestrator) | → follow-up |
+
+---
+
+### Surprises & cross-cutting findings
+
+**Conditional delivery phases (eval-time env check).** PHASE E (upload) and PHASE F
+(email) are included in the system prompt only when `DRIVE_DOCBUILDER_ID` /
+`DOCBUILDER_REVIEW_EMAIL` are set; otherwise each is a "(skipped: …)" line. The pipeline
+degrades gracefully in dev (verifying PHASE 0–D) and runs fully in production — the right
+default for an orchestrator with external-dependency phases.
+
+**LLM selection vs eval-time resolution.** The orchestrator resolves `{doc_type, variant}`
+at eval time (catalogue + context) and pre-bakes the downstream commands; PHASE 0's LLM
+selection is genuine but, for the single-variant demo, confirmatory. Multi-variant runtime
+selection — where downstream must wait on the choice, or the LLM constructs commands — is
+a deliberate future concern, not built here.
+
+**`${VAR:-{...}}` brace-append shell bug.** A JSON env-var default in `${VAR:-{...}}` form
+mis-parses nested braces and appends a stray `}` when the var is already set, breaking JSON
+parse. Fixed with an `if [-z]` + single-quoted literal. Promoted to CLAUDE.md (latent since
+the m2a sprint default).
+
+**Scratch artifacts reached 0** (continuing the m2a 8→1 arc): `fetch_data --output` (t3) +
+dropping `write_file` from the orchestrator tools closed it. Promoted to CLAUDE.md.
+
+**Shared cross-script helper pattern.** `_drive.py` (this milestone) and `_table_html.py`
+(m2a t10) both factor shared plumbing with lazy heavy imports so unit tests run without the
+dependency. Promoted to CLAUDE.md.
+
+---
+
+### Open items for m3 / follow-up
+
+- Option C (NL request → field extraction → confirmation gate → render).
+- Conversational template editing (patch schema + JSONL edit log).
+- PHASE F runtime dependency: add `email_send_review --drive-links-file` so the orchestrator
+  passes a path instead of the LLM reading `uploaded.json` inline.
+- `rename_output.py --dry-run` so the orchestrator reads renamed paths rather than
+  replicating `slugify`/`safe_segment`/`doc_type_base` at eval time.
+- Multi-variant runtime template selection (real selection driving downstream commands).
+- Drive base-file checklist (named styles, branding) is in `drive-structure.md` onboarding;
+  enforce it when real tenants are onboarded.

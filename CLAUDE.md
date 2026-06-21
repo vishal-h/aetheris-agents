@@ -256,3 +256,18 @@ Findings that recurred across ≥2 tickets in the docbuilder m2a milestone, prom
 
 **Before re-flagging a carried review finding as "still open", verify it is actually unresolved.** A finding resolved in an earlier commit was re-flagged as open in two later reviews; each time the correction (already fixed in `<commit>`) had to be recorded. Check the current source/commit history for the fix before carrying a finding forward.
 `Source: m-docbuilder-m2a t5, t7 (t4 F1 re-flagged after resolution in 6d1d382)`
+
+---
+
+## Learning — m2b-docbuilder
+
+Findings that recurred across ≥2 tickets in the docbuilder m2b milestone, promoted per methodology §7.
+
+**Remove `write_file` from an orchestrator's tools once every phase uses `--output FILE`.** When the last `write_file` user is converted to `--output`, the tool becomes dead capability — drop it from the agent's `tools:` list. Fewer available tools is a smaller surface for the LLM to improvise scratch files. This was the closing piece of the orchestrator scratch-artifact arc (8 → 1 → 0): `--output` on the scripts removed the large-blob round-trip, the explicit "don't investigate" rule removed the re-run-to-inspect habit, and dropping `write_file` removed the capability entirely.
+`Source: m-docbuilder-m2b t3 (raised), t7 (confirmed: scratch 0 with tools: ["run_command"])`
+
+**For a JSON env-var default in a shell script, use an `if [ -z ]` guard + single-quoted literal, not `${VAR:-{...}}`.** Bash's `${VAR:-WORD}` mis-parses nested `{...}` in the default WORD: when the var is *already set* to a value ending in `}`, it appends a stray `}`, producing invalid JSON downstream (a `Jason.DecodeError` at the trailing brace). Guard instead: `if [[ -z "${VAR:-}" ]]; then VAR='{"k":"v"}'; fi`. (And keep nounset-safe `${VAR:-}` in any `set -u` script.)
+`Source: m-docbuilder-m2b t7 (sprint.sh DOCBUILDER_CONTEXT default; latent since m2a)`
+
+**Factor cross-script plumbing into a shared `_helper.py` module with lazy heavy imports.** When several scripts in a use case share non-trivial plumbing (HTML table markup, Drive auth/navigation/upload), put it in one `scripts/_name.py` rather than duplicating or cross-importing between CLIs. Keep heavy third-party imports *inside the functions* (not at module top) so unit tests can import the helper — and the scripts that use it — without the dependency installed; only the code path that actually calls out needs it.
+`Source: m-docbuilder-m2a t10 (_table_html.py), m2b t2/t5 (_drive.py: build_service/find_or_create_folder/upload_file with lazy googleapiclient imports)`

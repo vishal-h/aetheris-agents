@@ -642,10 +642,18 @@ python3 -m pytest docbuilder/tests/ --tb=short 2>&1 | tail -5
 > Regenerate capability matrix, update README, write milestone summary,
 > promote CLAUDE.md learning candidates (≥2-ticket recurrences).
 >
-> Named CLAUDE.md candidate (from t3 review F3): "Remove `write_file` from an
-> orchestrator's tools once every phase uses `--output FILE` — dead capability
-> increases the LLM's misuse surface." This is the closing piece of the scratch
-> 8→1→0 arc (m2a t8 → m2a t10 → m2b t3); promote it alongside any ≥2-ticket findings.
+> Named CLAUDE.md candidates:
+> - (t3 review F3) "Remove `write_file` from an orchestrator's tools once every phase
+>   uses `--output FILE` — dead capability increases the LLM's misuse surface." Closes
+>   the scratch 8→1→0 arc (m2a t8 → m2a t10 → m2b t3).
+> - (t7 review F1) "For a JSON env-var default in sprint.sh, use an `if [ -z ]` guard +
+>   single-quoted literal, not `${VAR:-{...}}` — the brace form mis-parses nested JSON
+>   braces and appends a stray `}` when the var is already set."
+>
+> Also confirm `docs/rig/runbook.md` reflects m2b: the new env vars (`DOCBUILDER_CONTEXT`
+> primary, `DRIVE_DOCBUILDER_ID`, `GOOGLE_SERVICE_ACCOUNT_FILE`, `DOCBUILDER_REVIEW_EMAIL`,
+> `SMTP_*`) and the **retirement of `DOCBUILDER_DOC_TYPE`/`DOCBUILDER_VERSION`/
+> `DOCBUILDER_DATA_PATH`** (t7 review F5).
 >
 > **Review packet must open with the full done-check output block.**
 

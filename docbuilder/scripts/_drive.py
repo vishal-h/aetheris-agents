@@ -11,6 +11,7 @@ docs name), falling back to `GOOGLE_SERVICE_ACCOUNT` (the name the existing
 `drive/` scripts use). See drive-structure.md.
 """
 
+import mimetypes
 import os
 import sys
 from io import BytesIO
@@ -18,6 +19,7 @@ from pathlib import Path
 
 READONLY_SCOPE = ["https://www.googleapis.com/auth/drive.readonly"]
 RW_SCOPE = ["https://www.googleapis.com/auth/drive"]
+FOLDER_MIME = "application/vnd.google-apps.folder"
 
 
 def service_account_key_path():
@@ -98,3 +100,44 @@ def download_file(service, file_id, dest_path):
     while not done:
         _, done = downloader.next_chunk()
     dest.write_bytes(buf.getvalue())
+
+
+def find_or_create_folder(service, parent_id, name):
+    """Return the folder id for *name* under *parent_id*, creating it if absent.
+    Requires the RW scope (`build_service(RW_SCOPE)`) to create."""
+    existing = find_child(service, parent_id, name, folder_only=True)
+    if existing:
+        return existing["id"]
+    folder = service.files().create(
+        body={"name": name, "mimeType": FOLDER_MIME, "parents": [parent_id]},
+        fields="id",
+        supportsAllDrives=True,
+    ).execute()
+    return folder["id"]
+
+
+def upload_file(service, folder_id, file_path):
+    """Upload *file_path* into *folder_id*, updating in place if a file of the same
+    name already exists (no duplicate). Returns the Drive file id."""
+    from googleapiclient.http import MediaFileUpload
+
+    path = Path(file_path)
+    existing = find_child(service, folder_id, path.name)
+    mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    media = MediaFileUpload(str(path), mimetype=mime)
+    if existing:
+        result = service.files().update(
+            fileId=existing["id"], media_body=media, fields="id",
+            supportsAllDrives=True,
+        ).execute()
+    else:
+        result = service.files().create(
+            body={"name": path.name, "parents": [folder_id]},
+            media_body=media, fields="id", supportsAllDrives=True,
+        ).execute()
+    return result["id"]
+
+
+def drive_url(file_id):
+    """A shareable view URL for a Drive file id."""
+    return f"https://drive.google.com/file/d/{file_id}/view"

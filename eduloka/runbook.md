@@ -11,7 +11,7 @@ Operational guide for the eduloka use case. For pipeline design see
 
 ```bash
 cd aetheris-agents/eduloka
-pip install -r requirements.txt   # no extra deps for t1; stdlib urllib only
+pip install -r requirements.txt   # fetch/map/enrich are stdlib-only; the direct sink needs psycopg (in requirements.txt)
 ```
 
 ---
@@ -34,13 +34,24 @@ Set via shell export or Rig agent config (§"Agent config" below).
 | `DATAFORSEO_PASSWORD` | dataforseo | DataForSEO account password |
 
 **CSE notes:**
-- Free tier: 100 queries/day. Shared with any other CSE usage on the key.
-- Sunset: **2027-01-01**. CSE is the free baseline until then; paid providers (serper, dataforseo, exa) are available as drop-in replacements.
-- Same credentials as the legacy `ct-edux` app (`GWS_CSE_API_KEY`, `GWS_CSE_ENGINE_ID`).
+- **Access — new projects are blocked.** Google closed the Custom Search JSON
+  API to new customers in 2026. A newly-created GCP project returns
+  `403 PERMISSION_DENIED` ("does not have the access to Custom Search JSON API")
+  regardless of console settings — access is inferred from the API key's project
+  and cannot be newly granted. CSE is therefore usable in eduloka **only** via
+  ct-edux's grandfathered project credentials (`GWS_CSE_API_KEY`,
+  `GWS_CSE_ENGINE_ID` — the same credentials as the legacy ct-edux app).
+- **Free tier (grandfathered keys only):** 100 queries/day, shared with any
+  other CSE usage on the key.
+- **Sunset:** the 2027-01-01 shutdown still applies to grandfathered access, but
+  new access is already gone. For any new deployment the practical free baseline
+  is **Serper** (free tier, closest CSE-like Google SERP results), not CSE.
 
 **Serper notes:**
-- Prepaid 6-month billing. Closest paid match to CSE results (Google SERP).
-- Paginates by page number (`page=1` = results 1–num; `page=2` = num+1–2·num).
+- **Free tier: 2,500 searches/month.** Credits (free and paid) expire 6 months
+  after issue.
+- Closest match to CSE results (Google SERP). Paginates by page number
+  (`page=1` = results 1–num; `page=2` = num+1–2·num).
 
 **DataForSEO notes:**
 - Pure prepaid credits (charged per task). Cheapest per-query of the paid three.
@@ -71,8 +82,8 @@ Add a new **"Eduloka"** group to `agentConfigDefs.ts` (rig runbook
 §"Agent config") for the keys above. The current groups are: Harness,
 Anthropic, SMTP, Google Drive, Payslip, GitHub. Eduloka keys needed:
 `SEARCH_PROVIDER`, `GWS_CSE_API_KEY`, `GWS_CSE_ENGINE_ID`,
-`GWS_CSE_REFERER` (optional), `EXA_API_KEY`, `EDUX_DATABASE_URL` (t5),
-`SERPER_API_KEY` (t2), `DATAFORSEO_LOGIN` (t2), `DATAFORSEO_PASSWORD` (t2).
+`GWS_CSE_REFERER` (optional), `EXA_API_KEY`, `EDUX_DATABASE_URL`,
+`SERPER_API_KEY`, `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`.
 
 ---
 
@@ -91,7 +102,7 @@ python3 scripts/list_terms.py --terms-file /path/to/custom_terms.txt
 
 ---
 
-## Running the orchestrator (t6)
+## Running the orchestrator
 
 The orchestrator drives the full pipeline: `list_terms → [fetch → map → enrich → sink]`
 one sub-agent per term, all in parallel.
@@ -123,7 +134,11 @@ The orchestrator fails at eval time if `EDUX_SINK=direct` and `EDUX_DATABASE_URL
 ```bash
 cd aetheris-agents/eduloka
 
-# CSE — free baseline
+# Serper — Google SERP, free tier 2,500/mo
+export SERPER_API_KEY=...
+python3 scripts/fetch.py --provider serper --term "iit.ac.in" --num 10
+
+# CSE — grandfathered ct-edux key only (new projects blocked, see CSE notes)
 export GWS_CSE_API_KEY=...
 export GWS_CSE_ENGINE_ID=...
 python3 scripts/fetch.py --provider cse --term "iit.ac.in" --num 10
@@ -131,10 +146,6 @@ python3 scripts/fetch.py --provider cse --term "iit.ac.in" --num 10
 # Exa — semantic, full page text
 export EXA_API_KEY=...
 python3 scripts/fetch.py --provider exa --term "iit.ac.in" --num 10
-
-# Serper — paid Google SERP (prepaid 6-month credits)
-export SERPER_API_KEY=...
-python3 scripts/fetch.py --provider serper --term "iit.ac.in" --num 10
 
 # DataForSEO — paid Google SERP (prepaid per-query credits)
 export DATAFORSEO_LOGIN=...
@@ -163,12 +174,12 @@ duckdb -c "select count(*) from read_json_auto('eduloka/data/raw/provider=*/dt=*
 
 ---
 
-## Running the operational sink (t5 / t5b)
+## Running the operational sink
 
 Two sink scripts share the same `to_gws_cse()` row projection. The orchestrator
-(t6) selects between them via `EDUX_SINK`.
+selects between them via `EDUX_SINK`.
 
-### Sink A — direct upsert into Postgres (t5)
+### Sink A — direct upsert into Postgres
 
 ```bash
 cd aetheris-agents/eduloka
@@ -199,7 +210,7 @@ psql "$EDUX_DATABASE_URL" -f eduloka/data/migrations/0001_add_enrichment_jsonb.s
 `0000_create_gws_cse_clone.sql` is test-only — it clones the live DDL for the
 `eduloka_test` DB. Do not apply it to any production or staging database.
 
-### Sink B — export JSONL for ct-edux ingest (t5b)
+### Sink B — export JSONL for ct-edux ingest
 
 Use when the ct-edux Postgres DB is unreachable from the agent. Output files
 land in `data/export/` (gitignored) and are consumed by ct-edux via
@@ -274,5 +285,12 @@ the cse provider.
 **`HTTP 429`** — CSE daily quota (100 queries) exhausted. Wait until midnight
 Pacific time for the quota to reset, or switch provider.
 
-**`HTTP 403`** — key or engine ID is invalid; check the Google Cloud Console.
-If the key is referer-restricted, set `GWS_CSE_REFERER`.
+**`HTTP 403` (CSE)** — two distinct cases:
+- **Grandfathered key genuinely invalid** — check the Google Cloud Console; if
+  the key is referer-restricted, set `GWS_CSE_REFERER`.
+- **New project** — the Custom Search JSON API is closed to new customers (see
+  CSE notes); no key or referer change fixes this — switch to `serper` or `exa`.
+
+**`HTTP 403` (Serper)** — a 403 from `google.serper.dev` often means a key from
+`serpapi.com` (a DIFFERENT company) is being used against Serper's endpoint. Get
+the key from `serper.dev`, not `serpapi.com`.

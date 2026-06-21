@@ -85,8 +85,8 @@ Sprint: `./scripts/sprint.sh eduloka` — 8/8 checks, no live API or DB required
 - Real enrichers: LLM classification, geocoding, SERP fetch-text
 - Remote object storage for the Hive lake
 - Promotion of hot enrichment keys to real `gws_cse` columns
-- Discovery-source migration plan off CSE ahead of the 2027-01-01 sunset
-  (paid provider or Vertex)
+- Production discovery-provider decision (Serper vs Exa) — see open question #3;
+  CSE is already closed to new customers, so this is active, not a 2027 plan
 - ct-edux companion workstream: Ecto migration for `enrichment` column;
   `GwsCseApi.upsert/1` ingest task for the export file (issue #65)
 
@@ -100,6 +100,9 @@ Sprint: `./scripts/sprint.sh eduloka` — 8/8 checks, no live API or DB required
 2. **max_steps ceiling:** current `max_steps: 50` handles ~44 terms. Past that,
    batch sub-agents (each takes several terms) to decouple step count from term
    count.
-3. **CSE sunset plan:** CSE free tier ends 2027-01-01. Primary provider to
-   migrate to: Serper (closest results, prepaid) or Exa (semantic + full text).
-   Recommend validating recall against CSE before switching.
+3. **Production discovery provider:** CSE's JSON API is already closed to new
+   customers (2026) — new GCP projects get `403 PERMISSION_DENIED`; CSE survives
+   only via ct-edux's grandfathered key. The free baseline for new runs is
+   already Serper, so this is an active choice, not a 2027 migration: bake off
+   Serper vs Exa on the real `terms.txt` (homepage hit-rate vs aggregator noise;
+   Exa's inline full text for the harvesting path). Status: open, not yet run.

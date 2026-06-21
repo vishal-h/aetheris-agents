@@ -34,7 +34,7 @@ DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_em
 | Field | Type | Required | Description | Example | Consumed by |
 |-------|------|----------|-------------|---------|-------------|
 | `title` | string | **yes** | Document title; the `{{title}}` narrative variable and the document heading. | `"B2B Project Proposal"` | render_template (narrative PDF) |
-| `client_name` | string | **yes** | Customer name; the `{{client_name}}` narrative variable. Also used in the output filename (slugified: lowercased, spaces → underscores). | `"Acme Corp"` | render_template, rename_output, email_send_review |
+| `client_name` | string | **yes** | Customer name; the `{{client_name}}` narrative variable. Also used in the output filename (slugified: lowercased, spaces → underscores, **non-ASCII stripped** — `"Müller GmbH"` → `mller_gmbh`; provide an ASCII-safe name if accents matter). | `"Acme Corp"` | render_template, rename_output, email_send_review |
 | `client_email` | string | **yes** | The external recipient. Placed in the **review email body** so the ops reviewer can forward — it is *not* a direct send target (see the review-alias design decision in README). | `"ops@acme.example"` | email_send_review |
 | `date` | string | **yes** | Proposal/issue date, ISO (`2026-06-20`) or display (`20 Jun 2026`) format. The `{{date}}` narrative variable; also used in the output filename. | `"20 Jun 2026"` | render_template, rename_output, email_send_review |
 | `doc_type` | string | optional | The doc type to render. **Option A** (LLM picks variant only) when present; **Option B** (LLM derives doc_type + variant) when absent. Also used in the output filename. | `"proposal"` | LLM selection, rename_output, email_send_review |

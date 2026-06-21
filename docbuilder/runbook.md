@@ -8,38 +8,43 @@ Operational guide for the docbuilder pipeline.
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DOCBUILDER_TENANT` | Tenant name — selects the template directory under `data/templates/` | `demo` |
-| `DOCBUILDER_DOC_TYPE` | Document type — selects the template file | `proposal` |
-| `DOCBUILDER_VERSION` | Template version string | `v1` |
-| `DOCBUILDER_DATA_PATH` | Path to the input CSV for the `main` source, relative to the docbuilder/ sandbox root | `data/sample_data.csv` |
+| `DOCBUILDER_TENANT` | Tenant name — selects the tenant subtree (`data/templates/{tenant}/` locally, or the Drive subtree) | `demo` |
+| `DOCBUILDER_CONTEXT` | The single input blob — inline JSON of all run fields (see `docs/context-schema.md`). Required fields: `title`, `client_name`, `client_email`, `date`. Optional `doc_type` (selects Option A). | `{"title":"…","client_name":"Acme Corp","client_email":"ops@acme.example","date":"2026-06-20"}` |
 | `ANTHROPIC_API_KEY` | Anthropic API key for the LLM | _(set in shell)_ |
 
-Optional overrides:
+> m2b note: `DOCBUILDER_DOC_TYPE` / `DOCBUILDER_VERSION` / `DOCBUILDER_DATA_PATH` (m1/m2a)
+> are gone — the doc type/variant come from `DOCBUILDER_CONTEXT` + the catalogue (LLM
+> selection), and data-source paths come from the template.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DOCBUILDER_CONTEXT` | `{}` | Inline JSON of scalar variables for narrative-mode PDF (`{{title}}`, `{{client_name}}`, `{{date}}`, …). Unset/empty resolves to `{}`. |
-| `AETHERIS_MODEL` | `claude-haiku-4-5-20251001` | — |
-| `AETHERIS_PROVIDER` | `anthropic` | — |
+Optional — delivery (PHASE E/F skip when absent):
 
-### Multi-source data
+| Variable | Description |
+|----------|-------------|
+| `DRIVE_DOCBUILDER_ID` | `docbuilder` Shared Drive root id. Set → PHASE E uploads outputs to `{tenant}/output/`; unset → upload skipped. Also makes `list_templates`/`fetch_template` read from Drive. |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | Service-account JSON path for Drive auth (falls back to `GOOGLE_SERVICE_ACCOUNT`). |
+| `DOCBUILDER_REVIEW_EMAIL` | Internal review alias. Set → PHASE F emails it (with `SMTP_*`); unset → email skipped. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | SMTP creds for PHASE F (same as `email/scripts/email_send.py`). |
+| `AETHERIS_MODEL` / `AETHERIS_PROVIDER` | Model/provider overrides (default `claude-haiku-4-5-20251001` / `anthropic`). |
 
-The orchestrator reads `data_sources` from the template and fetches **one raw JSON
-per source** (`output/pipeline_raw_{key}.json`), then passes them all to
-`compute_doc.py`. The `main` source uses `DOCBUILDER_DATA_PATH`; other sources use
-their template `path` (the leading `docbuilder/` is stripped to make it
-sandbox-relative). A source declared in the template but not read by any sheet is
-still fetched — that is intentional, not a bug (e.g. the demo's `summary` source: the
-Summary sheet derives from `summary_rows`, so `summary` is fetched but unconsumed).
+### Pipeline phases (m2b)
 
-### Base files & narrative mode
+The orchestrator resolves the template + delivery options at eval time and runs:
 
-- If a base file `data/templates/{tenant}/{doc_type}_{version}.{xlsx,docx}` exists,
-  the orchestrator passes `--base-file` to that renderer so branding (logo, header,
-  footer, styles) is preserved.
-- If the template has a `narrative` block, the orchestrator passes `--template-dir
-  data/templates/{tenant}` and `--context "$DOCBUILDER_CONTEXT"` to `generate_pdf.py`,
-  which renders the PDF from the Markdown narrative template + CSS.
+- **PHASE 0 — Template selection:** `list_templates.py --tenant {tenant}` → the LLM picks
+  `{doc_type, variant}` from the catalogue + context → `fetch_template.py` downloads the
+  bundle (Drive → local cache; no Drive → committed local nested bundle).
+- **PHASE A — Fetch:** one `fetch_data.py --output` per `data_sources` entry. Paths are
+  the template's, with the leading `docbuilder/` stripped (sandbox-relative). A declared
+  source not read by any sheet is still fetched (e.g. the demo `summary`).
+- **PHASE B — Compute:** `compute_doc.py {bundle}/…json {raw files} --output pipeline_spec.json`.
+- **PHASE C — Render:** each `output_formats` entry; xlsx/docx get `--base-file` from the
+  bundle, pdf gets `--template-dir {bundle}` + `--context` (narrative mode).
+- **PHASE D — Rename:** `rename_output.py` → `{client_name_slug}_{doc_type}_{date}.{ext}`.
+- **PHASE E — Upload** (only if `DRIVE_DOCBUILDER_ID` set): `upload_output.py` → `{tenant}/output/`.
+- **PHASE F — Email** (only if `DOCBUILDER_REVIEW_EMAIL` set): `email_send_review.py` to the
+  review alias with the Drive links.
+
+In dev (no Drive/SMTP creds) PHASE E/F skip with a notice; the sprint verifies PHASE 0–D.
 
 ---
 
@@ -70,10 +75,10 @@ python3 -m pip install openpyxl python-docx weasyprint markdown
 cd ~/sandbox/elixirws/aetheris
 
 DOCBUILDER_TENANT=demo \
-DOCBUILDER_DOC_TYPE=proposal \
-DOCBUILDER_VERSION=v1 \
-DOCBUILDER_DATA_PATH=data/sample_data.csv \
+DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_email":"ops@acme.example","date":"2026-06-20"}' \
 ./scripts/sprint.sh docbuilder
+# add DRIVE_DOCBUILDER_ID / GOOGLE_SERVICE_ACCOUNT_FILE / DOCBUILDER_REVIEW_EMAIL / SMTP_*
+# to also exercise PHASE E (upload) and PHASE F (email).
 ```
 
 ### Direct run
@@ -82,9 +87,7 @@ DOCBUILDER_DATA_PATH=data/sample_data.csv \
 cd ~/sandbox/elixirws/aetheris
 
 DOCBUILDER_TENANT=demo \
-DOCBUILDER_DOC_TYPE=proposal \
-DOCBUILDER_VERSION=v1 \
-DOCBUILDER_DATA_PATH=data/sample_data.csv \
+DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_email":"ops@acme.example","date":"2026-06-20"}' \
 mix aetheris run ../aetheris-agents/docbuilder/agents/docbuilder_orchestrator.exs
 ```
 
@@ -94,9 +97,7 @@ mix aetheris run ../aetheris-agents/docbuilder/agents/docbuilder_orchestrator.ex
 cd ~/sandbox/elixirws/aetheris
 
 DOCBUILDER_TENANT=demo \
-DOCBUILDER_DOC_TYPE=proposal \
-DOCBUILDER_VERSION=v1 \
-DOCBUILDER_DATA_PATH=data/sample_data.csv \
+DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_email":"ops@acme.example","date":"2026-06-20"}' \
 mix run --eval \
   'Code.eval_file("../aetheris-agents/docbuilder/agents/docbuilder_orchestrator.exs")'
 ```
@@ -108,13 +109,19 @@ mix run --eval \
 After a successful run, `docbuilder/output/` will contain:
 
 ```
-output/pipeline_raw_main.json     # intermediate — raw fetch output (one per source)
-output/pipeline_raw_summary.json   # intermediate — second source (demo)
-output/pipeline_spec.json          # intermediate — computed doc spec
-output/proposal_v1.xlsx            # branded (base file applied)
-output/proposal_v1.docx            # branded (base file applied)
-output/proposal_v1.pdf             # narrative mode (Markdown template + CSS)
+output/template_cache_path.txt              # PHASE 0 — bundle path (fetch_template)
+output/pipeline_raw_main.json               # PHASE A — raw fetch (one per source)
+output/pipeline_raw_summary.json            # PHASE A — second source (demo)
+output/pipeline_spec.json                   # PHASE B — computed doc spec
+output/acme_corp_proposal_2026-06-20.xlsx   # PHASE C+D — branded, renamed (was proposal_v1.xlsx)
+output/acme_corp_proposal_2026-06-20.docx   # PHASE C+D — branded, renamed
+output/acme_corp_proposal_2026-06-20.pdf    # PHASE C+D — narrative, renamed
+output/renamed.json                         # PHASE D — {original, renamed} pairs
+output/uploaded.json                        # PHASE E — {filename, drive_file_id, drive_url} (only if Drive enabled)
 ```
+
+The renamed filenames come from `DOCBUILDER_CONTEXT` (`{client_name_slug}_{doc_type}_{date}`).
+The intermediate `proposal_v1.*` files are renamed away by PHASE D.
 
 The formats generated depend on the `output_formats` array in the template. The
 `demo/proposal_v1.json` template specifies `["xlsx", "docx", "pdf"]`. xlsx/docx open

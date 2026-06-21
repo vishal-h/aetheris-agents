@@ -1,55 +1,106 @@
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
-tenant    = System.get_env("DOCBUILDER_TENANT")    || raise "DOCBUILDER_TENANT not set"
-doc_type  = System.get_env("DOCBUILDER_DOC_TYPE")  || raise "DOCBUILDER_DOC_TYPE not set"
-version   = System.get_env("DOCBUILDER_VERSION")   || raise "DOCBUILDER_VERSION not set"
-data_path = System.get_env("DOCBUILDER_DATA_PATH") || raise "DOCBUILDER_DATA_PATH not set"
+tenant = System.get_env("DOCBUILDER_TENANT") || raise "DOCBUILDER_TENANT not set"
 
-# Optional scalar-variable context for narrative-mode PDF. Treat unset/empty as "{}"
-# so we never pass an empty --context (render_template.py would fail json.loads("")).
-context =
+# Single input blob (docs/context-schema.md). Unset/empty → "{}" so we never pass an
+# empty --context to a script (json.loads("") would fail).
+context_json =
   case System.get_env("DOCBUILDER_CONTEXT") do
     nil -> "{}"
     "" -> "{}"
     v -> v
   end
 
-template_rel = "data/templates/#{tenant}/#{doc_type}_#{version}.json"
-template_dir = "data/templates/#{tenant}"
-filename     = "#{doc_type}_#{version}"
+context = Jason.decode!(context_json)
 
-# Resolve the template at eval time so the system prompt can list concrete steps
-# (sources to fetch, formats to render, which renderers get base files / narrative).
-# Scripts decide content; this only decides which commands to run.
-template = agent_root |> Path.join(template_rel) |> File.read!() |> Jason.decode!()
+# Delivery creds — when absent, the matching delivery PHASE is skipped (the pipeline
+# degrades gracefully in dev; runs fully in production).
+env_or_nil = fn name ->
+  case System.get_env(name) do
+    nil -> nil
+    "" -> nil
+    v -> v
+  end
+end
+
+drive_id      = env_or_nil.("DRIVE_DOCBUILDER_ID")
+review_email  = env_or_nil.("DOCBUILDER_REVIEW_EMAIL")
+deliver_upload? = drive_id != nil
+deliver_email?  = review_email != nil
+
+# --- resolve doc_type / variant at eval time (from the catalogue + context) -----
+# The LLM selection in PHASE 0 is genuine but confirmatory: for a single-variant
+# catalogue (the demo) it resolves to the one entry; the orchestrator pre-bakes the
+# downstream commands against this resolution. Multi-variant runtime selection is a
+# future concern (see docs/m2b-milestone.md).
+catalogue =
+  agent_root |> Path.join("data/templates/#{tenant}/catalogue.json")
+  |> File.read!() |> Jason.decode!()
+
+doc_types = catalogue["doc_types"] || []
+resolved_doc_type = context["doc_type"] || (List.first(doc_types) || %{})["doc_type"]
+dt_entry = Enum.find(doc_types, fn d -> d["doc_type"] == resolved_doc_type end) || %{}
+resolved_version = ((List.first(dt_entry["variants"] || []) || %{})["version"])
+
+prefix = "#{resolved_doc_type}_#{resolved_version}"
+
+# Bundle dir = where fetch_template puts the template bundle. Drive → local cache;
+# no Drive → the committed local nested bundle. The renderers point --base-file /
+# --template-dir here.
+bundle_dir =
+  if drive_id,
+    do: "output/template_cache/#{tenant}/#{resolved_doc_type}/#{resolved_version}",
+    else: "data/templates/#{tenant}/#{resolved_doc_type}/#{resolved_version}"
+
+bundle_template_rel = "#{bundle_dir}/#{prefix}.json"
+
+# Resolve data_sources / output_formats / narrative from the committed FLAT template
+# (always present at eval time, even in Drive mode where the bundle isn't fetched yet).
+# It mirrors the bundle template that compute_doc reads at runtime.
+flat_template_rel = "data/templates/#{tenant}/#{prefix}.json"
+template = agent_root |> Path.join(flat_template_rel) |> File.read!() |> Jason.decode!()
 
 data_sources   = template["data_sources"] || []
 output_formats = template["output_formats"] || []
 narrative?     = is_map(template["narrative"])
 
-# Base-file presence (per format), checked once at eval time.
-xlsx_base_rel = "#{template_dir}/#{doc_type}_#{version}.xlsx"
-docx_base_rel = "#{template_dir}/#{doc_type}_#{version}.docx"
-xlsx_base? = File.exists?(Path.join(agent_root, xlsx_base_rel))
-docx_base? = File.exists?(Path.join(agent_root, docx_base_rel))
+# Base-file presence: proxy via the committed flat base files (present for the demo).
+xlsx_base? = File.exists?(Path.join(agent_root, "data/templates/#{tenant}/#{prefix}.xlsx"))
+docx_base? = File.exists?(Path.join(agent_root, "data/templates/#{tenant}/#{prefix}.docx"))
 
-# Source paths in the template are relative to the aetheris-agents repo root
-# (e.g. "docbuilder/data/...") but run_command runs from the docbuilder sandbox,
-# so strip the leading "docbuilder/". The "main" source honours DOCBUILDER_DATA_PATH.
+# Source paths in the template are repo-root-relative ("docbuilder/data/...") but
+# run_command runs from the docbuilder sandbox — strip the leading "docbuilder/"
+# at eval time (t2 review F3, Option a; same strip the m2a orchestrator did).
 sources =
   Enum.map(data_sources, fn s ->
     key = s["key"]
-    path =
-      if key == "main" do
-        data_path
-      else
-        String.replace_prefix(s["path"] || "", "docbuilder/", "")
-      end
-
-    %{key: key, path: path, raw_file: "output/pipeline_raw_#{key}.json"}
+    %{
+      key: key,
+      path: String.replace_prefix(s["path"] || "", "docbuilder/", ""),
+      raw_file: "output/pipeline_raw_#{key}.json"
+    }
   end)
 
 raw_files = Enum.map(sources, & &1.raw_file)
+
+# --- renamed output paths (deterministic from context) for PHASE E ---------------
+slugify = fn name ->
+  s = name |> to_string() |> String.trim() |> String.downcase() |> String.replace(" ", "_")
+  Regex.replace(~r/[^a-z0-9_-]/, s, "")
+end
+
+safe_seg = fn v ->
+  s = Regex.replace(~r/\s+/, v |> to_string() |> String.trim(), "_")
+  Regex.replace(~r/[^A-Za-z0-9_.-]/, s, "")
+end
+
+rename_doc_type = context["doc_type"] || Regex.replace(~r/_v\d+$/, prefix, "")
+client_slug = slugify.(context["client_name"] || "")
+safe_date = safe_seg.(context["date"] || "")
+renamed_files =
+  Enum.map(output_formats, fn ext ->
+    "output/#{client_slug}_#{rename_doc_type}_#{safe_date}.#{ext}"
+  end)
 
 model    = System.get_env("AETHERIS_MODEL")    || "claude-haiku-4-5-20251001"
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
@@ -64,90 +115,148 @@ fetch_steps =
       A#{i}. Fetch source "#{s.key}":
             run_command  command: "python3"
                          args: ["scripts/fetch_data.py", "--key", "#{s.key}", "#{s.path}", "--output", "#{s.raw_file}"]
-            This writes #{s.raw_file} and prints only that path. Do NOT write_file it
-            yourself — the script already wrote it.
+            Writes #{s.raw_file} and prints only that path.
     """
   end)
   |> Enum.join("\n")
 
 compute_args =
-  ["scripts/compute_doc.py", template_rel] ++
+  ["scripts/compute_doc.py", bundle_template_rel] ++
     raw_files ++ ["--output", "output/pipeline_spec.json"]
-
-render_args = fn fmt ->
-  extra =
-    case fmt do
-      "xlsx" -> if xlsx_base?, do: ["--base-file", xlsx_base_rel], else: []
-      "docx" -> if docx_base?, do: ["--base-file", docx_base_rel], else: []
-      "pdf"  -> if narrative?, do: ["--template-dir", template_dir], else: []
-      _ -> []
-    end
-
-  ["scripts/generate_#{fmt}.py", "--input", "output/pipeline_spec.json"] ++
-    extra ++ ["--output-dir", "output", "--filename", filename]
-end
 
 render_steps =
   output_formats
   |> Enum.with_index(1)
   |> Enum.map(fn {fmt, i} ->
-    if fmt == "pdf" and narrative? do
-      # Single clean args array with a "<CONTEXT>" placeholder element; the real
-      # JSON is given below it so the LLM substitutes it verbatim (no escaping).
-      display_args =
-        ["scripts/generate_#{fmt}.py", "--input", "output/pipeline_spec.json",
-         "--template-dir", template_dir, "--context", "<CONTEXT>",
-         "--output-dir", "output", "--filename", filename]
+    cond do
+      fmt == "pdf" and narrative? ->
+        display_args =
+          ["scripts/generate_pdf.py", "--input", "output/pipeline_spec.json",
+           "--template-dir", bundle_dir, "--context", "<CONTEXT>",
+           "--output-dir", "output", "--filename", prefix]
 
-      """
-        C#{i}. Render #{fmt} (narrative mode):
-              run_command  command: "python3"
-                           args: #{inspect(display_args)}
-              Replace the "<CONTEXT>" placeholder element with this EXACT JSON string,
-              passed as a single arg verbatim (do not escape or reformat it):
-                #{context}
-      """
-    else
-      """
-        C#{i}. Render #{fmt}:
-              run_command  command: "python3"
-                           args: #{inspect(render_args.(fmt))}
-      """
+        """
+          C#{i}. Render pdf (narrative mode):
+                run_command  command: "python3"  args: #{inspect(display_args)}
+                Replace the "<CONTEXT>" element with this EXACT JSON, one arg, verbatim:
+                  #{context_json}
+        """
+
+      true ->
+        extra =
+          case fmt do
+            "xlsx" -> if xlsx_base?, do: ["--base-file", "#{bundle_dir}/#{prefix}.xlsx"], else: []
+            "docx" -> if docx_base?, do: ["--base-file", "#{bundle_dir}/#{prefix}.docx"], else: []
+            _ -> []
+          end
+
+        args =
+          ["scripts/generate_#{fmt}.py", "--input", "output/pipeline_spec.json"] ++
+            extra ++ ["--output-dir", "output", "--filename", prefix]
+
+        """
+          C#{i}. Render #{fmt}:
+                run_command  command: "python3"  args: #{inspect(args)}
+        """
     end
   end)
   |> Enum.join("\n")
 
+rename_args =
+  ["scripts/rename_output.py", "--output-dir", "output", "--filename-prefix", prefix,
+   "--context", "<CONTEXT>", "--output", "output/renamed.json"]
+
+upload_phase =
+  if deliver_upload? do
+    upload_args =
+      ["scripts/upload_output.py", "--tenant", tenant, "--files"] ++
+        renamed_files ++ ["--output", "output/uploaded.json"]
+
+    """
+    PHASE E — Upload the renamed outputs to Drive.
+      E1. run_command  command: "python3"  args: #{inspect(upload_args)}
+          Writes output/uploaded.json (array of {filename, drive_file_id, drive_url}).
+    """
+  else
+    """
+    PHASE E — (skipped: DRIVE_DOCBUILDER_ID not set, so there is no upload target).
+    """
+  end
+
+email_phase =
+  cond do
+    deliver_email? and deliver_upload? ->
+      """
+      PHASE F — Send the review email.
+        F1. Read output/uploaded.json (the array PHASE E wrote) and pass its exact
+            contents as the --drive-links value:
+              run_command  command: "python3"
+                           args: ["scripts/email_send_review.py", "--context", "<CONTEXT>", "--drive-links", "<UPLOADED_JSON>"]
+            Replace "<CONTEXT>" with the EXACT context JSON below, and "<UPLOADED_JSON>"
+            with the exact stdout/array contents of output/uploaded.json:
+              #{context_json}
+      """
+
+    deliver_email? ->
+      """
+      PHASE F — Send the review email (no Drive links — upload was skipped).
+        F1. run_command  command: "python3"
+                         args: ["scripts/email_send_review.py", "--context", "<CONTEXT>"]
+            Replace "<CONTEXT>" with the EXACT context JSON below, one arg, verbatim:
+              #{context_json}
+      """
+
+    true ->
+      """
+      PHASE F — (skipped: DOCBUILDER_REVIEW_EMAIL not set).
+      """
+  end
+
 system_prompt = """
-You are the docbuilder orchestrator. Run the document-generation pipeline by
-executing the exact commands listed below in order, then report the output files.
+You are the docbuilder orchestrator. Run the document-generation + delivery pipeline by
+executing the steps below in order, then report the output files and any Drive links.
 
 Configuration resolved at startup:
-  Tenant:        #{tenant}
-  Doc type:      #{doc_type}
-  Version:       #{version}
-  Template path: #{template_rel}
-  Output prefix: #{filename}
-  Data sources:  #{Enum.map_join(sources, ", ", & &1.key)}
-  Output formats: #{Enum.join(output_formats, ", ")}
+  Tenant:          #{tenant}
+  Resolved target: #{resolved_doc_type} / #{resolved_version}  (output prefix #{prefix})
+  Template bundle: #{bundle_dir}
+  Data sources:    #{Enum.map_join(sources, ", ", & &1.key)}
+  Output formats:  #{Enum.join(output_formats, ", ")}
+  Delivery:        upload=#{deliver_upload?}  email=#{deliver_email?}
 
 ---
 
+PHASE 0 — Select the template, then fetch its bundle.
+  0.1 List the tenant's catalogue:
+        run_command  command: "python3"  args: ["scripts/list_templates.py", "--tenant", "#{tenant}"]
+  0.2 From that catalogue and the context, choose the best doc_type and variant.
+      State your choice as JSON (this is your selection of record):
+        {"doc_type": "...", "variant": "...", "rationale": "..."}
+  0.3 Fetch the chosen template bundle (resolved target #{resolved_doc_type}/#{resolved_version}):
+        run_command  command: "python3"
+                     args: ["scripts/fetch_template.py", "--tenant", "#{tenant}", "--doc-type", "#{resolved_doc_type}", "--version", "#{resolved_version}", "--output", "output/template_cache_path.txt"]
+        Writes the bundle path to that file (#{bundle_dir}).
+
 PHASE A — Fetch each data source and save its raw JSON.
 #{fetch_steps}
-  Fetch every source listed, even if you suspect a sheet does not read it — the
-  set of sources is fixed; do not skip any.
+  Fetch every source listed; do not skip any.
 
-PHASE B — Compute the doc spec from the template and ALL raw source files.
-  B1. run_command  command: "python3"
-                   args: #{inspect(compute_args)}
-      This writes the doc spec to output/pipeline_spec.json and prints only that
-      path to stdout. Do NOT write_file the spec yourself — the script wrote it.
+PHASE B — Compute the doc spec from the bundle template and ALL raw source files.
+  B1. run_command  command: "python3"  args: #{inspect(compute_args)}
+      Writes output/pipeline_spec.json and prints only that path.
 
 PHASE C — Render each output format from the saved doc spec.
 #{render_steps}
-  Record the output path each renderer prints to stdout.
 
-PHASE D — Report the list of output files generated.
+PHASE D — Rename the rendered outputs to the deliverable convention.
+  D1. run_command  command: "python3"  args: #{inspect(rename_args)}
+      Replace the "<CONTEXT>" element with this EXACT JSON, one arg, verbatim:
+        #{context_json}
+      Writes output/renamed.json (array of {original, renamed}).
+
+#{upload_phase}
+#{email_phase}
+PHASE G — Report: the renamed output files, and (if uploaded) the Drive links.
 
 ---
 
@@ -158,9 +267,11 @@ Rules:
   investigate manually.
 - Each `--output FILE` call writes its result directly to that file and prints ONLY the
   path. Do NOT re-run a script without `--output` to view its content, and do NOT write
-  any helper/scratch script — use the file the script already wrote and proceed to the
-  next step.
-- Do not construct or modify JSON yourself. The scripts produce all data.
+  any helper/scratch script — use the file the script already wrote and proceed.
+- Template selection (0.2): parse/produce the JSON exactly; do not add fields. If you
+  cannot select, report why and stop.
+- Do not construct or modify JSON yourself beyond the selection in 0.2. The scripts
+  produce all data.
 - Do not pass "python3" inside the args array — it is already the command field.
 """
 
@@ -172,9 +283,9 @@ Rules:
   label:            "Docbuilder Orchestrator",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,
-  max_steps:        30,
+  max_steps:        40,
   context_strategy: :full,
   tools:            ["run_command"],
   system_prompt:    system_prompt,
-  user_prompt:      "Run the document generation pipeline."
+  user_prompt:      "Run the document generation and delivery pipeline."
 }

@@ -90,6 +90,11 @@ To onboard a new tenant `{tenant_id}` (in the `docbuilder` Shared Drive):
      consistent across sheets; the narrative `.css` `@page` header/footer should match
      the docx base file's header/footer strings. (See README design decisions and the
      m2a base-file learning.)
+   - **Cover-page subtitle is a placeholder.** The base file's cover page subtitle
+     (`Prepared for: Client Name | Date: DD MMM YYYY`) is sample wording only — replace
+     it with the tenant's standard cover wording during onboarding. (Per-run `client_name`
+     and `date` are substituted at render time; the subtitle styling/phrasing in the base
+     file is the tenant's to customise.)
 5. **Verify.** With `DRIVE_DOCBUILDER_ID` set:
    ```bash
    python3 scripts/list_templates.py --tenant {tenant_id} | python3 -m json.tool

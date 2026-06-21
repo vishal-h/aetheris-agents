@@ -642,6 +642,11 @@ python3 -m pytest docbuilder/tests/ --tb=short 2>&1 | tail -5
 > Regenerate capability matrix, update README, write milestone summary,
 > promote CLAUDE.md learning candidates (≥2-ticket recurrences).
 >
+> Named CLAUDE.md candidate (from t3 review F3): "Remove `write_file` from an
+> orchestrator's tools once every phase uses `--output FILE` — dead capability
+> increases the LLM's misuse surface." This is the closing piece of the scratch
+> 8→1→0 arc (m2a t8 → m2a t10 → m2b t3); promote it alongside any ≥2-ticket findings.
+>
 > **Review packet must open with the full done-check output block.**
 
 ---

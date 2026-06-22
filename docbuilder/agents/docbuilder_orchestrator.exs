@@ -54,19 +54,27 @@ bundle_dir =
 
 bundle_template_rel = "#{bundle_dir}/#{prefix}.json"
 
-# Resolve data_sources / output_formats / narrative from the committed FLAT template
-# (always present at eval time, even in Drive mode where the bundle isn't fetched yet).
-# It mirrors the bundle template that compute_doc reads at runtime.
-flat_template_rel = "data/templates/#{tenant}/#{prefix}.json"
-template = agent_root |> Path.join(flat_template_rel) |> File.read!() |> Jason.decode!()
+# Resolve data_sources / output_formats / narrative from the committed template at
+# eval time (always present, even in Drive mode where the bundle isn't fetched yet).
+# It mirrors the bundle template that compute_doc reads at runtime. Prefer the
+# canonical NESTED bundle layout (data/templates/{tenant}/{doc_type}/{version}/);
+# fall back to the FLAT layout (the demo keeps both). A nested-only tenant (e.g.
+# bitloka) resolves here without a flat duplicate.
+nested_dir_rel    = "data/templates/#{tenant}/#{resolved_doc_type}/#{resolved_version}"
+nested_exists?    = File.exists?(Path.join(agent_root, "#{nested_dir_rel}/#{prefix}.json"))
+eval_template_dir = if nested_exists?, do: nested_dir_rel, else: "data/templates/#{tenant}"
+
+template =
+  agent_root |> Path.join("#{eval_template_dir}/#{prefix}.json")
+  |> File.read!() |> Jason.decode!()
 
 data_sources   = template["data_sources"] || []
 output_formats = template["output_formats"] || []
 narrative?     = is_map(template["narrative"])
 
-# Base-file presence: proxy via the committed flat base files (present for the demo).
-xlsx_base? = File.exists?(Path.join(agent_root, "data/templates/#{tenant}/#{prefix}.xlsx"))
-docx_base? = File.exists?(Path.join(agent_root, "data/templates/#{tenant}/#{prefix}.docx"))
+# Base-file presence: proxy via the committed base files alongside the eval template.
+xlsx_base? = File.exists?(Path.join(agent_root, "#{eval_template_dir}/#{prefix}.xlsx"))
+docx_base? = File.exists?(Path.join(agent_root, "#{eval_template_dir}/#{prefix}.docx"))
 
 # Source paths in the template are repo-root-relative ("docbuilder/data/...") but
 # run_command runs from the docbuilder sandbox — strip the leading "docbuilder/"

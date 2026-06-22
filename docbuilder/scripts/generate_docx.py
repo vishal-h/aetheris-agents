@@ -6,6 +6,8 @@ from pathlib import Path
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
+from _format import format_cell
+
 ALIGN_MAP = {
     "left": WD_ALIGN_PARAGRAPH.LEFT,
     "right": WD_ALIGN_PARAGRAPH.RIGHT,
@@ -13,9 +15,9 @@ ALIGN_MAP = {
 }
 
 
-def _write_cell(doc_cell, cell_spec):
+def _write_cell(doc_cell, cell_spec, col_type=None):
     para = doc_cell.paragraphs[0]
-    run = para.add_run(str(cell_spec["value"]) if cell_spec["value"] is not None else "")
+    run = para.add_run(format_cell(cell_spec["value"], col_type))
     run.bold = cell_spec["bold"]
     para.alignment = ALIGN_MAP.get(cell_spec["align"], WD_ALIGN_PARAGRAPH.LEFT)
 
@@ -84,8 +86,14 @@ def generate_docx(doc_spec, output_path, base_file=None):
 
         for row_idx, row_spec in enumerate(rows):
             tr = table.rows[row_idx]
+            is_header = row_spec["type"] == "header"
             for col_idx, cell_spec in enumerate(row_spec["cells"]):
-                _write_cell(tr.cells[col_idx], cell_spec)
+                # Header cells hold the column name; data/aggregate cells are
+                # formatted by their column's type (currency/number).
+                col_type = None if is_header else (
+                    columns[col_idx]["type"] if col_idx < len(columns) else None
+                )
+                _write_cell(tr.cells[col_idx], cell_spec, col_type)
 
     doc.save(output_path)
 

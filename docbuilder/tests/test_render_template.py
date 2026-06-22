@@ -85,6 +85,14 @@ def test_table_partial_case_insensitive(spec):
     assert "SRV-001" in out
 
 
+def test_currency_cells_formatted(spec):
+    # Total column is currency: data "3000.00" and aggregate 3000 both → $3,000.00.
+    out = render_template("{{>Line Items}}\n", {}, spec, str(CSS))
+    assert "$3,000.00" in out
+    assert ">3000.00<" not in out          # raw value must not leak through
+    assert ">Total<" in out                # header label is not type-formatted
+
+
 def test_unknown_partial_empty_with_warning(spec, capsys):
     out = render_template("before {{>NoSuch}} after\n", {}, spec, str(CSS))
     assert "<table>" not in out

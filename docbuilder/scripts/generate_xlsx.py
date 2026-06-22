@@ -22,8 +22,11 @@ def _write_cell(ws_cell, cell_spec, col_type=None):
     ws_cell.value = value
     ws_cell.font = Font(bold=cell_spec["bold"])
     ws_cell.alignment = Alignment(horizontal=cell_spec["align"])
-    if col_type in ("currency", "number"):
-        ws_cell.number_format = "#,##0.00"
+    if col_type == "currency":
+        ws_cell.number_format = '"$"#,##0.00'
+    elif col_type == "number":
+        # No forced decimals: a count like 1 shows "1", not "1.00".
+        ws_cell.number_format = "#,##0.##"
 
 
 def generate_xlsx(doc_spec, output_path, base_file=None):

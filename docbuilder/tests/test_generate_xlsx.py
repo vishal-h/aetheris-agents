@@ -176,12 +176,34 @@ def test_numeric_string_converted_to_float(tmp_path, simple_spec):
 
 
 @pytest.mark.integration
-def test_numeric_column_has_number_format(tmp_path, simple_spec):
+def test_currency_column_has_dollar_number_format(tmp_path, simple_spec):
     out = tmp_path / "out.xlsx"
     generate_xlsx(simple_spec, out)
     wb = openpyxl.load_workbook(out)
     ws = wb["Items"]
-    assert ws.cell(row=3, column=3).number_format == "#,##0.00"
+    # Cost column (3) is currency → "$"#,##0.00 so it renders $250.00.
+    assert ws.cell(row=3, column=3).number_format == '"$"#,##0.00'
+
+
+@pytest.mark.integration
+def test_number_column_has_no_forced_decimals(tmp_path, simple_spec):
+    out = tmp_path / "out.xlsx"
+    generate_xlsx(simple_spec, out)
+    wb = openpyxl.load_workbook(out)
+    ws = wb["Items"]
+    # Qty column (2) is number → #,##0.## so a count of 5 shows "5", not "5.00".
+    assert ws.cell(row=3, column=2).number_format == "#,##0.##"
+
+
+@pytest.mark.integration
+def test_currency_aggregate_has_dollar_number_format(tmp_path, simple_spec):
+    out = tmp_path / "out.xlsx"
+    generate_xlsx(simple_spec, out)
+    wb = openpyxl.load_workbook(out)
+    ws = wb["Items"]
+    # aggregate row at row 5 (header_row=2 + 1 header + 2 data); Cost total cell.
+    assert ws.cell(row=5, column=3).number_format == '"$"#,##0.00'
+    assert ws.cell(row=5, column=3).value == pytest.approx(400.0)
 
 
 @pytest.mark.integration

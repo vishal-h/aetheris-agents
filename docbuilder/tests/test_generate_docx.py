@@ -147,6 +147,37 @@ def test_data_row_cell_text(tmp_path, simple_spec):
 
 
 @pytest.mark.integration
+def test_currency_cells_formatted(tmp_path, simple_spec):
+    out = tmp_path / "out.docx"
+    generate_docx(simple_spec, out)
+    doc = Document(str(out))
+    table = doc.tables[0]
+    # Total column (2) is currency: data "250.00" → $250.00, aggregate 400 → $400.00.
+    assert table.rows[1].cells[2].text == "$250.00"
+    assert table.rows[3].cells[2].text == "$400.00"
+
+
+@pytest.mark.integration
+def test_number_cells_no_trailing_zeros(tmp_path, simple_spec):
+    out = tmp_path / "out.docx"
+    generate_docx(simple_spec, out)
+    doc = Document(str(out))
+    table = doc.tables[0]
+    # Qty column (1) is number: data "5" → "5", aggregate 8 → "8" (not 5.00 / 8.00).
+    assert table.rows[1].cells[1].text == "5"
+    assert table.rows[3].cells[1].text == "8"
+
+
+@pytest.mark.integration
+def test_header_cells_not_type_formatted(tmp_path, simple_spec):
+    out = tmp_path / "out.docx"
+    generate_docx(simple_spec, out)
+    doc = Document(str(out))
+    # Header label in the currency column stays "Total", not "$0.00" or similar.
+    assert doc.tables[0].rows[0].cells[2].text == "Total"
+
+
+@pytest.mark.integration
 def test_row_count(tmp_path, simple_spec):
     out = tmp_path / "out.docx"
     generate_docx(simple_spec, out)

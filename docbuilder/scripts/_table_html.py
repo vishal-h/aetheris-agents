@@ -12,6 +12,8 @@ aggregate rows get `class='aggregate'`, and each cell carries inline
 
 import html as _html
 
+from _format import format_cell
+
 
 def esc(value):
     return _html.escape(str(value) if value is not None else "")
@@ -39,14 +41,20 @@ def render_table(sheet):
         row += "</tr>"
         parts.append(row)
 
+    columns = sheet["columns"]
     for row in sheet["rows"]:
         cls = " class='aggregate'" if row["type"] == "aggregate" else ""
+        is_header = row["type"] == "header"
         parts.append(f"<tr{cls}>")
-        for cell in row["cells"]:
+        for col_idx, cell in enumerate(row["cells"]):
             fw = "bold" if cell["bold"] else "normal"
+            # Header cells hold the column name; never type-format them. Data and
+            # aggregate cells are formatted by their column's type (currency/number).
+            col_type = columns[col_idx]["type"] if col_idx < len(columns) else None
+            value = cell["value"] if is_header else format_cell(cell["value"], col_type)
             parts.append(
                 f"<td style='text-align:{cell['align']};font-weight:{fw};'>"
-                f"{esc(cell['value'])}</td>"
+                f"{esc(value)}</td>"
             )
         parts.append("</tr>")
 

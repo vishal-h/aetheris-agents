@@ -24,11 +24,11 @@ Refresh trigger: milestone end, or before any handoff session.
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `fd2f327` | 2026-06-21 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `fd2f327` | 2026-06-21 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `8613302` | 2026-06-22 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `201dcc2` | 2026-06-14 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `cdb6a21` | 2026-06-13 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-21 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-22 |
 
 ---
 
-Exported: 2026-06-21 at aetheris-agents `fd2f327` / aetheris `308ddb2`.
+Exported: 2026-06-22 at aetheris-agents `8613302` / aetheris `308ddb2`.

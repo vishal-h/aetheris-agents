@@ -3,6 +3,10 @@
 !sample_data.csv
 !sample_data_summary.csv
 
+# Per-run history (m3 context builder "same as last month") — accumulates client
+# context (names, emails, addresses); seeded locally, never committed
+run_log.json
+
 # Real client templates — never commit; demo/ tenant is committed in full
 templates/*/
 !templates/demo/

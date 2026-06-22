@@ -36,6 +36,10 @@ def format_number(value):
     """Format a number with thousands separators and no trailing zeros:
     ``1`` → ``1``, ``1000`` → ``1,000``, ``1234.5`` → ``1,234.5``.
 
+    Non-integer values are formatted to at most 2 decimal places (``1234.567``
+    → ``1,234.57``). Count columns (e.g. ``# Resource(s)``) are integers, so the
+    rounding never fires for current use cases.
+
     Returns the value's string form unchanged if it is not numeric."""
     num = _as_number(value)
     if num is None:

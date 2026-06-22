@@ -1,0 +1,82 @@
+<div class="invoice-header">
+  <div class="company-name">Bitloka Solutions Private Limited</div>
+  <img class="logo" src="btl_logo-withtext.png" alt="Bitloka Solutions">
+</div>
+
+<div class="gst-banner">
+  Supply meant for Export under Letter of Undertaking without payment of IGST<br>
+  Application Reference Number (ARN) AD290821000381G<br>
+  GSTIN 29AAFCB5659N1ZY
+</div>
+
+<table class="meta-block">
+  <tr>
+    <td class="billed-to-col">
+      <div class="billed-to-label">Billed To</div>
+      <div class="client-name">{{client_name}}</div>
+      <div class="client-address">{{client_address}}</div>
+    </td>
+    <td class="invoice-meta-col">
+      <table class="invoice-meta-table">
+        <tr class="amount-due-row">
+          <td class="amount-due-label">Amount Due:</td>
+          <td class="amount-due-value">{{amount_due}}</td>
+        </tr>
+        <tr class="meta-row">
+          <td class="meta-label">Invoice No:</td>
+          <td class="meta-value">{{invoice_number}}</td>
+        </tr>
+        <tr class="meta-row">
+          <td class="meta-label">Dated:</td>
+          <td class="meta-value">{{date}}</td>
+        </tr>
+        <tr class="meta-row">
+          <td class="meta-label">Order Ref:</td>
+          <td class="meta-value">{{order_ref}}</td>
+        </tr>
+        <tr class="meta-row">
+          <td class="meta-label">Order Effective Date:</td>
+          <td class="meta-value">{{order_effective_date}}</td>
+        </tr>
+        <tr class="meta-row">
+          <td class="meta-label">Terms:</td>
+          <td class="meta-value">{{terms}}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+{{>Line Items}}
+
+<div class="jurisdiction-note">Subject to Bangalore Jurisdiction. System Generated Invoice</div>
+
+<div class="bank-block">
+  <table class="bank-table">
+    <tr>
+      <td class="bank-label">Account Name:</td>
+      <td class="bank-value">Bitloka Solutions Pvt Ltd</td>
+    </tr>
+    <tr>
+      <td class="bank-label">Bank:</td>
+      <td class="bank-value">ICICI Bank</td>
+    </tr>
+    <tr>
+      <td class="bank-label">Branch:</td>
+      <td class="bank-value">Sadashiv Nagar Branch</td>
+    </tr>
+    <tr>
+      <td class="bank-label">Account No:</td>
+      <td class="bank-value">166105001234</td>
+    </tr>
+    <tr>
+      <td class="bank-label">IFSC Code:</td>
+      <td class="bank-value">ICIC0001661</td>
+    </tr>
+  </table>
+</div>
+
+<div class="signatory">
+  <div class="signatory-name">For Bitloka Solutions Pvt. Ltd</div>
+  <div class="signatory-role">(Authorized Signatory)</div>
+</div>

@@ -1,0 +1,21 @@
+{
+  "tenant_id": "bitloka",
+  "doc_types": [
+    {
+      "doc_type": "invoice",
+      "description": "Client invoice for services rendered — PDF with line items, bank details, and GST export declaration",
+      "variants": [
+        {
+          "version": "v1",
+          "label": "Standard",
+          "output_formats": ["xlsx", "docx", "pdf"],
+          "has_base_files": {
+            "xlsx": false,
+            "docx": false
+          },
+          "has_narrative": true
+        }
+      ]
+    }
+  ]
+}

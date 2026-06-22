@@ -1,0 +1,288 @@
+/* invoice_v1.css — Bitloka Solutions invoice brand stylesheet (weasyprint).
+   Paired with invoice_v1.md.template. Orange #F5A623, dark text #1A1A2E.
+   A4, 15mm margins. */
+
+@page {
+  size: A4;
+  margin: 15mm 15mm 22mm 15mm;
+
+  @bottom-left {
+    content: "#311/1, Zikhin Bhavan, 26th X, BSK II Stage, Bangalore - 560070";
+    font-family: Arial, sans-serif;
+    font-size: 7pt;
+    color: #666666;
+    border-top: 0.5pt solid #cccccc;
+    padding-top: 4pt;
+  }
+
+  @bottom-center {
+    content: "www.bitloka.com  |  contact@bitloka.com";
+    font-family: Arial, sans-serif;
+    font-size: 7pt;
+    color: #F5A623;
+    border-top: 0.5pt solid #cccccc;
+    padding-top: 4pt;
+  }
+
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: Arial, sans-serif;
+    font-size: 7pt;
+    color: #666666;
+    border-top: 0.5pt solid #cccccc;
+    padding-top: 4pt;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9.5pt;
+  color: #1A1A2E;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.invoice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8pt;
+  border-bottom: 2pt solid #F5A623;
+  margin-bottom: 8pt;
+}
+
+.invoice-header .company-name {
+  font-size: 18pt;
+  font-weight: bold;
+  color: #1A1A2E;
+  letter-spacing: 0.5pt;
+}
+
+.invoice-header .logo {
+  height: 45pt;
+  width: auto;
+}
+
+/* ── GST declaration banner ──────────────────────────────────────────────── */
+
+.gst-banner {
+  background-color: #FFF8EC;
+  border: 0.5pt solid #F5A623;
+  padding: 5pt 8pt;
+  text-align: center;
+  font-size: 8pt;
+  color: #555555;
+  margin-bottom: 12pt;
+  line-height: 1.6;
+}
+
+/* ── Two-column meta block ───────────────────────────────────────────────── */
+
+.meta-block {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12pt;
+}
+
+.meta-block td {
+  vertical-align: top;
+  border: none;
+  padding: 2pt 0;
+}
+
+.meta-block .billed-to-col {
+  width: 48%;
+  padding-right: 8pt;
+}
+
+.meta-block .invoice-meta-col {
+  width: 52%;
+}
+
+.billed-to-label {
+  font-size: 8pt;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+  margin-bottom: 3pt;
+}
+
+.client-name {
+  font-size: 13pt;
+  font-weight: bold;
+  color: #1A1A2E;
+  margin-bottom: 3pt;
+}
+
+.client-address {
+  font-size: 8.5pt;
+  color: #444444;
+  line-height: 1.5;
+}
+
+/* Invoice meta right-side table */
+.invoice-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoice-meta-table tr:first-child td {
+  border-top: none;
+}
+
+.amount-due-row td {
+  background-color: #FFF8EC;
+  padding: 4pt 8pt;
+  font-size: 11pt;
+  font-weight: bold;
+}
+
+.amount-due-label {
+  text-align: left;
+  color: #1A1A2E;
+}
+
+.amount-due-value {
+  text-align: right;
+  color: #F5A623;
+}
+
+.meta-row td {
+  padding: 3pt 8pt;
+  border-bottom: 0.25pt solid #eeeeee;
+  font-size: 8.5pt;
+}
+
+.meta-label {
+  text-align: right;
+  color: #888888;
+  width: 45%;
+}
+
+.meta-value {
+  text-align: left;
+  color: #1A1A2E;
+  font-weight: bold;
+}
+
+/* ── Line items table ────────────────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8pt;
+  font-size: 9pt;
+}
+
+table th {
+  background-color: #1A1A2E;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: left;
+  padding: 5pt 8pt;
+  font-size: 8.5pt;
+}
+
+table th:last-child,
+table td:last-child {
+  text-align: right;
+}
+
+table th:nth-child(2),
+table th:nth-child(3),
+table th:nth-child(4),
+table td:nth-child(2),
+table td:nth-child(3),
+table td:nth-child(4) {
+  text-align: center;
+}
+
+table td {
+  padding: 5pt 8pt;
+  border-bottom: 0.25pt solid #dddddd;
+  color: #1A1A2E;
+  min-height: 18pt;
+}
+
+table tr:nth-child(even) td {
+  background-color: #FAFAFA;
+}
+
+.aggregate td {
+  font-weight: bold;
+  background-color: #FFF8EC;
+  border-top: 1.5pt solid #F5A623;
+  border-bottom: none;
+  text-align: right;
+}
+
+.aggregate td:first-child {
+  text-align: right;
+}
+
+/* ── Jurisdiction note ───────────────────────────────────────────────────── */
+
+.jurisdiction-note {
+  font-size: 8pt;
+  color: #888888;
+  font-style: italic;
+  margin: 8pt 0;
+}
+
+/* ── Bank details ────────────────────────────────────────────────────────── */
+
+.bank-block {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16pt;
+}
+
+.bank-table {
+  width: 55%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+
+.bank-table td {
+  padding: 3pt 8pt;
+  border-bottom: 0.25pt solid #eeeeee;
+}
+
+.bank-label {
+  text-align: right;
+  color: #888888;
+  width: 40%;
+}
+
+.bank-value {
+  text-align: left;
+  font-weight: bold;
+  color: #1A1A2E;
+}
+
+/* ── Signatory ───────────────────────────────────────────────────────────── */
+
+.signatory {
+  text-align: right;
+  font-size: 8.5pt;
+  color: #1A1A2E;
+  margin-top: 8pt;
+  padding-right: 8pt;
+}
+
+.signatory .signatory-name {
+  font-weight: bold;
+  font-size: 9pt;
+}
+
+.signatory .signatory-role {
+  color: #888888;
+  margin-top: 3pt;
+}

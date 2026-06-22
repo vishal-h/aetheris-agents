@@ -1,0 +1,76 @@
+{
+  "template_id": "bitloka/invoice_v1",
+  "title": "Invoice",
+  "data_sources": [
+    {
+      "key": "main",
+      "type": "csv",
+      "path": "docbuilder/data/templates/bitloka/invoice/v1/sample_invoice_data.csv"
+    }
+  ],
+  "output_formats": ["xlsx", "docx", "pdf"],
+  "table_style": "Table Grid",
+  "data_col_start": 1,
+  "narrative": {
+    "template_file": "invoice_v1.md.template",
+    "css_file": "invoice_v1.css"
+  },
+  "sheets": [
+    {
+      "name": "Line Items",
+      "source_key": "main",
+      "header_row": 1,
+      "merge_ranges": [],
+      "columns": [
+        {
+          "name": "Summary",
+          "source_field": "summary",
+          "type": "string",
+          "bold": false,
+          "align": "left",
+          "width": 30
+        },
+        {
+          "name": "Rate",
+          "source_field": "rate",
+          "type": "string",
+          "bold": false,
+          "align": "center",
+          "width": 14
+        },
+        {
+          "name": "# Resource(s)",
+          "source_field": "resources",
+          "type": "number",
+          "bold": false,
+          "align": "center",
+          "width": 14
+        },
+        {
+          "name": "# Month(s)",
+          "source_field": "months",
+          "type": "string",
+          "bold": false,
+          "align": "center",
+          "width": 14
+        },
+        {
+          "name": "Amount",
+          "source_field": "amount",
+          "type": "string",
+          "bold": true,
+          "align": "right",
+          "width": 14
+        }
+      ],
+      "aggregate_rows": [
+        {
+          "position": "bottom",
+          "label": "Total:",
+          "label_column": "months",
+          "aggregates": []
+        }
+      ]
+    }
+  ]
+}

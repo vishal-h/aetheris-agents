@@ -17,3 +17,10 @@ templates/*/
 
 # Demo template catalogue (m2a)
 !templates/demo/catalogue.json
+
+# Bitloka tenant invoice bundle (m2b) — narrative-mode, no base files
+!templates/bitloka/
+!templates/bitloka/catalogue.json
+!templates/bitloka/invoice/
+!templates/bitloka/invoice/v1/
+!templates/bitloka/invoice/v1/**

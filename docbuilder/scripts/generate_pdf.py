@@ -76,8 +76,14 @@ def generate_pdf(doc_spec, output_path, template_dir=None, context=None):
     HTML is produced by render_template.py (Markdown + CSS). Otherwise structured
     mode: `_build_html(doc_spec)` (m1 behaviour). If `narrative` is present but no
     `template_dir` is supplied, warn on stderr and fall back to structured mode."""
+    base_url = None
     if doc_spec.get("narrative") and template_dir:
         html = _narrative_html(doc_spec, template_dir, context or "{}")
+        # Resolve relative asset URLs (e.g. <img src="logo.png">) against the
+        # template bundle dir where the committed assets live — not the CWD.
+        # Trailing os.sep so urljoin keeps the final path segment (without it,
+        # urljoin treats the dir name as a file and drops it).
+        base_url = str(Path(template_dir).resolve()) + os.sep
     else:
         if doc_spec.get("narrative") and not template_dir:
             print(
@@ -89,7 +95,7 @@ def generate_pdf(doc_spec, output_path, template_dir=None, context=None):
                 file=sys.stderr,
             )
         html = _build_html(doc_spec)
-    weasyprint.HTML(string=html).write_pdf(str(output_path))
+    weasyprint.HTML(string=html, base_url=base_url).write_pdf(str(output_path))
 
 
 def main():

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -142,6 +143,43 @@ def test_html_escapes_special_chars():
     assert "<script>" not in html
     assert "&lt;script&gt;" in html
     assert "&lt;b&gt;" in html
+
+
+# --- base_url regression tests (fast: weasyprint.HTML stubbed, no rendering) ---
+
+class _FakeHTML:
+    """Captures the kwargs generate_pdf passes to weasyprint.HTML."""
+    captured = {}
+
+    def __init__(self, string=None, base_url=None):
+        _FakeHTML.captured = {"string": string, "base_url": base_url}
+
+    def write_pdf(self, path):
+        Path(path).write_bytes(b"%PDF-stub")
+
+
+def test_narrative_mode_passes_base_url(tmp_path, simple_spec, monkeypatch):
+    # Regression: a relative <img src="logo.png"> in the narrative template must
+    # resolve against the bundle dir, so base_url is the resolved dir + os.sep
+    # (trailing sep so urljoin keeps the final segment).
+    import generate_pdf as gp
+    simple_spec["narrative"] = {"template_file": "x.md.template", "css_file": "x.css"}
+    monkeypatch.setattr(gp, "_narrative_html", lambda *a, **k: "<html></html>")
+    monkeypatch.setattr(gp.weasyprint, "HTML", _FakeHTML)
+
+    gp.generate_pdf(simple_spec, tmp_path / "n.pdf",
+                    template_dir="/some/bundle/dir", context="{}")
+    base_url = _FakeHTML.captured["base_url"]
+    assert base_url == str(Path("/some/bundle/dir").resolve()) + os.sep
+    assert base_url.endswith(os.sep)
+
+
+def test_structured_mode_base_url_none(tmp_path, simple_spec, monkeypatch):
+    # No narrative → structured mode → no base_url (nothing to resolve against).
+    import generate_pdf as gp
+    monkeypatch.setattr(gp.weasyprint, "HTML", _FakeHTML)
+    gp.generate_pdf(simple_spec, tmp_path / "s.pdf")
+    assert _FakeHTML.captured["base_url"] is None
 
 
 # --- PDF rendering integration tests ---

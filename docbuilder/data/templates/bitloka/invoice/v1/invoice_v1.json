@@ -57,7 +57,7 @@
         {
           "name": "Amount",
           "source_field": "amount",
-          "type": "string",
+          "type": "currency",
           "bold": true,
           "align": "right",
           "width": 14
@@ -68,7 +68,9 @@
           "position": "bottom",
           "label": "Total:",
           "label_column": "months",
-          "aggregates": []
+          "aggregates": [
+            {"column": "amount", "function": "sum"}
+          ]
         }
       ]
     }

@@ -268,42 +268,42 @@ Not in m2b: natural language requests, conversational template editing.
 
 ---
 
-### m3 — NL requests + conversational template editing ✦ *backlog*
+### m3 — Context builder ("same as last month") ✦ *done*
 
-**Goal:** Option C — user provides a natural language request; the LLM
-extracts data fields, selects the template, and fills values. Users can
-also refine a generated document via natural language instructions.
+**Goal:** a conversational agent turns a natural-language request into a
+`DOCBUILDER_CONTEXT` and hands off to the orchestrator, so a recurring document
+("invoice for XYZ for June 2026, same as last month") is produced from prior-run
+history with the date and invoice number advanced deterministically.
 
-Scope:
+Delivered (t1–t5):
 
-**Natural language request handling (Option C):**
-- Input: freeform text — "Generate a formal quote for Acme for 40 days of
-  consulting at £1,200/day including our standard payment terms"
-- LLM extracts: structured data fields (customer, line items, amounts,
-  terms), infers `doc_type` + `variant`
-- Extracted fields feed into the existing `compute_doc.py` pipeline
-- Ambiguity handling: LLM asks clarifying questions before rendering if
-  required fields are missing or ambiguous
-- Reliability gate: extracted fields shown to the user for confirmation
-  before rendering — LLM extraction errors must not silently produce a
-  wrong customer-facing document
+- **`run_log_writer.py` + orchestrator PHASE D2** — every run appends
+  `{tenant, doc_type, variant, run_id, timestamp, context, outputs}` to
+  `data/run_log.json` (gitignored), idempotent by `run_id`. This is the history the
+  context builder reads.
+- **`context_builder.exs`** — conversational agent (`read_file`/`write_file`/`run_command`).
+  Reads the tenant catalogue + run log, interprets the request, and writes
+  `output/confirmed_context.json`. **Single-shot gate:** it always writes the file and
+  emits a "PROPOSED DOCBUILDER_CONTEXT" block; the operator reviews the trajectory before
+  the orchestrator renders (an interactive confirm/amend loop is deferred).
+- **`resolve_last_run.py`** — deterministic "same as last month": finds the latest
+  matching `{tenant, doc_type, client_name}`, bumps `date` to month-end, increments the
+  invoice number `{FY}/{client_code}/{seq+1}` with the financial year rolling on April 1.
+  The LLM calls it and never computes these values itself.
+- **Orchestrator context source** — reads `DOCBUILDER_CONTEXT` env var if set, else
+  `DOCBUILDER_CONTEXT_FILE` (or the default `output/confirmed_context.json`). Sprint case
+  `docbuilder_context` chains builder → orchestrator end-to-end.
 
-**Conversational template editing:**
-- **Patch schema** — atomic operations:
-  `set_bold`, `set_align`, `set_column_width`, `add_aggregate_row`,
-  `set_merge_range`, `add_logo`, `reorder_columns`, `rename_column`, etc.
-- **JSONL edit log** — one line per patch, append-only; full audit trail;
-  template state = replay of all patches from base
-- `patch_template.py` — applies a patch JSON to a template JSON, deterministic
-- `replay_template.py` — reconstructs current template from base + JSONL log
-- Conversational agent: reads current template + user instruction → emits
-  patch JSON → calls `patch_template.py` → calls renderer for preview
-- Ambiguity handling: agent clarifies underspecified instructions before
-  applying patches
-- Save path: accepted patches written to JSONL log; template registry updated
-  (m2 dependency)
+Deferred to a future milestone (originally sketched for m3):
 
-Not in m3: multi-user collaboration on templates, approval workflows.
+- **Option C — freeform NL request → field extraction** (e.g. "a formal quote for Acme,
+  40 days at £1,200/day"): LLM extracts structured fields + infers `doc_type`/`variant`,
+  with a confirmation gate. m3 handles recurring/"same as last month" requests; open-ended
+  extraction is the next step.
+- **Conversational template editing** — patch schema (`set_bold`, `set_align`,
+  `add_aggregate_row`, …), append-only JSONL edit log, `patch_template.py` /
+  `replay_template.py`, and an editing agent.
+- Not planned: multi-user collaboration on templates, approval workflows.
 
 ---
 

@@ -440,6 +440,40 @@ DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_em
 - **PHASE A–C:** multi-source fetch (one raw JSON per source; template paths with the leading `docbuilder/` stripped), compute, render (xlsx/docx base files + narrative PDF), against the fetched bundle.
 - **PHASE D — rename:** outputs → `{client_name_slug}_{doc_type}_{date}.{ext}`.
 - **PHASE E/F (conditional):** upload to Drive / email the review alias — skipped with a notice when their creds are absent (dev verifies PHASE 0–D).
+- **PHASE D2 (m3):** after rename, `run_log_writer.py` appends the run to `data/run_log.json` (gitignored) — the history the context builder reads for "same as last month".
+
+### m3 — context builder ("same as last month")
+
+A conversational agent (`context_builder.exs`) turns a natural-language request into a
+`DOCBUILDER_CONTEXT` and hands off to the orchestrator. Single-shot gate: it always
+writes the context file and emits a "PROPOSED DOCBUILDER_CONTEXT" block; the operator
+reviews the trajectory before the orchestrator renders.
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DOCBUILDER_REQUEST` | The natural-language request for `context_builder.exs` | `Invoice for XYZ for June 2026, same as last month` |
+| `DOCBUILDER_CONTEXT_FILE` | Orchestrator: path to the confirmed-context file to read when `DOCBUILDER_CONTEXT` is unset. Default `output/confirmed_context.json` | `/abs/path/output/confirmed_context.json` |
+
+- **Context source precedence (orchestrator):** `DOCBUILDER_CONTEXT` env var (non-empty)
+  > `DOCBUILDER_CONTEXT_FILE` (or the default `output/confirmed_context.json`) > `{}`.
+  Env-var-wins protects legacy/direct runs from a stale file; the NL flow leaves the env
+  var unset and uses the file.
+- **`DOCBUILDER_AUTOCONFIRM`: not implemented** — the builder always writes the context
+  file; the gate is the operator reviewing the trajectory (no auto-confirm flag).
+- **Recurring resolution:** for "same as last month", `context_builder` calls
+  `resolve_last_run.py`, which reads `data/run_log.json`, finds the latest matching
+  `{tenant, doc_type, client_name}`, bumps the date to month-end and increments the
+  invoice number (`{FY}/{client_code}/{seq+1}`, FY rolling April 1). An absent run log →
+  `no_prior_run` (the builder falls back to the request).
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+# Chains context_builder.exs → docbuilder_orchestrator.exs (reads confirmed_context.json).
+# The case resets data/run_log.json to the May seed for a deterministic June invoice.
+DOCBUILDER_TENANT=bitloka \
+DOCBUILDER_REQUEST="Invoice for XYZ for June 2026, same as last month" \
+./scripts/sprint.sh docbuilder_context
+```
 
 ### Expected output files
 

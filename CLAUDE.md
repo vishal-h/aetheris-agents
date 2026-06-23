@@ -271,3 +271,19 @@ Findings that recurred across ≥2 tickets in the docbuilder m2b milestone, prom
 
 **Factor cross-script plumbing into a shared `_helper.py` module with lazy heavy imports.** When several scripts in a use case share non-trivial plumbing (HTML table markup, Drive auth/navigation/upload), put it in one `scripts/_name.py` rather than duplicating or cross-importing between CLIs. Keep heavy third-party imports *inside the functions* (not at module top) so unit tests can import the helper — and the scripts that use it — without the dependency installed; only the code path that actually calls out needs it.
 `Source: m-docbuilder-m2a t10 (_table_html.py), m2b t2/t5 (_drive.py: build_service/find_or_create_folder/upload_file with lazy googleapiclient imports)`
+
+---
+
+## Learning — m3-docbuilder
+
+Findings that recurred across ≥2 tickets in the docbuilder m3 milestone (the context
+builder), promoted per methodology §7.
+
+**Derived values are computed by a deterministic script and written to a file; the LLM only orchestrates and never recomputes them — assert this with a byte-identical / end-to-end check.** When an agent must produce values that have real rules (a financial-year invoice sequence, a month-end date), put the rule in a Python script that writes the result to a `--output` file; the agent calls the script, reads the file back, and passes it downstream verbatim. Prove the LLM added nothing by diffing the agent-produced artifact against the script run directly (must be byte-identical), or by an end-to-end render whose output could only come from the script's values. This is the concrete, testable form of "scripts do, agents decide" — when it holds, the agent prompt can shrink to "detect intent → call script → present", which is far more reliable than asking the LLM to do the math.
+`Source: m-docbuilder-m3 t3 (resolve_last_run.py; byte-identical confirmed_context.json), t4 (end-to-end render from the script-produced context)`
+
+**When the implementation diverges from the milestone doc, adjudicate the intent, then update the doc — the milestone doc is the single source of truth, so a divergence is closed by changing code *or* the doc, never left as a silent mismatch.** Repeatedly the right call was to keep the (better) implementation and bring the doc to it: single-shot confirmation gate vs an interactive loop; absent-run-log → exit 0 (degrade) vs exit 1; a configurable `DOCBUILDER_CONTEXT_FILE` env var; `DOCBUILDER_AUTOCONFIRM` recorded as not-implemented. Each was adjudicated and the design-decisions table / done-check note updated in the same commit, so the next ticket (and the t5 runbook) is written against the truth rather than a stale spec.
+`Source: m-docbuilder-m3 t2 (single-shot gate), t3 (missing-log degrade), t4 (DOCBUILDER_CONTEXT_FILE, DOCBUILDER_AUTOCONFIRM)`
+
+**Pre-list a tool an agent will need next milestone-step, and verify stateful pipelines against their own output record (not a hardcoded value); reset accumulating fixtures for deterministic sprints.** Adding `run_command` to the context builder's `tools:` in t2 — before it was used — made the t3 wiring a prompt-only edit. For the t4 sprint, verifying rendered files against the orchestrator's `renamed.json` (its authoritative PHASE-D record) rather than a hardcoded `…30-Jun-2026…` made the check date-independent; and because `run_log.json` accumulates, the sprint must reset it to a known seed so "same as last month" resolves deterministically (production accumulates; the test seeds).
+`Source: m-docbuilder-m3 t2 (run_command pre-listed), t4 (renamed.json verification + run_log seed reset)`

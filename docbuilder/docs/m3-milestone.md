@@ -171,3 +171,45 @@ Paste this at the start of the new session:
 > Ready to draft the m3 milestone doc. Start by reading
 > `docbuilder/docs/m2b-milestone.md` (for the format convention) and
 > `docbuilder/docs/context-schema.md` (for the field list), then let's plan.
+
+---
+
+## Milestone summary (close — t5, 2026-06-23)
+
+**m3 is done (t1–t5).** The context builder turns a natural-language "same as last month"
+request into a rendered, branded invoice with the date and invoice number advanced
+deterministically.
+
+**Shipped:**
+- t1 — `run_log_writer.py` + orchestrator PHASE D2: every run is appended to
+  `data/run_log.json` (idempotent by `run_id`).
+- t2 — `context_builder.exs`: NL request → `output/confirmed_context.json`, single-shot
+  confirmation gate; `run_command` pre-listed for t3.
+- t3 — `resolve_last_run.py`: deterministic "same as last month" — month-end date +
+  `{FY}/{client_code}/{seq+1}` FY-rolling invoice increment. The LLM calls it; it never
+  computes the values (byte-identical proof).
+- t4 — orchestrator context source (`DOCBUILDER_CONTEXT` env > `DOCBUILDER_CONTEXT_FILE`
+  / default file > `{}`); `docbuilder_context` sprint chains builder → orchestrator.
+- t5 — docs sync (capability matrix 2 agents / 20 scripts; rig runbook; README;
+  context-schema), CLAUDE.md `## Learning — m3-docbuilder`, this summary, drift check.
+
+**Capability matrix:** docbuilder 2 agents / 20 scripts; repo total 25 / 58.
+
+**Promoted learnings (`## Learning — m3-docbuilder` in CLAUDE.md):** (1) deterministic
+script owns derived values, LLM only orchestrates — assert byte-identical/end-to-end;
+(2) divergence from the milestone doc is closed by adjudicating + updating the doc (single
+source of truth); (3) pre-list next-step tools + verify stateful pipelines against their
+own output record + reset accumulating fixtures.
+
+**Deferred (out of m3):** Option C (freeform NL field extraction), conversational template
+editing (patch schema + JSONL edit log), an interactive confirm/amend loop.
+
+**Surprises / decisions:** the FY-code shorthand in the original design table would have
+produced `202627` — corrected to the data-true `2627` (t3). The `docbuilder_context` sprint
+resets `run_log.json` to a seed because accumulation made "same as last month" drift to a
+later month (t4). Env-var-wins context precedence protects legacy/direct runs from a stale
+confirmed-context file.
+
+**Project-knowledge refresh (BL-002, human-owned):** `CLAUDE.md`,
+`docs/capability-matrix.md`, and `docs/rig/runbook.md` changed — re-upload to the Claude.ai
+project and advance `docs/project-knowledge-manifest.md` to clear the drift WARNs.

@@ -47,32 +47,52 @@ Read these first (use read_file):
 The request is in the user message below.
 
 Workflow:
-  1. read_file the catalogue. Decide the doc_type + variant the request refers to. If the
-     request names a doc type that is not in the catalogue, say so and STOP.
-  2. read_file the run log. For "same as last month" (or similar), find the MOST RECENT
-     entry (last in the array / latest timestamp) whose context matches the requested
-     client_name and doc_type. Carry its stable fields forward VERBATIM:
-     client_name, client_email, client_address, order_ref, order_effective_date, terms.
-  3. Build the DOCBUILDER_CONTEXT for the NEW period the request asks for:
-       - date: the requested period (for an invoice, the month-end of the requested month).
-       - title / invoice_number / amount_due: update for the new period.
-         ⚠ PROVISIONAL — the exact invoice-number sequence + financial-year increment is
-         computed by a script in a later milestone step (t3). For now use the request's
-         explicit values if given; otherwise mirror last month's and note it is provisional.
-       - Required for every context: title, client_name, client_email, date.
-         For invoices ALSO: invoice_number, client_address, amount_due.
-  4. Do NOT invent client data. If a required field is neither in the request nor in a
-     matching prior run, LIST what is missing and STOP — do not fabricate values.
-  5. Present the resolved context as pretty JSON under the heading:
+  1. read_file the catalogue (#{catalogue_rel}). Decide the doc_type + variant the request
+     refers to. If the request names a doc type not in the catalogue, say so and STOP.
+
+  2. Decide whether this is a RECURRING request — "same as last month", "like last time",
+     "the usual", or any request to repeat a prior document for an existing client.
+
+  3a. RECURRING → resolve it deterministically from the run log. Do NOT compute dates or
+      invoice numbers yourself — a script owns that math:
+        run_command  command: "python3"
+                     args: ["scripts/resolve_last_run.py",
+                            "--tenant", "#{tenant}",
+                            "--doc-type", "<DOC_TYPE>",
+                            "--client-name", "<CLIENT>",
+                            "--target-month", "<YYYY-MM>",
+                            "--output", "output/confirmed_context.json"]
+        - <DOC_TYPE> : the doc type from step 1.
+        - <CLIENT>   : the client named in the request (a substring like "XYZ" is fine).
+        - <YYYY-MM>  : the month the request asks for, e.g. "June 2026" -> "2026-06".
+                       OMIT the --target-month element entirely if the request names no
+                       month (the script defaults to the current month).
+        Then:
+        - If stdout is {"status": "no_prior_run", ...}: there is no matching prior run —
+          go to step 3b (build from the request).
+        - Otherwise the script WROTE output/confirmed_context.json (date bumped to
+          month-end, invoice number incremented with the correct financial year).
+          read_file it and go to step 4. Do NOT alter the date, invoice_number, or FY —
+          the script owns that.
+
+  3b. FRESH request (not recurring, or no prior run) → build the DOCBUILDER_CONTEXT from
+      the request + catalogue. Required for every context: title, client_name,
+      client_email, date. For invoices ALSO: invoice_number, client_address, amount_due.
+      Do NOT invent client data — if a required field is in neither the request nor a
+      prior run, LIST what is missing and STOP. write_file the context (a single JSON
+      object, not wrapped) to "output/confirmed_context.json".
+
+  4. Present the final context (the contents of output/confirmed_context.json) as pretty
+     JSON under the heading:
        "PROPOSED DOCBUILDER_CONTEXT (review before rendering):"
-     This is the confirmation view for the operator.
-  6. write_file the resolved context JSON to "output/confirmed_context.json"
-     (a single JSON object — the context, not wrapped). Then print that path.
+     Then print the path "output/confirmed_context.json".
 
 Rules:
   - All paths are relative to the sandbox root; overlay_base_dir is nil (files persist).
   - Output strictly the documented fields; do not add unknown keys.
-  - You read the catalogue + run log and write the context JSON — nothing else.
+  - You read the catalogue + run log, optionally call resolve_last_run.py, and write the
+    context JSON — nothing else. For recurring requests the script computes the date and
+    invoice number; you never compute those yourself.
 """
 
 user_prompt =

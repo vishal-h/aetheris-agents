@@ -2,16 +2,29 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
 tenant = System.get_env("DOCBUILDER_TENANT") || raise "DOCBUILDER_TENANT not set"
 
-# Single input blob (docs/context-schema.md). Unset/empty → "{}" so we never pass an
-# empty --context to a script (json.loads("") would fail).
-context_json =
+# Context source (m3 t4). Precedence:
+#   1. DOCBUILDER_CONTEXT env var (non-empty) — explicit/legacy runs always win, so a
+#      stale output/confirmed_context.json can never hijack a direct env-var run.
+#   2. output/confirmed_context.json — written by the context builder (context_builder.exs);
+#      this is the "same as last month" → render handoff when no env var is set.
+#   3. "{}" — never pass an empty --context to a script (json.loads("") would fail).
+confirmed_path = Path.join(agent_root, "output/confirmed_context.json")
+
+{raw_context_json, context_source} =
   case System.get_env("DOCBUILDER_CONTEXT") do
-    nil -> "{}"
-    "" -> "{}"
-    v -> v
+    v when is_binary(v) and v != "" -> {v, "env:DOCBUILDER_CONTEXT"}
+    _ ->
+      if File.exists?(confirmed_path) do
+        {File.read!(confirmed_path), "file:output/confirmed_context.json"}
+      else
+        {"{}", "default:{}"}
+      end
   end
 
-context = Jason.decode!(context_json)
+context = Jason.decode!(raw_context_json)
+# Normalise to compact single-line JSON for verbatim prompt interpolation (the file
+# source is pretty-printed; the "one arg, verbatim" steps need a single line).
+context_json = Jason.encode!(context)
 
 # Delivery creds — when absent, the matching delivery PHASE is skipped (the pipeline
 # degrades gracefully in dev; runs fully in production).
@@ -236,6 +249,7 @@ executing the steps below in order, then report the output files and any Drive l
 
 Configuration resolved at startup:
   Tenant:          #{tenant}
+  Context source:  #{context_source}
   Resolved target: #{resolved_doc_type} / #{resolved_version}  (output prefix #{prefix})
   Template bundle: #{bundle_dir}
   Data sources:    #{Enum.map_join(sources, ", ", & &1.key)}

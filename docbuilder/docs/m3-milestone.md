@@ -55,6 +55,8 @@ language and hands off to the orchestrator, with a confirmation gate before rend
 | Invoice number increment | `{FY}/{client_code}/{seq+1}` where the FY code is the last two digits of each year (`{start%100:02d}{end%100:02d}`), rolling on April 1: month ≥ 4 → `{year}-{year+1}` (e.g. 2026-06 → `2627`), else `{year-1}-{year}` (e.g. 2026-03 → `2526`). Matches the committed Bitloka invoice `2627/XYZ/02`. (t3: corrected from the original `{year}{…}` shorthand, which would have produced `202627`.) `seq+1` does not reset on FY change. |
 | Confirmation gate | **Single-shot** (t2 / review F2): the agent always writes `output/confirmed_context.json` and emits a "PROPOSED DOCBUILDER_CONTEXT" block; the operator reviews that block before invoking the orchestrator, and t4 only renders when the file exists. An interactive confirm/amend loop needs a conversational harness — deferred, out of m3 scope. |
 | Agent type | Conversational Elixir agent (new `context_builder.exs`) with `read_file`/`write_file`/`run_command` tools |
+| Orchestrator context source (t4) | Precedence: `DOCBUILDER_CONTEXT` env var (non-empty) > the context-builder file > `{}`. The file path is `DOCBUILDER_CONTEXT_FILE` if set, else the default `output/confirmed_context.json`. Env-var-wins protects legacy/direct runs from a stale file; the canonical NL flow leaves the env var unset and uses the file. |
+| `DOCBUILDER_AUTOCONFIRM` | **Not implemented** (t4 decision / review F4). The context builder always writes `confirmed_context.json`; the operator reviews the trajectory before invoking the orchestrator (single-shot gate, t2/F2). There is no auto-confirm flag. |
 
 ### Proposed ticket structure
 

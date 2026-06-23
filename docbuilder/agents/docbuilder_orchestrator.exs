@@ -4,18 +4,20 @@ tenant = System.get_env("DOCBUILDER_TENANT") || raise "DOCBUILDER_TENANT not set
 
 # Context source (m3 t4). Precedence:
 #   1. DOCBUILDER_CONTEXT env var (non-empty) — explicit/legacy runs always win, so a
-#      stale output/confirmed_context.json can never hijack a direct env-var run.
-#   2. output/confirmed_context.json — written by the context builder (context_builder.exs);
-#      this is the "same as last month" → render handoff when no env var is set.
+#      stale confirmed-context file can never hijack a direct env-var run.
+#   2. The context-builder file — DOCBUILDER_CONTEXT_FILE if set, else the default
+#      output/confirmed_context.json. This is the "same as last month" → render handoff.
 #   3. "{}" — never pass an empty --context to a script (json.loads("") would fail).
-confirmed_path = Path.join(agent_root, "output/confirmed_context.json")
+context_file_env = System.get_env("DOCBUILDER_CONTEXT_FILE")
+confirmed_path = context_file_env || Path.join(agent_root, "output/confirmed_context.json")
+file_origin = if context_file_env, do: "DOCBUILDER_CONTEXT_FILE", else: "default"
 
 {raw_context_json, context_source} =
   case System.get_env("DOCBUILDER_CONTEXT") do
     v when is_binary(v) and v != "" -> {v, "env:DOCBUILDER_CONTEXT"}
     _ ->
       if File.exists?(confirmed_path) do
-        {File.read!(confirmed_path), "file:output/confirmed_context.json"}
+        {File.read!(confirmed_path), "file:#{confirmed_path} (#{file_origin})"}
       else
         {"{}", "default:{}"}
       end

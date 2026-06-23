@@ -113,6 +113,10 @@ renamed_files =
 model    = System.get_env("AETHERIS_MODEL")    || "claude-haiku-4-5-20251001"
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
+# Pre-establish the run_id so it can be referenced both in the RunConfig and in
+# the PHASE D2 run-log step (m3: the context builder reads run_log by run_id).
+run_id = "docbuilder-orch-#{Aetheris.ID.generate()}"
+
 # --- build concrete step text -------------------------------------------------
 
 fetch_steps =
@@ -173,6 +177,12 @@ render_steps =
 rename_args =
   ["scripts/rename_output.py", "--output-dir", "output", "--filename-prefix", prefix,
    "--context", "<CONTEXT>", "--output", "output/renamed.json"]
+
+run_log_args =
+  ["scripts/run_log_writer.py", "--tenant", tenant, "--doc-type", resolved_doc_type,
+   "--variant", to_string(resolved_version), "--run-id", run_id,
+   "--renamed", "output/renamed.json", "--context", "<CONTEXT>",
+   "--log-file", "data/run_log.json"]
 
 upload_phase =
   if deliver_upload? do
@@ -256,11 +266,16 @@ PHASE B — Compute the doc spec from the bundle template and ALL raw source fil
 PHASE C — Render each output format from the saved doc spec.
 #{render_steps}
 
-PHASE D — Rename the rendered outputs to the deliverable convention.
+PHASE D — Rename the rendered outputs to the deliverable convention, then log the run.
   D1. run_command  command: "python3"  args: #{inspect(rename_args)}
       Replace the "<CONTEXT>" element with this EXACT JSON, one arg, verbatim:
         #{context_json}
       Writes output/renamed.json (array of {original, renamed}).
+  D2. Append this run to the run log (m3 "same as last month" context builder):
+        run_command  command: "python3"  args: #{inspect(run_log_args)}
+        Replace the "<CONTEXT>" element with this EXACT JSON, one arg, verbatim:
+          #{context_json}
+        Writes data/run_log.json and prints only that path.
 
 #{upload_phase}
 #{email_phase}
@@ -284,7 +299,7 @@ Rules:
 """
 
 %Aetheris.RunConfig{
-  run_id:           "docbuilder-orch-#{Aetheris.ID.generate()}",
+  run_id:           run_id,
   mode:             :record,
   provider:         provider,
   model:            model,

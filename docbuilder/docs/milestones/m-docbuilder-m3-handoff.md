@@ -39,6 +39,7 @@ language and hands off to the orchestrator, with a confirmation gate before rend
 |---|---|
 | Run log storage | Option B — local `docbuilder/data/run_log.json` (gitignored) |
 | Run log format | JSON array, one entry per run (see seeded entry below) |
+| Run log idempotency | **Replace-in-place by `run_id`** (t1 decision, refining the original "skip if exists"): re-running a `run_id` overwrites that entry rather than skipping or duplicating, so the log stays accurate. The log is append-only *history* across distinct run_ids; `resolve_last_run.py` (t3) must pick the latest matching `{tenant, doc_type, client_name}` by order/timestamp — it must **not** assume `{client_name, date}` is unique. |
 | "Same as last month" | Find last matching `{tenant, doc_type, client_name}` entry in run_log; bump date + increment invoice sequence |
 | Invoice number increment | `{FY}/{client_code}/{seq+1}` where FY rolls on April 1: month ≥ 4 → `{year}{(year+1)%100:02d}`, else `{year-1}{year%100:02d}` |
 | Confirmation gate | Mandatory — show resolved context as JSON, wait for "confirm" or amendment before calling the orchestrator |

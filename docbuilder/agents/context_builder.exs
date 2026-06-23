@@ -44,8 +44,7 @@ Read these first (use read_file):
         {tenant, doc_type, variant, run_id, timestamp, context, outputs}.
         Use it for "same as last month" / "like last time".
 
-The request:
-  "#{request}"
+The request is in the user message below.
 
 Workflow:
   1. read_file the catalogue. Decide the doc_type + variant the request refers to. If the
@@ -93,7 +92,9 @@ user_prompt =
   overlay_base_dir: nil,
   max_steps:        15,
   context_strategy: :full,
-  tools:            ["read_file", "write_file"],
+  # run_command is listed but unused in t2 — t3 adds a resolve_last_run.py call, which
+  # is then a prompt-only edit (keeps the t2→t3 delta minimal). See review F1.
+  tools:            ["read_file", "write_file", "run_command"],
   system_prompt:    system_prompt,
   user_prompt:      user_prompt
 }

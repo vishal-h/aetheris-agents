@@ -29,9 +29,16 @@ language and hands off to the orchestrator, with a confirmation gate before rend
 **The canonical user story:**
 
 > "Invoice for XYZ for Jun 2026 — same as last month"
-> → agent resolves last run, bumps date and invoice number, shows context for confirmation
-> → user approves (or amends)
+> → agent resolves last run, bumps date and invoice number, and writes the resolved
+>   context, presenting it as a "PROPOSED DOCBUILDER_CONTEXT" block (the confirmation view)
+> → operator reviews that block in the trajectory before invoking the orchestrator
 > → orchestrator runs
+
+> **Confirmation gate is single-shot** (t2 decision, review F2): the agent always writes
+> `output/confirmed_context.json` and emits the proposal block for review; the "gate" is
+> the operator inspecting it before triggering rendering, and t4 only renders when the
+> file exists. A true interactive "Confirm? / tell me what to change" loop needs a
+> conversational harness that is **not built** and is **deferred out of m3 scope**.
 
 ### Key design decisions (resolved)
 
@@ -42,7 +49,7 @@ language and hands off to the orchestrator, with a confirmation gate before rend
 | Run log idempotency | **Replace-in-place by `run_id`** (t1 decision, refining the original "skip if exists"): re-running a `run_id` overwrites that entry rather than skipping or duplicating, so the log stays accurate. The log is append-only *history* across distinct run_ids; `resolve_last_run.py` (t3) must pick the latest matching `{tenant, doc_type, client_name}` by order/timestamp — it must **not** assume `{client_name, date}` is unique. |
 | "Same as last month" | Find last matching `{tenant, doc_type, client_name}` entry in run_log; bump date + increment invoice sequence |
 | Invoice number increment | `{FY}/{client_code}/{seq+1}` where FY rolls on April 1: month ≥ 4 → `{year}{(year+1)%100:02d}`, else `{year-1}{year%100:02d}` |
-| Confirmation gate | Mandatory — show resolved context as JSON, wait for "confirm" or amendment before calling the orchestrator |
+| Confirmation gate | **Single-shot** (t2 / review F2): the agent always writes `output/confirmed_context.json` and emits a "PROPOSED DOCBUILDER_CONTEXT" block; the operator reviews that block before invoking the orchestrator, and t4 only renders when the file exists. An interactive confirm/amend loop needs a conversational harness — deferred, out of m3 scope. |
 | Agent type | Conversational Elixir agent (new `context_builder.exs`) with `read_file`/`write_file`/`run_command` tools |
 
 ### Proposed ticket structure
@@ -58,9 +65,11 @@ language and hands off to the orchestrator, with a confirmation gate before rend
 - Reads the tenant's catalogue + run_log
 - Understands: "invoice for XYZ for Jun 2026", "same as last month", explicit field overrides
 - Resolves to a concrete `DOCBUILDER_CONTEXT` JSON
-- Shows it for confirmation; accepts amendments in plain language
-- On confirm: writes context to `output/confirmed_context.json` and prints it
-- Tools: `read_file` (catalogue, run_log), `write_file` (confirmed_context.json)
+- Presents it as a "PROPOSED DOCBUILDER_CONTEXT" block (single-shot confirmation view —
+  see the Confirmation-gate decision above) and writes it to
+  `output/confirmed_context.json`
+- Tools: `read_file` (catalogue, run_log), `write_file` (confirmed_context.json),
+  `run_command` (listed but unused in t2; t3 calls `resolve_last_run.py` via it — F1)
 
 **t3 — "Same as last month" resolution + FY invoice number increment**
 - `resolve_last_run.py` — finds last matching entry in run_log by

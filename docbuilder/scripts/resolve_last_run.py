@@ -114,7 +114,10 @@ def _parse_target_month(s):
     if not s:
         now = datetime.now()
         return now.year, now.month
-    year_s, month_s = s.split("-")
+    # maxsplit=1 so a 3-part value like "2026-06-01" yields ("2026", "06-01") and
+    # int("06-01") raises a clean ValueError (caught by main) rather than an unhandled
+    # "too many values to unpack".
+    year_s, month_s = s.split("-", 1)
     year, month = int(year_s), int(month_s)
     if not 1 <= month <= 12:
         raise ValueError(f"month out of range in --target-month '{s}'")

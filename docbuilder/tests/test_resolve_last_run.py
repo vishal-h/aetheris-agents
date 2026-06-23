@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from resolve_last_run import (
+    _parse_target_month,
     bump_invoice_number,
     find_last_match,
     fy_code,
@@ -69,6 +70,34 @@ def test_fy_code(year, month, expected):
 ])
 def test_month_end(year, month, expected):
     assert month_end(year, month) == expected
+
+
+# --- _parse_target_month ---
+
+def test_parse_target_month_basic():
+    assert _parse_target_month("2026-06") == (2026, 6)
+
+
+def test_parse_target_month_default_is_current(monkeypatch):
+    import resolve_last_run as r
+    class _Now:
+        @staticmethod
+        def now():
+            import datetime as _dt
+            return _dt.datetime(2026, 6, 23)
+    monkeypatch.setattr(r, "datetime", _Now)
+    assert _parse_target_month(None) == (2026, 6)
+
+
+def test_parse_target_month_extra_parts_raises():
+    # "2026-06-01" → ("2026", "06-01") → int("06-01") raises (F2 hardening).
+    with pytest.raises(ValueError):
+        _parse_target_month("2026-06-01")
+
+
+def test_parse_target_month_out_of_range_raises():
+    with pytest.raises(ValueError):
+        _parse_target_month("2026-13")
 
 
 # --- bump_invoice_number ---
@@ -216,6 +245,17 @@ def test_cli_bad_target_month_exits_1(tmp_path):
               "--target-month", "2026-13", "--run-log", str(log)])
     assert r.returncode == 1
     assert "error" in r.stderr
+
+
+def test_cli_target_month_extra_parts_exits_1(tmp_path):
+    # F2: a 3-part --target-month must exit 1 cleanly, not raise an unhandled error.
+    log = tmp_path / "run_log.json"
+    log.write_text("[]")
+    r = _run(["--tenant", "bitloka", "--doc-type", "invoice", "--client-name", "X",
+              "--target-month", "2026-06-01", "--run-log", str(log)])
+    assert r.returncode == 1
+    assert "error" in r.stderr
+    assert "Traceback" not in r.stderr  # clean error path, not an unhandled exception
 
 
 def test_cli_corrupt_log_exits_1(tmp_path):

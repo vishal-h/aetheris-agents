@@ -81,7 +81,12 @@ language and hands off to the orchestrator, with a confirmation gate before rend
   current month-end and invoice sequence incremented
 - FY logic: `{FY}/{client_code}/{seq+1}` with April 1 rollover
 - `context_builder.exs` calls this script when "same as last month" is detected
-- Tests: FY rollover (March→April), sequence increment, no prior run (graceful)
+- **Missing run log** (t3 / review F1): an absent `run_log.json` is treated as an empty
+  log → `{"status": "no_prior_run"}`, **exit 0** (a missing log on a fresh checkout is an
+  expected state; the agent falls back to a fresh request). Hard-fail (exit 1) is reserved
+  for a malformed/non-array log or a bad `--target-month`.
+- Tests: FY rollover (March→April), sequence increment, no prior run (graceful),
+  missing/empty/corrupt log, `--target-month` parsing (incl. 3-part value → exit 1)
 
 **t4 — Orchestrator integration: context_builder → orchestrator handoff**
 - When `confirmed_context.json` exists, the orchestrator reads it instead of the

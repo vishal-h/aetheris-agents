@@ -1,4 +1,8 @@
-# Docbuilder m3 — Handoff & Conversation Starter
+# Docbuilder m3 — Context Builder (milestone)
+
+> Canonical m3 milestone doc (single source of truth, methodology §1/§8). Named to match
+> the m1/m2a/m2b convention (`docs/m{N}-milestone.md`); originally drafted as the m3
+> handoff/conversation-starter, retained below.
 
 ## State at session close (2026-06-22)
 

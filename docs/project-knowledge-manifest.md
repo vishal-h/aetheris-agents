@@ -27,6 +27,7 @@ Refresh trigger: milestone end, or before any handoff session.
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b08c425` | 2026-06-23 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `201dcc2` | 2026-06-14 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `cdb6a21` | 2026-06-13 |
+| `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-23 |
 
 ---

@@ -42,6 +42,10 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
   { key: 'PAYSLIP_EMPLOYEE_ID', label: 'Employee ID',     group: 'Payslip',
     masked: false, placeholder: 'BTL_999 — leave blank for all' },
 
+  // Docbuilder
+  { key: 'DOCBUILDER_TENANT',   label: 'Tenant',          group: 'Docbuilder',
+    masked: false, placeholder: 'bitloka' },
+
   // Provenance
   { key: 'PROVENANCE_NAS_PATH', label: 'NAS archive path',  group: 'Provenance',
     masked: false, placeholder: '/your/nas/archive/path' },

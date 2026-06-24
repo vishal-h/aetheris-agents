@@ -28,9 +28,8 @@ const STEP_CONFIG_HINTS: Record<string, string[]> = {
     'SMTP_USER',
     'SMTP_PASSWORD',
   ],
-  'docbuilder/agents/context_builder.exs':                ['DOCBUILDER_TENANT', 'DOCBUILDER_REQUEST'],
-  'docbuilder/agents/docbuilder_orchestrator.exs':        ['DOCBUILDER_TENANT', 'DOCBUILDER_CONTEXT_FILE'],
-  'docbuilder/agents/docbuilder_context_orchestrator.exs': ['DOCBUILDER_TENANT', 'DOCBUILDER_REQUEST'],
+  'docbuilder/agents/context_builder.exs':         ['DOCBUILDER_TENANT', 'DOCBUILDER_REQUEST'],
+  'docbuilder/agents/docbuilder_orchestrator.exs': ['DOCBUILDER_TENANT', 'DOCBUILDER_CONTEXT_FILE'],
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────

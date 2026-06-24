@@ -19,8 +19,9 @@ orchestrator) requires two manual Orchestrator invocations.
 This milestone delivers:
 1. Per-run env vars in the Orchestrator request form (t1)
 2. Docbuilder stored config + `STEP_CONFIG_HINTS` (t2)
-3. A thin `docbuilder_context_orchestrator.exs` that chains the two steps
-   into one Rig run (t3)
+3. A `chain_docbuilder.py` script that chains the two steps, run **top-level**
+   by Rig and emitting the orchestrator protocol (t3 — corrected from a wrapping
+   agent, which can't nest `mix aetheris run`; see §t3)
 4. A dedicated Docbuilder panel with a pre-populated form and one-click
    chained execution (t4)
 5. Docs sync + milestone close (t5)
@@ -44,11 +45,15 @@ This milestone delivers:
 Two design points from the milestone draft were verified against source before
 writing this doc; the t3 and t4 prompts below reflect the findings.
 
-- **`run_command` has no `env` field** (verified: `aetheris/lib/aetheris/execution/
-  tool_schema/registry.ex` — the schema is `command` / `args` / `working_dir` /
-  `timeout_ms` only). t3 **must** use a `sh -c` wrapper to set per-invocation env vars;
-  there is no env-passing form. The wrapper also has to `cd` into the **aetheris** repo
-  (where `mix aetheris run` works) and reference the agents via `../aetheris-agents/…`.
+- **`run_command` cannot set per-invocation env, and `sh`/`bash` are blocked**
+  (corrected during t3). The schema (`aetheris/lib/aetheris/execution/tool_schema/
+  registry.ex`) has no `env` field — `command` / `args` / `working_dir` / `timeout_ms`
+  only — AND the exec-server allowlist (`native/aetheris_exec_server/src/runner.rs`,
+  `PERMITTED_COMMANDS`) rejects `sh`/`bash` by basename. The original `sh -c "VAR=… mix
+  aetheris run …"` plan is therefore impossible. `python3` IS allowlisted, so t3 moves the
+  per-step env plumbing into a Python script (`chain_docbuilder.py`) that the agent calls
+  via a single `run_command`. (The initial draft's "use a `sh -c` wrapper" claim was wrong
+  — it verified the tool schema but not the command allowlist.)
 - **No new Tauri file-read command is needed for t4.** `tools_read_script`
   (`rig/src-tauri/src/commands/tools.rs`) already reads any file under
   `AETHERIS_AGENTS_PATH` (joins `use_case`/`file`, canonicalizes, rejects path traversal —
@@ -68,11 +73,11 @@ writing this doc; the t3 and t4 prompts below reflect the findings.
 | `DOCBUILDER_TENANT` placement | Stored config (`agentConfigDefs.ts`, new "Docbuilder" group) | Stable per installation — same pattern as `AETHERIS_MODEL` |
 | `DOCBUILDER_REQUEST` placement | Per-run env var + Docbuilder panel text field | Changes every invocation; no value in persisting |
 | `DOCBUILDER_CONTEXT_FILE` placement | Per-run env var; set automatically by the chained orchestrator | Path is run-specific; operator never types it in the chained flow |
-| Chained execution approach | `docbuilder_context_orchestrator.exs` — a new thin Elixir agent that runs the context builder then the orchestrator as two sequential Aetheris runs via `run_command` on `mix aetheris run` | Keeps Rust side unchanged; each run has its own trajectory; no new `OrchestratorJob` sequencing in Rig |
-| Per-invocation env in the chained agent | `sh -c` wrapper around `mix aetheris run` (run_command has no `env` field — verified) | The only way to set per-step env vars; step 2 also `env -u DOCBUILDER_CONTEXT` so the file is read |
+| Chained execution approach | `chain_docbuilder.py` run **top-level** by Rig (via `orchestrate_start`, `.py` heuristic) — runs the two `mix aetheris run` sub-agents sequentially and emits the orchestrator protocol. **Corrected (t3):** a wrapping agent can't be used — a nested `mix aetheris run` hits `ETXTBSY` re-copying the in-use worker binary. Top-level = sequential, non-nested (like the sprint). | Each sub-run still records its own trajectory; one backend job; phase lifecycle via the protocol |
+| Per-invocation env in the chained agent | `chain_docbuilder.py` (python3, allowlisted) runs both sub-agents via `subprocess.run(env=…, cwd=…)`; the agent makes one `run_command` to it | `run_command` has no `env` field and `sh`/`bash` are blocked by the exec-server allowlist, so a Python script is the only way to set per-step env; deterministic + unit-testable. Step 2 removes `DOCBUILDER_CONTEXT` from env so the file is read |
 | Docbuilder panel | New module (`docbuilder`) with a single route `/docbuilder` — tenant (from stored config), request field, Run button, output file list | Thin React wrapper over `orchestratorStart`; reuses `useOrchestrator` |
 | Panel output file list | Read `docbuilder/output/renamed.json` via the existing `tools_read_script` command (no new Tauri command) | `tools_read_script` already reads any path under `AETHERIS_AGENTS_PATH` |
-| `STEP_CONFIG_HINTS` entries | `context_builder.exs` → `['DOCBUILDER_TENANT', 'DOCBUILDER_REQUEST']`; `docbuilder_orchestrator.exs` → `['DOCBUILDER_TENANT', 'DOCBUILDER_CONTEXT_FILE']`; `docbuilder_context_orchestrator.exs` → `['DOCBUILDER_TENANT', 'DOCBUILDER_REQUEST']` | Surfaces the vars the operator needs to verify before approving |
+| `STEP_CONFIG_HINTS` entries | `context_builder.exs` → `['DOCBUILDER_TENANT', 'DOCBUILDER_REQUEST']`; `docbuilder_orchestrator.exs` → `['DOCBUILDER_TENANT', 'DOCBUILDER_CONTEXT_FILE']` (t2 also added a `docbuilder_context_orchestrator.exs` entry; t3 removes it — that agent was dropped) | Surfaces the vars the operator needs to verify before approving |
 
 ---
 
@@ -82,7 +87,7 @@ writing this doc; the t3 and t4 prompts below reflect the findings.
 |---|---|---|
 | t1 | `orchestrate_start` per-run env vars — Rust + TypeScript | `commands/orchestrate.rs`, `useOrchestrator.ts`, `OrchestratorView.tsx` |
 | t2 | Docbuilder config entries + `STEP_CONFIG_HINTS` | `agentConfigDefs.ts`, `OrchestratorView.tsx` |
-| t3 | `docbuilder_context_orchestrator.exs` — chained context builder → orchestrator | `docbuilder/agents/docbuilder_context_orchestrator.exs` |
+| t3 | `chain_docbuilder.py` — top-level chained run, emits orchestrator protocol | `docbuilder/scripts/chain_docbuilder.py` |
 | t4 | Docbuilder panel — dedicated form + chained run | `src/components/modules/docbuilder/`, `registry.ts`, `App.tsx` |
 | t5 | Docs sync + drift check + milestone close | `specs.md`, `runbook.md`, `CLAUDE.md` |
 
@@ -259,138 +264,122 @@ cargo tauri dev
 
 ---
 
-### t3 — `docbuilder_context_orchestrator.exs` (chained run)
+### t3 — `chain_docbuilder.py` (top-level chained run, emits the orchestrator protocol)
 
-**Scope.** A new thin Elixir agent that sequences the two-step docbuilder
-flow as a single Aetheris run: runs `context_builder.exs` to produce
-`confirmed_context.json`, then runs `docbuilder_orchestrator.exs` consuming
-it, all without the operator switching between scripts.
+**Scope.** Chain the two-step docbuilder flow: run `context_builder.exs` →
+`confirmed_context.json`, then `docbuilder_orchestrator.exs` consuming it. A new
+Python script `chain_docbuilder.py` does the sequencing + env plumbing. **Rig runs
+it as the top-level process** (no wrapping Aetheris agent) and it **emits the
+orchestrator newline-JSON protocol** so the Docbuilder panel drives the phase
+lifecycle natively.
 
-**Design.** The agent uses `run_command` to invoke `mix aetheris run` for
-each sub-agent (not `spawn_agent` — these are sequential, not parallel).
-`mix aetheris run` on each `.exs` file records a trajectory in `aetheris.db`
-under its own `run_id`, so both runs are inspectable separately. The outer
-agent's job is purely sequencing and reporting: run the builder, verify
-`confirmed_context.json` was written, set `DOCBUILDER_CONTEXT_FILE`, run
-the orchestrator, report the rendered output files.
+**Design — corrected twice (no `sh -c`, no nesting).**
+1. `run_command` can't help: the exec-server allowlist
+   (`native/aetheris_exec_server/src/runner.rs`) rejects `sh`/`bash`, and
+   `run_command` has no `env` field. So per-step env can't be set via a tool call.
+2. A wrapping agent doesn't work either: a **nested `mix aetheris run`** (inside an
+   outer agent run) fails — the inner run's `compile.aetheris_worker` step does an
+   unconditional `File.copy!` of the worker binary the outer run holds open →
+   `ETXTBSY` ("text file busy"); there is no `--no-compile`/skip escape. Verified
+   empirically (run `docbuilder-ctx-orch-WRNyiQ`/`lsjxug`).
+   **Therefore the chain must run top-level, not inside an agent.** Run top-level,
+   the two `mix aetheris run` children are sequential — each worker exits and frees
+   the binary before the next (exactly like the working `docbuilder_context` sprint).
+3. So **Rig runs `chain_docbuilder.py` directly** (not `mix aetheris run <exs>`).
+   `orchestrate_start` gets a one-line heuristic (t4): a `script_path` ending in
+   `.py` is spawned as `python3 <path>` instead of `mix run <path>`. The script
+   speaks the orchestrator protocol on stdout, so it's a drop-in for the existing
+   `orchestrate_start`/`_poll` plumbing and the phase-lifecycle UI.
 
-**`run_command` has no `env` field (verified — see Pre-implementation
-verification).** The agent therefore wraps each `mix aetheris run` in a
-`sh -c` command that sets the per-step env vars and `cd`s into the aetheris
-repo. Step 2 also `env -u DOCBUILDER_CONTEXT` so the orchestrator reads the
-confirmed-context file rather than a stray env var.
+There is **no `docbuilder_context_orchestrator.exs`** — the wrapping agent is dropped.
+
+**`chain_docbuilder.py` contract.**
+- Args: `--tenant`, `--request`, `--aetheris-dir` (aetheris mix project, `cwd`),
+  `--agents-dir` (aetheris-agents repo root), `--protocol` (emit the orchestrator
+  newline-JSON protocol; without it, print a single JSON summary — for CLI/tests).
+- Step 1: `subprocess.run(['mix','aetheris','run', '<agents>/docbuilder/agents/context_builder.exs'],
+  env={**os.environ, 'DOCBUILDER_TENANT': tenant, 'DOCBUILDER_REQUEST': request}, cwd=aetheris_dir)`.
+- Verify `<agents>/docbuilder/output/confirmed_context.json` exists + valid JSON; fail
+  the step otherwise (do not run the orchestrator).
+- Step 2: `subprocess.run(['mix','aetheris','run', '<agents>/docbuilder/agents/docbuilder_orchestrator.exs'],
+  env={**os.environ, 'DOCBUILDER_TENANT': tenant, 'DOCBUILDER_CONTEXT_FILE': '<abs confirmed_context.json>'},
+  cwd=aetheris_dir)` — **remove `DOCBUILDER_CONTEXT`** from that env (orchestrator
+  precedence is env > file; a stray var would shadow the file).
+- Sub-run output captured (not streamed).
+- **`--protocol` mode** emits one JSON object per line, matching `useOrchestrator`:
+  - `{"type":"plan","request":…,"params":{…},"steps":[{id,description,agent,context}×2]}`
+    — step `agent` values are `docbuilder/agents/context_builder.exs` and
+    `docbuilder/agents/docbuilder_orchestrator.exs` (the `STEP_CONFIG_HINTS` keys from t2).
+  - `{"type":"step_started","step_id":…}` / `{"type":"step_complete","step_id":…,"status":"done"|"failed","error":…}` around each sub-run.
+  - `{"type":"orchestration_complete"}` at the end (always — a failed step shows via its `step_complete`).
+  - One-click: no approval gate (the script does not wait on stdin). If a gate is wanted later it's a t4 addition.
+- **Default (no `--protocol`)** prints `{status, context_builder_exit, orchestrator_exit, confirmed_context_path, outputs}` and exits 0 only when both sub-runs succeed.
 
 **Contract refs.**
 - `agent-creation-guide.md` §"Core principle: scripts do, agents decide"
-- `agent-creation-guide.md` §"Standard RunConfig fields"
-- `agent-creation-guide.md` §"Be explicit about run_command format"
-- `agent-creation-guide.md` §"Env vars and worker lifetime"
-- m3-milestone §Design decisions — `DOCBUILDER_CONTEXT_FILE` takes
-  precedence over the default file path; `DOCBUILDER_CONTEXT` must be unset
-  (or not set) for the orchestrator to read the file
+- exec-server allowlist: `native/aetheris_exec_server/src/runner.rs`
+- worker-copy `ETXTBSY`: `aetheris/lib/mix/tasks/compile/aetheris_worker.ex` (unconditional `File.copy!`)
+- orchestrator protocol consumer: `rig/src/hooks/useOrchestrator.ts` (`plan`/`step_started`/`step_complete`/`orchestration_complete`)
+- m3-milestone §Design decisions — orchestrator context source precedence
 
 **Touches.**
-- `docbuilder/agents/docbuilder_context_orchestrator.exs` — new
+- `docbuilder/scripts/chain_docbuilder.py` — new (sequencing + env + protocol)
+- `docbuilder/tests/test_chain_docbuilder.py` — new (mock `subprocess.run`; covers summary + protocol modes)
+- `rig/src/components/modules/orchestrator/OrchestratorView.tsx` — remove the dead
+  `docbuilder_context_orchestrator.exs` `STEP_CONFIG_HINTS` entry (that agent is dropped)
 - `docbuilder/docs/milestones/p9-t3-implementation-notes.md` — new
 
 **Do not generate.**
 - Do not modify `context_builder.exs` or `docbuilder_orchestrator.exs`
-- Do not modify the sprint.sh — the existing `docbuilder_context` case is
-  unchanged; this agent is the Rig-facing entry point only
-- Do not add Python scripts or tests — the agent delegates all logic to the
-  existing agents; there is no new script logic to test here
-- Do not add a sprint case for this agent — the existing `docbuilder_context`
-  sprint case remains the CLI entry point
+- Do not modify sprint.sh (the `docbuilder_context` shell case is unchanged)
+- Do not add the Rust `.py` heuristic here — that lands in t4 (`orchestrate_start`)
+- Do not add a `docbuilder_context_orchestrator.exs` agent — the wrapping agent is dropped
 
 **Done-check.**
 ```bash
 cd ~/sandbox/elixirws/aetheris-agents
 
-# Eval check (no LLM)
-DOCBUILDER_TENANT=bitloka \
-DOCBUILDER_REQUEST="Invoice for XYZ for June 2026, same as last month" \
-mix run --eval \
-  'Code.eval_file("docbuilder/agents/docbuilder_context_orchestrator.exs")' \
-  2>/dev/null
-# Expected: EXIT 0
-
-# Verify the RunConfig struct
-DOCBUILDER_TENANT=bitloka DOCBUILDER_REQUEST="test" \
-mix run --no-start --eval '
-  {config, _} = Code.eval_file(
-    "docbuilder/agents/docbuilder_context_orchestrator.exs")
-  IO.inspect(config.tools, label: "tools")
-  IO.inspect(config.model, label: "model")
-  IO.inspect(String.length(config.system_prompt) > 100,
-    label: "system_prompt_present")
-'
-# Expected: tools contains "run_command"; model is haiku; system_prompt_present true
+# Unit tests (mock subprocess) — summary mode + protocol-mode emission
+python3 -m pytest docbuilder/tests/test_chain_docbuilder.py -v   # all pass
 
 # Full docbuilder suite — no regression
-python3 -m pytest docbuilder/tests/ -v --tb=short
-# Expected: 292 passed, 3 skipped (unchanged)
+python3 -m pytest docbuilder/tests/ -q                           # 292 + chain tests, 3 skipped
+
+# Top-level end-to-end (NON-nested — this is the fix): reset run_log to the May seed, then
+cd ~/sandbox/elixirws/aetheris
+python3 ../aetheris-agents/docbuilder/scripts/chain_docbuilder.py \
+  --tenant bitloka --request "Invoice for XYZ for June 2026, same as last month" \
+  --aetheris-dir "$PWD" --agents-dir "$PWD/../aetheris-agents" --protocol
+# Expected: plan + step events + orchestration_complete on stdout; exit 0;
+# docbuilder/output/confirmed_context.json (June) + xyz_inc_invoice_30-Jun-2026.{xlsx,docx,pdf} written
 ```
 
 **Claude-code prompt.**
-> Read `CLAUDE.md` (aetheris-agents root) and `agent-creation-guide.md` in
-> full before writing any code. Then implement t3 of
-> `rig/docs/milestones/p9/README.md`.
+> Read `CLAUDE.md` (aetheris-agents root) and `agent-creation-guide.md` in full first.
+> Then implement t3 per §t3 above (note: corrected design — no wrapping agent; Rig runs
+> the script top-level; the script emits the orchestrator protocol).
 >
-> **Scope:** create `docbuilder/agents/docbuilder_context_orchestrator.exs`
-> — a thin sequencing agent that chains the context builder → orchestrator
-> into a single Aetheris run.
+> **`chain_docbuilder.py`** — importable `chain(tenant, request, aetheris_dir, agents_dir,
+> on_event=None)` running the two sub-agents (step events via `on_event`); `build_plan(...)`;
+> `main()` with `--protocol` (emit plan → step events → orchestration_complete; one-click,
+> no stdin gate) vs default (print JSON summary). Step 2 env removes `DOCBUILDER_CONTEXT`.
+> Protocol messages must match `useOrchestrator.ts`.
 >
-> **Agent behaviour:**
-> - Reads `DOCBUILDER_TENANT` (raise if absent) and `DOCBUILDER_REQUEST`
->   (raise if absent) at eval time.
-> - `tools: ["run_command", "read_file"]`
-> - `model: "claude-haiku-4-5-20251001"`, `max_steps: 10`,
->   `context_strategy: :full`, `overlay_base_dir: nil`
-> - System prompt workflow (two steps). **`run_command` has NO `env` field
->   (verified against the tool schema), so use a `sh -c` wrapper** that sets
->   the per-step env vars and `cd`s into the aetheris mix project:
+> **`test_chain_docbuilder.py`** — mock `subprocess.run`: both succeed; context builder
+> fails (no step 2); confirmed-context missing/invalid (no step 2); orchestrator fails; env
+> construction (step1 TENANT+REQUEST; step2 TENANT+CONTEXT_FILE and NOT DOCBUILDER_CONTEXT;
+> cwd); `build_plan` shape (2 steps, correct agent paths); on_event emits the right sequence.
 >
->   Step 1 — run the context builder:
->   ```
->   run_command  command: "sh"
->                args: ["-c",
->                  "cd ../../aetheris && DOCBUILDER_TENANT='<tenant>' \
->                   DOCBUILDER_REQUEST='<request>' \
->                   mix aetheris run ../aetheris-agents/docbuilder/agents/context_builder.exs"]
->   ```
->   (Resolve the correct relative path to the aetheris repo + agent from the
->   outer agent's sandbox; confirm with a `pwd`/`ls` probe if unsure.)
->   Wait for it to complete. Then read_file
->   `docbuilder/output/confirmed_context.json` to verify it exists and is
->   valid JSON. If absent or invalid, report the error and stop.
+> **`OrchestratorView.tsx`** — remove the `docbuilder_context_orchestrator.exs`
+> `STEP_CONFIG_HINTS` entry (dropped agent).
 >
->   Step 2 — run the orchestrator (unset DOCBUILDER_CONTEXT so the file wins):
->   ```
->   run_command  command: "sh"
->                args: ["-c",
->                  "cd ../../aetheris && env -u DOCBUILDER_CONTEXT \
->                   DOCBUILDER_TENANT='<tenant>' \
->                   DOCBUILDER_CONTEXT_FILE='<abs path to confirmed_context.json>' \
->                   mix aetheris run ../aetheris-agents/docbuilder/agents/docbuilder_orchestrator.exs"]
->   ```
->   Wait for it to complete. Report the rendered output files.
->
-> - Interpolate `tenant` and `request` from the eval-time env vars into the
->   system prompt as named variables (same pattern as `context_builder.exs`),
->   not inline `System.get_env` in the struct. Single-quote-escape the request
->   when embedding it into the `sh -c` string.
-> - `user_prompt`: "Run the docbuilder context flow for: #{request}"
->
-> **Document in the implementation notes** the exact wrapper form used and the
-> working-directory resolution (the outer sandbox vs the aetheris mix project).
->
-> **Touches:** `docbuilder/agents/docbuilder_context_orchestrator.exs`,
+> **Touches:** `docbuilder/scripts/chain_docbuilder.py`,
+> `docbuilder/tests/test_chain_docbuilder.py`,
+> `rig/src/components/modules/orchestrator/OrchestratorView.tsx`,
 > `docbuilder/docs/milestones/p9-t3-implementation-notes.md`.
->
 > **Do not generate** anything outside Touches.
 >
-> Run the done-check from `rig/docs/milestones/p9/README.md §t3` and include
-> its full output at the top of the review packet, before the diff.
+> Run the done-check from §t3 and put its full output at the top of the review packet.
 
 ---
 
@@ -399,8 +388,8 @@ python3 -m pytest docbuilder/tests/ -v --tb=short
 **Scope.** A new Rig module (`docbuilder`) with a single route `/docbuilder`
 and a sidebar entry. The panel has a request text field (maps to both
 `ORCHESTRATOR_REQUEST` and `DOCBUILDER_REQUEST`), reads `DOCBUILDER_TENANT`
-from stored config, and on submit runs `docbuilder_context_orchestrator.exs`
-via `orchestratorStart` (from t1) with `DOCBUILDER_REQUEST` as a per-run
+from stored config, and on submit runs `docbuilder/scripts/chain_docbuilder.py`
+(top-level, via the `.py` heuristic in `orchestrate_start`) with `DOCBUILDER_REQUEST` as a per-run
 env var. Shows the standard Orchestrator phase lifecycle (planning →
 plan_ready → executing → done) and, on completion, lists the rendered output
 files read from `docbuilder/output/renamed.json`.
@@ -415,15 +404,20 @@ files read from `docbuilder/output/renamed.json`.
 - `tools_read_script` (`commands/tools.rs`) — reads any file under
   `AETHERIS_AGENTS_PATH`; the panel uses it for `renamed.json` (no new command)
 
-**Prerequisite (found in t1 — `orchestrate_start` hardcodes the script path).**
-`orchestrate_start` currently runs a hardcoded `{agents_path}/agents/orchestrator.exs`,
-and `useOrchestrator.start` takes no script path. To run
-`docbuilder_context_orchestrator.exs`, t4 must first thread a script path through both:
+**Prerequisite (found in t1; extended in t3 — `orchestrate_start` hardcodes
+`mix aetheris run {agents_path}/agents/orchestrator.exs`).** To run the docbuilder
+chain, t4 must thread a script path through `orchestrate_start` **and** add the `.py`
+heuristic so the chain script runs top-level (t3's required design — it cannot be a
+nested agent):
 - `rig/src-tauri/src/commands/orchestrate.rs` — add `script_path: Option<String>` to
-  `orchestrate_start`; when `None`, default to the existing `agents/orchestrator.exs`
-  (so every current caller is unaffected). Build the command path from it.
+  `orchestrate_start`; when `None`, default to `agents/orchestrator.exs` (existing callers
+  unaffected). **When `script_path` ends in `.py`, spawn `python3 <path>` (with the chain
+  script's args + `--protocol`); otherwise spawn `mix aetheris run <path>`** (one heuristic,
+  no new fields). The `.py` branch runs `chain_docbuilder.py` top-level — non-nested.
 - `rig/src/hooks/useOrchestrator.ts` — add `scriptPath?: string` to `start`; pass it
   through to `invoke` (camelCase `scriptPath`).
+- The Docbuilder panel's `scriptPath` is `docbuilder/scripts/chain_docbuilder.py`
+  (NOT a `.exs` agent — the wrapping agent was dropped in t3).
 
 **Touches.**
 - `rig/src-tauri/src/commands/orchestrate.rs` — `script_path: Option<String>` param (prerequisite above)
@@ -503,7 +497,7 @@ cargo tauri dev
 > **`useDocbuilder.ts`:** wraps `useOrchestrator`. On submit:
 > - Sets `ORCHESTRATOR_REQUEST` = the request text
 > - Calls `orchestratorStart` with:
->   - `scriptPath`: `docbuilder/agents/docbuilder_context_orchestrator.exs`
+>   - `scriptPath`: `docbuilder/scripts/chain_docbuilder.py` (the `.py` heuristic runs it top-level)
 >     (relative to `AETHERIS_AGENTS_PATH`)
 >   - `request`: the request text
 >   - `extraEnv`: `{ DOCBUILDER_REQUEST: requestText }` (per-run; tenant
@@ -548,8 +542,9 @@ summary and CLAUDE.md learning scan.
 - `rig/docs/runbook.md` — add Docbuilder panel section (how to use the
   panel, what `DOCBUILDER_TENANT` to set, what the plan view shows, how to
   inspect the sub-runs)
-- `docs/capability-matrix.md` — add `docbuilder_context_orchestrator.exs`
-  to the docbuilder agents section (→ 3 agents; total 26 / 58)
+- `docs/capability-matrix.md` — add `chain_docbuilder.py` to the docbuilder
+  **scripts** section (→ 2 agents / 21 scripts; total 25 / 59). No new agent —
+  the wrapping `.exs` was dropped in t3.
 - `rig/docs/milestones/p9/README.md` — milestone summary appended
 - `aetheris-agents/CLAUDE.md` — `## Learning — rig-p9` (recurring findings
   from t1–t4 reviews, or "No recurring findings" if none)
@@ -586,8 +581,8 @@ grep -n "docbuilder_context_orchestrator" docs/capability-matrix.md
 >    and orchestrator sub-runs separately in the Harness.
 >
 > 3. `docs/capability-matrix.md` — add
->    `docbuilder_context_orchestrator.exs` to the docbuilder agents section;
->    update the totals (3 agents, total 26 / 58).
+>    `chain_docbuilder.py` to the docbuilder **scripts** section; update the
+>    totals (2 agents / 21 scripts; total 25 / 59). No new agent.
 >
 > 4. Scan `t1–t4-implementation-notes.md` for findings recurring on ≥2
 >    tickets. Write `## Learning — rig-p9` in `aetheris-agents/CLAUDE.md`.
@@ -616,9 +611,11 @@ grep -n "docbuilder_context_orchestrator" docs/capability-matrix.md
 - Once the panel exists, additional doc types (proposals, reports) could be
   surfaced via a doc type selector populated from the tenant catalogue. Worth
   scoping once the invoice flow is stable.
-- If the `sh -c` wrapper in t3 proves fragile (quoting, working-dir), consider
-  adding an `env` field to the `run_command` tool schema in Aetheris (worker +
-  schema change) so chained agents can pass per-invocation env directly.
+- t3 routes per-step env through `chain_docbuilder.py` because `run_command` has no
+  `env` field and the exec-server allowlist blocks `sh`/`bash`. If chained flows become
+  common, consider adding an `env` field to the `run_command` tool schema (worker +
+  schema change) so a chaining agent could set per-invocation env directly without a
+  Python shim.
 
 ---
 

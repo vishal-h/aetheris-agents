@@ -121,7 +121,9 @@ Orchestrator request form.
 ```bash
 cd ~/sandbox/elixirws/aetheris-agents/rig
 
-cargo build 2>&1 | tail -5
+# Cargo.toml lives in rig/src-tauri/ — build from there (subshell keeps cwd at rig/
+# for the rest of the block). `cargo tauri dev` works from rig/; raw `cargo build` does not.
+( cd src-tauri && cargo build 2>&1 | tail -5 )
 # Expected: Finished (no errors)
 
 bun run tsc --noEmit
@@ -413,7 +415,19 @@ files read from `docbuilder/output/renamed.json`.
 - `tools_read_script` (`commands/tools.rs`) — reads any file under
   `AETHERIS_AGENTS_PATH`; the panel uses it for `renamed.json` (no new command)
 
+**Prerequisite (found in t1 — `orchestrate_start` hardcodes the script path).**
+`orchestrate_start` currently runs a hardcoded `{agents_path}/agents/orchestrator.exs`,
+and `useOrchestrator.start` takes no script path. To run
+`docbuilder_context_orchestrator.exs`, t4 must first thread a script path through both:
+- `rig/src-tauri/src/commands/orchestrate.rs` — add `script_path: Option<String>` to
+  `orchestrate_start`; when `None`, default to the existing `agents/orchestrator.exs`
+  (so every current caller is unaffected). Build the command path from it.
+- `rig/src/hooks/useOrchestrator.ts` — add `scriptPath?: string` to `start`; pass it
+  through to `invoke` (camelCase `scriptPath`).
+
 **Touches.**
+- `rig/src-tauri/src/commands/orchestrate.rs` — `script_path: Option<String>` param (prerequisite above)
+- `rig/src/hooks/useOrchestrator.ts` — `scriptPath?` on `start` (prerequisite above)
 - `rig/src/components/modules/docbuilder/DocbuilderView.tsx` — new; the panel
 - `rig/src/hooks/useDocbuilder.ts` — new; thin wrapper over `useOrchestrator`
   with docbuilder-specific defaults
@@ -424,8 +438,10 @@ files read from `docbuilder/output/renamed.json`.
 - `rig/docs/milestones/p9/t4-implementation-notes.md` — new
 
 **Do not generate.**
-- Do not add new Rust commands — the panel uses `orchestrate_start` from t1
-  and the existing `tools_read_script` for `renamed.json`
+- Do not add **new** Rust commands — extending `orchestrate_start` with a
+  `script_path` param is in scope (prerequisite above); the panel otherwise uses
+  `orchestrate_start` from t1 and the existing `tools_read_script` for `renamed.json`
+- Do not change the stdin/stdout orchestration protocol or polling
 - Do not add a new `agentConfigDefs.ts` entry — `DOCBUILDER_TENANT` was
   added in t2
 
@@ -459,6 +475,14 @@ cargo tauri dev
 > of `rig/docs/milestones/p9/README.md`. Follow the "Adding a new module"
 > checklist in `rig/docs/runbook.md` (current-state doc §"Adding a new
 > module").
+>
+> **Prerequisite — do this first.** `orchestrate_start` hardcodes
+> `agents/orchestrator.exs` (found in t1). Before adding the panel, add
+> `script_path: Option<String>` to `orchestrate_start` (default
+> `agents/orchestrator.exs` when `None`, so existing callers are unaffected) and
+> thread `scriptPath?: string` through `useOrchestrator.start` (camelCase
+> `scriptPath` in the `invoke` args). This is required to run any agent other than
+> the hardcoded orchestrator.
 >
 > **Scope:** a new Docbuilder module at `/docbuilder`.
 >

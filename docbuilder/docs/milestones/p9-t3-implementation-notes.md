@@ -56,6 +56,18 @@ agent is **dropped**.
   - rendered `xyz_inc_invoice_30-Jun-2026.{xlsx,docx,pdf}`.
   - `run_log` gained the orchestrator sub-run (`docbuilder-orch-IOR8Mw`, 30-Jun-2026) — PHASE D2 fired.
 
+## Review F1 — failed-run UI handling (evidence, no code change)
+
+`main()` emits `orchestration_complete` unconditionally then `sys.exit(code)` (code may be
+1). Confirmed against the consumer: `useOrchestrator.ts` transitions to `'done'` on
+`orchestration_complete` (line 41) and **does not read the process exit code** — `'error'`
+phase fires only on an invoke/poll exception. A failed step surfaces via its
+`step_complete{status:"failed"}` message; the done-view computes
+`anyFailed = stepStatuses.some(s => 'failed')` and renders **"Completed with errors"**
+(amber) instead of "Done" (`OrchestratorView.tsx:332–338`). So a failed chain run shows
+"Completed with errors", matching the real orchestrator's own behaviour. The exit code is
+still correct for CLI/`orchestrate_poll` semantics; the UI just keys off step status.
+
 ## Forward to t4
 
 - `orchestrate_start` needs the `.py` heuristic: `script_path` ending in `.py` → spawn

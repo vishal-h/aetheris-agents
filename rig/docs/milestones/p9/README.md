@@ -414,6 +414,14 @@ nested agent):
   unaffected). **When `script_path` ends in `.py`, spawn `python3 <path>` (with the chain
   script's args + `--protocol`); otherwise spawn `mix aetheris run <path>`** (one heuristic,
   no new fields). The `.py` branch runs `chain_docbuilder.py` top-level — non-nested.
+  - **Rig supplies the chain script's required args** — `chain_docbuilder.py` needs
+    `--tenant`, `--request`, `--aetheris-dir`, `--agents-dir`, `--protocol`. `orchestrate_start`
+    already has both paths in state (`aetheris_dir`; `agents_path` = `AETHERIS_AGENTS_PATH`);
+    pass `--aetheris-dir <aetheris_dir>` and `--agents-dir <agents_path>`. `--tenant` comes
+    from `agent_config`/`extra_env` (`DOCBUILDER_TENANT`) and `--request` from
+    `DOCBUILDER_REQUEST` (per-run) — the panel passes the request; the `.py` branch maps
+    these env values to the args. Missing any required arg → the script errors immediately,
+    so the heuristic must construct the full arg list.
 - `rig/src/hooks/useOrchestrator.ts` — add `scriptPath?: string` to `start`; pass it
   through to `invoke` (camelCase `scriptPath`).
 - The Docbuilder panel's `scriptPath` is `docbuilder/scripts/chain_docbuilder.py`

@@ -14,6 +14,7 @@
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | Absolute path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | Set `true` to enable corpus-search MCP |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No (GitHub MCP) | PAT for GitHub MCP server — or set in Rig Settings |
+| `DOCBUILDER_TENANT` | No (Docbuilder) | p9 — docbuilder tenant (e.g. `bitloka`); set in Rig Settings → "Docbuilder", injected when spawning agents and passed to the chain script. Not read by Rig itself |
 
 ---
 
@@ -316,6 +317,45 @@ Per-run overlay upper directories are not automatically cleaned up (tracked: iss
 The overlay mechanism uses `libc::mount` + user namespaces. On non-Linux hosts the
 worker fails open and writes reach the real sandbox path. Production deployments
 should run on Linux.
+
+---
+
+## Docbuilder module — natural-language document build (p9)
+
+Sidebar entry **Docbuilder** (FileText icon, route `/docbuilder`). Turns a
+natural-language request into a rendered, branded document via the chained docbuilder
+flow, without the terminal.
+
+### Setup
+
+Set **`DOCBUILDER_TENANT`** in Settings → "Docbuilder" group (e.g. `bitloka`). The panel
+shows the configured tenant and disables Run with a Settings link if it is unset.
+
+### What you do
+
+1. Type a request — e.g. `Invoice for XYZ for June 2026, same as last month`.
+2. Run. The panel runs `docbuilder/scripts/chain_docbuilder.py` **top-level** (via the
+   `.py` heuristic in `orchestrate_start`) with `--tenant`/`--request` and `--protocol`.
+   This is one-click — there is no plan-approval gate.
+3. The phase lifecycle renders from the script's emitted protocol: planning → a two-step
+   plan (context builder, then orchestrator) → steps update live → done.
+4. On completion, the rendered file list is read from `docbuilder/output/renamed.json`
+   (via `tools_read_script`). A failed step shows "Completed with errors".
+
+### Why a script, not an agent
+
+The chain can't be a wrapping Aetheris agent: a nested `mix aetheris run` fails (the inner
+run re-copies the worker binary the outer run holds open → "text file busy"), and
+`run_command` can't set per-step env (no `env` field; `sh`/`bash` are blocked by the
+exec-server allowlist). Run top-level, `chain_docbuilder.py` runs the two `mix aetheris run`
+sub-agents **sequentially** — each frees the worker binary before the next.
+
+### Inspecting the sub-runs
+
+The chain produces **two** Aetheris runs (context builder, orchestrator), each with its own
+`run_id` and trajectory — inspect them separately in the Harness module (or
+`mix aetheris inspect <run_id>`). PHASE D2 of the orchestrator appends the run to
+`data/run_log.json`, which feeds the next "same as last month".
 
 ---
 

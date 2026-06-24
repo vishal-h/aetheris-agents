@@ -287,3 +287,16 @@ builder), promoted per methodology §7.
 
 **Pre-list a tool an agent will need next milestone-step, and verify stateful pipelines against their own output record (not a hardcoded value); reset accumulating fixtures for deterministic sprints.** Adding `run_command` to the context builder's `tools:` in t2 — before it was used — made the t3 wiring a prompt-only edit. For the t4 sprint, verifying rendered files against the orchestrator's `renamed.json` (its authoritative PHASE-D record) rather than a hardcoded `…30-Jun-2026…` made the check date-independent; and because `run_log.json` accumulates, the sprint must reset it to a known seed so "same as last month" resolves deterministically (production accumulates; the test seeds).
 `Source: m-docbuilder-m3 t2 (run_command pre-listed), t4 (renamed.json verification + run_log seed reset)`
+
+---
+
+## Learning — rig-p9
+
+Findings that recurred across ≥2 tickets in the rig-p9 milestone (Rig per-run env vars +
+Docbuilder integration), promoted per methodology §7.
+
+**`run_command` cannot set per-invocation env, and `sh`/`bash` are blocked — per-step env / shell sequencing must live in a `python3` script.** The `run_command` tool schema has no `env` field (`command`/`args`/`working_dir`/`timeout_ms` only), and the exec-server allowlist (`aetheris/native/aetheris_exec_server/src/runner.rs`, `PERMITTED_COMMANDS`) rejects `sh`/`bash` by basename. So an agent cannot do `sh -c "VAR=… cmd"` to set env, nor pass env through the tool. When a step needs per-invocation env (or any shell logic), put it in a Python script (`python3` is allowlisted) that uses `subprocess.run(env=…, cwd=…)`. Verify the allowlist, not just the tool schema, before assuming a command is runnable.
+`Source: rig-p9 t3 (sh blocked + no env field → chain_docbuilder.py), t4 (.py heuristic in orchestrate_start)`
+
+**`mix aetheris run` cannot be nested — a chained run must be top-level or sequential, never one agent run inside another.** A nested `mix aetheris run` (inside a running agent's `run_command`) fails: the inner run's `compile.aetheris_worker` does an unconditional `File.copy!` of the worker binary the outer run holds open → `ETXTBSY` ("text file busy"); there is no `--no-compile`/skip escape. To chain Aetheris runs, run the chain **top-level** (e.g. Rig spawns a Python script that runs the sub-agents sequentially) — each sub-run's worker exits and frees the binary before the next, exactly like a shell sprint. This is why the Rig Docbuilder chain is a top-level script, not a wrapping `.exs` agent.
+`Source: rig-p9 t3 (nested mix aetheris run → ETXTBSY; verified runs docbuilder-ctx-orch-WRNyiQ/lsjxug), t4 (top-level .py via orchestrate_start)`

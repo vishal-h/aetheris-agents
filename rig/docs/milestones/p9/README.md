@@ -475,7 +475,7 @@ cargo tauri dev
 **Claude-code prompt.**
 > Read `rig/CLAUDE.md` in full before writing any code. Then implement t4
 > of `rig/docs/milestones/p9/README.md`. Follow the "Adding a new module"
-> checklist in `rig/docs/runbook.md` (current-state doc §"Adding a new
+> checklist in `docs/rig/runbook.md` (current-state doc §"Adding a new
 > module").
 >
 > **Prerequisite — do this first.** `orchestrate_start` hardcodes
@@ -543,11 +543,11 @@ summary and CLAUDE.md learning scan.
 - Milestone methodology §7 — milestone-end ritual
 
 **Touches.**
-- `rig/docs/specs.md` — add `extra_env` to `orchestrate_start`; add
+- `docs/rig/specs.md` — add `extra_env` to `orchestrate_start`; add
   `DOCBUILDER_TENANT` to env var table (§1); add `DocbuilderState` to
   TypeScript interfaces (§5) if introduced in t4; add Docbuilder module to
   module structure (§8)
-- `rig/docs/runbook.md` — add Docbuilder panel section (how to use the
+- `docs/rig/runbook.md` — add Docbuilder panel section (how to use the
   panel, what `DOCBUILDER_TENANT` to set, what the plan view shows, how to
   inspect the sub-runs)
 - `docs/capability-matrix.md` — add `chain_docbuilder.py` to the docbuilder
@@ -568,8 +568,8 @@ cd ~/sandbox/elixirws/aetheris-agents
 python3 scripts/drift_check.py
 # Expected: 0 FAIL (WARNs for project_knowledge = BL-002, human-owned)
 
-grep -n "extra_env\|DOCBUILDER_TENANT" rig/docs/specs.md
-grep -n "Docbuilder\|docbuilder_context_orchestrator" rig/docs/runbook.md
+grep -n "extra_env\|DOCBUILDER_TENANT" docs/rig/specs.md
+grep -n "Docbuilder\|docbuilder_context_orchestrator" docs/rig/runbook.md
 grep -n "docbuilder_context_orchestrator" docs/capability-matrix.md
 ```
 
@@ -578,12 +578,12 @@ grep -n "docbuilder_context_orchestrator" docs/capability-matrix.md
 > Then implement t5 of `rig/docs/milestones/p9/README.md`. Docs-only — no
 > Rust or TypeScript changes.
 >
-> 1. `rig/docs/specs.md` — (a) add `extra_env: HashMap<String, String>` to
+> 1. `docs/rig/specs.md` — (a) add `extra_env: HashMap<String, String>` to
 >    the `orchestrate_start` command description; (b) add `DOCBUILDER_TENANT`
 >    to §1 env var table; (c) add `DocbuilderState` type to §5 if t4
 >    introduced it; (d) add the Docbuilder module to §8 module structure.
 >
-> 2. `rig/docs/runbook.md` — add a "Docbuilder panel" section: how to
+> 2. `docs/rig/runbook.md` — add a "Docbuilder panel" section: how to
 >    launch the flow from the sidebar, what `DOCBUILDER_TENANT` to configure
 >    in Settings, what the plan view shows, how to inspect the context-builder
 >    and orchestrator sub-runs separately in the Harness.
@@ -597,7 +597,7 @@ grep -n "docbuilder_context_orchestrator" docs/capability-matrix.md
 >
 > 5. Append milestone summary to `rig/docs/milestones/p9/README.md`.
 >
-> **Touches:** `rig/docs/specs.md`, `rig/docs/runbook.md`,
+> **Touches:** `docs/rig/specs.md`, `docs/rig/runbook.md`,
 > `docs/capability-matrix.md`, `rig/docs/milestones/p9/README.md`,
 > `aetheris-agents/CLAUDE.md`,
 > `rig/docs/milestones/p9/t5-implementation-notes.md`.
@@ -627,6 +627,44 @@ grep -n "docbuilder_context_orchestrator" docs/capability-matrix.md
 
 ---
 
-## Milestone summary
+## Milestone summary (close — t5, 2026-06-24)
 
-_To be written by claude-code at t5. Do not fill in now._
+**rig-p9 is done (t1–t5).** The full docbuilder context-builder → render flow is operable
+from Rig without the terminal: a natural-language request in the Docbuilder panel produces
+a rendered, branded document, with the phase lifecycle shown live.
+
+**Shipped:**
+- t1 — `orchestrate_start` gains `extra_env: HashMap<String,String>` (per-run env, wins on
+  collision, never persisted) + a collapsible "Additional env vars" form in the Orchestrator.
+- t2 — `DOCBUILDER_TENANT` stored config ("Docbuilder" group) + `STEP_CONFIG_HINTS` for the
+  docbuilder agents.
+- t3 — `chain_docbuilder.py`: runs context_builder → orchestrator sequentially **top-level**
+  (with per-step env via `subprocess(env=)`), emitting the orchestrator protocol. Two design
+  corrections forced by the harness (see Learnings).
+- t4 — `orchestrate_start` gains `script_path: Option<String>` + a `.py` heuristic
+  (`python3 <path> …`); new `/docbuilder` panel (request + tenant + phase lifecycle +
+  rendered-file list from `renamed.json`).
+- t5 — docs sync (specs.md §1/§4/§8, runbook Docbuilder section, capability matrix), this
+  summary, the `## Learning — rig-p9` scan, drift 0 FAIL.
+
+**Capability matrix:** docbuilder 2 agents / 21 scripts (added `chain_docbuilder.py`; no new
+agent — the wrapping `.exs` was dropped); repo total 25 / 59.
+
+**Two design corrections (promoted to CLAUDE.md `## Learning — rig-p9`):**
+1. `run_command` has no `env` field and the exec-server allowlist blocks `sh`/`bash` →
+   per-step env / shell logic must live in a `python3` script.
+2. `mix aetheris run` cannot be nested (inner worker-binary recopy → ETXTBSY) → chained runs
+   must be top-level / sequential. This is why the chain is a top-level script, not a
+   wrapping agent.
+
+**Per-ticket review path corrections** (carried, each fixed when found): t1 done-check
+`cargo build` runs from `src-tauri/`; t3/t5 docs live at `docs/rig/` (drift-checked +
+manifest-tracked), not `rig/docs/` (legacy).
+
+**Deferred (out of p9):** interactive confirm/amend loop (needs a conversational harness);
+multi-tenant + doc-type selector in the panel; `data.db` migration of agent config (see
+"Open questions for p10").
+
+**Project-knowledge refresh (BL-002, human-owned):** `CLAUDE.md`, `docs/capability-matrix.md`,
+`docs/rig/specs.md`, `docs/rig/runbook.md` changed — re-upload to the Claude.ai project and
+advance `docs/project-knowledge-manifest.md` to clear the drift WARNs.

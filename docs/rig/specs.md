@@ -14,6 +14,7 @@
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | — | Path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | — | Not read by Rig Rust; intended for the `search_agent.exs` file when the corpus-search MCP is active |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No | — | Stored in `agent-config.json`; injected as env var when orchestrator spawns agents — not read from env directly by Rig |
+| `DOCBUILDER_TENANT` | No | — | p9 — stored in `agent-config.json` ("Docbuilder" group); injected when the Docbuilder panel / orchestrator spawns agents, and passed as `--tenant` to the chain script. Not read from env directly by Rig |
 
 ---
 
@@ -234,9 +235,15 @@ pub struct TrajectoryFile {
 Takes `run_id: String`. Opens a save dialog; copies
 `priv/runs/{run_id}/trajectory.json` to the user-chosen path. Returns `()`.
 
-### Orchestrator commands (`commands/orchestrate.rs`) — p3
+### Orchestrator commands (`commands/orchestrate.rs`) — p3 (extended p9)
 
-**`orchestrate_start`** — Takes `request: String`. Returns `job_id: String`.
+**`orchestrate_start`** — Takes `request: String`, `extra_env: HashMap<String, String>`
+(p9 t1 — per-run env vars, injected after `agent_config` so per-run wins on collision;
+never persisted), and `script_path: Option<String>` (p9 t4 — agent/script path relative to
+`AETHERIS_AGENTS_PATH`; `None` → the default `agents/orchestrator.exs`). A `script_path`
+ending in `.py` is spawned **top-level** as `python3 <path> --tenant --request --aetheris-dir
+--agents-dir --protocol` (the docbuilder chain — cannot be a nested `mix aetheris run`);
+otherwise `mix aetheris run <path>`. Returns `job_id: String`.
 
 **`orchestrate_poll`** — Takes `job_id: String`. Returns:
 ```rust
@@ -569,13 +576,18 @@ rig/src/components/modules/
   orchestrator/              ← p3
     OrchestratorView.tsx     ← 7 phases: idle → planning → plan_ready →
                              ←   executing → done | cancelled | error
+  docbuilder/                ← p9 (route: /docbuilder)
+    DocbuilderView.tsx       ← NL request → rendered document; runs
+                             ←   chain_docbuilder.py top-level (.py heuristic),
+                             ←   one-click (no approval gate); lists rendered
+                             ←   files from output/renamed.json on done
   tools/                     ← p4-tools
     ToolsView.tsx            ← wrapper
     ToolTree.tsx             ← left panel (scripts + Harness + MCP sections)
     ToolDetail.tsx           ← right panel (args form + Run + MCP try)
   settings/                  ← p7 (route: /settings, no sidebar entry)
     AgentConfigTab.tsx       ← grouped env var config (masked fields)
-    agentConfigDefs.ts       ← key definitions: Harness/Anthropic/SMTP/Drive/Payslip/GitHub
+    agentConfigDefs.ts       ← key definitions: Harness/Anthropic/SMTP/Drive/Payslip/Docbuilder/GitHub
   playground/                ← m-playground-p2
     RunComposer.tsx          ← Run Composer panel: policy, sandbox, prompt, submit, status
   provenance/                ← existing

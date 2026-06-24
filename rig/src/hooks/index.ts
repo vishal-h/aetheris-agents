@@ -35,6 +35,7 @@ export type { HarnessStatus, RunSummary, EventRow, RunDetail } from './types';
 export type { TrajectoryMeta, TrajectoryEvent, TrajectoryFile } from './types';
 export type { PlanStep, OrchestratorPlan, PollResult, OrchestratorPhase, StepStatus } from './types';
 export { useOrchestrator } from './useOrchestrator';
+export { useDocbuilder } from './useDocbuilder';
 export { useTrajectory } from './useTrajectory';
 export type { MetaDiffRow, StepDiffEntry, RunDiff } from './types';
 export { useRunDiff } from './useRunDiff';

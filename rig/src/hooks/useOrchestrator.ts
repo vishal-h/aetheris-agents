@@ -76,13 +76,16 @@ export function useOrchestrator() {
   const start = useCallback(async (
     request: string,
     extraEnv: Record<string, string> = {},
+    scriptPath?: string,
   ) => {
     setPhase('planning');
     setPlan(null);
     setStepStatuses({});
     setError(null);
     try {
-      const id = await invoke<string>('orchestrate_start', { request, extraEnv });
+      // scriptPath omitted → Rust defaults to the orchestrator agent. A `.py`
+      // scriptPath (the docbuilder chain) is run top-level by the backend.
+      const id = await invoke<string>('orchestrate_start', { request, extraEnv, scriptPath });
       setJobId(id);
     } catch (e) {
       setError(String(e));

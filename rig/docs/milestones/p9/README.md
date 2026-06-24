@@ -467,8 +467,8 @@ cargo tauri dev
 # Smoke:
 # 1. Sidebar shows "Docbuilder" entry
 # 2. Panel shows request field + tenant from stored config
-# 3. Submit runs docbuilder_context_orchestrator.exs
-# 4. Phase lifecycle renders (planning → plan_ready → executing → done)
+# 3. Submit runs chain_docbuilder.py top-level (.py heuristic)
+# 4. Phase lifecycle renders (planning → plan → steps → done)
 # 5. On done: rendered file list shown (from renamed.json)
 ```
 

@@ -79,10 +79,21 @@ const playgroundModule: Module = {
   ],
 };
 
+// Docbuilder — natural language → rendered document (chained context builder → orchestrator)
+const docbuilderModule: Module = {
+  id: 'docbuilder',
+  label: 'Docbuilder',
+  icon: 'FileText',
+  sections: [
+    { id: 'docbuilder', label: 'Docbuilder', icon: 'FileText', path: '/docbuilder' },
+  ],
+};
+
 // Module registry - add new modules here
 export const modules: Module[] = [
   harnessModule,
   orchestratorModule,
+  docbuilderModule,
   toolsModule,
   playgroundModule,
   f2Module,

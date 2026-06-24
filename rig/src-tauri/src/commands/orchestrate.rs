@@ -11,21 +11,46 @@ pub fn orchestrate_start(
     config_state: State<'_, AgentConfigState>,
     request:      String,
     extra_env:    HashMap<String, String>,
+    script_path:  Option<String>,
 ) -> Result<String, String> {
     let agents_path = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
     let aetheris_dir = state.aetheris_dir.as_ref()
         .ok_or("aetheris dir unavailable — is AETHERIS_DB_PATH set?")?;
 
-    let script_path = format!("{}/agents/orchestrator.exs", agents_path);
-
     let agent_config = config_state.cache.lock().unwrap().clone();
 
-    let mut cmd = std::process::Command::new("mix");
-    cmd.args(["run", &script_path])
-        .env("ORCHESTRATOR_REQUEST", &request)
-        .current_dir(aetheris_dir)
-        .stdin(std::process::Stdio::piped())
+    // Script path is relative to AETHERIS_AGENTS_PATH; default to the hardcoded
+    // orchestrator agent so existing callers (no scriptPath) are unaffected.
+    let rel = script_path.unwrap_or_else(|| "agents/orchestrator.exs".to_string());
+    let full_path = format!("{}/{}", agents_path, rel);
+
+    // p9: a `.py` script (the docbuilder chain) is run TOP-LEVEL via python3 — it cannot be
+    // a nested `mix aetheris run` (the inner worker-binary recopy hits ETXTBSY). Rig supplies
+    // the chain script's required args. Any other path is an `.exs` agent run via mix.
+    let mut cmd = if rel.ends_with(".py") {
+        let tenant = extra_env.get("DOCBUILDER_TENANT")
+            .or_else(|| agent_config.get("DOCBUILDER_TENANT"))
+            .cloned()
+            .unwrap_or_default();
+        let mut c = std::process::Command::new("python3");
+        c.arg(full_path.as_str())
+            .arg("--tenant").arg(tenant.as_str())
+            .arg("--request").arg(request.as_str())
+            .arg("--aetheris-dir").arg(aetheris_dir.as_str())
+            .arg("--agents-dir").arg(agents_path.as_str())
+            .arg("--protocol")
+            .current_dir(aetheris_dir);
+        c
+    } else {
+        let mut c = std::process::Command::new("mix");
+        c.args(["run", &full_path])
+            .env("ORCHESTRATOR_REQUEST", &request)
+            .current_dir(aetheris_dir);
+        c
+    };
+
+    cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null());
 

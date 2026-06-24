@@ -6,6 +6,7 @@ import { MainArea } from '@/components/shell/MainArea';
 import { RightPanel } from '@/components/shell/RightPanel';
 import { HarnessRoute } from '@/components/modules/harness/RunList';
 import { OrchestratorView } from '@/components/modules/orchestrator/OrchestratorView';
+import { DocbuilderView } from '@/components/modules/docbuilder/DocbuilderView';
 import { ToolsView } from '@/components/modules/tools/ToolsView';
 import { DiffView } from '@/components/modules/harness/DiffView';
 import { F2Operations, F2Viewer } from '@/components/modules/f2';
@@ -80,6 +81,13 @@ function App() {
             <Route path="/orchestrator" element={
               <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto p-8">
                 <OrchestratorView />
+              </div>
+            } />
+
+            {/* Docbuilder — NL request → rendered document (chained run) */}
+            <Route path="/docbuilder" element={
+              <div className="flex flex-1 flex-col h-full bg-background overflow-y-auto p-8">
+                <DocbuilderView />
               </div>
             } />
 

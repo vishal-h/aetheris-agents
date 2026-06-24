@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
 import { useLocation } from 'react-router-dom';
-import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOrchestrator } from '@/hooks/useOrchestrator';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
@@ -121,6 +121,9 @@ export function OrchestratorView() {
   const location = useLocation();
   const prefill  = (location.state as { prefill?: string } | null)?.prefill ?? '';
   const [request, setRequest] = useState(prefill);
+  // Per-run env vars (p9 t1): ephemeral — never persisted to agent-config.json.
+  const [envExpanded, setEnvExpanded] = useState(false);
+  const [extraEnvRows, setExtraEnvRows] = useState<{ key: string; value: string }[]>([]);
   const { phase, plan, params, stepStatuses, stepErrors, error, start, approve, cancel, reset } = useOrchestrator();
   const { values: configValues } = useAgentConfig();
   const history = useRequestHistory();
@@ -128,6 +131,21 @@ export function OrchestratorView() {
   const suggestions = request.trim().length > 0
     ? history.history.filter((h) => h.toLowerCase().includes(request.toLowerCase()))
     : [];
+
+  // Clear staged per-run vars once a run reaches a terminal state, so the next run
+  // starts with a fresh form.
+  useEffect(() => {
+    if (phase === 'done' || phase === 'cancelled') setExtraEnvRows([]);
+  }, [phase]);
+
+  const serializeExtraEnv = (): Record<string, string> =>
+    Object.fromEntries(
+      extraEnvRows
+        .filter((r) => r.key.trim() !== '')
+        .map((r) => [r.key.trim(), r.value]),
+    );
+
+  const filledEnvCount = extraEnvRows.filter((r) => r.key.trim() !== '').length;
 
   return (
     <div className="flex flex-col items-center">
@@ -162,8 +180,64 @@ export function OrchestratorView() {
                 </div>
               )}
             </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground
+                           hover:text-foreground w-fit"
+                onClick={() => setEnvExpanded((v) => !v)}
+              >
+                {envExpanded
+                  ? <ChevronDown className="h-3.5 w-3.5" />
+                  : <ChevronRight className="h-3.5 w-3.5" />}
+                Additional env vars{filledEnvCount > 0 ? ` (${filledEnvCount})` : ''}
+              </button>
+              {envExpanded && (
+                <div className="flex flex-col gap-2 pl-1">
+                  {extraEnvRows.map((row, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        className="flex-1 rounded-md border border-input bg-background px-2 py-1
+                                   text-sm font-mono placeholder:text-muted-foreground
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        placeholder="KEY"
+                        value={row.key}
+                        onChange={(e) => setExtraEnvRows((prev) =>
+                          prev.map((r, j) => (j === i ? { ...r, key: e.target.value } : r)))}
+                      />
+                      <input
+                        className="flex-1 rounded-md border border-input bg-background px-2 py-1
+                                   text-sm font-mono placeholder:text-muted-foreground
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        placeholder="value"
+                        value={row.value}
+                        onChange={(e) => setExtraEnvRows((prev) =>
+                          prev.map((r, j) => (j === i ? { ...r, value: e.target.value } : r)))}
+                      />
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground px-1"
+                        onClick={() => setExtraEnvRows((prev) => prev.filter((_, j) => j !== i))}
+                        aria-label="Remove variable"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground w-fit"
+                    onClick={() => setExtraEnvRows((prev) => [...prev, { key: '', value: '' }])}
+                  >
+                    + Add variable
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Button
-              onClick={() => { history.add(request); start(request); }}
+              onClick={() => { history.add(request); start(request, serializeExtraEnv()); }}
               disabled={!request.trim()}
             >
               Run

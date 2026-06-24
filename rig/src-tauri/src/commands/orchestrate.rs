@@ -1,4 +1,5 @@
 use crate::{AgentConfigState, OrchestratorState};
+use std::collections::HashMap;
 use std::io::BufRead;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
@@ -9,6 +10,7 @@ pub fn orchestrate_start(
     state:        State<'_, OrchestratorState>,
     config_state: State<'_, AgentConfigState>,
     request:      String,
+    extra_env:    HashMap<String, String>,
 ) -> Result<String, String> {
     let agents_path = state.agents_path.as_ref()
         .ok_or("AETHERIS_AGENTS_PATH not set")?;
@@ -28,6 +30,13 @@ pub fn orchestrate_start(
         .stderr(std::process::Stdio::null());
 
     for (key, value) in &agent_config {
+        cmd.env(key, value);
+    }
+
+    // Per-run env vars (p9 t1): injected after the agent_config loop so that on a
+    // key collision the per-run value wins (e.g. an ad-hoc DOCBUILDER_TENANT overriding
+    // the stored config). Not persisted anywhere — the caller passes them per invocation.
+    for (key, value) in &extra_env {
         cmd.env(key, value);
     }
 

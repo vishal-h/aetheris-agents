@@ -73,13 +73,16 @@ export function useOrchestrator() {
     return () => clearInterval(id);
   }, [jobId, phase, processMessage]);
 
-  const start = useCallback(async (request: string) => {
+  const start = useCallback(async (
+    request: string,
+    extraEnv: Record<string, string> = {},
+  ) => {
     setPhase('planning');
     setPlan(null);
     setStepStatuses({});
     setError(null);
     try {
-      const id = await invoke<string>('orchestrate_start', { request });
+      const id = await invoke<string>('orchestrate_start', { request, extraEnv });
       setJobId(id);
     } catch (e) {
       setError(String(e));

@@ -81,6 +81,16 @@ DOCBUILDER_CONTEXT='{"title":"B2B Proposal","client_name":"Acme Corp","client_em
 # to also exercise PHASE E (upload) and PHASE F (email).
 ```
 
+Other sprint cases:
+- `./scripts/sprint.sh docbuilder_context` — m3 context builder → orchestrator chain
+  ("same as last month").
+- `./scripts/sprint.sh docbuilder_fresh` — m4 freeform fresh path: `context_builder.exs`
+  extracts fields from a freeform `DOCBUILDER_REQUEST`, validates via `validate_fields.py`,
+  and writes `confirmed_context.json`. Resets `run_log.json` to `[]` first (forces the fresh
+  path); asserts the context is written + parseable and the run log is NOT appended
+  (builder-only — PHASE D2 runs with the orchestrator). Full m4 detail: §"m4 — freeform NL
+  field extraction" below.
+
 ### Direct run
 
 ```bash

@@ -515,6 +515,14 @@ DOCBUILDER_REQUEST="Invoice for XYZ for June 2026, same as last month" \
 ./scripts/sprint.sh docbuilder_context
 ```
 
+**Freeform fresh path (m4):** `./scripts/sprint.sh docbuilder_fresh` runs only
+`context_builder.exs` with a freeform `DOCBUILDER_REQUEST` for a client absent from the run
+log — the agent extracts the fields, `validate_fields.py` validates/normalises them, and
+`confirmed_context.json` is written. The case resets `run_log.json` to `[]` (forces the
+fresh path) and asserts the run log is NOT appended (builder-only; PHASE D2 runs with the
+orchestrator). A request missing a required field yields one clarifying message and no
+context file (single-shot self-correction — see the docbuilder m4 milestone doc).
+
 ### Expected output files
 
 After a successful run, `aetheris-agents/docbuilder/output/` contains:

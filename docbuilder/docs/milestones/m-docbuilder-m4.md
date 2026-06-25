@@ -52,10 +52,18 @@ the validated values itself.
 > the LLM-extracted numeric *intermediates* `unit_price` / `line_item_qty` (not in the final
 > context schema) are coerced to numbers.
 
-**D2 — Ambiguity loop depth.** One clarifying-question round. If the second
-pass still fails validation, the agent emits a fallback message asking the
-operator to supply a complete context JSON directly, and stops. A deeper loop
-requires proper multi-turn state management and is deferred.
+**D2 — Ambiguity loop depth (single-shot self-correction; t2 review).**
+`context_builder.exs` runs single-shot via `mix aetheris run` — there is no in-run
+human-reply channel, and `ask_human` is intentionally NOT in its tools (identical
+constraint to the m3 confirmation gate). So the "one round" is a **self-correction
+re-pass**: on a validation failure the agent re-reads the *original* request for fields
+the first extraction missed and re-validates ONCE. If a required field is genuinely absent
+from the request, the agent emits **one** clarifying message naming the missing/invalid
+fields and stops without writing `confirmed_context.json` — the operator's "reply" is a
+**re-run with the field included** (out-of-run). An interactive in-run wait/loop requires
+a conversational harness and is deferred. (The agent prompt's step-iv parenthetical —
+"this run cannot pause for a human reply; the second pass is your own re-read" — encodes
+this.)
 
 **D3 — Agent extension vs sub-agent.** Extend `context_builder.exs` (Option A).
 The extraction logic is a section replacement in the existing step-3b decision
@@ -183,11 +191,11 @@ replaces that behaviour with: (1) extract a raw field map from the freeform
 request text; (2) call `validate_fields.py --input <extracted> --output
 <validated>`; (3a) if exit 0, proceed to the existing confirmation gate
 (write `confirmed_context.json`, emit the `PROPOSED DOCBUILDER_CONTEXT` block);
-(3b) if exit 1, read the error payload, ask the operator exactly one
-clarifying question naming the missing/invalid fields, wait for the reply,
-re-extract incorporating the reply, re-run `validate_fields.py`; (3c) if
-still exit 1 after the second pass, emit a fallback message ("I need these
-fields to proceed: <list>. Please supply a complete context JSON.") and stop
+(3b) if exit 1, read the error payload and **self-correct once** — re-read the
+*original* request for the named fields (no in-run human reply; see D2), re-extract only
+what the request actually contains, and re-run `validate_fields.py`; (3c) if
+still exit 1 after that second pass, emit one clarifying message ("I need the following
+to proceed: <list>. Please re-run with these included.") and stop
 without writing the context file. The recurring path (step 3a, "same as last
 month") and the confirmation gate are unchanged.
 
@@ -264,13 +272,13 @@ cat ../aetheris-agents/docbuilder/output/confirmed_context.json | python3 -m jso
 >    emit the `PROPOSED DOCBUILDER_CONTEXT` block. (Confirmation gate logic is
 >    unchanged — do not touch it.)
 > 3b. Exit 1 → read `output/validated_extraction.json` (the error payload) via
->    `read_file`. Ask the operator exactly one clarifying question naming the
->    missing and/or invalid fields. Wait for the reply. Re-extract incorporating
->    both the original request and the reply. Repeat from step 1 (one time only).
-> 3c. If validation still fails after the second pass → emit: "I need the
->    following fields to proceed: <list from error payload>. Please supply a
->    complete context JSON and re-run." Do NOT write `confirmed_context.json`.
->    Stop.
+>    `read_file`. Self-correct ONCE: re-read the ORIGINAL request for the named
+>    missing/invalid fields and re-extract only what it actually contains (this run
+>    cannot pause for a human reply — the second pass is your own re-read, not an operator
+>    answer). Repeat from step 1 (one time only).
+> 3c. If validation still fails after the second pass → emit one clarifying message:
+>    "I need the following to proceed: <list from error payload>. Please re-run with
+>    these included." Do NOT write `confirmed_context.json`. Stop.
 >
 > The step-3a recurring path ("same as last month" → `resolve_last_run.py`) is
 > unchanged. Do not touch it.

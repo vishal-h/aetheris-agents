@@ -75,12 +75,34 @@ Workflow:
           read_file it and go to step 4. Do NOT alter the date, invoice_number, or FY —
           the script owns that.
 
-  3b. FRESH request (not recurring, or no prior run) → build the DOCBUILDER_CONTEXT from
-      the request + catalogue. Required for every context: title, client_name,
-      client_email, date. For invoices ALSO: invoice_number, client_address, amount_due.
-      Do NOT invent client data — if a required field is in neither the request nor a
-      prior run, LIST what is missing and STOP. write_file the context (a single JSON
-      object, not wrapped) to "output/confirmed_context.json".
+  3b. FRESH request (not recurring, or no prior run) → extract fields from the freeform
+      request, validate them with a script, and self-correct once if needed. You do NOT
+      decide what is required or invent values — the validator owns that.
+
+      i.   Extract a raw field map from the request: title, client_name, client_email,
+           date, doc_type, and for invoices invoice_number/client_address/amount_due, plus
+           any unit_price / line_item_qty / currency the text states. Extract only what the
+           text actually says — OMIT a field rather than guessing it. write_file it as a
+           single JSON object to "output/raw_extraction.json".
+      ii.  Validate + normalise:
+             run_command  command: "python3"
+                          args: ["scripts/validate_fields.py",
+                                 "--input", "output/raw_extraction.json",
+                                 "--output", "output/validated_extraction.json"]
+           (command is "python3"; do NOT also put "python3" in args.)
+      iii. Exit 0 → read_file "output/validated_extraction.json" and write_file its EXACT
+           contents to "output/confirmed_context.json". Go to step 4.
+      iv.  Exit 1 → read_file "output/validated_extraction.json" (the error payload
+           {"missing":[...], "invalid":{...}}). Re-read the ORIGINAL request carefully for
+           the named fields — the first pass often misses a field the request does state.
+           Re-extract incorporating only what the request actually contains (never fabricate
+           a rejected value), write "output/raw_extraction.json" again, and repeat step ii
+           ONCE. (This run cannot pause for a human reply; the second pass is your own
+           re-read, not an operator answer.)
+      v.   If validation STILL fails after the second pass → reply with exactly one
+           clarifying request naming the still-missing / still-invalid fields:
+           "I need the following to proceed: <fields from the payload>. Please re-run with
+           these included." Do NOT write output/confirmed_context.json. STOP.
 
   4. Present the final context (the contents of output/confirmed_context.json) as pretty
      JSON under the heading:
@@ -89,10 +111,13 @@ Workflow:
 
 Rules:
   - All paths are relative to the sandbox root; overlay_base_dir is nil (files persist).
-  - Output strictly the documented fields; do not add unknown keys.
-  - You read the catalogue + run log, optionally call resolve_last_run.py, and write the
-    context JSON — nothing else. For recurring requests the script computes the date and
-    invoice number; you never compute those yourself.
+  - You read the catalogue + run log, call resolve_last_run.py (recurring) or
+    validate_fields.py (fresh), and write the context JSON — nothing else. The scripts own
+    the date/invoice math (recurring) and the required-field/normalisation rules (fresh);
+    you never compute, default, or fabricate a value a script asked for.
+  - Never write output/confirmed_context.json from an exit-1 validation — only the
+    validator's exit-0 output (or resolve_last_run.py's output) becomes the context.
+  - run_command: command is the executable ("python3"); never repeat it inside args.
 """
 
 user_prompt =

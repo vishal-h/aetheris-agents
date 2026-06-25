@@ -40,10 +40,17 @@ deterministic rule for parsing "40 days at £1,200/day" into
 LLM extracts a raw field map (inside the existing `context_builder.exs` system
 prompt), then a new `validate_fields.py` script validates and normalises that
 raw JSON against the context schema — required fields present, date parseable,
-amounts numeric, currency codes valid. The script exits non-zero with a
+amounts well-formed, currency codes valid. The script exits non-zero with a
 structured JSON error payload if anything is missing or malformed. The agent
 reads the error and formulates the clarifying question; it never re-derives
 the validated values itself.
+
+> **Amount normalisation (t1 review, accepted divergence).** `amount_due` is a context
+> schema string substituted **verbatim** into the rendered document (`{{amount_due}}` →
+> "$1,000.00"), so it is **validated as a monetary value but kept as its display string** —
+> NOT coerced to a bare float (which would regress the invoice render to "1000.0"). Only
+> the LLM-extracted numeric *intermediates* `unit_price` / `line_item_qty` (not in the final
+> context schema) are coerced to numbers.
 
 **D2 — Ambiguity loop depth.** One clarifying-question round. If the second
 pass still fails validation, the agent emits a fallback message asking the
@@ -83,8 +90,10 @@ a raw extracted-field JSON (via `--input FILE`) and the context schema rules,
 and either writes a normalised context JSON to `--output FILE` (exit 0) or
 writes a structured error JSON to `--output FILE` and exits 1. No LLM call;
 no network. The normalisation rules are: ISO 8601 date coercion for `date` and
-`order_effective_date`; numeric coercion for `amount_due`, `unit_price`,
-`line_item_qty`; `currency` uppercased and validated against a fixed set
+`order_effective_date`; `amount_due` validated as a monetary value but kept as its
+display string (verbatim render substitution — t1 review); numeric coercion for the
+extraction intermediates `unit_price`, `line_item_qty`; `currency` uppercased and
+validated against a fixed set
 (`GBP`, `USD`, `EUR`, `AED`, `INR`); required-field presence checked against
 the doc_type (all: `title`, `client_name`, `client_email`, `date`; invoice
 additionally: `invoice_number`, `client_address`, `amount_due`). Fields not in
@@ -140,7 +149,9 @@ python3 -m pytest docbuilder/tests/test_validate_fields.py -v
 > the error payload.
 >
 > Normalisation rules (from `context-schema.md` — read it, do not restate):
-> date fields → ISO 8601; amount fields → float; `currency` → upper + validate
+> date fields → ISO 8601; `amount_due` → validated as money, kept as display string
+> (verbatim render substitution); `unit_price`/`line_item_qty` → numeric (extraction
+> intermediates); `currency` → upper + validate
 > against the fixed set; required fields checked per doc_type (read from input
 > as `doc_type`, default `invoice` if absent).
 >

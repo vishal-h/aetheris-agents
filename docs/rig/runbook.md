@@ -515,13 +515,32 @@ DOCBUILDER_REQUEST="Invoice for XYZ for June 2026, same as last month" \
 ./scripts/sprint.sh docbuilder_context
 ```
 
-**Freeform fresh path (m4):** `./scripts/sprint.sh docbuilder_fresh` runs only
-`context_builder.exs` with a freeform `DOCBUILDER_REQUEST` for a client absent from the run
-log — the agent extracts the fields, `validate_fields.py` validates/normalises them, and
-`confirmed_context.json` is written. The case resets `run_log.json` to `[]` (forces the
-fresh path) and asserts the run log is NOT appended (builder-only; PHASE D2 runs with the
-orchestrator). A request missing a required field yields one clarifying message and no
-context file (single-shot self-correction — see the docbuilder m4 milestone doc).
+### m4 — freeform NL field extraction (fresh path)
+
+The complementary path to "same as last month": a freeform `DOCBUILDER_REQUEST` for a
+client with no prior run. `context_builder.exs` extracts a raw field map →
+`validate_fields.py` validates + normalises it against the context schema (date → ISO;
+`amount_due` validated-as-money, kept as a display string; `currency` upper+checked;
+required fields per doc_type) → on success writes `confirmed_context.json`; on a validation
+failure the agent self-corrects ONCE (re-reads the request) and, if a field is still
+genuinely absent, emits one clarifying message and stops without writing the context —
+**single-shot self-correction**, no in-run human reply (same model as the m3 gate; the
+operator's "reply" is a re-run with the field).
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+# Runs only context_builder.exs; resets run_log.json to [] to force the fresh path.
+DOCBUILDER_TENANT=bitloka \
+DOCBUILDER_REQUEST="Invoice for Northwind Traders at billing@northwind.example, address 12 Harbour Rd, invoice number 2627/NWT/01, amount due \$3,400.00, dated 30 June 2026, titled Invoice 2627/NWT/01" \
+./scripts/sprint.sh docbuilder_fresh
+```
+
+Asserts `confirmed_context.json` is written + parseable and the run log is NOT appended
+(builder-only — PHASE D2 appends only with the orchestrator). The fresh extraction artifacts
+are `output/raw_extraction.json` + `output/validated_extraction.json` (inspect the latter on
+a clarifying stop). **Known limitation:** the sprint's client-match assertion checks the
+default request's client ("Northwind Traders"); override `DOCBUILDER_REQUEST` for a
+different client and that substring assertion will not match (the context is still correct).
 
 ### Expected output files
 

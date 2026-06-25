@@ -480,9 +480,56 @@ grep -c "## Milestone summary" docbuilder/docs/milestones/m-docbuilder-m4.md
 
 ---
 
-## Milestone summary
+## Milestone summary (close — t4, 2026-06-25)
 
-_To be written by claude-code at milestone end, from implementation notes t1–t4._
+**m4 is done (t1–t4).** The context builder's fresh path now turns a freeform request
+("a formal quote for Acme Corp, 40 days at £1,200/day, …") into a valid
+`confirmed_context.json` without a prior run — complementing the m3 "same as last month"
+path.
+
+**Shipped:**
+- t1 — `validate_fields.py`: deterministic validate + normalise of a raw extracted-field
+  map; exit 0 → normalised context, exit 1 → `{missing,invalid}` payload (no partial).
+  20 tests.
+- t2 — `context_builder.exs` step-3b: extract → `validate_fields.py` → write
+  `confirmed_context.json` (exit 0) / self-correct once → clarify-and-stop (exit 1).
+  Recurring path + confirmation gate unchanged.
+- t3 — `test_context_builder_fresh.py` (3) + `docbuilder_fresh` sprint case (builder-only;
+  resets run_log to `[]`; asserts context written + run log not appended) + runbook entries.
+- t4 — docs sync: milestone summary, full m4 runbook sections (`docbuilder/runbook.md` +
+  `docs/rig/runbook.md`), capability matrix (`validate_fields.py` → docbuilder 2 agents /
+  22 scripts; repo total 25 / 60).
+
+**Two accepted divergences (recorded in the doc, per the m3 doc-divergence learning):**
+- **`amount_due` kept as a display string** (validated as money, not coerced to float) —
+  it is substituted verbatim into the rendered invoice; coercing would regress
+  "$1,000.00" → "1000.0". Only `unit_price`/`line_item_qty` (extraction intermediates) →
+  numeric. (D1 / t1 review.)
+- **Single-shot self-correction**, not an in-run interactive wait — `mix aetheris run` has
+  no human-reply channel and `ask_human` is intentionally excluded (identical to the m3
+  confirmation gate). The "one round" is a re-read of the request; a still-absent field →
+  one clarifying message + stop; the operator re-runs with the field. (D2 / t2 review.)
+
+**Deferred:** interactive confirm/amend loop and multi-round clarification (need a
+conversational harness); conversational template editing; new doc types/variants.
+
+**Open items for m5:**
+- A full *render-with-intermediates* end-to-end check (the `docbuilder_fresh` sprint is
+  builder-only by design; the orchestrator ignoring unknown fields is the schema contract).
+- `validate_fields.py` `CURRENCIES` allowlist is hardcoded (`{GBP,USD,EUR,AED,INR}`) —
+  extend when multi-currency support broadens (t1 review F2).
+- `test_context_builder_fresh.py` module docstring says "Integration tests" — a cosmetic
+  tidy (they are non-integration script-CLI tests; t3 review F3).
+- The `docbuilder_fresh` client-match assertion uses the default request's client name
+  (t3 review F1).
+
+**Single-shot pattern — promotion candidate.** The single-shot harness constraint has now
+resolved an interactive-loop design question identically in m3 (confirmation gate) and m4
+(clarification round). If it recurs, promote to CLAUDE.md as a standing instruction.
+
+**Project-knowledge refresh (BL-002, human-owned):** `docs/capability-matrix.md` and
+`docs/rig/runbook.md` changed — re-upload to the Claude.ai project and advance
+`docs/project-knowledge-manifest.md` to clear the drift WARNs.
 
 ---
 

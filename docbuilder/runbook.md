@@ -166,6 +166,60 @@ python3 -m pytest docbuilder/tests/test_compute_doc.py -v
 
 ---
 
+## m4 — freeform NL field extraction
+
+The context builder's **fresh path** (no recurring "same as last month" match) turns a
+freeform `DOCBUILDER_REQUEST` into a `confirmed_context.json`:
+
+1. **Extract** — the LLM extracts a raw field map from the request (client, title, date,
+   doc_type, invoice fields, and any `unit_price`/`line_item_qty`/`currency` stated) →
+   `output/raw_extraction.json`.
+2. **Validate** — `validate_fields.py --input output/raw_extraction.json --output
+   output/validated_extraction.json` validates + normalises against the context schema
+   (date → ISO 8601; `amount_due` validated-as-money but **kept as a display string**;
+   `unit_price`/`line_item_qty` → numeric; `currency` → upper + checked against
+   `{GBP,USD,EUR,AED,INR}`; required fields per `doc_type`). Exit 0 → normalised context;
+   exit 1 → `{"missing":[...],"invalid":{...}}` payload (no partial context).
+3. **Self-correct once** — on exit 1 the agent re-reads the original request for the named
+   fields and re-validates ONCE. There is **no in-run human reply** (single-shot
+   `mix aetheris run`, no `ask_human` tool — same model as the m3 confirmation gate).
+4. **Gate or clarify** — exit 0 → write `output/confirmed_context.json`, emit the
+   `PROPOSED DOCBUILDER_CONTEXT` block (the operator reviews before rendering). Still
+   failing after the second pass → the agent emits one clarifying message naming the
+   fields and STOPS without writing the context; the operator re-runs with the field
+   included (the "reply" is a re-run).
+
+### Sprint case
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+DOCBUILDER_TENANT=bitloka ./scripts/sprint.sh docbuilder_fresh
+```
+
+Runs only `context_builder.exs` with a freeform `DOCBUILDER_REQUEST`, resets
+`data/run_log.json` to `[]` (forces the fresh path), and asserts `confirmed_context.json`
+is written + parseable and the run log is NOT appended (builder-only — PHASE D2 appends
+only when the orchestrator runs). **Known limitation:** the client-match assertion checks
+for the default request's client name ("Northwind Traders"); override `DOCBUILDER_REQUEST`
+for a different client and the assertion's substring will not match (the context is still
+correct).
+
+### Output files (m4)
+
+- `output/raw_extraction.json` — the LLM's raw extracted field map (gitignored).
+- `output/validated_extraction.json` — `validate_fields.py`'s normalised context (exit 0)
+  or `{missing,invalid}` error payload (exit 1). Inspect this when the fresh path stops
+  with a clarifying message.
+
+### Failure mode — `validate_fields.py` exit 1
+
+Read `output/validated_extraction.json`: `missing` lists absent required fields, `invalid`
+maps a field to why it was rejected (bad date, unknown currency, non-monetary amount, bad
+email). Supply the field in `DOCBUILDER_REQUEST` and re-run. The validator never fabricates
+or defaults a value (e.g. a fresh invoice missing `invoice_number` is flagged, not invented).
+
+---
+
 ## Common failure modes
 
 ### `DOCBUILDER_TENANT not set` (or similar) on eval

@@ -300,3 +300,10 @@ Docbuilder integration), promoted per methodology §7.
 
 **`mix aetheris run` cannot be nested — a chained run must be top-level or sequential, never one agent run inside another.** A nested `mix aetheris run` (inside a running agent's `run_command`) fails: the inner run's `compile.aetheris_worker` does an unconditional `File.copy!` of the worker binary the outer run holds open → `ETXTBSY` ("text file busy"); there is no `--no-compile`/skip escape. To chain Aetheris runs, run the chain **top-level** (e.g. Rig spawns a Python script that runs the sub-agents sequentially) — each sub-run's worker exits and frees the binary before the next, exactly like a shell sprint. This is why the Rig Docbuilder chain is a top-level script, not a wrapping `.exs` agent.
 `Source: rig-p9 t3 (nested mix aetheris run → ETXTBSY; verified runs docbuilder-ctx-orch-WRNyiQ/lsjxug), t4 (top-level .py via orchestrate_start)`
+
+---
+
+## Learning — m4-docbuilder
+
+**`mix aetheris run` is single-shot — any design that requires an in-run human reply must be re-modelled as a stop-and-re-run pattern.** The harness has no human-reply channel and `ask_human` is intentionally excluded from the tool set. Interactive-loop designs (confirmation gates, clarification rounds, approval flows) resolve the same way every time: the agent performs its best single-pass (extraction, proposal, self-correction), then stops if human input is required; the operator's "reply" is a re-run with the additional information.
+`Source: m-docbuilder-m3 t2 (confirmation gate), m-docbuilder-m4 t2 (clarification round)`

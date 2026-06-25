@@ -1,6 +1,6 @@
 # m-docbuilder-m4 — Freeform NL Field Extraction
 
-> **Path:** `docbuilder/docs/milestones/m-docbuilder-m4.md`
+> **Path:** `docbuilder/docs/m4-milestone.md`
 > **Canonical repo:** aetheris-agents
 > **Base commit:** `c14a0e4` (m3 + rig-p9 clean, 8 PASS / 0 FAIL / 0 WARN)
 
@@ -394,7 +394,7 @@ DOCBUILDER_TENANT=bitloka ./scripts/sprint.sh docbuilder_fresh
 ### t4 — Runbook and docs update
 
 **Scope.** Sync all milestone-level docs to reflect the completed m4 work:
-`docbuilder/docs/milestones/m-docbuilder-m4.md` milestone summary section
+`docbuilder/docs/m4-milestone.md` milestone summary section
 (what shipped, what was deferred, open items); the m4 section in
 `docbuilder/runbook.md`; the m4 entry in `docs/rig/runbook.md` (docbuilder
 module section); and the capability matrix `docs/capability-matrix.md`
@@ -410,7 +410,7 @@ the diffs. Run the drift checker to confirm zero FAIL.
   doc-first discipline slips" — re-verify canonical-doc sync explicitly
 
 **Touches.**
-- `docbuilder/docs/milestones/m-docbuilder-m4.md` (milestone summary section,
+- `docbuilder/docs/m4-milestone.md` (milestone summary section,
   appended)
 - `docbuilder/runbook.md` (new m4 section)
 - `docs/rig/runbook.md` (docbuilder module section — m4 entry)
@@ -433,7 +433,7 @@ python3 scripts/drift_check.py
 # validate_fields.py — confirm it appears in the PASS output.)
 
 # Verify the milestone summary section exists in the doc:
-grep -c "## Milestone summary" docbuilder/docs/milestones/m-docbuilder-m4.md
+grep -c "## Milestone summary" docbuilder/docs/m4-milestone.md
 # Expected: 1
 ```
 
@@ -447,7 +447,7 @@ grep -c "## Milestone summary" docbuilder/docs/milestones/m-docbuilder-m4.md
 > 1. Read implementation notes from
 >    `docbuilder/docs/milestones/m-docbuilder-m4-t{1,2,3}-implementation-notes.md`.
 >    Append a `## Milestone summary` section to
->    `docbuilder/docs/milestones/m-docbuilder-m4.md` covering: what shipped
+>    `docbuilder/docs/m4-milestone.md` covering: what shipped
 >    (validate_fields.py, context_builder.exs step-3b, tests + sprint case),
 >    what was deferred (interactive confirm/amend, multi-round clarification),
 >    surprises from implementation notes, open items for m5.

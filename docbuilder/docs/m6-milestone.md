@@ -1,4 +1,4 @@
-# Milestone — m6-docbuilder — Offer Letter bundle
+# Milestone — m6-docbuilder — Jinja2 renderer + offer letter
 
 **Repo:** aetheris-agents
 **Branch:** m6-docbuilder
@@ -12,23 +12,43 @@
 
 ## Goal
 
-Add an `offer_letter/v1` bundle for the Bitloka tenant so the docbuilder pipeline
-can produce a branded Word document offer letter from a natural-language request.
-The output is a `.docx` file ready to upload to Drive and tweak before sending.
-This is also the first end-to-end proof that the runbook's "Adding a new doc type"
-guide (`docbuilder/runbook.md`) is correct.
+Replace the Markdown+regex renderer (`render_template.py`) with a Jinja2 HTML renderer,
+migrate the invoice to use it, and add an offer letter doc type on top of it. The Jinja2
+path gives conditional sections (`{% if %}`), loops (`{% for %}`), proper escaping, and
+native absent-variable handling (`{{ field | default('') }}`). DOCX output uses Pandoc
+(HTML → DOCX via a branding reference doc). PDF output uses WeasyPrint (unchanged path,
+just a new template format).
 
 ---
 
 ## What is NOT in scope
 
-- PDF output (docx only — Drive + manual edit handles distribution)
-- XLSX output
-- Salary arithmetic / `compute_doc.py` extension (operator provides all amounts)
-- Multi-variant support (v1 only)
-- Changes to the orchestrator, context builder, or any existing script beyond
-  `validate_fields.py` and `OPTIONAL_FIELDS` in `render_template.py`
-- Drive upload wiring (PHASE E) — the runbook covers this; not a new milestone item
+- Removing `render_template.py` in this milestone — deprecated but kept for backward
+  compatibility; removal is m7
+- Changes to `generate_xlsx.py`, `generate_csv.py`, or other non-narrative renderers
+- Multi-variant support beyond v1 for the offer letter
+- Salary computation (`compute_offer.py`) — operator provides all amounts
+- Drive upload wiring (PHASE E) — already works; no new milestone work needed
+- Changes to `context_builder.exs`, `resolve_last_run.py`, or `run_log_writer.py`
+
+---
+
+## Pre-flight verification (scope-time, 2026-06-26)
+
+Verified against the live environment before scoping — three facts that adjust the tickets:
+
+- **Pandoc:** present (`pandoc 2.9.2.1`). t2 DOCX path is viable as written. ✓
+- **Jinja2: NOT installed** and **not in `docbuilder/requirements.txt`** (the doc's
+  "already installed, 3.1.6" is false here — `weasyprint 69.0` + `markdown 3.10.2` are
+  the only narrative deps listed). **t1 must add `jinja2` to `docbuilder/requirements.txt`
+  and install it**, or its `import jinja2` (and the `test_generate_html.py` done-check)
+  fails at collection. `docbuilder/requirements.txt` is added to t1's Touches for this.
+- **`invoice_v1.json` shape:** `template_file` is **nested under `narrative`**
+  (`narrative.template_file` = `"invoice_v1.md.template"`, `narrative.css_file` =
+  `"invoice_v1.css"`), NOT a top-level key. So t3's "update `template_file`" means
+  `narrative.template_file → "invoice_v1.html.j2"`, and `has_jinja` is a new top-level key.
+  Top-level keys: `template_id, title, data_sources, output_formats, table_style,
+  data_col_start, narrative, sheets`.
 
 ---
 
@@ -36,107 +56,67 @@ guide (`docbuilder/runbook.md`) is correct.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Output format | `docx` only | Offer letter is reviewed/signed in Word; Drive handles distribution |
-| Compensation table | Individual `{{field}}` placeholders in the base `.docx`, not a sheet partial | Simpler; "good enough + Drive tweak" model; no `compute_doc.py` change needed |
-| Internship acknowledgement | Optional field `{{internship_acknowledgement}}` — full paragraph text when applicable, empty string for direct hires | Avoids needing conditional template logic; absent → renders as empty (m5 `OPTIONAL_FIELDS` mechanism) |
-| Performance bonuses | Optional fields `{{business_performance_bonus_pct}}` and `{{individual_performance_bonus_pct}}` | Vary per hire; absent → renders as empty |
-| Notice period | Hardcoded in the base `.docx` template ("eight (8) weeks") | Fixed for all hires |
-| Field naming | Offer-letter-specific aliases (`candidate_name`, `candidate_email`, etc.) rather than reusing `client_name` | Clearer semantics; option (b) from the pre-milestone discussion |
-| `validate_fields.py` | Add `OFFER_LETTER_REQUIRED` branch | Same pattern as `INVOICE_REQUIRED`; keeps validation doc-type-aware |
-| `render_template.py` | Add offer-letter optional fields to `OPTIONAL_FIELDS` | Ensures absent optional fields render as empty, not `{{placeholders}}` |
+| Template engine | Jinja2 (already installed, 3.1.6) | Native conditionals, loops, filters, proper escaping; `{{ field \| default('') }}` replaces the `OPTIONAL_FIELDS` workaround from m5 |
+| HTML renderer script | New `generate_html.py` — Jinja2 template + context → HTML | Replaces `render_template.py` for new doc types; clean, testable |
+| DOCX output | New `generate_docx_from_html.py` — Pandoc wrapper (HTML → DOCX via `--reference-doc`) | Pandoc 2.9 available; reference doc carries Bitloka branding/styles, no content; version-controlled plain text templates |
+| PDF output | Existing WeasyPrint path — `generate_pdf.py` calls `generate_html.py` instead of `render_template.py` when `has_jinja: true` in the bundle spec | Minimal change to `generate_pdf.py`; WeasyPrint stays |
+| Invoice migration | Replace `invoice_v1.md.template` with `invoice_v1.html.j2`; update bundle spec | One template, one renderer for both PDF and future DOCX; `render_template.py` left in place as deprecated |
+| Regression gate | `docbuilder_invoice_jinja` sprint case renders the invoice via the new path and asserts zero `{{` artifacts in the PDF | Proves the migration is correct |
+| Offer letter output | DOCX only (PDF deferred to m7) | Letters reviewed/signed in Word; Drive handles distribution |
+| Offer letter fields | Offer-letter-specific aliases (`candidate_name` etc.); `OFFER_LETTER_REQUIRED` branch in `validate_fields.py` | Clearer semantics; same pattern as `INVOICE_REQUIRED` |
+| Conditional sections | Jinja2 `{% if internship_acknowledgement %}…{% endif %}` | Natural in Jinja2; eliminates the optional-field workaround from the original m6 plan |
+| `render_template.py` deprecation | Add deprecation comment; keep all existing tests passing | No breakage for any existing sprint case |
 
 ---
 
-## Field list
+## Bundle spec convention (new field: `has_jinja`)
+
+The bundle spec JSON gains one optional boolean field:
+
+```json
+{ "has_jinja": true }
+```
+
+When `true`, `generate_pdf.py` calls `generate_html.py` (Jinja2) instead of
+`render_template.py` (Markdown). When absent or `false`, the existing path is used.
+This is the only orchestrator-visible change — no PHASE numbering changes.
+
+---
+
+## Offer letter field list
 
 ### Required for `offer_letter`
 
-| Field | Description | Example |
-|---|---|---|
-| `title` | Document title | `"Offer Letter — Ajay Rao"` |
-| `candidate_name` | Full name | `"Ajay Rao"` |
-| `candidate_email` | Email address | `"ajay.rao@example.com"` |
-| `candidate_phone` | Phone number | `"980 000 1234"` |
-| `candidate_address` | Full postal address | `"123, Main Street, Bengaluru, Karnataka - 560012"` |
-| `role` | Position offered | `"Software Engineer"` |
-| `date` | Letter date (ISO or DD-Mon-YYYY) | `"01-Jul-2026"` |
-| `annual_ctc` | Annual Cost to Company | `"₹9,00,000"` |
-| `basic_monthly` | Basic salary per month | `"37,500.00"` |
-| `hra_monthly` | HRA per month | `"18,750.00"` |
-| `lta_monthly` | LTA per month | `"3,000.00"` |
-| `wfh_allowance_monthly` | WFH allowance per month | `"3,000.00"` |
-| `flexi_pay_monthly` | Flexi pay per month | `"12,750.00"` |
-| `total_earnings_monthly` | Sum of earnings | `"75,000.00"` |
-| `professional_tax_monthly` | PT deduction | `"200.00"` |
-| `tds_monthly` | TDS deduction | `"7,500.00"` |
-| `total_deductions_monthly` | Sum of deductions | `"7,700.00"` |
-| `net_take_home_monthly` | Net take-home | `"₹67,300.00"` |
+| Field | Example |
+|---|---|
+| `title` | `"Offer Letter — Ajay Rao"` |
+| `candidate_name` | `"Ajay Rao"` |
+| `candidate_email` | `"ajay.rao@example.com"` |
+| `candidate_phone` | `"980 000 1234"` |
+| `candidate_address` | `"123, Main Street, Bengaluru, Karnataka - 560012"` |
+| `role` | `"Software Engineer"` |
+| `date` | `"01-Jul-2026"` |
+| `annual_ctc` | `"₹9,00,000"` |
+| `basic_monthly` | `"37,500.00"` |
+| `hra_monthly` | `"18,750.00"` |
+| `lta_monthly` | `"3,000.00"` |
+| `wfh_allowance_monthly` | `"3,000.00"` |
+| `flexi_pay_monthly` | `"12,750.00"` |
+| `total_earnings_monthly` | `"75,000.00"` |
+| `professional_tax_monthly` | `"200.00"` |
+| `tds_monthly` | `"7,500.00"` |
+| `total_deductions_monthly` | `"7,700.00"` |
+| `net_take_home_monthly` | `"₹67,300.00"` |
 
 ### Optional for `offer_letter`
 
-| Field | Description |
+| Field | Notes |
 |---|---|
-| `internship_acknowledgement` | Full paragraph text acknowledging prior internship; empty for direct hires |
+| `internship_acknowledgement` | Full paragraph text; omit for direct hires |
 | `business_performance_bonus_pct` | e.g. `"12.5%"` |
-| `individual_performance_bonus_pct` | e.g. `"12.5%"` |
 | `business_performance_bonus_period` | e.g. `"March/April"` |
+| `individual_performance_bonus_pct` | e.g. `"12.5%"` |
 | `individual_performance_bonus_period` | e.g. `"September/October"` |
-
----
-
-## Bundle structure
-
-```
-data/templates/bitloka/offer_letter/v1/
-  offer_letter_v1.docx        ← base file with {{placeholders}} and table structure
-  offer_letter_v1.json        ← bundle spec (required by orchestrator at eval time)
-```
-
-No `.md.template`, no `.css`, no data source — docx only, context-driven.
-
-### `offer_letter_v1.json` (bundle spec)
-
-```json
-{
-  "title": "{{title}}",
-  "sheets": [],
-  "narrative": null,
-  "sources": [],
-  "output_formats": ["docx"],
-  "base_file": {
-    "docx": "offer_letter_v1.docx"
-  }
-}
-```
-
-> **t1 verification note (raised at scope time):** confirm the exact spec key names against
-> the live invoice bundle `invoice_v1.json` and the orchestrator before writing. Known
-> discrepancies to resolve at t1: the invoice spec uses `data_sources` (not `sources`); the
-> orchestrator detects the DOCX base by **file existence** (`File.exists?(prefix.docx)`), so
-> a `base_file` key may be ignored; `narrative: null` is intentional (non-map → structured /
-> base-file docx path, not the `render_template.py` narrative path). Adjust the spec to match
-> reality at t1 rather than trusting this illustrative shape verbatim.
-
-### `catalogue.json` addition
-
-```json
-{
-  "doc_type": "offer_letter",
-  "description": "Employment offer letter for new hires — branded Word document with compensation structure",
-  "variants": [
-    {
-      "version": "v1",
-      "label": "Standard FTE",
-      "output_formats": ["docx"],
-      "has_base_files": {
-        "xlsx": false,
-        "docx": true
-      },
-      "has_narrative": false
-    }
-  ]
-}
-```
 
 ---
 
@@ -144,348 +124,414 @@ No `.md.template`, no `.css`, no data source — docx only, context-driven.
 
 | Ticket | Title | Key artifacts |
 |---|---|---|
-| t1 | Bundle assets — `offer_letter_v1.docx` + `offer_letter_v1.json` + catalogue entry | `data/templates/bitloka/offer_letter/v1/` |
-| t2 | `validate_fields.py` — `OFFER_LETTER_REQUIRED` branch + `render_template.py` `OPTIONAL_FIELDS` | `scripts/validate_fields.py`, `scripts/render_template.py` |
-| t3 | `context-schema.md` + end-to-end sprint (`docbuilder_offer_letter`) + runbook | `docbuilder/docs/context-schema.md`, `aetheris/scripts/sprint.sh`, `docbuilder/runbook.md` |
-| t4 | Docs sync + milestone close | `docs/capability-matrix.md`, `CLAUDE.md`, milestone summary |
+| t1 | `generate_html.py` — Jinja2 renderer | `scripts/generate_html.py`, tests |
+| t2 | `generate_docx_from_html.py` — Pandoc wrapper | `scripts/generate_docx_from_html.py`, tests, `reference.docx` |
+| t3 | Migrate invoice to Jinja2 + update `generate_pdf.py` | `invoice_v1.html.j2`, `generate_pdf.py` |
+| t4 | Offer letter bundle + `validate_fields.py` | `data/templates/bitloka/offer_letter/v1/`, `validate_fields.py` |
+| t5 | Sprint cases + runbook | `sprint.sh`, `docbuilder/runbook.md` |
+| t6 | Docs sync + milestone close | `docs/capability-matrix.md`, `docs/rig/runbook.md`, `CLAUDE.md` |
 
 ---
 
 ## Tickets
 
-### t1 — Bundle assets
+### t1 — `generate_html.py` (Jinja2 renderer)
 
-**Scope.** Create the offer letter bundle: the `.docx` base file with `{{placeholder}}`
-fields and table structure matching the Bitloka FTE offer letter template, the
-`offer_letter_v1.json` bundle spec, and the catalogue entry. No Python script changes
-in this ticket.
-
-**The `.docx` base file** must contain:
-- Bitloka letterhead (copy style from the actual template)
-- All `{{placeholder}}` fields in the narrative (candidate details, role, date, CTC,
-  `{{internship_acknowledgement}}`, notice period hardcoded)
-- Compensation table with `{{basic_monthly}}`, `{{hra_monthly}}`, `{{lta_monthly}}`,
-  `{{wfh_allowance_monthly}}`, `{{flexi_pay_monthly}}`, `{{total_earnings_monthly}}`
-- Deductions table with `{{professional_tax_monthly}}`, `{{tds_monthly}}`,
-  `{{total_deductions_monthly}}`
-- Net take-home row: `{{net_take_home_monthly}}`
-- Performance bonus section with `{{business_performance_bonus_pct}}`,
-  `{{business_performance_bonus_period}}`, `{{individual_performance_bonus_pct}}`,
-  `{{individual_performance_bonus_period}}`
-- Signature block (hardcoded: Vishal Honnatti, Director)
-- Footer (hardcoded: address, www.bitloka.com, contact@bitloka.com)
+**Scope.** A new script that renders a Jinja2 `.html.j2` template with a context dict
+→ HTML string or file. Replaces `render_template.py` for new doc types.
 
 **Contract refs.**
-- `docbuilder/runbook.md` §"Adding a new doc type" — the two-layer structure
-  (catalogue = selection metadata; bundle spec = operative config)
-- `generate_docx.py` — does find-and-replace of `{{field}}` → value throughout the
-  document; the base file must use exactly the `{{field}}` syntax
+- `agent-creation-guide.md` §"Scripts do, agents decide"
+- `render_template.py` — the script being superseded; match its CLI interface
 
 **Touches.**
-- `docbuilder/data/templates/bitloka/offer_letter/v1/offer_letter_v1.docx` — new
-- `docbuilder/data/templates/bitloka/offer_letter/v1/offer_letter_v1.json` — new
-- `docbuilder/data/templates/bitloka/catalogue.json` — add `offer_letter` entry
+- `docbuilder/scripts/generate_html.py` — new
+- `docbuilder/tests/test_generate_html.py` — new
+- `docbuilder/requirements.txt` — add `jinja2` (NOT installed yet — see §Pre-flight)
 - `docbuilder/docs/milestones/m-docbuilder-m6-t1-implementation-notes.md` — new
 
 **Do not generate.**
-- Do not modify any `.py` or `.exs` file
-- Do not add a sprint case — that is t3
+- Do not modify `render_template.py`, `generate_pdf.py`, or any bundle asset
+
+**Script contract:**
+- CLI: `generate_html.py --template TEMPLATE [--context JSON] [--spec SPEC_JSON_FILE] [--output FILE]`
+- Absent variables render as `""` (use `jinja2.Undefined` environment)
+- Exit 1 on `TemplateNotFound`, `TemplateSyntaxError`, or JSON parse error
+- Importable: `render_html(template_path, context, spec=None) -> str`
 
 **Done-check.**
 ```bash
 cd ~/sandbox/elixirws/aetheris-agents/docbuilder
 
-# Verify bundle files exist
-ls data/templates/bitloka/offer_letter/v1/
+python3 -m pytest tests/test_generate_html.py -v
+python3 -m pytest tests/ -q
 
-# Verify catalogue entry
-python3 -c "
-import json
-cat = json.load(open('data/templates/bitloka/catalogue.json'))
-types = [d['doc_type'] for d in cat['doc_types']]
-print('doc_types:', types)
-assert 'offer_letter' in types, 'offer_letter missing from catalogue'
-print('OK')
-"
+echo '<p>Hello {{ name | default("") }}</p>' > /tmp/test.html.j2
+python3 scripts/generate_html.py --template /tmp/test.html.j2 --context '{"name":"World"}'
+# Expected: <p>Hello World</p>
 
-# Verify bundle spec is valid JSON
-python3 -c "import json; json.load(open('data/templates/bitloka/offer_letter/v1/offer_letter_v1.json')); print('bundle spec: valid JSON')"
-
-# Smoke: run generate_docx.py against the base file with a minimal context
-python3 scripts/generate_docx.py \
-  --output-dir output \
-  --filename test_offer_letter \
-  --base-file data/templates/bitloka/offer_letter/v1/offer_letter_v1.docx \
-  --context '{"candidate_name":"Test Candidate","role":"Engineer","date":"2026-07-01","annual_ctc":"₹9,00,000","basic_monthly":"37,500.00","hra_monthly":"18,750.00","lta_monthly":"3,000.00","wfh_allowance_monthly":"3,000.00","flexi_pay_monthly":"12,750.00","total_earnings_monthly":"75,000.00","professional_tax_monthly":"200.00","tds_monthly":"7,500.00","total_deductions_monthly":"7,700.00","net_take_home_monthly":"₹67,300.00"}'
-ls -lh output/test_offer_letter.docx
-# Expected: file exists, non-zero size
+python3 scripts/generate_html.py --template /tmp/test.html.j2 --context '{}'
+# Expected: <p>Hello </p>  (absent var → empty, no error)
 ```
 
-> **t1 verification note:** the smoke command's `generate_docx.py` flags above
-> (`--output-dir` / `--filename` / `--base-file` / `--context`) are illustrative — confirm
-> the script's real CLI signature before relying on them, and adjust the done-check to match.
-
 **Claude-code prompt.**
-> Read `CLAUDE.md` (aetheris-agents root) and `docbuilder/runbook.md` §"Adding a new
-> doc type" before writing any files. Then implement t1 of
-> `docbuilder/docs/m6-milestone.md`.
+> Read `CLAUDE.md` (aetheris-agents root) before writing any code. Then implement t1
+> of `docbuilder/docs/m6-milestone.md`.
 >
-> **Scope:** create the offer_letter/v1 bundle assets.
+> First add `jinja2` to `docbuilder/requirements.txt` and install it
+> (`python3 -m pip install jinja2`) — it is NOT currently installed (see §Pre-flight
+> verification); without it the new script and its tests cannot import.
 >
-> **`offer_letter_v1.docx`:** Build a Word document that faithfully reproduces the
-> Bitloka FTE offer letter structure (see the field list in the milestone doc).
-> Use `{{placeholder}}` syntax throughout — `generate_docx.py` does a find-and-replace
-> of `{{field}}` → value. The document must contain:
-> - Bitloka Solutions Private Limited header
-> - Date: `{{date}}`
-> - Candidate address block: `{{candidate_name}}`, `{{candidate_address}}`,
->   `{{candidate_email}}` | `{{candidate_phone}}`
-> - Salutation: `Dear Mr./Ms. {{candidate_name}},`
-> - Offer paragraph mentioning `{{role}}`
-> - `{{internship_acknowledgement}}` paragraph (leave as a placeholder — empty for
->   direct hires, full paragraph text for interns)
-> - CTC line: `{{annual_ctc}}`
-> - Notice period: hardcoded "eight (8) weeks"
-> - Terms, documents-required, and NDA paragraphs: hardcoded boilerplate
-> - Acceptance paragraph: hardcoded
-> - Signature block: hardcoded (Vishal Honnatti, Director)
-> - Compensation section heading
-> - Monthly salary breakup table with all `{{earnings_field}}` placeholders
-> - Monthly deductions table with all `{{deductions_field}}` placeholders
-> - Net take-home row: `{{net_take_home_monthly}}`
-> - Performance bonus section with all `{{bonus_field}}` placeholders
-> - Footer: hardcoded (address, www.bitloka.com, contact@bitloka.com)
+> Create `generate_html.py` — a Jinja2 template renderer:
+> - `render_html(template_path, context, spec=None) -> str` — importable. Uses
+>   `jinja2.Environment(loader=jinja2.FileSystemLoader(...), undefined=jinja2.Undefined)`
+>   so absent variables render as `""` rather than raising.
+> - CLI: `--template`, `--context` (inline JSON, default `{}`), `--spec` (JSON file
+>   path, optional; makes `spec` dict available in templates), `--output` (file; default
+>   stdout). Exit 1 on `TemplateNotFound`, `TemplateSyntaxError`, bad JSON — emit
+>   `{"status":"error","error":"..."}` to stderr (stage-CLI pattern).
 >
-> Use `python-docx` to construct the document programmatically. Match the Bitloka
-> invoice style (professional, clean). Commit the generated `.docx` file as a binary.
+> Tests:
+> - Present variable renders its value
+> - Absent variable renders as `""` (no exception)
+> - `{% if field %}` block: present → rendered; absent → skipped
+> - `{% for item in items %}` loop
+> - `--spec` makes `spec` available in the template
+> - CLI: `--output FILE` writes to file; stdout mode; missing template → exit 1;
+>   bad context JSON → exit 1
 >
-> **`offer_letter_v1.json`:** Use the bundle spec from the milestone doc §"Bundle
-> structure". Confirm the exact fields the orchestrator expects by checking
-> `fetch_template.py` AND the live `invoice_v1.json` before writing — resolve the
-> known discrepancies flagged in the §"Bundle structure" verification note
-> (`data_sources` vs `sources`; `base_file` likely ignored; `narrative: null` intended).
->
-> **`catalogue.json`:** Append the `offer_letter` entry from the milestone doc
-> §"Design decisions" to the `doc_types` array. Do not modify the existing `invoice`
-> entry.
->
-> **Touches:** `data/templates/bitloka/offer_letter/v1/offer_letter_v1.docx`,
-> `data/templates/bitloka/offer_letter/v1/offer_letter_v1.json`,
-> `data/templates/bitloka/catalogue.json`,
+> **Touches:** `docbuilder/scripts/generate_html.py`,
+> `docbuilder/tests/test_generate_html.py`,
 > `docbuilder/docs/milestones/m-docbuilder-m6-t1-implementation-notes.md`.
+> Do not generate anything outside Touches.
 >
-> **Do not generate** anything outside Touches.
->
-> Run the done-check from `m6-milestone.md §t1` and include its full output at the
-> top of the review packet, before the diff.
+> Run the done-check from `m6-milestone.md §t1` and include its full output at
+> the top of the review packet.
 
 ---
 
-### t2 — `validate_fields.py` + `render_template.py` updates
+### t2 — `generate_docx_from_html.py` (Pandoc wrapper)
 
-**Scope.** Add `OFFER_LETTER_REQUIRED` to `validate_fields.py` so the fresh extraction
-path enforces the correct required fields for offer letters. Add offer-letter optional
-fields to `OPTIONAL_FIELDS` in `render_template.py` (though `render_template.py` is not
-used for docx, this keeps the two constants in sync for future PDF support).
-
-**Contract refs.**
-- `validate_fields.py` — existing `INVOICE_REQUIRED` pattern; same approach
-- `render_template.py` — existing `OPTIONAL_FIELDS` set; add new optional fields
+**Scope.** A new script that converts HTML to DOCX via Pandoc, using a reference `.docx`
+for Bitloka branding. Create the reference doc with `python-docx` (styles only, no
+content).
 
 **Touches.**
-- `docbuilder/scripts/validate_fields.py` — add `OFFER_LETTER_REQUIRED`, extend
-  required-fields branch
-- `docbuilder/scripts/render_template.py` — add offer-letter optional fields to
-  `OPTIONAL_FIELDS`
-- `docbuilder/tests/test_validate_fields.py` — add tests for offer_letter doc_type
+- `docbuilder/scripts/generate_docx_from_html.py` — new
+- `docbuilder/data/templates/bitloka/reference.docx` — new (styles-only reference doc)
+- `docbuilder/tests/test_generate_docx_from_html.py` — new
 - `docbuilder/docs/milestones/m-docbuilder-m6-t2-implementation-notes.md` — new
 
 **Do not generate.**
-- Do not modify any bundle asset, catalogue, or agent file
-- Do not add a sprint case — that is t3
+- Do not modify any bundle asset or catalogue
+
+**Script contract:**
+- CLI: `generate_docx_from_html.py --input HTML_FILE --output DOCX_FILE [--reference-doc DOCX]`
+- Default `--reference-doc`: `data/templates/bitloka/reference.docx`
+- Calls `pandoc --from html --to docx --reference-doc REF -o OUTPUT INPUT`
+- Exit 1 if pandoc not found or returns non-zero
+- Importable: `html_to_docx(html_path, output_path, reference_doc=None) -> None`
 
 **Done-check.**
 ```bash
 cd ~/sandbox/elixirws/aetheris-agents/docbuilder
 
-python3 -m pytest tests/test_validate_fields.py -v
-# Expected: all existing tests pass + new offer_letter tests pass
-
+python3 -m pytest tests/test_generate_docx_from_html.py -v
 python3 -m pytest tests/ -q
-# Expected: full suite passes
+
+echo '<h1>Test</h1><p>Hello World</p>' > /tmp/test.html
+python3 scripts/generate_docx_from_html.py \
+  --input /tmp/test.html --output /tmp/test.docx
+ls -lh /tmp/test.docx
+# Expected: file exists, non-zero size
 ```
 
 **Claude-code prompt.**
 > Read `CLAUDE.md` (aetheris-agents root) before writing any code. Then implement t2
 > of `docbuilder/docs/m6-milestone.md`.
 >
-> **`validate_fields.py`:**
-> Add at module level:
-> ```python
-> OFFER_LETTER_REQUIRED = [
->     "candidate_name", "candidate_email", "candidate_phone", "candidate_address",
->     "role", "date", "annual_ctc",
->     "basic_monthly", "hra_monthly", "lta_monthly", "wfh_allowance_monthly",
->     "flexi_pay_monthly", "total_earnings_monthly",
->     "professional_tax_monthly", "tds_monthly", "total_deductions_monthly",
->     "net_take_home_monthly",
-> ]
-> ```
-> Update the required-fields selection in `validate()`:
-> ```python
-> required = BASE_REQUIRED + (
->     INVOICE_REQUIRED if doc_type == "invoice" else
->     OFFER_LETTER_REQUIRED if doc_type == "offer_letter" else
->     []
-> )
-> ```
-> Note: `BASE_REQUIRED` (`title`, `client_name`, `client_email`, `date`) is
-> NOT used for offer_letter — `OFFER_LETTER_REQUIRED` is the complete list
-> (it has its own name/email/date fields with offer-letter semantics). The
-> `BASE_REQUIRED` check only applies when `doc_type` is neither `invoice` nor
-> `offer_letter`. (i.e. the `required = BASE_REQUIRED + (...)` shape must NOT
-> add `BASE_REQUIRED` for offer_letter — make `required` be exactly
-> `OFFER_LETTER_REQUIRED` for that branch; restructure the expression if needed
-> so `client_name`/`client_email` are never required for an offer letter.)
+> **`generate_docx_from_html.py`:**
+> - `html_to_docx(html_path, output_path, reference_doc=None) -> None` — resolves
+>   default reference doc path. Calls:
+>   `["pandoc","--from","html","--to","docx","--reference-doc",ref,"-o",out,inp]`
+>   Raises `FileNotFoundError` if pandoc not on PATH; `RuntimeError` (with stderr)
+>   if pandoc exits non-zero.
+> - CLI wrapping it: `--input`, `--output`, `--reference-doc`. Exit 1 on error.
 >
-> Also add `candidate_email` to the email format check (currently only
-> `client_email` is checked) — check whichever of `client_email` /
-> `candidate_email` is present.
+> **`reference.docx`:** Create with `python-docx` — styles only, no content pages.
+> Normal style: Calibri 11pt. Heading 1: bold 16pt dark grey `#333333`. Table style
+> with thin borders. Include Bitloka orange `#F5A623` as a theme accent. Commit
+> the generated `.docx` as a binary.
 >
-> **`render_template.py`:** Add to `OPTIONAL_FIELDS`:
-> ```python
-> "internship_acknowledgement",
-> "business_performance_bonus_pct",
-> "business_performance_bonus_period",
-> "individual_performance_bonus_pct",
-> "individual_performance_bonus_period",
-> "candidate_name", "candidate_email", "candidate_phone", "candidate_address",
-> "role", "annual_ctc",
-> "basic_monthly", "hra_monthly", "lta_monthly", "wfh_allowance_monthly",
-> "flexi_pay_monthly", "total_earnings_monthly",
-> "professional_tax_monthly", "tds_monthly", "total_deductions_monthly",
-> "net_take_home_monthly",
-> ```
-> These are offer-letter fields; marking them optional in `render_template.py`
-> keeps the two scripts in sync for future PDF support.
+> Tests: `html_to_docx` produces non-empty `.docx`; pandoc not found →
+> `FileNotFoundError`; pandoc non-zero → `RuntimeError`; CLI `--output` exists after
+> run; bad `--input` → exit 1.
 >
-> **Tests:** add to `test_validate_fields.py`:
-> - Valid offer_letter with all required fields → exit 0
-> - offer_letter missing `candidate_name` → exit 1, in `missing`
-> - offer_letter missing `net_take_home_monthly` → exit 1, in `missing`
-> - offer_letter with invalid `candidate_email` → exit 1, in `invalid`
-> - offer_letter with optional `internship_acknowledgement` absent → exit 0
->   (optional field, must not be required)
-> - offer_letter does NOT require `client_name` / `client_email` (regression guard
->   for the BASE_REQUIRED exclusion)
->
-> **Touches:** `docbuilder/scripts/validate_fields.py`,
-> `docbuilder/scripts/render_template.py`,
-> `docbuilder/tests/test_validate_fields.py`,
+> **Touches:** `docbuilder/scripts/generate_docx_from_html.py`,
+> `docbuilder/data/templates/bitloka/reference.docx`,
+> `docbuilder/tests/test_generate_docx_from_html.py`,
 > `docbuilder/docs/milestones/m-docbuilder-m6-t2-implementation-notes.md`.
+> Do not generate anything outside Touches.
 >
-> **Do not generate** anything outside Touches.
->
-> Run the done-check from `m6-milestone.md §t2` and include its full output at the
-> top of the review packet, before the diff.
+> Run the done-check from `m6-milestone.md §t2` and include its full output at
+> the top of the review packet.
 
 ---
 
-### t3 — `context-schema.md` + `docbuilder_offer_letter` sprint + runbook
+### t3 — Migrate invoice to Jinja2 + update `generate_pdf.py`
 
-**Scope.** Document the offer-letter fields in `context-schema.md`. Add a
-`docbuilder_offer_letter` sprint case that runs the full fresh path end-to-end for an
-offer letter: freeform NL request → extraction → validation → confirmed_context.json →
-orchestrator renders → `ajay_rao_offer_letter_{date}.docx`. Add the sprint-case entry
-to `docbuilder/runbook.md`. This is the end-to-end proof that the runbook's "Adding a
-new doc type" guide works correctly.
-
-**Contract refs.**
-- `docbuilder/runbook.md` §"Adding a new doc type" — the guide this ticket proves
-- m4/m5 sprint case patterns (`docbuilder_fresh_render`) — same structure
+**Scope.** Replace `invoice_v1.md.template` with `invoice_v1.html.j2`. Update
+`generate_pdf.py` to call `generate_html.py` when `has_jinja: true`. Update
+`invoice_v1.json` to add `"has_jinja": true`. Do not delete `invoice_v1.md.template`.
 
 **Touches.**
-- `docbuilder/docs/context-schema.md` — add offer-letter fields (required + optional)
-- `aetheris/scripts/sprint.sh` — new `docbuilder_offer_letter` case (also under `all`)
-- `docbuilder/runbook.md` — sprint-case entry
+- `docbuilder/data/templates/bitloka/invoice/v1/invoice_v1.html.j2` — new
+- `docbuilder/data/templates/bitloka/invoice/v1/invoice_v1.json` — add `"has_jinja": true`
+- `docbuilder/scripts/generate_pdf.py` — add `has_jinja` branch in `_narrative_html`
+- `docbuilder/tests/test_generate_pdf.py` — add/update tests for `has_jinja` path
 - `docbuilder/docs/milestones/m-docbuilder-m6-t3-implementation-notes.md` — new
 
 **Do not generate.**
-- Do not modify any `.py` or `.exs` file
-- Do not update `docs/rig/runbook.md` — that is t4
+- Do not delete `invoice_v1.md.template` or modify `render_template.py`
+- Do not add a sprint case — that is t5
 
-**Runbook update rule.** Add the sprint-case entry to `docbuilder/runbook.md` in
-this ticket (not deferred to t4) — same rule as m5 t3.
+**Done-check.**
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/docbuilder
+
+python3 -m pytest tests/test_generate_pdf.py -v
+python3 -m pytest tests/ -q
+
+# Zero unresolved Jinja2 vars in rendered HTML
+python3 scripts/generate_html.py \
+  --template data/templates/bitloka/invoice/v1/invoice_v1.html.j2 \
+  --context '{"title":"Invoice 2627/XYZ/03","client_name":"XYZ Inc","client_email":"accounts@xyz.example","date":"30-Jun-2026","invoice_number":"2627/XYZ/03","client_address":"1234 Stevens Creek Blvd","amount_due":"$1,000.00"}' \
+  | grep -c '{{'
+# Expected: 0
+```
+
+**Claude-code prompt.**
+> Read `CLAUDE.md` (aetheris-agents root) and inspect `invoice_v1.md.template`,
+> `invoice_v1.json`, `invoice_v1.css`, and `generate_pdf.py` carefully before writing
+> any code. Then implement t3 of `docbuilder/docs/m6-milestone.md`.
+>
+> **`invoice_v1.html.j2`:** A Jinja2 HTML template reproducing the same invoice
+> layout as `invoice_v1.md.template`. Use `{{ field | default('') }}` for all context
+> variables. Link or inline `invoice_v1.css` (WeasyPrint resolves relative paths from
+> `base_url` — a `<link>` tag with the relative CSS path works when `base_url` is set
+> to the bundle directory in `generate_pdf.py`).
+>
+> **`invoice_v1.json`:** Add `"has_jinja": true`. Read the file first; do not change
+> any other field. Update `"template_file"` to `"invoice_v1.html.j2"` if the bundle
+> spec uses that field to name the narrative template.
+>
+> **`generate_pdf.py`:** In `_narrative_html`, add a `has_jinja` branch:
+> when `doc_spec.get("has_jinja")` is true, call `generate_html.py` (importable
+> `render_html`) instead of `render_template.py`. Both paths must set `base_url`
+> correctly for WeasyPrint asset resolution.
+>
+> **Touches:** `data/templates/bitloka/invoice/v1/invoice_v1.html.j2`,
+> `data/templates/bitloka/invoice/v1/invoice_v1.json`,
+> `docbuilder/scripts/generate_pdf.py`,
+> `docbuilder/tests/test_generate_pdf.py`,
+> `docbuilder/docs/milestones/m-docbuilder-m6-t3-implementation-notes.md`.
+> Do not generate anything outside Touches. Do not delete `invoice_v1.md.template`.
+>
+> Run the done-check from `m6-milestone.md §t3` and include its full output at
+> the top of the review packet.
+
+---
+
+### t4 — Offer letter bundle + `validate_fields.py`
+
+**Scope.** Create the offer letter bundle: `offer_letter_v1.html.j2` with Jinja2
+conditional sections, bundle spec, catalogue entry. Add `OFFER_LETTER_REQUIRED` to
+`validate_fields.py`. Wire the DOCX output path for `has_jinja` + `docx` format.
+
+**Touches.**
+- `docbuilder/data/templates/bitloka/offer_letter/v1/offer_letter_v1.html.j2` — new
+- `docbuilder/data/templates/bitloka/offer_letter/v1/offer_letter_v1.json` — new
+- `docbuilder/data/templates/bitloka/catalogue.json` — add `offer_letter` entry
+- `docbuilder/scripts/validate_fields.py` — `OFFER_LETTER_REQUIRED` + `candidate_email` check
+- `docbuilder/tests/test_validate_fields.py` — offer_letter tests
+- `docbuilder/docs/context-schema.md` — add offer-letter fields
+- Any script change needed to wire DOCX output for the Jinja2 path
+- `docbuilder/docs/milestones/m-docbuilder-m6-t4-implementation-notes.md` — new
+
+**Do not generate.**
+- Do not add a sprint case — that is t5
+
+**Key `offer_letter_v1.html.j2` patterns:**
+```jinja2
+{% if internship_acknowledgement %}
+<p>{{ internship_acknowledgement }}</p>
+{% endif %}
+
+{% if business_performance_bonus_pct %}
+<p>Business Performance Bonus: Up to {{ business_performance_bonus_pct }}
+of total annual earnings, provisioned in
+{{ business_performance_bonus_period | default('March/April') }}.</p>
+{% endif %}
+```
+
+**`validate_fields.py` note:** `OFFER_LETTER_REQUIRED` is the complete list —
+do NOT add `BASE_REQUIRED` on top (offer letters use `candidate_name`, not `client_name`).
+
+**Done-check.**
+```bash
+cd ~/sandbox/elixirws/aetheris-agents/docbuilder
+
+python3 -m pytest tests/test_validate_fields.py -v
+python3 -m pytest tests/ -q
+
+python3 -c "
+import json
+cat = json.load(open('data/templates/bitloka/catalogue.json'))
+types = [d['doc_type'] for d in cat['doc_types']]
+assert 'offer_letter' in types; print('catalogue OK:', types)
+"
+
+python3 scripts/generate_html.py \
+  --template data/templates/bitloka/offer_letter/v1/offer_letter_v1.html.j2 \
+  --context '{"candidate_name":"Ajay Rao","role":"Software Engineer","date":"2026-07-01","annual_ctc":"₹9,00,000","basic_monthly":"37,500.00","hra_monthly":"18,750.00","lta_monthly":"3,000.00","wfh_allowance_monthly":"3,000.00","flexi_pay_monthly":"12,750.00","total_earnings_monthly":"75,000.00","professional_tax_monthly":"200.00","tds_monthly":"7,500.00","total_deductions_monthly":"7,700.00","net_take_home_monthly":"₹67,300.00"}' \
+  | grep -c '{{'
+# Expected: 0
+```
+
+**Claude-code prompt.**
+> Read `CLAUDE.md` (aetheris-agents root) and inspect `invoice_v1.json`,
+> `invoice_v1.html.j2` (from t3), `generate_pdf.py`, and `generate_docx_from_html.py`
+> (from t2) before writing any code. Then implement t4 of
+> `docbuilder/docs/m6-milestone.md`.
+>
+> **`offer_letter_v1.html.j2`:** Jinja2 HTML template for the Bitloka FTE offer
+> letter. All field references use `{{ field | default('') }}`. Use Jinja2 `{% if %}`
+> for conditional sections (internship acknowledgement, performance bonuses). Match
+> the structure of the actual BTL offer letter (header, body, compensation tables,
+> signature, footer). Keep CSS clean — a simple letter stylesheet, not the invoice
+> table-heavy style.
+>
+> **`offer_letter_v1.json`:** Read `invoice_v1.json` for the exact shape; adapt for
+> offer_letter: `output_formats: ["docx"]`, `has_jinja: true`, no data sources,
+> `template_file: "offer_letter_v1.html.j2"`.
+>
+> **`catalogue.json`:** Append the `offer_letter` entry:
+> `doc_type: "offer_letter"`, `description: "Employment offer letter for new hires —
+> Word document with compensation structure"`, `variants: [{version: "v1",
+> label: "Standard FTE", output_formats: ["docx"], has_base_files: {xlsx: false,
+> docx: false}, has_narrative: false}]`.
+>
+> **`validate_fields.py`:** Add `OFFER_LETTER_REQUIRED` (the complete list from
+> §"Offer letter field list" — all 18 required fields). Update `validate()`. Extend
+> the email format check to cover `candidate_email`. `OFFER_LETTER_REQUIRED` replaces
+> `BASE_REQUIRED` entirely for offer_letter — do not combine them.
+>
+> **DOCX wiring:** Determine how the orchestrator currently triggers DOCX rendering
+> (check `generate_pdf.py` and the orchestrator system prompt). Add the parallel
+> `has_jinja` + `docx` path so calling the pipeline with `output_formats: ["docx"]`
+> and `has_jinja: true` calls `generate_html.py` → `generate_docx_from_html.py`.
+> Document the approach in the implementation notes.
+>
+> **Touches:** `data/templates/bitloka/offer_letter/v1/offer_letter_v1.html.j2`,
+> `data/templates/bitloka/offer_letter/v1/offer_letter_v1.json`,
+> `data/templates/bitloka/catalogue.json`,
+> `docbuilder/scripts/validate_fields.py`,
+> `docbuilder/tests/test_validate_fields.py`,
+> `docbuilder/docs/context-schema.md`,
+> `docbuilder/docs/milestones/m-docbuilder-m6-t4-implementation-notes.md`.
+> (Plus any script needed for DOCX wiring.)
+> Do not generate anything outside Touches.
+>
+> Run the done-check from `m6-milestone.md §t4` and include its full output at
+> the top of the review packet.
+
+---
+
+### t5 — Sprint cases + runbook
+
+**Scope.** Two new sprint cases: `docbuilder_invoice_jinja` (regression gate) and
+`docbuilder_offer_letter` (offer letter proof). Runbook updates including the new
+§"Jinja2 templates" section.
+
+**Touches.**
+- `aetheris/scripts/sprint.sh` — two new cases; usage line updated
+- `docbuilder/runbook.md` — §"Jinja2 templates (m6)"; sprint entries; deprecation note
+- `docbuilder/docs/milestones/m-docbuilder-m6-t5-implementation-notes.md` — new
+
+**Do not generate.**
+- Do not update `docs/rig/runbook.md` — that is t6
+
+**Runbook sections to add to `docbuilder/runbook.md`:**
+
+**§"Jinja2 templates (m6)"** — explain: `.html.j2` templates, `has_jinja: true` in
+bundle spec, `generate_html.py` for HTML/PDF, `generate_docx_from_html.py` +
+`reference.docx` for DOCX. Deprecation note: `render_template.py` and `.md.template`
+files are deprecated; use `.html.j2` for new doc types. Short Jinja2 primer:
+`{{ field | default('') }}`, `{% if field %}...{% endif %}`,
+`{% for item in list %}...{% endfor %}`.
 
 **Done-check.**
 ```bash
 cd ~/sandbox/elixirws/aetheris
 
+# Invoice Jinja2 regression
+DOCBUILDER_TENANT=bitloka \
+DOCBUILDER_REQUEST="Invoice for XYZ for June 2026, same as last month" \
+./scripts/sprint.sh docbuilder_invoice_jinja
+# Expected: rendered PDF; zero {{ in PDF; run log appended
+
+# Offer letter end-to-end
 DOCBUILDER_TENANT=bitloka \
 ./scripts/sprint.sh docbuilder_offer_letter
-# Expected:
-#   context_builder.exs evaluates [OK]
-#   confirmed_context.json written (candidate: Ajay Rao) [OK]
-#   rendered: ajay_rao_offer_letter_{date}.docx [OK]  (via renamed.json)
-#   run log appended (PHASE D2 fired: 0 → 1 entry) [OK]
+# Expected: confirmed_context.json (candidate: Ajay Rao);
+#           ajay_rao_offer_letter_{date}.docx rendered; run log appended
 ```
 
 **Claude-code prompt.**
-> Read `CLAUDE.md` (aetheris-agents root) before writing. Then implement t3 of
-> `docbuilder/docs/m6-milestone.md`.
+> Read `CLAUDE.md` (aetheris-agents root) and `docbuilder/runbook.md` before writing.
+> Then implement t5 of `docbuilder/docs/m6-milestone.md`.
 >
-> **`context-schema.md`:** add the offer-letter required and optional fields from
-> the milestone doc §"Field list". Mark them as offer_letter-specific.
+> **`docbuilder_invoice_jinja`:** Follows `docbuilder_context` (recurring, "same as
+> last month"). Additionally: after the rendered PDF is verified to exist, assert zero
+> `{{` artifacts with `pdftotext` (degrades to `[INFO]` if unavailable) — this is the
+> Jinja2 migration regression gate.
 >
-> **`sprint.sh` — `docbuilder_offer_letter` case:**
-> Follow the `docbuilder_fresh_render` pattern (m5 t3). Key differences:
-> - Default `DOCBUILDER_REQUEST`:
->   `"Offer letter for Ajay Rao at ajay.rao@example.com, phone 980 000 1234,
->   address 123 Main Street Bengaluru Karnataka 560012, role Software Engineer,
->   date 1 Jul 2026, annual CTC ₹9,00,000, basic monthly 37500, HRA 18750,
->   LTA 3000, WFH allowance 3000, flexi pay 12750, total earnings 75000,
->   professional tax 200, TDS 7500, total deductions 7700, net take-home
->   ₹67300, business performance bonus 12.5% in March/April, individual
->   performance bonus 12.5% in September/October"`
-> - Verify `confirmed_context.json` written + parseable + `candidate_name`
->   non-empty (not `client_name` — offer letters use `candidate_name`)
-> - Verify `renamed.json` output file exists (docx only)
-> - Verify run log goes 0 → 1 (PHASE D2)
-> - No PDF placeholder check (docx output, not PDF)
-> - Under `all` + usage line updated
+> **`docbuilder_offer_letter`:** Follows `docbuilder_fresh_render`. Key differences:
+> - Default `DOCBUILDER_REQUEST` contains all required offer-letter fields for Ajay Rao
+>   (all 18 required fields from the milestone doc §"Offer letter field list")
+> - Assert `candidate_name` non-empty (not `client_name`)
+> - Assert `renamed.json` output is a `.docx` file
+> - No `pdftotext` check (DOCX output)
+> - Run log goes 0 → 1
 >
-> Add sprint-case entry to `docbuilder/runbook.md` (same section as
-> `docbuilder_fresh_render`).
+> Both cases under `all`. Update usage line.
 >
-> **Touches:** `docbuilder/docs/context-schema.md`, `aetheris/scripts/sprint.sh`,
-> `docbuilder/runbook.md`,
-> `docbuilder/docs/milestones/m-docbuilder-m6-t3-implementation-notes.md`.
+> **`docbuilder/runbook.md`:** Add §"Jinja2 templates (m6)" and sprint-case entries
+> per the milestone doc §t5.
 >
-> **Do not generate** anything outside Touches.
+> **Touches:** `aetheris/scripts/sprint.sh`, `docbuilder/runbook.md`,
+> `docbuilder/docs/milestones/m-docbuilder-m6-t5-implementation-notes.md`.
+> Do not generate anything outside Touches.
 >
-> Run the done-check from `m6-milestone.md §t3` and include its full output at
-> the top of the review packet, before the diff.
+> Run the done-check from `m6-milestone.md §t5` and include its full output at
+> the top of the review packet.
 
 ---
 
-### t4 — Docs sync + milestone close
+### t6 — Docs sync + milestone close
 
-**Scope.** Bring all reference docs in sync with t1–t3. Update the capability matrix
-(no new scripts/agents — counts unchanged, but `validate_fields.py` description updated).
-Run drift check. Write the milestone summary and CLAUDE.md learning scan.
+**Scope.** Capability matrix (two new scripts), `docs/rig/runbook.md` pointer (clears
+pre-m6 deferred item), milestone summary, CLAUDE.md learning scan, drift check.
 
 **Touches.**
-- `docs/capability-matrix.md` — update `validate_fields.py` description: append
-  `offer_letter doc_type branch added (m6).`
-- `docs/rig/runbook.md` — add one-line pointer to `docbuilder/runbook.md`
-  §"Adding a new doc type" (the deferred BL-002 item from the pre-m6 runbook work)
+- `docs/capability-matrix.md` — add `generate_html.py`, `generate_docx_from_html.py`;
+  update `render_template.py` (deprecated) and `generate_pdf.py` (Jinja2 path);
+  update counts: docbuilder 2 agents / 24 scripts; total 25 / 62
+- `docs/rig/runbook.md` — add Jinja2 + new doc type pointer to `docbuilder/runbook.md`
+  (clears the pre-m6 deferred BL-002 item from state memory)
 - `docbuilder/docs/m6-milestone.md` — milestone summary appended
-- `aetheris-agents/CLAUDE.md` — `## Learning — m6-docbuilder` (recurring findings
-  scan; "No recurring findings" if none)
-- `docbuilder/docs/milestones/m-docbuilder-m6-t4-implementation-notes.md` — new
-
-**Do not generate.**
-- Do not modify any script, agent, or test file
+- `aetheris-agents/CLAUDE.md` — `## Learning — m6-docbuilder`
+- `docbuilder/docs/milestones/m-docbuilder-m6-t6-implementation-notes.md` — new
 
 **Done-check.**
 ```bash
@@ -494,58 +540,65 @@ cd ~/sandbox/elixirws/aetheris-agents
 python3 scripts/drift_check.py
 # Expected: 0 FAIL (project_knowledge WARNs = BL-002, human-owned)
 
-grep -n "offer_letter" docs/capability-matrix.md
-grep -n "Adding a new doc type" docs/rig/runbook.md
+grep -n "generate_html\|generate_docx_from_html" docs/capability-matrix.md
+grep -n "Jinja2\|docbuilder/runbook" docs/rig/runbook.md
 grep -c "^## Milestone summary" docbuilder/docs/m6-milestone.md
 ```
 
 **Claude-code prompt.**
 > Read `CLAUDE.md` and `milestone-methodology.md` §7 before writing. Then implement
-> t4 of `docbuilder/docs/m6-milestone.md`. Docs-only.
+> t6 of `docbuilder/docs/m6-milestone.md`. Docs-only.
 >
-> 1. `docs/capability-matrix.md` — update `validate_fields.py` description row:
->    append `offer_letter doc_type branch added (m6).` Counts unchanged.
+> 1. `docs/capability-matrix.md`:
+>    - Add `generate_html.py`: "Render a Jinja2 `.html.j2` template with a context
+>      dict to HTML; replaces `render_template.py` for new doc types (m6)."
+>    - Add `generate_docx_from_html.py`: "Convert an HTML file to DOCX via Pandoc
+>      using a Bitloka reference doc for branding and styles (m6)."
+>    - Update `render_template.py` row: append "(deprecated in m6 — use
+>      `generate_html.py` for new doc types; kept for backward compatibility)."
+>    - Update `generate_pdf.py` row: append "Jinja2 path added in m6 (`has_jinja: true`)."
+>    - Update docbuilder counts: 2 agents / 24 scripts; total 25 / 62.
 >
-> 2. `docs/rig/runbook.md` — in the Docbuilder section (after the m4 fresh path
->    entry), add: `For template and doc-type authoring (including adding new doc
->    types like offer_letter), see \`docbuilder/runbook.md\` §"Adding a new doc type".`
->    (This clears the deferred pre-m6 BL-002 pointer item — fold the re-upload in
->    with the t4 close.)
+> 2. `docs/rig/runbook.md` — in the Docbuilder section, add after the m4 fresh-path
+>    entry: "For Jinja2 template authoring and adding new doc types (e.g. offer
+>    letter), see `docbuilder/runbook.md` §\"Jinja2 templates (m6)\"."
 >
-> 3. Scan `docbuilder/docs/reviews/m-docbuilder-m6-t{1,2,3}-review.md` for
->    findings recurring on ≥2 tickets. Write `## Learning — m6-docbuilder` in
->    `aetheris-agents/CLAUDE.md` per methodology §7. If none recurred, write the
->    header with "No recurring findings in this milestone."
+> 3. Scan `m-docbuilder-m6-t{1..5}-review.md` for recurring findings. Write
+>    `## Learning — m6-docbuilder` in `CLAUDE.md`.
 >
-> 4. Append milestone summary to `docbuilder/docs/m6-milestone.md`.
+> 4. Append milestone summary to `m6-milestone.md`.
 >
-> 5. Run `drift_check.py` and include the full output in the review packet.
+> 5. Run drift_check and include full output in the review packet.
 >
 > **Touches:** `docs/capability-matrix.md`, `docs/rig/runbook.md`,
 > `docbuilder/docs/m6-milestone.md`, `aetheris-agents/CLAUDE.md`,
-> `docbuilder/docs/milestones/m-docbuilder-m6-t4-implementation-notes.md`.
+> `docbuilder/docs/milestones/m-docbuilder-m6-t6-implementation-notes.md`.
+> Do not generate anything outside Touches.
 >
-> **Do not generate** anything outside Touches.
->
-> Run the done-check from `m6-milestone.md §t4` and include its full output at
-> the top of the review packet, before the diff.
+> Run the done-check from `m6-milestone.md §t6` and include its full output at
+> the top of the review packet.
+
+---
+
+## Runbook update summary
+
+| Ticket | File | What changes |
+|---|---|---|
+| t5 | `docbuilder/runbook.md` | §"Jinja2 templates (m6)"; `docbuilder_invoice_jinja` + `docbuilder_offer_letter` sprint entries; `render_template.py` deprecation note |
+| t6 | `docs/rig/runbook.md` | Pointer to `docbuilder/runbook.md` §"Jinja2 templates"; clears pre-m6 deferred BL-002 item; advances manifest past `cac8b67` |
 
 ---
 
 ## Open questions for m7
 
-- The offer letter is currently context-only (no data source). If salary computation
-  is needed (derive breakdown from a single `annual_ctc` input), a `compute_offer.py`
-  script following the `compute_doc.py` pattern would handle it.
-- The `internship_acknowledgement` field is a full paragraph of text supplied by the
-  operator. A future improvement: a boolean `is_intern` field that triggers the standard
-  Bitloka internship paragraph automatically (stored in the template or as a constant).
-- Drive upload (PHASE E) is already wired in the orchestrator — it just needs
-  `DRIVE_DOCBUILDER_ID` set. No milestone work needed; document the env var in the
-  runbook if not already there.
+- Remove `render_template.py` and `.md.template` files once the Jinja2 invoice path
+  is production-proven (after at least one full billing cycle).
+- Add PDF output to the offer letter (WeasyPrint + Jinja2 path already proven on the invoice).
+- `compute_offer.py` — derive the monthly breakdown from a single `annual_ctc` input.
+- `is_intern` boolean → automatic internship acknowledgement paragraph.
 
 ---
 
 ## Milestone summary
 
-_To be written by claude-code at t4, from the implementation notes._
+_To be written by claude-code at t6, from the implementation notes._

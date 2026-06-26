@@ -468,7 +468,10 @@ bundle spec, `generate_html.py` for HTML/PDF, `generate_docx_from_html.py` +
 `reference.docx` for DOCX. Deprecation note: `render_template.py` and `.md.template`
 files are deprecated; use `.html.j2` for new doc types. Short Jinja2 primer:
 `{{ field | default('') }}`, `{% if field %}...{% endif %}`,
-`{% for item in list %}...{% endfor %}`.
+`{% for item in list %}...{% endfor %}`. **Autoescaping note (t1 F1):** autoescaping
+is ON — all context values are HTML-escaped by default (so `$1,000.00` / `₹9,00,000`
+render correctly and untrusted text can't inject markup). Use `{{ field | safe }}`
+ONLY when the value is trusted HTML you want rendered as-is.
 
 **Done-check.**
 ```bash

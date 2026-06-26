@@ -360,7 +360,10 @@ milestone summary. CLAUDE.md scan for recurring findings.
   optional-field fix (m5); counts unchanged (no new scripts/agents)
 - `docs/rig/runbook.md` — add `docbuilder_fresh_render` sprint-case mention in the m4
   section (mirrors the docbuilder/runbook.md entry from t3)
-- `docbuilder/docs/m5-milestone.md` — milestone summary appended
+- `docbuilder/docs/m5-milestone.md` — milestone summary appended; **correct the §t1
+  Done-check smoke command** (t1 F1): use filenames `invoice_v1.md.template` /
+  `invoice_v1.css` (not `invoice.*`) and `--spec '{"sheets":[]}'` (not `/dev/null`,
+  which fails JSON-parse so the renderer never runs → trivial 0 count)
 - `aetheris-agents/CLAUDE.md` — `## Learning — m5-docbuilder` (recurring findings scan;
   "No recurring findings" if none)
 - `docbuilder/docs/milestones/m-docbuilder-m5-t4-implementation-notes.md` — new

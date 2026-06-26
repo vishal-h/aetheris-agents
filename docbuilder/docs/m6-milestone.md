@@ -482,7 +482,13 @@ files are deprecated; use `.html.j2` for new doc types. Short Jinja2 primer:
 `{% for item in list %}...{% endfor %}`. **Autoescaping note (t1 F1):** autoescaping
 is ON — all context values are HTML-escaped by default (so `$1,000.00` / `₹9,00,000`
 render correctly and untrusted text can't inject markup). Use `{{ field | safe }}`
-ONLY when the value is trusted HTML you want rendered as-is.
+ONLY when the value is trusted HTML you want rendered as-is. **Canonical `| safe` example
+(t3):** pre-rendered table markup from `render_table` injected as `{{ tables['Line Items']
+| safe }}` — trusted Python-produced HTML. **Subscript-guard note (t3):** a
+potentially-absent variable that you subscript must be guarded with
+`{% if tables and 'Name' in tables %}…{% endif %}` — `{{ tables['Name'] | default('') }}`
+does NOT work, because subscripting an *undefined* variable raises `UndefinedError` before
+the `default` filter runs.
 
 **Done-check.**
 ```bash

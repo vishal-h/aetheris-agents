@@ -53,3 +53,30 @@ this → branded `.docx`).
   tests are gated on pandoc.
 - Scope held: no bundle asset or catalogue changed (t3/t4 wire this into the pipeline).
   `reference.docx` is a committed binary.
+
+## Reproducing `reference.docx` (t2 review F2)
+
+The reference doc is a committed binary; this is the python-docx recipe used to generate it,
+so it is reproducible from the repo without the original throwaway script. Run from
+`docbuilder/`:
+
+```python
+from docx import Document
+from docx.shared import Pt, RGBColor
+
+BITLOKA_ORANGE = RGBColor(0xF5, 0xA6, 0x23)
+DARK_GREY = RGBColor(0x33, 0x33, 0x33)
+
+doc = Document()
+n = doc.styles["Normal"];   n.font.name = "Calibri"; n.font.size = Pt(11)
+h1 = doc.styles["Heading 1"]; h1.font.name = "Calibri"; h1.font.bold = True
+h1.font.size = Pt(16); h1.font.color.rgb = DARK_GREY
+h2 = doc.styles["Heading 2"]; h2.font.name = "Calibri"; h2.font.bold = True
+h2.font.size = Pt(13); h2.font.color.rgb = BITLOKA_ORANGE   # accent on H2 (not H1)
+doc.add_table(rows=1, cols=1).style = "Table Grid"          # materialise Table Grid
+doc.save("data/templates/bitloka/reference.docx")
+```
+
+Pandoc reads only these styles and ignores the body, so the placeholder table never appears
+in output. Regenerate when branding/styles change; the `docbuilder_invoice_jinja` and
+`docbuilder_offer_letter` sprints (t5) are the regression guard for the rendered result.

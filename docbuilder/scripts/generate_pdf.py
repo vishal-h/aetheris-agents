@@ -38,12 +38,35 @@ def _build_html(doc_spec):
     return "".join(parts)
 
 
-def _narrative_html(doc_spec, template_dir, context_json):
-    """Produce HTML for narrative mode by shelling out to render_template.py.
+def _narrative_html_jinja(doc_spec, template_dir, context_json):
+    """Produce narrative HTML via the Jinja2 path (m6, `has_jinja: true`).
 
-    The doc spec is written to a temp file and passed via `--spec` (render_template
-    takes `--spec PATH`, not `--input`). `--template`/`--css` are resolved from the
-    `narrative` block's filenames under `template_dir`."""
+    Calls `generate_html.render_html` in-process (no subprocess). Sheet tables are
+    pre-rendered with the shared `render_table` (so all table formatting stays in
+    Python, not the template) and injected as `tables[{sheet name}]`; the `.html.j2`
+    emits them with `{{ tables['Name'] | safe }}` (trusted, pre-rendered markup —
+    autoescaping is on). The template links its CSS relatively; WeasyPrint resolves it
+    against `base_url` (set by `generate_pdf`). `spec` (the full doc spec) is also
+    exposed to the template."""
+    from generate_html import render_html
+
+    narrative = doc_spec["narrative"]
+    template_path = Path(template_dir) / narrative["template_file"]
+    context = json.loads(context_json) if context_json else {}
+    context["tables"] = {s["name"]: render_table(s) for s in doc_spec.get("sheets", [])}
+    return render_html(template_path, context, spec=doc_spec)
+
+
+def _narrative_html(doc_spec, template_dir, context_json):
+    """Produce HTML for narrative mode.
+
+    `has_jinja: true` → the Jinja2 path (`_narrative_html_jinja`). Otherwise the legacy
+    Markdown path: shell out to render_template.py (the doc spec is written to a temp file
+    and passed via `--spec`; `--template`/`--css` are resolved from the `narrative` block's
+    filenames under `template_dir`)."""
+    if doc_spec.get("has_jinja"):
+        return _narrative_html_jinja(doc_spec, template_dir, context_json)
+
     narrative = doc_spec["narrative"]
     template_path = Path(template_dir) / narrative["template_file"]
     css_path = Path(template_dir) / narrative["css_file"]

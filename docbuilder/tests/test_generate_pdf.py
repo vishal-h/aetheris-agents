@@ -310,6 +310,56 @@ def test_narrative_mode_direct(tmp_path, simple_spec):
     assert out.stat().st_size > 0
 
 
+# --- narrative mode: Jinja2 path (m6 t3) ---
+
+BITLOKA_INVOICE = USE_CASE_ROOT / "data" / "templates" / "bitloka" / "invoice" / "v1"
+
+
+def test_narrative_jinja_html_has_table_and_no_leaks(tmp_path, simple_spec):
+    # has_jinja → _narrative_html routes to the Jinja2 renderer; sheet tables are
+    # pre-rendered (render_table) and injected as `tables[name]`; absent vars empty.
+    import generate_pdf as gp
+    (tmp_path / "t.html.j2").write_text(
+        "<p>{{ title | default('') }}</p>"
+        "{% if tables and 'Line Items' in tables %}{{ tables['Line Items'] | safe }}{% endif %}"
+        "<p>{{ missing | default('') }}</p>",
+        encoding="utf-8",
+    )
+    simple_spec["has_jinja"] = True
+    simple_spec["narrative"] = {"template_file": "t.html.j2", "css_file": "t.css"}
+    html = gp._narrative_html(simple_spec, str(tmp_path), '{"title":"Hi"}')
+    assert "<table" in html               # Line Items table injected + rendered
+    assert "Hi" in html                    # present var
+    assert "{{" not in html                # zero unresolved placeholders
+
+
+def test_narrative_jinja_path_renders_pdf(tmp_path, simple_spec):
+    (tmp_path / "t.html.j2").write_text(
+        "<p>{{ title | default('') }}</p>"
+        "{% if tables and 'Line Items' in tables %}{{ tables['Line Items'] | safe }}{% endif %}",
+        encoding="utf-8",
+    )
+    simple_spec["has_jinja"] = True
+    simple_spec["narrative"] = {"template_file": "t.html.j2", "css_file": "t.css"}
+    out = tmp_path / "j.pdf"
+    generate_pdf(simple_spec, out, template_dir=str(tmp_path), context='{"title":"Hi"}')
+    assert out.read_bytes()[:4] == b"%PDF"
+
+
+def test_bitloka_invoice_jinja_template_no_leaks(tmp_path, simple_spec):
+    # The committed invoice_v1.html.j2 + a Line-Items spec → no {{ leaks, table present.
+    import generate_pdf as gp
+    simple_spec["has_jinja"] = True
+    simple_spec["narrative"] = {
+        "template_file": "invoice_v1.html.j2", "css_file": "invoice_v1.css"}
+    ctx = ('{"client_name":"XYZ Inc","client_address":"1 St","amount_due":"$1,000.00",'
+           '"invoice_number":"INV-1","date":"30-Jun-2026"}')   # order_ref/terms absent
+    html = gp._narrative_html(simple_spec, str(BITLOKA_INVOICE), ctx)
+    assert "XYZ Inc" in html
+    assert "<table" in html
+    assert "{{" not in html                # absent optional fields render empty, no leak
+
+
 @pytest.mark.integration
 def test_cli_narrative_mode(tmp_path):
     # Full pipeline: the demo doc spec carries `narrative` (t5 pass-through);

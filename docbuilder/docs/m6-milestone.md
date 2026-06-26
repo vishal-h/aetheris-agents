@@ -288,8 +288,19 @@ ls -lh /tmp/test.docx
 - `docbuilder/data/templates/bitloka/invoice/v1/invoice_v1.html.j2` — new
 - `docbuilder/data/templates/bitloka/invoice/v1/invoice_v1.json` — add `"has_jinja": true`
 - `docbuilder/scripts/generate_pdf.py` — add `has_jinja` branch in `_narrative_html`
+- `docbuilder/scripts/compute_doc.py` — **pass `has_jinja` through** to the computed doc
+  spec (scope addition, see note below)
 - `docbuilder/tests/test_generate_pdf.py` — add/update tests for `has_jinja` path
+- `docbuilder/tests/test_compute_doc.py` — `has_jinja` passthrough tests (scope addition)
 - `docbuilder/docs/milestones/m-docbuilder-m6-t3-implementation-notes.md` — new
+
+> **Scope addition (t3 implementation):** `compute_doc.py` builds a fresh output doc-spec
+> dict and only copies selected keys — it dropped `has_jinja`, so `generate_pdf`'s
+> `has_jinja` branch never fired in the real pipeline (`compute_doc → generate_pdf`) and the
+> invoice fell back to the legacy Markdown renderer on the `.html.j2` (leaking literal
+> `{{ … }}`). Passing `has_jinja` through `compute_doc` is required for the migration to hold
+> end-to-end and for the t5 `docbuilder_invoice_jinja` `grep '{{'` gate to pass. Added with a
+> default of `False` so every pre-m6 bundle is unchanged.
 
 **Do not generate.**
 - Do not delete `invoice_v1.md.template` or modify `render_template.py`

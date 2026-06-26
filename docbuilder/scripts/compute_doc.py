@@ -198,6 +198,7 @@ def compute_doc(template, sources):
         "output_formats": template["output_formats"],
         "table_style": template.get("table_style", "Table Grid"),
         "data_col_start": template.get("data_col_start", 1),
+        "has_jinja": template.get("has_jinja", False),
         "narrative": template.get("narrative"),
         "sheets": output_sheets,
     }

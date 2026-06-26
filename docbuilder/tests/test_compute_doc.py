@@ -42,6 +42,22 @@ def _sheet(name, source_key="main", columns=None, aggregate_rows=None,
     return s
 
 
+# --- has_jinja passthrough (m6 t3) ---
+
+def test_has_jinja_passthrough_true():
+    tmpl = _tmpl()
+    tmpl["has_jinja"] = True
+    spec = compute_doc(tmpl, {"main": []})
+    assert spec["has_jinja"] is True
+
+
+def test_has_jinja_defaults_false_when_absent():
+    # A template without the field (every pre-m6 bundle) → has_jinja False, so the
+    # legacy render_template path is taken — no behaviour change for existing bundles.
+    spec = compute_doc(_tmpl(), {"main": []})
+    assert spec["has_jinja"] is False
+
+
 # --- aggregate function unit tests ---
 
 def test_aggregate_sum():

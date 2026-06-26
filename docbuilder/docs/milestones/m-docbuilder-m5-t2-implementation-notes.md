@@ -39,7 +39,13 @@ client-match assertion client-agnostic.
 - `CURRENCIES` comment verified (`grep -n Hardcoded`).
 - `aetheris/scripts/sprint.sh`: `bash -n` clean; the client-match one-liner verified
   standalone — non-empty `client_name` → exit 0 (and `$CLIENT` extracted); empty/whitespace
-  → exit 1. The full `docbuilder_fresh` sprint runs a live LLM agent (operator-run).
+  → exit 1.
+- **Live `docbuilder_fresh` sprint (t2 review F1):** ran
+  `DOCBUILDER_TENANT=bitloka ./scripts/sprint.sh docbuilder_fresh` → **PASS**, run
+  `docbuilder-ctx-pY_r7g`:
+  `[OK] confirmed_context.json written + parseable (client: Northwind Traders)`. The
+  `[OK]` line interpolates the parsed `client_name`, confirming both the client-agnostic
+  non-empty check and the corrected message. Full output recorded in the t2 review file.
 
 ## Notes
 

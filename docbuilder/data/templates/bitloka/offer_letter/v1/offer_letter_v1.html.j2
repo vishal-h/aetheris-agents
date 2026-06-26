@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+
+<h1>{{ title | default('') }}</h1>
+
+<p>Bitloka Solutions Private Limited</p>
+
+<p>Date: {{ date | default('') }}</p>
+
+<p>
+{{ candidate_name | default('') }}<br>
+{{ candidate_address | default('') }}<br>
+{{ candidate_email | default('') }} | {{ candidate_phone | default('') }}
+</p>
+
+<p>Dear {{ candidate_name | default('') }},</p>
+
+<p>We are pleased to offer you the position of <strong>{{ role | default('') }}</strong> at
+Bitloka Solutions Private Limited. We are confident that your skills and experience will be
+a valuable addition to our team.</p>
+
+{% if internship_acknowledgement %}
+<p>{{ internship_acknowledgement }}</p>
+{% endif %}
+
+<p>Your annual Cost to Company (CTC) will be <strong>{{ annual_ctc | default('') }}</strong>,
+structured as set out in the compensation breakup below.</p>
+
+<p>Either party may terminate this engagement by giving the other written notice of
+<strong>eight (8) weeks</strong>.</p>
+
+<p>This offer is subject to your acceptance of our standard terms of employment, completion of
+the documentation required for onboarding, and your agreement to the Company's
+Non-Disclosure Agreement.</p>
+
+<p>Please confirm your acceptance of this offer by signing and returning a copy of this letter.</p>
+
+<h2>Monthly Compensation</h2>
+
+<table>
+  <tr><th>Earnings</th><th>Amount (per month)</th></tr>
+  <tr><td>Basic</td><td>{{ basic_monthly | default('') }}</td></tr>
+  <tr><td>HRA</td><td>{{ hra_monthly | default('') }}</td></tr>
+  <tr><td>LTA</td><td>{{ lta_monthly | default('') }}</td></tr>
+  <tr><td>WFH Allowance</td><td>{{ wfh_allowance_monthly | default('') }}</td></tr>
+  <tr><td>Flexi Pay</td><td>{{ flexi_pay_monthly | default('') }}</td></tr>
+  <tr><td><strong>Total Earnings</strong></td><td><strong>{{ total_earnings_monthly | default('') }}</strong></td></tr>
+</table>
+
+<table>
+  <tr><th>Deductions</th><th>Amount (per month)</th></tr>
+  <tr><td>Professional Tax</td><td>{{ professional_tax_monthly | default('') }}</td></tr>
+  <tr><td>TDS</td><td>{{ tds_monthly | default('') }}</td></tr>
+  <tr><td><strong>Total Deductions</strong></td><td><strong>{{ total_deductions_monthly | default('') }}</strong></td></tr>
+</table>
+
+<p><strong>Net Take-Home (per month): {{ net_take_home_monthly | default('') }}</strong></p>
+
+{% if business_performance_bonus_pct %}
+<p>Business Performance Bonus: Up to {{ business_performance_bonus_pct }} of total annual
+earnings, provisioned in {{ business_performance_bonus_period | default('March/April') }}.</p>
+{% endif %}
+
+{% if individual_performance_bonus_pct %}
+<p>Individual Performance Bonus: Up to {{ individual_performance_bonus_pct }} of total annual
+earnings, provisioned in {{ individual_performance_bonus_period | default('September/October') }}.</p>
+{% endif %}
+
+<p>We look forward to welcoming you to Bitloka Solutions.</p>
+
+<p>
+For Bitloka Solutions Pvt. Ltd<br><br>
+Vishal Honnatti<br>
+Director
+</p>
+
+<hr>
+<p>#311/1, Zikhin Bhavan, 26th X, BSK II Stage, Bangalore - 560070 |
+www.bitloka.com | contact@bitloka.com</p>
+
+</body>
+</html>

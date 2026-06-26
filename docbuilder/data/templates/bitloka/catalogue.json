@@ -16,6 +16,22 @@
           "has_narrative": true
         }
       ]
+    },
+    {
+      "doc_type": "offer_letter",
+      "description": "Employment offer letter for new hires — Word document with compensation structure",
+      "variants": [
+        {
+          "version": "v1",
+          "label": "Standard FTE",
+          "output_formats": ["docx"],
+          "has_base_files": {
+            "xlsx": false,
+            "docx": false
+          },
+          "has_narrative": false
+        }
+      ]
     }
   ]
 }

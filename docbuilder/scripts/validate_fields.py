@@ -32,6 +32,16 @@ from pathlib import Path
 
 BASE_REQUIRED = ["title", "client_name", "client_email", "date"]
 INVOICE_REQUIRED = ["invoice_number", "client_address", "amount_due"]
+# offer_letter uses candidate_* aliases (not client_*), so this is the COMPLETE
+# required list for the doc type — it replaces BASE_REQUIRED, it is not added to it (m6 t4).
+OFFER_LETTER_REQUIRED = [
+    "candidate_name", "candidate_email", "candidate_phone", "candidate_address",
+    "role", "date", "annual_ctc",
+    "basic_monthly", "hra_monthly", "lta_monthly", "wfh_allowance_monthly",
+    "flexi_pay_monthly", "total_earnings_monthly",
+    "professional_tax_monthly", "tds_monthly", "total_deductions_monthly",
+    "net_take_home_monthly",
+]
 # Hardcoded; extend manually when currency support broadens (m4 t1 F2, m5 t2).
 CURRENCIES = {"GBP", "USD", "EUR", "AED", "INR", "SGD", "CAD", "AUD"}
 DATE_FIELDS = ("date", "order_effective_date")
@@ -109,14 +119,24 @@ def validate(raw):
     invalid = {}
 
     doc_type = ctx.get("doc_type") or "invoice"
-    required = BASE_REQUIRED + (INVOICE_REQUIRED if doc_type == "invoice" else [])
+    if doc_type == "invoice":
+        required = BASE_REQUIRED + INVOICE_REQUIRED
+    elif doc_type == "offer_letter":
+        # Complete list — offer letters use candidate_* fields, NOT client_name/client_email,
+        # so BASE_REQUIRED must not apply.
+        required = OFFER_LETTER_REQUIRED
+    else:
+        required = BASE_REQUIRED
 
     for key in required:
         if not _present(ctx, key):
             missing.append(key)
 
-    if _present(ctx, "client_email") and not _valid_email(ctx["client_email"]):
-        invalid["client_email"] = f"not a valid email: {ctx['client_email']!r}"
+    # Validate whichever email field is present (client_email for invoice/base,
+    # candidate_email for offer_letter).
+    for email_key in ("client_email", "candidate_email"):
+        if _present(ctx, email_key) and not _valid_email(ctx[email_key]):
+            invalid[email_key] = f"not a valid email: {ctx[email_key]!r}"
 
     for key in DATE_FIELDS:
         if _present(ctx, key):

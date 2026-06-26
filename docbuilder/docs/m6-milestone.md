@@ -127,7 +127,8 @@ This is the only orchestrator-visible change — no PHASE numbering changes.
 | t1 | `generate_html.py` — Jinja2 renderer | `scripts/generate_html.py`, tests |
 | t2 | `generate_docx_from_html.py` — Pandoc wrapper | `scripts/generate_docx_from_html.py`, tests, `reference.docx` |
 | t3 | Migrate invoice to Jinja2 + update `generate_pdf.py` | `invoice_v1.html.j2`, `generate_pdf.py` |
-| t4 | Offer letter bundle + `validate_fields.py` | `data/templates/bitloka/offer_letter/v1/`, `validate_fields.py` |
+| t4 | Offer letter bundle + `validate_fields.py` (core) | `data/templates/bitloka/offer_letter/v1/`, `validate_fields.py` |
+| t4b | DOCX pipeline wiring (compute_doc zero-source, rename_output candidate fallback, orchestrator docx-jinja branch) | `compute_doc.py`, `rename_output.py`, `docbuilder_orchestrator.exs` |
 | t5 | Sprint cases + runbook | `sprint.sh`, `docbuilder/runbook.md` |
 | t6 | Docs sync + milestone close | `docs/capability-matrix.md`, `docs/rig/runbook.md`, `CLAUDE.md` |
 
@@ -353,11 +354,22 @@ python3 scripts/generate_html.py \
 
 ---
 
-### t4 — Offer letter bundle + `validate_fields.py`
+### t4 — Offer letter bundle + `validate_fields.py` (core)
+
+> **t4/t4b split (decided during implementation).** Examining the real integration surface
+> showed the offer-letter end-to-end also needs three production-pipeline changes — (a)
+> `compute_doc.py` accepting zero data sources (`nargs +→*`), (b) `rename_output.py` falling
+> back to `candidate_name` (it currently raises on missing `client_name`), and (c) the
+> orchestrator render-branch + `client_slug` fallback for context-only docx-jinja. None are
+> exercised by t4's done-check (only by the t5 sprint), and each touches tested pipeline code
+> with its own failure modes. **They were split into a separate ticket `t4b`** (drafted after
+> the t4 review) so the clean bundle/validation work merges independently and each wiring
+> change is adjudicated on its own — same spirit as the t3 `compute_doc` passthrough. This t4
+> is the **core**: bundle assets + validation only.
 
 **Scope.** Create the offer letter bundle: `offer_letter_v1.html.j2` with Jinja2
 conditional sections, bundle spec, catalogue entry. Add `OFFER_LETTER_REQUIRED` to
-`validate_fields.py`. Wire the DOCX output path for `has_jinja` + `docx` format.
+`validate_fields.py`. **DOCX pipeline wiring is t4b, not here.**
 
 **Touches.**
 - `docbuilder/data/templates/bitloka/offer_letter/v1/offer_letter_v1.html.j2` — new
@@ -366,11 +378,11 @@ conditional sections, bundle spec, catalogue entry. Add `OFFER_LETTER_REQUIRED` 
 - `docbuilder/scripts/validate_fields.py` — `OFFER_LETTER_REQUIRED` + `candidate_email` check
 - `docbuilder/tests/test_validate_fields.py` — offer_letter tests
 - `docbuilder/docs/context-schema.md` — add offer-letter fields
-- Any script change needed to wire DOCX output for the Jinja2 path
 - `docbuilder/docs/milestones/m-docbuilder-m6-t4-implementation-notes.md` — new
 
 **Do not generate.**
 - Do not add a sprint case — that is t5
+- Do not wire the DOCX pipeline (compute_doc / rename_output / orchestrator) — that is t4b
 
 **Key `offer_letter_v1.html.j2` patterns:**
 ```jinja2
@@ -437,11 +449,9 @@ python3 scripts/generate_html.py \
 > the email format check to cover `candidate_email`. `OFFER_LETTER_REQUIRED` replaces
 > `BASE_REQUIRED` entirely for offer_letter — do not combine them.
 >
-> **DOCX wiring:** Determine how the orchestrator currently triggers DOCX rendering
-> (check `generate_pdf.py` and the orchestrator system prompt). Add the parallel
-> `has_jinja` + `docx` path so calling the pipeline with `output_formats: ["docx"]`
-> and `has_jinja: true` calls `generate_html.py` → `generate_docx_from_html.py`.
-> Document the approach in the implementation notes.
+> **DOCX wiring is t4b — do NOT do it here.** The compute_doc/rename_output/orchestrator
+> changes that wire the context-only docx-jinja delivery path live in ticket t4b (drafted
+> after the t4 review). t4 stops at the bundle + validation.
 >
 > **Touches:** `data/templates/bitloka/offer_letter/v1/offer_letter_v1.html.j2`,
 > `data/templates/bitloka/offer_letter/v1/offer_letter_v1.json`,
@@ -450,7 +460,6 @@ python3 scripts/generate_html.py \
 > `docbuilder/tests/test_validate_fields.py`,
 > `docbuilder/docs/context-schema.md`,
 > `docbuilder/docs/milestones/m-docbuilder-m6-t4-implementation-notes.md`.
-> (Plus any script needed for DOCX wiring.)
 > Do not generate anything outside Touches.
 >
 > Run the done-check from `m6-milestone.md §t4` and include its full output at

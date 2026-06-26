@@ -30,6 +30,32 @@ def _invoice(**overrides):
     return base
 
 
+def _offer_letter(**overrides):
+    base = {
+        "title": "Offer Letter — Ajay Rao",
+        "doc_type": "offer_letter",
+        "candidate_name": "Ajay Rao",
+        "candidate_email": "ajay.rao@example.com",
+        "candidate_phone": "980 000 1234",
+        "candidate_address": "123, Main Street, Bengaluru, Karnataka - 560012",
+        "role": "Software Engineer",
+        "date": "2026-07-01",
+        "annual_ctc": "₹9,00,000",
+        "basic_monthly": "37,500.00",
+        "hra_monthly": "18,750.00",
+        "lta_monthly": "3,000.00",
+        "wfh_allowance_monthly": "3,000.00",
+        "flexi_pay_monthly": "12,750.00",
+        "total_earnings_monthly": "75,000.00",
+        "professional_tax_monthly": "200.00",
+        "tds_monthly": "7,500.00",
+        "total_deductions_monthly": "7,700.00",
+        "net_take_home_monthly": "₹67,300.00",
+    }
+    base.update(overrides)
+    return base
+
+
 # --- success + normalisation ---
 
 def test_valid_invoice_exit0():
@@ -196,3 +222,55 @@ def test_cli_malformed_input_exit1(tmp_path):
         capture_output=True, text=True, cwd=str(USE_CASE_ROOT))
     assert r.returncode == 1
     assert "_input" in json.loads(out.read_text())["invalid"]
+
+
+# --- offer_letter doc_type (m6 t4) ---
+
+def test_valid_offer_letter_exit0():
+    result, code = validate(_offer_letter())
+    assert code == 0
+    assert result["candidate_name"] == "Ajay Rao"
+    assert all(k in result for k in (
+        "candidate_name", "candidate_email", "role", "annual_ctc",
+        "net_take_home_monthly"))
+
+
+def test_offer_letter_missing_candidate_name():
+    raw = _offer_letter()
+    del raw["candidate_name"]
+    result, code = validate(raw)
+    assert code == 1
+    assert "candidate_name" in result["missing"]
+
+
+def test_offer_letter_missing_net_take_home():
+    raw = _offer_letter()
+    del raw["net_take_home_monthly"]
+    result, code = validate(raw)
+    assert code == 1
+    assert "net_take_home_monthly" in result["missing"]
+
+
+def test_offer_letter_invalid_candidate_email():
+    result, code = validate(_offer_letter(candidate_email="not-an-email"))
+    assert code == 1
+    assert "candidate_email" in result["invalid"]
+
+
+def test_offer_letter_optional_internship_absent_ok():
+    # internship_acknowledgement is optional — its absence must not fail validation.
+    raw = _offer_letter()
+    assert "internship_acknowledgement" not in raw
+    result, code = validate(raw)
+    assert code == 0
+
+
+def test_offer_letter_does_not_require_client_fields():
+    # Regression guard for the BASE_REQUIRED exclusion: offer letters use candidate_*,
+    # so client_name / client_email / title-as-base must NOT be required.
+    raw = _offer_letter()
+    assert "client_name" not in raw and "client_email" not in raw
+    result, code = validate(raw)
+    assert code == 0
+    assert "client_name" not in result.get("missing", [])
+    assert "client_email" not in result.get("missing", [])

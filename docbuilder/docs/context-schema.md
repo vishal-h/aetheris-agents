@@ -40,9 +40,34 @@ Unset or empty resolves to `{}` at the orchestrator (never passed empty to scrip
 | `terms` | string | optional | Payment or engagement terms (e.g. `"Discounted rates for May 26"`) | `render_template.py` |
 | `amount_due` | string | optional* | Total amount due on the invoice (e.g. `"$1,000.00"`). Required for invoice doc type. Passed explicitly rather than derived from line items for v1. | `render_template.py` (via `{{amount_due}}` in the template) |
 
+### Offer letter fields (m6)
+
+The `offer_letter` doc type uses **candidate_*** aliases, not `client_*` — `OFFER_LETTER_REQUIRED`
+in `validate_fields.py` is the complete required list and replaces `BASE_REQUIRED` for this
+type. Rendered by the Jinja2 path (`generate_html.py` → `generate_docx_from_html.py`).
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `candidate_name` | string | ✅ offer_letter | Candidate's full name (e.g. `"Ajay Rao"`) — slugged for the output filename |
+| `candidate_email` | string | ✅ offer_letter | Candidate's email (format-validated) |
+| `candidate_phone` | string | ✅ offer_letter | Candidate's phone |
+| `candidate_address` | string | ✅ offer_letter | Candidate's full postal address |
+| `role` | string | ✅ offer_letter | Position offered |
+| `date` | string | ✅ offer_letter | Letter date (ISO or `DD-Mon-YYYY`) |
+| `annual_ctc` | string | ✅ offer_letter | Annual Cost to Company (e.g. `"₹9,00,000"`) |
+| `basic_monthly`, `hra_monthly`, `lta_monthly`, `wfh_allowance_monthly`, `flexi_pay_monthly`, `total_earnings_monthly` | string | ✅ offer_letter | Monthly earnings breakup (display strings) |
+| `professional_tax_monthly`, `tds_monthly`, `total_deductions_monthly` | string | ✅ offer_letter | Monthly deductions breakup |
+| `net_take_home_monthly` | string | ✅ offer_letter | Net monthly take-home |
+| `internship_acknowledgement` | string | optional | Full paragraph acknowledging a prior internship; omit for direct hires (`{% if %}` section) |
+| `business_performance_bonus_pct` | string | optional | e.g. `"12.5%"` (`{% if %}` section) |
+| `business_performance_bonus_period` | string | optional | e.g. `"March/April"` (Jinja `default('March/April')`) |
+| `individual_performance_bonus_pct` | string | optional | e.g. `"12.5%"` (`{% if %}` section) |
+| `individual_performance_bonus_period` | string | optional | e.g. `"September/October"` (Jinja `default('September/October')`) |
+
 > \* "Required for invoice doc type" means these fields must be present in
 > `DOCBUILDER_CONTEXT` when running the Bitloka invoice template. Other doc
-> types may not need them.
+> types may not need them. The offer-letter required set is enforced separately
+> (`OFFER_LETTER_REQUIRED`).
 
 ---
 

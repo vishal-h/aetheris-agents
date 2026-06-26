@@ -57,6 +57,13 @@ def test_currency_uppercased():
     assert code == 0 and result["currency"] == "GBP"
 
 
+@pytest.mark.parametrize("raw,expected", [("sgd", "SGD"), ("cad", "CAD"), ("aud", "AUD")])
+def test_currency_extended_allowlist(raw, expected):
+    # m5 t2: SGD/CAD/AUD added to CURRENCIES — normalised to uppercase, exit 0.
+    result, code = validate(_invoice(currency=raw))
+    assert code == 0 and result["currency"] == expected
+
+
 def test_numeric_intermediates_coerced():
     result, code = validate(_invoice(unit_price="1200", line_item_qty="40"))
     assert code == 0

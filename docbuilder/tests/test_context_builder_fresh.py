@@ -1,4 +1,4 @@
-"""Integration tests for the freeform "fresh" path (m4 t3).
+"""Script CLI tests for the freeform fresh path — exercises validate_fields.py via CLI subprocess (no live LLM). m4 t3.
 
 Exercises `validate_fields.py` — the deterministic core of `context_builder.exs`
 step-3b — via the script CLI (the same invocation the agent makes through run_command).

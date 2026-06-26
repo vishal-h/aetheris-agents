@@ -32,7 +32,8 @@ from pathlib import Path
 
 BASE_REQUIRED = ["title", "client_name", "client_email", "date"]
 INVOICE_REQUIRED = ["invoice_number", "client_address", "amount_due"]
-CURRENCIES = {"GBP", "USD", "EUR", "AED", "INR"}
+# Hardcoded; extend manually when currency support broadens (m4 t1 F2, m5 t2).
+CURRENCIES = {"GBP", "USD", "EUR", "AED", "INR", "SGD", "CAD", "AUD"}
 DATE_FIELDS = ("date", "order_effective_date")
 NUMERIC_FIELDS = ("unit_price", "line_item_qty")
 

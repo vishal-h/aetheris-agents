@@ -538,9 +538,15 @@ DOCBUILDER_REQUEST="Invoice for Northwind Traders at billing@northwind.example, 
 Asserts `confirmed_context.json` is written + parseable and the run log is NOT appended
 (builder-only — PHASE D2 appends only with the orchestrator). The fresh extraction artifacts
 are `output/raw_extraction.json` + `output/validated_extraction.json` (inspect the latter on
-a clarifying stop). **Known limitation:** the sprint's client-match assertion checks the
-default request's client ("Northwind Traders"); override `DOCBUILDER_REQUEST` for a
-different client and that substring assertion will not match (the context is still correct).
+a clarifying stop). The client-match assertion is client-agnostic (m5 t2): it passes for any
+non-empty `client_name`, so overriding `DOCBUILDER_REQUEST` for a different client works.
+
+For the full fresh→render chain (context builder + orchestrator), use
+`./scripts/sprint.sh docbuilder_fresh_render` (m5). It chains `context_builder.exs` (fresh
+extract) → `docbuilder_orchestrator.exs` (reads `confirmed_context.json` via
+`DOCBUILDER_CONTEXT_FILE`, renders + PHASE D2), and additionally asserts every `renamed.json`
+output exists, the rendered **PDF has no unresolved `{{placeholder}}` strings** (the m5 t1
+`_sub_var` fix — degrades to `[INFO]` if `pdftotext` is absent), and the run log goes 0 → 1.
 
 ### Expected output files
 

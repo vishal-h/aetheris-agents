@@ -118,11 +118,14 @@ python3 -m pytest tests/test_render_template.py -v
 python3 -m pytest tests/ -q
 
 # Smoke: render a context with missing optional fields — no {{placeholders}} in output
-python3 scripts/render_template.py \
-  --template data/templates/bitloka/invoice/v1/invoice.md.template \
-  --css data/templates/bitloka/invoice/v1/invoice.css \
+# (t1 F1: real asset filenames are invoice_v1.*; --spec is a PATH or '-' for stdin —
+# pass a valid empty spec on stdin. /dev/null fails JSON-parse so the renderer never
+# runs, giving a trivial 0.)
+echo '{"sheets":[]}' | python3 scripts/render_template.py \
+  --template data/templates/bitloka/invoice/v1/invoice_v1.md.template \
+  --css data/templates/bitloka/invoice/v1/invoice_v1.css \
   --context '{"title":"Test","client_name":"Acme"}' \
-  --spec /dev/null 2>/dev/null | grep -c '{{'
+  --spec - 2>/dev/null | grep -c '{{'
 # Expected: 0
 ```
 
@@ -362,8 +365,9 @@ milestone summary. CLAUDE.md scan for recurring findings.
   section (mirrors the docbuilder/runbook.md entry from t3)
 - `docbuilder/docs/m5-milestone.md` — milestone summary appended; **correct the §t1
   Done-check smoke command** (t1 F1): use filenames `invoice_v1.md.template` /
-  `invoice_v1.css` (not `invoice.*`) and `--spec '{"sheets":[]}'` (not `/dev/null`,
-  which fails JSON-parse so the renderer never runs → trivial 0 count)
+  `invoice_v1.css` (not `invoice.*`) and pipe a valid empty spec on stdin
+  (`echo '{"sheets":[]}' | … --spec -`), since `--spec` is a path/`-`, not inline JSON,
+  and `/dev/null` fails JSON-parse so the renderer never runs → trivial 0 count
 - `aetheris-agents/CLAUDE.md` — `## Learning — m5-docbuilder` (recurring findings scan;
   "No recurring findings" if none)
 - `docbuilder/docs/milestones/m-docbuilder-m5-t4-implementation-notes.md` — new
@@ -435,4 +439,55 @@ grep -c "^## Milestone summary" docbuilder/docs/m5-milestone.md
 
 ## Milestone summary
 
-_To be written by claude-code at t4, from the implementation notes._
+**Status: complete.** Closed 2026-06-26. The fresh→render chain now produces a correctly
+rendered invoice for a freeform NL request with **zero `{{placeholder}}` artifacts** in the
+PDF — the milestone's core goal, verified end-to-end.
+
+### What shipped
+
+- **Pre-milestone commit** (`6da271d`) — promoted the **single-shot standing instruction**
+  to `CLAUDE.md` under `## Learning — m4-docbuilder` (`mix aetheris run` has no in-run human
+  reply; interactive loops re-model as stop-and-re-run). The candidate deferred from the m4
+  close (recurred in m3 t2 + m4 t2).
+- **t1** (`2591d20`) — `render_template.py` `_sub_var` returns `""` for absent variables
+  instead of the raw `{{placeholder}}`. New `OPTIONAL_FIELDS` set (the context-schema fields
+  not in `validate_fields.py`'s required lists) renders silently; genuinely unknown variables
+  still warn. Tests updated/added (14 in the render suite).
+- **t2** (`6407be9` + `ff574e2` in aetheris) — `CURRENCIES += {SGD, CAD, AUD}` with a
+  hardcoded-allowlist comment + parametrized tests; fixed the `test_context_builder_fresh.py`
+  "Integration tests" docstring → "Script CLI tests"; made the `docbuilder_fresh` sprint's
+  client-match client-agnostic (any non-empty `client_name`, reports the parsed client).
+- **t3** (`8dcfb47` + `69f41a2` in aetheris) — new `docbuilder_fresh_render` sprint case:
+  chains `context_builder.exs` (fresh) → `docbuilder_orchestrator.exs` (render + PHASE D2),
+  asserting every `renamed.json` output exists, the PDF has no unresolved `{{`, and the run
+  log goes 0 → 1. Live run `docbuilder-orch-h2yeTQ`: all PASS.
+- **t4** (this commit) — docs sync: capability-matrix `render_template.py` row, `docs/rig/runbook.md`
+  + `docbuilder/runbook.md` (`docbuilder_fresh_render` mention + corrected the now-stale
+  client-match "Known limitation" left by t2), the §t1 smoke-command correction (t1 F1),
+  `## Learning — m5-docbuilder` (no recurring findings), and this summary.
+
+### Accepted divergences / corrections
+
+- **§t1 done-check smoke command was broken as written** (wrong asset filenames; `--spec
+  /dev/null` fails JSON-parse → trivial 0). Corrected in t4 to `invoice_v1.*` + a valid
+  empty spec on stdin (`echo '{"sheets":[]}' | … --spec -`). t1's actual verification used
+  the corrected form throughout.
+- **t2 removed a doc claim, not just added one** — the client-agnostic sprint change made the
+  prior "Known limitation: substring assertion checks Northwind" false in both runbooks; t4
+  corrected both (the close is the right place to sweep doc accuracy).
+
+### Deferred / open for m6
+
+- Data-driven line-item table (currently hardcoded in the template) via `compute_doc.py`.
+- `CURRENCIES` still hardcoded (not tenant-configurable).
+- Possible `pdftotext` prerequisite check in `sprint.sh` (the `docbuilder_fresh_render` PDF
+  `{{` check degrades to `[INFO]` when it is absent).
+- `OPTIONAL_FIELDS` in `render_template.py` is a manual copy of "schema minus required" and
+  must stay in sync with `validate_fields.py` (a shared constant module if the set grows).
+
+### BL-002 (human-owned)
+
+t4 changes `docs/capability-matrix.md`, `docs/rig/runbook.md`, and `CLAUDE.md` (the latter
+also from the pre-milestone commit). All three go ahead of the manifest → `project_knowledge`
+WARNs are expected until re-uploaded. After re-upload, advance
+`docs/project-knowledge-manifest.md` → drift clears to 0 FAIL / 0 WARN.

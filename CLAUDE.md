@@ -307,3 +307,14 @@ Docbuilder integration), promoted per methodology §7.
 
 **`mix aetheris run` is single-shot — any design that requires an in-run human reply must be re-modelled as a stop-and-re-run pattern.** The harness has no human-reply channel and `ask_human` is intentionally excluded from the tool set. Interactive-loop designs (confirmation gates, clarification rounds, approval flows) resolve the same way every time: the agent performs its best single-pass (extraction, proposal, self-correction), then stops if human input is required; the operator's "reply" is a re-run with the additional information.
 `Source: m-docbuilder-m3 t2 (confirmation gate), m-docbuilder-m4 t2 (clarification round)`
+
+---
+
+## Learning — m5-docbuilder
+
+No recurring findings in this milestone (polish & fresh→render chain). Each t1–t3 review
+carried at most one finding, none recurring across ≥2 tickets: t1 (the done-check smoke
+command used wrong asset filenames + a `/dev/null` spec that fails JSON-parse → carried to
+t4 as a docs fix), t2 (missing live-sprint evidence → re-ran, PASS), t3 (informational
+`variant` optional-absent note). The single-shot standing instruction was promoted in the
+m5 pre-milestone commit under `## Learning — m4-docbuilder` above.

@@ -206,10 +206,9 @@ DOCBUILDER_TENANT=bitloka ./scripts/sprint.sh docbuilder_fresh
 Runs only `context_builder.exs` with a freeform `DOCBUILDER_REQUEST`, resets
 `data/run_log.json` to `[]` (forces the fresh path), and asserts `confirmed_context.json`
 is written + parseable and the run log is NOT appended (builder-only — PHASE D2 appends
-only when the orchestrator runs). **Known limitation:** the client-match assertion checks
-for the default request's client name ("Northwind Traders"); override `DOCBUILDER_REQUEST`
-for a different client and the assertion's substring will not match (the context is still
-correct).
+only when the orchestrator runs). The client-match assertion is client-agnostic (m5 t2): it
+passes for any non-empty `client_name` (and reports the parsed client in the `[OK]` line), so
+overriding `DOCBUILDER_REQUEST` for a different client works.
 
 ### Output files (m4)
 

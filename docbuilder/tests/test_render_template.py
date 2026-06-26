@@ -63,10 +63,29 @@ def test_variable_substituted(spec):
     assert "Acme Corp" in out
 
 
-def test_unknown_variable_left_as_is_with_warning(spec, capsys):
+def test_unknown_variable_rendered_empty_with_warning(spec, capsys):
+    # An absent variable that is NOT a known-optional field: render as "" (no raw
+    # {{placeholder}} leaks into the PDF) but warn so the mismatch is visible.
     out = render_template("Value: {{missing}}\n", {}, spec, str(CSS))
-    assert "{{missing}}" in out
+    assert "{{missing}}" not in out
+    assert "{{" not in out
     assert "missing" in capsys.readouterr().err
+
+
+def test_absent_optional_field_rendered_empty_silently(spec, capsys):
+    # A known-optional field absent from the context: render as "" with NO warning.
+    out = render_template("Ref: {{order_ref}}\nTerms: {{terms}}\n", {}, spec, str(CSS))
+    assert "{{order_ref}}" not in out
+    assert "{{terms}}" not in out
+    assert "{{" not in out
+    assert capsys.readouterr().err == ""
+
+
+def test_present_optional_field_rendered_with_value(spec, capsys):
+    # A known-optional field present in the context renders its value (not "").
+    out = render_template("Ref: {{order_ref}}\n", {"order_ref": "PO-42"}, spec, str(CSS))
+    assert "PO-42" in out
+    assert capsys.readouterr().err == ""
 
 
 # --- table partials ---

@@ -29,6 +29,24 @@ VAR_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 # {{>Sheet Name}} — table partial. Sheet names may contain spaces.
 PARTIAL_RE = re.compile(r"\{\{>\s*([^}]+?)\s*\}\}")
 
+# Context-schema fields that are not in validate_fields.py's BASE_REQUIRED or
+# INVOICE_REQUIRED — when absent from the context they render as "" silently
+# (an absent optional field is expected, not a defect). Kept in sync with the
+# optional fields documented in docs/context-schema.md / validate_fields.py.
+# A variable absent from the context AND absent from this set is treated as an
+# unknown variable: it still renders as "" (never a raw {{placeholder}} in a
+# client-facing PDF) but emits a warning so template/context mismatches surface.
+OPTIONAL_FIELDS = {
+    "order_ref",
+    "order_effective_date",
+    "terms",
+    "client_code",
+    "currency",
+    "unit_price",
+    "line_item_qty",
+    "variant",
+}
+
 
 def _warn(message):
     print(json.dumps({"status": "warning", "warning": message}), file=sys.stderr)
@@ -42,8 +60,12 @@ def render_template(template_text, context, doc_spec, css_path):
         key = m.group(1)
         if key in context:
             return str(context[key])
-        _warn(f"unknown variable '{key}' left unsubstituted")
-        return m.group(0)
+        # Absent: render as empty string (never leave a raw {{placeholder}} in a
+        # client-facing PDF). Known-optional fields are silent; anything else
+        # warns so template/context mismatches are still visible.
+        if key not in OPTIONAL_FIELDS:
+            _warn(f"unknown variable '{key}' rendered as empty string")
+        return ""
 
     def _sub_partial(m):
         name = m.group(1).strip()

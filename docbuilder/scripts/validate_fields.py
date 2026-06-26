@@ -35,6 +35,7 @@ INVOICE_REQUIRED = ["invoice_number", "client_address", "amount_due"]
 # offer_letter uses candidate_* aliases (not client_*), so this is the COMPLETE
 # required list for the doc type — it replaces BASE_REQUIRED, it is not added to it (m6 t4).
 OFFER_LETTER_REQUIRED = [
+    "title",
     "candidate_name", "candidate_email", "candidate_phone", "candidate_address",
     "role", "date", "annual_ctc",
     "basic_monthly", "hra_monthly", "lta_monthly", "wfh_allowance_monthly",

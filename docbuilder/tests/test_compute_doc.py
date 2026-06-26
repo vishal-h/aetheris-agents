@@ -58,6 +58,33 @@ def test_has_jinja_defaults_false_when_absent():
     assert spec["has_jinja"] is False
 
 
+# --- zero data sources (m6 t4b) ---
+
+def test_zero_source_bundle_returns_valid_spec():
+    # An offer-letter-style bundle (data_sources: [], sheets: []) → compute with no
+    # sources → valid spec, empty sheets, has_jinja passthrough still holds.
+    tmpl = _tmpl(sheets=[], data_sources=[])
+    tmpl["has_jinja"] = True
+    spec = compute_doc(tmpl, {})
+    assert spec["sheets"] == []
+    assert spec["has_jinja"] is True
+    assert spec["output_formats"] == tmpl["output_formats"]
+
+
+def test_cli_zero_source(tmp_path):
+    # CLI with no source_paths positional args (nargs="*") → exit 0, valid JSON spec.
+    tmpl = _tmpl(sheets=[], data_sources=[])
+    tmpl["has_jinja"] = True
+    tpath = tmp_path / "offer.json"
+    tpath.write_text(json.dumps(tmpl))
+    r = subprocess.run(
+        [sys.executable, "scripts/compute_doc.py", str(tpath)],
+        capture_output=True, text=True, cwd=str(USE_CASE_ROOT))
+    assert r.returncode == 0, r.stderr
+    spec = json.loads(r.stdout)
+    assert spec["sheets"] == [] and spec["has_jinja"] is True
+
+
 # --- aggregate function unit tests ---
 
 def test_aggregate_sum():

@@ -207,8 +207,9 @@ def compute_doc(template, sources):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("template_path")
-    parser.add_argument("source_paths", nargs="+",
-                        help="raw source JSON paths, or '-' for stdin")
+    parser.add_argument("source_paths", nargs="*",
+                        help="raw source JSON paths, or '-' for stdin; "
+                             "omit entirely for a zero-data-source bundle (m6 t4b)")
     parser.add_argument("--output", default=None,
                         help="write the doc spec JSON to FILE and print only the path "
                              "(default: print the doc spec to stdout)")

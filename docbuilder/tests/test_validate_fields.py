@@ -235,6 +235,15 @@ def test_valid_offer_letter_exit0():
         "net_take_home_monthly"))
 
 
+def test_offer_letter_missing_title():
+    # m6 t4b: title is required for offer_letter (it is the rendered <h1>).
+    raw = _offer_letter()
+    del raw["title"]
+    result, code = validate(raw)
+    assert code == 1
+    assert "title" in result["missing"]
+
+
 def test_offer_letter_missing_candidate_name():
     raw = _offer_letter()
     del raw["candidate_name"]

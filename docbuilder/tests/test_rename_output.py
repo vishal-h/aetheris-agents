@@ -44,6 +44,35 @@ def _make(out, name):
     (out / name).write_text("x")
 
 
+# --- candidate_name fallback (m6 t4b) ---
+
+def test_rename_uses_candidate_name_for_offer_letter(tmp_path):
+    # Offer-letter context has candidate_name (no client_name) → slug from candidate_name.
+    _make(tmp_path, "offer_letter_v1.docx")
+    pairs = rename_outputs(
+        str(tmp_path), "offer_letter_v1",
+        {"candidate_name": "Ajay Rao", "date": "2026-07-01", "doc_type": "offer_letter"},
+    )
+    assert Path(pairs[0]["renamed"]).name == "ajay_rao_offer_letter_2026-07-01.docx"
+    assert (tmp_path / "ajay_rao_offer_letter_2026-07-01.docx").exists()
+
+
+def test_rename_client_name_takes_precedence(tmp_path):
+    # When both present, client_name wins (invoices/proposals unchanged).
+    _make(tmp_path, "invoice_v1.pdf")
+    pairs = rename_outputs(
+        str(tmp_path), "invoice_v1",
+        {"client_name": "Acme Corp", "candidate_name": "Ignored", "date": "2026-06-20"},
+    )
+    assert Path(pairs[0]["renamed"]).name.startswith("acme_corp_")
+
+
+def test_rename_raises_when_neither_name(tmp_path):
+    _make(tmp_path, "x_v1.pdf")
+    with pytest.raises(ValueError, match="client_name.*candidate_name"):
+        rename_outputs(str(tmp_path), "x_v1", {"date": "2026-06-20"})
+
+
 def test_rename_produces_expected_filenames(tmp_path):
     for ext in ("xlsx", "docx", "pdf"):
         _make(tmp_path, f"proposal_v1.{ext}")

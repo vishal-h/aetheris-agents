@@ -86,6 +86,10 @@ template =
 data_sources   = template["data_sources"] || []
 output_formats = template["output_formats"] || []
 narrative?     = is_map(template["narrative"])
+# m6: a Jinja2 (.html.j2) bundle. docx for such a bundle renders via the
+# generate_html.py -> generate_docx_from_html.py chain (not generate_docx.py).
+has_jinja?       = template["has_jinja"] == true
+narrative_template = (template["narrative"] || %{})["template_file"]
 
 # Base-file presence: proxy via the committed base files alongside the eval template.
 xlsx_base? = File.exists?(Path.join(agent_root, "#{eval_template_dir}/#{prefix}.xlsx"))
@@ -118,7 +122,9 @@ safe_seg = fn v ->
 end
 
 rename_doc_type = context["doc_type"] || Regex.replace(~r/_v\d+$/, prefix, "")
-client_slug = slugify.(context["client_name"] || "")
+# client_name for invoices/proposals; candidate_name for offer letters (m6 t4b) —
+# mirrors the same fallback in rename_output.py so renamed_files matches PHASE D output.
+client_slug = slugify.(context["client_name"] || context["candidate_name"] || "")
 safe_date = safe_seg.(context["date"] || "")
 renamed_files =
   Enum.map(output_formats, fn ext ->
@@ -167,6 +173,26 @@ render_steps =
                 run_command  command: "python3"  args: #{inspect(display_args)}
                 Replace the "<CONTEXT>" element with this EXACT JSON, one arg, verbatim:
                   #{context_json}
+        """
+
+      fmt == "docx" and narrative? and has_jinja? ->
+        # m6 t4b: Jinja2 docx — render HTML (generate_html.py) then convert with
+        # Pandoc (generate_docx_from_html.py), two sequential commands.
+        html_args =
+          ["scripts/generate_html.py", "--template", "#{bundle_dir}/#{narrative_template}",
+           "--context", "<CONTEXT>", "--spec", "output/pipeline_spec.json",
+           "--output", "output/#{prefix}.html"]
+
+        docx_args =
+          ["scripts/generate_docx_from_html.py", "--input", "output/#{prefix}.html",
+           "--output", "output/#{prefix}.docx"]
+
+        """
+          C#{i}. Render docx (Jinja2 narrative → HTML → Pandoc), two commands in order:
+                C#{i}a. run_command  command: "python3"  args: #{inspect(html_args)}
+                        Replace the "<CONTEXT>" element with this EXACT JSON, one arg, verbatim:
+                          #{context_json}
+                C#{i}b. run_command  command: "python3"  args: #{inspect(docx_args)}
         """
 
       true ->

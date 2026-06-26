@@ -6,8 +6,9 @@ Finds the run's generated files in the output dir (those matching
 JSON. Deterministic — no LLM. Prints a JSON array of `{original, renamed}` path
 pairs (so the orchestrator can hand the renamed paths to upload_output.py).
 
-Required context fields: `client_name`, `date`. `doc_type` is optional and falls
-back to the `--filename-prefix` base (its `_v{N}` version suffix stripped).
+Required context fields: `client_name` (or `candidate_name` for offer letters), and
+`date`. `doc_type` is optional and falls back to the `--filename-prefix` base (its
+`_v{N}` version suffix stripped).
 
 See docs/context-schema.md and docs/drive-structure.md §"Output filename convention".
 """
@@ -46,12 +47,14 @@ def rename_outputs(output_dir, filename_prefix, context):
 
     Raises KeyError-equivalent ValueError if a required context field is missing.
     """
-    if not context.get("client_name"):
-        raise ValueError("context missing required field 'client_name'")
+    # client_name for invoices/proposals; candidate_name for offer letters (m6 t4b).
+    name = context.get("client_name") or context.get("candidate_name") or ""
+    if not name:
+        raise ValueError("context has neither 'client_name' nor 'candidate_name'")
     if not context.get("date"):
         raise ValueError("context missing required field 'date'")
 
-    slug = slugify(context["client_name"])
+    slug = slugify(name)
     doc_type = context.get("doc_type") or doc_type_base(filename_prefix)
     date = safe_segment(context["date"])
 

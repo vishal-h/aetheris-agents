@@ -157,6 +157,222 @@ data/templates/{DOCBUILDER_TENANT}/{DOCBUILDER_DOC_TYPE}_{DOCBUILDER_VERSION}.js
 Example: `DOCBUILDER_TENANT=demo`, `DOCBUILDER_DOC_TYPE=proposal`, `DOCBUILDER_VERSION=v1`
 → `data/templates/demo/proposal_v1.json`
 
+> **Two layers of config — know which is which.** `catalogue.json` is *selection*
+> metadata only: `list_templates.py` (PHASE 0) surfaces its `output_formats` /
+> `has_base_files` / `has_narrative` / `label` to the LLM so it can pick a template. The
+> bundle spec `{prefix}_v1.json` (e.g. `invoice_v1.json`) is the *operative render config*:
+> the orchestrator (at eval time) and `compute_doc.py` (at runtime) read `narrative`,
+> `output_formats`, `data_sources`, and `sheets` from it. The orchestrator decides narrative
+> vs structured by `is_map(template["narrative"])` in the **bundle spec**, not by the
+> catalogue's `has_narrative`; and it uses a DOCX/XLSX base file only when that file
+> **physically exists** in the bundle, not because `has_base_files` says so. Keep the two in
+> sync, but the bundle spec is the source of truth.
+
+---
+
+## Editing an existing template
+
+Template bundles live under the canonical nested layout:
+```
+data/templates/{tenant}/{doc_type}/{version}/
+```
+
+The Bitloka invoice bundle (`data/templates/bitloka/invoice/v1/`) actually contains:
+```
+invoice_v1.json          ← bundle spec (operative config): narrative pointer,
+                           output_formats, data_sources, sheets — the file the
+                           orchestrator + compute_doc read
+invoice_v1.md.template   ← narrative layout (Markdown + {{placeholders}})
+invoice_v1.css           ← PDF styling (WeasyPrint)
+sample_invoice_data.csv  ← the `main` data source for the Line Items table
+btl_logo-withtext.png    ← branding asset referenced by the template/CSS
+```
+There are **no** `invoice_v1.docx` / `invoice_v1.xlsx` base files here — the invoice's
+`has_base_files` is `{xlsx:false, docx:false}` and all three formats (xlsx/docx/pdf) are
+generated from scratch.
+
+### The narrative template (`*.md.template`)
+
+Markdown with two kinds of placeholders:
+
+- `{{variable}}` — substituted from the resolved context at render time. Present fields
+  are substituted with their value; absent **optional** fields render as empty string
+  (never a raw `{{placeholder}}`); absent **unknown** vars also render empty but warn (m5 t1).
+- `{{>Sheet Name}}` — replaced with an HTML table rendered from the bundle spec's named
+  sheet (e.g. `{{>Line Items}}`).
+
+To add a new field to the PDF layout:
+1. Add `{{your_field}}` at the desired location in the `.md.template`.
+2. If the field is **optional**, add `"your_field"` to `OPTIONAL_FIELDS` in
+   `scripts/render_template.py` so it renders silently as empty rather than warning.
+3. If the field is **required** for this doc type, add it to the appropriate required-fields
+   list in `scripts/validate_fields.py`.
+4. Document the field in `docbuilder/docs/context-schema.md`.
+
+### The CSS file (`*.css`)
+
+Standard CSS loaded by WeasyPrint — fonts, colours, table borders, header layout, page
+margins. Edit directly; no pipeline changes needed.
+
+### Base files (`*.docx`, `*.xlsx`) — only when present
+
+When a `{prefix}.docx` / `{prefix}.xlsx` file is committed alongside the bundle spec, the
+DOCX/XLSX renderers start from it (named styles like `Heading 1` / `Table Grid`, fonts,
+per-sheet branding). When absent — as for the Bitloka invoice — the renderers generate from
+scratch. The catalogue's `has_base_files` flag is selection metadata and should mirror this
+reality, but file presence is what the renderers actually key on. To add/replace a base file,
+drop it into the bundle directory and set `has_base_files` accordingly.
+
+---
+
+## Adding a new doc type
+
+Adding a new doc type (e.g. `offer_letter`) is **not config-only** — it needs a bundle
+(including the spec JSON), a catalogue entry, schema docs, and small code edits to
+`validate_fields.py` (+ `render_template.py` for optional fields). Steps:
+
+### Step 1 — Create the bundle directory and files
+
+```
+data/templates/bitloka/offer_letter/v1/
+  offer_letter_v1.json          ← REQUIRED bundle spec (see below)
+  offer_letter_v1.md.template   ← narrative layout
+  offer_letter_v1.css           ← PDF styling
+```
+
+> **The spec JSON is mandatory.** The orchestrator does
+> `File.read!("{bundle}/{prefix}.json")` at eval time — without
+> `offer_letter_v1.json` the run crashes before any LLM call. For a PDF-only narrative
+> letter with no tables, the minimal spec is:
+> ```json
+> {
+>   "template_id": "bitloka/offer_letter_v1",
+>   "title": "Offer Letter",
+>   "data_sources": [],
+>   "output_formats": ["pdf"],
+>   "narrative": { "template_file": "offer_letter_v1.md.template", "css_file": "offer_letter_v1.css" },
+>   "sheets": []
+> }
+> ```
+> `data_sources` and `sheets` must be present (empty lists are fine — `compute_doc.py`
+> iterates them directly). The `narrative` map is what makes the orchestrator route through
+> `render_template.py`. DOCX/XLSX base files are optional and only needed if you add those to
+> `output_formats` and want branded bases.
+
+**`offer_letter_v1.md.template` example:**
+
+```markdown
+# {{title}}
+
+Dear {{candidate_name}},
+
+We are pleased to offer you the position of **{{role}}** at Bitloka Solutions
+Private Limited, reporting to {{reporting_to}}.
+
+**Start date:** {{start_date}}
+**Compensation:** {{compensation}}
+**Location:** {{location}}
+
+{{terms}}
+
+Please confirm acceptance by replying to this email by {{acceptance_deadline}}.
+
+For Bitloka Solutions Pvt. Ltd
+
+(Authorised Signatory)
+```
+
+All `{{fields}}` not always supplied go in `OPTIONAL_FIELDS` (step 4); required fields go in
+`validate_fields.py` (step 4).
+
+### Step 2 — Register in `catalogue.json`
+
+Add an entry to the `doc_types` array in `data/templates/bitloka/catalogue.json`:
+
+```json
+{
+  "doc_type": "offer_letter",
+  "description": "Employment offer letter for new hires — PDF with role, compensation, and start date",
+  "variants": [
+    {
+      "version": "v1",
+      "label": "Standard",
+      "output_formats": ["pdf"],
+      "has_base_files": { "xlsx": false, "docx": false },
+      "has_narrative": true
+    }
+  ]
+}
+```
+
+This drives PHASE 0 selection only (`list_templates.py` → the LLM). `has_narrative` /
+`output_formats` / `has_base_files` here should **mirror** the bundle spec from step 1 — they
+do not themselves change rendering behaviour.
+
+### Step 3 — Add fields to `context-schema.md`
+
+Add the new doc type's fields to `docbuilder/docs/context-schema.md`, marking required vs
+optional:
+```
+candidate_name      string  required for offer_letter  "Jane Smith"
+role                string  required for offer_letter  "Senior Engineer"
+start_date          string  required for offer_letter  "01-Aug-2026"
+compensation        string  required for offer_letter  "₹25,00,000 per annum"
+reporting_to        string  optional                   "Anil Kumar"
+location            string  optional                   "Bangalore"
+acceptance_deadline string  optional                   "05-Jul-2026"
+```
+
+### Step 4 — Update `validate_fields.py` and `render_template.py` (code change)
+
+`scripts/validate_fields.py` — add a required-fields list and a doc-type branch:
+```python
+OFFER_LETTER_REQUIRED = ["candidate_name", "role", "start_date", "compensation"]
+
+# In validate():
+required = BASE_REQUIRED + (
+    INVOICE_REQUIRED if doc_type == "invoice" else
+    OFFER_LETTER_REQUIRED if doc_type == "offer_letter" else
+    []
+)
+```
+
+`scripts/render_template.py` — add the optional offer-letter fields to `OPTIONAL_FIELDS` so
+they render silently when absent:
+```python
+OPTIONAL_FIELDS = {
+    # … existing …
+    "reporting_to", "location", "acceptance_deadline",
+}
+```
+
+### Step 5 — Test it
+
+```bash
+cd ~/sandbox/elixirws/aetheris
+
+# Fresh path — builder only (confirm extraction)
+DOCBUILDER_TENANT=bitloka \
+DOCBUILDER_REQUEST="Offer letter for Jane Smith joining as Senior Engineer on 1 Aug 2026 at ₹25L/year, reporting to Anil Kumar, email jane.smith@example.com" \
+./scripts/sprint.sh docbuilder_fresh
+
+# Full chain — render the PDF
+DOCBUILDER_TENANT=bitloka \
+DOCBUILDER_REQUEST="…same request…" \
+./scripts/sprint.sh docbuilder_fresh_render
+```
+
+Or from the Rig Docbuilder panel — type the same request and Run.
+
+### What is automatic vs manual
+
+Automatic: once the catalogue entry + bundle spec exist, PHASE 0 surfaces `offer_letter/v1`
+and the LLM selects it from the request; the orchestrator and context builder need **no**
+changes (they are doc-type-agnostic and read the bundle spec). Manual: the bundle spec JSON
+(step 1), the `validate_fields.py` doc-type branch, and the `render_template.py`
+`OPTIONAL_FIELDS` additions (step 4) — these are the code edits, so a new doc type is a
+small ticket, not a pure docs/config change.
+
 ---
 
 ## Running tests

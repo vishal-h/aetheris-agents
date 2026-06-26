@@ -90,6 +90,13 @@ Other sprint cases:
   path); asserts the context is written + parseable and the run log is NOT appended
   (builder-only — PHASE D2 runs with the orchestrator). Full m4 detail: §"m4 — freeform NL
   field extraction" below.
+- `./scripts/sprint.sh docbuilder_fresh_render` — m5 full fresh→render chain: builder-only
+  `docbuilder_fresh` plus the orchestrator step. Chains `context_builder.exs` (fresh extract)
+  → `docbuilder_orchestrator.exs` (reads `confirmed_context.json` via `DOCBUILDER_CONTEXT_FILE`,
+  renders + PHASE D2). Resets `run_log.json` to `[]`; asserts every `renamed.json` output
+  exists + non-empty, the rendered **PDF has no unresolved `{{placeholder}}` strings** (m5 t1
+  `_sub_var` fix — degrades to `[INFO]` if `pdftotext` is absent), and the run log has exactly
+  1 entry (PHASE D2 appended: 0 → 1).
 
 ### Direct run
 

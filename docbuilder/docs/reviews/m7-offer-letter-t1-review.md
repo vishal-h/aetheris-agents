@@ -4,9 +4,9 @@ Reviewer: claude-ui
 Subject: `offer_letter_v1.html.j2` HTML + inline-CSS template
 (pre-t1 doc correction `db3a430`; t1 `b815d61`; round-1 fixes `<this commit>`)
 
-> Path note: filed at `docs/reviews/` per the m7 milestone doc's File-locations §
-> (diverges from the m1–m6 `docbuilder/docs/reviews/` convention; the m7 doc + its t4
-> review-scan both target `docs/reviews/`, so reviews live here for m7).
+> Path note: filed at `docbuilder/docs/reviews/` (round-2 F1 — consolidated to match m1–m6;
+> repo-root `docs/reviews/` is for other use cases, e.g. eduloka/playground). The m7 milestone
+> doc's File-locations + t4 review-scan were corrected to `docbuilder/docs/reviews/`.
 
 ---
 
@@ -65,3 +65,30 @@ F4 absent-phone) → **ALL CHECKS PASS**.
 
 **t1 clear to merge** after the round-1 fixes (both blocking findings resolved + the two polish
 items + F5 clarified). Template code updated in `<this commit>`.
+
+---
+
+## Round 2
+
+**F1 [blocking] — review-path convention.** Resolved by human decision: **consolidate under
+`docbuilder/docs/reviews/`** (match m1–m6). Actioned: `git mv` of this file to
+`docbuilder/docs/reviews/m7-offer-letter-t1-review.md`; the m7 milestone doc's File-locations
+block + t4 review-scan path both corrected to `docbuilder/docs/reviews/`. Doc and file now agree
+(methodology §1.1). Repo-root `docs/reviews/` is used by other use cases (eduloka, playground),
+not docbuilder — so the Phase-1 `docs/reviews/` was the defect.
+
+**F2 [non-blocking] — phone note.** t1 notes tightened: `candidate_phone` IS required;
+`validate_fields` treats empty/whitespace as missing, so a valid context always has it. The
+guard is defensive against an empty value reaching the template via a non-validated path, NOT
+against absence in production.
+
+**F3 [non-blocking] — title note.** t1 notes use the **validated-but-not-rendered** framing and
+correctly record that `compute_doc`'s doc-spec title comes from the bundle spec
+(`template["title"]`), not context — so context `title` is required-but-consumed-nowhere for the
+offer letter.
+
+**Cross-ticket (carried into t3 §scope):** keep the four t1 edge cases as committed sprint
+assertions; assert the Net-table F1 fix structurally (rendered HTML has standalone
+`<table class="net">`); pixel-13pt is a human visual check of the PDF.
+
+**Disposition: t1 fully closed.** No template code change in round 2 (path/doc/notes only).

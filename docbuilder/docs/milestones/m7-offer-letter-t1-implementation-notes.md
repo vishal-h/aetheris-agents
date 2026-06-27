@@ -78,12 +78,20 @@ substantive fields referenced in the template (`title` excluded — doc metadata
   independently. Verified: individual-only bonus → heading + individual line render (business
   absent); both absent → section fully suppressed.
 - **F3 [non-blocking] — subject underline.** Added `text-decoration: underline` to `.subject`.
-- **F4 [non-blocking] — phone guard.** `candidate_phone` IS required (in `OFFER_LETTER_REQUIRED`),
-  so it's always present; added a defensive `{% if candidate_phone %} | {{ … }}{% endif %}` so
-  an empty value can't leave a trailing `email | `. Verified: absent phone → no trailing pipe.
-- **F5 [question] — title vs candidate_name.** Resolved + the title note above corrected: the
-  filename slug uses `candidate_name`; `title` is validated-but-not-rendered. t3's sprint slug
-  assertion should target the `candidate_name` slug (`ajay_rao_offer_letter_*`).
+- **F4 [non-blocking] — phone guard.** `candidate_phone` **is in `OFFER_LETTER_REQUIRED`
+  (required, not optional)** — and `validate_fields._present` treats an empty/whitespace value
+  as *missing* (exit 1), so a valid `confirmed_context.json` always has a non-empty
+  `candidate_phone`. The `{% if candidate_phone %} | {{ … }}{% endif %}` guard is therefore
+  **defensive against an empty-string value reaching the template** (e.g. a standalone/test
+  render that bypasses validation), NOT against the field being absent in production. Verified:
+  empty phone → no trailing ` | `.
+- **F5 [question] — title vs candidate_name.** Resolved. `title` is **validated-but-not-rendered**:
+  `validate_fields` requires it (it's in `OFFER_LETTER_REQUIRED`), but it is NOT the source of the
+  filename and NOT the source of `compute_doc`'s doc-spec title. The filename slug uses
+  `candidate_name` (`rename_output.py` fallback); `compute_doc` takes its doc-spec `title` from the
+  **bundle spec** (`template["title"]` in `offer_letter_v1.json`), not from context. So context
+  `title` is validated but currently consumed nowhere for the offer letter (the reference letter
+  has no visible document-title element). t3's slug assertion targets `ajay_rao_offer_letter_*`.
 
 Re-ran the done-check plus all four edge cases above → **ALL CHECKS PASS**.
 

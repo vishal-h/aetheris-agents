@@ -348,6 +348,14 @@ blob to supply all currency fields as display strings (e.g. `"₹37,500.00"` not
 `37500`). Also add a one-line entry to `docbuilder/runbook.md` §"Jinja2 templates (m6)"
 noting that the offer-letter sprint now exercises both outputs.
 
+> **From the t1 review (carry into t3's assertions):** keep the t1 edge-case checks as
+> committed sprint assertions, not ad-hoc — i.e. the sprint context must exercise
+> `internship_acknowledgement` + the performance-bonus section (both render), and the run must
+> confirm zero `{{` in the PDF. The **Net-row 13pt-bold** is the F1 fix: assert it structurally
+> (the rendered intermediate HTML contains the standalone `<table class="net">`, no
+> `class="comp net"`); true pixel-13pt is a human visual check of the PDF (pdftotext gives text,
+> not font size). The slug to assert is `ajay_rao_offer_letter_*` (from `candidate_name`, not `title`).
+
 **Contract refs.**
 - `CLAUDE.md` §Learning — m6-docbuilder (end-to-end check beyond unit done-check)
 - `docbuilder/runbook.md` §"Jinja2 templates (m6)"
@@ -482,7 +490,7 @@ else:
 > 1. Run `python3 scripts/drift_check.py`. Report the result. If it is not
 >    8 PASS / 0 FAIL / 0 WARN, stop and report what failed — do not proceed.
 >
-> 2. Read all three review files for m7 (`docs/reviews/m7-offer-letter-t1-review.md`,
+> 2. Read all three review files for m7 (`docbuilder/docs/reviews/m7-offer-letter-t1-review.md`,
 >    `-t2-review.md`, `-t3-review.md`). List every finding that appears on ≥2 tickets.
 >    For each recurring finding, draft a `CLAUDE.md` learning entry in the §7 format.
 >    If none recur, note "No recurring findings in m7".
@@ -529,9 +537,9 @@ docbuilder/docs/milestones/m7-offer-letter-t1-implementation-notes.md
 docbuilder/docs/milestones/m7-offer-letter-t2-implementation-notes.md
 docbuilder/docs/milestones/m7-offer-letter-t3-implementation-notes.md
 docbuilder/docs/milestones/m7-offer-letter-t4-implementation-notes.md
-docs/reviews/m7-offer-letter-t1-review.md
-docs/reviews/m7-offer-letter-t2-review.md
-docs/reviews/m7-offer-letter-t3-review.md
+docbuilder/docs/reviews/m7-offer-letter-t1-review.md
+docbuilder/docs/reviews/m7-offer-letter-t2-review.md
+docbuilder/docs/reviews/m7-offer-letter-t3-review.md
 ```
 
 ---

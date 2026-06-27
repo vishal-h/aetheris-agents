@@ -23,7 +23,7 @@
   .date { margin-bottom: 12pt; }
   .to-block { margin-bottom: 12pt; }
   .to-block .line { margin: 0 0 2pt 0; }
-  .subject { font-weight: bold; margin-bottom: 12pt; }
+  .subject { font-weight: bold; text-decoration: underline; margin-bottom: 12pt; }
   p.body { margin: 0 0 12pt 0; text-align: justify; }
   .section-heading { font-weight: bold; margin: 0 0 4pt 0; }
   table.comp {
@@ -45,7 +45,20 @@
   }
   table.comp tbody td { font-size: 11pt; }
   table.comp tr.total td { font-weight: bold; font-size: 12pt; }
-  table.net td { font-weight: bold; font-size: 13pt; }
+  /* Net table is standalone (NOT .comp) so the .comp tbody 11pt rule cannot win
+     the cascade over the 13pt bold here (F1). */
+  table.net {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12pt;
+  }
+  table.net td {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    font-weight: bold;
+    font-size: 13pt;
+  }
+  table.net td.amount { text-align: right; }
   ul.documents { margin: 0 0 12pt 0; padding-left: 20px; }
   ul.documents li { margin-bottom: 2pt; }
   .signature { margin-top: 24pt; margin-bottom: 12pt; }
@@ -72,7 +85,7 @@
 <div class="to-block">
   <div class="line">{{ candidate_name | default('') }}</div>
   <div class="line">{{ candidate_address | default('') }}</div>
-  <div class="line">{{ candidate_email | default('') }} | {{ candidate_phone | default('') }}</div>
+  <div class="line">{{ candidate_email | default('') }}{% if candidate_phone %} | {{ candidate_phone }}{% endif %}</div>
 </div>
 
 <div class="subject">Re: Offer of Employment</div>
@@ -118,16 +131,18 @@ compensation breakup below.</p>
   </tbody>
 </table>
 
-<table class="comp net">
+<table class="net">
   <tbody>
     <tr><td>Net Monthly Take Home</td><td class="amount">{{ net_take_home_monthly | default('') }}</td></tr>
   </tbody>
 </table>
 
-{% if business_performance_bonus_pct %}
+{% if business_performance_bonus_pct or individual_performance_bonus_pct %}
 <div class="section-heading">Performance Bonuses</div>
+{% if business_performance_bonus_pct %}
 <p class="body">Business Performance Bonus: Up to {{ business_performance_bonus_pct }}% of total
 annual earnings, provisioned in {{ business_performance_bonus_period | default('March/April') }}.</p>
+{% endif %}
 {% if individual_performance_bonus_pct %}
 <p class="body">Individual Performance Bonus: Up to {{ individual_performance_bonus_pct }}% of total
 annual earnings, provisioned in {{ individual_performance_bonus_period | default('September/October') }}.</p>

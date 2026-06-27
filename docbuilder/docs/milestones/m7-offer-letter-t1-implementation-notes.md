@@ -40,10 +40,13 @@ old names would have rendered `""` silently (the m6 t5 `jinja2.Undefined` bug cl
 
 ## Decisions / notes
 
-- **`title` is NOT rendered in the letter body.** It is the document-title field (e.g. "Offer
-  Letter — Ajay Rao") used for the output filename / metadata, not letter content. The body
-  opens with the letterhead + date + To block per the reference. Cross-check confirmed the
-  other 17 required fields all render.
+- **`title` is NOT rendered in the letter body** (corrected per t1 review F5). `title` is a
+  required `OFFER_LETTER_REQUIRED` context field, but it does **not** drive the filename and is
+  not letter content: `rename_output.py` slugs the **`candidate_name`** fallback for the output
+  filename (`{candidate_name_slug}_{doc_type}_{date}.ext`), and `compute_doc` takes the doc-spec
+  title from the **bundle spec** (`template["title"]`), not from context. So `title` is
+  validated-but-not-rendered here; the body opens with the letterhead + date + To block per the
+  reference. Cross-check confirmed the other 17 required fields all render.
 - **Amount column header is "Amount", not "Amount (₹)".** Per D5 the currency values are
   display strings that already carry `₹` (e.g. `₹37,500.00`); a "(₹)" header would double the
   symbol. The symbol lives in the value.
@@ -61,6 +64,28 @@ bonus sections render when their triggers are set and are suppressed when empty.
 
 Field-coverage cross-check (sentinel value per `OFFER_LETTER_REQUIRED` field): **17/17**
 substantive fields referenced in the template (`title` excluded — doc metadata, not body).
+
+## Round-1 review fixes (claude-ui)
+
+- **F1 [blocking] — Net row rendered 11pt normal, not 13pt bold (CSS cascade).** `table.comp
+  tbody td {font-size:11pt}` (0,1,3) out-specified `table.net td {…13pt bold}` (0,1,2). Fixed
+  by making the Net table **standalone** `class="net"` (dropped `comp`) with its own
+  border/padding/13pt-bold rules — `table.comp tbody td` no longer matches it at all, so there
+  is no competing rule (not just a higher-specificity one). Verified: HTML has `<table class="net">`,
+  no `class="comp net"`.
+- **F2 [blocking] — bonus heading/independent conditionals.** Restructured to
+  `{% if business_… or individual_… %}` wrapping the heading, then each bonus paragraph guarded
+  independently. Verified: individual-only bonus → heading + individual line render (business
+  absent); both absent → section fully suppressed.
+- **F3 [non-blocking] — subject underline.** Added `text-decoration: underline` to `.subject`.
+- **F4 [non-blocking] — phone guard.** `candidate_phone` IS required (in `OFFER_LETTER_REQUIRED`),
+  so it's always present; added a defensive `{% if candidate_phone %} | {{ … }}{% endif %}` so
+  an empty value can't leave a trailing `email | `. Verified: absent phone → no trailing pipe.
+- **F5 [question] — title vs candidate_name.** Resolved + the title note above corrected: the
+  filename slug uses `candidate_name`; `title` is validated-but-not-rendered. t3's sprint slug
+  assertion should target the `candidate_name` slug (`ajay_rao_offer_letter_*`).
+
+Re-ran the done-check plus all four edge cases above → **ALL CHECKS PASS**.
 
 ## Scope held
 

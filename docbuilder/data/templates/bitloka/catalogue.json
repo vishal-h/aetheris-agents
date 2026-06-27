@@ -19,12 +19,12 @@
     },
     {
       "doc_type": "offer_letter",
-      "description": "Employment offer letter for new hires — Word document with compensation structure",
+      "description": "Employment offer letter for new hires — branded PDF (primary) with compensation structure; DOCX secondary draft to edit in Word",
       "variants": [
         {
           "version": "v1",
           "label": "Standard FTE",
-          "output_formats": ["docx"],
+          "output_formats": ["pdf", "docx"],
           "has_base_files": {
             "xlsx": false,
             "docx": false

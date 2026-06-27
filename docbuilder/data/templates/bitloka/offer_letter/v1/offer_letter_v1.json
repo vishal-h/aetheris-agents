@@ -2,7 +2,7 @@
   "template_id": "bitloka/offer_letter_v1",
   "title": "Offer Letter",
   "data_sources": [],
-  "output_formats": ["docx"],
+  "output_formats": ["pdf", "docx"],
   "has_jinja": true,
   "narrative": {
     "template_file": "offer_letter_v1.html.j2",

@@ -592,12 +592,17 @@ grep -c "^## Milestone summary" docbuilder/docs/m6-milestone.md
 >    entry: "For Jinja2 template authoring and adding new doc types (e.g. offer
 >    letter), see `docbuilder/runbook.md` §\"Jinja2 templates (m6)\"."
 >
-> 3. Scan `m-docbuilder-m6-t{1..5}-review.md` for recurring findings. Write
->    `## Learning — m6-docbuilder` in `CLAUDE.md`.
+> 3. Scan `m-docbuilder-m6-t{1,2,3,4,4b,5}-review.md` for recurring findings (include
+>    **t4b**). Write `## Learning — m6-docbuilder` in `CLAUDE.md`.
 >
 > 4. Append milestone summary to `m6-milestone.md`.
 >
-> 5. Run drift_check and include full output in the review packet.
+> 5. **(t4b F1)** If any t4b smoke command is referenced in this doc, ensure it uses the
+>    positional form `compute_doc.py <template>` (NOT `--template <template>` — the template
+>    is a positional arg). The t4b ticket lived outside this doc, so there may be nothing to
+>    fix here; confirm and note it.
+>
+> 6. Run drift_check and include full output in the review packet.
 >
 > **Touches:** `docs/capability-matrix.md`, `docs/rig/runbook.md`,
 > `docbuilder/docs/m6-milestone.md`, `aetheris-agents/CLAUDE.md`,

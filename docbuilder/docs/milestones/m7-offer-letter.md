@@ -26,11 +26,11 @@ bundle-spec only, plus a sprint-case update to assert PDF + DOCX outputs.
   is a future consideration)
 - `compute_offer.py` salary computation
 - `is_intern` boolean field (conditional rendering stays Jinja `{% if %}` on
-  the existing string field `prior_internship_acknowledgement`)
+  the existing string field `internship_acknowledgement`)
 - Context builder optional-field-name awareness (BL / m6-t5 F2 — bonus field
   names off-schema)
 - Removing `render_template.py` / `.md.template` (deferred from m6)
-- Any change to `validate_fields.py` `OFFER_LETTER_REQUIRED` (19 fields, stable)
+- Any change to `validate_fields.py` `OFFER_LETTER_REQUIRED` (18 fields, stable)
 
 ---
 
@@ -65,7 +65,7 @@ Source: `BTL-Offer_Letter-_Template_-_FTE_-_Ajay_Rao.docx` (inspected in m6 clos
 3. **Subject line** — "Re: Offer of Employment" (bold inline).
 4. **Offer paragraph** — body text 10pt.
 5. **[CONDITIONAL] Internship acknowledgement** — paragraph only if
-   `prior_internship_acknowledgement` is non-empty.
+   `internship_acknowledgement` is non-empty (`{% if internship_acknowledgement %}`).
 6. **CTC line** — "Your annual CTC is ₹X,XX,XXX.00."
 7. **Monthly earnings table** (Table 1):
    - Header row: bold 12pt, orange background (#F5A623), white text
@@ -79,9 +79,12 @@ Source: `BTL-Offer_Letter-_Template_-_FTE_-_Ajay_Rao.docx` (inspected in m6 clos
 9. **Net take-home table** (Table 3):
    - Single row, bold 13pt
    - Net Monthly Take Home | ₹XX,XXX.00
-10. **[CONDITIONAL] Performance bonuses section** — only if `has_performance_bonus` is truthy:
-    - Business Performance Bonus: `business_bonus_pct`% of CTC per `business_bonus_period`
-    - Individual Performance Bonus: `individual_bonus_pct`% of CTC per `individual_bonus_period`
+10. **[CONDITIONAL] Performance bonuses section** — only if `business_performance_bonus_pct`
+    is non-empty (`{% if business_performance_bonus_pct %}`; no `has_performance_bonus` flag):
+    - Business Performance Bonus: `business_performance_bonus_pct`% of CTC, provisioned in
+      `business_performance_bonus_period` (`default('March/April')`)
+    - Individual Performance Bonus: `individual_performance_bonus_pct`% of CTC, provisioned in
+      `individual_performance_bonus_period` (`default('September/October')`)
 11. **Notice period paragraph** — hardcoded "eight (8) weeks"
 12. **Terms and Conditions** — boilerplate paragraph
 13. **Documents Required** — boilerplate list
@@ -93,35 +96,49 @@ Source: `BTL-Offer_Letter-_Template_-_FTE_-_Ajay_Rao.docx` (inspected in m6 clos
 
 ## Context fields
 
-The 19 required fields from `validate_fields.py` `OFFER_LETTER_REQUIRED` plus the
-conditional bonus fields:
+> **Authoritative source = `validate_fields.py` `OFFER_LETTER_REQUIRED`, read from the repo
+> (not the reference DOCX).** The Phase-1 draft of this table inferred field names from the
+> DOCX structure and was wrong (`candidate_title`, `basic_salary`, split address, `start_date`,
+> `has_performance_bonus` etc. do not exist). Corrected below to the actual pipeline schema —
+> the template MUST use these exact names, or `jinja2.Undefined` silently renders `""`
+> (the m6 t5 class of bug). `validate_fields.py` is unchanged (frozen, per §"NOT in scope").
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `candidate_name` | string | Used in To block + rename_output fallback |
-| `candidate_title` | string | Job title |
-| `candidate_address_1` | string | Address line 1 |
-| `candidate_address_2` | string | Address line 2 (may be empty) |
-| `candidate_city` | string | |
-| `date` | ISO date | Letter date |
-| `start_date` | ISO date | Employment start |
-| `annual_ctc` | display string | e.g. `₹9,00,000.00` |
-| `basic_salary` | display string | e.g. `₹37,500.00` |
-| `hra` | display string | |
-| `lta` | display string | |
-| `wfh_allowance` | display string | |
-| `flexi_pay` | display string | |
-| `total_earnings` | display string | |
-| `professional_tax` | display string | |
-| `tds` | display string | |
-| `total_deductions` | display string | |
-| `net_take_home` | display string | |
-| `prior_internship_acknowledgement` | string or empty | Conditional section trigger |
-| `has_performance_bonus` | bool/truthy | Conditional bonus section trigger |
-| `business_bonus_pct` | string | Only if `has_performance_bonus` |
-| `business_bonus_period` | string | Only if `has_performance_bonus` |
-| `individual_bonus_pct` | string | Only if `has_performance_bonus` |
-| `individual_bonus_period` | string | Only if `has_performance_bonus` |
+**Required — the 18 `OFFER_LETTER_REQUIRED` fields (all display strings):**
+
+| Field | Notes |
+|-------|-------|
+| `title` | Document title (e.g. `Offer Letter — Ajay Rao`) |
+| `candidate_name` | To block + `rename_output.py` candidate-name fallback |
+| `candidate_email` | To block |
+| `candidate_phone` | To block |
+| `candidate_address` | **Flat** single string (may contain commas / city / pincode) — NOT split |
+| `role` | Position offered (the doc's old `candidate_title`) |
+| `date` | Letter date (ISO or display) |
+| `annual_ctc` | e.g. `₹9,00,000.00` |
+| `basic_monthly` | e.g. `₹37,500.00` |
+| `hra_monthly` | |
+| `lta_monthly` | |
+| `wfh_allowance_monthly` | |
+| `flexi_pay_monthly` | |
+| `total_earnings_monthly` | |
+| `professional_tax_monthly` | |
+| `tds_monthly` | |
+| `total_deductions_monthly` | |
+| `net_take_home_monthly` | |
+
+**Optional (m6 `OPTIONAL_FIELDS` names) — conditional `{% if %}` sections:**
+
+| Field | Notes |
+|-------|-------|
+| `internship_acknowledgement` | Non-empty → internship paragraph renders |
+| `business_performance_bonus_pct` | Non-empty → business-bonus line (the conditional trigger; there is NO `has_performance_bonus` flag) |
+| `business_performance_bonus_period` | e.g. `March/April` (Jinja `default('March/April')`) |
+| `individual_performance_bonus_pct` | Non-empty → individual-bonus line |
+| `individual_performance_bonus_period` | e.g. `September/October` (Jinja `default('September/October')`) |
+
+**Dropped from the Phase-1 draft (no backing field):** `start_date`, `candidate_title`
+(→ `role`), `candidate_address_1/_2/_city` (→ flat `candidate_address`), `has_performance_bonus`
+(→ trigger on `business_performance_bonus_pct`).
 
 ---
 
@@ -150,7 +167,7 @@ overwritten; no other files change in this ticket.
   `validate_fields.py`, or any sprint/test file.
 - Do not create a separate `.css` file — CSS is inline in the template per D1.
 - Do not add any new context fields beyond those listed in the Context fields table
-  above. The 19 required fields in `validate_fields.py` are frozen.
+  above. The 18 required fields in `validate_fields.py` are frozen.
 
 **Runbook update rule.** No new env vars, startup steps, or operational procedures.
 No runbook change required.
@@ -167,30 +184,29 @@ bundle = pathlib.Path('docbuilder/data/templates/bitloka/offer_letter/v1')
 env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(bundle)),
     autoescape=True, undefined=jinja2.Undefined)
 ctx = {
+    'title': 'Offer Letter — Ajay Rao',
     'candidate_name': 'Ajay Rao',
-    'candidate_title': 'Software Engineer',
-    'candidate_address_1': '12 MG Road',
-    'candidate_address_2': 'Indiranagar',
-    'candidate_city': 'Bangalore 560038',
+    'candidate_email': 'ajay.rao@example.com',
+    'candidate_phone': '980 000 1234',
+    'candidate_address': '12 MG Road, Indiranagar, Bangalore 560038',
+    'role': 'Software Engineer',
     'date': '2026-06-30',
-    'start_date': '2026-07-15',
     'annual_ctc': '₹9,00,000.00',
-    'basic_salary': '₹37,500.00',
-    'hra': '₹15,000.00',
-    'lta': '₹3,000.00',
-    'wfh_allowance': '₹2,500.00',
-    'flexi_pay': '₹7,800.00',
-    'total_earnings': '₹65,800.00',
-    'professional_tax': '₹200.00',
-    'tds': '₹8,300.00',
-    'total_deductions': '₹8,500.00',
-    'net_take_home': '₹67,300.00',
-    'prior_internship_acknowledgement': 'We acknowledge your internship from Jan–Mar 2026.',
-    'has_performance_bonus': True,
-    'business_bonus_pct': '10',
-    'business_bonus_period': 'annually',
-    'individual_bonus_pct': '5',
-    'individual_bonus_period': 'annually',
+    'basic_monthly': '₹37,500.00',
+    'hra_monthly': '₹15,000.00',
+    'lta_monthly': '₹3,000.00',
+    'wfh_allowance_monthly': '₹2,500.00',
+    'flexi_pay_monthly': '₹7,800.00',
+    'total_earnings_monthly': '₹65,800.00',
+    'professional_tax_monthly': '₹200.00',
+    'tds_monthly': '₹8,300.00',
+    'total_deductions_monthly': '₹8,500.00',
+    'net_take_home_monthly': '₹67,300.00',
+    'internship_acknowledgement': 'We acknowledge your internship from Jan–Mar 2026.',
+    'business_performance_bonus_pct': '10',
+    'business_performance_bonus_period': 'March/April',
+    'individual_performance_bonus_pct': '5',
+    'individual_performance_bonus_period': 'September/October',
 }
 html = env.get_template('offer_letter_v1.html.j2').render(**ctx)
 assert '{{' not in html and '}}' not in html, 'Jinja leaks found'
@@ -199,11 +215,10 @@ assert 'Total Deductions' in html, 'deductions table missing'
 assert 'Net Monthly Take Home' in html, 'net take-home table missing'
 assert 'internship' in html.lower(), 'conditional internship section missing'
 assert 'Business Performance Bonus' in html, 'conditional bonus section missing'
-# Now test conditional suppression
-ctx2 = dict(ctx, prior_internship_acknowledgement='', has_performance_bonus=False)
+# Now test conditional suppression (drop the optional triggers)
+ctx2 = dict(ctx, internship_acknowledgement='', business_performance_bonus_pct='')
 html2 = env.get_template('offer_letter_v1.html.j2').render(**ctx2)
-assert 'internship' not in html2.lower() or 'acknowledge' not in html2.lower(), \
-    'internship section should be suppressed when empty'
+assert 'acknowledge' not in html2.lower(), 'internship section should be suppressed when empty'
 assert 'Business Performance Bonus' not in html2, 'bonus section should be suppressed'
 print('PASS — template renders cleanly, tables present, conditionals toggle')
 "
@@ -223,7 +238,7 @@ print('PASS — template renders cleanly, tables present, conditionals toggle')
 > - D1: CSS is **inline** in the template — no separate `.css` file
 > - D4: Table header rows use `background-color: #F5A623; color: #fff;`; body cell
 >   borders `1px solid #ccc`
-> - D5: All currency fields are Jinja variables (`{{ basic_salary }}` etc.) already
+> - D5: All currency fields are Jinja variables (`{{ basic_monthly }}` etc.) already
 >   pre-formatted as display strings — do not add formatting filters
 > - D7: `css_file` is null; `base_url` is set by `generate_pdf.py` — no path handling
 >   needed in the template
@@ -375,7 +390,7 @@ grep -A 30 'docbuilder_offer_letter' scripts/sprint.sh | grep -E '\.pdf|\.docx|p
 > 1. Passes a `DOCBUILDER_REQUEST` (or `DOCBUILDER_CONTEXT` inline JSON) that
 >    supplies all currency fields as **display strings** (e.g. `"₹37,500.00"`, not
 >    `37500`). Include the conditional fields for a run that exercises
->    `prior_internship_acknowledgement` (non-empty) and `has_performance_bonus: true`.
+>    `internship_acknowledgement` (non-empty) and `business_performance_bonus_pct` set.
 >    Use the sample values from §t1 Done-check.
 >
 > 2. Asserts **both** `ajay_rao_offer_letter_*.pdf` and `ajay_rao_offer_letter_*.docx`

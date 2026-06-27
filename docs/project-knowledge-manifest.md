@@ -22,7 +22,7 @@ Refresh trigger: milestone end, or before any handoff session.
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `4afb21f` | 2026-06-13 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `728d124` | 2026-06-27 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `201dcc2` | 2026-06-14 |
@@ -35,4 +35,4 @@ Refresh trigger: milestone end, or before any handoff session.
 
 ---
 
-Exported: 2026-06-27 at aetheris-agents `eeb37a1` / aetheris `1a8eb08`.
+Exported: 2026-06-27 at aetheris-agents `728d124` / aetheris `1a8eb08`.

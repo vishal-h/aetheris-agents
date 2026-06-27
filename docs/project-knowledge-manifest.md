@@ -18,21 +18,21 @@ Refresh trigger: milestone end, or before any handoff session.
 |-------------|-----------|------|--------|--------------|
 | `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `6127ebc` | 2026-06-24 |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
-| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d79b27` | 2026-06-26 |
+| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `4afb21f` | 2026-06-13 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `7d79b27` | 2026-06-26 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `7d79b27` | 2026-06-26 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `201dcc2` | 2026-06-14 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `cdb6a21` | 2026-06-13 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-26 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-27 |
 
 ---
 
-Exported: 2026-06-26 at aetheris-agents `7d79b27` / aetheris `1a8eb08`.
+Exported: 2026-06-27 at aetheris-agents `eeb37a1` / aetheris `1a8eb08`.

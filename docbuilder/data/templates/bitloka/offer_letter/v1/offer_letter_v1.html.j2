@@ -3,37 +3,52 @@
 <head>
 <meta charset="utf-8">
 <style>
-  @page { size: A4; margin: 1.3cm; }
+  /* Footer is anchored to the bottom of EVERY page via the @bottom-center margin box
+     (a running element), not an inline div that floats after the content. Extra bottom
+     page margin (1.8cm) gives the footer box room. */
+  @page {
+    size: A4;
+    margin: 1.3cm 1.3cm 1.8cm 1.3cm;
+    @bottom-center {
+      content: "#311/1, Zikhin Bhavan, 26th X, BSK II Stage, Bangalore - 560070   |   www.bitloka.com   |   contact@bitloka.com";
+      font-family: Calibri, 'Gill Sans', 'Segoe UI', sans-serif;
+      font-size: 8pt;
+      color: #555555;
+      padding-top: 4pt;
+    }
+  }
   body {
     font-family: Calibri, 'Gill Sans', 'Segoe UI', sans-serif;
-    font-size: 10pt;
+    font-size: 9.5pt;
     color: #1A1A2E;
-    line-height: 1.4;
+    line-height: 1.35;
   }
   .letter-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 2px solid #F5A623;
-    padding-bottom: 8px;
-    margin-bottom: 12pt;
+    padding-bottom: 6px;
+    margin-bottom: 10pt;
   }
-  .letter-header img.logo { height: 48px; }
+  .letter-header img.logo { height: 44px; }
   .letter-header .company { font-size: 12pt; font-weight: bold; text-align: right; }
-  .date { margin-bottom: 12pt; }
-  .to-block { margin-bottom: 12pt; }
+  .date { margin-bottom: 8pt; }
+  .to-block { margin-bottom: 8pt; }
   .to-block .line { margin: 0 0 2pt 0; }
-  .subject { font-weight: bold; text-decoration: underline; margin-bottom: 12pt; }
-  p.body { margin: 0 0 12pt 0; text-align: justify; }
-  .section-heading { font-weight: bold; margin: 0 0 4pt 0; }
+  .subject { font-weight: bold; text-decoration: underline; margin-bottom: 8pt; }
+  p.body { margin: 0 0 8pt 0; text-align: justify; orphans: 2; widows: 2; }
+  .section-heading { font-weight: bold; margin: 0 0 4pt 0; break-after: avoid; }
+  /* Keep each table whole on one page (no split header/rows). */
   table.comp {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 12pt;
+    margin-bottom: 8pt;
+    break-inside: avoid;
   }
   table.comp th, table.comp td {
     border: 1px solid #ccc;
-    padding: 4px 8px;
+    padding: 3px 8px;
     text-align: left;
   }
   table.comp td.amount, table.comp th.amount { text-align: right; }
@@ -41,36 +56,32 @@
     background-color: #F5A623;
     color: #ffffff;
     font-weight: bold;
-    font-size: 12pt;
+    font-size: 10pt;
   }
-  table.comp tbody td { font-size: 11pt; }
-  table.comp tr.total td { font-weight: bold; font-size: 12pt; }
+  table.comp tbody td { font-size: 9.5pt; }
+  table.comp tr.total td { font-weight: bold; font-size: 10pt; }
   /* Net table is standalone (NOT .comp) so the .comp tbody 11pt rule cannot win
-     the cascade over the 13pt bold here (F1). */
+     the cascade over the 13pt bold here (m7 t1 F1). */
   table.net {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 12pt;
+    margin-bottom: 8pt;
+    break-inside: avoid;
   }
   table.net td {
     border: 1px solid #ccc;
-    padding: 4px 8px;
+    padding: 3px 8px;
     font-weight: bold;
-    font-size: 13pt;
+    font-size: 11pt;
   }
   table.net td.amount { text-align: right; }
-  ul.documents { margin: 0 0 12pt 0; padding-left: 20px; }
-  ul.documents li { margin-bottom: 2pt; }
-  .signature { margin-top: 24pt; margin-bottom: 12pt; }
+  /* Documents list stays whole — no orphaned bullets split across the page break. */
+  ul.documents { margin: 0 0 8pt 0; padding-left: 20px; break-inside: avoid; }
+  /* list-style-position: inside keeps the • marker in the same box as its text so the
+     markers cannot detach and render as a separate block (page-break artifact). */
+  ul.documents li { margin-bottom: 2pt; break-inside: avoid; list-style-position: inside; }
+  .signature { margin-top: 16pt; margin-bottom: 8pt; break-inside: avoid; }
   .signature .name { font-weight: bold; }
-  .footer {
-    border-top: 1px solid #ccc;
-    padding-top: 6px;
-    margin-top: 18pt;
-    font-size: 8pt;
-    color: #555;
-    text-align: center;
-  }
 </style>
 </head>
 <body>
@@ -179,11 +190,6 @@ this letter. We look forward to welcoming you to Bitloka Solutions.</p>
   <br>
   <div class="name">Vishal Honnatti</div>
   <div>Director</div>
-</div>
-
-<div class="footer">
-  #311/1, Zikhin Bhavan, 26th X, BSK II Stage, Bangalore - 560070 |
-  www.bitloka.com | contact@bitloka.com
 </div>
 
 </body>

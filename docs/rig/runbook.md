@@ -548,6 +548,13 @@ extract) → `docbuilder_orchestrator.exs` (reads `confirmed_context.json` via
 output exists, the rendered **PDF has no unresolved `{{placeholder}}` strings** (the m5 t1
 `_sub_var` fix — degrades to `[INFO]` if `pdftotext` is absent), and the run log goes 0 → 1.
 
+m6 added a Jinja2 (`.html.j2`) renderer and an offer-letter doc type (DOCX via Pandoc). For
+template/doc-type authoring — editing a template, adding a new doc type, and the Jinja2 path
+(`generate_html.py`, `generate_docx_from_html.py`, `has_jinja`) — see `docbuilder/runbook.md`
+§"Editing an existing template", §"Adding a new doc type", and §"Jinja2 templates (m6)". The
+m6 sprint gates are `./scripts/sprint.sh docbuilder_invoice_jinja` (invoice via Jinja, zero
+`{{` in the PDF) and `./scripts/sprint.sh docbuilder_offer_letter` (fresh → DOCX).
+
 ### Expected output files
 
 After a successful run, `aetheris-agents/docbuilder/output/` contains:

@@ -399,6 +399,11 @@ for new doc types. A bundle opts in with `"has_jinja": true` in its spec JSON.
   `data/templates/bitloka/reference.docx` (Pandoc reads only the reference doc's named styles
   and ignores its body). The orchestrator emits the two-step chain
   `generate_html.py → generate_docx_from_html.py` for a `docx` + `has_jinja` bundle.
+  **The docx-jinja chain is for table-less narrative letters (`sheets: []`, e.g. the offer
+  letter).** A bundle with computed sheets (e.g. the invoice) uses the structured
+  `generate_docx.py` path for its DOCX output — standalone `generate_html.py` does NOT inject
+  sheet tables (only `generate_pdf`'s narrative-jinja path does), so the orchestrator routes a
+  sheeted docx through `generate_docx.py` (the `no_sheets?` guard on the docx-jinja branch).
 
 **Deprecation.** `render_template.py` and `.md.template` files are **deprecated** (kept for
 backward compatibility; removal is m7). Use `.html.j2` for new doc types and migrations.

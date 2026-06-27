@@ -647,4 +647,62 @@ grep -c "^## Milestone summary" docbuilder/docs/m6-milestone.md
 
 ## Milestone summary
 
-_To be written by claude-code at t6, from the implementation notes._
+**Status: complete.** Closed 2026-06-27. A Jinja2 HTML renderer now backs the docbuilder
+narrative path; the invoice renders through it (PDF) and a new `offer_letter` doc type renders
+to branded DOCX via Pandoc — both proven by live sprints.
+
+### What shipped
+
+- **t1** (`3d7ab25`) — `generate_html.py`: Jinja2 `.html.j2` renderer (`render_html` + CLI).
+  Absent vars render `""` (`jinja2.Undefined`), autoescaping on. Added `jinja2==3.1.6` to
+  `requirements.txt` (was the pre-flight blocker — not installed). 15 tests.
+- **t2** (`877d521`) — `generate_docx_from_html.py`: Pandoc HTML→DOCX wrapper +
+  styles-only `reference.docx` (Calibri/H1 grey/H2 Bitloka-orange/Table Grid). 6 tests; the
+  generator recipe is recorded in the t2 notes (review F2).
+- **t3** (`429972d`) — invoice migrated to `invoice_v1.html.j2` (`has_jinja: true`,
+  `narrative.template_file`); `generate_pdf._narrative_html` branches to the Jinja path
+  (in-process `render_html`, pre-rendered `tables` injected). **Scope-add:** `compute_doc.py`
+  passes `has_jinja` through (else the real pipeline fell back to Markdown). `render_template.py`
+  + `.md.template` kept (deprecated).
+- **t4 core** (`c931465`) — offer-letter bundle (`offer_letter_v1.html.j2` with `{% if %}`
+  conditional sections + `.json` spec), catalogue entry, `OFFER_LETTER_REQUIRED` in
+  `validate_fields.py` (the complete list — replaces `BASE_REQUIRED`), context-schema. 6 tests.
+- **t4b** (`93c400b`) — DOCX pipeline wiring: `compute_doc` zero-source (`nargs *`),
+  `rename_output` `candidate_name` fallback, orchestrator docx-jinja render branch +
+  `client_slug` fallback, `title` added to `OFFER_LETTER_REQUIRED` (t4 F2). `generate_pdf`
+  css_file guard confirmed unnecessary. Script-chain smoke + orchestrator eval.
+- **t5** (`a86d539` + `78fe332` aetheris) — sprint cases `docbuilder_invoice_jinja` (PDF zero
+  `{{` gate) + `docbuilder_offer_letter` (fresh→DOCX); runbook §"Jinja2 templates (m6)".
+  **Fix:** narrowed the docx-jinja branch to `…and no_sheets?` after the live run showed it
+  over-matched the invoice docx (which lost its table). Live PASS: `docbuilder-orch-vb69ng`,
+  `docbuilder-orch-MXl0Ew`.
+- **t6** (this commit) — docs sync + close: capability matrix (+2 scripts → docbuilder 2/24,
+  total 25/62; render_template deprecated, generate_pdf Jinja note), `docs/rig/runbook.md`
+  authoring/Jinja pointer (clears the pre-m6 deferred BL-002 item), `docbuilder/runbook.md`
+  `no_sheets?` note (t5 F3), `## Learning — m6-docbuilder`, this summary, drift.
+
+### Accepted divergences / corrections
+
+- **t4 → t4 core + t4b split** (user-decided): the offer-letter wiring touched tested pipeline
+  code (compute_doc/rename_output/orchestrator) with its own failure modes, so it was reviewed
+  separately from the clean bundle/validation work.
+- **t3 `compute_doc` `has_jinja` passthrough** and **t5 docx-jinja `no_sheets?` narrowing** —
+  both scope-adds surfaced by end-to-end checks (see `## Learning — m6-docbuilder`).
+- **t4b done-check command:** `compute_doc.py` takes a positional template, not `--template`
+  (the orchestrator calls it positionally). The corrected positional form is the canonical one.
+
+### Deferred / open for m7
+
+- Remove `render_template.py` + `.md.template` once the Jinja invoice is production-proven.
+- Offer-letter PDF output (WeasyPrint + Jinja already proven on the invoice).
+- `compute_offer.py` (derive the monthly breakdown from `annual_ctc`); `is_intern` boolean.
+- **(t5 F2)** context builder offer-letter-schema-aware for **optional** field names (the live
+  run named bonus fields off-schema → those sections skipped; required fields unaffected).
+- **(t5 F4)** consider moving the `pdftotext` `{{` assertion into `docbuilder_context` (may make
+  `docbuilder_invoice_jinja` redundant).
+
+### BL-002 (human-owned)
+
+t6 changes `docs/capability-matrix.md`, `docs/rig/runbook.md`, and `CLAUDE.md` — all
+manifest-tracked. They go ahead of the manifest → `project_knowledge` WARNs until re-uploaded;
+then advance `docs/project-knowledge-manifest.md` → 0 FAIL / 0 WARN.

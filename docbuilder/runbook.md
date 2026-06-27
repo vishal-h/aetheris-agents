@@ -102,11 +102,14 @@ Other sprint cases:
   renders through `invoice_v1.html.j2` (`has_jinja: true`). Regression gate for the m6
   migration: asserts the rendered **PDF has zero `{{` artifacts** (`pdftotext`; degrades to
   `[INFO]` if absent).
-- `./scripts/sprint.sh docbuilder_offer_letter` — m6 offer letter, **fresh → DOCX**. Freeform
-  NL request → `context_builder.exs` (validates `OFFER_LETTER_REQUIRED`) → orchestrator's
-  **docx-jinja branch** (`generate_html.py` → `generate_docx_from_html.py`). Asserts
-  `confirmed_context.json` has a non-empty `candidate_name` (offer letters use `candidate_name`,
-  not `client_name`), `renamed.json` contains a `.docx` output, and the run log goes 0 → 1.
+- `./scripts/sprint.sh docbuilder_offer_letter` — m7 offer letter, **→ PDF + DOCX**. Context is
+  supplied **directly** via `DOCBUILDER_CONTEXT` with **display-string currency** (e.g.
+  `₹37,500.00`) so it renders deterministically (the NL/fresh path can't guarantee that — the LLM
+  strips `₹` to ints; m6 t5 F2). The orchestrator renders both formats — PDF via `generate_pdf`
+  (`has_jinja`) + WeasyPrint, DOCX via `generate_html.py` → `generate_docx_from_html.py`. Asserts
+  `renamed.json` contains **both a `.pdf` and a `.docx`** (slug from `candidate_name`,
+  `ajay_rao_offer_letter_*`), the PDF has **zero `{{`** + a `₹` display string, the rendered HTML
+  uses the standalone `<table class="net">` (m7 t1 F1), and the run log goes 0 → 1.
 
 ### Direct run
 
@@ -404,6 +407,11 @@ for new doc types. A bundle opts in with `"has_jinja": true` in its spec JSON.
   `generate_docx.py` path for its DOCX output — standalone `generate_html.py` does NOT inject
   sheet tables (only `generate_pdf`'s narrative-jinja path does), so the orchestrator routes a
   sheeted docx through `generate_docx.py` (the `no_sheets?` guard on the docx-jinja branch).
+
+**Offer letter (m7):** `offer_letter/v1` renders **both PDF and DOCX** (`output_formats:
+["pdf","docx"]`) from one `.html.j2` with inline CSS + the bundle logo; the
+`docbuilder_offer_letter` sprint asserts both a `.pdf` and a `.docx` output (PDF zero-`{{`
+checked via `pdftotext`).
 
 **Deprecation.** `render_template.py` and `.md.template` files are **deprecated** (kept for
 backward compatibility; removal is m7). Use `.html.j2` for new doc types and migrations.

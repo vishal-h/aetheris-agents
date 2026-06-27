@@ -45,6 +45,7 @@ bundle-spec only, plus a sprint-case update to assert PDF + DOCX outputs.
 | D5 | **Currency values are display strings in the sprint context** — e.g. `"₹37,500.00"` not `37500` | Validated-as-money → kept as display string (same design as `amount_due` for invoices). The sprint case must supply them pre-formatted. `validate_fields.py` keeps them as-is. |
 | D6 | **Output format change**: `offer_letter_v1.json` changes from `output_formats: ["docx"]` to `output_formats: ["pdf", "docx"]` | PDF (WeasyPrint) is primary. DOCX (Pandoc) is secondary. No pipeline change required — the orchestrator already has both branches wired from m6. |
 | D7 | **`css_file: null`** in `offer_letter_v1.json` stays null | The `_narrative_html_jinja` path does not read `css_file`. Inline CSS makes this permanently correct — no change needed. |
+| D8 | **`btl_logo-withtext.png` is JPEG content with a `.png` name** | Bundle convention shared with the invoice bundle (copied byte-identical). WeasyPrint sniffs content, not the extension, so the `<img src="btl_logo-withtext.png">` resolves and embeds correctly. Do not "fix" the extension — the name is referenced by the template and the invoice bundle. |
 
 ---
 
@@ -299,7 +300,7 @@ assert spec['output_formats'][0] == 'pdf', 'pdf must be first output_format'
 assert 'docx' in spec['output_formats'], 'docx must still be present'
 assert (bundle / 'btl_logo-withtext.png').exists(), 'logo not found in bundle'
 cat = json.loads(pathlib.Path('docbuilder/data/templates/bitloka/catalogue.json').read_text())
-ol = next(e for e in cat if e['doc_type'] == 'offer_letter')
+ol = next(e for e in cat['doc_types'] if e['doc_type'] == 'offer_letter')
 v1 = next(v for v in ol['variants'] if v['version'] == 'v1')
 assert 'pdf' in v1['output_formats'], 'catalogue variant must reflect pdf'
 print('PASS — output_formats correct, logo present, catalogue in sync')

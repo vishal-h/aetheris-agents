@@ -31,13 +31,21 @@ context → **84K PDF, `%PDF`, zero `{{`, logo embedded** (1 `/Image` XObject); 
 signatory). The logo resolves via `base_url` = bundle dir (D3) — confirmed working now that the
 asset is in the bundle.
 
-## Done-check command correction (carry to t4)
+## Done-check command correction (FIXED in t2 round-1 review — not deferred)
 
-The §t2 done-check's catalogue check iterates `for e in cat` — but `catalogue.json` is
+The §t2 done-check's catalogue check iterated `for e in cat` — but `catalogue.json` is
 `{"tenant_id": ..., "doc_types": [...]}` (a dict), so it must iterate **`cat["doc_types"]`**
-(`e['doc_type']` on the dict's string keys would raise). Ran the corrected form. Same class as
-the t4b `compute_doc --template` positional fix — recorded here; fold the corrected command into
-the milestone doc at t4 if the §t2 block is referenced again.
+(`e['doc_type']` on the dict's string keys would raise). **Per t2 review F1 (§1.1 — the doc is
+the canonical done-check), corrected the §t2 block in `m7-offer-letter.md` now** rather than
+deferring to t4. Same class as the t4b `compute_doc --template` positional fix; a recurrence in
+t3 would be a CLAUDE.md learning-promotion candidate (done-check commands written against an
+assumed structure, not a verified one).
+
+## Logo asset note (FIXED — promoted to the doc, t2 review F2)
+
+The JPEG-content / `.png`-name fact is now recorded as **D8 in the milestone doc's Design
+decisions table** (discoverable), not only here: WeasyPrint sniffs content so the `.png` name is
+fine; do not "fix" the extension (referenced by the template + the invoice bundle).
 
 ## Scope held
 

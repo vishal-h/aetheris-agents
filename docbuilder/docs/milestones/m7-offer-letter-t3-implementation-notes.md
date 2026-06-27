@@ -68,6 +68,20 @@ left to break was the sprint wiring / context blob — and it was.
 ```
 `bash -n scripts/sprint.sh`: clean.
 
+## Round-1 review fixes (claude-ui)
+
+- **F1 [non-blocking] — stale runbook ref.** `docbuilder/runbook.md` §"Jinja2 templates"
+  deprecation note said "removal is m7"; `render_template.py` removal was descoped from m7.
+  Updated to "**removal deferred (post-m7)** — descoped from m7, tracked as an m8 open item".
+- **F2 [question] — does `offer_letter_v1.html` persist? + is the `[INFO]` fallback a silent
+  pass?** Confirmed it persists: the docx-jinja step (`generate_html.py --output`) writes it,
+  `generate_pdf` renders **in-process** (`render_html`, no `.html` file I/O), and
+  `rename_output.py` only renames `KNOWN_EXTS` (`.html` not among them) — so nothing
+  consumes-and-deletes it. **Hardened** the check anyway: a missing intermediate is now a
+  `fail` (not `[INFO]`-skip), since for a pdf+docx `has_jinja` bundle the file MUST exist — the
+  `[INFO]` branch would have been a silent pass on a regression. Re-ran: still PASS (file present,
+  standalone `<table class="net">`).
+
 ## Notes
 
 - `sprint.sh` is committed in the sibling `aetheris` repo (separate from this repo's commit).

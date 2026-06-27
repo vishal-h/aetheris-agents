@@ -414,7 +414,8 @@ for new doc types. A bundle opts in with `"has_jinja": true` in its spec JSON.
 checked via `pdftotext`).
 
 **Deprecation.** `render_template.py` and `.md.template` files are **deprecated** (kept for
-backward compatibility; removal is m7). Use `.html.j2` for new doc types and migrations.
+backward compatibility; **removal deferred (post-m7)** — descoped from m7, tracked as an m8
+open item). Use `.html.j2` for new doc types and migrations.
 
 **Jinja2 authoring primer.**
 - `{{ field | default('') }}` — substitute a field; render empty when absent. (The

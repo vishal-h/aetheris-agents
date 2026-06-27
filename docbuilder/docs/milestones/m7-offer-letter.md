@@ -548,3 +548,64 @@ docbuilder/docs/reviews/m7-offer-letter-t3-review.md
 _Approved & committed (2026-06-27). Q1 resolved to the **orange header / grey body**
 default (D4) — operator approved the doc without overriding; flag at t1 if grey is
 preferred instead. Q2 resolved at t2 (locate the logo; placeholder + note if absent)._
+
+---
+
+## Milestone summary
+
+**Status: complete.** Closed 2026-06-27. The offer letter now renders a faithful,
+branded Bitloka FTE letter — **WeasyPrint PDF (primary) + Pandoc DOCX (secondary)** —
+from a proper HTML + inline-CSS Jinja2 template with the logo, compensation tables,
+and conditional sections. No pipeline-script changes: m7 was template + bundle-spec +
+sprint, on top of the m6 wiring.
+
+### What shipped
+
+- **Pre-t1 (`db3a430`)** — corrected the milestone doc's field schema to the actual
+  `validate_fields.py` `OFFER_LETTER_REQUIRED` (the Phase-1 table was inferred from the
+  reference DOCX without repo state — wrong names). **The methodology working as intended:**
+  the field-name defect was caught and fixed *before any template code was written* (§1.1 —
+  the code is the source of truth).
+- **t1 (`b815d61`, fixes `07aa33c`/`a44d987`)** — `offer_letter_v1.html.j2`: complete HTML +
+  inline CSS (A4 1.3cm, Calibri, logo header, orange `#F5A623` table headers / `#ccc` body,
+  three comp tables, `{% if %}` internship + perf-bonus sections, hardcoded boilerplate +
+  footer). Round-1 fixes: Net-table standalone `class="net"` (CSS cascade), independent bonus
+  conditionals, subject underline, phone guard. Round-2: reviews consolidated to
+  `docbuilder/docs/reviews/`.
+- **t2 (`abb96bb`)** — `output_formats: ["pdf","docx"]` (PDF primary, D6); `btl_logo-withtext.png`
+  copied into the bundle (real asset, no placeholder); catalogue updated. **t2 de-risk pattern:**
+  an end-to-end PDF render in the done-check (84K, logo embedded, zero `{{`) confirmed the
+  template/bundle *before* t3 — so t3's failure surface was narrowed to sprint wiring only…
+- **t3 (`ab929e2`/`702bac5`, fixes `ee4089f`/`b9d9575`)** — `docbuilder_offer_letter` sprint
+  reworked to direct-context (display-string currency, D5) asserting **both `.pdf` and `.docx`**,
+  zero `{{` + `₹` in the PDF, the standalone `<table class="net">`, run log 0→1. Live PASS
+  `docbuilder-orch-iDGIIQ`. …**and the bug was exactly there:** a `CAND=` line read an unexported
+  env var → `set -euo pipefail` killed it before `run_agent` (sprint wiring, not template).
+- **t4 (this commit)** — close: drift 8/0/0, this summary, the `## Learning — m7-docbuilder`
+  command-shape promotion.
+
+### Learning promoted
+
+`## Learning — m7-docbuilder` — write done-check/sprint commands against the **verified**
+runtime shape, not an assumed one (four instances across m5 t1 / m6 t4b / m7 t2 / t3).
+
+### Open items for m8
+
+- **Remove `render_template.py` + `.md.template`** — deprecated since m6, descoped from m7;
+  do it once the Jinja invoice is production-proven (the runbook now says "removal deferred
+  (post-m7)").
+- **Fresh-path coverage for `offer_letter`** — t3 traded the live `context_builder` offer-letter
+  path for deterministic display-string rendering (direct-context). If ongoing live NL-extraction
+  coverage for offer_letter is wanted, add a separate fresh case. (Validation is unit-tested;
+  fresh path proven once at m6 t5.)
+- **Context builder optional-field-name awareness** (carried from m6 t5 F2) — the LLM names
+  optional bonus fields off-schema; make the builder offer-letter-schema-aware or add aliases.
+- **Offer-letter content fidelity** is a human visual check (pixel-13pt Net row, layout) — the
+  sprint asserts structure (zero `{{`, both formats, standalone net table), not pixels.
+
+### BL-002 (human-owned)
+
+t4 changes `CLAUDE.md` only (the new learning) — the sole manifest-tracked file touched in m7
+(`capability-matrix.md`, `docs/rig/runbook.md` unchanged; `docbuilder/runbook.md` is not
+manifest-tracked). Re-upload `aetheris-agents--CLAUDE.md`, then advance
+`docs/project-knowledge-manifest.md` → drift 0 FAIL / 0 WARN.

@@ -97,6 +97,16 @@ Other sprint cases:
   exists + non-empty, the rendered **PDF has no unresolved `{{placeholder}}` strings** (m5 t1
   `_sub_var` fix — degrades to `[INFO]` if `pdftotext` is absent), and the run log has exactly
   1 entry (PHASE D2 appended: 0 → 1).
+- `./scripts/sprint.sh docbuilder_invoice_jinja` — m6 invoice via the **Jinja2** renderer.
+  Same recurring ("same as last month") chain as `docbuilder_context`, but the invoice now
+  renders through `invoice_v1.html.j2` (`has_jinja: true`). Regression gate for the m6
+  migration: asserts the rendered **PDF has zero `{{` artifacts** (`pdftotext`; degrades to
+  `[INFO]` if absent).
+- `./scripts/sprint.sh docbuilder_offer_letter` — m6 offer letter, **fresh → DOCX**. Freeform
+  NL request → `context_builder.exs` (validates `OFFER_LETTER_REQUIRED`) → orchestrator's
+  **docx-jinja branch** (`generate_html.py` → `generate_docx_from_html.py`). Asserts
+  `confirmed_context.json` has a non-empty `candidate_name` (offer letters use `candidate_name`,
+  not `client_name`), `renamed.json` contains a `.docx` output, and the run log goes 0 → 1.
 
 ### Direct run
 
@@ -372,6 +382,42 @@ changes (they are doc-type-agnostic and read the bundle spec). Manual: the bundl
 (step 1), the `validate_fields.py` doc-type branch, and the `render_template.py`
 `OPTIONAL_FIELDS` additions (step 4) — these are the code edits, so a new doc type is a
 small ticket, not a pure docs/config change.
+
+---
+
+## Jinja2 templates (m6)
+
+m6 introduced a Jinja2 HTML renderer that supersedes the Markdown+regex `render_template.py`
+for new doc types. A bundle opts in with `"has_jinja": true` in its spec JSON.
+
+**Pipeline.**
+- **Template:** a `.html.j2` file (Jinja2 HTML), named by `narrative.template_file` in the
+  bundle spec.
+- **HTML / PDF:** `generate_html.py` renders the `.html.j2` + context → HTML;
+  `generate_pdf.py` calls it (the `has_jinja` branch in `_narrative_html`) → WeasyPrint PDF.
+- **DOCX:** `generate_docx_from_html.py` converts that HTML → DOCX via **Pandoc**, branded by
+  `data/templates/bitloka/reference.docx` (Pandoc reads only the reference doc's named styles
+  and ignores its body). The orchestrator emits the two-step chain
+  `generate_html.py → generate_docx_from_html.py` for a `docx` + `has_jinja` bundle.
+
+**Deprecation.** `render_template.py` and `.md.template` files are **deprecated** (kept for
+backward compatibility; removal is m7). Use `.html.j2` for new doc types and migrations.
+
+**Jinja2 authoring primer.**
+- `{{ field | default('') }}` — substitute a field; render empty when absent. (The
+  `jinja2.Undefined` environment already renders an absent `{{ field }}` as `""` and treats it
+  as falsy in `{% if %}`, but `| default('')` documents intent.)
+- `{% if field %}…{% endif %}` — conditional section (e.g. the offer letter's internship /
+  performance-bonus blocks).
+- `{% for item in list %}…{% endfor %}` — loops.
+- **Autoescaping is ON** — all context values are HTML-escaped by default, so `$1,000.00` /
+  `₹9,00,000` render correctly and untrusted text cannot inject markup. Use `{{ field | safe }}`
+  ONLY when the value is trusted HTML you want rendered as-is. **Canonical `| safe` use:**
+  pre-rendered table markup from `render_table`, injected as `{{ tables['Line Items'] | safe }}`.
+- **Subscripting a possibly-absent variable** must be guarded:
+  `{% if tables and 'Line Items' in tables %}{{ tables['Line Items'] | safe }}{% endif %}`.
+  `{{ tables['Line Items'] | default('') }}` does NOT work — subscripting an *undefined*
+  variable raises `UndefinedError` before the `default` filter runs.
 
 ---
 

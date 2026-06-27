@@ -90,6 +90,13 @@ narrative?     = is_map(template["narrative"])
 # generate_html.py -> generate_docx_from_html.py chain (not generate_docx.py).
 has_jinja?       = template["has_jinja"] == true
 narrative_template = (template["narrative"] || %{})["template_file"]
+# The docx-jinja chain (generate_html -> pandoc) is for table-less narrative letters
+# (e.g. offer_letter, sheets: []). A bundle WITH sheets (e.g. the invoice) keeps its
+# structured docx via generate_docx.py — standalone generate_html does not inject the
+# sheet tables (only generate_pdf's narrative-jinja path does), so routing a sheeted
+# docx through jinja would drop its tables. (m6 t5: caught by the invoice docx losing
+# its Line Items table.)
+no_sheets?       = (template["sheets"] || []) == []
 
 # Base-file presence: proxy via the committed base files alongside the eval template.
 xlsx_base? = File.exists?(Path.join(agent_root, "#{eval_template_dir}/#{prefix}.xlsx"))
@@ -175,7 +182,7 @@ render_steps =
                   #{context_json}
         """
 
-      fmt == "docx" and narrative? and has_jinja? ->
+      fmt == "docx" and narrative? and has_jinja? and no_sheets? ->
         # m6 t4b: Jinja2 docx — render HTML (generate_html.py) then convert with
         # Pandoc (generate_docx_from_html.py), two sequential commands.
         html_args =

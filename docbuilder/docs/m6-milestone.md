@@ -602,10 +602,15 @@ grep -c "^## Milestone summary" docbuilder/docs/m6-milestone.md
 >    is a positional arg). The t4b ticket lived outside this doc, so there may be nothing to
 >    fix here; confirm and note it.
 >
-> 6. Run drift_check and include full output in the review packet.
+> 6. **(t5 F3)** Add a one-line note to `docbuilder/runbook.md` §"Jinja2 templates (m6)":
+>    "The docx-jinja chain is for table-less narrative letters (`sheets: []`). A bundle with
+>    computed sheets (e.g. the invoice) uses the structured `generate_docx.py` path for its
+>    DOCX output — standalone `generate_html.py` does not inject sheet tables."
 >
-> **Touches:** `docs/capability-matrix.md`, `docs/rig/runbook.md`,
-> `docbuilder/docs/m6-milestone.md`, `aetheris-agents/CLAUDE.md`,
+> 7. Run drift_check and include full output in the review packet.
+>
+> **Touches:** `docs/capability-matrix.md`, `docs/rig/runbook.md`, `docbuilder/runbook.md`
+> (t5 F3 note), `docbuilder/docs/m6-milestone.md`, `aetheris-agents/CLAUDE.md`,
 > `docbuilder/docs/milestones/m-docbuilder-m6-t6-implementation-notes.md`.
 > Do not generate anything outside Touches.
 >
@@ -630,6 +635,13 @@ grep -c "^## Milestone summary" docbuilder/docs/m6-milestone.md
 - Add PDF output to the offer letter (WeasyPrint + Jinja2 path already proven on the invoice).
 - `compute_offer.py` — derive the monthly breakdown from a single `annual_ctc` input.
 - `is_intern` boolean → automatic internship acknowledgement paragraph.
+- **(t5 F2)** Make the context builder offer-letter-schema-aware for **optional** field names,
+  or add template aliases. The live run extracted the optional bonus fields under off-schema
+  names (`business_performance_bonus` vs `business_performance_bonus_pct`), so the bonus
+  `{% if %}` sections were skipped (graceful — optional fields). Required fields were unaffected.
+- **(t5 F4)** Consider moving the `pdftotext` zero-`{{` assertion into `docbuilder_context`
+  (it now exercises the same Jinja2 invoice path); if it becomes the primary regression case,
+  `docbuilder_invoice_jinja` may be redundant. Low priority.
 
 ---
 

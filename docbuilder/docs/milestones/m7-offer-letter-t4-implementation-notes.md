@@ -34,10 +34,12 @@ milestone summary. Docs-only.
   ahead of the manifest** (the new learning). Expected, BL-002, human-owned. No FAIL.
 - Anchored `^## Milestone summary` in `m7-offer-letter.md` = **1**.
 - `## Learning — m7-docbuilder` present in `CLAUDE.md`.
-- The milestone doc's t4 done-check has a `docbuilder/docs/runbook.md` manifest-grep snippet —
-  that path is wrong (the runbook is `docbuilder/runbook.md`) AND `docbuilder/runbook.md` is **not
-  manifest-tracked** anyway, so the check is moot. The only manifest-tracked file changed in m7
-  is `CLAUDE.md`.
+- The milestone doc's t4 done-check had a `docbuilder/docs/runbook.md` manifest-grep snippet —
+  wrong path (the runbook is `docbuilder/runbook.md`) AND not manifest-tracked anyway.
+  **Corrected in the t4 round-1 review (F1):** replaced the snippet (in both the §t4 Done-check
+  block and the prompt step 4) with a `git diff --name-only eeb37a1 HEAD -- <tracked files>`
+  check that confirms `CLAUDE.md` is the only manifest-tracked change — same §1.1 doc-hygiene
+  fix as the t3 `removal is m7` correction.
 
 ## BL-002 (human-owned)
 

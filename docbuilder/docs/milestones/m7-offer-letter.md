@@ -463,22 +463,13 @@ python3 scripts/drift_check.py
 grep -c '## Milestone summary' docbuilder/docs/milestones/m7-offer-letter.md
 # Expected: 1
 
-# Confirm manifest was updated (no stale hashes for changed files)
-python3 -c "
-import pathlib, subprocess, re
-manifest = pathlib.Path('docs/project-knowledge-manifest.md').read_text()
-# Basic parse: check the runbook row's commit hash matches HEAD for that file
-result = subprocess.run(
-    ['git', 'log', '-1', '--format=%h', '--', 'docbuilder/docs/runbook.md'],
-    capture_output=True, text=True)
-head_hash = result.stdout.strip()
-if head_hash and head_hash in manifest:
-    print(f'PASS — runbook manifest hash {head_hash} matches HEAD')
-elif not head_hash:
-    print('INFO — runbook not in git (local only); skip manifest check')
-else:
-    print(f'WARN — runbook manifest may be stale (HEAD={head_hash}); verify manually')
-"
+# BL-002: only manifest-TRACKED files that changed in m7 need a manifest advance.
+# m7 changed exactly one tracked file — CLAUDE.md (the new learning). The docbuilder
+# runbook lives at docbuilder/runbook.md (NOT docbuilder/docs/runbook.md) and is NOT in
+# the manifest, so it needs no row. Confirm CLAUDE.md is the only tracked change:
+git diff --name-only eeb37a1 HEAD -- CLAUDE.md docs/capability-matrix.md docs/rig/runbook.md
+# Expected: CLAUDE.md  (and only CLAUDE.md)
+# → re-upload aetheris-agents--CLAUDE.md, then advance its manifest row to HEAD (human-owned).
 ```
 
 **Claude-code prompt.**
@@ -501,11 +492,11 @@ else:
 >    milestone summaries (what shipped, what was deferred with → ref, surprises,
 >    open items for m8). Source is the three implementation notes files, not the diffs.
 >
-> 4. Update `docs/project-knowledge-manifest.md`: for every file in the manifest
->    whose content changed in m7, update the commit hash to HEAD. Run
->    `git log -1 --format=%h -- <path>` to get the hash. The offer-letter template
->    is NOT in the manifest (it is not a project-knowledge export file). Check
->    `docbuilder/docs/runbook.md` — if t3 touched it, bump its row.
+> 4. BL-002 (human-owned): only manifest-TRACKED files that changed in m7 need a row
+>    advance. m7 changed exactly one — `CLAUDE.md`. The offer-letter template/bundle and
+>    `docbuilder/runbook.md` are NOT manifest-tracked (note: the runbook is
+>    `docbuilder/runbook.md`, not `docbuilder/docs/runbook.md`). After the human re-uploads
+>    `aetheris-agents--CLAUDE.md`, advance its manifest row to HEAD. Do NOT pre-advance.
 >
 > Run the done-check and include its full output at the top of the review packet.
 > Write implementation notes to

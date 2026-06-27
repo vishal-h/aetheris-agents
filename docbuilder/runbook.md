@@ -433,6 +433,46 @@ open item). Use `.html.j2` for new doc types and migrations.
   `{{ tables['Line Items'] | default('') }}` does NOT work — subscripting an *undefined*
   variable raises `UndefinedError` before the `default` filter runs.
 
+### HTML+CSS templates (m7)
+
+The offer letter (`offer_letter_v1.html.j2`) uses **inline CSS** in the template (no separate
+`.css` file) for full WeasyPrint layout control. Notes for editing it (or any future
+inline-CSS doc):
+
+**Adjusting layout is an out-of-band CSS fixup, not a milestone ticket.** Tweaking a template's
+CSS (spacing, font sizes, page fit, footer position) is a `.html.j2`-only change you iterate
+visually: edit → `generate_pdf` → eyeball the PDF → repeat, then commit the template alone (no
+sprint-case change, no review triad). Reserve a full milestone ticket for *structural* changes
+(new fields, new sections, a new doc type). The CSS polish that produced the current offer
+letter (commit `9b532e3`) was done this way. (A `/goal` with the visual acceptance criteria is a
+good harness for the iterate-until-it-renders loop, but is optional.)
+
+**WeasyPrint CSS gotchas (hard-won in m7):**
+- **Footer anchored to the page bottom** → a `@page { @bottom-center { content: "…" } }`
+  *running margin box*, NOT an inline `<div>` at the end of `<body>` (which just floats after
+  the content). Widen the bottom page margin (e.g. `margin: 1.3cm 1.3cm 1.8cm 1.3cm`) to give
+  the box room. Repeats on every page automatically.
+- **Bullet markers detaching** (the `•` rendering as a separate block) → set
+  `list-style-position: inside` on the `<li>` so the marker stays in the same box as its text.
+- **Page-break control** → `break-inside: avoid` on tables / lists / the signature block (keep
+  each whole), `break-after: avoid` on section headings (keep a heading with its content), and
+  `orphans: 2; widows: 2` on body paragraphs. Verify the result with `pdfinfo` (page count) and
+  per-page `pdftotext -f N -l N` (heading + its content on the same page).
+- **Use `pt`, not `px`, for print sizing.** Body text 9–10pt; the offer-letter tables run
+  ~9.5–11pt (smaller than the m6 reference after the m7 CSS pass, to fit 2 pages).
+
+**Logo asset convention (D8):** `btl_logo-withtext.png` in the bundle is **JPEG content with a
+`.png` name** (shared with the invoice bundle; copied byte-identical). WeasyPrint sniffs content,
+not the extension, so `<img src="btl_logo-withtext.png">` resolves. **Do not "fix" the
+extension** — the name is referenced by the template and the invoice bundle. The `<img>` resolves
+relative to `base_url` = the bundle dir (set by `generate_pdf`).
+
+**Currency must be a pre-formatted display string (D5).** Jinja2 narrative templates substitute
+context values verbatim — pass money as `"₹37,500.00"`, NOT the int `37500` (`validate_fields`
+keeps money fields as display strings, same as `amount_due`). The fresh/NL path can't guarantee
+this (the LLM strips `₹` to ints — m6 t5 F2), which is why the `docbuilder_offer_letter` sprint
+supplies context directly via `DOCBUILDER_CONTEXT`.
+
 ---
 
 ## Running tests

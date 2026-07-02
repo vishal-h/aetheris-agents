@@ -475,6 +475,44 @@ supplies context directly via `DOCBUILDER_CONTEXT`.
 
 ---
 
+## Tenant data layer
+
+Structured reference data (employee records, salary structures) lives **outside** the
+docbuilder use case, at the platform level, under a top-level `tenants/` directory:
+
+```
+tenants/{tenant_id}/data/
+  .gitignore            # ignores the real *.jsonl / *.csv at this dir root
+  employees.jsonl       # REAL data — gitignored, operator-managed
+  salary_structures.csv # REAL data — gitignored, operator-managed
+  sample/               # anonymised fixtures — COMMITTED (used by sprint cases)
+    employees_sample.jsonl
+    salary_structures_sample.csv
+  views/                # committed DuckDB view .sql files (populated in later tickets)
+  data_manifest.json    # committed view registry
+```
+
+**Canonical location.** `tenants/{tenant_id}/data/` — not under `docbuilder/data/templates/`.
+Tenant data is shared across agents (a platform concern), not a docbuilder artifact.
+
+**Gitignore convention (D7).** The real data files (`employees.jsonl`, `salary_structures.csv`)
+are **gitignored** — they hold real employee PII. Only the anonymised `sample/` fixtures are
+committed (the `.gitignore` is anchored with a leading `/` so it ignores the files at the `data/`
+root but NOT the deeper `sample/` copies). Salary amounts in the CSV are stored **numeric**;
+currency display formatting (`₹…`) is the SQL view's job, never the CSV's.
+
+**Adding a real data file.** Drop `employees.jsonl` and `salary_structures.csv` into
+`tenants/{tenant_id}/data/` (same schema as the `sample/` fixtures). They are gitignored, so they
+stay local. The query layer reads whichever files are present in that dir.
+
+**Drive sync (deferred — D-Drive / BL-TDL-005).** The intended production path is a Drive agent
+that syncs the tenant's files into `tenants/{tenant_id}/data/`. That is a clean follow-on: the
+local cache is the abstraction boundary, so the query helper and views are unchanged whether the
+files arrived via Drive agent, manual copy, or a future sync. **This milestone uses local files
+only.**
+
+---
+
 ## Running tests
 
 ```bash

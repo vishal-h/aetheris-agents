@@ -1,0 +1,12 @@
+employee_id,component,amount
+EMP001,annual_ctc,900000
+EMP001,basic_monthly,37500
+EMP001,hra_monthly,15000
+EMP001,lta_monthly,3000
+EMP001,wfh_allowance_monthly,2500
+EMP001,flexi_pay_monthly,7800
+EMP001,total_earnings_monthly,65800
+EMP001,professional_tax_monthly,200
+EMP001,tds_monthly,8300
+EMP001,total_deductions_monthly,8500
+EMP001,net_take_home_monthly,67300

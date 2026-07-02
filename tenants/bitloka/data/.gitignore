@@ -1,0 +1,6 @@
+# Tenant data layer — real employee/salary data is NEVER committed.
+# Operator-managed (dropped in manually today; Drive-agent-synced in future — BL-TDL-005).
+# Anchored to THIS directory (leading /) so the committed anonymised fixtures under
+# sample/ are NOT ignored — only the real files at tenants/bitloka/data/ root.
+/*.jsonl
+/*.csv

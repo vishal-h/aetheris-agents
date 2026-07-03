@@ -53,6 +53,14 @@ fixed-string, engine-independent) — passes. But the *authoritative* check for 
 `git check-ignore` (behaviour, not file contents), which I used above. Recorded for t5's docs pass
 if the §t1 block is referenced again; it's another instance for the command-shape learning.
 
+## Session note (t1 review F2) — model
+
+This milestone runs on **Claude Opus 4.8 (1M context)** — used for the long-running session with
+full repo state in context. That is why the commit `Co-Authored-By:` trailer reads
+`Claude Opus 4.8 (1M context)` (the harness dictates this trailer for the running model), whereas
+the m1–m7 commits used `Claude Sonnet 4.6` (those were a Sonnet session). Not a mistake — the
+trailer correctly reflects the active model; recorded here so t2 onward knows the context.
+
 ## Scope held
 
 Only the `tenants/bitloka/data/` assets + the runbook section. No `.sql` views, no

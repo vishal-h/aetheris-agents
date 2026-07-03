@@ -208,11 +208,17 @@ for r in rows:
 print(f'PASS — {len(rows)} salary row(s), amount column is numeric')
 "
 
-# 3. .gitignore correctly excludes real data files
-grep -q '*.jsonl' tenants/bitloka/data/.gitignore && \
-grep -q '*.csv'   tenants/bitloka/data/.gitignore && \
+# 3. .gitignore correctly excludes real data files.
+# Use grep -F (fixed-string): a bare `grep '*.jsonl'` treats `*` as a regex quantifier and
+# ERRORS under some engines (e.g. ugrep), where a leading `*` is an empty sub-expression.
+grep -qF '*.jsonl' tenants/bitloka/data/.gitignore && \
+grep -qF '*.csv'   tenants/bitloka/data/.gitignore && \
 echo 'PASS — .gitignore excludes *.jsonl and *.csv' || \
 echo 'FAIL — .gitignore missing entries'
+# Authoritative check (behaviour, not file contents): real files ignored, sample/ tracked.
+git check-ignore -q tenants/bitloka/data/employees.jsonl && \
+! git check-ignore -q tenants/bitloka/data/sample/employees_sample.jsonl && \
+echo 'PASS — git check-ignore: real ignored, sample tracked'
 
 # 4. Runbook section exists
 grep -q 'Tenant data layer' docbuilder/runbook.md && \

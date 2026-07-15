@@ -516,12 +516,12 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 
 | Event type | Payload fields (key ones) |
 |-----------|--------------------------|
-| `prompt_built` | `system_prompt`, `user_prompt`, `context_hash`, `message_count` |
+| `prompt_built` | `system_prompt`, `user_prompt`, `context_hash`, `message_count`, `tool_schema` |
 | `llm_called` | `model` |
-| `llm_responded` | `response_type`, `output_tokens`, `latency_ms`, `resolved_model`, `cost_usd`, `input_tokens`, `raw_response`, `system_fingerprint` |
+| `llm_responded` | `response_type`, `output_tokens`, `latency_ms`, `resolved_model`, `cost_usd`, `input_tokens`, `raw_response`, `system_fingerprint`, `tool_name`, `tool_input` |
 | `tool_called` | `tool_name`, `tool_input`, `source`, `server_id` |
-| `tool_result` | `tool_name`, `output`, `exit_code`, `fs_hash`, `duration_ms` |
-| `error` | `reason` |
+| `tool_result` | `tool_name`, `output`, `exit_code`, `fs_hash`, `duration_ms`, `result`, `is_error` |
+| `error` | `reason`, `detail` |
 | `run_complete` | `reason` — `agent_finished` \| `max_steps_reached` \| `error` |
 | `step_complete` | `step` |
 | `agent_message_sent` | `message_id`, `to_run_id`, `content` |
@@ -541,6 +541,22 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 **Note on `cost_usd`:** `cost_usd` is computed by `execution/pricing.ex` and
 emitted in `llm_responded` payloads. For unknown models, `cost_usd` is `null`.
 `usage.rs` reads `cost_usd` from `llm_responded` events via `json_extract`.
+
+**Legacy payload fields — not promoted (BL-015, #66).** Three field names
+observed in the dev DB are **not** listed above because they are superseded
+legacy emissions, not canonical fields. Promoting them would legitimize drift.
+They remain as `payload_fields` INFOs in `drift_check` until the pre-2026-05-15
+rows age out of the DB (DB is read-only to this ticket; not a BL-003 orphan):
+
+- `llm_responded.content` / `llm_responded.type` — the pre-2026-05-15 emission
+  shape (56 events, all 2026-05-12). Superseded by `raw_response` /
+  `response_type` when the current `execution/loop.ex:241-284` emission landed
+  2026-05-15. Canonical readers use `raw_response` / `response_type`.
+- `prompt_built.key` — test-fixture payload `{"key":"value"}` (5 events, all
+  2026-05-12); no emission source in `loop.ex`. Not a real field.
+
+Stopping the legacy emission is already done in harness source; clearing the
+residual INFOs needs a dev-DB reset, tracked separately from this doc ticket.
 
 ---
 

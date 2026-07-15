@@ -63,6 +63,19 @@ still zero rows, its trigger hasn't fired; BL-015 does not subsume it.
 / anomaly triaged); drift_check shows zero `payload_fields` INFOs, 0 FAIL,
 0 WARN.
 
+**Status:** Done 2026-07-15. 6 canonical fields promoted to specs §6
+(`prompt_built.tool_schema`; `llm_responded.tool_name`/`tool_input`;
+`tool_result.result`/`is_error`; `error.detail`) — each confirmed against
+current harness emission (`loop.ex:170/244/245/352/355`,
+`agent/server.ex:529`). 3 fields errata-noted in specs §6, **not**
+promoted: `prompt_built.key` (test-fixture `{"key":"value"}`) and
+`llm_responded.content`/`type` (pre-2026-05-15 legacy emission, superseded
+by `raw_response`/`response_type`) — all confined to 2026-05-12 rows.
+Residual after this ticket: 3 `payload_fields` INFOs (legacy DB rows;
+clear on dev-DB reset, DB read-only here) and 2 `project_knowledge` WARN
+(manifest staleness from the BL-001 + BL-015 doc commits — BL-002 owns the
+refresh and the clean re-verify, per BL-001 review finding 2).
+
 ---
 
 ### BL-002 — Refresh Claude project knowledge files (all three scopes) (#43)

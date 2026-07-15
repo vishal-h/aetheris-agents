@@ -330,6 +330,30 @@ exists for the general case; this ticket just records the trigger.
 
 ---
 
+### BL-017 — Resolve `react-hooks/set-state-in-effect` lint failures (#68)
+**Size:** S–M · **Priority:** after BL-016 (standing-red gate)
+
+`bun run lint` (`eslint .`) is red on `main`: **31** `react-hooks/set-state-in-effect`
+errors across ~15 files. Origin is a bump of `eslint-plugin-react-hooks` that
+promoted the rule to error — undated, because the gate had not been run
+whole-project until BL-005 ran it off-territory (per the gate-boundary rule now
+in `CLAUDE.md`). The flagged pattern is the idiomatic `if (!id) { setData(null) }`
+reset at the top of the data hooks (`useHarness`, `useTrajectory`, `useRunDiff`,
+the `use*` corpus/provenance hooks) plus a few views (`OrchestratorView:140`,
+`PlaygroundView:295/325/333/341`). No BL-005 file is among them.
+
+**Decide first, before touching any site:** does this codebase *adopt* the rule
+(refactor all ~15 sites so effects don't call `setState` synchronously — the
+lint-clean-per-file path) or *reject* it (disable the rule in `eslint.config.js`
+with a comment stating why the guard pattern is acceptable here)? Pin the
+decision in this ticket; do **not** let it be settled implicitly by silencing
+errors file-by-file.
+
+**Done when:** `bun run lint` exits 0, and the adopt-vs-reject decision is
+recorded (in the rule-config comment if rejected, or in the notes if adopted).
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)

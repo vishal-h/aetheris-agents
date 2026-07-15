@@ -222,6 +222,16 @@ failure) are **not** exempt and still fail under `--strict`.
 it was verified against; claude-code treats divergence between ticket text and repo reality
 as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002.
 
+**Every existing gate runs at ticket boundaries, even off-territory** (`mix test`,
+`tsc -b`/`bun run build`, `bun run lint`, sprint, `drift_check --strict`). A red gate gets a
+tracked ticket the day it's found — never carried silently. Gates that only run when a ticket
+happens to touch their territory rot invisibly, and each rot normalizes the next: `mix test`
+was red before BL-003, `tsc -b`/`bun run build` red for three weeks (p9-t4), `bun run lint` red
+since an undated `eslint-plugin-react-hooks` bump — all three surfaced only because a later
+ticket ran the gate off-territory. A known-red gate that already has a tracked ticket is
+**named in the packet with its ticket ref, not re-triaged** — the rule prevents silent carry,
+not tracked carry. Source: BL-016, BL-005 (×2).
+
 **Optional payload fields:** suffix with `?` in the §6 table cell (e.g. `` `stop_reason?` ``) to allow the field to be absent from current DB events without triggering a FAIL. The drift check emits INFO instead. Add the `?` suffix when the field is valid but not yet emitted by the harness version in use; the INFO firing is the trigger to drop the `?` and promote the field to required.
 
 **Tests:** `python3 -m pytest tests/test_drift_check.py -v`

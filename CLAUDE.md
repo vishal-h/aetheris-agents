@@ -14,6 +14,12 @@ The two repos work together:
 
 All sprint and agent commands are run from `~/sandbox/elixirws/aetheris/`, not from this repo.
 
+**Repos rule (claude-code sessions).** Sessions run with this repo
+(`aetheris-agents/`) as the working directory; the harness is the sibling
+`../aetheris/`. Paths in tickets and docs are relative to `aetheris-agents/`
+unless prefixed with `../aetheris/`. Edits default to this repo; touching the
+harness is explicit and called out in the ticket's `Touches` list.
+
 ---
 
 ## Commands

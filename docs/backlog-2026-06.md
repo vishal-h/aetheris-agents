@@ -76,6 +76,15 @@ clear on dev-DB reset, DB read-only here) and 2 `project_knowledge` WARN
 (manifest staleness from the BL-001 + BL-015 doc commits — BL-002 owns the
 refresh and the clean re-verify, per BL-001 review finding 2).
 
+**Tracked follow-up (event-triggered, not scheduled — BL-006 pattern):** a
+dev-DB reset clears the three BL-015 documented-legacy payload INFOs
+(`prompt_built.key`, `llm_responded.content`/`type`). **Gated on BL-003
+completion** — the pre-2026-05-15 legacy rows share the May window with
+BL-003's orphaned-`running` fixtures, so a reset before BL-003 consumes
+them would destroy fixtures. (Note surfaced during BL-015: the DB now holds
+76 `running` rows, not five — BL-003's "five orphaned rows" count is itself
+stale and wants re-checking when BL-003 is scoped.)
+
 ---
 
 ### BL-002 — Refresh Claude project knowledge files (all three scopes) (#43)
@@ -121,6 +130,15 @@ hashes against `git log -1 --format=%h -- <file>`.
 
 **Done when:** project knowledge matches HEAD for all three scopes and
 the manifest exists in-repo.
+
+**Status:** Done 2026-07-15. Repos rule added to root `CLAUDE.md`; BL-001
+/ BL-002 / BL-015 marked complete here and on the roadmap Active line;
+`../aetheris/CLAUDE.md` confirmed present (27 KB) and in the export set.
+Manifest regenerated as the final commit (hashes at HEAD after the doc
+edits): `rig--specs.md`, `rig--current-state-2026-06.md`,
+`backlog-2026-06.md`, `aetheris-agents--CLAUDE.md`. drift_check re-verify
+at HEAD: 8 PASS / 0 FAIL / 0 WARN / 7 INFO. The Claude.ai upload itself is
+the human step; export file list + hashes delivered in the packet.
 
 ---
 

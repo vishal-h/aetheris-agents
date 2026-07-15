@@ -163,6 +163,13 @@ Census (reference fixture — re-run at execution time, see done-when):
 | `error` | 4 | errored (status lagged) | reconcile → terminal, `finished_at`=event ts |
 | `agent_waiting` | 0 | none paused currently | synthetic fixture required |
 
+- **Pre-flight — this is the project's first ticket that WRITES to the DB
+  (76 status mutations, a new event type, `finished_at` stamps).** Before
+  the first sweep run, copy `priv/aetheris.db` aside (plain file copy; the
+  harness must not be running during the sweep). The census is the
+  acceptance fixture; the backup is the undo button if the sweep mishandles
+  real rows on first contact. Record the backup path in the implementation
+  notes; delete it after the done-check passes.
 - On harness application start (and/or a `mix aetheris sweep` task), find
   runs where `status='running'` and the owning process is provably gone
   (no live GenServer for the run_id; last event older than a **named config

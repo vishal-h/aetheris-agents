@@ -248,7 +248,7 @@ landed in the run list; token totals did not.
 
 ---
 
-### BL-016 — Fix standing `payslip_orchestrator` test failure (#—, to be filed)
+### BL-016 — Fix standing `payslip_orchestrator` test failure (#67)
 **Size:** S · **Priority:** medium
 
 `test/aetheris/agents_test.exs:22` ("payslip_orchestrator.exs evaluates to a

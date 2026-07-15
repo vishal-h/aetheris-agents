@@ -39,6 +39,32 @@ per review finding 1 (`docs/reviews/bl-001-review.md`).
 
 ---
 
+### BL-015 — Promote nine observed payload_fields to specs §6 (#66)
+**Size:** S · **Priority:** now (before BL-002)
+
+> Numbered BL-015, not BL-010 as the review draft suggested — BL-010
+> through BL-014 are existing boxy-pipeline tickets. GitHub issue #66.
+
+The 2026-07-15 baseline (`d24e482`) reports nine payload fields observed
+in DB events but absent from specs §6: `prompt_built.key`,
+`prompt_built.tool_schema`, `llm_responded.content`,
+`llm_responded.tool_input`, `llm_responded.tool_name`,
+`llm_responded.type`, `tool_result.is_error`, `tool_result.result`,
+`error.detail`. Per the BL-006 logic, observed fields get promoted — but
+the §8 errata's `llm_called`/`llm_responded` divergence means each field
+needs a canonical-name confirm before promotion, not a mechanical copy.
+
+Split from BL-001 review finding 3. Ordered before BL-002 so BL-002's
+single export catches the promoted fields, the corrected backlog, and the
+new baseline in one manifest refresh. `stop_reason` stays with BL-006 —
+still zero rows, its trigger hasn't fired; BL-015 does not subsume it.
+
+**Done when:** each field has a disposition (promoted to §6 / errata note
+/ anomaly triaged); drift_check shows zero `payload_fields` INFOs, 0 FAIL,
+0 WARN.
+
+---
+
 ### BL-002 — Refresh Claude project knowledge files (all three scopes) (#43)
 **Size:** S · **Priority:** now
 
@@ -465,7 +491,7 @@ multi-line street/city/state/zip.
 
 | Order | Ticket | Why first |
 |-------|--------|-----------|
-| 1 | BL-001, BL-002 | Minutes each; locks in everything just built |
+| 1 | BL-001, BL-015, BL-002 | Minutes each; locks in everything just built. BL-015 before BL-002 so one export catches the §6 promotions |
 | 2 | BL-010 | First real run revealed output defects; fix before next client demo |
 | 3 | BL-003 | The five orphaned rows are sitting test fixtures; pairs with shipped stalled? marker |
 | 4 | BL-005 | Small, immediate daily-use value |

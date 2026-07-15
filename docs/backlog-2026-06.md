@@ -22,13 +22,20 @@ Every drift_check output recorded so far predates at least one parser fix
 There is no recorded genuinely-clean run.
 
 - Run `python3 scripts/drift_check.py` with `AETHERIS_DB_PATH` set.
-- Expected: 7 PASS, 0 FAIL, 0 WARN; INFOs only for event types with zero
-  DB rows (`observation`, `run_cancelled`, …). The phantom
-  `runs.finished_at` and `llm_responded.stop_reason` INFOs must be gone.
+- Expected (as observed 2026-07-15): 8 PASS, 0 FAIL, 0 WARN. The 8th PASS
+  is the `project_knowledge` check. INFOs fall in two benign categories:
+  `env_vars` (agent-side vars in specs §1 not read by Rig) and
+  `payload_fields` (event payload fields observed in the DB but not yet
+  promoted to specs §6). The phantom `runs.finished_at` and
+  `llm_responded.stop_reason` INFOs must be gone.
 - Append the summary line to `docs/rig/current-state-2026-06.md` as
-  "Drift baseline 2026-06-XX: …".
+  "Drift baseline 2026-07-XX: …".
 
 **Done when:** baseline recorded; any unexpected finding triaged.
+
+**Status:** Done 2026-07-15 — baseline in `current-state-2026-06.md`,
+commit `d24e482`. Expectation lines above corrected to observed reality
+per review finding 1 (`docs/reviews/bl-001-review.md`).
 
 ---
 

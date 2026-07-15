@@ -102,6 +102,69 @@ to reset between validation runs.
 
 ---
 
+### uc-ingestion
+
+Universal inbound document pipeline: ingest → extract → validate →
+generate → deliver. Extends Docbuilder (outbound-only today) with an
+inbound leg. Full design:
+`../aetheris/docs/aetheris/research/universal-ingestion-extraction-pipeline-2026-06.md`.
+
+Core abstraction: the **artefact manifest** — every source adapter
+(pdf, docx, xlsx, email, slack, …) produces the same typed JSON shape;
+the extraction agent consumes it without knowing the source format.
+Every element carries a confidence score; low-confidence extractions
+block generation pending human review (single-shot model, same pattern
+as Docbuilder m4).
+
+Phases — complete in order:
+
+1. **Single-source, text + tables** — `pdf_extract.py`, `docx_extract.py`,
+   `xlsx_extract.py`; `ingestion_agent.exs` (file-type router),
+   `extraction_agent.exs` (hardcoded schema), `validation_agent.exs`;
+   wire to existing `docbuilder_orchestrator.exs` for generation/delivery.
+   Proves the manifest contract.
+2. **Second source type** — `email_extract.py` or `slack_extract.py`
+   through the unchanged pipeline. Proves format-agnosticism.
+3. **Schema registry** — schemas move from hardcoded prompt to a
+   `schemas/` directory; extraction agent takes `--schema`; add a second
+   schema. (First consumer of the harness semantic-facts table if that
+   lands — see Cross-repo dependencies.)
+4. **Vision sub-agents** — rasterise image elements; `vision_agent.exs`
+   spawned per image element, results merged into extracted JSON.
+5. **Multi-source synthesis** — one concrete scenario only (e.g.
+   contract DOCX + Slack approval thread → procurement record). No
+   generalisation until this works.
+
+Reused unchanged from Docbuilder: all generation scripts
+(`generate_docx.py`, `generate_pdf.py`, …), `rename_output.py`,
+`upload_output.py`, `email_send_review.py`, `validate_fields.py`,
+`_drive.py`.
+
+**Depends on:** Docbuilder (complete); ETXTBSY answer from the harness
+(see Cross-repo dependencies) before the orchestrator is designed.
+
+**Blocks:** nothing.
+
+**Status:** Design complete (research brief). Phase 1 ready to scope
+once the ETXTBSY question is answered.
+
+---
+
+## Cross-repo dependencies
+
+Items where the harness repo is upstream or downstream. Keep in sync with
+the matching section in `../aetheris/ROADMAP.md`.
+
+| Item | Agents side | Harness side |
+|---|---|---|
+| ETXTBSY / `spawn_agent` worker sharing | uc-ingestion orchestrator design blocked on the answer (proper `.exs` vs Python chain, as in `chain_docbuilder.py`) | Harness answers: does a spawned sub-agent re-copy the worker binary? |
+| `caused_by` event field | Rig causal-tree view; Provenance audit lineage ("which passage caused this classification?") | Harness Horizon 0 ticket |
+| `observation` convention | Lands in `docs/agent-creation-guide.md`: emit a structured observation at each significant decision point | Motivated by coming-loop brief |
+| BL-008 skills | Agent files gain `skill_injected` visibility; sprint runs leave skill rows; possible convention edits proposed by extraction | Harness Horizon 2 milestone |
+| Semantic facts table | uc-ingestion phase 3 schema registry is the first consumer | Optional harness Horizon 3 pre-work |
+
+---
+
 ## Pipeline view
 
 ### Payslip pipeline (monthly, automated)
@@ -186,3 +249,5 @@ sprint.sh passes before merge.
 - TAP v0 design: docs/uc-api-agent-design.md
 - Aetheris harness: ../aetheris
 - Implementation notes: `{use_case}/docs/t*-implementation-notes.md`
+- Harness roadmap: ../aetheris/ROADMAP.md
+- Research briefs: ../aetheris/docs/aetheris/research/

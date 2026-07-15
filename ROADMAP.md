@@ -162,6 +162,8 @@ the matching section in `../aetheris/ROADMAP.md`.
 | `observation` convention | Lands in `docs/agent-creation-guide.md`: emit a structured observation at each significant decision point | Motivated by coming-loop brief |
 | BL-008 skills | Agent files gain `skill_injected` visibility; sprint runs leave skill rows; possible convention edits proposed by extraction | Harness Horizon 2 milestone |
 | Semantic facts table | uc-ingestion phase 3 schema registry is the first consumer | Optional harness Horizon 3 pre-work |
+| E5 — IP sweep | Owns client-specific material by design; confirm nothing needs relocating *into* it from harness | Sweep harness repo + research briefs + eval fixtures |
+| Pilot delivery (Tier A) | Pilot agents/scripts authored per client engagement; live in a per-client directory or private branch, never in the shared use-case tree | No harness work required |
 
 ---
 

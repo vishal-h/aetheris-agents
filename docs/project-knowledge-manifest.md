@@ -16,24 +16,24 @@ Refresh trigger: milestone end, or before any handoff session.
 
 | export name | repo path | repo | commit | last changed |
 |-------------|-----------|------|--------|--------------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `6127ebc` | 2026-06-24 |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `a56a442` | 2026-07-15 |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
-| `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `4afb21f` | 2026-06-13 |
+| `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `d24e482` | 2026-07-15 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `728d124` | 2026-06-27 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `fb86231` | 2026-07-15 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `201dcc2` | 2026-06-14 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fb86231` | 2026-07-15 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `cdb6a21` | 2026-06-13 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `e373092` | 2026-07-15 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-06-27 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-15 |
 
 ---
 
-Exported: 2026-06-27 at aetheris-agents `728d124` / aetheris `1a8eb08`.
+Exported: 2026-07-15 at aetheris-agents `fb86231` / aetheris `3fe4598` (BL-002 #43).

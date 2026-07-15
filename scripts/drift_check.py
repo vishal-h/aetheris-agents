@@ -18,6 +18,12 @@ Checks:
   payload_fields   — live DB payload sampling vs specs.md §6 (skipped if DB absent)
   milestone_status    — docs/rig/milestones/*/README.md has Status: line
   project_knowledge   — project-knowledge-manifest.md commit hashes vs git HEAD (WARN if stale)
+
+--strict promotes WARN to FAIL, with one exemption: project_knowledge
+manifest-STALENESS WARNs stay WARN and do not affect the exit code (mid-cycle
+staleness is expected truth between export boundaries). Structural manifest
+problems (missing file, unknown repo, git failure) are NOT exempt and still FAIL.
+So under --strict the invariant is "zero UNEXPLAINED WARNs", not "zero WARNs".
 """
 
 import argparse
@@ -64,8 +70,11 @@ _COLORS = {
 _RESET = "\033[0m"
 
 
-def record(level: str, check: str, message: str) -> None:
-    if level == "WARN" and _strict:
+def record(level: str, check: str, message: str, strict_exempt: bool = False) -> None:
+    # --strict promotes WARN to FAIL, EXCEPT for strict_exempt WARNs (currently
+    # only project_knowledge manifest-staleness). Mid-cycle manifest staleness is
+    # expected truth between export boundaries, not a regression — see BL-009.
+    if level == "WARN" and _strict and not strict_exempt:
         level = "FAIL"
     FINDINGS.append((level, check, message))
     color = _COLORS.get(level, "")
@@ -73,7 +82,7 @@ def record(level: str, check: str, message: str) -> None:
 
 
 def _fail(check, msg): record("FAIL", check, msg)
-def _warn(check, msg): record("WARN", check, msg)
+def _warn(check, msg, strict_exempt=False): record("WARN", check, msg, strict_exempt)
 def _info(check, msg): record("INFO", check, msg)
 def _ok(check, msg):   record("PASS", check, msg)
 
@@ -617,7 +626,14 @@ def check_project_knowledge() -> None:
             continue
 
         if current != manifest_commit:
-            _warn(check, f"{repo_path} stale — manifest={manifest_commit} current={current}")
+            # Staleness is strict-exempt: expected between export boundaries (BL-009).
+            # Structural manifest problems above (missing file, unknown repo, git
+            # failure) are NOT exempt — they still FAIL under --strict.
+            _warn(
+                check,
+                f"{repo_path} stale — manifest={manifest_commit} current={current}",
+                strict_exempt=True,
+            )
             stale.append(repo_path)
 
     if not stale:

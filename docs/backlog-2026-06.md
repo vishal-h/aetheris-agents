@@ -325,14 +325,32 @@ one skill row behind and Rig can show it.
 **Size:** S · **Priority:** after BL-001
 
 Zero standing WARNs was achieved (f2/provenance command tables added).
-Once the BL-001 baseline confirms it holds, flip the sprint.sh case to
-`drift_check.py --strict` so new WARNs fail the sprint instead of
-accumulating into the next alarm-fatigue cycle.
+Flip the sprint.sh case to `drift_check.py --strict` so new WARNs fail the
+sprint instead of accumulating into the next alarm-fatigue cycle.
+
+**`project_knowledge` staleness exemption (decision 2026-07-15).** Under
+`--strict`, manifest-*staleness* WARNs are reported but do **not** fail —
+every doc commit re-stales the manifest until the next export, so mid-cycle
+staleness is expected truth between export boundaries, not regression. The
+invariant becomes **"zero *unexplained* WARNs"**, not "zero WARNs".
+Structural manifest problems (missing manifest, unknown repo, git failure)
+are **not** exempt and still fail. Land the promoted standing rule in
+CLAUDE.md alongside: *ticket text quoting repo state cites the commit it was
+verified against; divergence is a deviation to note, never silently follow*
+(source: BL-001, BL-015, BL-002).
 
 **Done when:** sprint runs `--strict` and passes; CLAUDE.md doc-sync
-section mentions strict mode.
+section documents strict mode, the exemption + rationale, and the standing
+rule.
 
 **Depends on:** BL-001 (#42)
+
+**Status:** Done 2026-07-15. `drift_check.py` `--strict` exempts
+`project_knowledge` staleness via a `strict_exempt` flag on `record`
+(only the staleness WARN at the manifest-comparison site; structural pk
+WARNs still promote to FAIL). `sprint.sh` drift case flipped to `--strict`.
+CLAUDE.md doc-sync section updated. Exemption isolation verified: staleness
+WARN → exit 0; a milestone_status WARN → `--strict` exit 1.
 
 ---
 

@@ -207,6 +207,21 @@ milestone README Status: lines.
 **When to run:** after any Rig milestone, after adding commands, event types, env vars,
 routes, or DB tables. Zero FAIL findings and zero WARN findings required before committing.
 
+**Strict mode (`--strict`, BL-009).** The sprint runs `drift_check.py --strict`: any
+WARN fails the sprint, so drift cannot accumulate into the next alarm-fatigue cycle.
+**One exemption** — `project_knowledge` manifest-*staleness* WARNs stay WARN and do not
+fail. Rationale: every doc commit re-stales the manifest until the next export, so
+mid-cycle staleness is expected truth, not regression; the export boundary is the
+enforcement point (that is where the manifest is regenerated and staleness must clear).
+So the strict invariant is **"zero *unexplained* WARNs"**, not "zero WARNs" — a standing
+manifest-staleness WARN in day-to-day output is the signal we chose to keep, not a
+regression to chase. Structural manifest problems (missing manifest, unknown repo, git
+failure) are **not** exempt and still fail under `--strict`.
+
+**Ticket text that quotes repo state** (counts, paths, expected outputs) cites the commit
+it was verified against; claude-code treats divergence between ticket text and repo reality
+as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002.
+
 **Optional payload fields:** suffix with `?` in the §6 table cell (e.g. `` `stop_reason?` ``) to allow the field to be absent from current DB events without triggering a FAIL. The drift check emits INFO instead. Add the `?` suffix when the field is valid but not yet emitted by the harness version in use; the INFO firing is the trigger to drop the `?` and promote the field to required.
 
 **Tests:** `python3 -m pytest tests/test_drift_check.py -v`

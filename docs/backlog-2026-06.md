@@ -299,6 +299,21 @@ TrajectoryView errors for `status='running'`.
 **Done when:** opening Trajectory on a running run shows events instead of
 an error; completed runs unchanged.
 
+**Status:** Done 2026-07-15. `TrajectoryView` falls back to
+`harness_get_events` + `harness_get_run` on `trajectory_load` failure and
+rebuilds the step-grouped view via `src/lib/reconstructTrajectory.ts`; the
+`run` prop replaces `runId` so the banner can vary by status. **Scope
+widened** past "for a running run" per the ticket's own recommendation:
+BL-003 swept 66 orphaned runs to `failed` with no trajectory file either, so
+the fallback triggers on any `trajectory_load` failure, with the banner
+reading `live — reconstructed from events` (running) vs `trajectory file
+unavailable — reconstructed from events` (terminal — covers absent *and*
+corrupt/`.tmp` files, with the read error logged to console). p2 polling reused
+for live append (decision: **in** — free via the existing `useRunEvents` hook).
+Fidelity verified byte-identical against a real 58-event `trajectory.json`,
+guarded durably by `rig/scripts/verify-reconstruct-trajectory.ts`. Export JSON
+hidden in reconstructed mode. No new Tauri command (specs §4 unchanged).
+
 ---
 
 ### BL-006 — Document `stop_reason` when first observed (#47)

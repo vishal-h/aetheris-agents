@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTrajectory } from '@/hooks/useTrajectory';
-import type { TrajectoryEvent, TokenSummary } from '@/hooks/types';
+import { useTrajectory, useRunEvents, useRunDetail } from '@/hooks';
+import type { RunSummary, TrajectoryEvent, TrajectoryFile, TokenSummary } from '@/hooks/types';
+import { reconstructTrajectory, reconstructedBanner } from '@/lib/reconstructTrajectory';
 
 const EVENT_COLOURS: Record<string, string> = {
   prompt_built:           'bg-blue-100 text-blue-800',
@@ -163,35 +164,117 @@ function ExpandableText({ label, text }: { label: string; text: string }) {
   );
 }
 
-interface Props {
-  runId: string | null;
+function CentredMessage({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+      {children}
+    </div>
+  );
 }
 
-export function TrajectoryView({ runId }: Props) {
-  const { trajectory, loading, error } = useTrajectory(runId);
-  const [metaOpen, setMetaOpen] = useState(true);
+interface Props {
+  run: RunSummary | null;
+}
+
+/**
+ * Trajectory viewer with a live-run fallback (BL-005).
+ *
+ * The primary source is the atomically-written `trajectory.json`, loaded via
+ * `useTrajectory`. That file exists only after a clean run end, so for running
+ * runs — and for runs swept from orphaned state (BL-003), which never get a
+ * file — the load fails. On failure we rebuild the identical view from the live
+ * SQLite event stream (`harness_get_events`) plus `runs.config_json`
+ * (`harness_get_run`), showing a banner that names the source. The fallback DB
+ * queries are gated to fire only after the file load has failed, so completed
+ * runs are unaffected.
+ */
+export function TrajectoryView({ run }: Props) {
+  const runId = run?.run_id ?? null;
+  const { trajectory: fileTrajectory, loading: fileLoading, error: fileError } =
+    useTrajectory(runId);
+
+  // Only reach for the event stream once the file load has failed. Gating the
+  // run_id to null until then means a completed run (file present) never issues
+  // the extra queries. Poll while the run is live so the view appends events.
+  const fileMissing = fileError !== null;
+  const fallbackRunId = fileMissing ? runId : null;
+  const events = useRunEvents(fallbackRunId, { polling: run?.status === 'running' });
+  const detail = useRunDetail(fallbackRunId);
+
+  // Preserve the interrupted-write / corrupt-file signal the runbook documents:
+  // the banner reports the file as "unavailable" generically, so log the actual
+  // read error once when the fallback engages (e.g. a truncated `.tmp`).
+  useEffect(() => {
+    if (fileError !== null) {
+      console.warn(`[TrajectoryView] trajectory_load failed for ${runId}; reconstructing from events: ${fileError}`);
+    }
+  }, [fileError, runId]);
 
   if (!runId) {
+    return <CentredMessage>Select a run to view its trajectory.</CentredMessage>;
+  }
+
+  // Active file load — show Loading. Checked before the file-present branch so
+  // a reload never flashes the previously-selected run's trajectory (useTrajectory
+  // holds the prior value until the new load settles).
+  if (fileLoading) {
+    return <CentredMessage>Loading…</CentredMessage>;
+  }
+
+  // File load failed — reconstruct the view from the live event stream. Handled
+  // before the file-present branch because on a failed load `fileTrajectory`
+  // still holds the previous run's (stale) value.
+  if (fileMissing) {
+    // Events are required; config (from harness_get_run) is best-effort and only
+    // enriches meta, so a detail error does not block reconstruction.
+    const eventsPending = events.data === null && events.error === null;
+    const detailPending = detail.data === null && detail.error === null;
+    if (eventsPending || detailPending) {
+      return <CentredMessage>Loading…</CentredMessage>;
+    }
+
+    if (events.error !== null) {
+      // Neither the file nor the event stream is available — surface the original
+      // trajectory-load error the user was trying to resolve.
+      return <div className="p-4 text-sm text-red-600">{fileError}</div>;
+    }
+
+    const reconstructed = reconstructTrajectory(
+      runId,
+      run,
+      detail.data?.config ?? null,
+      events.data ?? [],
+    );
+
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-        Select a run to view its trajectory.
-      </div>
+      <TrajectoryBody
+        trajectory={reconstructed}
+        banner={reconstructedBanner(run?.status)}
+        isPolling={events.isPolling}
+        showExport={false}
+      />
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-        Loading…
-      </div>
-    );
+  // File loaded successfully — render it exactly as before.
+  if (fileTrajectory) {
+    return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport />;
   }
 
-  if (error) {
-    return <div className="p-4 text-sm text-red-600">{error}</div>;
-  }
+  // First render, before the useTrajectory effect has started the load.
+  return <CentredMessage>Loading…</CentredMessage>;
+}
 
-  if (!trajectory) return null;
+interface TrajectoryBodyProps {
+  trajectory: TrajectoryFile;
+  /** Reconstructed-source banner text, or null for the file-backed view. */
+  banner: string | null;
+  isPolling: boolean;
+  showExport: boolean;
+}
+
+function TrajectoryBody({ trajectory, banner, isPolling, showExport }: TrajectoryBodyProps) {
+  const [metaOpen, setMetaOpen] = useState(true);
 
   const { meta, events } = trajectory;
 
@@ -210,7 +293,7 @@ export function TrajectoryView({ runId }: Props) {
 
   async function handleExport() {
     try {
-      await invoke('trajectory_export', { runId: trajectory!.run_id });
+      await invoke('trajectory_export', { runId: trajectory.run_id });
     } catch (e) {
       console.error('export failed', e);
     }
@@ -218,6 +301,19 @@ export function TrajectoryView({ runId }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Reconstructed-source banner — absent for the file-backed view */}
+      {banner !== null && (
+        <div className="flex items-center gap-2 border-b bg-amber-50 px-4 py-1.5 text-xs text-amber-800 shrink-0">
+          {isPolling && (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+            </span>
+          )}
+          {banner}
+        </div>
+      )}
+
       {/* Meta panel */}
       <div className="border-b shrink-0">
         <div className="flex items-center justify-between px-4 py-2">
@@ -230,10 +326,12 @@ export function TrajectoryView({ runId }: Props) {
               : <ChevronRight className="h-4 w-4" />}
             Run metadata
           </button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-3.5 w-3.5 mr-1.5" />
-            Export JSON
-          </Button>
+          {showExport && (
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-3.5 w-3.5 mr-1.5" />
+              Export JSON
+            </Button>
+          )}
         </div>
 
         {metaOpen && (

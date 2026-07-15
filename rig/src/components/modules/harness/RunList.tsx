@@ -459,7 +459,7 @@ export function HarnessRoute() {
       tabs={[
         { id: 'runs',       label: 'Runs',       content: <RunsContent onSelectRun={handleSelectRun} /> },
         { id: 'events',     label: 'Events',     content: <EventsContent selectedRun={selectedRun} />, disabled: !hasSelection },
-        { id: 'trajectory', label: 'Trajectory', content: <TrajectoryView runId={selectedRun?.run_id ?? null} />, disabled: !hasSelection },
+        { id: 'trajectory', label: 'Trajectory', content: <TrajectoryView run={selectedRun} />, disabled: !hasSelection },
       ]}
     />
   );

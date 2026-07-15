@@ -431,7 +431,37 @@ config :aetheris, :sweep_liveness_threshold_ms, 300_000
 config :aetheris, :sweep_on_start, true
 ```
 
-### Trajectory tab shows "read failed" or blank for a completed run
+### Trajectory tab shows a "reconstructed from events" banner
+
+`trajectory.json` is written atomically only at clean run end, so it does
+not exist while a run is live, and never exists for runs swept from orphaned
+state (see "stalled?" above — the sweep marks them `failed` without writing a
+file). Rather than erroring, the Trajectory tab **falls back to the live event
+stream** (`harness_get_events` + `runs.config_json`) and renders the same
+step-grouped view with a banner naming the source (BL-005):
+
+- **`live — reconstructed from events`** — a `running` run. The view polls and
+  appends new events until `run_complete` arrives (the same p2 polling used by
+  the Events tab). It does **not** auto-switch to the file when the run
+  finishes; reopen the run (or reselect it) to load the file-backed view.
+- **`trajectory file unavailable — reconstructed from events`** — a terminal run
+  whose file could not be read: either **absent** (typically a swept orphan) or
+  **unreadable** (a corrupt file, or a truncated `.tmp` from an interrupted
+  write — see below). Either way the DB events are complete. The wording is
+  deliberately generic; the actual `trajectory_load` error is logged to the
+  browser console (`[TrajectoryView] trajectory_load failed …`) so the
+  interrupted-write signal is not lost behind the banner.
+
+Fidelity is identical to the file: both stores hold complete, untruncated
+payloads. The only meta fields unavailable pre-completion are those with no
+live source (e.g. `overlay_changes`); everything else is derived from
+`config_json` and the run row. The **Export JSON** button is hidden in
+reconstructed mode (there is no readable file to copy).
+
+### Trajectory tab shows "read failed" or blank
+
+Reached only when **both** the trajectory file and the DB event stream are
+unavailable — otherwise the fallback above renders instead.
 
 The trajectory file is written atomically at run completion. If the run
 finished too recently (< 1s) or the harness crashed mid-write, the file
@@ -441,7 +471,8 @@ may be absent or truncated.
 file should be `trajectory.json`, not `trajectory.json.tmp`.
 
 **If `.tmp` exists**, the write was interrupted. The `.tmp` file is partial
-and cannot be recovered — the run data is still in `aetheris.db` (Events tab).
+and cannot be recovered — the run data is still in `aetheris.db` (Events tab,
+or the reconstructed Trajectory view once events exist).
 
 **If the file exists** but Rig reports a read error, check
 `AETHERIS_DB_PATH` — `trajectory.rs` derives the run directory from it;

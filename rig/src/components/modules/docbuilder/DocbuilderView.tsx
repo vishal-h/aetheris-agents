@@ -39,8 +39,6 @@ export function DocbuilderView() {
   const { values: config } = useAgentConfig();
   const tenant = config['DOCBUILDER_TENANT'];
 
-  const running = !['idle', 'done', 'cancelled', 'error'].includes(phase);
-
   // On completion, read the orchestrator's rename record for the rendered file list.
   // Best-effort — a missing/unparseable file just shows a generic completion message.
   useEffect(() => {

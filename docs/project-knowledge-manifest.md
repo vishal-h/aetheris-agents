@@ -22,7 +22,7 @@ Refresh trigger: milestone end, or before any handoff session.
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `d24e482` | 2026-07-15 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `fb86231` | 2026-07-15 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `a12a145` | 2026-07-15 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `c604a53` | 2026-07-15 |

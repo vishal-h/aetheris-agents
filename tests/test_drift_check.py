@@ -481,6 +481,49 @@ def test_project_knowledge_stale_entry_is_warn(tmp_path, monkeypatch):
     assert not fails_of("project_knowledge")
 
 
+def test_project_knowledge_stale_exempt_under_strict(tmp_path, monkeypatch):
+    """BL-009: under --strict, manifest STALENESS stays WARN, does not FAIL."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+    monkeypatch.setattr(drift_check, "_git_head_hash", lambda repo_dir, path: "zzz9999")
+    drift_check._strict = True
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+        drift_check._strict = False
+
+    assert warns_of("project_knowledge"), "staleness must stay WARN under --strict"
+    assert not fails_of("project_knowledge"), "staleness must NOT be promoted to FAIL"
+
+
+def test_project_knowledge_structural_fails_under_strict(tmp_path, monkeypatch):
+    """BL-009: under --strict, a STRUCTURAL pk problem (git can't verify) still FAILs.
+
+    Exemption is staleness-specific, not check-specific — the un-walked boundary
+    branch flagged in the BL-009 review (finding 1)."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+    # git_head_hash returns None → "git log failed — cannot verify" (structural WARN)
+    monkeypatch.setattr(drift_check, "_git_head_hash", lambda repo_dir, path: None)
+    drift_check._strict = True
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+        drift_check._strict = False
+
+    assert fails_of("project_knowledge"), "structural pk WARN must FAIL under --strict"
+
+
 def test_project_knowledge_fresh_entries_pass(tmp_path, monkeypatch):
     """All manifest commits matching git HEAD must produce PASS."""
     reset()

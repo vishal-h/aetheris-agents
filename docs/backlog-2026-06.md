@@ -148,26 +148,62 @@ the human step; export file list + hashes delivered in the packet.
 **Size:** M · **Priority:** high
 
 Rig's "stalled?" marker (commit `0eddf20`) is the *detector*; the DB still
-lies forever. Five orphaned `status='running'` rows from May 2026 exist in
-`priv/aetheris.db` — use them as test fixtures, then let the sweep clean
-them.
+lies forever. As of the 2026-07-15 baseline (verified `d24e482`),
+`priv/aetheris.db` holds **76** `status='running'` rows — not the five May
+rows the earlier draft assumed (corrected per BL-002 review finding 2).
+Census (reference fixture — re-run at execution time, see done-when):
+
+| Last event | Count | True state | Sweep action |
+|---|---|---|---|
+| (no events) | 11 | orphaned | `run_orphaned`, `finished_at`=`started_at` |
+| `llm_called` | 30 | orphaned | `run_orphaned`, `finished_at`=last-event ts |
+| `tool_called` | 22 | orphaned | `run_orphaned`, `finished_at`=last-event ts |
+| `prompt_built` | 3 | orphaned | `run_orphaned`, `finished_at`=last-event ts |
+| `run_complete` | 6 | finished (status lagged) | reconcile → `done`, `finished_at`=event ts |
+| `error` | 4 | errored (status lagged) | reconcile → terminal, `finished_at`=event ts |
+| `agent_waiting` | 0 | none paused currently | synthetic fixture required |
 
 - On harness application start (and/or a `mix aetheris sweep` task), find
   runs where `status='running'` and the owning process is provably gone
-  (no live GenServer for the run_id; last event older than a threshold).
-- Mark them `failed`, emit a terminal event (`run_complete` with
-  `reason: "orphaned"` or a new `run_orphaned` type — if a new type,
-  update `event.ex` **and** specs §6, then run drift_check).
+  (no live GenServer for the run_id; last event older than a **named config
+  threshold** — see below).
+- **Orphaned (66, no terminal event):** mark `failed`; emit a new
+  **`run_orphaned`** event type — per harness rule 14 this is a three-place
+  change in one commit: `event.ex` union **and** `Trajectory.File`
+  `@event_type_map` **and** specs §6, then drift_check. `finished_at` =
+  last-event timestamp; for the 11 no-event rows, `started_at`. **Never
+  sweep time** — that fabricates the dormancy gap into the run duration.
+- **Reconcilable (10, last event `run_complete`/`error`):** adopt the
+  terminal outcome the events already record — set `runs.status` to
+  `done`/error and `finished_at` to the terminal event's timestamp; emit
+  **no** new event (the trajectory already tells the truth); log one
+  reconciliation line. Do **not** overwrite a real outcome with `failed`.
 - Must not touch legitimately paused runs: a run whose latest event is
   `agent_waiting` with an unexpired `wait_condition` in `run_checkpoints`
-  is paused, not dead (distinction already documented in runbook.md's
-  stalled? entry).
+  is paused, not dead. **Zero such runs exist in the current DB** — the
+  exclusion path has no live fixture, so build a **synthetic
+  `wait_for_event` run** during the ticket to exercise it; do not assume
+  it is present.
+- The liveness **threshold is a named config key**, not a buried constant:
+  name it, pick a default with one sentence of rationale, and document it
+  in `runbook.md` (runbook update rule — operational knob, same commit).
+- Specs §6's `run_orphaned` row **notes the status mapping** (event
+  `run_orphaned`, status `failed`) so the event/status asymmetry reads as
+  designed, not accidental.
 - Write `finished_at` when sweeping (note: Rig's `TrajectoryMeta` treats
   missing `finished_at` as `""`).
 
-**Done when:** the five May rows are swept on first run; a kill-9'd run is
-swept on next harness start; a `wait_for_event` run survives the sweep;
-drift_check passes.
+**Do not:** change Rig's stalled? detector (ships as-is; this is the cure
+side); clean up the BL-015 legacy event rows (separately gated on this
+ticket's completion).
+
+**Done when:** re-run the census pre-sweep (fresh numbers, not the
+`d24e482` reference) → sweep → post-sweep counts match that fresh census:
+orphaned rows marked `failed` with `run_orphaned`, reconcilable rows
+adopted to their recorded terminal outcome, **0** rows remain `running`;
+both censuses in the implementation notes; a kill-9'd run is swept on next
+harness start; a synthetic `wait_for_event` run survives; drift_check
+passes (`--strict` if BL-009 landed).
 
 ---
 

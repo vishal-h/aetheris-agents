@@ -107,7 +107,8 @@ to reset between validation runs.
 Universal inbound document pipeline: ingest → extract → validate →
 generate → deliver. Extends Docbuilder (outbound-only today) with an
 inbound leg. Full design:
-`../aetheris/docs/aetheris/research/universal-ingestion-extraction-pipeline-2026-06.md`.
+`../aetheris/docs/aetheris/research/universal-ingestion-extraction-pipeline-2026-06.md`
+*(brief not yet written; prerequisite for scoping — already ETXTBSY-gated)*.
 
 Core abstraction: the **artefact manifest** — every source adapter
 (pdf, docx, xlsx, email, slack, …) produces the same typed JSON shape;

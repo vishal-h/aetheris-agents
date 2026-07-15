@@ -395,14 +395,41 @@ mid-run and the harness did not get a chance to update the status.
 **Verify:** `mix aetheris inspect <run_id>` — if the last event is old and no
 new events arrive, the process is dead.
 
-**The harness does not automatically mark these runs as failed.** Rig detects
-the condition display-only; no DB write occurs. The status in `aetheris.db`
-remains `running` permanently unless the harness is restarted and a cleanup
-sweep runs (no such sweep currently exists in the harness).
+**Rig's badge is display-only** — it never writes to the DB. The **cure** lives
+in the harness: the orphan sweep (`Aetheris.Sweep`). It runs automatically on
+harness start (after checkpoint resume) and on demand via `mix aetheris sweep`.
+For each `running` row whose owning process is gone and whose last event is older
+than the liveness threshold, it:
+
+- **orphaned** (no terminal event) → marks the run `failed` and appends a
+  `run_orphaned` event; `finished_at` is stamped from the run's last-event
+  timestamp (or `started_at` if it has no events), never the sweep time;
+- **reconcilable** (trajectory already ends in `run_complete`/`error`) → adopts
+  that recorded outcome (`done`/`failed`) and stamps `finished_at` from the
+  terminal event; it appends **no** new event.
+
+To cure a stalled run now: `mix aetheris sweep` (prints a summary of the actions
+taken). See specs.md §6 for the `run_orphaned` event and its status mapping.
 
 **Distinguish from paused runs:** a run in `wait_for_event` state is paused
 legitimately — it will also show no new events, but `mix aetheris inspect`
-will show a `agent_waiting` event as the latest. Treat these differently.
+will show a `agent_waiting` event as the latest. The sweep leaves these alone:
+a run whose latest event is `agent_waiting` and whose `run_checkpoints` row is
+`waiting` with an unexpired wait is skipped, not swept.
+
+**Sweep configuration (harness `config :aetheris`):**
+
+```elixir
+# How old a running row's last event must be before it is considered dead.
+# 5 min mirrors the "stalled?" display threshold above, so the cure fires
+# exactly when the badge warns. Lower it (e.g. in a done-check) to sweep a
+# just-killed run without waiting.
+config :aetheris, :sweep_liveness_threshold_ms, 300_000
+
+# Whether the sweep runs automatically on harness start (after checkpoint
+# resume). Set false to cure only on demand via `mix aetheris sweep`.
+config :aetheris, :sweep_on_start, true
+```
 
 ### Trajectory tab shows "read failed" or blank for a completed run
 

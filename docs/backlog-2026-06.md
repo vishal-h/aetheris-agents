@@ -212,6 +212,21 @@ both censuses in the implementation notes; a kill-9'd run is swept on next
 harness start; a synthetic `wait_for_event` run survives; drift_check
 passes (`--strict` if BL-009 landed).
 
+**Status:** Done 2026-07-15. `Aetheris.Sweep` ships the cure: startup hook
+(after checkpoint resume, gated by `config :aetheris, :sweep_on_start`,
+default on) plus `mix aetheris sweep`. New `run_orphaned` event type added
+via the rule-14 three-place change (`event.ex` union + `Trajectory.File`
+`@event_type_map` + specs §6, one commit); drift `event_types` parity holds
+at 22 types. Fresh pre-sweep census matched the `d24e482` reference exactly
+(66 orphaned / 10 reconcilable / 0 paused); post-sweep **0** rows remain
+`running`. Liveness threshold is the named config key
+`:sweep_liveness_threshold_ms` (default 300 000 ms, mirroring Rig's "stalled?"
+display detector; documented in `runbook.md`). Paused-run exclusion exercised
+with a synthetic unexpired `wait_for_event` fixture (survives, not merely
+created). Methodology §6 repo-qualified-Touches rule batched into this commit
+per the approved promotion. Implementation notes + both censuses in
+`../aetheris/docs/aetheris/milestones/bl-003-startup-sweep-implementation-notes.md`.
+
 ---
 
 ### BL-004 — Per-run token totals in RunSummary (#45)
@@ -230,6 +245,34 @@ landed in the run list; token totals did not.
 - Update specs §3; run drift_check.
 
 **Done when:** token totals visible per run; NULL stays NULL for stub runs.
+
+---
+
+### BL-016 — Fix standing `payslip_orchestrator` test failure (#—, to be filed)
+**Size:** S · **Priority:** medium
+
+`test/aetheris/agents_test.exs:22` ("payslip_orchestrator.exs evaluates to a
+valid RunConfig") is **red on `main`** and has been since before BL-003.
+Surfaced during BL-003's suite run and triaged per the standing pristine-HEAD
+rule: with BL-003's work stashed, `mix test test/aetheris/agents_test.exs`
+still fails identically (`git stash push --include-untracked` → run → pop), so
+it is not a BL-003 regression. Evidence in `docs/reviews/bl-003-review.md`
+finding 2 and `bl-003-startup-sweep-implementation-notes.md`.
+
+- The test asserts `agents/payslip_orchestrator.exs` resolves to tools
+  `["run_command", "spawn_agent", "wait_for_all"]` (test lines 43–45), but the
+  agent file currently yields only `["run_command"]` — `assert "spawn_agent" in
+  result.tools` fails (`left: "spawn_agent", right: ["run_command"]`).
+- Decide the source of truth: either the agent file lost `spawn_agent` /
+  `wait_for_all` (restore them) or the test is ahead of the file (correct the
+  assertion). Do not silently delete the assertion.
+
+**Why it matters:** a standing red test normalises "1 failure is expected" and
+lets the *next* real failure hide behind it (alarm fatigue). Close it so the
+suite is 0-failure and a new red is unambiguous.
+
+**Done when:** `mix test` is green with no excluded/expected failures; whichever
+side was wrong (agent file or test) is corrected with a one-line rationale.
 
 ---
 
@@ -585,7 +628,7 @@ multi-line street/city/state/zip.
 |-------|--------|-----------|
 | 1 | BL-001, BL-015, BL-002 | Minutes each; locks in everything just built. BL-015 before BL-002 so one export catches the §6 promotions |
 | 2 | BL-010 | First real run revealed output defects; fix before next client demo |
-| 3 | BL-003 | The five orphaned rows are sitting test fixtures; pairs with shipped stalled? marker |
+| 3 | BL-003 | Done. 76 orphaned `running` rows (66 orphaned / 10 reconcilable) cured; pairs with the shipped stalled? marker |
 | 4 | BL-005 | Small, immediate daily-use value |
 | 5 | BL-009 | One-line change once baseline holds |
 | 6 | BL-011 | Refactor before more scripts share the helpers |

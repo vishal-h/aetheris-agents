@@ -537,6 +537,18 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 | `agent_tree_joined` | child run completed; parent resuming |
 | `pre_tool_result` | intermediate result before tool execution |
 | `context_summarised` | rolling-context summary was applied |
+| `run_orphaned` | `reason`, `last_event_type?` — written by the startup / `mix aetheris sweep` cure when an orphaned `running` run is marked `failed` |
+
+**Note on `run_orphaned`:** unlike every other terminal event, `run_orphaned`
+is written *by the harness sweep*, not by the run's own loop — the owning
+process is already dead. It records an **event/status asymmetry by design**:
+the trajectory event is `run_orphaned` while the `runs.status` it sets is
+`failed` (there is no `orphaned` status). `finished_at` is stamped from the
+run's **last-event timestamp** — or `started_at` for a run with no events —
+**never the sweep time**, so the dormancy gap is not fabricated into the run's
+duration. Reconcilable runs (whose trajectory already ends in
+`run_complete`/`error`) receive **no** `run_orphaned` event: the sweep adopts
+their recorded terminal outcome (`done`/`failed`) instead.
 
 **Note on `cost_usd`:** `cost_usd` is computed by `execution/pricing.ex` and
 emitted in `llm_responded` payloads. For unknown models, `cost_usd` is `null`.

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Wrench, RefreshCw, Settings, Loader2, PanelRight, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/context/AppContext';
+import { useApp } from '@/context/useApp';
 
 interface TopBarProps {
   onSync?: () => void;

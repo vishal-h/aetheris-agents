@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { modules } from '@/modules/registry';
-import { useApp } from '@/context/AppContext';
+import { useApp } from '@/context/useApp';
 import { cn } from '@/lib/utils';
 
 // Icon resolution map - maps string icon names to lucide-react components

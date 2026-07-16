@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp } from "@/context/useApp";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

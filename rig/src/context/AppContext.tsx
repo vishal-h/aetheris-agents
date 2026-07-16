@@ -1,27 +1,12 @@
-import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { useReducer, useEffect, ReactNode } from 'react';
 
-// Types
-export type Theme = 'light' | 'dark' | 'system';
-
-export interface AppState {
-  activeModule: string;
-  activeSidebarItem: string;
-  rightPanelOpen: boolean;
-  theme: Theme;
-}
-
-export type AppAction =
-  | { type: 'SET_ACTIVE_MODULE'; payload: string }
-  | { type: 'SET_ACTIVE_SIDEBAR_ITEM'; payload: string }
-  | { type: 'SET_RIGHT_PANEL_OPEN'; payload: boolean }
-  | { type: 'SET_THEME'; payload: Theme };
-
-interface AppContextValue extends AppState {
-  setActiveModule: (module: string) => void;
-  setActiveSidebarItem: (item: string) => void;
-  setRightPanelOpen: (open: boolean) => void;
-  setTheme: (theme: Theme) => void;
-}
+import {
+  AppContext,
+  type AppState,
+  type AppAction,
+  type AppContextValue,
+  type Theme,
+} from './app-context';
 
 // Initial state
 const initialState: AppState = {
@@ -46,9 +31,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return state;
   }
 }
-
-// Context
-const AppContext = createContext<AppContextValue | undefined>(undefined);
 
 // Helper to resolve actual theme from "system"
 function resolveTheme(theme: Theme): 'light' | 'dark' {
@@ -97,13 +79,4 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
-
-// Hook
-export function useApp(): AppContextValue {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
-  return context;
 }

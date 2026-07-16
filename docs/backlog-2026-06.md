@@ -274,6 +274,22 @@ suite is 0-failure and a new red is unambiguous.
 **Done when:** `mix test` is green with no excluded/expected failures; whichever
 side was wrong (agent file or test) is corrected with a one-line rationale.
 
+**Status:** Done 2026-07-15. Evidence resolved the fork: `git log -p` on
+`payslip/agents/payslip_orchestrator.exs` shows commit **5abd4b9**
+("refactor(payslip): move employee loop into generate script, remove LLM
+iteration") deliberately dropped `spawn_agent`/`wait_for_all` — the LLM was
+mangling employee IDs when iterating, so the same commit rewrote
+`generate_employee_payslips.py` to loop over all employees internally. This is
+the deliberate-sequential branch, aligned with the ROADMAP "Sequential over
+parallel for independent agents" principle — so the **test was stale**, not the
+agent file. Fixed in the harness (`test/aetheris/agents_test.exs:22`):
+`tools == ["run_command"]`, `context_strategy == :full`; the stale spawn-based
+assertions and `max_spawn_depth == 2` corrected, not deleted. The ROADMAP
+uc-payslip description (the current-state mirror that still claimed "Parallel
+sub-agents via spawn_agent + wait_for_all") was corrected in the same change.
+`payslip/milestone.md` left as-is: it is a point-in-time milestone record of the
+as-built parallel design, not a current-state claim.
+
 ---
 
 ## Rig (aetheris-agents/rig/)

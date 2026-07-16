@@ -4,7 +4,9 @@
 
 ### uc-payslip
 Generate monthly payslips from a payroll CSV. Per-employee HTML, PDF,
-and CSV output. Parallel sub-agents via spawn_agent + wait_for_all.
+and CSV output. A single `run_command` invocation drives the run; the
+generate script loops over all employees internally (moved out of the LLM
+in 5abd4b9 — per-employee `spawn_agent` iteration mangled employee IDs).
 Scripts handle all computation and file generation; agent orchestrates.
 
 Established the core pattern: **scripts do, agents decide.**

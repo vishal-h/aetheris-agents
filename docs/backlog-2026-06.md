@@ -365,8 +365,61 @@ with a comment stating why the guard pattern is acceptable here)? Pin the
 decision in this ticket; do **not** let it be settled implicitly by silencing
 errors file-by-file.
 
-**Done when:** `bun run lint` exits 0, and the adopt-vs-reject decision is
+**Done when:** ~~`bun run lint` exits 0~~, and the adopt-vs-reject decision is
 recorded (in the rule-config comment if rejected, or in the notes if adopted).
+
+**Divergence noted (per the standing rule):** the "31 = one rule" premise was a
+miscount — the true split is **28 `react-hooks/set-state-in-effect` + 3
+`react-refresh/only-export-components`** (BL-016's gate line read only the
+eslint tail). So BL-017's done-when is corrected to: *the 28
+`set-state-in-effect` errors cleared, the reject decision recorded, and the
+residual 3 tracked as BL-018 (#69)*. `bun run lint → exit 0` is delivered
+jointly with BL-018 at one shared export boundary, not by BL-017 alone.
+
+**Status:** Done 2026-07-16 (decision: **reject**, 2026-07-15 human call on
+claude-ui recommendation). `react-hooks/set-state-in-effect` disabled rule-level
+in `rig/eslint.config.js` (not 28 per-site comments) with the decision recorded
+in the config comment: functionally-correct data-hook resets, rule targets
+render hygiene not bugs, ~22 sites with no frontend test runner → refactor risk
+without a net; revisit when a test runner exists. Lint went 31 → 3. The residual
+3 are a different rule class (react-refresh) — surfaced as a finding, not swept
+— and are BL-018's scope. See `docs/reviews/bl-017-review.md`.
+
+---
+
+### BL-018 — Resolve `react-refresh/only-export-components` lint failures (#69)
+**Size:** S · **Priority:** immediately after BL-017 (joint lint-green endpoint)
+
+The residual behind BL-017's rule disable: **3** `react-refresh/only-export-components`
+errors, pre-existing since 2026-05-31 (`ed63058`), hidden behind the 28
+`set-state-in-effect` errors until BL-017's verify step surfaced them (origin:
+BL-017 packet). Fast-refresh requires that a file exporting a component export
+nothing else:
+
+- `rig/src/components/ui/badge.tsx:37` — exports `badgeVariants` (cva helper)
+- `rig/src/components/ui/button.tsx:67` — exports `buttonVariants` (cva helper)
+- `rig/src/context/AppContext.tsx:103` — exports the `useApp` hook
+
+Unlike BL-017's rule, this one has a standard zero-risk fix (extract the
+non-component exports to their own modules), verifiable by `tsc -b` + `bun run
+build` without a frontend test runner — so it is fixed, not disabled.
+
+**Touches:** the 3 source files + new sibling modules (`badge-variants.ts`,
+`button-variants.ts`, `app-context.ts`, `useApp.ts`) + `useApp` import sites
+(Sidebar, RightPanel, TopBar); backlog status; the shared manifest regen.
+
+**Done when:** `bun run lint` exits 0 (the joint endpoint BL-017 and BL-018
+deliver together), `tsc -b` + `bun run build` green, decision-comment convention
+followed (each new module cites BL-018 / #69).
+
+**Status:** Done 2026-07-16. `badgeVariants`/`buttonVariants` extracted to
+`*-variants.ts`; `AppContext` object + types to `app-context.ts` and the `useApp`
+hook to `useApp.ts`, leaving `AppContext.tsx` exporting only `<AppProvider>`; the
+3 `useApp` importers repointed. Verified `bun run lint → exit 0` (31 → 0),
+`tsc -b` 0, `bun run build` 0 (1908 modules); no behavior change. This is the
+shared export boundary that also clears BL-016's carried staleness WARN — its
+named endpoint moved one ticket later than promised (BL-016 → BL-018), dated
+here so the carry stays honest.
 
 ---
 

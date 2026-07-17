@@ -423,6 +423,95 @@ here so the carry stays honest.
 
 ---
 
+### BL-019 — Harness runbook: sweep section + mirror convention (#70)
+**Size:** S · **Priority:** now (before BL-007 planning)
+
+BL-003's operational docs single-homed on the Rig side (`docs/rig/runbook.md`,
+agents repo — per that ticket's Touches). The harness's own
+`docs/aetheris/runbook.md` has no sweep entry, so a harness-side operator finds
+nothing on `mix aetheris sweep`, the config knobs, or the startup hook. The gap
+was invisible by construction: harness-side docs (methodology excepted) sit
+outside every detection mechanism built this cycle — no manifest row, no drift
+check, no export. Surfaced by human spot-check 2026-07-16.
+
+Three parts: (1) sweep section in the harness `runbook.md`, describing
+**observed** behavior — one real harness start performed during the ticket
+confirms the startup hook's log line; (2) a header codifying the mirror
+convention (the BL-016 mirror-vs-record distinction, applied); (3) decision —
+manifest-track the harness runbook: **yes** (claude-ui recommendation; BL-007 has
+operational surface and will touch this file — untracked mirrors are how this
+cycle started).
+
+**Done when:** sweep section present and matching observed behavior; convention
+header in place; manifest row added; `drift_check --strict` exit 0 at the
+closeout export.
+
+**Approved deviations (on record, per the standing rule):**
+- **Touches widened to `docs/rig/runbook.md`.** The Rig entry already carried the
+  knob defaults/rationale and behavioral detail, so writing the harness section
+  without trimming Rig would leave the same facts in two docs — and `drift_check`
+  compares each doc against its *own* repo's git history, never cross-doc
+  agreement, so divergence would be silent. That is the one rot class the tooling
+  cannot see. BL-017/018's scope split separated *different fix classes*; this is
+  one docs-only restructure of a single feature across its two mirrors, where
+  splitting would manufacture the inconsistency rather than prevent one.
+- **Convention wording supersedes the ticket's draft.** The drafted rule
+  ("`runbook-m*.md` files are point-in-time milestone records") was written from
+  inference; `ls` proves that glob also matches `runbook-model-comparison.md`, a
+  *living* topic guide, which the rule would have frozen by name-accident. The
+  taxonomy is three-way and **enumerated**: status is a property of the file, not
+  its name — a category rule defined by filename pattern is exactly what failed.
+- **Rider taken:** one-line status headers added to the three living topic guides
+  so category is visible from inside each file, not only from `runbook.md`.
+
+**Status:** Done 2026-07-17. Harness `runbook.md` gains: the three-category
+convention header (canonical-for-current-state / milestone records / living topic
+guides, plus a self-maintaining "add it to the correct list" line); `mix aetheris
+sweep` in the CLI commands block; and a `## Orphan sweep` section placed after
+*Checkpoint and resume* to mirror real boot order (resume → sweep). The section
+documents the five-way verdict table, the `finished_at`-never-sweep-time rule,
+both config knobs, idempotency, BL-003's worked census, and the highest-value
+operational gotcha — a *just-killed* run reports `skipped_recent`, not a cure, and
+only sweeps once staleness exceeds the threshold. Observed-behavior check ran
+against the real DB; log line matched BL-003's documented behavior exactly, so the
+"finding, not write-around" clause did not fire. Rig entry trimmed to badge +
+cure command + cross-ref. `aetheris--runbook.md` joins the manifest — the harness
+runbook enters project knowledge for the first time.
+
+---
+
+### BL-020 — Update HTTP-stack dependencies carrying security advisories (#71)
+**Size:** S–M · **Priority:** medium
+
+Surfaced by the clean-clone smoke test 2026-07-17. `mix deps.get` on a fresh clone
+prints "Found packages with security advisories"; `mix hex.audit` itemises them —
+all in the HTTP stack (the Bandit / Req dependency chain):
+
+| Package | Advisories |
+|---|---|
+| `req 0.5.17` | EEF-CVE-2026-49755 (**HIGH**), EEF-CVE-2026-49756 (LOW) |
+| `plug 1.19.1` | EEF-CVE-2026-54892 (**HIGH**), EEF-CVE-2026-8468 (**HIGH**), EEF-CVE-2026-56814 (MEDIUM), EEF-CVE-2026-56813 (LOW) |
+| `mint 1.8.0` | EEF-CVE-2026-56810 (**HIGH**) — buffers a whole chunked response chunk in memory in `Mint.HTTP1.decode_body/5` |
+| `hpax 1.0.3` | EEF-CVE-2026-58226 (**HIGH**) |
+
+No CI gate fails on these — deps resolve, `compile --warnings-as-errors` is clean,
+suite green 857/0 from a clean clone. That is *why* they went unnoticed:
+`hex.audit` is not in the gate set, so the advisories are invisible to every check
+that runs at a ticket boundary. Reachable surface, not dormant: `req` backs the
+LLM adapters, `plug`/`bandit` back the playground HTTP API.
+
+- `mix deps.update` across the HTTP chain; re-run the full gate line.
+- Sensitive area on update: the adapters' retry/timeout handling (see the
+  `receive_timeout` note in CLAUDE.md — socket timeouts must stay terminal, not
+  `:retry`).
+- Open question for the ticket: should `mix hex.audit` join the CI contract, so
+  this class surfaces at a boundary rather than by clean-clone spot-check?
+
+**Done when:** `mix hex.audit` clean, or each residual advisory explicitly
+accepted with a recorded rationale; full gate line green.
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)

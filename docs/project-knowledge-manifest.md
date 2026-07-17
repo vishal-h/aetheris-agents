@@ -33,9 +33,10 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `acf9a13` | 2026-07-15 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `ca35e59` | 2026-07-17 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `8b0c49e` | 2026-07-17 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `628f15f` | 2026-07-17 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `19c08be` | 2026-07-17 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `a1826b7` | 2026-07-17 |
+| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `19c08be` | 2026-07-17 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
@@ -51,4 +52,4 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 
 ---
 
-Exported: 2026-07-17 at aetheris-agents `ca35e59` / aetheris `8b0c49e` (BL-021 #72 closeout).
+Exported: 2026-07-17 at aetheris-agents `628f15f` / aetheris `19c08be` (BL-022 #73 closeout).

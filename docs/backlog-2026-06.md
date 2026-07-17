@@ -615,6 +615,68 @@ line green (now including `mix hex.audit`).
 
 ---
 
+### BL-022 — Refresh harness architecture.md + manifest-track it (#73)
+**Size:** S–M · **Priority:** before BL-007 milestone docs (input to fork planning)
+
+`docs/aetheris/architecture.md` was last refreshed around m13 and predates the
+entire hygiene cycle (confirmed: last touched **2026-05-22**, `56fd1f8`).
+Surfaced by human spot-check 2026-07-17 (claude-ui review of the project-knowledge
+copy) — the same way the runbook gap was found, and for the same reason: **the
+file is in project knowledge but has no manifest row**, so no mechanism watches
+it. Second instance of the harness-doc blind-spot class (first: BL-019).
+
+Verified-stale items (all found against the project-knowledge copy — **re-verify
+each against source**):
+
+1. **Event-type list (§Trajectory.Log)** enumerates 12 types; the `event_type()`
+   union has 22 (drift-verified at parity all cycle, incl. `run_orphaned` from
+   BL-003). Regenerate the list *from the union*, not by patching the delta.
+2. **"Adding a new event type" says two places; rule 14 is three** (`event.ex` +
+   `file.ex` + specs §6, one commit, drift-enforced). Following the doc as written
+   produces a drift FAIL. Cite rule 14.
+3. **§Known Limitations `receive_timeout` "Fixed" claim is over-broad**:
+   terminal-timeout handling exists in anthropic/gemini only; ollama/openrouter
+   carry the forbidden `:retry` fallthrough (BL-021 evidence: `ollama.ex:55/:75`,
+   `openrouter.ex:40`). **Coordinate with BL-021 (#72):** if it has landed,
+   restate the claim accurately (all four, tested); if not, annotate it with the
+   BL-021 ref. Do not leave it asserting the bug is fixed.
+4. **Adapter list (repo structure) omits `openrouter.ex`.** While correcting it,
+   spot-check the whole repo-structure tree against `ls` — one omission found by
+   eyeball suggests others; verify, don't assume the rest is current.
+5. **No sweep anywhere**: add `Aetheris.Sweep` to the component narrative and the
+   application-start/boot-order description (reseed → resume → sweep → optional
+   API). Cross-ref runbook §Orphan sweep rather than duplicating the verdict
+   table — BL-019's dedup rule applies.
+6. **Execution Modes table lists "Fork" as a shipped mode.** What exists is
+   `Eval.AB.run_forked/5` (m11); `Aetheris.fork_run` is BL-007, unbuilt. Footnote
+   the row to say exactly that — the BL-007 milestone doc will quote this table,
+   and its framing depends on knowing what exists today.
+7. **Trajectory-file layout shows `meta.json` as a separate file**; BL-005 treated
+   `meta` as inline in `trajectory.json`. Verify on disk against a real run
+   directory; correct whichever is wrong (specs §3 is the tiebreaker).
+8. **Add the current-state-mirror header** per BL-019's convention (this file is
+   canonical current-state; milestone docs are the frozen records), and **add the
+   `aetheris--architecture.md` manifest row** — confirmed absent today; the only
+   `architecture` row is `rig--architecture.md`.
+
+While in the file, sweep for *other* post-m13 staleness beyond the eight — the list
+above is what a review of the exported copy caught, not a guarantee of
+completeness. Anything found is corrected and named in the packet.
+
+**Done when:** all eight items resolved with source-verified corrections; header +
+manifest row in place; `drift_check --strict` exit 0 at the closeout export; the
+refreshed doc uploaded to project knowledge (the copy claude-ui reads during BL-007
+planning is the point of the ticket).
+
+**Sequencing:** run **after BL-021 (#72)** — item 3 writes cleanest as a statement
+of fixed reality rather than an annotation of a known bug, and BL-021 is the
+smaller, sharper ticket. Fresh session each: BL-021 touches adapter code with
+tests, BL-022 is a doc-verification sweep — different modes, don't chain them to
+save a `/clear`. The two boundaries may share one export if run back-to-back, or
+close separately.
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)

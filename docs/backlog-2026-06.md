@@ -557,12 +557,42 @@ branch exists in **two** adapters — `gemini.ex:79` and `anthropic.ex:91` — b
 Gemini has a test. Anthropic, the *primary production adapter* and the one CLAUDE.md's
 `receive_timeout` note is explicitly written about, has none; its correctness here is
 verified only by symmetry with Gemini (identical clause shape, and compilation proves
-the struct still exists). Low risk, genuinely unverified. Related: `ollama.ex` and
+the struct still exists). Low risk, genuinely unverified. ~~Related: `ollama.ex` and
 `openrouter.ex` set `receive_timeout` but never match `TransportError` at all, so a
 socket timeout there falls to `{:error, _} -> {:error, :retry}` — the exact behavior
-CLAUDE.md forbids. Both are pre-existing and out of BL-020's Touches (no adapter
-changes); they are the same class as the recorded "Nil-key-guard" lesson — a guard
-present in one adapter and absent in a sibling. Worth a ticket.
+CLAUDE.md forbids.~~ Worth a ticket.
+
+> **Correction 2026-07-17 (BL-021 verify step) — the struck sentence was false.**
+> The anthropic coverage gap above is real and stands. The ollama/openrouter claim
+> was not: **neither adapter has a `:retry` fallthrough, because neither retries
+> anything.** `:retry` is an adapter-*internal* protocol consumed only by each
+> adapter's own `with_retry/2`; `ollama.ex` and `openrouter.ex` have no
+> `with_retry/2` and never emit `:retry`. Their catch-alls, quoted verbatim:
+>
+> ```elixir
+> # ollama.ex:63 (call_native) and :83 (call_xml)
+> {:error, reason} ->
+>   {:error, "Ollama request failed: #{inspect(reason)}"}
+>
+> # openrouter.ex:49
+> {:error, reason} ->
+>   {:error, "OpenRouter request failed: #{inspect(reason)}"}
+> ```
+>
+> Terminal binaries. A socket timeout in those adapters was **already terminal**;
+> CLAUDE.md's rule governs adapters that retry, and is vacuously satisfied there.
+> There was no live bug.
+>
+> **How the error was made:** `anthropic.ex`'s catch-all *is*
+> `{:error, _reason} -> {:error, :retry}`. That file was read; ollama/openrouter
+> were only *grepped* for `TransportError` (0 hits), and their catch-all shape was
+> **inferred from the sibling** and asserted with `file:line` citations that made
+> it look verified. Grep proved absence of X; it was treated as proving presence of
+> Y. The citations are why it passed two reviews and propagated into BL-021 (#72)
+> and BL-022's item 3. Promoted to CLAUDE.md as **Cited-means-read** (author side)
+> and **Demonstration-not-citation** (reviewer side), extending **Complete-output**
+> — which would *not* have caught this, since no output was truncated; the lines
+> were simply never read.
 
 **Gate recommendation on the pinned open question** — *should `mix hex.audit` join
 the gate set?* **Adopted 2026-07-17** (human call on claude-ui recommendation).
@@ -576,42 +606,60 @@ ticket the day it is found. Adopted knowingly with that tradeoff on record.
 
 ---
 
-### BL-021 — Adapter socket-timeout terminality: fix ollama/openrouter, test anthropic (#72)
-**Size:** S–M · **Priority:** next (runnable standalone, harness-side)
+### BL-021 — Adapter socket-timeout terminality: test all four adapters (#72)
+**Size:** S · **Priority:** next (runnable standalone, harness-side)
+
+> **Re-scoped 2026-07-17 by its own verify step, before any code was changed.** As
+> filed, this ticket had two parts: (a) a coverage gap, (b) a "live violation" in
+> ollama/openrouter. **(b)'s premise was false and (b) is withdrawn** — see the
+> correction note in §BL-020 for the verbatim catch-alls and the how-it-happened.
+> In short: `:retry` is an adapter-*internal* protocol consumed only by each
+> adapter's own `with_retry/2`; ollama and openrouter have **no `with_retry/2` and
+> never emit `:retry`**, so their socket timeouts were already terminal. There was
+> no bug. The claim came from inferring their catch-all's shape from
+> `anthropic.ex` and asserting it with citations to lines never read.
 
 Origin: BL-020's packet. Verifying that `req 0.5 → 0.6` had not changed
-`Req.TransportError` semantics surfaced that the terminality rule is applied
-unevenly across the four LLM adapters. CLAUDE.md's `receive_timeout` note requires
+`Req.TransportError` semantics surfaced that terminality is *tested* unevenly
+across the four LLM adapters. CLAUDE.md's `receive_timeout` note requires
 `%Req.TransportError{reason: :timeout}` be matched as **terminal**, never
-`:retry` — otherwise a socket timeout is retried 6× and exhausts the eval runner's
-window before a single call completes.
+`:retry` — a rule that binds adapters which retry, and is vacuously satisfied by
+adapters which do not.
 
-Two parts, kept distinct — (b) is a live bug, (a) is a coverage gap:
+Actual state, verified by reading every catch-all:
 
-**(a) Coverage gap — test the Anthropic terminality branch.** `anthropic.ex:91`
-has the correct clause but **no test covers it**. Anthropic is the primary
-production adapter and the one the CLAUDE.md note is explicitly written about; its
-correctness is currently verified only by symmetry with Gemini. `gemini.ex:79` has
-the identical clause and *is* covered, by
-`test/aetheris/execution/llm_adapter/gemini_test.exs:351` — use it as the
-template: it is non-vacuous, asserting both that the error surfaces
-(`{:error, "receive timeout"}`) **and** that the retry was prevented
-(`call_count == 1`).
+| Adapter | `with_retry/2` | Timeout path | Was |
+|---|---|---|---|
+| `anthropic` | yes | `TransportError` clause (`:91`) precedes the `:retry` catch-all (`:94`) → terminal | correct, **untested** |
+| `gemini` | yes | same shape (`:79` before `:82`) | correct, tested |
+| `ollama` | **none** | catch-all → terminal binary | correct by construction, untested |
+| `openrouter` | **none** | catch-all → terminal binary | correct by construction, untested |
 
-**(b) Live violation — fix ollama + openrouter.** `ollama.ex` (`:55`, `:75`) and
-`openrouter.ex` (`:40`) set `receive_timeout: 120_000` but **never match
-`TransportError` at all**, so a socket timeout falls through to the catch-all
-`{:error, _reason} -> {:error, :retry}` — precisely the behavior CLAUDE.md
-forbids. A live rule violation in production-adjacent code, not merely missing
-tests. Fix the clause in both, with tests proving terminality.
+**(a) Test the Anthropic terminality branch.** The load-bearing part.
+`anthropic.ex:91` sits *before* the `{:error, _reason} -> {:error, :retry}`
+catch-all, so without it a timeout reaches `with_retry/2` and is retried 6× with
+exponential backoff — the exact CLAUDE.md scenario. Untested until now. Template:
+`gemini_test.exs:351`, non-vacuous (error surfaces **and** `call_count == 1`).
 
-Same class as the recorded **Nil-key-guard** lesson — a guard present in one
-adapter and absent in a sibling is a latent silent-failure. That lesson named
-Anthropic and Gemini as owing an audit; this is the same audit, one rule over.
+**(b′) Regression guards for ollama + openrouter — tests only, no code change.**
+Not vacuous: they lock in current-correct behaviour and fail the day someone adds
+`with_retry/2` without excluding `TransportError`. The exact message is incidental
+and deliberately unpinned; the load-bearing pair is *terminal (never `:retry`)*
+and *exactly one call*.
 
-**Done when:** all four adapters treat socket timeout as terminal; each has a test
-asserting both that the error surfaces and that the retry did not happen; full gate
-line green (now including `mix hex.audit`).
+**Done when:** all four adapters have a test asserting both that a socket timeout
+surfaces as terminal and that no retry occurred; full gate line green (now
+including `mix hex.audit`).
+
+**Status:** Done 2026-07-17. Four tests, gemini's as the template for all.
+`openrouter_test.exs` created (none existed; also gained an API-key-absent test).
+**No adapter code changed** — none needed changing. The anthropic test was
+**mutation-checked** rather than assumed load-bearing: removing the
+`TransportError` clause makes it fail inside `with_retry/2` at
+`Process.sleep/1` (anthropic.ex:113), blowing the 60 s ExUnit timeout — CLAUDE.md's
+documented scenario reproduced. Findings promoted to CLAUDE.md as
+**Cited-means-read** and **Demonstration-not-citation**. The 429-parity observation
+became BL-023.
 
 ---
 
@@ -634,12 +682,21 @@ each against source**):
 2. **"Adding a new event type" says two places; rule 14 is three** (`event.ex` +
    `file.ex` + specs §6, one commit, drift-enforced). Following the doc as written
    produces a drift FAIL. Cite rule 14.
-3. **§Known Limitations `receive_timeout` "Fixed" claim is over-broad**:
-   terminal-timeout handling exists in anthropic/gemini only; ollama/openrouter
-   carry the forbidden `:retry` fallthrough (BL-021 evidence: `ollama.ex:55/:75`,
-   `openrouter.ex:40`). **Coordinate with BL-021 (#72):** if it has landed,
-   restate the claim accurately (all four, tested); if not, annotate it with the
-   BL-021 ref. Do not leave it asserting the bug is fixed.
+3. **§Known Limitations `receive_timeout` claim — verify, then add per-adapter
+   nuance + a coverage pointer.** *(Rewritten 2026-07-17: as first drafted this
+   item said the "Fixed" claim was over-broad because ollama/openrouter "carry the
+   forbidden `:retry` fallthrough". That premise was false — see §BL-020's
+   correction note and §BL-021. It is corrected here rather than carried, since a
+   ticket built on a false premise produces a wrong edit.)* Expected outcome is now
+   that the claim is **accurate but under-specified**, not over-broad. Verify
+   against source, then say what "fixed" means per adapter: `anthropic`/`gemini`
+   retry transient errors via `with_retry/2` and exclude
+   `%Req.TransportError{reason: :timeout}` explicitly, so the clause is
+   load-bearing; `ollama`/`openrouter` have no retry mechanism at all, so their
+   timeouts are terminal by construction and the rule is vacuously satisfied. All
+   four now carry a terminality test (BL-021, #72) — point at them. Do **not**
+   restate this as "all four fixed the same way"; the two mechanisms differ, and
+   flattening them is how the original error started.
 4. **Adapter list (repo structure) omits `openrouter.ex`.** While correcting it,
    spot-check the whole repo-structure tree against `ls` — one omission found by
    eyeball suggests others; verify, don't assume the rest is current.
@@ -673,7 +730,46 @@ of fixed reality rather than an annotation of a known bug, and BL-021 is the
 smaller, sharper ticket. Fresh session each: BL-021 touches adapter code with
 tests, BL-022 is a doc-verification sweep — different modes, don't chain them to
 save a `/clear`. The two boundaries may share one export if run back-to-back, or
-close separately.
+close separately. *(BL-021 landed 2026-07-17; item 3 rewritten in light of it.)*
+
+---
+
+### BL-023 — Retry parity for hosted-provider adapters: 429 handling (#74)
+**Size:** S · **Priority:** low — **decision-gated, not scheduled work**
+
+Surfaced by BL-021's verify step, which read every adapter's error path and found
+an asymmetry pointing the *opposite* way to the one BL-021 was filed about.
+Recorded rather than acted on: this is a design question for the human, and the
+answer may legitimately be "leave it".
+
+Current retry behaviour, verified by reading each catch-all:
+
+| Adapter | Retries | Hosted? | Rate-limits? |
+|---|---|---|---|
+| `anthropic` | 429, 529, + transient network errors (`with_retry/2`, 6× exponential backoff) | yes | yes |
+| `gemini` | 429 + transient network errors (`with_retry/2`) | yes | yes |
+| `openrouter` | **nothing** | **yes** | **yes** |
+| `ollama` | **nothing** | no — local | no |
+
+Ollama not retrying is defensible: it is a local process with no rate limiting.
+**OpenRouter is the odd one** — a hosted, rate-limiting service with no 429
+handling, so a rate-limit response surfaces as a terminal
+`{:error, "OpenRouter HTTP 429: ..."}` and fails the step where anthropic/gemini
+would back off and succeed.
+
+**The question (human's to answer, do not decide in-ticket):** should hosted-provider
+adapters have retry parity for 429? Reasonable answers include:
+- **Yes** — add `with_retry/2` + 429 to openrouter, matching gemini. Note this makes
+  the `TransportError` terminality clause **newly load-bearing there**, so it must be
+  added in the same commit, and BL-021's regression guard is exactly the test that
+  catches its absence — that guard was written for this.
+- **No** — openrouter is used for cheap small-model experiments where failing fast
+  is preferable to a 63 s backoff; the eval runner's window is short.
+- **Not yet** — no observed 429 from openrouter in practice; wait for the trigger
+  (the BL-006 pattern).
+
+**Done when:** the question is answered and recorded here. If the answer is yes, the
+implementation follows as its own scoped work.
 
 ---
 

@@ -12,6 +12,14 @@ automatically and emits WARN for any stale entry. See **BL-002** in
 
 Refresh trigger: milestone end, or before any handoff session.
 
+**Uploads happen only as part of an export boundary — the manifest is regenerated
+and included in the same set.** The check compares this file against git, so it
+detects the repo moving ahead of an export (expected mid-cycle staleness, a
+strict-exempt WARN). It cannot detect the reverse: a file uploaded without a regen
+leaves the manifest silently under-describing project knowledge, and drift reports
+green while the record is wrong. The tooling is blind in that direction; the
+discipline is what covers it. Source: BL-022 filing, 2026-07-17.
+
 ---
 
 | export name | repo path | repo | commit | last changed |
@@ -25,8 +33,8 @@ Refresh trigger: milestone end, or before any handoff session.
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `acf9a13` | 2026-07-15 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `07a39a3` | 2026-07-17 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `6322be2` | 2026-07-17 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `ca35e59` | 2026-07-17 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `8b0c49e` | 2026-07-17 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `a1826b7` | 2026-07-17 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
@@ -43,4 +51,4 @@ Refresh trigger: milestone end, or before any handoff session.
 
 ---
 
-Exported: 2026-07-17 at aetheris-agents `07a39a3` / aetheris `6322be2` (BL-022 #73 filing).
+Exported: 2026-07-17 at aetheris-agents `ca35e59` / aetheris `8b0c49e` (BL-021 #72 closeout).

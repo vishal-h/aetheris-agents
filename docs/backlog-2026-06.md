@@ -565,7 +565,53 @@ changes); they are the same class as the recorded "Nil-key-guard" lesson — a g
 present in one adapter and absent in a sibling. Worth a ticket.
 
 **Gate recommendation on the pinned open question** — *should `mix hex.audit` join
-the gate set?* See the packet; decided at review, not implemented here.
+the gate set?* **Adopted 2026-07-17** (human call on claude-ui recommendation).
+`mix hex.audit` now sits in the harness CI contract after `deps.get`, with the
+accept path written into CLAUDE.md rather than left implicit: advisories cannot be
+suppressed (no ignore mechanism), so when no patched version exists the accepted
+advisory gets a backlog rationale and the gate runs **expected-red, named with its
+ticket ref** per the tracked-carry clause. Upstream-triggered red — a new advisory
+arriving through nobody's commit — is the gate working, not a defect, and gets a
+ticket the day it is found. Adopted knowingly with that tradeoff on record.
+
+---
+
+### BL-021 — Adapter socket-timeout terminality: fix ollama/openrouter, test anthropic (#72)
+**Size:** S–M · **Priority:** next (runnable standalone, harness-side)
+
+Origin: BL-020's packet. Verifying that `req 0.5 → 0.6` had not changed
+`Req.TransportError` semantics surfaced that the terminality rule is applied
+unevenly across the four LLM adapters. CLAUDE.md's `receive_timeout` note requires
+`%Req.TransportError{reason: :timeout}` be matched as **terminal**, never
+`:retry` — otherwise a socket timeout is retried 6× and exhausts the eval runner's
+window before a single call completes.
+
+Two parts, kept distinct — (b) is a live bug, (a) is a coverage gap:
+
+**(a) Coverage gap — test the Anthropic terminality branch.** `anthropic.ex:91`
+has the correct clause but **no test covers it**. Anthropic is the primary
+production adapter and the one the CLAUDE.md note is explicitly written about; its
+correctness is currently verified only by symmetry with Gemini. `gemini.ex:79` has
+the identical clause and *is* covered, by
+`test/aetheris/execution/llm_adapter/gemini_test.exs:351` — use it as the
+template: it is non-vacuous, asserting both that the error surfaces
+(`{:error, "receive timeout"}`) **and** that the retry was prevented
+(`call_count == 1`).
+
+**(b) Live violation — fix ollama + openrouter.** `ollama.ex` (`:55`, `:75`) and
+`openrouter.ex` (`:40`) set `receive_timeout: 120_000` but **never match
+`TransportError` at all**, so a socket timeout falls through to the catch-all
+`{:error, _reason} -> {:error, :retry}` — precisely the behavior CLAUDE.md
+forbids. A live rule violation in production-adjacent code, not merely missing
+tests. Fix the clause in both, with tests proving terminality.
+
+Same class as the recorded **Nil-key-guard** lesson — a guard present in one
+adapter and absent in a sibling is a latent silent-failure. That lesson named
+Anthropic and Gemini as owing an audit; this is the same audit, one rule over.
+
+**Done when:** all four adapters treat socket timeout as terminal; each has a test
+asserting both that the error surfaces and that the retry did not happen; full gate
+line green (now including `mix hex.audit`).
 
 ---
 

@@ -491,8 +491,21 @@ all in the HTTP stack (the Bandit / Req dependency chain):
 |---|---|
 | `req 0.5.17` | EEF-CVE-2026-49755 (**HIGH**), EEF-CVE-2026-49756 (LOW) |
 | `plug 1.19.1` | EEF-CVE-2026-54892 (**HIGH**), EEF-CVE-2026-8468 (**HIGH**), EEF-CVE-2026-56814 (MEDIUM), EEF-CVE-2026-56813 (LOW) |
-| `mint 1.8.0` | EEF-CVE-2026-56810 (**HIGH**) — buffers a whole chunked response chunk in memory in `Mint.HTTP1.decode_body/5` |
+| `mint 1.8.0` | **8 advisories** — 49754 (HIGH), 48862 (HIGH), 56810 (HIGH), 58229 (HIGH), 49753 (MED), 59246 (MED), 59249 (MED), 48861 (LOW) |
 | `hpax 1.0.3` | EEF-CVE-2026-58226 (**HIGH**) |
+
+> **Table corrected 2026-07-17 by BL-020's pre-audit capture (a finding).** As
+> first written, the `mint` row listed only 56810, putting the total at 8. The
+> true count is **15**: `mint 1.8.0` alone carries **8** advisories. This was not
+> upstream drift — the clean-clone smoke test was the same day — it was a
+> reporting error: the table was composed from two *truncated* views of
+> `mix hex.audit` (`head -20` and `tail -8`), capturing the first seven entries
+> and the last one. Same failure mode as the BL-016 gate-line miscount:
+> characterising a tool's output from a fragment. Note that BL-017's hardening
+> ("gate lines quote the tool's actual summary line") would **not** have caught
+> it — `hex.audit`'s summary line, `Found packages with security advisories`,
+> carries no count. The generalised lesson: never compose a factual table from a
+> truncated view; capture the whole output or count it programmatically.
 
 No CI gate fails on these — deps resolve, `compile --warnings-as-errors` is clean,
 suite green 857/0 from a clean clone. That is *why* they went unnoticed:
@@ -509,6 +522,50 @@ LLM adapters, `plug`/`bandit` back the playground HTTP API.
 
 **Done when:** `mix hex.audit` clean, or each residual advisory explicitly
 accepted with a recorded rationale; full gate line green.
+
+**Status:** Done 2026-07-17. `mix hex.audit` → **`No retired or security advisory
+packages found`** (exit 0). All 15 advisories cleared; **no residuals**, so the
+accept-with-rationale path was not needed and no human decision is pending.
+
+Version delta (`mix deps.update req plug mint hpax`; `mix.lock` only — **`mix.exs`
+unchanged**, since `~> 0.5` already permitted 0.6.x and `~> 1.0` permitted 1.20.x;
+no constraint conflicts, no forced overrides):
+
+| Package | Before | After | |
+|---|---|---|---|
+| `req` | 0.5.17 | **0.6.3** | target (0.x minor — see below) |
+| `plug` | 1.19.1 | **1.20.3** | target |
+| `mint` | 1.8.0 | **1.9.3** | target |
+| `hpax` | 1.0.3 | **1.0.4** | target |
+| `finch` | 0.21.0 | 0.23.0 | resolver-dragged (via req) |
+| `telemetry` | 1.4.1 | 1.4.2 | resolver-dragged |
+
+Six packages, nothing else — no opportunistic updates, so the diff stays
+auditable *as* a security patch.
+
+**`req 0.5.17 → 0.6.3` crossed a 0.x minor boundary** (breaking-change territory
+for a 0.x library) and `req` backs every LLM adapter — the sensitive area. Verified
+rather than assumed: `test/aetheris/execution/llm_adapter/gemini_test.exs:351`
+("Req.TransportError timeout is terminal and not retried") stubs
+`Req.Test.transport_error(conn, :timeout)` and asserts both that the error
+surfaces (`{:error, "receive timeout"}`) **and** that it prevented the retry
+(`call_count == 1`). It passes under 0.6.3, so `Req.TransportError`'s shape and
+semantics survived the bump. No adapter code changed.
+
+**Finding — asymmetric coverage (surfaced, not filled).** The identical terminality
+branch exists in **two** adapters — `gemini.ex:79` and `anthropic.ex:91` — but only
+Gemini has a test. Anthropic, the *primary production adapter* and the one CLAUDE.md's
+`receive_timeout` note is explicitly written about, has none; its correctness here is
+verified only by symmetry with Gemini (identical clause shape, and compilation proves
+the struct still exists). Low risk, genuinely unverified. Related: `ollama.ex` and
+`openrouter.ex` set `receive_timeout` but never match `TransportError` at all, so a
+socket timeout there falls to `{:error, _} -> {:error, :retry}` — the exact behavior
+CLAUDE.md forbids. Both are pre-existing and out of BL-020's Touches (no adapter
+changes); they are the same class as the recorded "Nil-key-guard" lesson — a guard
+present in one adapter and absent in a sibling. Worth a ticket.
+
+**Gate recommendation on the pinned open question** — *should `mix hex.audit` join
+the gate set?* See the packet; decided at review, not implemented here.
 
 ---
 

@@ -704,10 +704,23 @@ each against source**):
    application-start/boot-order description (reseed → resume → sweep → optional
    API). Cross-ref runbook §Orphan sweep rather than duplicating the verdict
    table — BL-019's dedup rule applies.
-6. **Execution Modes table lists "Fork" as a shipped mode.** What exists is
+6. ~~**Execution Modes table lists "Fork" as a shipped mode.** What exists is
    `Eval.AB.run_forked/5` (m11); `Aetheris.fork_run` is BL-007, unbuilt. Footnote
-   the row to say exactly that — the BL-007 milestone doc will quote this table,
-   and its framing depends on knowing what exists today.
+   the row to say exactly that.~~ **FALSE — struck 2026-07-17 by this ticket's own
+   verify step. The table is correct; no change made.** `Aetheris.fork_run/3`
+   **exists** (`lib/aetheris.ex:73`), backed by `Fork.from_step/3`
+   (`lib/aetheris/execution/fork.ex`, since 2026-05-17), a CLI command
+   (`cli/commands/fork.ex`), tests in both `execution/fork_test.exs` and
+   `cli/commands/fork_test.exs`, and `:fork` is first-class in the mode union
+   (`run_config.ex:115`). Acting on this item would have added a **false footnote
+   to accurate content** — the failure mode inverted: not a stale doc, a stale
+   reviewer.
+   **How it happened (reviewer-side `Cited-means-read` violation):** the claim was
+   written from the backlog's BL-007 scope sketch and the roadmap — *planning*
+   documents — and asserted as code state; `lib/aetheris.ex` was never opened.
+   Planning docs describe intent, and intent reads like fact. Caught only by this
+   ticket's own instruction to treat its items as leads and re-verify against
+   source. See `docs/reviews/bl-022-review.md`.
 7. **Trajectory-file layout shows `meta.json` as a separate file**; BL-005 treated
    `meta` as inline in `trajectory.json`. Verify on disk against a real run
    directory; correct whichever is wrong (specs §3 is the tiebreaker).
@@ -732,10 +745,38 @@ tests, BL-022 is a doc-verification sweep — different modes, don't chain them 
 save a `/clear`. The two boundaries may share one export if run back-to-back, or
 close separately. *(BL-021 landed 2026-07-17; item 3 rewritten in light of it.)*
 
+**Approved deviation (on record):** **Touches widened to `../aetheris/CLAUDE.md`**
+to correct **rule 14** in the same boundary. Item 2 required architecture.md to say
+"three places"; rule 14 said "two". Fixing only the doc would manufacture a
+cross-mirror contradiction that no tooling detects — the BL-019 logic exactly. Rule
+14's text now matches what `drift_check.py` has always enforced, with the
+enforcement behaviour cited as the evidence. This is a correction to enforced
+reality, not a new rule.
+
+**Status:** Done 2026-07-17. Eight items verified against source before any write —
+**six true, two false-premised**, both false ones authored by the reviewer from
+exported/planning docs and both caught by this ticket's own instruction to treat its
+items as leads rather than facts. Landed: three-category convention header;
+event-type list regenerated **from the union** (12 → all 22, table-formatted); the
+three-place rule with rule 14 corrected alongside; `openrouter.ex` added to the
+adapter tree — plus the spot-check the item asked for, which found the tree stale
+well beyond it (7 of 9 tools and 6 execution modules were missing, incl. `fork.ex`);
+`Aetheris.Sweep` added to the component narrative and the boot-order section
+(reseed → resume → sweep → API, with *why* the order is load-bearing), cross-ref'd
+to the runbook rather than duplicating its verdict table; the `receive_timeout`
+claim given per-adapter nuance and a coverage pointer, with an explicit note that
+flattening the two mechanisms is how BL-021's false report began; and the trajectory
+layout corrected — `meta` is inline, no `meta.json` has ever been written (verified
+on disk and against specs §3). Item 6 **not acted on** — the table was already
+correct. `aetheris--architecture.md` joins the manifest. Findings: BL-007's scope
+sketch annotated (its harness half already shipped); rule 14 corrected; the
+reviewer-side `Cited-means-read` instance appended to CLAUDE.md. See
+`docs/reviews/bl-022-review.md`.
+
 ---
 
 ### BL-023 — Retry parity for hosted-provider adapters: 429 handling (#74)
-**Size:** S · **Priority:** low — **decision-gated, not scheduled work**
+**Size:** S · **Priority:** answered-and-parked (event-triggered, not scheduled)
 
 Surfaced by BL-021's verify step, which read every adapter's error path and found
 an asymmetry pointing the *opposite* way to the one BL-021 was filed about.
@@ -771,6 +812,23 @@ adapters have retry parity for 429? Reasonable answers include:
 **Done when:** the question is answered and recorded here. If the answer is yes, the
 implementation follows as its own scoped work.
 
+**Answered 2026-07-17: not yet** (human call on claude-ui recommendation). Parked
+with a trigger, per the BL-006 convention — waiting on a named event, not on
+anyone's attention.
+
+- **Trigger:** an observed 429 from OpenRouter in a real run's trajectory.
+- **On trigger:** add `with_retry/2` + 429 matching gemini's shape, with the
+  `%Req.TransportError{reason: :timeout}` terminality clause **in the same
+  commit** — retry logic and the timeout exclusion are one change, never two.
+  BL-021's (#72) `openrouter_test.exs` regression guard is the test that enforces
+  it: it asserts terminal-never-`:retry` and exactly-one-call, so it fails the
+  moment retry arrives without the exclusion. That guard was written for this
+  branch.
+- **Until then:** fail-fast stands. OpenRouter surfaces a 429 as a terminal
+  `{:error, "OpenRouter HTTP 429: ..."}`, which is the intended behaviour for
+  cheap small-model experiments where a 63 s backoff would exhaust the eval
+  runner's window.
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)
@@ -785,15 +843,35 @@ mechanically reconstructable for completed runs — `run_checkpoints` is
 only needed for live ones. No recording changes required.
 
 Scope sketch for the milestone docs:
-- Harness: `Aetheris.fork_run(run_id, step)` — rebuild messages up to
+- ~~Harness: `Aetheris.fork_run(run_id, step)` — rebuild messages up to
   step N from the trajectory, start a new run with provenance back-link
-  (consider reusing `agent_trees` for the parent/child relation).
+  (consider reusing `agent_trees` for the parent/child relation).~~
+  **Already built — struck 2026-07-17, see the annotation below.**
 - Rig: one Tauri command + a "Fork from here" affordance on a step group
-  in TrajectoryView.
+  in TrajectoryView. *(Verified absent — this is the real work.)*
 - Decide divergence semantics up front: forked run gets a fresh run_id
   and records normally; original is never mutated.
 - New event types or config fields → event.ex/specs §6 in the same
   commit (drift_check enforces).
+
+> **Verified state 2026-07-17 (BL-022's source check — this sketch was stale).**
+> The harness half of the sketch describes work that already shipped:
+>
+> | Claimed as work | Verified state |
+> |---|---|
+> | `Aetheris.fork_run(run_id, step)` | **exists** — `lib/aetheris.ex:73` |
+> | "rebuild messages up to step N" | **exists** — `Fork.from_step/3`, `lib/aetheris/execution/fork.ex`, since 2026-05-17 |
+> | "provenance back-link" | **exists** — `fork_from` / `fork_step` are first-class `RunConfig` fields (`run_config.ex:82,196`), set at `fork.ex:119`, and **persisted into the trajectory's `meta`** by `maybe_add_fork_meta` (`agent/server.ex:717-720`). Shipped as a direct field link, not via `agent_trees` — the sketch's parenthetical was a suggestion, and a simpler design won. |
+> | — | `:fork` is first-class in the mode union (`run_config.ex:115`); CLI `cli/commands/fork.ex`; tests in `execution/fork_test.exs` and `cli/commands/fork_test.exs` |
+>
+> **Verified absent:** the Rig side — no fork command in `rig/src-tauri/src/*.rs`, no
+> frontend references, nothing in `specs.md` §4.
+>
+> Not re-scoped here; that is the planning session's job. Noting only that the shape
+> has changed: provenance, determinism contract, and Rig UX **on top of an existing
+> core**, rather than a from-scratch build.
+>
+> **Milestone scoping starts from source, not this sketch.**
 
 **Done when:** milestone README + issue docs exist; implementation gated
 on them, per the p3 pattern (docs → mock/real split if useful → UI).

@@ -1,12 +1,12 @@
 # BL-007 / t0 — `caused_by` event lineage field (harness)
 
-**Milestone:** [BL-007 — Fork](./milestone.md) · **Ticket:** t0 · **Repo:** `../aetheris/` (harness)
+**Milestone:** [BL-007 — Fork](./README.md) · **Ticket:** t0 · **Repo:** `../aetheris/` (harness)
 **Status:** Ready — D3 ratified 2026-07-18 (`caused_by` folds as t0). Runs in a **fresh**
 claude-code session.
 **Verified against:** aetheris `19c08be` — field confirmed absent (`grep -rn "caused_by"
 lib/ test/` → 0 hits, 2026-07-17 recon/verification pass).
 
-Generated from the committed milestone doc's t0 section (`milestone.md:114-144`). Scope is
+Generated from the committed milestone doc's t0 section (`README.md:115-158`). Scope is
 that section verbatim, restructured to the p3 issue-doc pattern — no scope added.
 
 ---
@@ -42,7 +42,7 @@ A Rule-14 **three-place change in one commit**:
    specs §6` ellipsis is corrected to this concrete path. Note: Rig's `docs/rig/specs.md` §6
    is the drift-checked mirror, but `caused_by` is a top-level field — not an event type or
    payload key — so it is not a drift-checked row; the Rig mirror row lands with t5, see the
-   adjudication note in `milestone.md`.)
+   adjudication note in `README.md`.)
 4. Matching tests — round-trip assertion + a **back-compat test**: a pre-existing trajectory
    file without the field loads with `caused_by == nil`.
 

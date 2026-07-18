@@ -1,6 +1,6 @@
 # BL-007 / t0 — implementation notes: `caused_by` event lineage field
 
-**Ticket:** [bl-007-t0-caused-by.md](./bl-007-t0-caused-by.md) · **Milestone:** [BL-007](./milestone.md)
+**Ticket:** [bl-007-t0-caused-by.md](./bl-007-t0-caused-by.md) · **Milestone:** [BL-007](./README.md)
 **Date:** 2026-07-18 · **Repos:** harness `../aetheris/` (code) + `aetheris-agents/` (milestone-doc corrections)
 
 ## What was built
@@ -74,8 +74,8 @@ harness `specs.md` §6 (finding 1) in the same review-fix commit.
 
 ## Ticket-text corrections landed with t0 (Rider 1)
 
-Both are doc defects in the committed t0 ticket text, corrected in `milestone.md` and
-`bl-007-t0-caused-by.md` per the §8 doc-sync rule:
+Both are doc defects in the committed t0 ticket text, corrected in the milestone doc (now
+`README.md`) and `bl-007-t0-caused-by.md` per the §8 doc-sync rule:
 
 1. **Vague Touches path.** `../aetheris/docs/… specs §6` (ellipsis — the vague-path defect the
    methodology names) → concrete `../aetheris/docs/aetheris/specs.md` (§1 + §6).
@@ -86,15 +86,17 @@ Both are doc defects in the committed t0 ticket text, corrected in `milestone.md
    (reproduced this session). The done-check is repo-qualified: the drift step runs from
    `aetheris-agents/`.
 
-## Open item flagged (not fixed in t0 — out of scope)
+## Pre-existing `milestone_status` WARN — resolved in review round 1 (finding 4)
 
-`drift_check` emits a **pre-existing** WARN: `milestone_status: bl-007/README.md not found`.
-The `bl-007/` milestone dir (created by `e733b3c` on main, before this ticket) names its doc
-`milestone.md`, whereas the drift checker's convention expects a `README.md` with a `Status:`
-line (every other milestone dir has one). This is non-strict WARN only (drift exits 0 for
-t0's non-strict done-check) but would **fail t5's `drift_check --strict`** gate. Not caused by
-the t0 code branch and out of t0's scope — flagged here and in the review packet so it is
-tracked, not silently carried into t5.
+`drift_check` was emitting a **pre-existing** WARN: `milestone_status: bl-007/README.md not
+found`. The `bl-007/` milestone dir (created by `e733b3c` on main, before this ticket) named
+its doc `milestone.md`, whereas the drift checker's convention (`drift_check.py:558-565`)
+expects a `README.md` containing a `Status:` line — every other milestone dir has one. Non-strict
+WARN only (t0's done-check exits 0), but it would have **failed t5's `drift_check --strict`**.
+Operator ratified the rename (the naming was claude-ui's): `git mv milestone.md README.md`,
+Status line reformatted to the `**Status: <STATE>** —` convention the other dirs use, backlinks
+swept. Drift now reports `milestone_status: PASS`. (No t0 *code*-branch involvement — this was a
+docs-only correction, its own commit on the ticket branch.)
 
 ## Verified-against note
 
@@ -111,8 +113,8 @@ and `test/` at HEAD.
 - `mix hex.audit` — no retired/advisory packages
 - `mix credo --strict` (touched files) — no issues
 - `mix dialyzer` — passed, 0 errors
-- `python3 scripts/drift_check.py` (from `aetheris-agents/`) — 0 FAIL, 1 pre-existing WARN
-  (milestone_status, above), 7 INFO; exit 0
+- `python3 scripts/drift_check.py` (from `aetheris-agents/`) — 0 FAIL, 0 WARN after the
+  finding-4 rename (was 1 pre-existing milestone_status WARN, now PASS), 7 INFO; exit 0
 
 ## Review round 1 — dispositions
 
@@ -124,14 +126,24 @@ Review at `docs/reviews/bl-007-t0-review.md`. No blocking findings; t0 merged as
 2. **[non-blocking] Specs §6 invariant wording** — fixed: the `tool_result ← tool_called ←
    llm_responded` chain is now marked *illustrative, once populated* so the holding invariant
    (round-trip, nil-back-compat) is not blended with future-work emit convention.
-3. **[non-blocking] Done-check defect still live in t1/t2** — swept: `milestone.md` t1 and t2
-   done-checks repo-qualified; t3/t4 carry no drift command; t5's bare `drift_check --strict`
-   annotated to run from `aetheris-agents/`. Defect class closed across the milestone.
-4. **[non-blocking, pre-existing] `milestone_status` WARN / `README.md` naming** — **pending
-   human ratification** (the `milestone.md` naming was claude-ui's). Recommended fix: rename
-   `milestone.md` → `README.md` (status-bearing, matches every other milestone dir) and sweep
-   the internal backlinks. Small tracked ticket; must land before t5's `drift_check --strict`.
-   Not actioned in this commit — awaiting the operator's go/no-go.
+3. **[non-blocking] Done-check defect still live in t1/t2** — swept: the milestone doc's
+   (now `README.md`) t1 and t2 done-checks repo-qualified; t3/t4 carry no drift command; t5's
+   bare `drift_check --strict` annotated to run from `aetheris-agents/`. Defect class closed
+   across the milestone.
+4. **[non-blocking, pre-existing] `milestone_status` WARN / `README.md` naming** — **DONE**
+   (operator ratified the rename). `git mv milestone.md README.md`; Status line reformatted to
+   convention; backlinks swept (in-repo refs + the stale `milestone.md:114-144` line range →
+   `README.md:115-158`). No GitHub issue re-sync needed: no separate t0 issue exists, and epic
+   #48 already refers to it generically as "Milestone README" (not a hardcoded path). Drift:
+   `milestone_status` WARN → PASS.
+
+**Boundary observation (per the operator's note).** t0's branch now carries **four**
+doc-correction commits (`10c0f2a` ticket-text; `ae01b44` review round 1; `2ab87b5` harness
+specs note; the finding-4 rename) alongside the single code commit (`f80521e`). At this scale
+it is fine, and each is honestly its own commit (code ≠ doc-correction). But four is the
+watermark the operator named: a fifth would signal the BL-007 milestone doc wanted its own
+correction round rather than riding t0 — recorded here so the pattern is visible at
+milestone-end.
 
 **Learning-promotion candidate (watch for recurrence):** *done-check commands must be
 repo-qualified and existence-verified the same way Touches paths are* — a command referencing

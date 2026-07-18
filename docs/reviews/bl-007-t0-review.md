@@ -73,5 +73,8 @@ t0 merged as-is (reviewer: mergeable once the diff is eyeballed; no blocking fin
 2. **Fixed** — harness `specs.md` §6 chain marked *illustrative, once populated*.
 3. **Fixed** — `milestone.md` t1 + t2 done-checks repo-qualified; t5 annotated; t3/t4 carry
    no drift command. Defect class closed across the milestone.
-4. **Pending human ratification** — `milestone.md` → `README.md` rename (naming was
-   claude-ui's). Small tracked ticket; must precede t5's `--strict`. Not actioned here.
+4. **Done** — operator ratified the rename. `git mv milestone.md README.md`; Status line
+   reformatted to the `**Status: <STATE>** —` convention; in-repo backlinks swept (incl. the
+   stale `milestone.md:114-144` line range → `README.md:115-158`). No GitHub re-sync needed
+   (no separate t0 issue; epic #48 already says "Milestone README", not a hardcoded path).
+   Drift: `milestone_status` WARN → PASS.

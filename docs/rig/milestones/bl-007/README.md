@@ -1,14 +1,15 @@
 # BL-007 — Fork: Rig UX + provenance/determinism contract (#48)
 
-**Status:** PARTIALLY RATIFIED — D3 ratified 2026-07-18 (`caused_by` folds as t0; t0 is
-execution-ready). D1, D2, D4, D6 still awaiting ratification (they gate t1–t5, not t0).
+**Status: PARTIALLY RATIFIED** — D3 ratified 2026-07-18 (`caused_by` folds as t0; t0
+implemented, in review). D1, D2, D4, D6 still awaiting ratification (they gate t1–t5, not t0).
 **Size:** L · docs-first per `docs/methodology/milestone-methodology.md`.
 **Drafted:** 2026-07-17, against aetheris `19c08be` / aetheris-agents `d11464f`.
 Every repo-state claim herein was source-verified this cycle (BL-007 recon +
 verification relay, 2026-07-17); citations name the lines read.
 
-**Proposed home:** `docs/rig/milestones/bl-007/milestone.md` (aetheris-agents — the
-Rig milestone convention, cf. `docs/rig/milestones/p3/`). Harness paths below are
+**Home:** `docs/rig/milestones/bl-007/README.md` (aetheris-agents — the Rig milestone
+convention, cf. `docs/rig/milestones/p3/`; renamed from `milestone.md` to the
+status-bearing `README.md` the drift checker expects). Harness paths below are
 `../aetheris/`-qualified per the cross-repo Touches rule.
 
 **Research basis:** `../aetheris/docs/aetheris/research/activegraph-log-is-agent-2026-07.md`

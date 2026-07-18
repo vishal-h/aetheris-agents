@@ -126,23 +126,35 @@ lineage; nothing is yet required to set it beyond what the ticket wires (fork's
 
 **Touches.** `../aetheris/lib/aetheris/trajectory/event.ex` ·
 `../aetheris/lib/aetheris/trajectory/file.ex` ·
-`../aetheris/docs/… specs §6` · matching tests.
+`../aetheris/docs/aetheris/specs.md` (§1 Event Schema typespec + §6 Trajectory File
+Format JSON — the harness-owned schema doc) · matching tests.
+
+> **t0 specs-target adjudication (2026-07-18).** The event struct is harness-owned,
+> so the normative schema statement lands in the harness specs (`§1` typespec + `§6`
+> JSON), keeping the Rule-14 change in one harness commit. The original `../aetheris/docs/…
+> specs §6` (ellipsis) is corrected here to the concrete path. Rig's mirror doc
+> (`docs/rig/specs.md` §6, the drift-checked one) is **not** touched in t0: `caused_by`
+> is a top-level field (not an event type or payload key), so it is not a drift-checked
+> row, and t0 gives Rig no consumer (D4 defers lineage queries). The mirror row lands
+> with t5's sync sweep (earlier only if a Rig ticket starts reading the field).
 
 **Do not generate.** No emit-site sweep across the codebase — only the field, its
 round-trip, and back-compat. Populating `caused_by` broadly is future work.
 
-**Done-check.**
+**Done-check.** (The drift step runs from `aetheris-agents/`; there is no
+`drift_check.py` in the harness repo — the original single-`cd` form failed
+file-not-found.)
 ```bash
-cd ../aetheris && mix test test/aetheris/trajectory/ && mix test && mix hex.audit \
-  && python3 scripts/drift_check.py
+cd ../aetheris && mix test test/aetheris/trajectory/ && mix test && mix hex.audit
+cd ../aetheris-agents && python3 scripts/drift_check.py
 ```
 
 **Claude-code prompt.**
 > t0, BL-007. Add optional `caused_by` (nullable event-id) to the trajectory event
 > struct per brief Part 4's reference shape. Rule-14 three-place change in one
-> commit: event.ex + Trajectory.File map + specs §6. Back-compat test: pre-existing
-> trajectory file without the field loads with nil. Run the done-check; include
-> output in the packet. Touch nothing outside Touches.
+> commit: event.ex + Trajectory.File map + harness specs (§1 + §6). Back-compat test:
+> pre-existing trajectory file without the field loads with nil. Run the done-check;
+> include output in the packet. Touch nothing outside Touches.
 
 ### t1 — Determinism contract doc + F2 semantics fix (harness)
 

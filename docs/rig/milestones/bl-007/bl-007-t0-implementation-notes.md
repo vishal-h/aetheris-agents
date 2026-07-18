@@ -148,11 +148,17 @@ Review at `docs/reviews/bl-007-t0-review.md`. No blocking findings; t0 merged as
 **four** doc-correction commits (`10c0f2a` ticket-text; `ae01b44` review round 1; `2ab87b5`
 harness specs note; `6d4bf1f` finding-4 rename) alongside the single code commit (`f80521e`).
 The operator's rule: a **fifth** signals the BL-007 milestone doc wanted its own correction
-round rather than riding t0. The **round-1-closeout commit is that fifth** (this notes update +
+round rather than riding t0. The **round-1-closeout commit `b6fd983` is that fifth** (this notes update +
 the README issue-tracking decision + t5 D4 rider) — the two items were operator-requested at
 round close, so it lands here, but it **fires the signal**: any *further* milestone-doc change
 must be a dedicated correction round (its own BL-xxx / branch), not a sixth commit on t0's
 branch. Recorded so the boundary is explicit at milestone-end.
+
+**Realized (loop closed).** The watermark fired at `b6fd983` (the fifth) and was **honored,
+not slid**: the next milestone-doc change — the t1 pre-flight ticket-text edits (verification
+table + read-only Touches) — went to a **dedicated branch `bl-007-t1-prep` (`1d48ff3`)**, cut
+off the t0 tip, rather than a sixth commit on t0's branch. So the history reads true: four
+clean → fifth fires → sixth-and-beyond diverted to their own round.
 
 **Learning-promotion candidate (watch for recurrence):** *done-check commands must be
 repo-qualified and existence-verified the same way Touches paths are* — a command referencing

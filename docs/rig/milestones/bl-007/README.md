@@ -172,7 +172,21 @@ and `aetheris.ex:64-69` corrected to match code.
 
 **Touches.** `../aetheris/docs/aetheris/determinism-contract.md` (new) ·
 `../aetheris/lib/aetheris/execution/fork.ex` (docstring only) ·
-`../aetheris/lib/aetheris.ex` (docstring only) · manifest row at boundary.
+`../aetheris/lib/aetheris.ex` (docstring only) ·
+`../aetheris/lib/aetheris/execution/replayer.ex` and
+`../aetheris/lib/aetheris/execution/verifier.ex` (**read-only verification targets** —
+read to fill the `[t1-verify]` table below; **no code changes**, so reading them is not
+out-of-Touches noise while docstrings in `fork.ex`/`aetheris.ex` stay t1's only code
+touches) · manifest row at boundary.
+
+**Verification table (required in the packet).** The contract's `[t1-verify]`-tagged
+claims (the `replay`/`verify` rows and the tool enumeration, §3/§5) derive from design
+docs, not source reads. t1's review packet MUST include a verification table — **claim →
+file:line → matches / diverges** — for every tagged claim, produced by reading
+`replayer.ex` / `verifier.ex` against source, **before the contract is committed**. A
+divergence is a **blocking finding**, resolved by a human-approved edit to the contract —
+never by quietly matching the doc to the code (or the code to the doc). t1 commits the
+contract only once the table is clean or its divergences are dispositioned.
 
 **Do not generate.** No behavior changes in this ticket — docstrings only. Seed-carry
 is t2.

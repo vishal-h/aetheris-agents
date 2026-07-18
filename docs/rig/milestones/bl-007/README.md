@@ -288,6 +288,14 @@ because the contract is normative for what t2 carries; t2 before t3 because the 
 command rides the fixed CLI. Fresh claude-code session per ticket; full restart
 after any CLAUDE.md change. Pushes held for the human; every gate at every boundary.
 
+**Issue tracking (decision, 2026-07-18).** Per-ticket GitHub issues (methodology §8:
+one issue per ticket, body = ticket section verbatim) are **waived for BL-007** — the
+milestone-level epic **#48** tracks at milestone granularity, and per-ticket issue docs
+live in this dir (`bl-007-t*.md`). This is the deliberate lightweight mode for a
+six-ticket, single-operator milestone, recorded so the methodology-vs-repo divergence is
+a decision, not drift. Reversible: if per-ticket issues are wanted, generate t1–t5 when
+t1 starts and strike this note.
+
 ## Done
 
 All tickets pass done-checks; zero blocking findings across

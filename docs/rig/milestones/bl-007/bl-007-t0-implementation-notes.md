@@ -72,6 +72,13 @@ Indexing the field in SQLite (a DB migration + `do_insert_event`/`events_for_run
 wiring) composes with D4's deferred work as a future backlog item. The scope note is added to
 harness `specs.md` §6 (finding 1) in the same review-fix commit.
 
+**Rider for t5's D4 backlog entry (carry forward).** When t5 writes the D4 deferral entry, it
+must capture explicitly that D4 is not merely index/API work: the `events` table has **no
+`caused_by` column** (`../aetheris/lib/aetheris/store.ex:803-812`), and `do_insert_event/2`
+(`store.ex:1006-1023`) persists only seven columns — the field lives in trajectory files only
+today. So a lineage-query consumer needs a store-side migration first. Recording the citations
+here so the deferred ticket inherits the gap instead of rediscovering it from scratch.
+
 ## Ticket-text corrections landed with t0 (Rider 1)
 
 Both are doc defects in the committed t0 ticket text, corrected in the milestone doc (now
@@ -137,13 +144,15 @@ Review at `docs/reviews/bl-007-t0-review.md`. No blocking findings; t0 merged as
    #48 already refers to it generically as "Milestone README" (not a hardcoded path). Drift:
    `milestone_status` WARN → PASS.
 
-**Boundary observation (per the operator's note).** t0's branch now carries **four**
-doc-correction commits (`10c0f2a` ticket-text; `ae01b44` review round 1; `2ab87b5` harness
-specs note; the finding-4 rename) alongside the single code commit (`f80521e`). At this scale
-it is fine, and each is honestly its own commit (code ≠ doc-correction). But four is the
-watermark the operator named: a fifth would signal the BL-007 milestone doc wanted its own
-correction round rather than riding t0 — recorded here so the pattern is visible at
-milestone-end.
+**Boundary observation (per the operator's note) — watermark fired.** t0's branch carried
+**four** doc-correction commits (`10c0f2a` ticket-text; `ae01b44` review round 1; `2ab87b5`
+harness specs note; `6d4bf1f` finding-4 rename) alongside the single code commit (`f80521e`).
+The operator's rule: a **fifth** signals the BL-007 milestone doc wanted its own correction
+round rather than riding t0. The **round-1-closeout commit is that fifth** (this notes update +
+the README issue-tracking decision + t5 D4 rider) — the two items were operator-requested at
+round close, so it lands here, but it **fires the signal**: any *further* milestone-doc change
+must be a dedicated correction round (its own BL-xxx / branch), not a sixth commit on t0's
+branch. Recorded so the boundary is explicit at milestone-end.
 
 **Learning-promotion candidate (watch for recurrence):** *done-check commands must be
 repo-qualified and existence-verified the same way Touches paths are* — a command referencing

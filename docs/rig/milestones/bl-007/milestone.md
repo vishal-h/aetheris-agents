@@ -178,7 +178,8 @@ is t2.
 
 **Done-check.**
 ```bash
-cd ../aetheris && mix test && mix hex.audit && python3 scripts/drift_check.py
+cd ../aetheris && mix test && mix hex.audit
+cd ../aetheris-agents && python3 scripts/drift_check.py
 ```
 
 ### t2 — Fork core alignment: seed-carry + CLI convergence (harness)
@@ -203,8 +204,8 @@ Recon §1a/§1b, F1.
 **Done-check.**
 ```bash
 cd ../aetheris && mix test test/aetheris/execution/fork_test.exs \
-  test/aetheris/cli/commands/fork_test.exs && mix test && mix hex.audit \
-  && python3 scripts/drift_check.py
+  test/aetheris/cli/commands/fork_test.exs && mix test && mix hex.audit
+cd ../aetheris-agents && python3 scripts/drift_check.py
 ```
 
 ### t3 — Rig Tauri command: fork a run (rig/src-tauri)
@@ -273,6 +274,7 @@ discipline. D6.
 
 **Done-check.**
 ```bash
+# run from aetheris-agents/ (drift_check.py lives here, not in the harness)
 python3 scripts/drift_check.py --strict   # exit 0 at the closeout export
 ```
 

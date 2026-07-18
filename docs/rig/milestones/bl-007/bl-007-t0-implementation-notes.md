@@ -43,6 +43,35 @@ key is silently ignored by the reader. So the JSON shape change does not break R
 trajectory view. (Had the parser been strict, that would have been a blocking scope-addition
 back to the milestone doc — it was not.)
 
+## Review round 1 — second-serializer audit (finding 1, answered with evidence)
+
+**Question:** does any path other than `Trajectory.File` serialize `%Event{}`, silently
+dropping `caused_by`?
+
+**Answer: yes — the SQLite index path, and the drop is by-design / in-scope-excluded.**
+- `Trajectory.Log` keeps events in ETS and has **no file serializer of its own**; on every
+  append it calls `Store.insert_event/1`
+  (`../aetheris/lib/aetheris/trajectory/log.ex:105`).
+- `Store.insert_event/1` → `do_insert_event/2`
+  (`../aetheris/lib/aetheris/store.ex:1006-1023`) writes exactly seven columns:
+  `INSERT INTO events (id, run_id, step, seq, type, payload_json, timestamp)`
+  (`store.ex:1008`); only `event.payload` is JSON-encoded (`store.ex:1018`). The `events`
+  table DDL (`store.ex:803-812`) has **no `caused_by` column**, so `caused_by` is dropped on
+  the DB path.
+- This loses nothing today: nothing populates `caused_by` yet, and the trajectory **file**
+  (which round-trips it) is canonical — `file.ex` moduledoc: *"The trajectory file is the
+  canonical source of truth for a run. SQLite is an index; replay reads from this file."*
+  The index reconstructs events with `caused_by == nil` (struct default) — no crash.
+- The drift `payload_fields` check samples `payload_json` keys only, so a top-level field is
+  invisible to it — this is why drift stays green.
+
+**Disposition (per the reviewer's fork): a specs "trajectory-file-only" note, NOT a t2 rider.**
+t2 (fork seed-carry + CLI convergence) touches neither event persistence nor the `events`
+table, and **D4 defers the lineage queries** that would justify a SQLite `caused_by` column.
+Indexing the field in SQLite (a DB migration + `do_insert_event`/`events_for_run`/`row_to_event`
+wiring) composes with D4's deferred work as a future backlog item. The scope note is added to
+harness `specs.md` §6 (finding 1) in the same review-fix commit.
+
 ## Ticket-text corrections landed with t0 (Rider 1)
 
 Both are doc defects in the committed t0 ticket text, corrected in `milestone.md` and
@@ -84,3 +113,27 @@ and `test/` at HEAD.
 - `mix dialyzer` — passed, 0 errors
 - `python3 scripts/drift_check.py` (from `aetheris-agents/`) — 0 FAIL, 1 pre-existing WARN
   (milestone_status, above), 7 INFO; exit 0
+
+## Review round 1 — dispositions
+
+Review at `docs/reviews/bl-007-t0-review.md`. No blocking findings; t0 merged as-is.
+
+1. **[question] Single-serializer confirmation** — answered above with file:line; the SQLite
+   index (`Store.insert_event/1`) is the second serializer and drops `caused_by` by design.
+   Resolved as a specs "trajectory-file-only" note (harness `specs.md` §6), not a t2 rider.
+2. **[non-blocking] Specs §6 invariant wording** — fixed: the `tool_result ← tool_called ←
+   llm_responded` chain is now marked *illustrative, once populated* so the holding invariant
+   (round-trip, nil-back-compat) is not blended with future-work emit convention.
+3. **[non-blocking] Done-check defect still live in t1/t2** — swept: `milestone.md` t1 and t2
+   done-checks repo-qualified; t3/t4 carry no drift command; t5's bare `drift_check --strict`
+   annotated to run from `aetheris-agents/`. Defect class closed across the milestone.
+4. **[non-blocking, pre-existing] `milestone_status` WARN / `README.md` naming** — **pending
+   human ratification** (the `milestone.md` naming was claude-ui's). Recommended fix: rename
+   `milestone.md` → `README.md` (status-bearing, matches every other milestone dir) and sweep
+   the internal backlinks. Small tracked ticket; must land before t5's `drift_check --strict`.
+   Not actioned in this commit — awaiting the operator's go/no-go.
+
+**Learning-promotion candidate (watch for recurrence):** *done-check commands must be
+repo-qualified and existence-verified the same way Touches paths are* — a command referencing
+a script that exists only in the sibling repo is the same defect class as an unqualified path.
+Bit once at t0 (drift step); finding 3's sweep is the pre-emptive fix.

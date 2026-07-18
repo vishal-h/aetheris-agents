@@ -274,9 +274,20 @@ its transcript prefix matches to step N.
 the affordance) — per the runbook-update rule these land with t2/t4 where
 operator-visible, this ticket sweeps for completeness, it does not recover.
 `architecture.md` fork section refreshed. `rig--current-state-2026-06.md` §C
-corrected (its "no fork API" text predates the discovery). Backlog entry for D4's
-deferral. Export boundary per D6: manifest regen including this doc, the contract,
-the brief; weng cite fix; six-file project-knowledge reconciliation.
+corrected (its "no fork API" text predates the discovery). Backlog entries: (a) D4's
+deferral; and three surfaced by t1's verification of `verifier.ex` — (b) the verify
+effect-class mechanism / record-and-serve for effectful tools (motivating hazard:
+verify re-executes `http_call`'s network egress — determinism-contract §5,
+`verifier.ex:130-136`); (c) the verify divergence-report gap — it names no first
+diverging event (`verifier.ex:176-186`, `188-242`); (d) the verify `KeyError` crash on
+paired in-process tools — `verify_step/2` assumes the worker `"output"` payload key
+(`verifier.ex:133`), but in-process results use `"result"` (`loop.ex:421-497`), so an
+orb trajectory using `wait_for_event`/`read_blackboard`/`write_blackboard` makes
+`verify` raise. Verify robustness (c/d) is outside BL-007 scope; standalone-harness-ticket
+vs. trigger-parked (trigger: first verify run against a multi-agent/orb trajectory) is
+the human's call at this boundary. Export boundary per D6: manifest regen including
+this doc, the contract, the brief; weng cite fix; six-file project-knowledge
+reconciliation.
 
 **Contract refs.** Mirror-vs-record convention (runbook header). Manifest header
 discipline. D6.

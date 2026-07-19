@@ -487,6 +487,26 @@ bug to the UI navigate/spinner.
 Gates: frontend `bun run build` + `bun run lint` + camelCase sweep (2 benign) green. No Rust, no
 harness this round (agents-repo frontend only).
 
+## Review round 6 — acceptance close
+
+Full GUI e2e passed against the shipped tree (agents `4641527`; harness `059c92e`): press 1
+(banner + navigate + prefix through step 0), presses 2–3 adversarial (full cycle each, one child
+per press — the button re-enabling on return confirmed the StrictMode-safe `alive` reset in the
+field), error path via real-run forks (rejection → red strip, no silent run; the failures were the
+live runtime answering truthfully, per the determinism contract), Bonus 2 (reconstructed view, no
+fork buttons). Bonus 1 recorded **not-reachable-with-trigger** — the 544 `fork_step:null` forks are
+trajectory-file-only (pre-BL-007 replay/verify, D4-era), not in the runs table, so unselectable;
+the guard is code + type verified. Finding 10 closed empirically (mtimes + one-child-per-press).
+
+**Cosmetic fold applied:** the "Fork failed: fork failed:" double prefix — `useFork` now strips
+the redundant leading `fork failed:` from `fork_run`'s message (`fork.rs:68`), leaving the strip's
+"Fork failed:" label as the single frame (frontend-only; build+lint+sweep green).
+
+**t4 closed** on the ff-merge to main (both repos). Two real defects fixed on their own merits
+(store `:busy` crash — harness `059c92e`; StrictMode alive-latch — agents `4641527`); one face
+recorded observed-not-reproduced; F3 error contract exercised in the field; four §7 candidates
+banked.
+
 ## Open items / carries
 
 - Fork **label** not surfaced by Rig (`harness_list_runs`/`harness_get_run` read label from

@@ -31,7 +31,10 @@ export function useFork(): {
       const forkedRunId = await invoke<string>('fork_run', { runId, step, label });
       return forkedRunId;
     } catch (e) {
-      const msg = String(e);
+      // fork_run's non-`done` error already reads "fork failed: <stderr>" (fork.rs:68);
+      // the error strip adds its own "Fork failed:" label, so strip the redundant prefix
+      // here — the UI label is the single authoritative frame (BL-007 t4 r6 cosmetic).
+      const msg = String(e).replace(/^fork failed:\s*/i, '');
       setError(msg);
       throw new Error(msg);
     } finally {

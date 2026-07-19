@@ -336,3 +336,57 @@ adversarial GUI e2e comes back green.
   of the pushed commits). ff-merge still held pending the human's re-run GUI
   e2e — now with teeth: press → spinner → resolve ~1.5s (stub) → auto-navigate
   → banner.
+
+---
+
+# Review — BL-007 t4 — round 6 (acceptance close)
+
+Full GUI e2e passed against the shipped tree (agents `4641527`, StrictMode fix
+committed + frontend gates green; harness `059c92e`).
+
+- **Press 1** ✓ — screenshot: banner reads from `meta.fork_from`/`fork_step`,
+  auto-navigated child, transcript prefix through step 0 (the four source
+  events) + the child's own continuation.
+- **Presses 2 & 3 (adversarial)** ✓ — full cycle each (button re-enabled on
+  return → spin → resolve → navigate → banner) while clicking around Rig
+  (refresh Runs, open another trajectory) mid-fork. The button re-enabling on
+  return across remounts confirmed the StrictMode-safe `alive` reset in the
+  field — a check we hadn't explicitly listed. Top two child rows
+  (`fork-fb5c73c5…`, `fork-5d3528f3…`) line up one-per-press.
+- **Error path** ✓ — real-run forks: rejection → red error strip, no silent
+  new run (F3 contract exercised end-to-end in the field). *Environment
+  honesty:* post-fork execution is live, so those failures were the runtime
+  answering truthfully, not a UI defect — exactly what the determinism
+  contract licenses.
+- **Bonus 1** — recorded **not-reachable-with-trigger**: all 544 `fork_step:
+  null` forks are trajectory-file-only (pre-BL-007 replay/verify producers,
+  D4-era), none in the runs table, so unselectable in Rig's list. The
+  `fork_step != null` banner guard is code + type verified; a BL-007
+  `Fork.from_step` fork always carries an integer step, so the null shape
+  can't appear through normal use. Same category as the gate-unreachable
+  bad-step path.
+- **Bonus 2** ✓ — reconstructed/file-less view (e.g. `run_DohBBQ`) shows no
+  fork buttons anywhere (`canFork={false}` → `onFork` undefined).
+- **Finding 10** ✓ — mtimes (`fork-bbef9485…` 18:54 vs `fork-ceb84df…` 18:36)
+  + one-child-per-press across presses 2 & 3 close the double-spawn concern
+  empirically.
+
+## Disposition of round 6 (claude-code)
+
+- **Cosmetic fold applied** (my recommendation, taken): the "Fork failed:
+  fork failed:" double prefix — `useFork` now strips the redundant leading
+  `fork failed:` from `fork_run`'s message (`fork.rs:68`), leaving the UI
+  strip's "Fork failed:" label as the single frame. One place, frontend-only;
+  build + lint + sweep re-run green.
+- **Acceptance recorded** (this section).
+- **Merge**: `--ff-only` harness `bl-007-t4` → `main`, agents `bl-007-t4` →
+  `main`; push both; delete feature branches local + remote (t3-boundary
+  pattern); final `main` HEADs relayed.
+
+**t4 closed.** Six review rounds; two real defects fixed on their own merits
+(the store `:busy` crash face — harness `059c92e`; the StrictMode alive-latch
+— agents `4641527`); one face (the field hang under contention) honestly
+recorded observed-not-reproduced with the per-statement race mechanism named;
+the F3 error contract exercised end-to-end in the field; four §7 candidates
+banked (artifact-over-writer-code; simulation-verifies-simulation;
+momentum-past-gate; one-symptom-three-faces).

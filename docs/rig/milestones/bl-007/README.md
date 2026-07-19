@@ -244,10 +244,30 @@ conventions) · `rig/src-tauri/src/lib.rs` (registration) · `docs/rig/specs.md`
 **Do not generate.** No UI in this ticket. No direct harness-DB writes — Rig stays
 read-only on SQLite; the fork happens through the spawned process.
 
-**Done-check.** `cargo build` + the Rig test convention for commands —
-**[PROMPT GAP: claude-code confirms the exact test command from `rig/CLAUDE.md` /
-repo state and records it in the implementation notes; an unverifiable done-check
-is a prompt defect to be corrected in the doc before t3 starts.]**
+**Done-check.** (Gap resolved from repo state 2026-07-19: Rig has no Tauri-command
+test-runner convention — all `rig/src-tauri` tests are DB-level (`db/migrations.rs`,
+`db/mod.rs`) and `#[tauri::command]` fns take `State<'_, _>`, so `fork_run` is not
+headlessly unit-invocable; the fork *behavior* is already covered by the harness CLI
+fork suite (t2). Hence a compile + lint + doc-sync gate plus one human-verified
+end-to-end, not a single test command.)
+
+- **Backend compiles:** `cd rig/src-tauri && cargo build` → exit 0.
+- **camelCase invoke sweep** (from `rig/`), per `rig/CLAUDE.md`:
+  ```bash
+  grep -rn "invoke(" src/hooks/ src/components/ --include="*.ts" --include="*.tsx" \
+    | grep "_id\|_path\|_dir\|_type\|_name\|_count\|_status"
+  ```
+  Criterion (not "zero output"): no hit may be a snake_case **key in an invoke args
+  object** — single-word keys (`path`, `status`, …) are exempt, and command-name
+  strings / value expressions are not keys. Baseline at HEAD: two benign hits (the
+  command name `provenance_set_classification_status`; the value `trajectory.run_id`);
+  the `fork_run` wiring must add no real one.
+- **Doc sync** (specs §4 `fork_run` entry lands in the same commit):
+  `python3 scripts/drift_check.py` → zero FAIL.
+- **End-to-end fork — human-verified exception:** invoke `fork_run(run_id, step)` on a
+  completed run; confirm the child run exists with trajectory `meta.fork_from` = source
+  run id and `mode: "record"` (t2 convention). If t3 factors argv/path-resolution out of
+  the command into a pure helper, add a `cargo test` unit for it and cite it here.
 
 ### t4 — TrajectoryView: "Fork from here" + provenance display (rig/src)
 

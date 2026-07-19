@@ -282,6 +282,16 @@ decision rule (brief Part 3) — the affordance explains that a fork is a durabl
 independently-inspectable branch. Sits on BL-005's reconstruction path in
 TrajectoryView (per handoff).
 
+**Inherited from t3 (`fork_run` contract).** `fork_run` is `async` and **blocks to
+completion** — its invoke promise resolves only when the forked run finishes (the
+CLI's `await_run` contract; the run id does not exist until then), which for a
+real-provider fork is minutes. The affordance therefore needs a pending/progress
+state, not an instant response. `fork_run` returns `Err` (carrying the CLI's stderr)
+on any non-`done` outcome, so the button surfaces a failed fork as an error, not as a
+silent new run. Quit-during-fork is unspecified: the `mix` subprocess is parented to
+Rig, so if Rig exits mid-fork the run is orphaned/killed mid-flight — the harness
+orphan sweep recovers the DB row, but the UX (warn on quit? detach?) is t4's to design.
+
 **Contract refs.** t3's command contract. Determinism contract (banner wording must
 not overclaim — transcript+seed, fresh environment). `rig/CLAUDE.md` UI conventions.
 
@@ -329,7 +339,14 @@ goals (surfaced at t2). (f) `TrajectoryMeta` type drift — `rig/src/hooks/types
 types `seed` as `string | null` while the harness meta writer (`server.ex:660-670`)
 writes an integer; sweep the whole `TrajectoryMeta` interface against the `server.ex`
 meta writer and correct, at whichever Rig ticket first touches `types.ts` or standalone
-(surfaced at t2 F2). Export boundary per D6: manifest regen including
+(surfaced at t2 F2). (g) Rig label-read defect — `harness_list_runs`
+(`rig/src-tauri/src/commands/harness.rs:82`) and `harness_get_run` (`:196`) read the
+run label via `json_extract(config_json, '$.label')`, but `encode_config` strips
+`label` from `config_json` (`../aetheris/.../server.ex:758`) — it lives in the
+dedicated `runs.label` column (`store.ex:794`). So Rig's label always falls back to
+`run_id` for *every* run, fork or not. One-line-per-site fix: read `r.label`
+(surfaced at t3; benefits all runs, not just forks). Export boundary per D6: manifest
+regen including
 this doc, the contract, the brief; weng cite fix; six-file project-knowledge
 reconciliation.
 

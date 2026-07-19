@@ -297,7 +297,11 @@ not overclaim — transcript+seed, fresh environment). `rig/CLAUDE.md` UI conven
 
 **Touches.** `rig/src/components/modules/harness/TrajectoryView.tsx` ·
 `rig/src/components/modules/harness/shared.tsx` (if shared UI needed) ·
-`docs/rig/specs.md` (if UI-visible state shapes change).
+`rig/src/hooks/types.ts` (`TrajectoryMeta` — declare `fork_from`/`fork_step`, which
+the banner reads but which pass through untyped today, the `resumed` precedent; §t5
+row (f)'s whole-interface `TrajectoryMeta` sweep rides here per its own
+"first Rig ticket to touch `types.ts`" trigger) · `docs/rig/specs.md` (if UI-visible
+state shapes change).
 
 **Do not generate.** No fork-list/lineage-tree view (D4 deferred). No RunList
 changes beyond what surfacing the new run requires.
@@ -345,7 +349,12 @@ run label via `json_extract(config_json, '$.label')`, but `encode_config` strips
 `label` from `config_json` (`../aetheris/.../server.ex:758`) — it lives in the
 dedicated `runs.label` column (`store.ex:794`). So Rig's label always falls back to
 `run_id` for *every* run, fork or not. One-line-per-site fix: read `r.label`
-(surfaced at t3; benefits all runs, not just forks). Export boundary per D6: manifest
+(surfaced at t3; benefits all runs, not just forks). (h) Early-return `fork_run`
+variant — today `fork_run` blocks to completion because the CLI reveals the run id
+only at `await_run` (`../aetheris/.../run_helpers.ex`); a spawn-and-return-early
+shape (like `orchestrate_start`) needs the harness CLI to emit the run id at
+fork-start. Harness-touching enhancement, ratified-tracked at t3 (not t3 scope; the
+t4 affordance ships against the blocking contract). Export boundary per D6: manifest
 regen including
 this doc, the contract, the brief; weng cite fix; six-file project-knowledge
 reconciliation.

@@ -205,11 +205,22 @@ export interface TrajectoryMeta {
   tools:           string[];
   system_prompt:   string;
   user_prompt:     string;
-  sandbox_path:    string;
-  seed:            string | null;
+  /** `config.sandbox_path` — `Map.get(map, "sandbox_path")` with no default and a
+   *  `nil` config default (run_config.ex:171,88), so null whenever unset. Verified:
+   *  null in 22,726 / 23,729 dev-store artifacts (e.g. every fresh-overlay fork). */
+  sandbox_path:    string | null;
+  /** Harness writes `config.seed` (an integer or nil) — server.ex:668,939. */
+  seed:            number | null;
   overlay_changes: unknown[];
   /** Only present when true — written by the harness for resumed runs. */
   resumed?:        boolean;
+  /** Only present on forked runs — server.ex:720 `maybe_add_fork_meta` writes
+   *  `fork_from`/`fork_step` together (or omits both). `fork_from`, when present, is
+   *  always a non-nil string (the nil guard at server.ex:717). `fork_step` carries
+   *  `config.fork_step` (`non_neg_integer() | nil`, run_config.ex:197), so its value
+   *  may be null; the banner guards for that. */
+  fork_from?:      string;
+  fork_step?:      number | null;
 }
 
 export interface TrajectoryEvent {

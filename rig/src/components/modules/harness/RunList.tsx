@@ -450,6 +450,28 @@ export function HarnessRoute() {
     setActiveTab('events');
   }, []);
 
+  // Surface a resolved fork (BL-007 t4): jump to the child run's trajectory so its
+  // provenance banner is immediately visible. `fork_run` resolves only on a `done`
+  // fork, and TrajectoryView reads all display data from the trajectory file's meta
+  // (not this summary) — the synthesized summary's `status: 'done'` only gates polling
+  // off. The Runs-list row appears on the next manual Refresh.
+  const handleForked = useCallback((runId: string) => {
+    setSelectedRun({
+      run_id:         runId,
+      label:          '',
+      status:         'done',
+      provider:       '',
+      model:          '',
+      started_at:     '',
+      finished_at:    null,
+      step_count:     0,
+      event_count:    0,
+      last_event_at:  null,
+      total_cost_usd: null,
+    });
+    setActiveTab('trajectory');
+  }, []);
+
   const hasSelection = selectedRun !== null;
 
   return (
@@ -459,7 +481,7 @@ export function HarnessRoute() {
       tabs={[
         { id: 'runs',       label: 'Runs',       content: <RunsContent onSelectRun={handleSelectRun} /> },
         { id: 'events',     label: 'Events',     content: <EventsContent selectedRun={selectedRun} />, disabled: !hasSelection },
-        { id: 'trajectory', label: 'Trajectory', content: <TrajectoryView run={selectedRun} />, disabled: !hasSelection },
+        { id: 'trajectory', label: 'Trajectory', content: <TrajectoryView run={selectedRun} onForked={handleForked} />, disabled: !hasSelection },
       ]}
     />
   );

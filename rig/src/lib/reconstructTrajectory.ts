@@ -75,10 +75,11 @@ function maxStepsField(config: Record<string, unknown>): number {
   return typeof value === 'number' ? value : 0;
 }
 
-function seedField(config: Record<string, unknown>): string | null {
+function seedField(config: Record<string, unknown>): number | null {
   const value = config['seed' as keyof typeof config];
   if (value === null || value === undefined) return null;
-  return String(value);
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
 }
 
 function parseConfig(configJson: string | null): Record<string, unknown> {

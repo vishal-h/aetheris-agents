@@ -37,6 +37,7 @@ export type { PlanStep, OrchestratorPlan, PollResult, OrchestratorPhase, StepSta
 export { useOrchestrator } from './useOrchestrator';
 export { useDocbuilder } from './useDocbuilder';
 export { useTrajectory } from './useTrajectory';
+export { useFork } from './useFork';
 export type { MetaDiffRow, StepDiffEntry, RunDiff } from './types';
 export { useRunDiff } from './useRunDiff';
 export { useCapabilityMatrix } from './useCapabilityMatrix';

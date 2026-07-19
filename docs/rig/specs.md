@@ -437,9 +437,12 @@ interface TrajectoryMeta {
   tools:           string[];
   system_prompt:   string;
   user_prompt:     string;
-  sandbox_path:    string;
-  seed:            string | null;
+  sandbox_path:    string | null;   // config.sandbox_path — no default, nil when unset (run_config.ex:171,88)
+  seed:            number | null;   // harness writes config.seed (integer|nil) — server.ex:668,939
   overlay_changes: unknown[];
+  resumed?:        boolean;         // only when true — server.ex:941 (resumed runs)
+  fork_from?:      string;          // only on forks, always a non-nil string — server.ex:717,720
+  fork_step?:      number | null;   // co-present with fork_from; value is config.fork_step (non_neg_integer|nil)
 }
 
 interface TrajectoryEvent {

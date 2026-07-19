@@ -1,8 +1,8 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, GitBranch, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTrajectory, useRunEvents, useRunDetail } from '@/hooks';
+import { useTrajectory, useRunEvents, useRunDetail, useFork } from '@/hooks';
 import type { RunSummary, TrajectoryEvent, TrajectoryFile, TokenSummary } from '@/hooks/types';
 import { reconstructTrajectory, reconstructedBanner } from '@/lib/reconstructTrajectory';
 
@@ -106,23 +106,60 @@ function EventRow({ event }: { event: TrajectoryEvent }) {
   );
 }
 
-function StepGroup({ step, events }: { step: number; events: TrajectoryEvent[] }) {
+interface StepGroupProps {
+  step:        number;
+  events:      TrajectoryEvent[];
+  /** True while any fork on this trajectory is in flight — disables all fork buttons. */
+  isForking:   boolean;
+  /** The step whose fork is currently in flight (shows the spinner), or null. */
+  forkingStep: number | null;
+  /** Fires when the fork button for this step is pressed. Absent → no fork affordance. */
+  onFork?:     (step: number) => void;
+}
+
+function StepGroup({ step, events, isForking, forkingStep, onFork }: StepGroupProps) {
   const [open, setOpen] = useState(true);
+
+  // Fork points are steps with a recorded `:step_complete` event (determinism
+  // contract §4 F2 — matched exactly, no fallback). A terminal text step emits
+  // `run_complete`, not `step_complete`, so the final step is never forkable.
+  const forkable = onFork !== undefined && events.some((e) => e.event_type === 'step_complete');
+  const thisForking = forkingStep === step;
 
   return (
     <div className="border rounded-md mb-2">
-      <button
-        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors font-medium text-sm"
-        onClick={() => setOpen((o) => !o)}
-      >
-        {open
-          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-        Step {step}
-        <span className="ml-2 text-xs text-muted-foreground font-normal">
-          {events.length} event{events.length !== 1 ? 's' : ''}
-        </span>
-      </button>
+      {/* Header row: the toggle and the fork control are siblings — a <button>
+          nested in a <button> is invalid HTML (rig/CLAUDE.md nested-clickable rule). */}
+      <div className="flex items-center gap-2 pr-2 hover:bg-muted/50 transition-colors">
+        <button
+          className="flex-1 flex items-center gap-2 px-3 py-2 text-left font-medium text-sm"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open
+            ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+          Step {step}
+          <span className="ml-2 text-xs text-muted-foreground font-normal">
+            {events.length} event{events.length !== 1 ? 's' : ''}
+          </span>
+        </button>
+        {forkable && (
+          <Button
+            variant="outline"
+            size="xs"
+            disabled={isForking}
+            title="Fork a new run that replays this run's transcript up to and including this step, then continues live. Transcript prefix and seed are carried; the environment (filesystem, clock) is fresh."
+            onClick={(e) => {
+              e.stopPropagation();
+              onFork?.(step);
+            }}
+          >
+            {thisForking
+              ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Forking…</>
+              : <><GitBranch className="h-3.5 w-3.5 mr-1.5" />Fork from here</>}
+          </Button>
+        )}
+      </div>
       {open && (
         <div className="border-t">
           {events.map((e) => <EventRow key={e.id} event={e} />)}
@@ -174,6 +211,8 @@ function CentredMessage({ children }: { children: ReactNode }) {
 
 interface Props {
   run: RunSummary | null;
+  /** Called with the child run id when a fork resolves — lets the host surface it. */
+  onForked?: (runId: string) => void;
 }
 
 /**
@@ -188,7 +227,7 @@ interface Props {
  * queries are gated to fire only after the file load has failed, so completed
  * runs are unaffected.
  */
-export function TrajectoryView({ run }: Props) {
+export function TrajectoryView({ run, onForked }: Props) {
   const runId = run?.run_id ?? null;
   const { trajectory: fileTrajectory, loading: fileLoading, error: fileError } =
     useTrajectory(runId);
@@ -252,13 +291,15 @@ export function TrajectoryView({ run }: Props) {
         banner={reconstructedBanner(run?.status)}
         isPolling={events.isPolling}
         showExport={false}
+        canFork={false}
+        onForked={onForked}
       />
     );
   }
 
   // File loaded successfully — render it exactly as before.
   if (fileTrajectory) {
-    return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport />;
+    return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport canFork onForked={onForked} />;
   }
 
   // First render, before the useTrajectory effect has started the load.
@@ -271,12 +312,47 @@ interface TrajectoryBodyProps {
   banner: string | null;
   isPolling: boolean;
   showExport: boolean;
+  /** Whether forking is offered. Only the file-backed view can fork — a running /
+   *  orphan-swept run has no trajectory.json, so the fork CLI's source load would
+   *  always fail (offered-but-always-fails). Reconstructed path passes false. */
+  canFork: boolean;
+  /** Called with the child run id when a fork resolves. */
+  onForked?: (runId: string) => void;
 }
 
-function TrajectoryBody({ trajectory, banner, isPolling, showExport }: TrajectoryBodyProps) {
+function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, onForked }: TrajectoryBodyProps) {
   const [metaOpen, setMetaOpen] = useState(true);
+  const { fork, forking, error, clearError } = useFork();
+  const [forkingStep, setForkingStep] = useState<number | null>(null);
+
+  // A fork blocks to completion (minutes). If the user selects another run or leaves
+  // the Trajectory tab meanwhile, this body unmounts (run change → the fileLoading
+  // branch swaps in CentredMessage; tab switch → Radix TabsContent unmounts inactive
+  // content). The pending promise still resolves, but `onForked` lives on the
+  // still-mounted HarnessRoute, so an unguarded resolve would yank the user to the
+  // child from wherever they navigated. Skip navigation + state writes once unmounted;
+  // the child then lands silently and appears in Runs on the next refresh.
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
 
   const { meta, events } = trajectory;
+
+  // A run is a fork iff the harness wrote `meta.fork_from` (server.ex:720) — never
+  // inferred from `meta.mode`, since CLI forks run in `:record` (determinism
+  // contract §4). null-not-zero: the banner shows only when the field is present.
+  const isFork = meta.fork_from != null;
+
+  async function handleFork(step: number) {
+    setForkingStep(step);
+    try {
+      const forkedRunId = await fork(trajectory.run_id, step);
+      if (alive.current) onForked?.(forkedRunId);
+    } catch {
+      // Error is already surfaced via `error` (useFork sets it and rethrows).
+    } finally {
+      if (alive.current) setForkingStep(null);
+    }
+  }
 
   const steps = events.reduce<Map<number, TrajectoryEvent[]>>((acc, e) => {
     const group = acc.get(e.step) ?? [];
@@ -301,6 +377,36 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport }: Trajector
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Provenance banner — only on forked runs (meta.fork_from present). Copy is
+          bounded by the determinism contract §4: transcript prefix + seed carried,
+          environment fresh; no post-fork reproducibility claim. */}
+      {isFork && (
+        <div
+          className="flex items-center gap-2 border-b bg-indigo-50 px-4 py-1.5 text-xs text-indigo-800 shrink-0"
+          title="Transcript prefix and seed carried; environment (filesystem, clock) is fresh. Post-fork execution is live."
+        >
+          <GitBranch className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Forked from <span className="font-mono">{meta.fork_from}</span>
+            {meta.fork_step != null && <> @ step {meta.fork_step}</>}
+          </span>
+        </div>
+      )}
+
+      {/* Fork error — surfaced from the rejected invoke promise, dismissible */}
+      {error !== null && (
+        <div className="flex items-start gap-2 border-b border-destructive/40 bg-destructive/5 px-4 py-2 text-xs text-destructive shrink-0">
+          <span className="flex-1 whitespace-pre-wrap break-all font-mono">Fork failed: {error}</span>
+          <button
+            className="shrink-0 hover:opacity-70"
+            title="Dismiss"
+            onClick={clearError}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Reconstructed-source banner — absent for the file-backed view */}
       {banner !== null && (
         <div className="flex items-center gap-2 border-b bg-amber-50 px-4 py-1.5 text-xs text-amber-800 shrink-0">
@@ -359,7 +465,14 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport }: Trajector
         {Array.from(steps.entries())
           .sort(([a], [b]) => a - b)
           .map(([step, evts]) => (
-            <StepGroup key={step} step={step} events={evts} />
+            <StepGroup
+              key={step}
+              step={step}
+              events={evts}
+              isForking={forking}
+              forkingStep={forkingStep}
+              onFork={canFork ? handleFork : undefined}
+            />
           ))}
       </div>
     </div>

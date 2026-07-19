@@ -1,6 +1,7 @@
 pub mod agent_config;
 pub mod capability_matrix;
 pub mod f2;
+pub mod fork;
 pub mod harness;
 pub mod orchestrate;
 pub mod playground;

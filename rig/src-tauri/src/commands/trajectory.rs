@@ -21,15 +21,53 @@ pub struct TrajectoryFile {
     pub events:         Vec<TrajectoryEvent>,
 }
 
-fn traj_path(run_id: &str) -> Result<std::path::PathBuf, String> {
+/// The aetheris repo root, derived as `AETHERIS_DB_PATH`.parent().parent()
+/// (the DB lives at `<root>/priv/<db>`). Shared by trajectory-path resolution
+/// and the `mix aetheris` working directory (see `commands/fork.rs`).
+pub(crate) fn aetheris_root() -> Result<std::path::PathBuf, String> {
     let db_path = std::env::var("AETHERIS_DB_PATH")
         .map_err(|_| "AETHERIS_DB_PATH not set".to_string())?;
 
-    Path::new(&db_path)
+    root_from_db_path(&db_path)
+        .ok_or_else(|| "could not derive aetheris root from AETHERIS_DB_PATH".to_string())
+}
+
+pub(crate) fn traj_path(run_id: &str) -> Result<std::path::PathBuf, String> {
+    aetheris_root().map(|root| traj_path_under(&root, run_id))
+}
+
+// Pure helpers (unit-tested — the shared contract is asserted, not assumed).
+
+fn root_from_db_path(db_path: &str) -> Option<std::path::PathBuf> {
+    Path::new(db_path)
         .parent()
         .and_then(|p| p.parent())
-        .map(|p| p.join("priv").join("runs").join(run_id).join("trajectory.json"))
-        .ok_or_else(|| "could not derive trajectory path from AETHERIS_DB_PATH".to_string())
+        .map(|p| p.to_path_buf())
+}
+
+fn traj_path_under(root: &Path, run_id: &str) -> std::path::PathBuf {
+    root.join("priv").join("runs").join(run_id).join("trajectory.json")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn root_from_db_path_strips_two_levels() {
+        assert_eq!(
+            root_from_db_path("/a/b/priv/aetheris.db"),
+            Some(std::path::PathBuf::from("/a/b"))
+        );
+    }
+
+    #[test]
+    fn traj_path_under_has_expected_shape() {
+        assert_eq!(
+            traj_path_under(Path::new("/a/b"), "run-1"),
+            std::path::PathBuf::from("/a/b/priv/runs/run-1/trajectory.json")
+        );
+    }
 }
 
 #[tauri::command]

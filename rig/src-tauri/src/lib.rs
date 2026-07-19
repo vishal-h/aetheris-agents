@@ -81,6 +81,7 @@ pub fn run() {
       commands::orchestrate::orchestrate_cancel,
       commands::trajectory::trajectory_load,
       commands::trajectory::trajectory_export,
+      commands::fork::fork_run,
       commands::capability_matrix::capability_matrix_load,
       commands::usage::usage_stats_load,
       commands::tools::tools_list_inventory,

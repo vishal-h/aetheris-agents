@@ -235,6 +235,28 @@ pub struct TrajectoryFile {
 Takes `run_id: String`. Opens a save dialog; copies
 `priv/runs/{run_id}/trajectory.json` to the user-chosen path. Returns `()`.
 
+### Fork command (`commands/fork.rs`) — BL-007 t3
+
+**`fork_run`** — `async` command. Takes `run_id: String`, `step: u64`,
+`label: Option<String>`. Resolves the source trajectory (`traj_path`, shared with
+`trajectory.rs`) and spawns `mix aetheris --json fork <trajectory> --step N
+[--name label]` in the aetheris repo root (`aetheris_root` =
+`AETHERIS_DB_PATH`.parent().parent()). The child run is the post-t2 CLI's fork —
+re-execution from step N (converged on `Fork.from_step/3`): it runs in `:record`
+mode and is identified by `meta.fork_from`, not a `:fork` mode. Returns the forked
+`run_id: String` parsed from the CLI's JSON result line, or an error string.
+**Blocks to completion:** `mix aetheris fork` prints the run id only when the fork
+reaches a terminal status (`await_run`), so the command runs the blocking
+subprocess on `spawn_blocking` (`async`, off the UI thread — Tauri v2 runs *sync*
+commands on the main thread); the invoke promise resolves when the fork finishes
+(progress UX is t4's concern). **Terminal status:** a run id appears on stdout only
+for a `done` fork; `failed`/`cancelled`/`step_not_found` produce a CLI error on
+*stderr* with a zero exit code, so `fork_run` returns `Err` carrying that stderr —
+never a false success. **`label` caveat:** persisted to the harness `runs.label`
+column, but Rig's `harness_list_runs`/`harness_get_run` read the label from
+`config_json` (where `encode_config` strips it), so a fork label is stored but not
+surfaced by Rig today (see BL-007 t3 notes).
+
 ### Orchestrator commands (`commands/orchestrate.rs`) — p3 (extended p9)
 
 **`orchestrate_start`** — Takes `request: String`, `extra_env: HashMap<String, String>`

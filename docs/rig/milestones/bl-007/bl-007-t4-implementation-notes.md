@@ -218,7 +218,10 @@ lands.
 Not run by claude-code (needs the Rig UI + dev store). Procedure for the packet:
 
 1. `cargo tauri dev` with `AETHERIS_DB_PATH` pointing at the dev store containing
-   `t3-fork-src-452` (known-forkable per t3).
+   `t3-fork-src-452` (known-forkable per t3). **Verify in `cargo tauri dev` specifically —
+   dev is the operator's environment and React StrictMode is active there, double-firing
+   effects; a production-only smoke masks the StrictMode-class defect that r5 found (a
+   cleanup-only mount-guard latched dead on remount).**
 2. Harness → Runs → select `t3-fork-src-452` → Trajectory tab.
 3. A completed step (has `:step_complete`) shows "Fork from here"; a non-forkable step (e.g. the
    terminal text step) shows **no** button (state b).
@@ -287,6 +290,19 @@ held-push / held-merge discipline caught them (nothing reached `main`; closure i
 which stayed held). Rule, if a third instance appears at t5, promoting as one line: *no action
 past a gate until that gate has run and its result is on the record* — covering doc-order gates,
 test gates, and publish/merge gates alike. (Ownership recorded as-is in the review file r4.)
+
+*Fourth §7 candidate (sharpest, now a complete worked example) — **one symptom, three faces:
+separate symptom from mechanism by direct capture in the operator's own environment.*** The
+"fork hangs" symptom (rounds 3–5) had three mechanisms — a harness `:busy` crash, an `await_run`
+poll-forever, and a StrictMode-dead mount-guard. Each round's capture executed the *previous*
+theory and moved on; a **real** fix shipped for face 1 and was mistaken for the fix of the
+observed symptom, which was actually face 3 — a bug my own face-1-adjacent fix (F1) introduced.
+What finally separated them was capturing in the operator's real environment (`cargo tauri dev`,
+StrictMode on) rather than a simulation or a production smoke. Rule: when one symptom admits
+multiple plausible mechanisms, do not treat the first real defect you fix as closure — reproduce
+the *symptom* in the operator's environment and confirm the fix kills *that*, because a correct
+fix for a real defect can still be the wrong fix for the symptom. Subsumes the
+simulation-verifies-simulation candidate as its most complete instance.
 
 ## Review round 2 — dispositions
 
@@ -434,6 +450,42 @@ wedge recurs, the capture procedure (SIGUSR1 → `erl_crash.dump` "Current call"
   changes (busy_timeout, journal_mode=WAL, `:busy` handling), reordered — scope held (condition 4).
 - **Gates re-run green** post-reorder: `mix format` 0 · `credo --strict` no issues · `mix test`
   **868/0** · store+fork+integration **23/0** · `dialyzer` **0**; agents drift `0 FAIL`/strict 0.
+
+## Review round 5 — the actual bug (StrictMode-dead mount-guard)
+
+**F9 [blocking — resolved] — the GUI "spinner-forever / no-navigate" symptom was my own F1
+mount-guard, not the harness.** Root cause, verified first-hand: `<StrictMode>` wraps the app
+(`main.tsx:9`); the F1 guard was written **cleanup-only** —
+`useEffect(() => () => { alive.current = false; }, [])` (`TrajectoryView.tsx:336`) — so the effect
+**body never re-armed** `alive.current = true`. React StrictMode double-invokes effects in dev
+(mount → cleanup → remount), latching `alive.current` to `false` from the first render. Both
+`onForked` (navigate, :349) and `setForkingStep(null)` (spinner-clear, :353) were gated on the
+dead ref → **no navigate, spinner forever, every press, in dev, always** — the exact observed
+symptom, zero residue. Nine missing characters in an effect body.
+
+Fix (3 lines): StrictMode-safe effect — set `alive.current = true` in the **body**, cleanup sets
+false — and **narrow the guard to `onForked` only**: the spinner-clear now always runs (a state
+set on an unmounted component is a React 18/19 no-op), so it can never strand again; only the
+navigate stays mount-guarded (F1's real intent — don't yank a navigated-away user).
+
+**Three faces, one symptom (§7 worked example).** The "fork hangs" symptom had three distinct
+mechanisms across five rounds: (1) the harness `Store` `:busy` crash under a per-statement lock
+race — a real latent defect, really fixed (WAL / busy_timeout / `:busy`, harness `059c92e`);
+(2) `await_run`'s poll-forever loop — the amplifier, backlog (i); (3) **this** StrictMode dead
+mount-guard — the actual cause of the GUI symptom. Each round's capture evidence executed the
+prior theory; the face-1 fix was real but was *verified against the wrong face* until the live
+GUI capture (the StrictMode grep) separated symptom from mechanism. The face-1 and face-3 fixes
+both ship — they fix different real things — but only face 3 explains the operator's observation.
+
+**F10 answer (mtime, not guess).** `fork-ceb84dfea946c04f` mtime `18:36:53`; newest child
+`fork-bbef9485ebbdc55f` `18:54:41` — both real completed forks from different GUI presses. Every
+press *did* land a child (the harness fork works); the dead ref merely suppressed navigation.
+"Stale from an earlier press" was directionally right (ceb84df is from an earlier press) but
+undersells it — it is a genuine completed fork, confirming the fork mechanism and isolating the
+bug to the UI navigate/spinner.
+
+Gates: frontend `bun run build` + `bun run lint` + camelCase sweep (2 benign) green. No Rust, no
+harness this round (agents-repo frontend only).
 
 ## Open items / carries
 

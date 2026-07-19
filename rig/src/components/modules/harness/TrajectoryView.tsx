@@ -330,10 +330,20 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, on
   // branch swaps in CentredMessage; tab switch → Radix TabsContent unmounts inactive
   // content). The pending promise still resolves, but `onForked` lives on the
   // still-mounted HarnessRoute, so an unguarded resolve would yank the user to the
-  // child from wherever they navigated. Skip navigation + state writes once unmounted;
-  // the child then lands silently and appears in Runs on the next refresh.
+  // child from wherever they navigated. Skip *navigation* once unmounted; the child
+  // then lands silently and appears in Runs on the next refresh.
+  //
+  // Set `alive.current = true` in the effect BODY, not only in cleanup: React
+  // StrictMode double-invokes effects in dev (mount → cleanup → remount), so a
+  // cleanup-only latch leaves the ref stuck `false` from the first render — which
+  // silently killed both the navigate and the spinner-clear on every press (dev is
+  // the operator's environment). Re-arming in the body makes it StrictMode-safe.
+  // (BL-007 t4 review r5.)
   const alive = useRef(true);
-  useEffect(() => () => { alive.current = false; }, []);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   const { meta, events } = trajectory;
 
@@ -350,7 +360,9 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, on
     } catch {
       // Error is already surfaced via `error` (useFork sets it and rethrows).
     } finally {
-      if (alive.current) setForkingStep(null);
+      // Always clear the pressed-step spinner — only navigation is mount-guarded.
+      // (A state set on an unmounted component is a no-op in React 18/19.)
+      setForkingStep(null);
     }
   }
 

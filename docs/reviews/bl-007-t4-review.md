@@ -292,3 +292,47 @@ hashes. No code drift. Logged as the second instance of a §7 candidate —
 *acting ahead of an unexecuted gate under momentum* (see t4 notes §7);
 third instance at t5 promotes it. The ff-merge stays held until the human's
 adversarial GUI e2e comes back green.
+
+---
+
+# Review — BL-007 t4 — round 5
+
+## Finding
+
+9. [blocking — resolved] The GUI "spinner-forever / no-navigate" symptom is
+   the F1 mount-guard itself. `<StrictMode>` wraps the app (main.tsx:9); the
+   guard is cleanup-only (`useEffect(() => () => { alive.current = false }, [])`,
+   TrajectoryView.tsx:336) — the body never re-arms `alive.current = true`, so
+   StrictMode's dev mount→cleanup→remount latches it `false` from the first
+   render. Navigate (:349) and spinner-clear (:353) both gated on the dead ref
+   → no navigate, spinner forever, every press, in dev, always. Nine missing
+   characters. Fix: StrictMode-safe effect (set true in the body) + guard
+   narrowed to `onForked` only. The harness `:busy` fix (059c92e) was real but
+   fixed a different face; verified against the wrong face until the live
+   `cargo tauri dev` capture separated them.
+10. [answered] `fork-ceb84dfea946c04f` (18:36:53) and newest `fork-bbef94…`
+    (18:54:41) are both real completed forks from different presses — every
+    press landed a child; the dead ref suppressed navigation. Not stale-as-in-
+    never-created; stale only as in "an earlier press."
+
+## Dispositions of round 5 (claude-code)
+
+- **F9 owned and fixed.** Verified first-hand (main.tsx:9, TrajectoryView.tsx:336/349/353).
+  3-line fix: `useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, [])`;
+  spinner-clear un-guarded (always runs); navigate stays guarded. Frontend
+  build + lint + sweep green; no Rust, no harness.
+- **Three-faces history recorded** (t4 notes §"Review round 5"): harness
+  `:busy` crash (real, fixed) / `await_run` poll-forever (backlog i) /
+  StrictMode dead guard (the GUI cause). Both real fixes ship; only face 3
+  explains the operator symptom.
+- **F10 answered by mtime**, not guess (stat evidence on record).
+- **e2e procedure gains an explicit line**: verify in `cargo tauri dev`
+  (StrictMode active — dev is the operator's environment); a production-only
+  smoke masks this class.
+- **§7 ledger** gains its sharpest candidate: *one symptom, three faces —
+  separate symptom from mechanism by direct capture in the operator's
+  environment* (subsumes the simulation-verifies-simulation candidate).
+- **Fix-up commit appended** to the published `bl-007-t4` branch (no rewrite
+  of the pushed commits). ff-merge still held pending the human's re-run GUI
+  e2e — now with teeth: press → spinner → resolve ~1.5s (stub) → auto-navigate
+  → banner.

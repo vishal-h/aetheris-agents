@@ -231,6 +231,9 @@ cd ../aetheris-agents && python3 scripts/drift_check.py
 correct, post-t2) CLI `mix aetheris fork <trajectory> --step N`, following the
 `orchestrate.rs` spawn pattern; resolves the trajectory path from the run id;
 returns the new run id / error. Specs §4 command entry in the same commit.
+The spawned fork executes in `:record` mode and is identified by `meta.fork_from`
+(t2 converged the CLI on `Fork.from_step`, which sets no `fork` mode) — any
+run-identity/label logic keys off `fork_from`, never `meta.mode`.
 
 **Contract refs.** t2's CLI behavior. `docs/rig/specs.md` §4 (command table
 conventions). Determinism contract (what the command may claim in its docs).
@@ -249,9 +252,12 @@ is a prompt defect to be corrected in the doc before t3 starts.]**
 ### t4 — TrajectoryView: "Fork from here" + provenance display (rig/src)
 
 **Scope.** A "Fork from here" affordance on step groups in `TrajectoryView.tsx`,
-**offered only on steps with a `:step_complete` event** (t1's semantics); invokes
-t3's command; surfaces the new run. A provenance banner on forked runs ("Forked from
-&lt;run&gt; @ step N") read from trajectory meta. UX copy basis: the frames-vs-forks
+**offered only on steps with a `:step_complete` event** (t1's semantics; and per t2's
+discovery a terminal *text* step emits `run_complete`, not `:step_complete`, so the
+final step of a run is never a fork point); invokes t3's command; surfaces the new run.
+A provenance banner on forked runs ("Forked from &lt;run&gt; @ step N") read from
+trajectory meta — forks are identified by `meta.fork_from`, never `meta.mode` (CLI
+forks run in `:record`, so a mode badge shows "record", not "fork"). UX copy basis: the frames-vs-forks
 decision rule (brief Part 3) — the affordance explains that a fork is a durable,
 independently-inspectable branch. Sits on BL-005's reconstruction path in
 TrajectoryView (per handoff).
@@ -275,8 +281,15 @@ its transcript prefix matches to step N.
 **Scope.** Runbook entries (harness runbook: fork CLI semantics change; Rig runbook:
 the affordance) — per the runbook-update rule these land with t2/t4 where
 operator-visible, this ticket sweeps for completeness, it does not recover.
-`architecture.md` fork section refreshed. `rig--current-state-2026-06.md` §C
-corrected (its "no fork API" text predates the discovery). Backlog entries: (a) D4's
+`architecture.md` fork section refreshed — annotate the Execution Modes "Fork" row
+(fork is provenance-carried via `fork_from`; forked runs execute in `:record` mode,
+not a `:fork` mode) and record removal of `:fork` from the `run_config.ex` mode union
+as a decide-at-t5 question (deleting it is a harness code change outside any current
+ticket); verify `run_config.ex` + the architecture.md table at HEAD before editing.
+`rig--current-state-2026-06.md` §C corrected (its "no fork API" text predates the
+discovery); the same sweep corrects the §3.1 meta-table `seed` row ("null — always
+seen as null" is now stale: t2's CLI test demonstrates a non-null seed persisting
+through the real writer and surviving the fork round-trip). Backlog entries: (a) D4's
 deferral; and three surfaced by t1's verification of `verifier.ex` — (b) the verify
 effect-class mechanism / record-and-serve for effectful tools (motivating hazard:
 verify re-executes `http_call`'s network egress — determinism-contract §5,
@@ -287,7 +300,16 @@ paired in-process tools — `verify_step/2` assumes the worker `"output"` payloa
 orb trajectory using `wait_for_event`/`read_blackboard`/`write_blackboard` makes
 `verify` raise. Verify robustness (c/d) is outside BL-007 scope; standalone-harness-ticket
 vs. trigger-parked (trigger: first verify run against a multi-agent/orb trajectory) is
-the human's call at this boundary. Export boundary per D6: manifest regen including
+the human's call at this boundary. (e) the fork reconstruction `tool_result`
+payload-key gap — `event_to_messages(:tool_result)` (`fork.ex`) reads only
+`payload["output"]`, but many in-process tool writers use `"result"`
+(`loop.ex:354,424,435,459,469,482,492,508`), so those tool results reconstruct with
+empty content on fork; `fork.ex`-local fix, but a behavior change beyond t2's four
+goals (surfaced at t2). (f) `TrajectoryMeta` type drift — `rig/src/hooks/types.ts`
+types `seed` as `string | null` while the harness meta writer (`server.ex:660-670`)
+writes an integer; sweep the whole `TrajectoryMeta` interface against the `server.ex`
+meta writer and correct, at whichever Rig ticket first touches `types.ts` or standalone
+(surfaced at t2 F2). Export boundary per D6: manifest regen including
 this doc, the contract, the brief; weng cite fix; six-file project-knowledge
 reconciliation.
 

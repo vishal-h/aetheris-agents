@@ -204,7 +204,9 @@ cd ../aetheris-agents && python3 scripts/drift_check.py
 `Fork.from_step/3`; `--step N` now actually replays to step N. Tests assert the
 reconstructed context (message list content at the fork point) and seed equality —
 closing the recon §4 gap where the CLI test inspected only status/run_id. Exercise
-the `tool_result` rebuild path (`fork.ex:99-103`, currently never tested).
+the `tool_result` rebuild path (`fork.ex:99-103`, currently never tested). Rider
+(ratified this cycle): rename the private `find_last_step_complete` →
+`find_step_complete_at` — its match is exact, no "last" fallback; behavior-neutral.
 
 **Contract refs.** Determinism contract (t1) — normative for what must carry.
 Recon §1a/§1b, F1.

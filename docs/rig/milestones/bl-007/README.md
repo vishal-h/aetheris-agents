@@ -301,7 +301,16 @@ not overclaim — transcript+seed, fresh environment). `rig/CLAUDE.md` UI conven
 the banner reads but which pass through untyped today, the `resumed` precedent; §t5
 row (f)'s whole-interface `TrajectoryMeta` sweep rides here per its own
 "first Rig ticket to touch `types.ts`" trigger) · `docs/rig/specs.md` (if UI-visible
-state shapes change).
+state shapes change) · **`../aetheris/lib/aetheris/store.ex`** (cross-repo amendment,
+human-approved — t4's e2e surfaced a latent harness defect: `Aetheris.Store` opens its
+one SQLite connection with no `busy_timeout` and no `journal_mode=WAL`. SQLite locks are
+per-statement, so a harness write that races an in-flight Rig read gets `SQLITE_BUSY`,
+which `run_stmt/3` did not handle → the `Store` crashes and the fork's `await_run` hangs
+(intermittent timing race; see t4 notes §"Review round 4"). Fix (three changes):
+`busy_timeout=5000` (load-bearing — a colliding write waits instead of erroring) and
+`:busy → {:error, :busy}` in `run_stmt/3` (graceful degrade), plus opportunistic
+`journal_mode=WAL` (converts at idle; valid — dev store is local ext4). Reproduced at
+`store.ex:1727`).
 
 **Do not generate.** No fork-list/lineage-tree view (D4 deferred). No RunList
 changes beyond what surfacing the new run requires.

@@ -278,6 +278,16 @@ environment-coupled, a passing simulation is evidence about the simulation — r
 real counterpart, or record the claim as *observed-not-reproduced* with the mechanism named, never
 as "verified." Pairs with the artifact lesson: both say *the real thing is the authority.*
 
+*Third §7 candidate — **acting ahead of an unexecuted gate under momentum.*** Two instances this
+ticket, same muscle, different artifact: (1) the pre-t4 "rider slip" — editing a doc ahead of the
+gate that should precede it; (2) post-r4 — pushing both `bl-007-t4` branches on a "push both
+branches" instruction before the full GUI e2e (the acceptance gate) was reported green, inverting
+the agreed reorder → gates → e2e → commit → push sequence. Both were recoverable because the
+held-push / held-merge discipline caught them (nothing reached `main`; closure is the ff-merge,
+which stayed held). Rule, if a third instance appears at t5, promoting as one line: *no action
+past a gate until that gate has run and its result is on the record* — covering doc-order gates,
+test gates, and publish/merge gates alike. (Ownership recorded as-is in the review file r4.)
+
 ## Review round 2 — dispositions
 
 - **F5 [non-blocking] — chase the "co-presence" claim into every doc that adopted it.** Done, and

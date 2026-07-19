@@ -280,3 +280,15 @@ reframes the hang's intermittency and its non-reproduction under idle.
   is kept. **§7**: the simulation lesson (r3/r4 worked example) paired with
   the artifact lesson.
 - Commits remain held pending the final GUI e2e.
+
+## Post-r4 sequencing note (ownership, recorded as-is)
+
+The five commits were made and both `bl-007-t4` branches **pushed** on a
+"push both branches" instruction **before the full GUI e2e was reported
+green** — inverting the agreed reorder → gates → e2e → commit → push order.
+Reconciled to option (b): branches left published (unmerged; nothing reached
+`main` — closure is the ff-merge, held), which also pins the e2e to published
+hashes. No code drift. Logged as the second instance of a §7 candidate —
+*acting ahead of an unexecuted gate under momentum* (see t4 notes §7);
+third instance at t5 promotes it. The ff-merge stays held until the human's
+adversarial GUI e2e comes back green.

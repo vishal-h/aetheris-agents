@@ -1230,6 +1230,43 @@ contract rather than inheriting the string-comparison guard.
 
 ---
 
+### BL-038 — Run list: search/filter, and the LIMIT window hides old runs (#TBD)
+**Size:** S · **Priority:** medium
+
+Two faces of one gap, surfaced together during BL-029's merge-gate check (2026-07-20).
+
+**No search.** At 250+ visible runs (878+ in store), locating a run by id or label
+means scrolling. A text filter over label + run_id on the loaded rows is the minimum;
+it makes labels (real as of BL-029) actually navigational.
+
+**The window is silent.** `harness_list_runs` is `ORDER BY started_at DESC LIMIT ?`
+(`rig/src-tauri/src/commands/harness.rs`), so runs older than the window are
+unreachable from the UI with no indication they exist — an operator concludes "not
+there" for a row that is. Concrete instance: `demo-01` (verified present, unlabelled,
+forkable — 53 events, steps 0–9) invisible at the default limit. A client-side filter
+alone does **not** fix this face: it filters the window, not the store. Minimum honest
+fix is to show "N of M runs" so the cutoff is visible; the full fix is server-side
+search (`WHERE label LIKE ? OR run_id LIKE ?`) or pagination.
+
+The two faces share a failure shape with BL-029 itself: the UI stated something false
+without appearing to state anything at all. There, every run's label silently read as
+its run_id; here, the store silently reads as 250 runs deep. Both degrade to a
+confident wrong answer rather than a visible gap, which is why both survived — an
+operator has no prompt to doubt what they see.
+
+**Relation:** BL-024's lineage view will need find-run-by-id anyway; whichever lands
+first should carry the shared piece.
+
+**Blocks:** BL-029's remaining merge-gate check as of 2026-07-20 — the COALESCE-guard
+e2e needs a *forkable unlabelled* run, and the only identified candidates
+(`demo-01`, `run_zS6XSQ`) sit outside the default window. Raising the limit or
+filtering to the id is the workaround; this row is the fix.
+
+**Done when:** an operator can locate any run in the store by id or label from the UI,
+or the UI states plainly that it is showing a truncated window.
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)
@@ -1589,5 +1626,6 @@ multi-line street/city/state/zip.
 | 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
 | 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
 | 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |
+| 23 | BL-038 | Placed with the BL-035/036 cluster per the filing note. **Two tensions flagged, unresolved:** at 23 it lands *after* BL-024 (19b), so BL-024 carries the shared find-run-by-id piece — consistent with "whichever lands first", but not with reading "ahead of BL-024 territory" as a strict order. And it currently blocks BL-029's last gate check, which argues for earlier than a low-priority cleanup cluster. Resequence if either matters |
 | — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
 | — | BL-006 | Fires on its own trigger |

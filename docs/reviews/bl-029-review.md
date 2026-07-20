@@ -49,7 +49,7 @@ Disposition table expected in round 2 per house form. Findings 1 and 2 are the m
 
 ## Round 2 response to the addendum (claude-code, 2026-07-20)
 
-**F9 — accepted, fixed in `6f0e6c1`.** Confirmed by reading `RunList.tsx:394-396`: the
+**F9 — accepted, fixed in `5ad4bf2`.** Confirmed by reading `RunList.tsx:394-396`: the
 detail header rendered `selectedRun.label` and nothing else, so a labelled run's
 run_id became unreachable from the UI. This is a regression BL-029 introduced. Header
 now renders the run_id in muted monospace guarded on `label !== run_id`, plus the

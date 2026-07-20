@@ -29,3 +29,51 @@ Packet integrity: conforms — done-check output opens the packet, all sections 
 ---
 
 Disposition table expected in round 2 per house form. Findings 1 and 2 are the merge gate; 3–6 are same-round hygiene; 7–8 need only `acknowledged`.
+
+---
+
+## Round 1 addendum — manual GUI pass results (human-executed)
+
+- Labelled run shows real label in list + detail: **pass** (screenshot: "Docbuilder Orchestrator" in the Events header).
+- Labelled-parent fork inherits verbatim: **pass**.
+- Unlabelled-parent fork stays unlabelled: **not executed** — no forkable unlabelled run available. Check remains open; see finding 10.
+- Token tooltip present on real run, absent on stub: **pass**.
+
+## Findings (continued)
+
+9. **[blocking]** BL-029 removed the run_id from the operator's view of a labelled run. Pre-fix, the label *was* the run_id everywhere, so the detail header incidentally displayed it; post-fix, a labelled run's header shows only the label — and the run_id is the handle for every CLI workflow the runbook teaches (`mix aetheris inspect <run_id>`, `fork`, `tree show`). An operator looking at "Docbuilder Orchestrator" now has no visible way to get the id these commands need. This is a legibility regression introduced by the fix, not a pre-existing gap. Suggested fix: render the run_id as muted secondary text in the run detail header whenever `label !== run_id` (list view can stay label-only — the detail view is where CLI handles are needed); one line in the runbook's "What you see" alongside. Same-file, in-scope, small.
+
+10. **[non-blocking, gate unresolved]** The COALESCE-guard e2e (unlabelled-parent fork stays unlabelled) could not be executed: the store's unlabelled rows offered no forkable candidate. Two closure paths, in preference order: **(a)** create the fixture — launch one cheap unlabelled run (stub or haiku, no label flag, any agent that makes at least one tool call so a step is forkable), fork it from the UI, confirm the child shows run_id-as-fallback; this costs minutes and exercises the exact line the guard exists for. **(b)** If (a) is impractical, record verified-by-code with a named trigger, per the null-`fork_step` banner precedent — trigger: *first fork of an unlabelled file-backed run*, noted in the review file so the deferral has an executor. My recommendation is (a): the guard defends against BL-029's own COALESCE writing a run_id into a child's label, and a happy-path-only pass is exactly the vacuous-exercise shape the harness CLAUDE.md warns about.
+
+---
+
+## Round 2 response to the addendum (claude-code, 2026-07-20)
+
+**F9 — accepted, fixed in `6f0e6c1`.** Confirmed by reading `RunList.tsx:394-396`: the
+detail header rendered `selectedRun.label` and nothing else, so a labelled run's
+run_id became unreachable from the UI. This is a regression BL-029 introduced. Header
+now renders the run_id in muted monospace guarded on `label !== run_id`, plus the
+runbook line. Diff in the round-2 packet.
+
+**F10 — closed via path (a), no fixture needed: the premise does not hold.** The store
+*does* contain forkable unlabelled runs. Query — unlabelled + `done` + a
+`priv/runs/<id>/trajectory.json` + ≥1 step — returns 10+ candidates. Two verified:
+
+| run_id | label | status | trajectory.json | events | forkable steps |
+|---|---|---|---|---|---|
+| `demo-01` | NULL | done | valid | 53 | 0–9 |
+| `run_zS6XSQ` | NULL | done | valid | 40 | 0–6 |
+
+Both are `claude-haiku-4-5`, both `COALESCE` to their own run_id (`demo-01` →
+`demo-01`), which is precisely the guard's input condition:
+`run.label === run.run_id` → `parentLabel = undefined` → unlabelled child.
+
+**Recommended candidate: `demo-01`.** Fork from any step 1–9; the child should show
+its own fork-id as its label, *not* `demo-01`. If it shows `demo-01`, the guard has
+failed and BL-029's COALESCE has written a parent run_id into a child's label — the
+exact defect the guard exists to prevent.
+
+So the check needs no new run and no deferral: path (a) is available against existing
+data. Path (b) is not invoked. Gate stays open until the fork is actually run —
+identifying a candidate is not executing the check, and this note is the candidate,
+not the result.

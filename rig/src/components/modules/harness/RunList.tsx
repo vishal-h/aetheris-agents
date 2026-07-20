@@ -394,6 +394,19 @@ function EventsContent({ selectedRun }: EventsContentProps) {
         <span className="font-medium truncate max-w-xs" title={selectedRun.label}>
           {selectedRun.label}
         </span>
+        {/* The run_id is the handle every CLI workflow needs (`mix aetheris inspect
+            <run_id>`, `fork`, `tree show`). Before BL-029 the label WAS the run_id
+            for every run, so the header showed it incidentally; once labels became
+            real, a labelled run's header stopped exposing it at all. Shown here
+            whenever it is not already the label — no point printing it twice. */}
+        {selectedRun.label !== selectedRun.run_id && (
+          <span
+            className="font-mono text-xs text-muted-foreground"
+            title="Run ID — use with `mix aetheris inspect`, `fork`, `tree show`"
+          >
+            {selectedRun.run_id}
+          </span>
+        )}
         <Badge variant={statusBadgeVariant(displayStatus)}>{displayStatus}</Badge>
         <span className="text-muted-foreground">
           {selectedRun.model.split('/').pop() ?? selectedRun.model}

@@ -408,3 +408,111 @@ learning promotion per methodology §7 (candidate already visible: the
 stale-recon-row class — a verification pass's own output goes stale the moment a
 second pass corrects it; corrections must chase the report into every doc that
 adopted it).
+
+---
+
+## Milestone summary — **DRAFT** (human approves at close)
+
+Written per methodology §7 step 4. Source is the six implementation-notes files
+(t0–t5), not the diffs. **DRAFT** until the human ratifies at close; Phase B (manifest
+regen + project-knowledge export) is still outstanding.
+
+### What shipped
+
+Fork went from *"infrastructure exists but nothing exposes it"* to an operator-usable
+feature, end to end — and the milestone's first real discovery was that the premise was
+wrong. The harness half already existed: `Aetheris.fork_run/3` and `Fork.from_step/3`
+had been in the tree since 2026-05-17. The scoping report that said otherwise had
+generalised a miss-aimed search into an absence. So the work was **alignment, contract,
+and exposure**, not construction.
+
+- **t0 — `caused_by` event lineage field (harness).** A nullable back-pointer on every
+  trajectory event, serialised and back-compatible (absent ⇒ `nil`), with no emit-site
+  wiring by design. Surfaced that a **second serializer exists** — the SQLite index has
+  no `caused_by` column, so the field is trajectory-file-only, recorded in the harness
+  specs rather than papered over.
+- **t1 — determinism contract (normative).** The contract that governs what a fork
+  guarantees. Its verification table caught three divergences between draft and source
+  in the *safety-relevant* direction, including the discovery that verify's "these tools
+  are contained" claim was false: three paired in-process tools crash verify outright.
+  Two of the milestone's backlog carries were born here.
+- **t2 — fork core alignment (harness).** Seed now carries from the source trajectory's
+  meta and is proven to survive the real writer *and* the fork round-trip; the CLI
+  converged on `Fork.from_step/3`, so `--step N` finally means what it says (it had been
+  re-running from the original prompt). `mode: :fork` was **dropped** — forks are
+  identified by `fork_from`, never by mode.
+- **t3 — `fork_run` Tauri command (Rig).** `async` + `spawn_blocking` so a minutes-long
+  fork never freezes the UI, with a demonstrated (not inferred) contract for failure:
+  `mix` always exits 0, so the command returns `Err` carrying the CLI's stderr whenever
+  stdout has no run id.
+- **t4 — "Fork from here" affordance + provenance banner (Rig).** Per-step, offered only
+  on completed steps and only on file-backed runs, with auto-navigation to the child and
+  an indigo `Forked from X @ step N` banner. Also discharged §t5's row (f) — the full
+  `TrajectoryMeta` sweep against the harness meta writer.
+- **t5 — docs sync + boundary.** Both runbooks, the architecture Fork row, the
+  current-state corrections, ten backlog rows, the weng cite. Phase A only.
+
+Three things are worth carrying forward as facts rather than history: **a fork is
+provenance-carried, not mode-carried** (`meta.fork_from`; a fork records as `record`);
+**only tool-call steps are forkable**, because a terminal text step emits `run_complete`
+and never `step_complete`; and **the store holds two fork-provenance shapes**, since the
+older `replay-source-*`/`verify-*` producers write a null `fork_step` where
+`Fork.from_step` writes an integer.
+
+### What was deferred
+
+Ten backlog rows, **BL-024…BL-033** (`docs/backlog-2026-06.md`), each with verified
+citations. The ones that matter most:
+
+- **BL-025** — verify **re-executes** effectful tools, so verifying a run that called
+  `http_call` performs the egress again. The only carry whose blast radius is outside
+  the repo.
+- **BL-028 / BL-027** — one root cause, two consumers: recorded tool results are read
+  under `"output"` while a family of in-process writers uses `"result"`. Fork
+  reconstruction *silently* empties those results; verify *crashes* on them.
+- **BL-029** — Rig reads every run's label from `config_json`, which the harness strips.
+  Every run displays its `run_id` as its label, and has all along.
+- **BL-026 / BL-027 are PARKED ON TRIGGER** (human-ratified 2026-07-19): they activate on
+  the first `verify` run against a multi-agent/orb trajectory, which is also the first
+  trajectory shape that can reach them.
+
+Deliberately **not** deferred, though §t5 listed it: row **(f)**, the `TrajectoryMeta`
+type drift, was discharged at t4 (`6dd2d55`). Filing it would have created a fake open
+item.
+
+### Open questions for the next milestone
+
+1. **Should fork return early?** Everything downstream inherits the CLI's
+   block-to-completion shape, because the run id is only revealed at `await_run`. The Rig
+   button sits disabled for minutes as a direct consequence. BL-030 + BL-031 are the pair.
+2. **Is WAL wanted, or is opportunistic WAL the design?** t4 left the store converting to
+   WAL only when no reads are in flight — which means adoption is not something the
+   harness can guarantee while Rig holds a read connection. That is a connection-lifecycle
+   question (BL-032), not a pragma one.
+3. **Does fork lineage compose with `caused_by`, or grow its own index?** D4 deferred the
+   reverse query ("list the forks of run X"). t0 built general causal lineage precisely so
+   this would not need a parallel fork-only mechanism (BL-024).
+4. **What does a fork of a fork mean?** Untested this milestone. Provenance is a single
+   parent pointer, so chains are representable but unexercised.
+
+### Process notes for the §7 ritual
+
+Two findings bear on the ritual itself and are handed to claude-ui with the t5 packet
+(scan table + the t0/t1 review files inlined):
+
+- **The packet-integrity class is already promoted — and recurred as blocking anyway**
+  (t3 F1, against two m1 CLAUDE.md learnings). By §7's own test, that means the promoted
+  rule was too vague, which is a stronger signal than any unpromoted class this milestone.
+- **The runbook-update rule was missed twice** (t2's CLI semantics change, t4's
+  affordance) and both entries had to be recovered at t5 — which §t5 explicitly says the
+  sweep does not do. Note the rule fires on "new env var, startup step, config key, or
+  operational procedure," and *a changed semantic on an existing command* matches none of
+  those four nouns.
+- **Promoted rules may not be reachable from the repo that needs them.** The
+  Cited-means-read rule — whose own worked example is BL-007's founding `fork_run` absence
+  claim — lives in `../aetheris/CLAUDE.md:530-532`. `aetheris-agents/CLAUDE.md` has no
+  equivalent, and milestone sessions run with `aetheris-agents/` as the working directory,
+  so the rule is not in their loaded context. Its class recurred across four tickets of
+  this milestone, including twice at t5 itself. Whether cross-repo promotions need
+  duplicating or cross-referencing is a question about the promotion mechanism, not about
+  any one rule's wording.

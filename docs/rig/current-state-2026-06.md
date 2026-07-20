@@ -493,12 +493,14 @@ Rig reads none of these tables. They are harness-internal.
 
 ### C. Replay/fork from step
 
-**Current state:** Infrastructure exists but is not exposed in Rig.
+**Current state:** ~~Infrastructure exists but is not exposed in Rig.~~ **Shipped in BL-007 (2026-07-20)** — exposed end to end, harness CLI through Rig affordance. Corrected bullets below.
 
 - `run_checkpoints` table (`store.ex:863`) stores per-run: `step`, `status`, `messages_json`, `tool_history_json`, `wait_condition_json`, `updated_at`. This is the resume mechanism for `wait_for_event` / paused runs.
 - `priv/runs/{run_id}/trajectory.json` stores the full event sequence including `prompt_built` events with `context_hash` and `message_count`. The conversation context at step N can be reconstructed from the messages in `run_checkpoints.messages_json` (for live runs) or by replaying `llm_called` payloads from the trajectory (for completed runs).
-- `Aetheris.fork_run` or equivalent is not visible in the harness public API from a search of `lib/aetheris.ex:111` (only `extract_skill` is near line 111). A fork-from-step feature would need a harness API addition plus a new Rig command — neither exists today.
-- **Bottom line:** enough state is recorded to reconstruct context at step N, but no fork API or Rig command exposes it.
+- ~~`Aetheris.fork_run` or equivalent is not visible in the harness public API from a search of `lib/aetheris.ex:111` (only `extract_skill` is near line 111). A fork-from-step feature would need a harness API addition plus a new Rig command — neither exists today.~~ **Struck 2026-07-20 — false when written.** The search that produced it missed the function: `Aetheris.fork_run/3` is at `lib/aetheris.ex:73`, delegating to `Execution.Fork.from_step/3` (`lib/aetheris/execution/fork.ex`), which has existed since 2026-05-17. The harness half never needed adding.
+- ~~**Bottom line:** enough state is recorded to reconstruct context at step N, but no fork API or Rig command exposes it.~~
+- **Corrected bottom line (2026-07-20, BL-007 closeout).** The fork API pre-existed this report; only the Rig exposure was genuinely absent, and BL-007 built it. As of the milestone: harness `Aetheris.fork_run/3` + `mix aetheris fork … --step N` (semantics aligned at t2, `eef174f`), the `fork_run` Tauri command (t3), and a per-step "Fork from here" affordance with a provenance banner in `TrajectoryView` (t4, `6dd2d55`). Fork lineage is provenance-carried in the trajectory `meta` as `fork_from`/`fork_step`; forked runs execute in `:record` mode, not a `:fork` mode. See `docs/rig/runbook.md` (Harness module → "Forking a run from a step") and `../aetheris/docs/aetheris/runbook.md` (§"Forking a run").
+- **Provenance of the error:** a single miss-aimed search, generalised into an absence claim and then inherited by every doc that adopted it. Carried into the BL-007 §7 material (`docs/rig/milestones/bl-007/bl-007-t5-section7-scan.md`, classes C and D).
 
 ### D. Skills extraction
 
@@ -546,7 +548,7 @@ From `server.ex:655-671` (first write) and `:935-942` (resumed write):
 |-------|------|-------|
 | `model` | string | from RunConfig |
 | `provider` | string | from RunConfig |
-| `mode` | string | `"record"` \| `"replay"` \| `"verify"` |
+| `mode` | string | `"record"` \| `"replay"` \| `"verify"` — **note:** never `"fork"`; a forked run records as `"record"` |
 | `step_count` | integer | unique step values in the events list |
 | `max_steps` | integer | from RunConfig |
 | `started_at` | ISO 8601 string | |
@@ -555,14 +557,22 @@ From `server.ex:655-671` (first write) and `:935-942` (resumed write):
 | `system_prompt` | string | full text, untruncated |
 | `user_prompt` | string | full text, untruncated |
 | `sandbox_path` | string \| null | |
-| `seed` | null (always seen as null) | |
+| `seed` | integer \| null | ~~null (always seen as null)~~ **corrected 2026-07-20:** the writer persists `config.seed` (`server.ex:668`, `:939`); it is null only when the run had no seed. BL-007 t2's CLI test demonstrates a non-null seed (`4242`) surviving the real writer *and* the fork round-trip. The original "always seen as null" reflected the sample set, not the contract |
 | `overlay_changes` | array | from `collect_overlay_changes` |
 | `resumed` | boolean | **only present when true** — added at `server.ex:941` for resumed runs |
+| `fork_from` | string | **only present on forked runs** — `maybe_add_fork_meta` (`server.ex:717-721`) merges `fork_from`/`fork_step` together or omits both. Present ⟹ non-null. This, not `mode`, identifies a fork |
+| `fork_step` | integer \| null | co-present with `fork_from` as a **key**, but its **value** may be null: `Fork.from_step` writes an integer, while the older `replay-source-*` / `verify-*` producers write null (540 of 1,201 fork-bearing metas in the dev store) |
 
-**`TrajectoryMeta` in `types.ts:193-207` does not declare `resumed`.** Rust
+~~**`TrajectoryMeta` in `types.ts:193-207` does not declare `resumed`.** Rust
 returns `meta` as `serde_json::Value` (`trajectory.rs:50`), so the field
 passes through to TypeScript, but the type interface silently drops it. Any
-code that uses `meta as TrajectoryMeta` will not see `resumed`.
+code that uses `meta as TrajectoryMeta` will not see `resumed`.~~
+
+**Resolved 2026-07-20 (BL-007 t4, `6dd2d55`).** The whole `TrajectoryMeta`
+interface was swept against the harness meta writer: `resumed?` declared,
+`fork_from?`/`fork_step?` added, and `seed` / `sandbox_path` retyped to match
+what the writer actually emits. The passthrough observation stands — Rust still
+returns `meta` as `serde_json::Value` — but the interface no longer drops fields.
 
 #### Per-event fields
 

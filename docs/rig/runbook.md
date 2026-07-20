@@ -99,6 +99,43 @@ The Harness module shows all agent runs recorded in `aetheris.db`.
 | `paused` | Blue | |
 | `idle` | Grey | |
 
+### Forking a run from a step
+
+On the **Trajectory** tab, a completed step shows a **"Fork from here"** button. It
+starts a new run that replays the transcript up to that step and then continues live.
+The source run is never modified.
+
+**Not every step gets a button — that is deliberate.** The button appears only on steps
+that recorded a completed step. A step whose LLM reply was plain text *finishes* the run
+and never completes a step, so the final text step of most runs has no button. There is
+no greyed-out button on such steps; absence is the signal.
+
+**Only on completed, file-backed runs.** A run still in flight (or one recovered by the
+orphan sweep) has no `trajectory.json` yet — that file is written at run end — so the
+Trajectory tab renders from reconstructed events and shows no fork buttons at all. Wait
+for the run to finish, then reopen the tab.
+
+**While a fork runs.** The pressed button reads "Forking…" and every fork button on the
+run disables until it resolves. **This blocks for as long as the fork takes — minutes is
+normal**, because the new run executes for real after replaying the prefix. There is no
+detach or cancel; quitting Rig mid-fork leaves a row the harness `mix aetheris sweep`
+will cure.
+
+**When it resolves**, Rig switches you to the child run's Trajectory, which carries an
+indigo **"Forked from `<run_id>` @ step N"** banner. Two caveats worth knowing:
+
+- If you navigated away (selected another run, or left the Trajectory tab) the fork still
+  completes, but Rig will **not** yank you to it — by design.
+- The child's **row does not appear in the Runs list until you hit Refresh.** The
+  trajectory opens regardless; only the list row lags.
+
+**A forked run displays `Mode: record`, not `fork`.** That is correct — fork is not a
+runtime mode. A run is a fork because its meta carries `fork_from`, which is exactly what
+the banner reads.
+
+If a fork fails, the reason (the CLI's stderr) appears in a dismissible red strip at the
+top of the Trajectory tab. A failed fork never shows up as a silent new run.
+
 ### Not connected
 
 If `AETHERIS_DB_PATH` is not set or the file doesn't exist, the Harness

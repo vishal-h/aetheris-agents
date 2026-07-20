@@ -292,6 +292,230 @@ as-built parallel design, not a current-state claim.
 
 ---
 
+### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X") (#TBD)
+**Size:** M · **Priority:** low
+
+BL-007 D4, deferred at that milestone with this entry as the record (README
+"Open decisions" — *"Deferral gets a backlog entry, not silence"*).
+
+BL-007 ships parent-link **display** only: Rig reads `fork_from`/`fork_step` from
+the forked run's trajectory meta. The reverse query — *list the forks of run X* —
+needs an index or a `config_json`-deserializing scan, neither of which exists.
+
+- **Compose with `caused_by`, don't grow a parallel mechanism.** t0 landed the
+  `caused_by` event-lineage field; a fork-only lineage index would be a second,
+  overlapping causal structure. Any lineage query should build on general causal
+  lineage.
+- **The store is not single-shaped — design for two fork-provenance shapes.**
+  Verified against 1,201 `fork_from`-bearing metas in the dev store: BL-007's
+  `Fork.from_step` writes an **integer** `fork_step` (661 metas), while the older
+  `replay-source-*` / `verify-*` producers write `fork_from` with `fork_step:
+  **null**` (540 metas). The key is always co-present; only the value varies. A
+  lineage view that assumes an integer step will mis-render or drop 45% of the
+  existing rows. (Surfaced at t4 r2 F6; Rig already tolerates both via
+  `fork_step?: number | null` plus a banner guard.)
+- **Deferred verification, with its trigger.** The null-`fork_step` banner render
+  is currently unverified end-to-end because those runs are file-only and do not
+  appear in the runs list. **Trigger: when file-only runs become listable, that
+  ticket's e2e picks up the null-`fork_step` banner render.** Not a standalone
+  e2e — it rides the ticket that makes it reachable.
+
+**Done when:** a lineage query exists that composes with `caused_by`, handles both
+provenance shapes, and has an e2e covering the null-`fork_step` case.
+
+---
+
+### BL-025 — Verify: effect classes / record-and-serve for effectful tools (#TBD)
+**Size:** M · **Priority:** medium
+
+`verify` **re-executes** every recorded tool call against a live worker
+(`verifier.ex:136`, `Client.execute/2`). For a pure tool that is the point; for an
+effectful one it is a hazard. The motivating case: verifying a run that called
+`http_call` performs the network egress **again** — real requests to a third party,
+from what an operator reasonably reads as a read-only check. A verify over a run
+with a destructive tool call would re-perform the destruction.
+
+Determinism contract §5 names this; `verifier.ex:130-136` is the mechanism.
+
+Shape to consider: classify tools as pure / effectful, and for effectful ones
+*record-and-serve* the recorded output rather than re-executing — verifying the
+transcript's consistency without re-entering the world.
+
+**Done when:** verify cannot re-perform an external effect without an explicit
+opt-in; `http_call` is covered by a test that asserts no egress during verify.
+
+---
+
+### BL-026 — Verify: divergence report names no first diverging event (#TBD)
+**Size:** S · **Priority:** low — **PARKED ON TRIGGER**
+
+**This row activates on its trigger, and not before. Trigger: the first `verify`
+run against a multi-agent / orb trajectory.** Human-ratified 2026-07-19 (BL-007 t5
+boundary). Until that trigger fires, this is recorded, not scheduled — do not pick
+it up as ready work.
+
+`VerifyReport` (`verifier.ex:176-186`) carries only `run_id`, `verified`, `failed`,
+and a flat `steps` list; the renderer (`:188-242`) prints per-step rows. Nothing
+identifies **the first step at which the run diverged** — the single most useful
+fact when a verify fails, since later divergences are usually consequences of the
+first. An operator gets a wall of per-step results and reconstructs the ordering by
+eye.
+
+**Done when:** a failing verify names the first diverging event/step explicitly,
+and the trigger condition above has actually occurred.
+
+---
+
+### BL-027 — Verify: `KeyError` crash on paired in-process tools (#TBD)
+**Size:** S · **Priority:** medium — **PARKED ON TRIGGER**
+
+**Same trigger and ratification as BL-026: activates on the first `verify` run
+against a multi-agent / orb trajectory.** Human-ratified 2026-07-19. Recorded, not
+scheduled.
+
+`verify_step/2` reads the recorded tool output with
+`result_event.payload |> Map.fetch!("output")` (`verifier.ex:133`) — a hard fetch,
+not a lookup with a default. But **in-process** tool writers emit the payload under
+`"result"`, not `"output"` (`loop.ex:421-497`). So verifying a trajectory whose
+tools ran in-process raises `KeyError` and takes the verify down.
+
+The tools that hit this are exactly the orb/coordination ones —
+`wait_for_event`, `read_blackboard`, `write_blackboard` — which is why the trigger
+is a multi-agent/orb trajectory: that is the first trajectory shape that can
+contain them, and the crash is unreachable until one exists.
+
+Note the shared root cause with BL-028: two independent consumers of recorded tool
+results each assume `"output"` while a family of writers uses `"result"`. Worth
+fixing as one payload-key convention rather than two point patches.
+
+**Done when:** verify tolerates both payload keys (or the writers converge on one),
+with a test over an orb trajectory — and the trigger has occurred.
+
+---
+
+### BL-028 — Fork reconstruction drops `"result"`-keyed tool output (#TBD)
+**Size:** S · **Priority:** medium
+
+`event_to_messages(:tool_result)` reads `Map.get(payload, "output", "")`
+(`fork.ex:101-105`). Many in-process tool writers store the payload under
+`"result"` instead (`loop.ex:354,424,435,459,469,482,492,508`). Because the read
+**defaults to an empty string**, those tool results reconstruct as tool messages
+with **empty content** — silently. The fork starts from a transcript in which the
+tools appear to have returned nothing, and nothing in the output says so.
+
+Silent-empty is the dangerous part: a fork that should have failed loudly instead
+proceeds from a subtly wrong context.
+
+`fork.ex`-local fix, but a behaviour change beyond t2's four goals, which is why t2
+surfaced rather than fixed it. Shares its root cause with BL-027 — see that entry.
+
+**Done when:** fork reconstruction carries `"result"`-keyed tool output, with a
+test asserting non-empty reconstructed content for an in-process tool.
+
+---
+
+### BL-030 — Early-return `fork_run` (spawn without blocking to completion) (#TBD)
+**Size:** M · **Priority:** medium
+
+`mix aetheris fork` blocks until the forked run finishes: the CLI reveals the new
+run id only via `RunHelpers.await_run/1` at the end (`fork.ex:37`,
+`run_helpers.ex`). Every consumer inherits the block — Rig's "Fork from here"
+button sits disabled for the full run, which for a real fork is minutes.
+
+Wanted: a spawn-and-return-early shape like `orchestrate_start`, which needs the
+**harness CLI to emit the run id at fork-start** rather than at completion. Once it
+does, Rig can navigate to the child immediately and let it stream.
+
+Harness-touching enhancement, ratified-tracked at BL-007 t3 and explicitly not t3
+or t4 scope — the t4 affordance ships against the blocking contract on purpose.
+Pairs naturally with BL-031: an early-return fork makes the unbounded `await_run`
+loop far less load-bearing.
+
+**Done when:** the fork CLI can emit the run id at start; Rig's affordance returns
+without waiting for completion.
+
+---
+
+### BL-031 — `await_run` has no timeout or cap (#TBD)
+**Size:** S · **Priority:** medium
+
+`await_run` (`cli/commands/run_helpers.ex`) is a poll-forever loop —
+`Process.sleep(200)` + `Store.get_run`, with **no bound**. If a terminal status
+never lands, the CLI spins forever, and so does any Rig `invoke` wrapping it.
+
+This was the **amplifier**, not the cause, of BL-007 t4's field hang: a store
+`:busy` crash stopped statuses landing, and the unbounded loop turned that into an
+indefinite hang. t4 fixed the store side (`059c92e`), so statuses land and the loop
+terminates today — which is exactly why this stayed out of that emergency fix
+(scope held to three store changes).
+
+It remains a latent resilience defect: **any** future cause of a stuck
+non-terminal status reproduces the hang, with no timeout to convert it into a
+legible error. Surfaced at t4 r3 F7.
+
+**Done when:** `await_run` bounds its wait and returns a timeout error naming the
+run and its last-seen status.
+
+---
+
+### BL-032 — WAL connection-lifecycle follow-ups (#TBD)
+**Size:** M · **Priority:** low
+
+BL-007 t4 added `PRAGMA busy_timeout=5000` (load-bearing), `:busy` handling in
+`run_stmt/3`, and `PRAGMA journal_mode=WAL` to `Store.init/1` (`059c92e`). WAL is
+kept **opportunistic with a comment**: SQLite can only convert the journal mode
+when no reads are in flight, so with Rig holding a read connection the store may
+stay in `delete` mode indefinitely and convert later at idle. Verified: an idle
+real store converts to `wal`; under continuous read-hammering it stays `delete` and
+forks still exit 0. The fix does not depend on the conversion — but it does mean
+**WAL adoption is not something the harness can currently guarantee**, and that is
+a connection-lifecycle question, not a pragma question.
+
+If WAL is genuinely wanted rather than opportunistic, the three follow-ups:
+
+- **(a) Checkpointing / `-wal` growth.** Rig holding a long read snapshot prevents
+  checkpointing; the `-wal` file can grow unbounded.
+- **(b) Dirty-`-wal` recovery under a read-only connection.** A read-only
+  connection cannot recover a dirty `-wal` left by a harness crash with no live
+  writer. It resolves on the next harness write, but Rig reads can fail in that
+  window.
+- **(c) Observability.** WAL's success or failure is currently silent — log the
+  post-pragma `journal_mode` so the mode in effect is a fact, not an assumption.
+
+Surfaced at t4 r4.
+
+**Done when:** a decision is recorded — either WAL is made deterministic via
+connection lifecycle (with the three items addressed), or opportunistic WAL is
+ratified as the permanent design and documented as such.
+
+---
+
+### BL-033 — Remove `:fork` from the `RunConfig` mode union (#TBD)
+**Size:** S · **Priority:** low
+
+`@type mode :: :record | :replay | :verify | :explore | :fork`
+(`run_config.ex:115`) still lists `:fork`, but **no code path in the harness sets
+or matches it.** `mode` is behaviourally significant only for `:replay` and
+`:verify`; BL-007 t2 dropped `mode: :fork` from the CLI fork path deliberately, so
+that forks are behaviourally identical to `fork_run/3`. Fork lineage is carried by
+`fork_from`/`fork_step`, not by mode.
+
+The member is therefore vestigial, and actively misleading: it invites consumers to
+key off `meta["mode"] == "fork"`, which is **never** true for a fork.
+
+Ratified at the BL-007 t5 boundary as *no code change now* — deleting it is a
+harness code change outside the milestone that surfaced it. The
+`../aetheris/docs/aetheris/architecture.md` Execution Modes table is annotated to
+document the discrepancy in the meantime.
+
+Check before deleting: nothing in-repo (or in Rig) pattern-matches `:fork`, and no
+persisted `config_json` decodes to it.
+
+**Done when:** `:fork` is removed from the union, or a reason to keep it is
+recorded on this entry.
+
+---
+
 ## Rig (aetheris-agents/rig/)
 
 ### BL-005 — TrajectoryView fallback for live runs (#46)
@@ -831,6 +1055,37 @@ anyone's attention.
 
 ---
 
+### BL-029 — Rig reads the run label from the wrong place, for every run (#TBD)
+**Size:** S · **Priority:** medium
+
+Both Rig harness queries read the run label out of `config_json`:
+
+- `harness_list_runs` — `COALESCE(json_extract(r.config_json, '$.label'), r.run_id)`
+  (`rig/src-tauri/src/commands/harness.rs:82-84`)
+- `harness_get_run` — same shape (`harness.rs:196`)
+
+But the harness **strips `label` from `config_json` before persisting it**:
+`encode_config/1` does `Map.delete(:label)`
+(`../aetheris/lib/aetheris/agent/server.ex:758`). The label lives in the dedicated
+`runs.label` column (`../aetheris/lib/aetheris/store.ex:807`, backfilled by
+`ensure_runs_label_column/1` at `:989`).
+
+So the `json_extract` always returns NULL and the `COALESCE` always takes the
+fallback: **Rig displays `run_id` as the label for every run.** The feature reads as
+"labels aren't set" rather than as a bug, which is why it survived this long.
+
+Not fork-specific — it affects every run in the list. Surfaced at BL-007 t3 while
+chasing why forked runs showed no label; the t4 fork invoke omits `label`
+accordingly, and can pass it once this lands.
+
+One-line-per-site fix: read `r.label` / `label` from the column, keeping the
+`COALESCE(..., run_id)` fallback for genuinely unlabelled runs.
+
+**Done when:** both queries read `runs.label`; a labelled run shows its label in the
+Rig run list and detail view.
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)
@@ -847,8 +1102,11 @@ Scope sketch for the milestone docs:
   step N from the trajectory, start a new run with provenance back-link
   (consider reusing `agent_trees` for the parent/child relation).~~
   **Already built — struck 2026-07-17, see the annotation below.**
-- Rig: one Tauri command + a "Fork from here" affordance on a step group
-  in TrajectoryView. *(Verified absent — this is the real work.)*
+- ~~Rig: one Tauri command + a "Fork from here" affordance on a step group
+  in TrajectoryView. *(Verified absent — this is the real work.)*~~
+  **Built — struck 2026-07-20.** Shipped exactly as sketched: the `fork_run`
+  Tauri command (t3) and a per-step "Fork from here" affordance with a
+  provenance banner in `TrajectoryView` (t4, `6dd2d55`).
 - Decide divergence semantics up front: forked run gets a fresh run_id
   and records normally; original is never mutated.
 - New event types or config fields → event.ex/specs §6 in the same
@@ -864,8 +1122,10 @@ Scope sketch for the milestone docs:
 > | "provenance back-link" | **exists** — `fork_from` / `fork_step` are first-class `RunConfig` fields (`run_config.ex:82,196`), set at `fork.ex:119`, and **persisted into the trajectory's `meta`** by `maybe_add_fork_meta` (`agent/server.ex:717-720`). Shipped as a direct field link, not via `agent_trees` — the sketch's parenthetical was a suggestion, and a simpler design won. |
 > | — | `:fork` is first-class in the mode union (`run_config.ex:115`); CLI `cli/commands/fork.ex`; tests in `execution/fork_test.exs` and `cli/commands/fork_test.exs` |
 >
-> **Verified absent:** the Rig side — no fork command in `rig/src-tauri/src/*.rs`, no
-> frontend references, nothing in `specs.md` §4.
+> ~~**Verified absent:** the Rig side — no fork command in `rig/src-tauri/src/*.rs`, no
+> frontend references, nothing in `specs.md` §4.~~ **Closed 2026-07-20:** all three
+> now exist — `fork_run` in `rig/src-tauri/src/commands/fork.rs:34`, the
+> `useFork`/`TrajectoryView` frontend path, and the `specs.md` §4 command row.
 >
 > Not re-scoped here; that is the planning session's job. Noting only that the shape
 > has changed: provenance, determinism contract, and Rig UX **on top of an existing
@@ -1173,4 +1433,13 @@ multi-line street/city/state/zip.
 | 9 | BL-013 | Needed before testing a second SO template |
 | 10 | BL-014 | Low-effort address fix; do with BL-013 pass |
 | 11 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
+| 12 | BL-029 | Every run shows the wrong label today; one line per site. Batch with BL-004 — same file (`harness.rs`) |
+| 13 | BL-028 | Silent-empty is the worst failure shape: a fork proceeds from a wrong context with no signal |
+| 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
+| 15 | BL-025 | Verify can re-perform real external effects — the one BL-007 carry with a blast radius outside the repo |
+| 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
+| 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |
+| 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |
+| 19 | BL-024 | Design-led; compose with `caused_by` rather than a fork-only index. Handle both provenance shapes |
+| — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
 | — | BL-006 | Fires on its own trigger |

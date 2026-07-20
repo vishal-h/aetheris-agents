@@ -516,6 +516,38 @@ recorded on this entry.
 
 ---
 
+### BL-034 — `prompts/bl-002-refresh-project-knowledge.md` has a self-staling step order (#TBD)
+**Size:** S · **Priority:** medium
+
+The BL-002 prompt is **internally contradictory**, and has been since it was written.
+Step 2 writes `docs/project-knowledge-manifest.md` with each file's current hash. Its
+closing constraint then says to *append* a drift-baseline line to
+`docs/rig/current-state-2026-06.md` — a file the manifest tracks. That append moves
+`current-state`'s hash past the value just recorded, so the manifest is stale for that
+row the instant the step completes. The same constraint also says to "run drift_check.py
+once at the end to confirm exit 0 and **zero WARN**" — which the preceding instruction
+has guaranteed cannot happen.
+
+Evidence it fired in production, not just on paper: at the 2026-07-17 export
+(`628f15f`) the manifest recorded `current-state` at `d24e482`, two commits behind
+`628f15f`. The row was born stale.
+
+The general rule the fix must encode: **any file the manifest tracks is edited *before*
+the manifest is written, never after.** BL-007 Phase B hit this and sequenced around it
+by hand — the manifest regen was made the last commit of the export, after the rider,
+this row, and the notes had all landed.
+
+Not fixed inline at BL-007 t5 Phase B because the Phase B scope was the export itself,
+and editing the prompt mid-export is the same class of ordering mistake the row
+describes.
+
+**Done when:** the prompt's step order puts every manifest-tracked edit (including the
+drift-baseline append) before the manifest write, and the "zero WARN" assertion is
+reachable — or the baseline append is dropped from the prompt if it is not worth the
+ordering constraint.
+
+---
+
 ## Rig (aetheris-agents/rig/)
 
 ### BL-005 — TrajectoryView fallback for live runs (#46)
@@ -1441,5 +1473,6 @@ multi-line street/city/state/zip.
 | 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |
 | 19 | BL-024 | Design-led; compose with `caused_by` rather than a fork-only index. Handle both provenance shapes |
+| 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
 | — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
 | — | BL-006 | Fires on its own trigger |

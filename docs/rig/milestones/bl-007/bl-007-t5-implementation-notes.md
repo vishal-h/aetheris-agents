@@ -530,5 +530,81 @@ exchange existed to avoid.
   exit 0 as the closeout gate. The `project_knowledge` WARN above is the marker for it.
 - ~~**Milestone summary is DRAFT**~~ — **closed 2026-07-20**: approved as-is, DRAFT marker
   removed from the README.
-- **BL-024…BL-033 carry `(#TBD)`** — GitHub issue numbers to backfill when issues are cut.
+- **BL-024…BL-034 carry `(#TBD)`** — GitHub issue numbers to backfill when issues are cut.
 - **Commit and push held** for the human, per the milestone's standing discipline.
+
+---
+
+# Phase B — manifest regen + export (final milestone act)
+
+**Watermark:** agents `675a5c2`, harness `7e77951` (both main, clean). Branch
+`bl-007-t5-phase-b` off agents main. **No harness edits** — the manifest lives in the
+agents repo and no harness file needed an export-name copy refreshed.
+
+## Ordering, which turned out to be the whole ticket
+
+The manifest records the commit at which each exported file *last changed*. So every
+edit to a manifest-tracked file must land **before** the manifest is written, or the row
+is born stale. Three of this session's four edits touch tracked files, so the commit
+order was forced:
+
+1. `d89641f` — the rider (`CLAUDE.md`, tracked).
+2. `<this commit>` — BL-034 row (`docs/backlog-2026-06.md`, tracked) + these notes
+   (untracked by the manifest).
+3. `<manifest commit>` — the regen, last, recording (1) and (2)'s hashes.
+
+Doing the regen first and the rider second would have produced a manifest that fails its
+own check on the commit that wrote it.
+
+## Deviations
+
+| # | Deviation | Reason |
+|---|---|---|
+| B1 | Drift-baseline append to `current-state-2026-06.md` (BL-002 prompt's closing constraint) **not done** | It is the self-staling step BL-034 documents; doing it after the regen re-stales the row, and the Phase B step list does not call for it. Filed, not silently skipped |
+| B2 | New backlog row BL-034 filed, though Phase B's step list is regen + export only | P3 — a deferred finding gets a backlog row in the same round it is deferred. Prose in these notes would file nothing |
+| B3 | Stale `last changed` dates corrected beyond the stale-hash set | `methodology--triad-loop.md` read `2026-07-15`; the commit's actual date is `2026-06-19`. The column was carrying export dates, not commit dates, for at least one row |
+
+## What the regen found beyond the nine
+
+The Phase A relay named nine stale files. At Phase B's HEAD there were **ten** — the
+harness `CLAUDE.md` joined the set when the P8 line landed at `7e77951`, after the count
+was taken. Recorded because it is the milestone's own class-D shape in miniature: a
+verified count decayed between the verification and its reuse, one commit later.
+
+## Export set and the reconciliation
+
+24 manifest rows (23 checked + the self-referencing manifest row). **3 added** per §t5
+D6's export clause: `rig--bl-007-milestone.md`, `aetheris--determinism-contract.md`,
+`aetheris--activegraph-brief.md`. **None dropped.**
+
+Inclusion rule, written into the manifest itself rather than left implicit: milestone
+*working artifacts* (reviews, implementation notes, scan files) are not exported;
+milestone *specifications* that later work is written against are. That is what admits
+`rig--protocol.md` and the BL-007 README while excluding `bl-007-t5-section7-scan.md`
+and the six t*-notes/review files.
+
+**The six-file reconciliation is the part the tooling cannot help with.** Five research
+briefs plus `rig--architecture.md` are listed in the manifest but absent from the live
+project knowledge. Their hashes match git, so the check reports them green — this is
+exactly the manifest-blind direction the manifest header has warned about since BL-022,
+now observed live. Four of the six are unchanged since the last export and so would look
+like "nothing to re-upload" to anyone reading the diff rather than the reconciliation.
+They must be uploaded regardless. Carried into the export table in the packet.
+
+## Done-check
+
+`python3 scripts/drift_check.py --strict` — **8 PASS, 0 FAIL, 0 WARN, 7 INFO**, exit `0`
+measured directly (`>/dev/null 2>&1; echo $?`, not a pipeline tail — the t5 F3 defect).
+`project_knowledge: 23 manifest entries all match git HEAD`. The staleness WARN class that
+marked Phase B as outstanding is now clear, which is the closeout gate §t5 named.
+
+Docs-only in both repos, so the Elixir/Rust/TS gate set is not re-run; green at the t4
+boundary (`059c92e` / `6dd2d55`).
+
+## Open after this
+
+- **Upload is human-owned.** The manifest now asserts an export at `d89641f` / `7e77951`.
+  Until the files are actually uploaded, the manifest over-describes project knowledge —
+  the blind direction. The export table in the packet is the upload list.
+- **BL-024…BL-034 carry `(#TBD)`.**
+- **BL-034** — fix the BL-002 prompt's step order before the next export.

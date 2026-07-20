@@ -420,10 +420,11 @@ human** — see "What actually landed, and what is held".
 | **P4** | B — decisions constraining ticket N+1 | **ACCEPT — LANDED.** Wording relayed on request |
 | **P5** | D — verified claims decay | **ACCEPT — LANDED.** Wording relayed; Source line carries t5's two decayed-citation instances per the C-residual fold |
 | ~~C~~ | Cited-means-read | **WITHDRAWN** by the reviewer; exists at HEAD. Residual absorbed by P5. No action |
-| **P6** | G+H — bar exception | **HELD.** Wording relayed, but the entry requires explicit human ratification of the bar exception (with a date); that adjudication has not arrived |
+| **P6** | G+H — bar exception | **RATIFIED 2026-07-20 — LANDED.** Human ratified the bar exception with its date; claude-ui's wording relayed as a paste (third attempt) and landed verbatim. Bar exception visible in the entry body, not only here |
 | **P7** | methodology §6 + §7 amendment | **ACCEPT — LANDED** in the harness methodology doc, including the second §7-input clause from observation 3 |
-| **P8** | reachability mechanism | **HELD** for the human. claude-code's reading favours (c); see reasoning below. Not landed — it changes both repos' standing session behaviour |
-| Summary | milestone summary | **HELD** — claude-code recommends approving as-is; the human's approval has not arrived, so it stays DRAFT |
+| **P8** | reachability mechanism | **RATIFIED option (c) 2026-07-20 — LANDED.** One standing line in each repo's CLAUDE.md; no rule duplicated, no rule rehomed |
+| **P9** | E applied to the §7 pipeline | **LANDED with P6.** New transport rule: promotion wording travels as a review-file artifact, not chat. Filed by claude-ui in the same round the gap recurred |
+| Summary | milestone summary | **APPROVED 2026-07-20** as it stood at the t5 round-2 state, no edits requested. DRAFT marker removed |
 
 **P6 reasoning (recorded for the human's decision; NOT acted on).**
 The recommendation is to promote **H** (*one symptom, several mechanisms — separate symptom from mechanism by direct
@@ -491,6 +492,35 @@ being promoted rather than an obstacle to it. Phase A is committed and complete;
 promotion commit needs either the four relayed wordings or explicit authorisation to
 compose them.
 
+### How the gate closed (2026-07-20, post-restart session)
+
+The hold held twice more before it cleared, which is why the transport rule exists.
+
+1. **Restart session, round 1.** The close-out instruction said P6's wording was "per the
+   wording in the t5 review record." It was not there — `bl-007-t5-review.md` was read in
+   full (135 lines) and carries only F1–F4 and the round-2 dispositions. The substance
+   survived in four committed places (`bl-007-t4-implementation-notes.md:294-305` is the
+   fullest), but claude-ui's *authored entry prose* had never reached an artifact. Offered
+   three routes — assemble from the record, relay the paste, or decline P6 — and held.
+2. **Route chosen: relay the paste**, on the ground that assembling from the record would
+   be action past an unrun gate, which is P2. The gate here is claude-ui's authored
+   wording, and P2 does not exempt the rule-writing itself.
+3. **Third relay attempt succeeded** — pasted verbatim, with the bar-exception clause in
+   the entry body and the `[date]` placeholder as the only field left to fill.
+
+The human's own framing on accepting the correction: the text "has existed only in chat
+through two relay attempts now." That is the whole case for the transport rule, and it is
+why claude-ui filed the §7 promotion draft into `docs/reviews/bl-007-t5-review.md` in the
+same commit — the milestone retroactively satisfies the rule it just wrote.
+
+**Style note, flagged rather than normalised (per the pre-check offered before landing).**
+The two new entries are relayed as markdown list items with an inline `Source:` sentence;
+P1–P5 are unbulleted paragraphs followed by a backticked `` `Source:` `` line. The text was
+landed **verbatim**, since "verbatim" was the instruction and the divergence is cosmetic.
+Normalising the six entries to one form is available as a follow-up if wanted; it is not
+done here because silently restyling relayed wording is the failure mode this whole
+exchange existed to avoid.
+
 ---
 
 ## Open items / carries
@@ -498,6 +528,7 @@ compose them.
 - **Phase B (separate session):** manifest regen including this doc, the determinism contract,
   and the brief; the six-file project-knowledge reconciliation; `drift_check.py --strict` at
   exit 0 as the closeout gate. The `project_knowledge` WARN above is the marker for it.
-- **Milestone summary is DRAFT** — human approves at close (README bottom).
+- ~~**Milestone summary is DRAFT**~~ — **closed 2026-07-20**: approved as-is, DRAFT marker
+  removed from the README.
 - **BL-024…BL-033 carry `(#TBD)`** — GitHub issue numbers to backfill when issues are cut.
 - **Commit and push held** for the human, per the milestone's standing discipline.

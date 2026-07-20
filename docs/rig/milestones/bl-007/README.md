@@ -411,11 +411,13 @@ adopted it).
 
 ---
 
-## Milestone summary — **DRAFT** (human approves at close)
+## Milestone summary — **RATIFIED 2026-07-20**
 
 Written per methodology §7 step 4. Source is the six implementation-notes files
-(t0–t5), not the diffs. **DRAFT** until the human ratifies at close; Phase B (manifest
-regen + project-knowledge export) is still outstanding.
+(t0–t5), not the diffs. **Approved by the human at close, 2026-07-20**, as it stood at
+the t5 round-2 state — no edits requested. Phase B (manifest regen + project-knowledge
+export + `drift_check.py --strict`) is still outstanding and is tracked separately; it
+changes no claim in this summary.
 
 ### What shipped
 

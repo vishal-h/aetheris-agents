@@ -132,3 +132,70 @@ Round 2 closed with zero blocking. Phase A committed on `bl-007-t5` in both repo
 see the adjudication record in `bl-007-t5-implementation-notes.md` §"§7 adjudication",
 which documents why four of the eight promotion wordings could not be landed from this
 session's inputs.
+
+---
+
+# §7 promotion draft (claude-ui, authored)
+
+**Filed retroactively 2026-07-20**, in the same commit that lands P6 and P8. This section
+exists because of the rule it contains: through the whole §7 ritual this wording lived only
+in chat — the P3–P6 relay gap held the promotion commit at round 2, and P6 again required a
+third relay attempt after the session restart. The review file is where the draft should
+have been from the start, so it is filed here now and the milestone's own record becomes
+what the new rule requires of every milestone after it.
+
+Wordings below are claude-ui's, as authored. P1–P5 landed at `3394386`; P6 and the
+transport rule land with this commit. All six are in `CLAUDE.md` §"Learning — BL-007".
+
+**P1 (class E — packet integrity).**
+A packet section referenced is a packet section absent — inline every required section
+verbatim; existence-in-repo does not satisfy the packet. `Source: m-docbuilder-m1 t4, t8;
+BL-007 t3`
+
+**P2 (class F — acting ahead of an unexecuted gate).**
+No action past a gate until that gate has run and its result is on the record — covering
+doc-order gates, test gates, and publish/merge gates alike. `Source: BL-007 t2, t4 (×2)`
+
+**P3 (class A — deferred findings).**
+A deferred finding gets a backlog row in the same round it's deferred — prose in a packet
+or notes files nothing. `Source: BL-007 t1, t2, t3`
+
+**P4 (class B — forward carry).**
+Decisions that constrain ticket N+1 land in N+1's README section before its session
+starts — implementation notes don't travel forward on the prompt path.
+`Source: BL-007 t2, t3, t4`
+
+**P5 (class D — decay of verified claims).**
+A correction chases the corrected claim into every doc that adopted it, in the same
+round — and a verified citation decays the moment the file moves; re-verify at HEAD before
+reuse. Absorbs class C's residual (C itself withdrawn — "Cited-means-read" exists at
+`../aetheris/CLAUDE.md:530-532`). `Source: BL-007 t2, t4, t5`
+
+**P6 (classes G+H — symptom vs. mechanism). Ratified 2026-07-20 with an explicit bar
+exception.**
+One symptom can have several mechanisms: verify a fix against the real counterpart in the
+operator's environment, not a simulation — and a fix proven for one face doesn't close the
+symptom until the observed face is captured directly. Promoted **below** §7's ≥2-ticket
+threshold by explicit human ratification: the class recurred across six *rounds* of one
+ticket rather than across two tickets, and that cost was judged sufficient evidence. The
+exception is recorded in the CLAUDE.md entry itself so the override is auditable rather
+than erosive. `Source: BL-007 t4 r3–r6`
+
+**Transport rule (class E, applied to the §7 pipeline itself).**
+Promotion wording travels as a review-file artifact, not chat: claude-ui's §7 promotion
+draft lands in `docs/reviews/` before the promotion commit is cut.
+`Source: BL-007 t5 (§7 ritual, ×2)`
+
+**P7 — methodology amendment, not a CLAUDE.md rule.** Landed in the harness at `0a0439f`:
+§6's runbook trigger list gains "changes the observable semantics of an existing command,
+flag, or UI affordance" (t2's `--step N` change matched none of the four existing nouns),
+and §7 step 1 gains the second-input clause from scan observation 3 (a review-file-only
+scan cannot see class I).
+
+**P8 — reachability mechanism, option (c). Ratified 2026-07-20.** One standing line in
+*each* repo's CLAUDE.md directing cross-repo milestone sessions to read both repos'
+learning sections at session start. Rejected: (a) duplicating rules into both files, which
+invites the copy-divergence this project's drift apparatus exists to prevent; (b) a
+cross-reference alone, which depends on a session prioritising a pointer it has no reason
+to follow. (c) puts the cost once at session start, changes no rule's home, and creates no
+second copy to drift.

@@ -1257,10 +1257,13 @@ operator has no prompt to doubt what they see.
 **Relation:** BL-024's lineage view will need find-run-by-id anyway; whichever lands
 first should carry the shared piece.
 
-**Blocks:** BL-029's remaining merge-gate check as of 2026-07-20 — the COALESCE-guard
-e2e needs a *forkable unlabelled* run, and the only identified candidates
-(`demo-01`, `run_zS6XSQ`) sit outside the default window. Raising the limit or
-filtering to the id is the workaround; this row is the fix.
+**Does not block BL-029.** An earlier draft of this row claimed it did, via the
+`demo-01` / `run_zS6XSQ` candidates being windowed out. That claim was stale when
+written and is struck: both candidates were deliberately retired, and the gate's
+closure path moved to a stub fixture agent. The real obstacle to fork-based checks is
+**BL-039** — real-provider fork continuation fails at the first LLM call — which no
+amount of window-raising fixes, since a real-provider fork of any run fails
+identically. Search/window and fork continuation are independent gaps.
 
 **Done when:** an operator can locate any run in the store by id or label from the UI,
 or the UI states plainly that it is showing a truncated window.
@@ -1618,6 +1621,7 @@ multi-line street/city/state/zip.
 | 13 | BL-028 | Silent-empty is the worst failure shape: a fork proceeds from a wrong context with no signal |
 | 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
 | 15 | BL-025 | Verify can re-perform real external effects — the one BL-007 carry with a blast radius outside the repo |
+| 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
 | 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |
@@ -1626,6 +1630,5 @@ multi-line street/city/state/zip.
 | 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
 | 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
 | 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |
-| 23 | BL-038 | Placed with the BL-035/036 cluster per the filing note. **Two tensions flagged, unresolved:** at 23 it lands *after* BL-024 (19b), so BL-024 carries the shared find-run-by-id piece — consistent with "whichever lands first", but not with reading "ahead of BL-024 territory" as a strict order. And it currently blocks BL-029's last gate check, which argues for earlier than a low-priority cleanup cluster. Resequence if either matters |
 | — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
 | — | BL-006 | Fires on its own trigger |

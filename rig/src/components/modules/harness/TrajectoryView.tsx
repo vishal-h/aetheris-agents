@@ -306,6 +306,11 @@ export function TrajectoryView({ run, onForked }: Props) {
     //     yields the run_id — inheriting that writes a run_id into the child's label;
     //   - the synthesized post-fork summary (RunList.tsx `handleForked`) carries
     //     label: '', so forking a fork before a Refresh would inherit Some("").
+    // The second guard is not free: that child *does* carry the inherited label in
+    // the DB, so forking it before a Refresh drops a real label rather than passing
+    // it on. Chosen deliberately — the placeholder cannot tell us what the label is,
+    // and an unlabelled fork is legible where a wrong or empty one is not. A Refresh
+    // before the second fork gets the real row, and the label with it.
     const parentLabel =
       run && run.label && run.label !== run.run_id ? run.label : undefined;
     return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport canFork parentLabel={parentLabel} onForked={onForked} />;

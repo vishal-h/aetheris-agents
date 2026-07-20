@@ -230,8 +230,13 @@ as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002
 tracked ticket the day it's found — never carried silently. Gates that only run when a ticket
 happens to touch their territory rot invisibly, and each rot normalizes the next: `mix test`
 was red before BL-003, `tsc -b`/`bun run build` red for three weeks (p9-t4), `bun run lint` red
-since an undated `eslint-plugin-react-hooks` bump — all three surfaced only because a later
-ticket ran the gate off-territory. A known-red gate that already has a tracked ticket is
+from an undated `eslint-plugin-react-hooks` bump — all three surfaced only because a later
+ticket ran the gate off-territory. **`bun run lint` is green as of BL-029 (2026-07-20)**, found
+so by an off-territory run; when it went green is unknown, because nothing was watching in
+either direction. That is the same invisibility this rule exists to prevent, running the other
+way: a gate that silently *heals* trains the same "the note is probably stale" reflex as one
+that silently rots, and the stale red note is what makes a real red one ignorable.
+A known-red gate that already has a tracked ticket is
 **named in the packet with its ticket ref, not re-triaged** — the rule prevents silent carry,
 not tracked carry. Source: BL-016, BL-005 (×2).
 

@@ -246,6 +246,20 @@ landed in the run list; token totals did not.
 
 **Done when:** token totals visible per run; NULL stays NULL for stub runs.
 
+**Status:** Done 2026-07-20 — `total_input_tokens` / `total_output_tokens` added to
+`RunSummary` as correlated subqueries mirroring `total_cost_usd`, surfaced in the
+Cost cell's `title` tooltip (table stays at 8 columns), commit `c39bf7e`. No
+`COALESCE`: NULL stays NULL, verified against stub fork runs. Cross-checked against
+`usage.rs`'s differently-shaped aggregation — 57591 input tokens both ways on
+`docbuilder-orch-iDGIIQ`. Columns appended after `total_cost_usd` so `row.get`
+indices 0–10 are unshifted.
+
+**Correction:** "Update specs §3" above is a **stale structural pointer**. §3 is
+*Trajectory File Schema*; the Tauri command structs live in **§4**, which is also the
+section `drift_check.py` parses. §4 is what was edited. A backlog row quoting doc
+structure decays exactly like a `file:line` citation does — same class, different
+surface (review finding 3, `docs/reviews/bl-029-review.md`).
+
 ---
 
 ### BL-016 — Fix standing `payslip_orchestrator` test failure (#67)
@@ -1116,6 +1130,17 @@ One-line-per-site fix: read `r.label` / `label` from the column, keeping the
 **Done when:** both queries read `runs.label`; a labelled run shows its label in the
 Rig run list and detail view.
 
+**Status:** Done 2026-07-20 — both queries read `runs.label` with the
+`COALESCE(..., run_id)` fallback retained, commit `c39bf7e`. Measured at the fix:
+878 runs, 596 labelled, **0** with a label in `config_json` — so the old read
+returned the fallback for every row, including the 596 properly named ones.
+Batched with BL-004 per the sequencing table. The BL-007 t4 fork rider landed in
+the same commit: a fork inherits its parent's label verbatim, guarded on both ways
+`label` is not real (the COALESCE fallback, and the `label: ''` placeholder in
+`handleForked`). Reviewed round 1 in `docs/reviews/bl-029-review.md`; merge gated
+on the manual GUI pass (review finding 2). Backend real-vs-fallback distinction
+deferred to BL-037 (review finding 5).
+
 ---
 
 ### BL-035 — Extract `formatCost` / `formatTokens` to `src/lib/format.ts` (#TBD)
@@ -1162,6 +1187,42 @@ this is the §4 analogue. Likely approach: parse the ```rust fenced blocks in §
 **Done when:** a field present in a §4 struct block but absent from the Rust struct
 (or vice versa) is reported; the checker is in the sprint's `--strict` run;
 `tests/test_drift_check.py` covers both directions.
+
+---
+
+### BL-037 — Nullable `label` in RunSummary/RunDetail: backend distinguishes real from fallback (#TBD)
+**Size:** XS–S · **Priority:** low
+
+BL-029 made both harness queries return `COALESCE(runs.label, run_id)`, so the wire
+type cannot express "this run has no label" — the fallback is indistinguishable from
+a run genuinely labelled with its own id.
+
+Every consumer that needs the distinction must re-derive it by string comparison. The
+fork rider already does:
+
+```ts
+// TrajectoryView.tsx
+run && run.label && run.label !== run.run_id ? run.label : undefined
+```
+
+That is the frontend reconstructing a fact the backend erased, and it will be wanted
+again — **BL-024's lineage view** needs real-vs-fallback to render sensibly, and any
+further consumer either repeats this guard or gets it wrong silently (the failure
+mode is a run_id displayed as if it were a chosen name, which is precisely the BL-029
+symptom returning by a different route).
+
+Shape: `label: Option<String>` / `string | null` on the wire; the `COALESCE` comes out
+of both queries; the run_id fallback moves to the display layer where it belongs; the
+`TrajectoryView` guard simplifies to a null check. Note this also removes the
+`label: ''` placeholder hazard in `RunList.tsx` `handleForked` (BL-029 review
+finding 6) — `null` is expressible where `''` was a stand-in.
+
+Sequence **with or before BL-024** so the lineage view is built against the corrected
+contract rather than inheriting the string-comparison guard.
+
+**Done when:** `label` is nullable end-to-end; no consumer compares `label` to
+`run_id`; the run_id fallback is applied once, at display; `cargo test` + `tsc -b` +
+`bun run lint` green.
 
 ---
 
@@ -1519,7 +1580,8 @@ multi-line street/city/state/zip.
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
 | 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |
-| 19 | BL-024 | Design-led; compose with `caused_by` rather than a fork-only index. Handle both provenance shapes |
+| 19 | BL-037 | Before BL-024 — the lineage view needs real-vs-fallback labels; building it first bakes in the string-comparison guard |
+| 19b | BL-024 | Design-led; compose with `caused_by` rather than a fork-only index. Handle both provenance shapes |
 | 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
 | 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
 | 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |

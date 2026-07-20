@@ -193,3 +193,96 @@ manual GUI pass — see the evidence section in the packet.
   an operator with the app running. The SQL underneath each is verified; what is
   unverified is the render path. The unlabelled-parent fork is the case worth not
   skipping — it is the one that exercises the COALESCE guard.
+
+---
+
+# Round 2 — review dispositions
+
+Review: `docs/reviews/bl-029-review.md` (round 1, claude-ui).
+
+## F1 — the `--name` claim (blocking): **verified, wording stands**
+
+The finding was correct that the packet asserted a CLI interface without
+demonstrating it. The assertion happened to be true; the evidence is now on record:
+
+```
+../aetheris/lib/aetheris/cli/commands/run.ex:12    @switches [
+../aetheris/lib/aetheris/cli/commands/run.ex:13      name: :string,
+../aetheris/lib/aetheris/cli/commands/run.ex:60      |> maybe_put(:label, Keyword.get(opts, :name))
+../aetheris/lib/aetheris/cli/commands/run.ex:75      |> maybe_put(:label, name)
+../aetheris/lib/aetheris/cli/commands/fork.ex:9    @switches [step: :integer, name: :string]
+../aetheris/lib/aetheris/cli/commands/fork.ex:64     name -> %{label: name}
+```
+
+`--name` is the flag; it maps to `RunConfig.label`, which persists to `runs.label`.
+No runbook change needed.
+
+Worth recording *why* the reviewer's `--label` hypothesis was a near-miss rather than
+a wrong guess: the concept is spelled `label` at every layer — `RunConfig.label`,
+`runs.label`, `%{label: name}` — **except** the argv surface, which is the one layer
+that names it `name`. A reader tracing the field downward from the DB would conclude
+`--label` and be wrong. That asymmetry is what makes this class resistant to
+catching-by-reading, and it is the argument for the demonstration rule rather than a
+counterexample to it: inference from the surrounding vocabulary is exactly what fails
+here.
+
+## F2 — manual GUI pass (blocking): **open, not executable in this session**
+
+Correctly identified as human-executed. Not claimed, not simulated. Merge stays
+gated. The four checks are listed under Open items above; the unlabelled-parent fork
+is the one that exercises the COALESCE guard and the one a happy-path pass would miss.
+
+## F3 — Status closure lines: **done**
+
+Both rows now carry `**Status:** Done 2026-07-20 … commit c39bf7e` in house form.
+BL-004's closure absorbs the §3→§4 correction, naming it as a stale *structural*
+pointer — a backlog row quoting doc structure decays like a `file:line` citation.
+
+## F4 — the lint claim: **two corrections, one of them to the finding**
+
+The finding assumed `bun run lint` and `eslint .` might differ. They do not:
+
+```json
+"scripts": { "lint": "eslint ." }        // rig/package.json:9
+```
+
+The packet's §1.4 block showed `$ eslint .` because that is **bun echoing the script
+it runs** — the command executed was `bun run lint`. So the real gate was run; the
+packet presented it in a way that could not be distinguished from bypassing it, which
+is a reporting defect rather than a gate defect. Recorded as such.
+
+Second correction: the stale red-gate note is in **root `CLAUDE.md:232`**, not
+`rig/CLAUDE.md` (which has no lint note at all). Corrected there. The clause read
+"red since an undated bump" — present-perfect, asserting an ongoing red — and is now
+"green as of BL-029 (2026-07-20), found so by an off-territory run; when it went green
+is unknown, because nothing was watching in either direction."
+
+The lesson that correction carries is worth more than the fix: a gate that silently
+*heals* trains the same "that note is probably stale" reflex as one that silently
+rots, and a stale red note is what makes a real red one ignorable. Added to the
+existing rule rather than filed separately, since it is the same rule's other
+direction.
+
+**Note:** this edits root `CLAUDE.md`, which triggers the restart rule for the *next*
+session.
+
+## F5 — BL-037 filed: **done**
+
+Nullable `label` end-to-end; `COALESCE` out of both queries; run_id fallback moves to
+display; the `TrajectoryView` guard becomes a null check. Sequenced at **19**, ahead
+of BL-024 (now 19b) so the lineage view is built against the corrected contract
+instead of inheriting the string-comparison guard. The row also notes it retires the
+`label: ''` placeholder hazard from F6.
+
+## F6 — degradation-cost comment: **done**
+
+The guard's second arm (`run.label &&`) is not free: the synthetic post-fork child
+*does* carry the inherited label in the DB, so forking it before a Refresh drops a
+real label. The comment now says so, and why it is still the right trade — the
+placeholder cannot tell us the label, and an unlabelled fork is legible where a wrong
+or empty one is not.
+
+## F7, F8 — **acknowledged**
+
+Phantom `RunDetail.events` deletion approved; no-new-tests argument accepted as the
+t3 convention holding. No action.

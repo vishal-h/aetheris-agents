@@ -92,7 +92,7 @@ The Harness module shows all agent runs recorded in `aetheris.db`.
 
 **Run detail header** shows the label, then the **run_id** in muted monospace when the
 two differ. The run_id is the handle the CLI workflows take — `mix aetheris inspect
-<run_id>`, `mix aetheris tree show <run_id>`, `aetheris fork` — so it stays visible
+<run_id>`, `mix aetheris tree show <run_id>`, `mix aetheris fork` — so it stays visible
 even once a run has a real name. On an unlabelled run the label *is* the run_id, so
 it is shown once, not twice.
 

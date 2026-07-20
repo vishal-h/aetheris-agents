@@ -77,3 +77,41 @@ So the check needs no new run and no deferral: path (a) is available against exi
 data. Path (b) is not invoked. Gate stays open until the fork is actually run —
 identifying a candidate is not executing the check, and this note is the candidate,
 not the result.
+
+---
+
+# Review — b1: BL-029 + BL-004 — round 2
+
+Packet integrity: conforms, and the supersession is handled correctly — done-checks re-run at HEAD rather than carried forward, all three diffs inlined, the self-correction (§7) on the record unprompted. That placeholder-sha instance is the citation-decay class caught by its author in-round — the cheapest point on that curve, noted under cross-ticket.
+
+## Dispositions on the round-2 responses
+
+- **F1 — closed.** Evidence conclusive (`run.ex:12-13,60,75` + `fork.ex:9,64`); runbook wording stands. The correction runs both ways and I'm taking my half: my suggested `--label` was inferred by tracing the field vocabulary upward — the identical undemonstrated method the finding prohibited, wrong where the packet's was luckily right. The near-miss analysis is accurate and stays in the file as a worked example: the reviewer is the offender, which is what makes it a good one.
+- **F3, F5, F6 — closed** as specified. BL-037's row is well-formed and the 19/19b resequencing is right.
+- **F4 — closed, correction accepted.** Reporting defect, not gate defect; the root-CLAUDE.md silent-heal clause is a genuine improvement folded into the right rule. Restart-rule consequence acknowledged below.
+- **F7, F8 — acknowledged**, no residue.
+- **F9 — fix accepted on the diff; verification rides the gate.** Correct shape (detail header only, `label !== run_id` guard, runbook line). But this is itself a render-path change verified only by compiler and build — the exact gap F9 came from. So the closing GUI pass gains one check; see gate below.
+- **F10 — correctly held open.** The candidate-not-result discipline is exactly right, and finding that the premise didn't hold is the better outcome than the fixture.
+
+## Findings (round 2)
+
+11. **[non-blocking]** BL-029's `Status:` closure line (written in `6d79191`) predates the F9 fix (`5ad4bf2`) and now under-describes what BL-029 ships: it cites `c39bf7e` and doesn't mention the run_id-in-header addition, which is part of this ticket's delivered surface. Correction-chasing, same class as the sha in §7: one sentence appended to the closure line ("F9 addendum: run detail header now shows the run_id when it differs from the label, `5ad4bf2`") closes it. Fold into the merge-side edit, no separate round needed.
+
+12. **[non-blocking]** The new runbook paragraph lists the CLI handles as `mix aetheris inspect <run_id>`, `mix aetheris tree show <run_id>`, and **`aetheris fork`** — the third drops the `mix` prefix. Operators copy command spellings from exactly this doc; make it `mix aetheris fork`. One word, same edit batch as F11.
+
+## Merge gate — final form, two visual checks, both yours
+
+1. **Fork `demo-01` from any step ≥1.** Child must show its own fork-id as its label after Refresh — not `demo-01`, not blank. Closes F2 check 3 and F10.
+2. **Open any labelled run's detail header** (the Docbuilder Orchestrator rows will do) and confirm the run_id now appears in muted monospace beside the label. Closes F9's render-path verification. Free bonus: the `demo-01` fork child from check 1, opened in detail, should show its id **once**, not twice — that's F9's guard arm on unlabelled runs, observable in passing.
+
+Report both into the file (one line each suffices); then F11/F12's two-line edit; then push all four commits (`f01262c` is already the pushed baseline; `6d79191`, `5ad4bf2`, `9bdc119`, plus the F11/F12 edit) in one release when you give the word — pushes stay held until you do.
+
+## Cross-ticket notes
+
+- **F9's shape is the batch's best promotion candidate so far, at one instance.** "A fix can remove a coincidence that was doing real work, and diff review structurally cannot catch it — the regression is in code the diff never touched." One instance is below the §7 bar and I am *not* proposing promotion now; recording it here so that if the class recurs this cycle, the wording is already drafted and travels per the transport rule. Its kinship to one-symptom-several-mechanisms (both are "the artifact under review isn't where the truth is") argues for extension rather than a new rule if it ever comes up.
+- The §7 placeholder-sha self-correction is a second in-batch instance of citation decay *by the author, caught by the author* — evidence the promoted rule is being exercised, which is what the §7 test wants to see. No action.
+- The claude-code-authored response section inside the review file is attributed and dated, which keeps the audit trail honest in lightweight mode — acceptable as practiced; noting so the mixed authorship is a recorded convention rather than drift.
+
+---
+
+Sequencing after the gate closes: the root-CLAUDE.md edit means **b2's session takes the full restart** — which costs nothing since b2 was getting a fresh session regardless. b2's prompt citations were pinned at harness `7e77951`, which hasn't moved, so it fires as drafted; it doesn't depend on b1's push. Run the two checks when you're at the app, and the word "push" from you closes b1.

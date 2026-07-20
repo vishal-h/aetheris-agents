@@ -1140,6 +1140,10 @@ the same commit: a fork inherits its parent's label verbatim, guarded on both wa
 `handleForked`). Reviewed round 1 in `docs/reviews/bl-029-review.md`; merge gated
 on the manual GUI pass (review finding 2). Backend real-vs-fallback distinction
 deferred to BL-037 (review finding 5).
+**F9 addendum:** the run detail header now shows the run_id when it differs from the
+label, commit `5ad4bf2`. Making labels real had removed the operator's only view of
+the run_id — the handle `mix aetheris inspect` / `fork` / `tree show` all take — so
+restoring it is part of what BL-029 ships, not a separate fix (review finding 9).
 
 ---
 

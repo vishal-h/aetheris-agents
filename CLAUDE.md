@@ -369,3 +369,25 @@ promoted per methodology §7.
 
 **Write a done-check / sprint command against the *verified* runtime shape, never an assumed one — check the actual data structure, export status, and arg convention before writing the command.** This failure recurred four times across two milestones as different surface manifestations of one root cause: a command was written against what the author *assumed* the shape was, and it broke (or, worse, passed trivially) because the real shape differed. (1) m5 t1 — the §t1 smoke used wrong asset filenames + `--spec /dev/null` (a path arg fed a non-existent/invalid spec), so `grep -c '{{'` returned 0 *trivially* (the renderer never ran). (2) m6 t4b — `compute_doc.py --template X` assumed a flag, but the template is a *positional* arg. (3) m7 t2 — the catalogue done-check did `for e in cat`, but `catalogue.json` is `{"tenant_id":…, "doc_types":[…]}` (a dict); it must iterate `cat["doc_types"]`. (4) m7 t3 — a sprint line read `os.environ['DOCBUILDER_CONTEXT']`, but the value was a shell var (not exported), so under `set -euo pipefail` the `KeyError` killed the run before the agent step; fix was to pass it via argv. **Before writing the command: inspect the file/JSON (`\d`, `head`, a one-line `json.load(...).keys()`), the CLI signature (`--help` / argparse), and whether a var is exported — then write the command to match. A done-check that can pass without exercising the thing it checks is worse than no check.**
 `Source: m-docbuilder-m5 t1, m-docbuilder-m6 t4b, m-docbuilder-m7 t2, t3`
+
+---
+
+## Learning — BL-007 (fork: Rig UX + provenance/determinism contract)
+
+Promoted per methodology §7 after the BL-007 milestone-end ritual. Adjudicated
+2026-07-20; wording authored by claude-ui, committed by claude-code.
+
+**A packet section referenced is a packet section absent — inline every required section verbatim; existence-in-repo does not satisfy the packet.** This class was already promoted twice from m1 ("review packets must include the full done-check output block"; "implementation notes are a required deliverable") and still arrived as a *blocking* finding, because both earlier rules read as "the section must exist and be committed" — which a packet that *cites* a committed file technically satisfies. It does not: the reviewer reads the packet, not the repo. By §7's own test, a class recurring as blocking means the promoted rule was too vague, so this is a rewrite of the m1 pair, not a third rule beside them.
+`Source: m-docbuilder-m1 t4, t8; BL-007 t3`
+
+**No action past a gate until that gate has run and its result is on the record** — covering doc-order gates, test gates, and publish/merge gates alike. Three instances in one milestone, same muscle, different artifact: a doc edited ahead of the gate that should have preceded it; a rider acted on before the milestone doc carried it; and both branches pushed on a "push both branches" instruction before the acceptance e2e was reported green, inverting the agreed reorder → gates → e2e → commit → push order. All three were recoverable only because the held-push discipline caught them — the rule is what makes the discipline unnecessary rather than load-bearing.
+`Source: BL-007 t2, t4 (×2)`
+
+**A deferred finding gets a backlog row in the same round it's deferred — prose in a packet or notes files nothing.** Three times this milestone a deferred item survived only because a later reviewer re-noticed it; prose has no executor.
+`Source: BL-007 t1, t2, t3`
+
+**Decisions that constrain ticket N+1 land in N+1's README section before its session starts — implementation notes don't travel forward on the prompt path.** The next session reads its ticket text and contract refs, not the previous ticket's notes; three consecutive tickets proved the carry works when done and bites when skipped.
+`Source: BL-007 t2, t3, t4`
+
+**A correction chases the corrected claim into every doc that adopted it, in the same round — and a verified citation decays the moment the file moves; re-verify at HEAD before reuse.** A verification pass's own output goes stale when a later pass corrects it (three instances), and two t5 instances show the decay form: a mirror citation and a line number that was right when read. This is the residual of the "cited-means-read" class, which covers claims *never* verified; this one covers claims verified once and reused after they rotted.
+`Source: BL-007 t2, t4, t5`

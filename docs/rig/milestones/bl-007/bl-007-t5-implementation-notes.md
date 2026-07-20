@@ -408,24 +408,25 @@ is where the lesson belongs. The correction itself is unchanged.
 ## §7 adjudication (round 2 close)
 
 The human delegated adjudication with *"go by claude-ai recommendation; let me know if
-human feedback is required."* Adjudications recorded below; the promotion **commit** is
-held, for the reason in "The gate that stopped the promotion commit".
+human feedback is required."* The four unrelayed wordings (P3–P6) were requested and
+supplied. **P1–P5 and P7 landed; P6, P8 and the summary approval remain open for the
+human** — see "What actually landed, and what is held".
 
 | Item | Class | Adjudication |
 |---|---|---|
-| **P1** | E — packet integrity | **ACCEPT.** Wording relayed verbatim. Already-promoted class that recurred as blocking; a rewrite, not a new rule |
-| **P2** | F — acting ahead of an unexecuted gate | **ACCEPT.** Three instances across two tickets; threshold met on the existing record |
-| **P3** | A — deferred finding gets a backlog row | **ACCEPT** in principle — wording not relayed (see below) |
-| **P4** | B — decisions constraining ticket N+1 | **ACCEPT** in principle — wording not relayed |
-| **P5** | D — verified claims decay | **ACCEPT** in principle — wording not relayed. Source line gains t5's two decayed-citation instances per the C-residual fold |
+| **P1** | E — packet integrity | **ACCEPT — LANDED.** Already-promoted class that recurred as blocking; a rewrite of the m1 pair, not a third rule |
+| **P2** | F — acting ahead of an unexecuted gate | **ACCEPT — LANDED.** Three instances across two tickets; threshold met on the existing record |
+| **P3** | A — deferred finding gets a backlog row | **ACCEPT — LANDED.** Wording relayed on request |
+| **P4** | B — decisions constraining ticket N+1 | **ACCEPT — LANDED.** Wording relayed on request |
+| **P5** | D — verified claims decay | **ACCEPT — LANDED.** Wording relayed; Source line carries t5's two decayed-citation instances per the C-residual fold |
 | ~~C~~ | Cited-means-read | **WITHDRAWN** by the reviewer; exists at HEAD. Residual absorbed by P5. No action |
-| **P6** | G+H — bar exception | **ACCEPT, promoting H (subsuming G), with the exception recorded** — see below. Wording not relayed |
-| **P7** | methodology §6 + §7 amendment | **ACCEPT**, including the second §7-input clause from observation 3 |
-| **P8** | reachability mechanism | **ACCEPT option (c)** — one standing line in each repo's CLAUDE.md |
-| Summary | milestone summary | **APPROVED as-is** (round-2 state, three process notes) |
+| **P6** | G+H — bar exception | **HELD.** Wording relayed, but the entry requires explicit human ratification of the bar exception (with a date); that adjudication has not arrived |
+| **P7** | methodology §6 + §7 amendment | **ACCEPT — LANDED** in the harness methodology doc, including the second §7-input clause from observation 3 |
+| **P8** | reachability mechanism | **HELD** for the human. claude-code's reading favours (c); see reasoning below. Not landed — it changes both repos' standing session behaviour |
+| Summary | milestone summary | **HELD** — claude-code recommends approving as-is; the human's approval has not arrived, so it stays DRAFT |
 
-**P6 reasoning, since the reviewer twice reserved it and then offered no recommendation.**
-Promote **H** (*one symptom, several mechanisms — separate symptom from mechanism by direct
+**P6 reasoning (recorded for the human's decision; NOT acted on).**
+The recommendation is to promote **H** (*one symptom, several mechanisms — separate symptom from mechanism by direct
 capture in the operator's own environment*), which t4's own notes record as subsuming G.
 The exception is explicit: H recurred across three **rounds of a single ticket**, not across
 two tickets, so it does **not** meet §7's stated bar. Promoting anyway is justified because
@@ -441,7 +442,36 @@ invites exactly the copy-divergence this project spends its drift apparatus prev
 to prioritise. (c) puts the cost once at session start, changes no rule's home, and creates
 no second copy to drift.
 
-### The gate that stopped the promotion commit
+### What actually landed, and what is held
+
+The four missing wordings (P3–P6) were relayed on request. **P1–P5 + P7 landed** in the
+promotion commit. **P6 and P8 are held**, per claude-ui's own rider: they arrive only with
+the human's explicit ratification, and the relay carried the wordings and riders but **not**
+those adjudications. P6's entry text demands *"explicit human ratification, [date]"* — a
+placeholder only the human can fill, and inventing it would be the exact failure P2 names.
+The summary approval is likewise still open, so the summary stays **DRAFT**.
+
+Note the diagnosis embedded in the gate itself (claude-ui's, and it is correct): P3–P6
+existed only in chat, never in a relayed artifact. That is **class E's mechanism —
+referenced, not inlined — landing on the reviewer's own deliverable.** It is recorded in the
+promotion commit message.
+
+**Placement mechanics (claude-code's call, recorded here as instructed).** P1–P5 landed in
+**`aetheris-agents/CLAUDE.md` only**, under a new `## Learning — BL-007` section. They were
+*not* duplicated into the harness CLAUDE.md, because duplication is P8 **option (a)** — the
+option P8 exists to reject, on the grounds that two copies drift. Landing them in both repos
+now would pre-empt the mechanism decision by silently implementing its worst branch. When P8
+is ratified, option (c) adds one standing line to each repo's CLAUDE.md and requires no
+duplication at all. Until then, these rules are reachable from the repo where milestone
+sessions actually run — which is the status quo the reachability finding describes, now
+consciously chosen rather than accidental.
+
+P7 is **not** a CLAUDE.md change and so is P8-independent: it amended
+`../aetheris/docs/methodology/milestone-methodology.md`, where the methodology doc lives —
+§6's trigger list gains "changes the observable semantics of an existing command, flag, or UI
+affordance," and §7 step 1 gains the second-input clause from observation 3.
+
+### The gate that stopped the promotion commit (round 1 of this exchange)
 
 **Four of the eight promotion wordings were never relayed to this session.** P1 arrived
 verbatim and P2's is inferable from its one-line gist. **P3, P4, P5 and P6 are described

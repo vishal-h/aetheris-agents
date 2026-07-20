@@ -79,9 +79,20 @@ The Harness module shows all agent runs recorded in `aetheris.db`.
 ### What you see
 
 **Run list tab:**
-- Label, status badge, model, started at, duration, steps
+- Label, status badge, model, started at, duration, steps, events, cost
+- **Label** is the run's real label — the `--name` you passed to `mix aetheris run`,
+  read from the `runs.label` column. Runs launched without a name show their `run_id`
+  instead. (Before BL-029, *every* run showed its `run_id`, which read as "labels
+  aren't set" rather than as a bug — if you concluded labelling was broken, retry it.)
+- **Cost** shows `—` for stub/Ollama runs and pre-instrumentation Anthropic runs;
+  `—` means "no cost data recorded", not "free". Hover the cost cell for that run's
+  input/output token totals — same NULL contract, no tooltip when no token data.
 - Click any row to open the event log for that run
 - Refresh button — no auto-refresh
+
+**Forking a run** (from the trajectory view) inherits the parent's label verbatim.
+Forking an *unlabelled* run leaves the child unlabelled too — the fork is never given
+a synthesized name, so a label in the list is always one an operator chose.
 
 **Event log tab:**
 - All events for the selected run, ordered by seq

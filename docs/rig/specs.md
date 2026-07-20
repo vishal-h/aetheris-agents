@@ -151,7 +151,8 @@ Path derivation from `AETHERIS_DB_PATH`:
 ```rust
 pub struct RunSummary {
     pub run_id:         String,
-    pub label:          String,        // from config_json.label
+    pub label:          String,        // COALESCE(runs.label, run_id) — the label column,
+                                       // NOT config_json (the harness strips it, server.ex:758)
     pub status:         String,
     pub provider:       String,        // from config_json.provider
     pub model:          String,        // from config_json.model
@@ -161,6 +162,8 @@ pub struct RunSummary {
     pub event_count:    i64,           // COUNT(*) from events
     pub last_event_at:  Option<String>,// MAX(timestamp) from events; NULL if no events
     pub total_cost_usd: Option<f64>,   // SUM cost_usd from llm_responded events; NULL when no cost data
+    pub total_input_tokens:  Option<i64>,  // SUM input_tokens from llm_responded; NULL when no token data
+    pub total_output_tokens: Option<i64>,  // SUM output_tokens from llm_responded; NULL when no token data
 }
 ```
 
@@ -185,12 +188,11 @@ Takes `run_id: String`. Returns:
 ```rust
 pub struct RunDetail {
     pub run_id:      String,
-    pub label:       String,
+    pub label:       String,       // COALESCE(runs.label, run_id) — see RunSummary.label
     pub status:      String,
     pub config:      String,       // full config_json
     pub started_at:  String,
     pub finished_at: Option<String>,
-    pub events:      Vec<EventRow>,
 }
 ```
 

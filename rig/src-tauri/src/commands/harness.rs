@@ -65,6 +65,11 @@ pub struct RunSummary {
     pub event_count:    i64,
     pub last_event_at:  Option<String>,
     pub total_cost_usd: Option<f64>,
+    /// SUM of `input_tokens` / `output_tokens` over this run's `llm_responded`
+    /// events. NULL (not 0) when no event carries token data — stub/Ollama runs
+    /// and pre-instrumentation Anthropic runs, same contract as `total_cost_usd`.
+    pub total_input_tokens:  Option<i64>,
+    pub total_output_tokens: Option<i64>,
 }
 
 #[tauri::command]
@@ -78,10 +83,11 @@ pub fn harness_list_runs(
     let sql = "
         SELECT
             r.run_id,
-            COALESCE(
-                json_extract(r.config_json, '$.label'),
-                r.run_id
-            ) AS label,
+            -- The harness strips `label` from config_json before persisting
+            -- (server.ex:758 `Map.delete(:label)`); it lives in the dedicated
+            -- runs.label column (store.ex:807). The fallback stays for runs that
+            -- are genuinely unlabelled — label is nullable. (BL-029)
+            COALESCE(r.label, r.run_id) AS label,
             r.status,
             COALESCE(json_extract(r.config_json, '$.provider'), '') AS provider,
             COALESCE(json_extract(r.config_json, '$.model'), '')    AS model,
@@ -92,7 +98,15 @@ pub fn harness_list_runs(
             (SELECT MAX(e.timestamp) FROM events e WHERE e.run_id = r.run_id)            AS last_event_at,
             (SELECT SUM(CASE WHEN e.type = 'llm_responded'
                              THEN json_extract(e.payload_json, '$.cost_usd') END)
-             FROM events e WHERE e.run_id = r.run_id)                                    AS total_cost_usd
+             FROM events e WHERE e.run_id = r.run_id)                                    AS total_cost_usd,
+            -- Tokens live ONLY on llm_responded (specs §6). No COALESCE: NULL must
+            -- stay NULL so stub runs stay distinguishable from a genuine zero. (BL-004)
+            (SELECT SUM(CASE WHEN e.type = 'llm_responded'
+                             THEN json_extract(e.payload_json, '$.input_tokens') END)
+             FROM events e WHERE e.run_id = r.run_id)                                    AS total_input_tokens,
+            (SELECT SUM(CASE WHEN e.type = 'llm_responded'
+                             THEN json_extract(e.payload_json, '$.output_tokens') END)
+             FROM events e WHERE e.run_id = r.run_id)                                    AS total_output_tokens
         FROM runs r
         ORDER BY r.started_at DESC
         LIMIT ?
@@ -113,6 +127,8 @@ pub fn harness_list_runs(
                 event_count:    row.get(8)?,
                 last_event_at:  row.get(9)?,
                 total_cost_usd: row.get(10)?,
+                total_input_tokens:  row.get(11)?,
+                total_output_tokens: row.get(12)?,
             })
         })
         .map_err(|e| format!("query error: {}", e))?;
@@ -193,7 +209,8 @@ pub fn harness_get_run(
     let sql = "
         SELECT
             run_id,
-            COALESCE(json_extract(config_json, '$.label'), run_id) AS label,
+            -- runs.label column, not config_json — see harness_list_runs. (BL-029)
+            COALESCE(label, run_id) AS label,
             status,
             config_json,
             started_at,

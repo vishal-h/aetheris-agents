@@ -1118,6 +1118,53 @@ Rig run list and detail view.
 
 ---
 
+### BL-035 — Extract `formatCost` / `formatTokens` to `src/lib/format.ts` (#TBD)
+**Size:** XS · **Priority:** low
+
+`rig/CLAUDE.md` ("React / Frontend patterns") sets the rule: these helpers are
+duplicated in `TrajectoryView.tsx:54,60`, `UsageView.tsx:8,13`, and
+`useRunDiff.ts:9`, "acceptable for three locations. Extract to `src/lib/format.ts`
+if they spread to a fourth."
+
+BL-004 added a third `formatTokens` copy in `RunList.tsx` (for the Cost cell's token
+tooltip) — at the threshold, not past it, so extraction was deliberately *not* done
+in that ticket: it would have touched three files outside the ticket's Touches list.
+The next site tips it over.
+
+Note the copies have **diverged in signature**: `TrajectoryView`/`RunList` take
+`number | null` and return `'—'` for null; `UsageView` takes a bare `number`. The
+extracted helper should be the nullable form, with `UsageView`'s call sites passing
+non-null values unchanged.
+
+**Done when:** one `src/lib/format.ts` exports both helpers; all four sites import
+them; no local copies remain; `bunx tsc -b && bun run lint` green.
+
+---
+
+### BL-036 — drift_check: field-level checking for specs §4 command structs (#TBD)
+**Size:** M · **Priority:** low
+
+`check_tauri_commands` (`scripts/drift_check.py:194-238`) compares command **names**
+only, three ways (`lib.rs` `generate_handler!` / `#[tauri::command]` fns / specs §4).
+The *struct fields* documented under each command in §4 are entirely unguarded.
+
+Found by: specs §4 documented `RunDetail` with an `events: Vec<EventRow>` field that
+the real struct (`harness.rs`) has never had. Nothing caught it; it was noticed only
+because BL-029 happened to edit that exact block. Corrected in the BL-029 + BL-004
+commit. The same blind spot let `RunSummary.label`'s `// from config_json.label`
+provenance comment stay wrong for as long as the bug itself lasted.
+
+§6 payload fields already have a live-DB sampling checker (`check_payload_fields`) —
+this is the §4 analogue. Likely approach: parse the ```rust fenced blocks in §4 for
+`pub <field>: <type>` and compare against the corresponding struct in
+`commands/*.rs`. The `?`-suffix optionality convention from §6 may be worth reusing.
+
+**Done when:** a field present in a §4 struct block but absent from the Rust struct
+(or vice versa) is reported; the checker is in the sprint's `--strict` run;
+`tests/test_drift_check.py` covers both directions.
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)
@@ -1474,5 +1521,7 @@ multi-line street/city/state/zip.
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |
 | 19 | BL-024 | Design-led; compose with `caused_by` rather than a fork-only index. Handle both provenance shapes |
 | 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
+| 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
+| 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |
 | — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
 | — | BL-006 | Fires on its own trigger |

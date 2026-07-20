@@ -45,6 +45,27 @@ function eventTypeClass(type: string): string {
   }
 }
 
+function formatTokens(n: number | null): string {
+  if (n === null) return '—';
+  return n.toLocaleString();
+}
+
+/**
+ * Token totals for the Cost cell's tooltip (BL-004). The runs table is at 8
+ * columns, so tokens ride the existing Cost cell rather than adding a 9th.
+ *
+ * Returns undefined — not an empty string — when neither total is present, so
+ * React omits the `title` attribute entirely and no blank tooltip appears on
+ * stub/pre-instrumentation runs. null-not-zero: a run with genuine zero tokens
+ * still renders "0".
+ */
+function tokenTooltip(run: RunSummary): string | undefined {
+  if (run.total_input_tokens === null && run.total_output_tokens === null) {
+    return undefined;
+  }
+  return `Tokens — in ${formatTokens(run.total_input_tokens)} · out ${formatTokens(run.total_output_tokens)}`;
+}
+
 function payloadPreview(payload: string): string {
   return payload.replace(/\s+/g, ' ').trim().slice(0, 120);
 }
@@ -165,7 +186,10 @@ function RunRow({ run, onSelect, now }: RunRowProps) {
       </td>
       <td className="px-4 py-2 text-right tabular-nums">{run.step_count}</td>
       <td className="px-4 py-2 text-right tabular-nums">{run.event_count}</td>
-      <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+      <td
+        className="px-4 py-2 text-right tabular-nums text-muted-foreground"
+        title={tokenTooltip(run)}
+      >
         {run.total_cost_usd != null ? `$${run.total_cost_usd.toFixed(4)}` : '—'}
       </td>
     </tr>
@@ -468,6 +492,11 @@ export function HarnessRoute() {
       event_count:    0,
       last_event_at:  null,
       total_cost_usd: null,
+      // Placeholder, like the rest of this literal — the real totals arrive with
+      // the row on the next manual Refresh. null (not 0) keeps the Cost cell and
+      // its token tooltip honest in the meantime.
+      total_input_tokens:  null,
+      total_output_tokens: null,
     });
     setActiveTab('trajectory');
   }, []);

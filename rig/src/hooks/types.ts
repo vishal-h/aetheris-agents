@@ -167,6 +167,10 @@ export interface RunSummary {
   event_count:    number;
   last_event_at:  string | null;
   total_cost_usd: number | null;
+  /** SUM over the run's `llm_responded` events. null (not 0) for stub/Ollama runs
+   *  and pre-instrumentation Anthropic runs — same contract as `total_cost_usd`. */
+  total_input_tokens:  number | null;
+  total_output_tokens: number | null;
 }
 
 export interface EventRow {

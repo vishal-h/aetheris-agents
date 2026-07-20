@@ -299,7 +299,16 @@ export function TrajectoryView({ run, onForked }: Props) {
 
   // File loaded successfully — render it exactly as before.
   if (fileTrajectory) {
-    return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport canFork onForked={onForked} />;
+    // A fork inherits its parent's label verbatim (BL-029 rider). Two ways `label`
+    // is not a real label, both of which must degrade to an unlabelled fork rather
+    // than to a synthesized one:
+    //   - server-side it is COALESCE(runs.label, run_id), so an unlabelled parent
+    //     yields the run_id — inheriting that writes a run_id into the child's label;
+    //   - the synthesized post-fork summary (RunList.tsx `handleForked`) carries
+    //     label: '', so forking a fork before a Refresh would inherit Some("").
+    const parentLabel =
+      run && run.label && run.label !== run.run_id ? run.label : undefined;
+    return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport canFork parentLabel={parentLabel} onForked={onForked} />;
   }
 
   // First render, before the useTrajectory effect has started the load.
@@ -316,11 +325,16 @@ interface TrajectoryBodyProps {
    *  orphan-swept run has no trajectory.json, so the fork CLI's source load would
    *  always fail (offered-but-always-fails). Reconstructed path passes false. */
   canFork: boolean;
+  /** The parent run's label, inherited verbatim by a fork — or undefined, which
+   *  leaves the fork unlabelled (Rust `Option::None`). Never a synthesized or
+   *  suffixed value: an unlabelled fork is legible, an invented label is not.
+   *  The caller is responsible for the run_id-fallback guard (see :302). */
+  parentLabel?: string;
   /** Called with the child run id when a fork resolves. */
   onForked?: (runId: string) => void;
 }
 
-function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, onForked }: TrajectoryBodyProps) {
+function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, parentLabel, onForked }: TrajectoryBodyProps) {
   const [metaOpen, setMetaOpen] = useState(true);
   const { fork, forking, error, clearError } = useFork();
   const [forkingStep, setForkingStep] = useState<number | null>(null);
@@ -355,7 +369,7 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, on
   async function handleFork(step: number) {
     setForkingStep(step);
     try {
-      const forkedRunId = await fork(trajectory.run_id, step);
+      const forkedRunId = await fork(trajectory.run_id, step, parentLabel);
       if (alive.current) onForked?.(forkedRunId);
     } catch {
       // Error is already surfaced via `error` (useFork sets it and rethrows).

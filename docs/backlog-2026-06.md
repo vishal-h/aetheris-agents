@@ -436,6 +436,15 @@ surfaced rather than fixed it. Shares its root cause with BL-027 — see that en
 **Done when:** fork reconstruction carries `"result"`-keyed tool output, with a
 test asserting non-empty reconstructed content for an in-process tool.
 
+**Status:** Done 2026-07-21 — read-side fix in `event_to_messages(:tool_result)`
+plus `normalize_content/1` (nil → `""`, non-binary → JSON-encoded; contract §2's
+string invariant), commit `9b2b102`. Three test arms, each verified red-first.
+Citations above describe the pre-fix file and are left as written; post-fix
+locations in the contract's repaired citations and
+`../aetheris/docs/aetheris/milestones/bl-028-implementation-notes.md`. BL-027
+annotated same round (`16de968`), not reopened. Review:
+`docs/reviews/bl-028-review.md`.
+
 ---
 
 ### BL-030 — Early-return `fork_run` (spawn without blocking to completion) (#TBD)

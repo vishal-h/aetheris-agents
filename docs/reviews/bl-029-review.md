@@ -182,6 +182,34 @@ reach `../aetheris-agents`; the error went to `/dev/null`). Read from source ins
 **No claim** is made about whether stub agents already exist in this repo — that grep
 was never run correctly and is not replaced by a guess.
 
+## Gate check 3 — CLOSED, confirmed in stored data (2026-07-21)
+
+Executed by the human operator via the Rig UI, against the fixture. Verified
+independently in `runs`:
+
+```
+fixture-unlabelled-fork-CbZX6w  | label <NULL> | done
+fork-94c31612127f2009           | label <NULL> | done | fork_from: fixture-unlabelled-fork-CbZX6w | fork_step 0 | provider stub
+```
+
+**The child's `runs.label` is NULL.** Had the guard failed, it would carry
+`fixture-unlabelled-fork-CbZX6w` — the parent's run_id inherited as if it were a
+chosen name, which is BL-029's original defect arriving through the fork path. It does
+not. `parentLabel` resolved to `undefined` exactly as designed.
+
+**Stated honestly:** the child's continuation was trivial. `encode_config` strips
+`stub_responses` (`../aetheris/lib/aetheris.ex:372`), so the fork ran with an empty
+queue, got `[stub exhausted]` as text, and terminated at step 0
+(`llm_called: stub-model` → `llm_responded` → `run_complete: agent_finished`). That
+does not weaken the check — the label is written at fork-config time, before any LLM
+call — but the child did not re-execute a tool call, and a reader should not infer
+that it did.
+
+**Gate check 2 now confirmed three times:** GUI pass, and `runs.label` carrying
+`"Payslip Orchestrator"` on two separate real-provider fork children (`fork-aa6a6a65…`,
+`fork-955dd155…`) whose `config_json` had no label key — inheritance works even when
+the continuation fails.
+
 ## F10 candidate-table correction
 
 The candidate filter (unlabelled + `done` + `trajectory.json` + ≥1 step) never required

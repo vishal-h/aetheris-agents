@@ -1317,11 +1317,18 @@ HTTP 400 at seq 2. This was the **first real-provider fork continuation ever
 attempted**; all fourteen prior `fork-*` rows were stub-provider, and the stub
 validates nothing. Full trail in `docs/reviews/bl-029-review.md`.
 
-**Reproduced 2026-07-21** — `fork-955dd155d2a8d4c4`, parent `payslip-orch-TVgr-Q`, a
-*different* source run, also human-executed via the Rig UI: `fork_step: 0`,
-`provider: anthropic`, `message_count: 2` at seq 0, identical `HTTP 400: Unexpected
-role "tool"` at seq 2. Two independent reproductions against different parents, so the
-minimal reproducer above is demonstrated rather than inferred.
+**Reproduced — three attempts, two distinct parents, all identical.** All human-executed
+via the Rig UI, all `fork_step: 0`, `provider: anthropic`, `message_count: 2` at seq 0,
+`HTTP 400: Unexpected role "tool"` at seq 2:
+
+| fork run | parent | date |
+|---|---|---|
+| `fork-aa6a6a65804f6645` | `payslip-orch-a7Vi3A` | 2026-07-20 |
+| `fork-333da479c4902361` | `payslip-orch-a7Vi3A` | 2026-07-20 |
+| `fork-955dd155d2a8d4c4` | `payslip-orch-TVgr-Q` | 2026-07-21 |
+
+100% failure rate on real-provider fork continuation; zero successes ever recorded. The
+minimal reproducer is demonstrated, not inferred.
 
 **Operator-facing symptom (noted, not separately filed):** the Rig UI surfaces this as
 `Fork failed: [sandbox] entered user+mount namespaces … Error: run <id> failed` — the

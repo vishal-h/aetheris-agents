@@ -254,6 +254,19 @@ directory, which already holds `mock_orchestrator.exs` and the `capability_matri
 set, and is the closest existing precedent for a non-production agent that belongs to
 no single use case.
 
+---
+
+## Round — F13 render verification (human-executed, 2026-07-21)
+
+- Labelled run detail header: **pass** — `docbuilder-orch-iDGIIQ` renders in muted monospace beside "Docbuilder Orchestrator" (screenshot on record). F9's render arm closed.
+- Unlabelled fork child header: **pass** — `fork-94c31612127f2009` shows its id **once**, not twice (screenshot on record). The `label !== run_id` guard's suppression arm confirmed.
+
+**b1 merge gate: CLOSED — all arms.** Check 2 ×3, check 3 in stored data + banner, F9 render both arms. F13 fixed-and-verified; F14 chased into both runbooks + BL-039's row with the third fix-space consideration (a fix needs a test path where a fork *actually continues* — accepted, and it's the right bar: it prevents BL-039's fix from being verified by the same vacuous green it exists to end); F15 relocated to `agents/` with the header recording why. No open findings on b1.
+
+**F13's shape, for the promotion file:** the packet body was scrupulous and the headline overclaimed. claude-code's own diagnosis — *"summaries are where a reader stops, which makes them the worst place to relax"* — is the wording worth keeping. It is a fifth face of the silent-wrong-answer class: a CLOSED headline is a well-formed answer standing where a gap should have surfaced, and it survived body-level care because review reads bodies while readers read headlines.
+
+---
+
 ## F10 candidate-table correction
 
 The candidate filter (unlabelled + `done` + `trajectory.json` + ≥1 step) never required

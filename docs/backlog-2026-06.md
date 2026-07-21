@@ -1317,6 +1317,19 @@ HTTP 400 at seq 2. This was the **first real-provider fork continuation ever
 attempted**; all fourteen prior `fork-*` rows were stub-provider, and the stub
 validates nothing. Full trail in `docs/reviews/bl-029-review.md`.
 
+**Reproduced 2026-07-21** — `fork-955dd155d2a8d4c4`, parent `payslip-orch-TVgr-Q`, a
+*different* source run, also human-executed via the Rig UI: `fork_step: 0`,
+`provider: anthropic`, `message_count: 2` at seq 0, identical `HTTP 400: Unexpected
+role "tool"` at seq 2. Two independent reproductions against different parents, so the
+minimal reproducer above is demonstrated rather than inferred.
+
+**Operator-facing symptom (noted, not separately filed):** the Rig UI surfaces this as
+`Fork failed: [sandbox] entered user+mount namespaces … Error: run <id> failed` — the
+sandbox preamble is carried into the error string and the actual cause (the HTTP 400)
+does not appear at all. An operator cannot diagnose from the UI message; the reason is
+only reachable by querying the events table. Whoever takes BL-039 or BL-030 should
+decide which owns surfacing the underlying error.
+
 **Fix space — sketched, not decided.** Either reconstruct assistant `tool_use` blocks
 from recorded `llm_responded` payloads (if the payload retains enough to rebuild the
 block), or fold tool results into user-role text and abandon structured tool

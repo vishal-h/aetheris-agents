@@ -187,4 +187,7 @@ was never run correctly and is not replaced by a guess.
 The candidate filter (unlabelled + `done` + `trajectory.json` + ≥1 step) never required
 a **tool-call** step, so practical availability was overstated; and both candidates
 (`demo-01`, `run_zS6XSQ`) were window-unreachable in the UI. Both were retired. Gate
-check 3 migrates to the stub fixture agent.
+check 3 migrates to the stub fixture agent — now committed at
+`rig/agents/fixture_unlabelled_fork.exs` (unlabelled, `provider: "stub"`, one
+`run_command` step). Verified at eval: `label: nil`, `provider: "stub"`, queue is
+`:tool_call` then `:text`.

@@ -118,6 +118,15 @@ a synthesized name, so a label in the list is always one an operator chose.
 
 ### Forking a run from a step
 
+> **Known failure — real-provider forks do not currently work (BL-039).** A fork whose
+> continuation runs against Anthropic fails at its **first LLM call** with
+> `HTTP 400: Unexpected role "tool"`. The reconstructed transcript carries a `"tool"`
+> role the API rejects, and relabeling alone would not fix it — the paired assistant
+> `tool_use` turns are never reconstructed. **Stub-provider forks work** and complete
+> normally; every fork that has ever succeeded was stub. Tracked: BL-039 in
+> `docs/backlog-2026-06.md`. The button below is live and will happily start a fork
+> that then fails — the failure shows on the child run, not at the click.
+
 On the **Trajectory** tab, a completed step shows a **"Fork from here"** button. It
 starts a new run that replays the transcript up to that step and then continues live.
 The source run is never modified.

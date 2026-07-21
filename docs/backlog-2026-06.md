@@ -1270,6 +1270,71 @@ or the UI states plainly that it is showing a truncated window.
 
 ---
 
+### BL-039 — Fork continuation fails against real providers: reconstructed transcript carries a `"tool"` role (#TBD)
+**Size:** M (docs-first — the fix is a design choice with contract implications)
+· **Priority:** medium-high
+
+Forking a run and continuing it against a real provider fails at the **first LLM
+call**. Two layers, and the second is why this is M rather than a one-line fix.
+
+**Layer 1 — the immediate rejector.** `../aetheris/lib/aetheris/execution/fork.ex:104`
+emits a message with `"role" => "tool"`:
+
+```elixir
+defp event_to_messages(%{type: :tool_result, payload: payload}) do
+  tool_name = Map.get(payload, "tool_name", "")
+  output = Map.get(payload, "output", "")
+  [%{"role" => "tool", "tool_name" => tool_name, "content" => output}]
+end
+```
+
+Anthropic accepts `user` and `assistant` only → HTTP 400 on the first call. This is
+the only `"role" => "tool"` site in the tree.
+
+**Layer 2 — why relabeling is insufficient.** Rewriting that message to the API's real
+shape (a `user`-role turn carrying a `tool_result` block) would *still* be rejected: a
+`tool_result` must pair with a preceding assistant `tool_use` block, and those are
+never reconstructed. `event_to_messages(:llm_responded)` spans `fork.ex:87-98` and
+drops every non-text response at `:95-96`:
+
+```elixir
+      _ ->
+        []
+```
+
+So the contract's §4 known limitation — assistant tool-call turns are not
+reconstructed — is not cosmetic. It is operationally fatal against any validating
+provider.
+
+**Minimal reproducer:** fork from any step whose `llm_responded` was a tool call. Step
+0 of any tool-using agent hits it.
+
+**Evidence.** `fork-aa6a6a65804f6645` — **human-executed via the Rig UI**, `fork_step:
+0`, parent `payslip-orch-a7Vi3A`, `provider: anthropic`, 2026-07-20. `message_count: 2`
+at seq 0 (user_prompt + the tool-role message; the parent's step 0 was a `run_command`
+with no text response, so `event_to_messages(:llm_responded)` contributed nothing),
+HTTP 400 at seq 2. This was the **first real-provider fork continuation ever
+attempted**; all fourteen prior `fork-*` rows were stub-provider, and the stub
+validates nothing. Full trail in `docs/reviews/bl-029-review.md`.
+
+**Fix space — sketched, not decided.** Either reconstruct assistant `tool_use` blocks
+from recorded `llm_responded` payloads (if the payload retains enough to rebuild the
+block), or fold tool results into user-role text and abandon structured tool
+continuation. The choice changes what a fork *is* — whether it resumes a tool
+conversation or replays a flattened one — so it is a contract decision, docs-first.
+
+**Sequencing.** Ahead of BL-030: an early-return fork UX matters little while real
+forks cannot run at all. **Builds atop BL-028's landed state** — BL-028's
+`"output"`/`"result"` key fix is in this exact clause (`fork.ex:101-105`,
+`Map.get(payload, "output", "")` at `:103`). Land BL-028 (b2) first; BL-039 must not
+race it.
+
+**Done when:** a fork of a tool-using run continues successfully against a real
+provider, or the contract states plainly that fork continuation is stub-only and the
+UI refuses real-provider forks rather than failing at the first call.
+
+---
+
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)
@@ -1622,6 +1687,7 @@ multi-line street/city/state/zip.
 | 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
 | 15 | BL-025 | Verify can re-perform real external effects — the one BL-007 carry with a blast radius outside the repo |
 | 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
+| 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
 | 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |

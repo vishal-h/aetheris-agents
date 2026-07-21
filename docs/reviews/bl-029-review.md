@@ -265,6 +265,10 @@ no single use case.
 
 **F13's shape, for the promotion file:** the packet body was scrupulous and the headline overclaimed. claude-code's own diagnosis — *"summaries are where a reader stops, which makes them the worst place to relax"* — is the wording worth keeping. It is a fifth face of the silent-wrong-answer class: a CLOSED headline is a well-formed answer standing where a gap should have surfaced, and it survived body-level care because review reads bodies while readers read headlines.
 
+## Post-push correction (2026-07-21, `d831220`)
+
+Post-push correction (2026-07-21, d831220): the F14 harness-runbook edit was made but never committed — repo-scoped git add -A doesn't reach the sibling tree, and the done-check (drift_check from agents) structurally cannot see a harness-side omission. fbf890e pushed with "complete normally" intact while the agents commit message claimed both runbooks corrected. Caught by the author post-push, verified fixed: grep -c "complete normally" → 0 in both runbooks. Same class as F13 (a claim about N artifacts verified against N−1); the mechanism — per-repo staging plus a single-repo gate on a cross-repo change — is the concrete, recurrable part.
+
 ---
 
 ## F10 candidate-table correction

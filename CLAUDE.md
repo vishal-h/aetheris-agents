@@ -19,9 +19,14 @@ All sprint and agent commands are run from `~/sandbox/elixirws/aetheris/`, not f
 `../aetheris/`. Paths in tickets and docs are relative to `aetheris-agents/`
 unless prefixed with `../aetheris/`. Edits default to this repo; touching the
 harness is explicit and called out in the ticket's `Touches` list.
-**Cross-repo milestone sessions read *both* repos' CLAUDE.md learning sections at
-session start** — promoted rules live in one repo only and are not otherwise
-reachable from the other.
+**Cross-repo sessions, and any session that will produce a review packet, read
+*both* repos' CLAUDE.md learning sections before the first edit** — promoted rules
+live in one repo only and are not otherwise reachable from the other. This is a
+first-action step, not a background intention: BL-031 was a cross-repo ticket whose
+session never opened `../aetheris/CLAUDE.md`, so the entire review-discipline block
+was absent while three review packets were written against it, and Complete-output
+was re-broken (`tail -3`, BL-031 §1f) by a session that had never read it. If you
+have not read the sibling's learning sections, you have not started the ticket.
 
 ---
 
@@ -388,8 +393,8 @@ Promoted per methodology §7 after the BL-007 milestone-end ritual. Adjudicated
 **A packet section referenced is a packet section absent — inline every required section verbatim; existence-in-repo does not satisfy the packet.** This class was already promoted twice from m1 ("review packets must include the full done-check output block"; "implementation notes are a required deliverable") and still arrived as a *blocking* finding, because both earlier rules read as "the section must exist and be committed" — which a packet that *cites* a committed file technically satisfies. It does not: the reviewer reads the packet, not the repo. By §7's own test, a class recurring as blocking means the promoted rule was too vague, so this is a rewrite of the m1 pair, not a third rule beside them.
 `Source: m-docbuilder-m1 t4, t8; BL-007 t3`
 
-**No action past a gate until that gate has run and its result is on the record** — covering doc-order gates, test gates, and publish/merge gates alike. Three instances in one milestone, same muscle, different artifact: a doc edited ahead of the gate that should have preceded it; a rider acted on before the milestone doc carried it; and both branches pushed on a "push both branches" instruction before the acceptance e2e was reported green, inverting the agreed reorder → gates → e2e → commit → push order. All three were recoverable only because the held-push discipline caught them — the rule is what makes the discipline unnecessary rather than load-bearing.
-`Source: BL-007 t2, t4 (×2)`
+**No action past a gate until that gate has run and its result is on the record** — covering doc-order gates, test gates, and publish/merge gates alike. Three instances in one milestone, same muscle, different artifact: a doc edited ahead of the gate that should have preceded it; a rider acted on before the milestone doc carried it; and both branches pushed on a "push both branches" instruction before the acceptance e2e was reported green, inverting the agreed reorder → gates → e2e → commit → push order. All three were recoverable only because the held-push discipline caught them — the rule is what makes the discipline unnecessary rather than load-bearing. A cross-repo change needs a cross-repo done-check — any gate that runs in one repo silently passes omissions in the sibling (repo-scoped `git add -A` + single-repo drift check let a one-repo edit push under a two-repo claim).
+`Source: BL-007 t2, t4 (×2); b1 post-push correction, 2026-07-21 (d831220)`
 
 **A deferred finding gets a backlog row in the same round it's deferred — prose in a packet or notes files nothing.** Three times this milestone a deferred item survived only because a later reviewer re-noticed it; prose has no executor.
 `Source: BL-007 t1, t2, t3`

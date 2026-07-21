@@ -115,3 +115,76 @@ Report both into the file (one line each suffices); then F11/F12's two-line edit
 ---
 
 Sequencing after the gate closes: the root-CLAUDE.md edit means **b2's session takes the full restart** — which costs nothing since b2 was getting a fresh session regardless. b2's prompt citations were pinned at harness `7e77951`, which hasn't moved, so it fires as drafted; it doesn't depend on b1's push. Run the two checks when you're at the app, and the word "push" from you closes b1.
+
+---
+
+# Session handoff — durable facts for the BL-039 batch (claude-code, 2026-07-21)
+
+Written as a file artifact rather than left in conversation. The BL-038 stale-blocking
+error happened because two turns of state existed only in chat; this block exists so
+the same mechanism cannot eat the facts below.
+
+## Human approval on record — contract §4 annotation
+
+**Approved verbatim by the human operator, 2026-07-21.** claude-ui's approval was
+already given; this is the second, required one (the doc is NORMATIVE). Wording ships
+**unchanged, no rewording**:
+
+> *Demonstrated consequence (2026-07-20): a fork continuation against the Anthropic
+> provider fails at its first LLM call — the reconstructed tool-role message is
+> rejected (HTTP 400), and relabeling alone cannot fix it because the paired assistant
+> `tool_use` turns are not reconstructed. Stub-provider forks are unaffected.
+> Tracked: BL-039 (`aetheris-agents/docs/backlog-2026-06.md`).*
+
+**Ordering constraint (cross-repo, cannot be enforced by one commit):** the annotation
+cites BL-039, which lives in the *other* repo. **File BL-039's row first**, then land
+the contract annotation. If the harness commit goes first, a normative doc cites a row
+that does not exist.
+
+## Citations verified at harness `7e77951` (2026-07-21)
+
+| Claim | Site | Verified |
+|---|---|---|
+| tool-role emission (layer 1) | `../aetheris/lib/aetheris/execution/fork.ex:104` | ✅ exact — `[%{"role" => "tool", "tool_name" => …, "content" => output}]` |
+| assistant `tool_use` never reconstructed (layer 2) | `fork.ex:95-96` — `_ -> []` inside `event_to_messages(:llm_responded)` | ✅ non-text responses contribute nothing |
+| shared function with BL-028 | `fork.ex:101-105`, incl. `Map.get(payload, "output", "")` at `:103` | ✅ BL-028's key fix is in this exact clause |
+
+**Correction for the batch prompt:** layer 2 was cited as `fork.ex:86-95`. The function
+spans **87–98** and the drop is at **95–96**. Use the corrected range.
+
+## Evidence line for BL-039 (provenance exact)
+
+`fork-aa6a6a65804f6645` — **human-executed via the Rig UI**; claude-code performed no
+fork. `fork_from: payslip-orch-a7Vi3A`, `fork_step: 0`, `provider: anthropic`,
+`message_count: 2` at seq 0, HTTP 400 at seq 2, 2026-07-20. First real-provider fork
+continuation ever attempted; all fourteen prior `fork-*` rows were stub-provider.
+
+**Minimal reproducer:** fork from any step whose `llm_responded` was a tool call — the
+exact §4-unreconstructed case. Step 0 of any tool-using agent hits it.
+
+## Check 2 confirmed a second time, in stored data
+
+`fork-aa6a6a65804f6645` carries `label: "Payslip Orchestrator"` in the **`runs.label`
+column** while its `config_json` has **no label key at all**. This confirms both the
+BL-029 rider (inheritance verbatim, no suffix) and BL-029's founding premise (the
+harness strips `label` from `config_json`) — on the fork path specifically. Check 2 is
+now confirmed twice: render path (GUI pass) and stored data.
+
+## Stub configuration — determined from source, not the vacuous grep
+
+The earlier `:stub` grep was structurally vacuous (`git grep` inside `aetheris/` cannot
+reach `../aetheris-agents`; the error went to `/dev/null`). Read from source instead:
+
+- `../aetheris/lib/aetheris/run_config.ex:153` — `provider` defaults to `"stub"`
+- `../aetheris/lib/aetheris/execution/llm_adapter.ex:47` — `adapter_module_for("stub")`
+- `../aetheris/lib/aetheris/run_config.ex:84` — `stub_responses: []`, the queued replies
+
+**No claim** is made about whether stub agents already exist in this repo — that grep
+was never run correctly and is not replaced by a guess.
+
+## F10 candidate-table correction
+
+The candidate filter (unlabelled + `done` + `trajectory.json` + ≥1 step) never required
+a **tool-call** step, so practical availability was overstated; and both candidates
+(`demo-01`, `run_zS6XSQ`) were window-unreachable in the UI. Both were retired. Gate
+check 3 migrates to the stub fixture agent.

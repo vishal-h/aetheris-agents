@@ -104,7 +104,16 @@ because it is a small live instance of the class, inside the check for that clas
 ## Forward
 
 The export boundary is unblocked once this closeout is pushed. Manifest regen is the
-final commit of the batch, from a fresh session, and clears all seven staleness WARNs
-(both CLAUDE.mds, both runbooks, the determinism contract, backlog, specs). Both
+final commit **of the export**, from a fresh session — not simply "the batch's last
+commit", which is how this line first read and was wrong: *every manifest-tracked edit
+must precede the manifest write* (backlog rows, the drift-baseline append, anything
+else being exported). Following `prompts/bl-002-refresh-project-knowledge.md` literally
+reproduces **BL-034**, whose closing constraint appends a drift-baseline line to
+`docs/rig/current-state-2026-06.md` — a file the manifest tracks — after the manifest
+is written, so that row is born stale (it fired in production at the 2026-07-17 export,
+`628f15f` recording `current-state` two commits behind). Fix BL-034 first or
+hand-sequence around it as BL-007 Phase B did, but choose deliberately. The regen
+clears all seven staleness WARNs (both CLAUDE.mds, both runbooks, the determinism
+contract, backlog, specs). Both
 CLAUDE.mds joined the stale set as predicted at commit time — the harness one was not
 stale before `1ebe971`, which is what made the prediction checkable.

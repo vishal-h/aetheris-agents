@@ -70,5 +70,7 @@ not this one continued.
 
 ### Resolution
 
-F26 taken: `docs/reviews/bl-batch-2026-07-promotion-notes.md`. Erratum appended to
+F26 taken: `docs/rig/milestones/bl-batch-2026-07-promotion-implementation-notes.md`
+(landed first at `docs/reviews/bl-batch-2026-07-promotion-notes.md` in `c3296c4`; moved
+to the milestones convention by the closeout ticket). Erratum appended to
 `bl-batch-2026-07-section7-adjudication.md`. Both in the closeout commit below.

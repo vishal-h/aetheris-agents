@@ -29,3 +29,36 @@ Packet integrity: conforms, and the red-first evidence is the strongest of the b
 ---
 
 Round 2: finding 18's exemption + test, 19's three-site chase, 20's swap, 21's comment lines, 22 answered either way. Disposition table per form. Commit stays held; after round 2 clears, b3 pushes and the batch enters closeout: promotion drafts (two classes now), export/manifest regen, Status lines.
+
+---
+
+# Review — b3: BL-031 — round 2
+
+Packet integrity: conforms at the batch's highest standard yet — the red-first-for-the-*finding* method (round-1 file restored via `git checkout` so exactly the exemption is under test), the isolation table across three code states reported with its anomalous first-boot `0` unsmoothed, and §1f disclosing a gate failure whose evidence the author's own tooling destroyed. All three are the packet norms doing what they were minted to do.
+
+## Dispositions
+
+- **F18 — closed, and the correction to my mechanism is accepted in full.** The `"paused"` status match would have been dead code beside a green test — the vacuous pass one level down, exactly as diagnosed; the writer-site census and live-store evidence settle it. The replacement is better than the finding asked for on every axis: extracted-not-duplicated (two copies falsify the symmetry claim at first divergence — the finding's own substance, correctly turned back on the suggested fix), lazily consulted so the hot path is unchanged, expiry negatively tested from both directions so the exemption can't become an escape hatch, and the sweep-agreement test pins the two mechanisms to each other *by test*, not by prose. This is the second time this batch my suggested mechanism was wrong while the invariant held (F1's `--label`, F18's `"paused"`), and both failed the same way — reviewer inference from vocabulary without reading the writer family. That's now on my ledger twice; see cross-ticket.
+- **§1c regression — accepted as handled, and the fix direction is the important part.** Rejecting the one-line restore because it "re-creates exactly the load-bearing coincidence this batch has been promoting against" is a promoted-in-draft rule already steering a live decision — the learning loop paying out before the promotion even lands. The compile-time map mirroring `Trajectory.File`'s existing precedent, with a named error replacing the atom crash, removes the coincidence rather than re-hiding it. The two Touches deviations (sweep/run_pause; event/store) are **approved as recorded** — the second was shipping-a-boot-crash-or-deviating, which is no choice at all, and both are flagged per §6 form.
+- **F19, F20, F21, F22 — closed** as specified. F20's premise correction (nothing real to swap to; synthetic `"reticulating"` explicitly labelled defensive) is the right resolution — a guard on a real key component, honestly marked as guarding a future rather than a present.
+- **§1f flake — accepted as disclosed, dispositioned below (F24), not blocking.** Eleven observed runs, one unattributed failure, five clean since: the honest statement "not green-with-confidence on a re-run" is correct, and so is not halting the batch on an unreproducible singleton.
+
+## Findings (round 2)
+
+23. **[non-blocking — file this round]** The event-type-triplication flag becomes **BL-040** now, per the deferred-finding rule — "not mine to cut" correctly deferred the *decision* to review; the decision is: cut it. Row: *Event-type list exists in three places (`Event.@type` union, `Event.@event_types`, `Trajectory.File.@event_type_map`); drift between them is silent. Collapse `File`'s map onto `known_types/0`; add a test asserting the union and the list agree (union not derivable from the list, so the test is the guard). Surfaced by BL-031 r2's boot regression — `Store` already derives from the canonical list. Size S, priority low-medium.* Sequence near BL-033 (both are event-type/union hygiene; note in the row that BL-033's `:fork`-removal decision should check `@event_types` too — it isn't in the new list, correctly, but the *union* still carries it, which is now a testable divergence BL-040's test must account for).
+24. **[non-blocking — record with trigger]** The flake: recorded, not chased. Deterministic-clock injection is a production seam bought against one unreproduced failure — not worth it today. Trigger for escalation: **a second unattributed full-suite failure**, at which point it gets a row and a seed-preserving chase, starting at the timing-shaped tests as the packet names. And the capture lesson gets called by its name: `tail -3` destroying the failure block is a **Complete-output instance** — the promoted rule ("capture the whole output, or state the truncation next to the claim") binds gate captures exactly as it binds advisory tables, and this is its first gate-side casualty. One sentence in the review record; the rule needs no rewrite, it needed applying.
+25. **[non-blocking]** BL-031's backlog row is still open — closure line per house form: *Status: Done 2026-07-21 — inactivity bound on `{status, max_event_seq}` with paused-run exemption via `Aetheris.RunPause` (shared with Sweep by construction), config key `:await_inactivity_timeout_ms` default 300 000; harness `4392194`+`a935038`, notes/agents `6defe0e`+`d0690a6`; r2 also fixed a boot-crash regression in `Store` event deserialization (compile-time type map) and filed BL-040. Review: `docs/reviews/bl-031-review.md`.* Same commit as BL-040's row.
+
+## Verdict
+
+**Zero blocking findings.** F23/F25 are one backlog commit; F24 is review-file text; then push both repos and b3 closes — with it, the small-ticket batch's last code. Store-error-through-`paused?/2` behavior (error → `false` → timeout fires) was checked and is consistent with the neutral-probe design: an erroring store can't confirm a pause, and giving up loudly is the correct degradation.
+
+## Cross-ticket — batch boundary is now open
+
+Both promotion candidates cleared the bar with margin, and b3 added the decisive instances:
+
+1. **Silent-wrong-answer** (well-formed answer where a gap should surface): BL-029's labels, BL-038's window, BL-039's stub-green e2e, the empty-queue "successes," F13's headline — and §1c's test-env-green-while-boot-crashes is arguably its sharpest form: the suite *couldn't* see the failure because the test environment structurally differs from the operator's (every module loaded), kin to one-symptom's "the simulation verified the simulation."
+2. **Adjacent-case / load-bearing coincidence** (fix or refactor whose blast radius is one case wider than its frame; coincidences doing unacknowledged work): F9's label≡run_id, b2-F1's map shape, F18's paused runs, §1c's literal atom.
+3. **Reviewer-sketch vs. invariant** (a finding binds by its invariant, not its sketch): three instances, two of them mine.
+
+Per the transport rule, the promotion draft lands as a review-file artifact — `docs/reviews/bl-batch-2026-07-section7-draft.md` — before anything is committed to either CLAUDE.md, wording for your adjudication. That, the export/manifest regen (six WARNs clear), and the Status hygiene above are the whole remaining batch-close queue. Backlog commit, push, and I'll write the draft.

@@ -489,6 +489,13 @@ legible error. Surfaced at t4 r3 F7.
 **Done when:** `await_run` bounds its wait and returns a timeout error naming the
 run and its last-seen status.
 
+**Status:** Done 2026-07-21 — inactivity bound on `{status, max_event_seq}` with
+paused-run exemption via `Aetheris.RunPause` (shared with Sweep by construction),
+config key `:await_inactivity_timeout_ms` default 300 000; harness `4392194`+`a935038`,
+notes/agents `6defe0e`+`d0690a6`; r2 also fixed a boot-crash regression in `Store`
+event deserialization (compile-time type map) and filed BL-040. Review:
+`docs/reviews/bl-031-review.md`.
+
 ---
 
 ### BL-032 — WAL connection-lifecycle follow-ups (#TBD)
@@ -1389,6 +1396,45 @@ race it.
 **Done when:** a fork of a tool-using run continues successfully against a real
 provider, or the contract states plainly that fork continuation is stub-only and the
 UI refuses real-provider forks rather than failing at the first call.
+
+---
+
+### BL-040 — Event-type list exists in three places; drift between them is silent (#TBD)
+**Size:** S · **Priority:** low-medium
+
+The set of trajectory event types is written out three times:
+
+| Site | Shape | Purpose |
+|---|---|---|
+| `../aetheris/lib/aetheris/trajectory/event.ex` `@type event_type` | type union | documentation / dialyzer |
+| `../aetheris/lib/aetheris/trajectory/event.ex` `@event_types` | literal atom list | atom-table guarantee; `known_types/0` |
+| `../aetheris/lib/aetheris/trajectory/file.ex` `@event_type_map` | `~w[…]a` → map | JSON trajectory deserialisation |
+
+`Store` was made to derive from the canonical list at BL-031 r2 (`a935038`), so it is
+no longer a fourth copy. `Trajectory.File` still holds its own, and the `@type` union
+cannot be derived from a list at all — so nothing makes the three agree.
+
+**The drift is not hypothetical — it is already present.** `:run_started` appears in
+`File.@event_type_map` and in `@event_types`, is **absent** from the `@type
+event_type` union, and is emitted by **no code path in `lib/`** (verified at
+`a935038`). So one deserialiser accepts a type the type spec denies and the harness
+never writes. Nobody noticed because no mechanism could.
+
+**Done when:** `Trajectory.File` derives its map from `Event.known_types/0`, and a
+test asserts the `@type` union and `@event_types` agree — the union is not derivable,
+so the test is the only possible guard. The test must also adjudicate `:run_started`:
+delete it as a phantom, or add it to the union and name what emits it.
+
+**Surfaced by** BL-031 r2's boot-crash regression, where `Store`'s
+`String.to_existing_atom` deserialisation depended on some *other* module having
+mentioned the atom first (`docs/reviews/bl-031-review.md`).
+
+> **Sequencing note, correcting the round-2 finding.** F23 suggested sequencing near
+> BL-033 and checking BL-033's `:fork` removal against `@event_types`. These are two
+> different unions: BL-033 concerns `RunConfig.@type mode` (`run_config.ex:115`),
+> whose vestigial member is `:fork`. `:fork` is a **mode, not an event type** — its
+> absence from `@event_types` is not a deliberate removal, and there is no
+> interaction between the two rows. Sequence BL-040 on its own merits.
 
 ---
 

@@ -153,6 +153,14 @@ normal**, because the new run executes for real after replaying the prefix. Ther
 detach or cancel; quitting Rig mid-fork leaves a row the harness `mix aetheris sweep`
 will cure.
 
+That block is bounded, but only against a fork that has *stopped*. Since BL-031 the
+harness CLI gives up after 5 minutes of no progress and returns
+`run <id> stalled: …`, which surfaces here through the same red strip as any other
+fork failure — so a wedged fork now releases the buttons instead of hanging Rig
+indefinitely. A fork that is still stepping is never cut off, and a fork parked on
+`wait_for_event` is exempt entirely. See "Waiting for a run to finish" in
+`../aetheris/docs/aetheris/runbook.md` for the threshold and its config key.
+
 **When it resolves**, Rig switches you to the child run's Trajectory, which carries an
 indigo **"Forked from `<run_id>` @ step N"** banner. Two caveats worth knowing:
 

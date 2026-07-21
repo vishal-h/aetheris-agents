@@ -205,3 +205,20 @@ first push (repo-scoped `git add -A` in one repo under a two-repo claim).
 
 Two replacements, one addition, two amendments. No rule is added beside the rule it
 supersedes.
+
+---
+
+## Erratum — appended 2026-07-21 at the promotion commit
+
+The table above is left as written; this file is a record, and errata correct a record
+without misdating it.
+
+- **Net-effect table, gate-before-action row:** the rule is **agents-side**
+  (`aetheris-agents/CLAUDE.md:391`), not harness. The harness only *refers* to it
+  ("per the gate rule", `aetheris/CLAUDE.md:435`). Slip caught at the promotion commit;
+  the riding clause was landed agents-side accordingly. See
+  `bl-batch-2026-07-promotion-review.md`.
+- **The promoted set was six edits, not five.** The harness's own mirror of the Repos
+  rule (`aetheris/CLAUDE.md:5-8`) was amended to the Q2 wording as well, on operator
+  authorisation at the promotion commit — amending only the agents copy would have left
+  the harness stating the pre-amendment rule. Ratified in the round-1 promotion review.

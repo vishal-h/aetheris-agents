@@ -122,10 +122,16 @@ a synthesized name, so a label in the list is always one an operator chose.
 > continuation runs against Anthropic fails at its **first LLM call** with
 > `HTTP 400: Unexpected role "tool"`. The reconstructed transcript carries a `"tool"`
 > role the API rejects, and relabeling alone would not fix it — the paired assistant
-> `tool_use` turns are never reconstructed. **Stub-provider forks work** and complete
-> normally; every fork that has ever succeeded was stub. Tracked: BL-039 in
+> `tool_use` turns are never reconstructed. Tracked: BL-039 in
 > `docs/backlog-2026-06.md`. The button below is live and will happily start a fork
 > that then fails — the failure shows on the child run, not at the click.
+>
+> **Stub-provider forks reach `done`, but their continuation is empty.** The fork
+> strips the response queue (`encode_config` drops `stub_responses`,
+> `../aetheris/lib/aetheris.ex:372`), so a stub fork gets `[stub exhausted]` on its
+> first call and terminates at step 0. So: **no fork on any provider has yet had a
+> meaningful continuation** — real ones are rejected at the first call, stub ones
+> exhaust at it. A green stub fork is not evidence that forking works.
 
 On the **Trajectory** tab, a completed step shows a **"Fork from here"** button. It
 starts a new run that replays the transcript up to that step and then continues live.

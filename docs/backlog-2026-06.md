@@ -1330,6 +1330,17 @@ via the Rig UI, all `fork_step: 0`, `provider: anthropic`, `message_count: 2` at
 100% failure rate on real-provider fork continuation; zero successes ever recorded. The
 minimal reproducer is demonstrated, not inferred.
 
+**And the stub "successes" are vacuous — the failure is universal, not real-provider-
+only.** `encode_config` strips `stub_responses` (`../aetheris/lib/aetheris.ex:372`), so
+a stub fork begins with an **empty queue**, receives `[stub exhausted]` on its first
+call, and terminates at step 0. Confirmed on `fork-94c31612127f2009`: `llm_called`
+(`stub-model`) → `llm_responded` (`[stub exhausted]`) → `run_complete`
+(`agent_finished`). The fourteen green `fork-*` rows from 2026-07-19 are green for this
+reason. **No fork on any provider has ever had a meaningful continuation** — real ones
+are rejected at the first call, stub ones exhaust at it. Any future fix must be
+verified against a fork that actually continues, since a `done` stub fork proves
+nothing.
+
 **Operator-facing symptom (noted, not separately filed):** the Rig UI surfaces this as
 `Fork failed: [sandbox] entered user+mount namespaces … Error: run <id> failed` — the
 sandbox preamble is carried into the error string and the actual cause (the HTTP 400)
@@ -1342,6 +1353,13 @@ from recorded `llm_responded` payloads (if the payload retains enough to rebuild
 block), or fold tool results into user-role text and abandon structured tool
 continuation. The choice changes what a fork *is* — whether it resumes a tool
 conversation or replays a flattened one — so it is a contract decision, docs-first.
+
+**Third consideration: the stub queue is stripped on fork** (`aetheris.ex:372`), which
+is why no stub fork can exercise a continuation. Whatever the fix, it needs a test path
+where a fork *actually continues* — either by carrying `stub_responses` across the fork
+(cheap, test-only) or by an integration test against a recorded real transcript.
+Without that, the fix's own verification would be as vacuous as the fourteen green rows
+this row documents.
 
 **Sequencing.** Ahead of BL-030: an early-return fork UX matters little while real
 forks cannot run at all. **Builds atop BL-028's landed state** — BL-028's

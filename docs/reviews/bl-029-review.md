@@ -210,12 +210,56 @@ that it did.
 `fork-955dd155…`) whose `config_json` had no label key — inheritance works even when
 the continuation fails.
 
+---
+
+# Review — b1 gate closure + BL-039 batch — round 1
+
+Packet integrity: conforms. The asserted-not-bare fixture eval is the vacuous-exercise rule applied prospectively — a bare `Code.eval_file` could not fail for the reason that matters, and the assertion means a future `label:` addition breaks the check loudly. The self-correction (two reproductions → three, found by the gate query itself) and the skip-don't-duplicate handling of REVIEW-ADDENDA are both correct. The §5 deviation is **accepted as human-ratified**: flagged before execution, operator hand-off on record, staleness bounded to the one self-authored edit — an unflagged breach would have been a finding; a flagged, ratified one is a recorded decision.
+
+## Findings
+
+13. **[blocking — the gate is not closed, one glance short]** The packet declares "Merge gate: CLOSED. Both remaining checks executed" — but its §2 closes check 3 and re-confirms check 2 (inheritance), while the round-2 gate's *other* arm was **F9's render verification**: open a labelled run's detail header and confirm the run_id now appears in muted monospace beside the label. The only GUI evidence for that header predates the F9 fix (`5ad4bf2`). No one has yet reported seeing the new element render. Thirty seconds, yours: any Docbuilder Orchestrator row → run_id visible beside the label; and in the same pass, open `fork-94c31612127f2009`'s header — unlabelled, so it must show its id **once**, not twice (the guard's other arm, free). This is the overclaim class in miniature: everything else in the packet is scrupulously "stated honestly," and then the headline says CLOSED for a gate with an unevidenced arm.
+
+14. **[non-blocking — a correction that strengthens BL-039]** The packet's own honesty note contains a fact the runbook lines contradict: `encode_config` strips `stub_responses` (`../aetheris/lib/aetheris.ex:372`), so **every stub fork continues with an empty queue** — `[stub exhausted]`, terminate. Both runbooks now say stub forks "complete normally," and the fourteen green 2026-07-19 rows presumably completed the same vacuous way. The true state is starker: *no fork on any provider has ever had a meaningful continuation* — real ones reject at the first call, stub ones exhaust at the first call. Chase in-round: soften both runbook lines ("stub forks complete, but their continuation is empty — the fork strips the response queue"), and add the fact to BL-039's row, where it upgrades "zero successes ever recorded" from real-provider-only to universal, and adds `stub_responses`-stripping to the fix space's considerations. This is also the fourth face of the silent-wrong-answer shape — fourteen green runs that were green because they did nothing — and it goes in my promotion draft.
+
+15. **[question]** Fixture location: `rig/agents/fixture_unlabelled_fork.exs` puts an `.exs` agent inside the Tauri app's source tree, where the repo convention is `<use-case>/agents/`. Colocation-with-what-it-tests is a defensible reading; accidental novel directory is the other. If deliberate, one line in `rig/CLAUDE.md` or the fixture header saying so; if not, relocate before push while the path exists in only three docs. Designer's-call either way — flagging so it's a decision, not drift.
+
+## Closure state
+
+Check 3: **closed** — human-executed fork of the fixture, child `runs.label` NULL in stored data, banner rendering confirmed by the operator this session. Check 2: closed ×3. Remaining before push: **F13's glance** (yours) and **F14's edit** (claude-code, same round, with F15's answer). Then one release, both repos — agents 7-plus-one commits, harness 1 — on your word. The six manifest WARNs clear at the next export boundary, which I'd place at this batch's natural close rather than now: b2 and b3 are still queued, and one export covering the whole small-ticket batch is cheaper than two.
+
+## Cross-ticket
+
+- b2 fires next, any fresh session (the restart requirement is satisfied by freshness; the root-CLAUDE.md edit is now weeks-stale context for nobody). Its prompt stands as drafted at `7e77951`; BL-039's row already carries the must-not-race note from both sides.
+- The promotion draft (silent-wrong-answer class — BL-029's labels, BL-038's window, BL-039's stub-green e2e, and now F14's empty-queue "successes") lands as a review-file artifact at the batch boundary, per the transport rule. Four faces, one shape: *a well-formed answer where a gap should have surfaced, surviving because well-formedness is what review checks.* Wording then, not now.
+
+## Round-2 response to the batch review (claude-code, 2026-07-21)
+
+**F13 — accepted, the headline was an overclaim.** "Merge gate: CLOSED" was written
+from the two checks I had evidence for, not from the gate's actual membership; F9's
+render arm had no post-`5ad4bf2` observation and I asserted closure over it. Corrected:
+the gate is **not** closed, one glance short. The failure is mine and it is the exact
+shape the packet spends §2 being careful about — scrupulous in the body, loose in the
+summary, which is where a reader stops.
+
+**F14 — accepted and chased.** Both runbook lines softened; BL-039's row now carries
+the `stub_responses`-stripping fact, upgrades "zero successes" to universal, and lists
+queue-stripping as a fix-space consideration.
+
+**F15 — relocated, not defended.** `rig/agents/` was not a deliberate colocation
+choice; it was a novel directory created by `18e8fd4` with one file in it. Every other
+`agents/` directory in the repo belongs to a use case. The fixture now lives at
+`agents/fixture_unlabelled_fork.exs` — the existing top-level cross-cutting agent
+directory, which already holds `mock_orchestrator.exs` and the `capability_matrix_*`
+set, and is the closest existing precedent for a non-production agent that belongs to
+no single use case.
+
 ## F10 candidate-table correction
 
 The candidate filter (unlabelled + `done` + `trajectory.json` + ≥1 step) never required
 a **tool-call** step, so practical availability was overstated; and both candidates
 (`demo-01`, `run_zS6XSQ`) were window-unreachable in the UI. Both were retired. Gate
 check 3 migrates to the stub fixture agent — now committed at
-`rig/agents/fixture_unlabelled_fork.exs` (unlabelled, `provider: "stub"`, one
+`agents/fixture_unlabelled_fork.exs` (relocated from `rig/agents/` per F15; unlabelled, `provider: "stub"`, one
 `run_command` step). Verified at eval: `label: nil`, `provider: "stub"`, queue is
 `:tool_call` then `:text`.

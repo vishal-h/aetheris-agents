@@ -22,9 +22,13 @@
 #     responses"), so the queue is tool_call-then-text: the tool_call produces
 #     step 0, the text ends the run cleanly at step 1.
 #
+# Lives in the top-level `agents/` directory (with `mock_orchestrator.exs` and the
+# `capability_matrix_*` set) rather than a `<use-case>/agents/` one: it belongs to no
+# single use case, and it is a test fixture, not production.
+#
 # Run:
 #   cd ~/sandbox/elixirws/aetheris
-#   mix aetheris run ../aetheris-agents/rig/agents/fixture_unlabelled_fork.exs
+#   mix aetheris run ../aetheris-agents/agents/fixture_unlabelled_fork.exs
 #
 # Then fork it from the Rig UI at step 0 and confirm the child's label is its
 # own fork-id, NOT the parent's run_id.

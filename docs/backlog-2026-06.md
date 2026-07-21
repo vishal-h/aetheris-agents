@@ -405,6 +405,16 @@ fixing as one payload-key convention rather than two point patches.
 **Done when:** verify tolerates both payload keys (or the writers converge on one),
 with a test over an orb trajectory — and the trigger has occurred.
 
+**Evidence base (added 2026-07-21, BL-028 round 2 — annotation only; trigger,
+ratification and parked status all stand unchanged).** Root-cause map and fix-space
+analysis in BL-028's implementation notes
+(`../aetheris/docs/aetheris/milestones/bl-028-implementation-notes.md`). Note in
+particular: `record_tool_error/6` writes `"result"` (`loop.ex:354`) for **every**
+recorded tool error regardless of which tool raised it — so the `KeyError` is
+reachable on any trajectory containing a tool error, not only orb trajectories. The
+trigger's wording stands as ratified; its reachability is wider than the row's
+"multi-agent / orb" framing implies.
+
 ---
 
 ### BL-028 — Fork reconstruction drops `"result"`-keyed tool output (#TBD)
@@ -412,7 +422,7 @@ with a test over an orb trajectory — and the trigger has occurred.
 
 `event_to_messages(:tool_result)` reads `Map.get(payload, "output", "")`
 (`fork.ex:101-105`). Many in-process tool writers store the payload under
-`"result"` instead (`loop.ex:354,424,435,459,469,482,492,508`). Because the read
+`"result"` instead (`loop.ex:354,424,435,450,459,469,482,492,508`). Because the read
 **defaults to an empty string**, those tool results reconstruct as tool messages
 with **empty content** — silently. The fork starts from a transcript in which the
 tools appear to have returned nothing, and nothing in the output says so.

@@ -1592,6 +1592,53 @@ WARN → exit 0; a milestone_status WARN → `--strict` exit 1.
 
 ---
 
+### BL-041 — Manifest-staleness done-checks are vacuous pre-commit; `drift_check` reads committed state only (#TBD)
+**Size:** S · **Priority:** medium
+
+Surfaced by BL-034's own verification (fe8298c, 2026-07-22), and caught by the executing
+session as a Silent-wrong-answer in its own gate order — recorded here because a deferred
+finding gets a row, not packet prose.
+
+`check_project_knowledge` (check 8) computes each row's "actual" hash via
+`_git_head_hash` → `git log -1 --format=%h -- <path>` (`scripts/drift_check.py:623-628`),
+which reads **committed** history. A working-tree (uncommitted) edit to a manifest-tracked
+doc creates no commit, so it is **invisible to check 8**: a `drift_check --strict` run
+*before* the edit is committed reports the manifest clean whether or not the edit was
+made. At BL-034 the pre-commit `--strict` run showed 0 WARN; the predicted
+`backlog-2026-06.md` staleness WARN only materialized after fe8298c.
+
+**Class: Silent-wrong-answer, in the verification order rather than the checker.** A
+pre-commit gate on a manifest-staleness question passes identically in the broken and
+fixed worlds — it looks like confirmation but exercises nothing about the edit. Ask what
+the gate would show if the staleness were real: identical → it verifies nothing.
+
+**Two dispositions (decide before implementing):**
+
+- **(a) Convention, doc-only (cheap, do now).** Encode in the CLAUDE.md doc-sync section
+  (and the export/handoff conventions): *any done-check that turns on manifest staleness
+  runs post-commit; a pre-commit drift_check on a tracked-file edit is a vacuous PASS.*
+  One rule, no tooling change.
+- **(b) Tooling guard (optional hardening).** `drift_check` emits a WARN (or INFO) when a
+  manifest-tracked path has uncommitted working-tree modifications (`git status
+  --porcelain -- <path>`), so the gap is visible in the tool instead of relying on gate
+  discipline. This closes the manifest-blind direction from the *other* side — the header
+  already warns the check cannot see an upload without a regen; this is the same blindness
+  to an uncommitted edit. Reuses the `?`/INFO-vs-WARN split the checker already has.
+
+**§7 learning candidate.** The Silent-wrong-answer entry gains a verification-ordering
+instance. Below the ≥2-ticket threshold on its own — promote when a second instance lands,
+or by explicit human ratification, per §7. Recorded here as the first instance so the
+recurrence is countable.
+
+**Done when:** the post-commit ordering rule is recorded (disposition a), and the tooling
+guard (disposition b) is either implemented in the `--strict` run with a
+`tests/test_drift_check.py` case both directions, or explicitly declined on this row with
+a reason.
+
+`Source: BL-034 review packet flagged observation, fe8298c, 2026-07-22.`
+
+---
+
 ## boxy-pipeline
 
 ### BL-010 — Clean order_formatter output: strip extra sheets and clear stale template formulas (#51)
@@ -1839,5 +1886,6 @@ multi-line street/city/state/zip.
 | 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
 | 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
 | 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |
+| 23 | BL-041 | Disposition (a) is a doc-only rule worth landing before the next export, since that export's own done-check is the case it governs. Disposition (b) batches with BL-036 — both are drift_check blind spots |
 | — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
 | — | BL-006 | Fires on its own trigger |

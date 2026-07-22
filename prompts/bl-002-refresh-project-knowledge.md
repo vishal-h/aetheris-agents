@@ -82,9 +82,23 @@ Step 5 — Print for the human:
     session detects staleness.
 
 Constraints: read-only outside docs/project-knowledge-manifest.md and
-/tmp/claude-project-export/. Run drift_check.py (with AETHERIS_DB_PATH
-set) once at the end to confirm exit 0 and zero WARN. The project_knowledge
-check (check 8) now covers the manifest — a PASS there is also the BL-001
-clean baseline capture. Append the summary line to
-docs/rig/current-state-2026-06.md as:
-  "Drift baseline <YYYY-MM-DD>: <summary line from drift_check output>"
+/tmp/claude-project-export/. The manifest is the ONLY tracked file this
+task writes, and it is the LAST tracked write — do NOT append to, or
+otherwise edit, any manifest-tracked doc (current-state-2026-06.md, the
+CLAUDE.mds, backlog, specs, runbook, architecture, …) after Step 2. Any
+such edit moves that file's commit hash past the value the manifest just
+recorded, staling the row the instant it lands. (This invariant is
+BL-034: the prompt used to close by appending a drift baseline to the
+manifest-tracked current-state-2026-06.md, which would stale that row the
+moment the append landed after Step 2. This is a latent hazard, not an
+observed one — a check-8 sweep of every committed manifest (38/38 clean)
+confirms it never actually fired; historical runs happened to avoid it.
+The append is removed so it cannot. BL-001 owns the one-time clean
+baseline and is Done.)
+
+Run drift_check.py (with AETHERIS_DB_PATH set) once at the end to confirm
+exit 0 and zero WARN. Because Step 2 regenerated the manifest at HEAD and
+nothing tracked was written after it, zero WARN is reachable. (Under
+--strict the binding invariant is zero *unexplained* WARN —
+project_knowledge staleness is strict-exempt — but a freshly regenerated
+manifest at an export boundary should carry no staleness WARN at all.)

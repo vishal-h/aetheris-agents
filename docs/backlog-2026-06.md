@@ -568,9 +568,11 @@ row the instant the step completes. The same constraint also says to "run drift_
 once at the end to confirm exit 0 and **zero WARN**" — which the preceding instruction
 has guaranteed cannot happen.
 
-Evidence it fired in production, not just on paper: at the 2026-07-17 export
+~~Evidence it fired in production, not just on paper: at the 2026-07-17 export
 (`628f15f`) the manifest recorded `current-state` at `d24e482`, two commits behind
-`628f15f`. The row was born stale.
+`628f15f`. The row was born stale.~~ — **WITHDRAWN as false, 2026-07-22. This claim was
+never verified and does not hold; see the Evidence correction in the Status block below.
+The hazard is real but latent — it never fired.**
 
 The general rule the fix must encode: **any file the manifest tracks is edited *before*
 the manifest is written, never after.** BL-007 Phase B hit this and sequenced around it
@@ -585,6 +587,44 @@ describes.
 drift-baseline append) before the manifest write, and the "zero WARN" assertion is
 reachable — or the baseline append is dropped from the prompt if it is not worth the
 ordering constraint.
+
+**Status:** Done 2026-07-22. Resolved by **dropping the baseline append** (decision:
+drop, human call 2026-07-22). The append was the sole reason BL-002 wrote a
+manifest-tracked file other than the manifest, so removing it makes the manifest the
+only tracked write and trivially the last. **Three defects closed in
+`prompts/bl-002-refresh-project-knowledge.md`:** (1) the ordering hazard this row
+describes; (2) the `exit 0 and zero WARN` done-check the committed append made
+unreachable; (3) an adjacent self-contradiction the row did not name — the constraint
+declared current-state read-only (`read-only outside …manifest… and /tmp`) then ordered
+a write to it four lines later. Defects (2) and (3) are demonstrable from the prompt
+text alone.
+
+**Evidence correction (supersedes this row's "it fired in production" claim).** The line
+above — "at the 2026-07-17 export (`628f15f`) the manifest recorded current-state at
+`d24e482`, two commits behind … born stale" — is **WITHDRAWN as false** (struck in place
+above). A check-8 sweep of all 38 committed manifests is clean (38/38); no manifest was
+ever born-stale. The two hashes are real (`d24e482` = the BL-001 baseline commit;
+`628f15f` = a real export commit — the export HEAD named in manifest commit `d11464f`'s
+Exported line, not a manifest commit itself) but the "two commits behind" relationship
+between them was never checked — a **Cited-means-read** instance. At `d11464f` the
+manifest pinned `current-state` at `d24e482` and the file genuinely last changed at
+`d24e482`; the row was correct. The comparison made was per-file pin vs export HEAD, and
+a per-file pin always lags HEAD — that is what it records. The hazard is real but
+**latent, never fired**; the drop stands on the prompt's textual self-contradiction plus
+latent-staleness, not on a production instance. The same false claim also appears in the
+b1–b3 export manifest narrative (`docs/project-knowledge-manifest.md`, "reproducing the
+2026-07-17 instance at `628f15f`") — it must **not** be repeated in the next manifest
+regen; flagged here so the correction chases forward rather than silently recurring. The
+manifest is deliberately not edited by this ticket (an out-of-scope tracked write).
+
+The general rule is now encoded as a standing invariant in the prompt itself (the
+manifest is the last tracked write; no manifest-tracked edit after Step 2), so a future
+re-addition reads as the regression it is. The per-export drift-baseline capture is
+intentionally **not** relocated — BL-001 (#42) captured the one-time clean baseline and
+is Done; nothing consumes a per-export refresh. The overdue 2026-07-22 baseline is closed
+by the same removal (no baseline is owed in current-state). The prompt file is not
+manifest-tracked, so the fix stales nothing; this row's own edit stales
+`backlog-2026-06.md` until the next export (expected, strict-exempt).
 
 ---
 

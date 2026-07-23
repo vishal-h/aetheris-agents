@@ -1957,6 +1957,49 @@ Pre-implementation handoff verified at 8021a59, 2026-07-23.`
 
 ---
 
+### BL-042 — DONE 2026-07-23
+
+**Landed:** conditional `CLONE_NEWNET` (`sandbox.rs:161-224`, gated on the init payload's
+`network_namespace`), establishment status reported through a reordered handshake (namespaces
+entered *before* `ready`, which now carries `network_namespace` — `main.rs:56-74`),
+fail-closed enforcement in `Worker.Client.init/1` via `containment_verdict/2`, the netns
+requested as `not allow_effects` by `Verifier` (`verifier.ex:89-96`), a legible CLI refusal,
+and `network_isolated` on `VerifyReport` so a networked divergence is interpretable.
+
+**Grew in-cycle by one tool, and the growth was load-bearing.** H6's red-first arm could not
+be written as specified: `Verifier` sent every tool to the worker's own dispatch table, but
+`run_command` is an exec-server MCP tool, so it re-executed as `unknown_tool:run_command` and
+opened **0 connections before the netns existed**. The row's "0 hits" done-when was already
+true, for a reason that had nothing to do with containment — a check that could not fail.
+Routing `run_command` (scoped decision, human, 2026-07-23) made the red arm real; the
+`git_*` family was left alone and filed as **BL-047** with the taxonomy question it deserves.
+
+**Evidence** (`test/aetheris/execution/verify_effects_test.exs`, `--include requires_worker`;
+the tag is excluded by default, so a plain `mix test` exercises neither arm):
+
+| arm | connections | step status |
+|---|---|---|
+| pre-fix, unrouted | 0 | `:error` — `unknown_tool:run_command`, never ran |
+| pre-netns, routed | **1** | re-executed and egressed — the red arm |
+| default verify (netns) | **0** | `:output_mismatch` + isolation note |
+| `--allow-effects` | **≥1** | `:verified` — opt-in preserved (H4) |
+
+**Decisions recorded** (implementation notes: `../aetheris/docs/aetheris/milestones/bl-042-implementation-notes.md`):
+H2 `lo` left down — no code brings it up. On a `/proc` mapping-write failure the worker keeps
+its log-and-continue and reports `network_namespace: false`, so record's fail-open survives
+that path too while verify still refuses. Non-Linux hosts report `net: false`, so a default
+verify there refuses — fail-closed working as ratified, named in §5 rather than discovered.
+
+**Off-territory gate finding:** `mix test --include requires_worker` is red with 15 failures,
+identical on a clean tree — filed as **BL-048**, not carried silently.
+
+**§5 contract edit:** drafted in `docs/reviews/bl-042-contract-draft.md` as three statements
+— (a) partial → capability-complete, (b) conditional on establishability with the fail-closed
+refusal named as contract-visible, and (c) the correction of BL-025's false "`:contained` …
+re-executed and compared" claim. Lands only on human approval per §8.
+
+---
+
 ### BL-043 — `http_call` is killed by seccomp (SIGSYS) in every mode: `setsockopt` missing from the allowlist (#TBD)
 **Size:** S · **Priority:** medium · **Section:** Harness (aetheris/)
 
@@ -2040,6 +2083,93 @@ change rather than as a side effect.
 `sprint.sh` is audited for commands that would newly abort it.
 
 `Source: BL-025 execution, 2026-07-23.`
+
+---
+
+### BL-047 — Verify never re-executes the `git_*` family: exec-server routing gap + a taxonomy decision (#TBD)
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+`Verifier` re-executes a recorded tool by sending it to the worker's own dispatch table
+(`Client.execute` → `main.rs` `dispatch/3`), which knows only `read_file`, `list_dir`,
+`write_file`, `http_call`. But `run_command` and the eleven `git_*` tools are **exec-server
+MCP tools** in a live run (`loop.ex` `@exec_server_tools`, `dispatch_mcp_tool/4`). So every
+member of that family re-executed as `unknown_tool:<name>` — a per-step `:error`, never a
+comparison — while determinism-contract §5 claimed `:contained` tools are "re-executed and
+compared".
+
+Demonstrated at BL-042 against unmodified `8021a59`, before any fix:
+
+```
+%{error: "unknown_tool:run_command", status: :error, actual_output: nil,
+  recorded_output: "{\"duration_ms\":20,\"exit_code\":0,\"stderr\":\"\",\"stdout\":\"connected\\n\"}"}
+```
+
+**BL-042 routed `run_command` only** — the tool its own containment proof requires, whose
+re-execution BL-025 already ratified, and whose new hazard (egress) is exactly what BL-042's
+network namespace contains. The `git_*` family was deliberately left unrouted rather than
+fixed by the same three lines, because routing it is not merely a bug fix:
+
+**The real question is whether mutating git operations should re-execute under verify at
+all.** `git_add`, `git_commit`, `git_checkout`, `git_cherry_pick` and
+`git_cherry_pick_control` mutate a repository. Re-executing `git_commit` against a sandbox
+whose HEAD has moved does not reproduce a recorded step, it writes a new one; `git_checkout`
+can destroy working-tree state that the recorded run did not have. The read-only members
+(`git_status`, `git_diff`, `git_diff_staged`, `git_log`, `git_show`) are a different case
+entirely. This is a taxonomy decision of the same weight as BL-025's three classes and it
+should be **decided**, not inherited from an accident of routing — which is the whole reason
+BL-042 did not quietly extend its own fix over the family.
+
+**Options to adjudicate (not a menu to pick from silently):** route them all as `:contained`;
+split the family, re-executing the read-only members and reclassifying the mutating ones as
+`:uncontained` (record-and-served); or declare the family unsupported under verify with an
+explicit status distinct from `:error`.
+
+**Done when:** the classification of each `git_*` tool is decided and recorded in §5 with a
+human-approved edit (§8), the implementation matches the decision, and a recorded `git_*`
+trajectory verifies to whatever verdict that decision implies — never to
+`unknown_tool:<name>`. §5's routing-gap paragraph and §3's verify row (both landed by BL-042)
+are updated to remove the named gap.
+
+`Source: BL-042 execution, demonstrated 2026-07-23 at 8021a59. §5 correction landed with
+BL-042's contract edit; this row closes the gap that correction names.`
+
+---
+
+### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+`mix test --include requires_worker` reports **15 failures** on `main` at `8021a59`, with no
+BL-042 changes applied (verified by stashing them and re-running: the failing set is
+byte-identical, 900 tests / 15 failures). CI never sees them — `ci.yml:64` runs
+`--exclude requires_worker --exclude integration` — and neither does a local `mix test`,
+because `test_helper.exs:4` excludes the same tags by default. Found off-territory by
+BL-042's own done-check, which is the only reason it is on the record at all.
+
+Three distinct causes, not one:
+
+- **Test written against a stale allowlist** — `run_command_test.exs` uses `pwd`, which is not
+  in `PERMITTED_COMMANDS` (`aetheris_exec_server/src/runner.rs:7-24`); the exec server
+  correctly answers `command not permitted: pwd`. 3 failures.
+- **`fs_hash` is nil where the test expects `sha256:…`** — `client_test.exs:53`,
+  `fs_hash_stability_test.exs` (×2). This one is **not** obviously a stale test and may be a
+  live defect in worker fs-hashing; it needs diagnosis, not a test edit.
+- **Network/credential-dependent integration tests pulled in by the include** — `httpbin.org`,
+  the GitHub MCP server, the HTTP MCP transport. `--include requires_worker` overrides the
+  `:integration` exclusion for tests carrying both tags, so these run whether or not the
+  environment can support them. 6+ failures.
+
+**This is the gate-rot pattern the CLAUDE.md gate rule exists to catch**, running in the
+direction that is hardest to see: a set that no gate executes cannot go red visibly, so it
+went red silently and stayed. When it broke is unknown, because nothing was watching.
+
+**Done when:** each failure is triaged to stale-test / live-defect / environment-dependent;
+stale tests are corrected, live defects get their own rows, environment-dependent tests are
+tagged so an include cannot drag them into a run that cannot satisfy them; and the set is
+wired into something that runs it — a sprint case or a CI job with the worker available —
+so it cannot rot invisibly again. Until then it is a **known-red gate named with this ticket
+ref** in packets, not re-triaged each time.
+
+`Source: BL-042 done-check, off-territory, 2026-07-23. Baseline captured on a clean tree.`
 
 ---
 
@@ -2308,8 +2438,10 @@ multi-line street/city/state/zip.
 | 13 | BL-028 | Silent-empty is the worst failure shape: a fork proceeds from a wrong context with no signal |
 | 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
 | ✔ | BL-025 | **Done 2026-07-23.** Grew in-cycle to include the CLI rewire (it never reached `Verifier`). Spawned BL-042/043/044/045 |
-| 15 | BL-042 | Inherits BL-025's slot: closes the *incidental* egress BL-025 named but could not fix. Must follow BL-025 (landed), and should precede BL-043 — repairing `setsockopt` before the netns exists widens the window |
-| 15a | BL-043 | `http_call` is dead in every mode, so nothing regresses by waiting; but it is the reason BL-042's exposure looks smaller than it is. Confirm the tool has no live users before choosing repair-vs-retire |
+| ✔ | BL-042 | **Done 2026-07-23.** Grew in-cycle by one tool: `run_command` was never re-executed under verify at all (`unknown_tool`), so the netns had nothing to contain until the routing was fixed. Spawned BL-047 (the `git_*` half of that gap, plus its taxonomy question) and BL-048 (the red `requires_worker` set found off-territory) |
+| 15 | BL-043 | `http_call` is dead in every mode, so nothing regresses by waiting; but it is the reason BL-042's exposure looks smaller than it is. Confirm the tool has no live users before choosing repair-vs-retire. **Now unblocked**: BL-042's netns has landed, so restoring egress no longer widens an open window |
+| 15a | BL-047 | The `git_*` half of the routing gap BL-042's §5 correction names. Decide the mutating-vs-read-only classification *first*; the routing is three lines once the taxonomy is settled |
+| 15a2 | BL-048 | Known-red gate, tracked not carried. Triage before anything cites "the worker tests pass" |
 | 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
 | 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |

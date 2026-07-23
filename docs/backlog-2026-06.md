@@ -1841,13 +1841,99 @@ error. Do not silently skip it.
 larger, not smaller; fixing this row makes BL-043's repair safe. Neither is a substitute for
 the other — do not let BL-043's accidental truncation be read as containment.
 
-**Done when:** the verify worker runs under `CLONE_NEWNET`; a `run_command` recorded doing
-network egress cannot egress during verify (hermetic listener: 0 hits) and its divergence is
-reported legibly; `http_call`/MCP remain served (BL-025) and do not fail under the netns;
-§5's egress-safety statement upgrades from partial to capability-complete, human-approved
-in-cycle (§8).
+---
 
-`Source: BL-025 execution, run_command allowlist finding, HEAD d567d75, 2026-07-22.`
+### Pre-implementation handoff (verified at `8021a59`, 2026-07-23)
+
+Recorded here, not in BL-025's implementation notes, because the next session reads *this
+row* and not the previous ticket's notes. Each item below was checked against source; treat
+them as verified ground, not leads.
+
+**H1 — the premise holds: the exec server inherits the netns.** This was the way the row's
+fix could have been quietly false — `run_command`/`git_*` are dispatched to a *separate
+process*, so the netns closes their egress only if that process is inside it. Startup order
+in `native/aetheris_worker/src/main.rs` settles it: `enter_namespaces()` at `:53` → exec
+server spawned at `:80` (comment: "before seccomp filter — execve is blocked after") →
+`apply_seccomp_filter()` at `:92`. The exec server is spawned **after** `unshare`, so it
+inherits the namespaces. Adding `CLONE_NEWNET` at `sandbox.rs:144` therefore does cover
+`run_command` and the eleven `git_*` tools. (Note the exec server is *not* under the seccomp
+filter — a separate process, filtered independently — which is why BL-043's `setsockopt`
+kill affects `http_call` but not `run_command`.)
+
+**H2 — `lo` comes up DOWN in a fresh netns. Decide, don't default.** A new network namespace
+has only a loopback interface and it starts down, so 127.0.0.1 is unreachable until something
+brings it up. Nothing in the worker needs it: the worker↔BEAM channel is pipes (`Port`), and
+MCP stdio is pipes. **Recommendation: leave `lo` down** — it is the stricter choice and
+matches the row's goal; bringing it up would re-admit localhost-only egress for no benefit
+verify needs. Flagged for ratification, and whichever way it goes it must be a stated
+decision in the implementation notes, not an unexamined default.
+
+**H3 — `enter_namespaces()` fails open, and verify must not inherit that.** `unshare`
+failure is logged and execution continues (`sandbox.rs:146-153`: "Fails open: if `unshare` is
+rejected by the kernel (e.g. in restricted container environments), the error is logged and
+the worker continues without isolation"). So in a restricted container there is **no netns**,
+and verify would report a clean result while having had none of the containment it claims —
+a well-formed verdict over a gap, which is the Silent-wrong-answer class BL-025 exists to
+remove. **Verify cannot stay silent about this.**
+
+  - **Recommendation, ratified by the executing session 2026-07-23: fail closed.** Verify
+    refuses to re-execute and errors (`cannot establish network containment`) rather than
+    proceeding under a banner. Rationale: verify's entire value *is* the guarantee, so a
+    verify that cannot guarantee has nothing to report; a banner is the mitigation you choose
+    when refusing is not an option, and here it is. Human ratification still wanted — the
+    alternative (degrade + loudly report, never silently) is defensible if operators in
+    restricted containers need verify to run at all.
+  - **`record` mode keeps its fail-open.** Normal runs in restricted containers must keep
+    working; do not tighten `enter_namespaces` globally.
+
+**H4 — the netns MUST be gated on `not allow_effects`. Required, not optional.** An
+unconditional netns breaks `--allow-effects`: the flag exists precisely to re-issue real
+network effects, and inside a netns it cannot. It would also flip BL-025's opt-in test
+(`test/aetheris/execution/verify_effects_test.exs` — `--allow-effects` → **≥1** connection to
+a listener living outside the netns) to 0, i.e. the regression guard for the opt-in path
+would silently invert into asserting the opposite of what it was written for.
+
+  - default verify → **netns on**: contained tools re-execute but cannot egress (this row's goal)
+  - `--allow-effects` → **netns off**: re-execute everything with real egress (the explicit opt-in)
+
+  It is a clean per-verify decision because BL-025's `Verifier.execute_planned_steps/3` starts
+  exactly one worker per verify, and `allow_effects` is already resolved at that point.
+
+**H5 — scope: this is not a one-line flag add.** Three pieces, in order:
+
+  1. **Conditional `CLONE_NEWNET`** — the flag must be *requestable*, so it rides the init
+     payload: `Worker.Client.worker_init_payload/5` (`lib/aetheris/worker/client.ex:58-70`)
+     builds the map (`sandbox_path`, `memory_limit_bytes`, `cpu_quota_percent`, optional
+     `overlay`); add a `network_namespace` field plus a matching `Client.start_link` opt
+     (`init/1`, `:157-171`), and have `enter_namespaces` take it.
+  2. **Establishment-status plumbing** — and note the ordering problem: the worker writes
+     `{"status": "ready"}` at `main.rs:51`, **before** `enter_namespaces()` at `:53`. The
+     existing handshake therefore *cannot* carry the netns result without reordering it (move
+     the ready write after namespace setup, or add a second message). Whichever is chosen,
+     `enter_namespaces` must report whether `CLONE_NEWNET` was actually established rather
+     than only logging.
+  3. **Verify's non-silent handling** of that status, per H3.
+
+**H6 — reuse the existing hermetic harness.** `test/aetheris/execution/verify_effects_test.exs`
+(BL-025) already provides a localhost listener that counts inbound connections, and the
+`recorded-trajectory` fixture shape. BL-042's egress test is the same harness pointed at a
+`run_command` that shells out to `python3` (allowlisted) opening a socket — expect **0** under
+default verify. Its `--allow-effects` arm must keep recording **≥1** (H4).
+
+**Decisions to ratify before implementing:** H2 (`lo` down), H3 (fail closed). H4 is a
+requirement, not a choice.
+
+**Done when:** the verify worker runs under `CLONE_NEWNET` **when re-executing without
+`--allow-effects`**; a `run_command` recorded doing network egress cannot egress during
+verify (hermetic listener: 0 hits) and its divergence is reported legibly; the
+`--allow-effects` path still egresses and BL-025's opt-in arm still asserts ≥1 (H4); netns
+establishment is reported by the worker and acted on by verify, never silently assumed (H3),
+with `record` mode's fail-open untouched; `http_call`/MCP remain served (BL-025) and do not
+fail under the netns; §5's egress-safety statement upgrades from partial to
+capability-complete, human-approved in-cycle (§8).
+
+`Source: BL-025 execution, run_command allowlist finding, HEAD d567d75, 2026-07-22.
+Pre-implementation handoff verified at 8021a59, 2026-07-23.`
 
 ---
 

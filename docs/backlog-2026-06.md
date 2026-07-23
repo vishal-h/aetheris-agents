@@ -1876,13 +1876,24 @@ and verify would report a clean result while having had none of the containment 
 a well-formed verdict over a gap, which is the Silent-wrong-answer class BL-025 exists to
 remove. **Verify cannot stay silent about this.**
 
-  - **Recommendation, ratified by the executing session 2026-07-23: fail closed.** Verify
-    refuses to re-execute and errors (`cannot establish network containment`) rather than
-    proceeding under a banner. Rationale: verify's entire value *is* the guarantee, so a
-    verify that cannot guarantee has nothing to report; a banner is the mitigation you choose
-    when refusing is not an option, and here it is. Human ratification still wanted — the
-    alternative (degrade + loudly report, never silently) is defensible if operators in
-    restricted containers need verify to run at all.
+  - **RATIFIED 2026-07-23 (human): fail closed.** Verify refuses to re-execute and errors
+    (`cannot establish network containment`) rather than proceeding under a banner. This is
+    settled — implement it, do not re-litigate.
+
+    Two reasons, recorded so a future reader sees the argument and not just the verdict.
+    (i) Verify's entire value *is* the guarantee, so a verify that cannot guarantee has
+    nothing to report; a banner is the mitigation you choose when refusing is not an option,
+    and here it is — `--allow-effects` already names the deliberate-uncontained path (H4),
+    so a *silently* uncontained default has no constituency.
+    (ii) **Fail-closed is the reversible direction.** The niche it does not serve is the
+    operator who wants default behaviour (serve uncontained, re-execute contained) but cannot
+    get a netns; only degrade-and-report serves that. Checked at `8021a59`: nothing in this
+    repo runs verify inside a restricted container — CI excludes `:requires_worker`
+    (`ci.yml:64`) so the worker never starts there, Rig invokes verify nowhere, `sprint.sh`
+    runs on the host. The niche is empty today. If it later appears, degrade-and-report is
+    *additive* (a new flag or downgraded verdict, strict default intact); shipping it first
+    and tightening later would be a behaviour change on the default path needing its own
+    contract edit and migration. Cheap-to-reverse wins.
   - **`record` mode keeps its fail-open.** Normal runs in restricted containers must keep
     working; do not tighten `enter_namespaces` globally.
 
@@ -1920,8 +1931,10 @@ would silently invert into asserting the opposite of what it was written for.
 `run_command` that shells out to `python3` (allowlisted) opening a socket — expect **0** under
 default verify. Its `--allow-effects` arm must keep recording **≥1** (H4).
 
-**Decisions to ratify before implementing:** H2 (`lo` down), H3 (fail closed). H4 is a
-requirement, not a choice.
+**Decision status.** H3 (fail closed) — **ratified, human, 2026-07-23**. H2 (`lo` down) —
+**agreed in review 2026-07-23**; still must be *stated* as a decision in the implementation
+notes rather than left as an unexamined default. H4 (netns gated on `not allow_effects`) is a
+requirement, not a choice. Nothing here is open; the implementer starts from settled ground.
 
 **Done when:** the verify worker runs under `CLONE_NEWNET` **when re-executing without
 `--allow-effects`**; a `run_command` recorded doing network egress cannot egress during
@@ -1930,7 +1943,14 @@ verify (hermetic listener: 0 hits) and its divergence is reported legibly; the
 establishment is reported by the worker and acted on by verify, never silently assumed (H3),
 with `record` mode's fail-open untouched; `http_call`/MCP remain served (BL-025) and do not
 fail under the netns; §5's egress-safety statement upgrades from partial to
-capability-complete, human-approved in-cycle (§8).
+capability-complete, human-approved in-cycle (§8) — **and that §5 edit is two statements, not
+one**: (a) the upgrade itself, and (b) the guarantee is *conditional on the netns being
+establishable*, with the fail-closed refusal (H3) named as contract-visible behaviour, since
+an operator whose kernel denies `unshare` gets an error instead of a verdict. Drafting (a)
+without (b) would restate the exact overclaim BL-025's §5 rewrite was written to remove —
+a capability-complete guarantee asserted unconditionally over an environment that cannot
+provide it. Draft both in one review-file artifact for a single approval, as BL-025 did with
+§3+§5.
 
 `Source: BL-025 execution, run_command allowlist finding, HEAD d567d75, 2026-07-22.
 Pre-implementation handoff verified at 8021a59, 2026-07-23.`

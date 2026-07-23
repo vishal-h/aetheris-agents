@@ -289,10 +289,37 @@ $ mix test test/aetheris/execution/verify_effects_test.exs --include requires_wo
 | pre-fix, unrouted | 0 | `:error` — `unknown_tool:run_command` | n/a |
 | pre-netns, routed | **1** | re-executed, egressed | n/a |
 | default verify | **0** | `:output_mismatch` + isolation note | `true` |
-| `--allow-effects` | **≥1** | `:verified` | `false` |
+| `--allow-effects` | **≥1** | re-executed and egressed; status **not asserted** (below) | `false` |
 
 The last row is BL-025's opt-in guard (H4): an unconditional namespace would have silently
 inverted it into asserting the opposite of what it was written for.
+
+**Correction, raised in review.** An earlier version of this table read `:verified` for the
+`--allow-effects` arm. That was wrong twice over: the test never asserts a status there (only
+`!= :served` plus `actual_output =~ "connected"`), and the status is not stable. The exec
+server's `run_command` payload carries `duration_ms`, and §5's comparison is value equality
+over the whole blob, so an identical command lands either way depending on whether the
+millisecond timing coincides. Measured, six consecutive runs:
+
+```
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :verified         recorded: {"duration_ms":22,…}  actual: {"duration_ms":22,…}
+status: :output_mismatch  recorded: {"duration_ms":23,…}  actual: {"duration_ms":19,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":20,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :output_mismatch  recorded: {"duration_ms":21,…}  actual: {"duration_ms":20,…}
+```
+
+There is no normalization of volatile fields anywhere in the test or the comparison — the
+first packet reported a status read off a single run that happened to hit the coincidence.
+
+**This is a live defect, not just a packet error.** A `run_command` step can essentially never
+report `:verified`, so an operator verifying a trajectory with `run_command` steps gets
+`Failed: N` on commands that reproduced exactly. BL-042 did not cause it — before the routing
+fix the step errored and never reached the comparison — but BL-042 is what makes it reachable,
+so it ships with this ticket. Filed as **BL-049**, sequenced ahead of BL-047 (routing more
+exec-server tools into a comparison that mis-reports would multiply it). The default-verify
+row is unaffected: that step diverges on `exit_code` and `stderr`, not on timing.
 
 #### 2d. The green arm cannot pass vacuously
 
@@ -374,7 +401,9 @@ Record runs are byte-identical to before: they never request the namespace, so t
 - **Record mode** — passes `network_namespace: false` (the default), so flags are exactly
   `CLONE_NEWUSER | CLONE_NEWNS` as before and `containment_verdict(false, _)` is always
   `:ok`. Restricted-container record runs still degrade rather than fail.
-- **`--allow-effects`** — no namespace, so the opt-in still egresses (§2c, arm 4).
+- **`--allow-effects`** — no namespace, so the opt-in still egresses (§2c, arm 4). Its step
+  status is unstable by construction (`duration_ms` inside the compared payload, BL-049) and
+  is therefore not asserted.
 - **`:uncontained` tools under a default verify** — served, never executed, so the namespace
   cannot break them. `http_call`/MCP remain served (BL-025), asserted by the two untagged
   tests in the same file that continue to pass.
@@ -424,6 +453,8 @@ Not deviations, restated for the record: `lo` left down (H2); netns gated on
 - **Not** that the `requires_worker` set is green — it is red with 15 pre-existing failures,
   BL-048.
 - **Not** that §5 is updated. The draft is in §7 and lands only on approval.
+- **Not** that a re-executed `run_command` reports `:verified`. It essentially cannot —
+  `duration_ms` is inside the compared payload (BL-049, §2c).
 
 ---
 
@@ -432,7 +463,7 @@ Not deviations, restated for the record: `lo` left down (H2); netns gated on
 Reproduced in full below from `docs/reviews/bl-042-contract-draft.md` (committed at
 `0d5676a`). Three statements, one approval, as BL-025 did with §3+§5.
 
-<!-- begin verbatim: docs/reviews/bl-042-contract-draft.md @ 0d5676a -->
+<!-- begin verbatim: docs/reviews/bl-042-contract-draft.md @ 9290827 -->
 
 # BL-042 — determinism contract §5 edit (draft for human approval)
 
@@ -607,6 +638,15 @@ Replace the first bullet; leave the rest as they are.
 > - **`git_*` tools are not re-executed at all** — the exec-server routing gap above; a
 >   recorded `git_*` step reports `:error`. Tracked as **BL-047**, which also decides whether
 >   they *should* be re-executed.
+> - **A `run_command` step can essentially never report `:verified`.** Comparison is value
+>   equality over the tool's whole output payload, and the exec server's payload carries
+>   `duration_ms` — a wall-clock measurement that differs between the recording and the
+>   re-execution. A perfectly reproducible command therefore reports `:output_mismatch` on
+>   timing alone (measured: five of six runs; the sixth coincided). Verify tells the truth
+>   about the bytes it compared, but "the outputs differ" is not the claim an operator reads
+>   it as. Tracked as **BL-049**, which decides whether the comparison should exclude volatile
+>   fields, compare structurally, or the tool should stop returning timing in the compared
+>   payload — a §5 semantics decision, not a patch.
 
 ## Update to the §3 `verify` row
 
@@ -634,10 +674,32 @@ by a real worker, so both arms measure a **delta** against that recording.
 | pre-fix, routing unrouted | 0 | `:error` — `unknown_tool:run_command` (never ran) |
 | pre-netns, routing fixed | **1** | re-executed and egressed — the red arm |
 | default verify (netns) | **0** | `:output_mismatch`, with the isolation note |
-| `--allow-effects` (no netns) | **≥1** | `:verified` — the opt-in still egresses |
+| `--allow-effects` (no netns) | **≥1** | re-executed and egressed — status not asserted, see below |
 
 The middle row is why the routing fix rides this ticket: without it the "0 connections" of a
 default verify is true before the namespace exists, and proves nothing.
+
+**The `--allow-effects` arm's status is deliberately not asserted, and cannot be.** The exec
+server's `run_command` payload carries `duration_ms`, and §5's comparison is value equality
+over that whole JSON blob. Measured over six runs of an identical, perfectly reproducible
+command: five `:output_mismatch`, one `:verified` — decided entirely by whether the
+millisecond timing happened to coincide.
+
+```
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :verified         recorded: {"duration_ms":22,…}  actual: {"duration_ms":22,…}
+status: :output_mismatch  recorded: {"duration_ms":23,…}  actual: {"duration_ms":19,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":20,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :output_mismatch  recorded: {"duration_ms":21,…}  actual: {"duration_ms":20,…}
+```
+
+So **a `run_command` step can essentially never verify**, whatever it does. This is not
+introduced by BL-042 — it is exposed by it, because BL-042 is what makes `run_command` reach
+the comparison at all (before, it errored). It is a live consequence of this ticket for any
+operator running `aetheris verify` on a trajectory with `run_command` steps, and it is
+tracked as **BL-049**. The default-verify row above is unaffected: that step diverges on
+`exit_code` and `stderr`, not on timing.
 
 ---
 
@@ -764,70 +826,23 @@ instead of leaving it to be discovered.
 
 ---
 
-### 9. Diff — harness (`../aetheris/` @ `72a7f5e`)
+### 9. Diff — harness (`../aetheris/`, cumulative `8021a59..HEAD`)
+
+Commits: `72a7f5e` (implementation), `36800e7` (review r1 — comment only).
 
 ```
-72a7f5e BL-042: capability-shaped containment for the verify worker (CLONE_NEWNET)
- .../milestones/bl-042-implementation-notes.md      |  99 ++++++++++++++++++
- lib/aetheris/cli/commands/verify.ex                |  29 +++++-
- lib/aetheris/execution/verifier.ex                 |  89 ++++++++++++++--
- lib/aetheris/execution/verify_report.ex            |  13 ++-
- lib/aetheris/worker/client.ex                      |  68 +++++++++++--
- native/aetheris_worker/src/main.rs                 |  28 +++++-
- native/aetheris_worker/src/sandbox.rs              |  92 ++++++++++++++---
- test/aetheris/execution/verify_effects_test.exs    | 112 +++++++++++++++++++++
- test/aetheris/worker/client_test.exs               |  28 ++++++
- 9 files changed, 516 insertions(+), 42 deletions(-)
+ lib/aetheris/cli/commands/verify.ex             |  29 +++++-
+ lib/aetheris/execution/verifier.ex              |  89 ++++++++++++++---
+ lib/aetheris/execution/verify_report.ex         |  13 ++-
+ lib/aetheris/worker/client.ex                   |  68 +++++++++++--
+ native/aetheris_worker/src/main.rs              |  28 +++++-
+ native/aetheris_worker/src/sandbox.rs           |  92 +++++++++++++++---
+ test/aetheris/execution/verify_effects_test.exs | 122 ++++++++++++++++++++++++
+ test/aetheris/worker/client_test.exs            |  28 ++++++
+ 8 files changed, 427 insertions(+), 42 deletions(-)
 ```
 
 ```diff
-commit 72a7f5e95d10a866e3b3b179f4aa172a8fd5dab6
-Author: Vishal Honnatti <vishal@bitloka.com>
-Date:   Thu Jul 23 13:46:53 2026 +0530
-
-    BL-042: capability-shaped containment for the verify worker (CLONE_NEWNET)
-    
-    Default verify now re-executes inside a network namespace, so no re-executed
-    tool can egress regardless of what the exec allowlist permits. Record-and-serve
-    (BL-025) becomes defence-in-depth rather than the sole, partial defence.
-    
-    - sandbox.rs: enter_namespaces/1 takes the request and returns NamespaceStatus.
-      CLONE_NEWNET rides the existing unshare (CLONE_NEWUSER grants the capability).
-      Fail-open is kept in Rust: an unshare refusal returns Ok(all-false), never Err,
-      or record mode loses its fail-open. `lo` is left down (H2) — nothing needs it,
-      the worker channel and MCP stdio are pipes.
-    - main.rs: namespaces are entered BEFORE the ready handshake, which now carries
-      network_namespace. A worker announcing ready before its isolation existed left
-      the BEAM no way to tell containment from its absence.
-    - client.ex: network_namespace: true means *required*. containment_verdict/2
-      refuses to finish starting a worker that could not establish one, so no caller
-      can hold an uncontained-but-usable worker by forgetting to check (H3).
-    - verifier.ex: requests the namespace as `not allow_effects` (H4 — an
-      unconditional netns would invert BL-025's opt-in guard).
-    - verify.ex: the refusal is legible, naming --allow-effects as the way forward.
-    - verify_report.ex: network_isolated, so a networked divergence is interpretable
-      rather than a mystery mismatch.
-    
-    Grew in-cycle by one tool, and the growth was load-bearing: run_command was
-    never re-executed under verify at all. Verifier sent every tool to the worker's
-    own dispatch table, but run_command is an exec-server MCP tool, so it returned
-    unknown_tool:run_command and opened 0 connections *before* the namespace
-    existed — the row's "0 hits" done-when was already true for a reason unrelated
-    to containment. Routing run_command (scoped decision, human) made the red arm
-    real: 1 connection pre-netns, 0 after, >=1 under --allow-effects. The git_*
-    family is deliberately left unrouted and filed as BL-047 with the taxonomy
-    question it deserves.
-    
-    Gates: format, credo --strict, dialyzer, compile --warnings-as-errors, mix test
-    (907/0). `mix test --include requires_worker` is red with 15 failures, identical
-    on a clean tree — pre-existing, filed as BL-048.
-    
-    Backlog rows, the §5 contract draft and the closing evidence are in the sibling
-    repo (aetheris-agents), per the cross-repo split. The §5 edit itself is NOT in
-    this commit: it lands only on human approval, per contract §8.
-    
-    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
-
 diff --git a/lib/aetheris/cli/commands/verify.ex b/lib/aetheris/cli/commands/verify.ex
 index 06f0fce..801174f 100644
 --- a/lib/aetheris/cli/commands/verify.ex
@@ -1367,53 +1382,199 @@ index 470aa96..111f108 100644
  }
  
  /// Mounts an OverlayFS at `merged`, presenting `lower` as read-only and directing all writes
+diff --git a/test/aetheris/execution/verify_effects_test.exs b/test/aetheris/execution/verify_effects_test.exs
+index 2d8440f..fe73051 100644
+--- a/test/aetheris/execution/verify_effects_test.exs
++++ b/test/aetheris/execution/verify_effects_test.exs
+@@ -6,11 +6,17 @@ defmodule Aetheris.Execution.VerifyEffectsTest do
+   connections; the fabricated trajectory's recorded `http_call` targets it.
+   The load-bearing assertion is the connection count, not the exit status:
+   a verify that "succeeded" while re-issuing the call has failed this test.
++
++  BL-042 extends the same harness to *incidental* egress: a `run_command`
++  (`:contained`, so re-executed by default) that shells out to `python3` and
++  opens a socket. The recorded step is produced by a real worker, so the
++  connection count is measured as a delta against that recording.
+   """
+   use ExUnit.Case, async: false
+ 
+   alias Aetheris.Execution.{Verifier, VerifyReport}
+   alias Aetheris.Trajectory.{Event, File}
++  alias Aetheris.Worker.Client
+ 
+   @timestamp DateTime.from_naive!(~N[2026-07-23 00:00:00], "Etc/UTC")
+   @recorded_output ~s({"status":200,"body":"recorded-not-live"})
+@@ -110,6 +116,122 @@ defmodule Aetheris.Execution.VerifyEffectsTest do
+     assert Map.fetch!(step_result, :status) != :served
+   end
+ 
++  # --- BL-042: incidental egress through a :contained run_command -------------
++
++  @tag :requires_worker
++  test "default verify does not re-open a recorded run_command's connection", context do
++    %{run_id: run_id, sandbox_path: sandbox_path, listener: listener} = context
++
++    recorded_output = record_run_command(run_id, sandbox_path, listener.port)
++    baseline = connection_count(listener)
++
++    # The recording itself egressed — that is precisely the behaviour verify
++    # must not repeat. Without this the delta assertion below is vacuous.
++    assert baseline >= 1
++
++    assert {:ok, %VerifyReport{} = report} = Verifier.verify(run_id, sandbox_path: sandbox_path)
++
++    # Load-bearing: re-execution opened no new connection.
++    assert connection_count(listener) - baseline == 0
++
++    assert report.network_isolated == true
++
++    assert [step_result] = report.steps
++    assert Map.fetch!(step_result, :recorded_output) == recorded_output
++
++    # run_command is :contained, so it must not be served — it is re-executed and
++    # diverges, because the network is unreachable under the namespace. Asserting
++    # the divergence is what keeps the 0 above meaningful: a step that silently
++    # failed to run would also open no connection.
++    assert Map.fetch!(step_result, :status) == :output_mismatch
++    assert Map.fetch!(step_result, :actual_output) != nil
++    refute Map.fetch!(step_result, :actual_output) =~ "connected"
++
++    # ...and the divergence must be interpretable, not a mystery mismatch.
++    rendered = Verifier.to_report(report)
++    assert rendered =~ "Re-execution ran under a network namespace"
++    assert rendered =~ "re-executed under network isolation"
++  end
++
++  @tag :requires_worker
++  test "--allow-effects re-executes the recorded run_command and the connection returns",
++       context do
++    %{run_id: run_id, sandbox_path: sandbox_path, listener: listener} = context
++
++    recorded_output = record_run_command(run_id, sandbox_path, listener.port)
++    baseline = connection_count(listener)
++    assert baseline >= 1
++
++    Process.flag(:trap_exit, true)
++
++    assert {:ok, %VerifyReport{} = report} =
++             Verifier.verify(run_id, sandbox_path: sandbox_path, allow_effects: true)
++
++    # Load-bearing: the opt-in path still egresses. An unconditional network
++    # namespace would silently invert this arm into asserting the opposite of
++    # what it was written for (BL-042 H4).
++    assert connection_count(listener) - baseline >= 1
++
++    assert report.network_isolated == false
++
++    assert [step_result] = report.steps
++
++    # The status is deliberately NOT asserted, and must not be: the exec server's
++    # run_command payload carries `duration_ms`, and comparison is value equality
++    # over the whole blob, so an identical command lands on :verified or
++    # :output_mismatch depending on whether the millisecond timing coincides
++    # (measured: 1 of 6 runs verified). Asserting either value would make this a
++    # flaky test; asserting `!= :served` is the claim that actually holds and is
++    # the one this arm exists to make. Tracked as BL-049.
++    assert Map.fetch!(step_result, :status) != :served
++
++    # What does reproduce is the observable behaviour: same command, network
++    # reachable, same stdout.
++    assert Map.fetch!(step_result, :actual_output) =~ "connected"
++    assert Map.fetch!(step_result, :recorded_output) == recorded_output
++
++    rendered = Verifier.to_report(report)
++    assert rendered =~ "WITHOUT network isolation"
++  end
++
++  defp record_run_command(run_id, sandbox_path, port) do
++    # Recorded through the same route a live run uses: run_command is an
++    # exec-server MCP tool in the loop (loop.ex @exec_server_tools), not a
++    # direct worker dispatch.
++    {:ok, worker_pid} = Client.start_link(run_id: "record-#{run_id}", sandbox_path: sandbox_path)
++
++    {:ok, output} =
++      Client.call_mcp_tool(worker_pid, "aetheris_exec", "run_command", run_command_input(port))
++
++    Client.stop(worker_pid)
++
++    events = [
++      event(run_id, 1, 0, :tool_called, %{
++        "tool_name" => "run_command",
++        "tool_input" => run_command_input(port)
++      }),
++      event(run_id, 1, 1, :tool_result, %{
++        "tool_name" => "run_command",
++        "output" => output,
++        "fs_hash" => nil
++      })
++    ]
++
++    assert {:ok, _path} = File.write(run_id, events, %{"sandbox_path" => sandbox_path})
++
++    output
++  end
++
++  defp run_command_input(port) do
++    %{
++      "command" => "python3",
++      "args" => [
++        "-c",
++        ~s[import socket; s = socket.create_connection(("127.0.0.1", #{port}), 2); s.close(); print("connected")]
++      ]
++    }
++  end
++
+   defp write_http_call_trajectory(run_id, sandbox_path, port) do
+     events = [
+       event(run_id, 1, 0, :tool_called, %{
+diff --git a/test/aetheris/worker/client_test.exs b/test/aetheris/worker/client_test.exs
+index 1611295..2209ce2 100644
+--- a/test/aetheris/worker/client_test.exs
++++ b/test/aetheris/worker/client_test.exs
+@@ -301,4 +301,32 @@ defmodule Aetheris.Worker.ClientSandboxPathTest do
+     payload = Client.worker_init_payload("run-test", "/tmp/foo", nil, 536_870_912, 25)
+     assert Map.fetch!(payload, :cpu_quota_percent) == 25
+   end
++
++  # --- BL-042: network namespace request + fail-closed verdict ----------------
++
++  test "worker init payload does not request a network namespace by default" do
++    payload = Client.worker_init_payload("run-test", "/tmp/foo", nil, 536_870_912, 50)
++    assert Map.fetch!(payload, :network_namespace) == false
++  end
++
++  test "worker init payload requests a network namespace when asked" do
++    payload = Client.worker_init_payload("run-test", "/tmp/foo", nil, 536_870_912, 50, true)
++    assert Map.fetch!(payload, :network_namespace) == true
++  end
++
++  # The gate is fail-closed in exactly one cell of this table. The other three are
++  # what keep record runs and `verify --allow-effects` on the worker's fail-open,
++  # so they are asserted rather than assumed.
++  test "containment_verdict/2 refuses when a required network namespace was not established" do
++    assert Client.containment_verdict(true, false) == {:stop, :containment_unavailable}
++  end
++
++  test "containment_verdict/2 accepts when a required network namespace was established" do
++    assert Client.containment_verdict(true, true) == :ok
++  end
++
++  test "containment_verdict/2 accepts when no network namespace was required" do
++    assert Client.containment_verdict(false, false) == :ok
++    assert Client.containment_verdict(false, true) == :ok
++  end
+ end
 ```
 
-### 10. Diff — agents (`aetheris-agents/` @ `0d5676a`), backlog only
+### 10. Diff — agents (`aetheris-agents/`, cumulative `6ec3304..HEAD`), backlog only
 
-The contract draft added by the same commit is reproduced in full in §7; only the backlog
-diff is repeated here, to avoid duplicating it.
+Commits: `0d5676a` (rows + draft), `9290827` (review r1 — correction + BL-049). The contract
+draft added by the same commits is reproduced in full in §7; only the backlog diff is repeated
+here, to avoid duplicating it.
 
 ```diff
-commit 0d5676a3b5b9b0f3031eced7cfbbef0e4e273c57
-Author: Vishal Honnatti <vishal@bitloka.com>
-Date:   Thu Jul 23 13:47:07 2026 +0530
-
-    BL-042 done + follow-ups (BL-047, BL-048); §5 contract draft (3 statements)
-    
-    Harness side landed in ../aetheris @ 72a7f5e (conditional CLONE_NEWNET,
-    establishment status through a reordered handshake, fail-closed enforcement in
-    Worker.Client.init, run_command routing).
-    
-    - BL-042 row closed with the four-arm evidence table and the decisions that do
-      not survive in the code: `lo` left down; a /proc mapping-write failure keeps
-      log-and-continue and reports network_namespace: false, so record's fail-open
-      survives that path while verify still refuses; non-Linux hosts refuse.
-    - BL-047 filed — the git_* half of the routing gap. Not a three-line fix
-      deferred out of laziness: whether mutating git ops (commit/checkout/
-      cherry_pick) should re-execute under verify at all is a taxonomy decision of
-      BL-025's weight, and inheriting it from a routing accident is how it would
-      otherwise get decided.
-    - BL-048 filed — `mix test --include requires_worker` is red with 15 failures,
-      identical on a clean tree, invisible to CI (ci.yml excludes the tag) and to
-      every default mix test (test_helper excludes it too). Found off-territory by
-      this ticket's own done-check; three distinct causes, one of which (nil
-      fs_hash) may be a live defect rather than a stale test.
-    - docs/reviews/bl-042-contract-draft.md — the §5 edit for §8 approval, as three
-      statements rather than the two the row scoped: (a) partial ->
-      capability-complete, (b) conditional on establishability with the fail-closed
-      refusal named as contract-visible behaviour, and (c) a correction of BL-025's
-      "`:contained` ... re-executed and compared", which was false for the whole
-      exec-server family. (c) is not optional: §8 forbids leaving a known-false
-      guarantee standing.
-    
-    Priority table: BL-042 marked done, BL-043 noted as now-unblocked (the netns
-    landed, so restoring setsockopt egress no longer widens an open window).
-    
-    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
-
 diff --git a/docs/backlog-2026-06.md b/docs/backlog-2026-06.md
-index 7b8b41e..b5f3fc8 100644
+index 7b8b41e..43bc24a 100644
 --- a/docs/backlog-2026-06.md
 +++ b/docs/backlog-2026-06.md
 @@ -1957,6 +1957,49 @@ Pre-implementation handoff verified at 8021a59, 2026-07-23.`
@@ -1445,7 +1606,7 @@ index 7b8b41e..b5f3fc8 100644
 +| pre-fix, unrouted | 0 | `:error` — `unknown_tool:run_command`, never ran |
 +| pre-netns, routed | **1** | re-executed and egressed — the red arm |
 +| default verify (netns) | **0** | `:output_mismatch` + isolation note |
-+| `--allow-effects` | **≥1** | `:verified` — opt-in preserved (H4) |
++| `--allow-effects` | **≥1** | re-executed and egressed — opt-in preserved (H4); status not asserted, see BL-049 |
 +
 +**Decisions recorded** (implementation notes: `../aetheris/docs/aetheris/milestones/bl-042-implementation-notes.md`):
 +H2 `lo` left down — no code brings it up. On a `/proc` mapping-write failure the worker keeps
@@ -1466,7 +1627,7 @@ index 7b8b41e..b5f3fc8 100644
  ### BL-043 — `http_call` is killed by seccomp (SIGSYS) in every mode: `setsockopt` missing from the allowlist (#TBD)
  **Size:** S · **Priority:** medium · **Section:** Harness (aetheris/)
  
-@@ -2043,6 +2086,93 @@ change rather than as a side effect.
+@@ -2043,6 +2086,149 @@ change rather than as a side effect.
  
  ---
  
@@ -1519,6 +1680,62 @@ index 7b8b41e..b5f3fc8 100644
 +
 +---
 +
++### BL-049 — A `run_command` step can essentially never verify: `duration_ms` is inside the compared payload (#TBD)
++**Size:** S · **Priority:** medium-high · **Section:** Harness (aetheris/)
++
++`Verifier.compare_status/4` compares recorded vs re-executed tool output by **value equality**
++over the whole payload string. The exec server's `run_command` payload is
++`{"duration_ms":N,"exit_code":N,"stderr":"…","stdout":"…"}` — it carries a wall-clock
++measurement. So two runs of an identical, perfectly reproducible command differ whenever the
++timing differs, which is almost always.
++
++Measured, six consecutive runs of the same `python3` one-liner, recorded and then re-executed
++under `--allow-effects` (no namespace, network reachable, identical stdout and exit code):
++
++```
++status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
++status: :verified         recorded: {"duration_ms":22,…}  actual: {"duration_ms":22,…}
++status: :output_mismatch  recorded: {"duration_ms":23,…}  actual: {"duration_ms":19,…}
++status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":20,…}
++status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
++status: :output_mismatch  recorded: {"duration_ms":21,…}  actual: {"duration_ms":20,…}
++```
++
++Five of six report a divergence that is purely timing; the sixth "verifies" by coincidence.
++
++**Exposed by BL-042, not caused by it.** Before BL-042 routed `run_command`, the step returned
++`unknown_tool:run_command` and never reached the comparison at all, so the defect was
++unreachable. It is now live for any operator running `aetheris verify` on a trajectory
++containing `run_command` steps: they get `Failed: N` on commands that reproduced exactly.
++
++**Not a patch — a §5 semantics decision.** Three directions, and they differ in what "verified"
++comes to mean:
++- **Exclude volatile fields from comparison** (`duration_ms` today; enumerate rather than
++  guess). Verify then compares what the tool *did*, not how long it took.
++- **Compare structurally** rather than by string equality, with a per-tool field policy. More
++  general, more machinery, and the policy is exactly the thing that needs deciding.
++- **Stop returning timing inside the compared payload** — move `duration_ms` out of the tool
++  output and into the step envelope, where it is recorded but not compared. Cleanest, and it
++  touches the exec server's response shape plus every recorded trajectory's expectations.
++
++Whichever is chosen, §5 must say what a `:verified` `run_command` step asserts, since today it
++asserts something no honest command can satisfy.
++
++**Adjacent, check before fixing:** `read_file`/`list_dir`/`write_file` go through the worker's
++own dispatch and their `duration_ms` sits *outside* the compared `output` (`parse_execute_response/1`
++splits `output`/`fs_hash`/`duration_ms`) — which is why this never surfaced for them, and why
++the third direction above is the one that matches the existing worker-native shape.
++
++**Done when:** the comparison semantics for timing-bearing payloads is decided and recorded in
++§5 with a human-approved edit (§8); a recorded `run_command` that reproduces exactly reports
++`:verified` deterministically; and a regression test asserts that across repeated runs, not
++once.
++
++`Source: BL-042 review, 2026-07-23 — reviewer challenged the packet's `:verified` claim for the
++--allow-effects arm; measurement showed the arm is nondeterministic and the claim was wrong.`
++
++---
++
 +### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
 +**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 +
@@ -1560,7 +1777,7 @@ index 7b8b41e..b5f3fc8 100644
  ### BL-045 — `RunConfig mode: :verify` is a misnomer: no verification semantics (#TBD)
  **Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
  
-@@ -2308,8 +2438,10 @@ multi-line street/city/state/zip.
+@@ -2308,8 +2494,11 @@ multi-line street/city/state/zip.
  | 13 | BL-028 | Silent-empty is the worst failure shape: a fork proceeds from a wrong context with no signal |
  | 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
  | ✔ | BL-025 | **Done 2026-07-23.** Grew in-cycle to include the CLI rewire (it never reached `Verifier`). Spawned BL-042/043/044/045 |
@@ -1570,6 +1787,7 @@ index 7b8b41e..b5f3fc8 100644
 +| 15 | BL-043 | `http_call` is dead in every mode, so nothing regresses by waiting; but it is the reason BL-042's exposure looks smaller than it is. Confirm the tool has no live users before choosing repair-vs-retire. **Now unblocked**: BL-042's netns has landed, so restoring egress no longer widens an open window |
 +| 15a | BL-047 | The `git_*` half of the routing gap BL-042's §5 correction names. Decide the mutating-vs-read-only classification *first*; the routing is three lines once the taxonomy is settled |
 +| 15a2 | BL-048 | Known-red gate, tracked not carried. Triage before anything cites "the worker tests pass" |
++| 15a3 | BL-049 | Operator-facing *today*: BL-042 made `run_command` reach the comparison, and the comparison is wrong for it. Ahead of BL-047 — routing more exec-server tools into a comparison that mis-reports would multiply the defect |
  | 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
  | 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
  | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
@@ -1579,13 +1797,13 @@ index 7b8b41e..b5f3fc8 100644
 
 ### 11. Backlog rows filed this round
 
-- **BL-047** — Verify never re-executes the `git_*` family: the exec-server routing gap
-  plus the taxonomy question (should mutating git ops re-execute under verify at all?).
-  Filed as a row in the same round it was deferred, not left as prose.
-- **BL-048** — `mix test --include requires_worker` red with 15 failures, invisible to
-  CI and to every default `mix test`. Off-territory gate finding; tracked, not carried.
-- **BL-042** — row closed with the four-arm evidence table and the decisions that do not
-  survive in the code. **BL-043** noted as now-unblocked in the priority table.
+- **BL-047** — Verify never re-executes the `git_*` family: the exec-server routing gap plus
+  the taxonomy question (should mutating git ops re-execute under verify at all?).
+- **BL-048** — `mix test --include requires_worker` red with 15 failures, invisible to CI and
+  to every default `mix test`. Off-territory gate finding; tracked, not carried.
+- **BL-049** *(review r1)* — a `run_command` step can essentially never verify: `duration_ms`
+  sits inside the compared payload. Sequenced **ahead of** BL-047.
+- **BL-042** — row closed with the corrected evidence table. **BL-043** noted as now-unblocked.
 
 ### 12. Done-when
 
@@ -1594,7 +1812,7 @@ index 7b8b41e..b5f3fc8 100644
 | verify worker runs under `CLONE_NEWNET` when re-executing without `--allow-effects` | done — `sandbox.rs:169-172`, requested at `verifier.ex:89-96`; worker log shows `network namespace established` on exactly the default-verify arm (§1d) |
 | a recorded networked `run_command` cannot egress during verify (0 hits) | done — §2c, delta 0, against a red arm that showed 1 (§2b) |
 | its divergence is reported legibly | done — `:output_mismatch` plus the isolation note and header line (§3) |
-| `--allow-effects` still egresses; BL-025 opt-in arm still asserts ≥1 | done — §2c arm 4 |
+| `--allow-effects` still egresses; BL-025 opt-in arm still asserts ≥1 | done — §2c arm 4 (connection count; step status deliberately unasserted, BL-049) |
 | netns establishment reported by the worker and acted on by verify, never silently assumed | done — status rides `ready` (`main.rs:56-74`), enforced in `Client.init/1` via `containment_verdict/2` (§2e) |
 | `record` mode fail-open untouched | done — §4; record passes `network_namespace: false`, flags identical to before |
 | `http_call`/MCP remain served, do not fail under the netns | done — the two untagged BL-025 tests still pass (§1d) |
@@ -1603,3 +1821,12 @@ index 7b8b41e..b5f3fc8 100644
 | push held | held — both repos committed locally, nothing pushed |
 
 **Outstanding:** §5 approval. Everything else is complete.
+
+### 13. Review rounds
+
+**r1 (human, 2026-07-23)** — challenged the `--allow-effects` arm's `:verified` status and
+asked where volatile fields are normalized. They are not, anywhere. The claim was wrong on
+both counts: the test asserts `!= :served`, never a status, and the status is nondeterministic
+(five of six runs `:output_mismatch`). Corrected in §2c, §4, §7 and the BL-042 row; the
+underlying defect filed as **BL-049** and sequenced ahead of BL-047; the test comment now
+states why no status is asserted (`36800e7`). Packet regenerated, not patched.

@@ -340,7 +340,48 @@ provenance shapes, and has an e2e covering the null-`fork_step` case.
 ---
 
 ### BL-025 — Verify: effect classes / record-and-serve for effectful tools (#TBD)
-**Size:** M · **Priority:** medium
+**Size:** M · **Priority:** medium — **DONE 2026-07-23**
+
+**Landed.** `Aetheris.Execution.EffectClass` declares `:pure` / `:contained` /
+`:uncontained` as the single source of truth; `Verifier` record-and-serves `:uncontained`
+tools by default and reports them **served, not verified** (excluded from the verified
+tally); `aetheris verify <traj> --allow-effects` opts back in. Proven by a hermetic
+localhost listener: **0 inbound connections** under default verify, **1** under
+`--allow-effects`. A completeness test asserts the classifier is total over
+`Registry.names/0` and every in-process tool module, mutation-checked.
+
+**Scope grew, by human decision in-cycle (rev 2, 2026-07-22).** `aetheris verify` never
+reached `Verifier` at all — `Commands.Verify` started a fresh **live** run
+(`mode: :verify`) and returned `verified: true` unconditionally. The CLI was rewired to
+`Aetheris.verify_run/2` and now returns the real verdict with a failure-reflecting exit
+code; the vacuous `verified == true` test was replaced with a mutation-checked pass/fail
+pair.
+
+**Contract edits (§8, human-approved in-cycle):** determinism-contract **§3** (verify row;
+plus a new paragraph separating `verify` the command from `RunConfig mode: :verify`) and
+**§5** (full rewrite: taxonomy, record-and-serve, served-not-verified, mechanized
+tripwire). Draft: `docs/reviews/bl-025-contract-draft.md`.
+
+**MCP scope note:** the MCP *family* is classified `:uncontained`, not `http_call` alone.
+Because MCP tool names are discovered at runtime, classification falls back to the recorded
+`"source"`/`"server_id"` — with `server_id == "aetheris_exec"` held `:contained`, since the
+internal exec server routes `run_command` and all eleven `git_*` as MCP calls.
+
+**BL-027 folded in (human call, 2026-07-23).** `verify_step/2` now reads the recorded result
+through the same `"output"`-else-`"result"` fallback as the served path. Without it, BL-025
+would have shipped the crash as the behaviour of the command it had just made real: any
+trajectory with a failed contained tool call took verify down. See BL-027 for the red-first
+evidence; the payload-key *convention* residue is BL-046.
+
+**Deliberately not closed here:** capability-level egress safety. `run_command` stays
+`:contained` (rev 3) and its allowlisted interpreters can still egress — named as a §5
+limitation, tracked by **BL-042**. Follow-ups filed: BL-042, BL-043 (`http_call` is
+SIGSYS-killed in every mode), BL-044 (`mix aetheris` discards exit codes), BL-045
+(`mode: :verify` misnomer), BL-046 (payload-key convention).
+
+---
+
+**Original row:**
 
 `verify` **re-executes** every recorded tool call against a live worker
 (`verifier.ex:136`, `Client.execute/2`). For a pure tool that is the point; for an
@@ -381,7 +422,40 @@ and the trigger condition above has actually occurred.
 ---
 
 ### BL-027 — Verify: `KeyError` crash on paired in-process tools (#TBD)
-**Size:** S · **Priority:** medium — **PARKED ON TRIGGER**
+**Size:** S · **Priority:** medium — **DONE 2026-07-23 (folded into BL-025)**
+
+**Closed.** `Verifier.verify_step/2` now reads the recorded result through the same
+`recorded_result/1` fallback (`"output"`, else `"result"`) that the record-and-serve path
+uses — one reader, both paths. Red-first evidence, on a trajectory whose recorded
+`read_file` **failed**:
+
+```
+** (KeyError) key "output" not found in:
+   %{"is_error" => true, "result" => "Error: :enoent", "tool_name" => "read_file"}
+   verifier.ex:201  Aetheris.Execution.Verifier.verify_step/2
+→ after the fix: 6 tests, 0 failures; the step reports :output_mismatch with
+  recorded_output "Error: :enoent" — a genuine divergence, legibly, instead of a crash.
+```
+
+**Why it was unparked rather than left on its trigger.** The stated trigger — a
+multi-agent/orb trajectory — was **too narrow**, and the row's in-process framing was the
+reason. `Loop.record_tool_error/7` writes *every* recorded tool failure under `"result"`
+with `"is_error"` and no `"output"` key, including for **contained, worker-dispatched**
+tools. So a single failed `read_file` or `run_command` — a routine shape, needing no orb —
+crashed verify. BL-025 made `aetheris verify` actually route through `Verifier`, which would
+have shipped that crash as the operator-visible behaviour of the command it had just made
+real. Human call, 2026-07-23: fold the fix in rather than release that state.
+
+BL-025's record-and-serve independently removed the *in-process* face (those tools are
+`:uncontained` and no longer dispatched), so the residual this fix closes is precisely the
+contained-tool face the original row did not describe.
+
+**Not closed here — tracked as BL-046:** the payload-key *convention* itself, shared with
+BL-028. This row fixed the reader; it did not unify the writers.
+
+---
+
+**Original row:**
 
 **Same trigger and ratification as BL-026: activates on the first `verify` run
 against a multi-agent / orb trajectory.** Human-ratified 2026-07-19. Recorded, not
@@ -397,6 +471,28 @@ The tools that hit this are exactly the orb/coordination ones —
 `wait_for_event`, `read_blackboard`, `write_blackboard` — which is why the trigger
 is a multi-agent/orb trajectory: that is the first trajectory shape that can
 contain them, and the crash is unreachable until one exists.
+
+**Trigger correction (BL-025, 2026-07-23) — the stated trigger is too narrow, and the
+in-process framing is now stale in both directions.** Two changes:
+
+1. **The crash never needed an orb trajectory.** `Loop.record_tool_error/7` writes *every*
+   recorded tool failure — including worker-dispatched, contained tools — under `"result"`
+   with `"is_error" => true` and **no `"output"` key at all**. So a trajectory containing a
+   single failed `read_file` or `run_command` reaches the same `Map.fetch!` and crashes
+   verify. Demonstrated at BL-025 against a recorded `http_call` failure before that tool
+   was reclassified:
+   `** (KeyError) key "output" not found in: %{"is_error" => true, "result" => "Error: :timeout", …}`
+   at `verifier.ex:133`. The parked-on-trigger status understates reachability accordingly.
+
+2. **BL-025 sidesteps the in-process case without fixing this row.** The in-process tools are
+   now classified `:uncontained` and record-and-served, so verify no longer dispatches them
+   and the `"result"`-key crash is unreachable *for them*. The residual — and the real scope
+   of this row now — is a **`:contained`** tool whose recorded result is an error. Do not
+   read BL-025 as having closed this; the hard fetch on the re-execution path is untouched.
+
+Fix shape unchanged: read the recorded result with a fallback (`"output"`, else `"result"`),
+as `Verifier.serve_step/1` already does on the served path — the two paths should share one
+reader.
 
 Note the shared root cause with BL-028: two independent consumers of recorded tool
 results each assume `"output"` while a family of writers uses `"result"`. Worth
@@ -1639,6 +1735,194 @@ a reason.
 
 ---
 
+### BL-046 — Tool-result payload key is a convention, not a contract: `"output"` vs `"result"` (#TBD)
+**Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
+
+Three tickets have now fixed the *same root cause* on the read side, one reader at a time:
+
+| Ticket | Reader fixed | Failure shape it produced |
+|---|---|---|
+| BL-028 (`9b2b102`) | `Fork.event_to_messages/1` — `Map.get(payload, "output", "")` | **Silent empty** tool messages; fork proceeds from a wrong transcript |
+| BL-025 | `Verifier.serve_step/1` (new path) | — (written correctly from the start) |
+| BL-027 (folded into BL-025) | `Verifier.verify_step/2` — `Map.fetch!(payload, "output")` | **Crash**; verify dies on any failed-tool trajectory |
+
+The writers remain unreconciled. `Loop` emits `:tool_result` payloads under **`"output"`**
+for worker and MCP dispatch, **`"result"`** for in-process tools, and **`"result"` +
+`"is_error"`** for every tool error regardless of dispatch route (`record_tool_error/7`).
+Nothing declares this; each new reader must rediscover it, and the two failure shapes above
+are what rediscovery costs. A fourth reader will be written eventually.
+
+Note the two fixes differ in a way worth preserving: BL-028's read-side fallback also
+normalizes (nil → `""`, non-binary → JSON) per contract §2's string invariant; BL-025's does
+not, because verify must reflect the record verbatim rather than improve on it. So "one
+shared helper" is not automatically the right answer — the *convention* needs declaring even
+if the readers stay separate.
+
+**Done when:** the `:tool_result` payload contract is stated in one place (a `@type` plus
+docstring on the writer side, or a documented accessor), the existing readers are pointed at
+it, and adding a writer that invents a third key is caught — by a test or by there being
+only one way to write the payload. Decide explicitly whether the readers share code or only
+share the convention.
+
+`Source: BL-028 (2026-07-21), BL-027/BL-025 (2026-07-23) — same root cause, third reader.`
+
+---
+
+### BL-042 — Capability-shaped containment for the verify worker (`CLONE_NEWNET`) (#TBD)
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+BL-025 classifies `run_command` `:contained` and record-and-serves only the purpose-network
+tools (`http_call`, MCP). But the verify sandbox confines filesystem only — no network
+namespace (`CLONE_NEWNET` absent, `sandbox.rs:144`), seccomp permits `connect`
+(`sandbox.rs:265-278`) — and the exec allowlist (`aetheris_exec_server/src/runner.rs:7-24`)
+permits `python3`/`node`/`npm`/`mix`/`cargo`/`git`, every one socket-capable
+(`npm install` / `mix deps.get` egress by design). So verify re-executing a `run_command`
+that ran a networked script **egresses**, regardless of BL-025's record-and-serve. The
+containment is command-shaped, not capability-shaped (found at BL-025, HEAD `d567d75`).
+
+Fix: add `CLONE_NEWNET` to the verify worker's namespace set so re-execution cannot egress
+regardless of allowlist — capability-shaped containment. This makes BL-025's record-and-serve
+**defence-in-depth** for the purpose-network tools rather than the sole (and partial) defence.
+
+**Builds on BL-025, does not race it.** Under a network namespace, `http_call`/MCP would
+*fail* (no network) rather than egress — so record-and-serve (BL-025) must be landed first,
+or those tools break under verify. Sequence BL-042 after BL-025.
+
+**Adjacent — decide, don't assume:** a networked `run_command` re-executed under a netns will
+*diverge* (the script fails/times out) rather than reproduce. That is verify honestly
+reporting a non-reproducible (network-dependent) step, but the divergence message must read
+as "network unavailable under verify," not a spurious content mismatch — specify the surfaced
+error. Do not silently skip it.
+
+**Interacts with BL-043.** BL-043 (missing `setsockopt`) currently truncates worker egress at
+`connect(2)` by accident. Fixing BL-043 restores full egress and makes this row's exposure
+larger, not smaller; fixing this row makes BL-043's repair safe. Neither is a substitute for
+the other — do not let BL-043's accidental truncation be read as containment.
+
+**Done when:** the verify worker runs under `CLONE_NEWNET`; a `run_command` recorded doing
+network egress cannot egress during verify (hermetic listener: 0 hits) and its divergence is
+reported legibly; `http_call`/MCP remain served (BL-025) and do not fail under the netns;
+§5's egress-safety statement upgrades from partial to capability-complete, human-approved
+in-cycle (§8).
+
+`Source: BL-025 execution, run_command allowlist finding, HEAD d567d75, 2026-07-22.`
+
+---
+
+### BL-043 — `http_call` is killed by seccomp (SIGSYS) in every mode: `setsockopt` missing from the allowlist (#TBD)
+**Size:** S · **Priority:** medium · **Section:** Harness (aetheris/)
+
+`http_call` does not work at all — not in verify, not in a normal **record** run. The worker's
+seccomp allowlist (`native/aetheris_worker/src/sandbox.rs`) carries a section explicitly
+headed *"Network (http_call + MCP stdio)"* listing `socket`, `connect`, `sendto`, `recvfrom`,
+`sendmsg`, `recvmsg`, `bind`, `listen`, `accept4`, `poll`, `epoll_*` — but **omits
+`setsockopt`** (x86_64 syscall 54), which `ureq` calls to set timeouts immediately after
+`connect(2)`. The filter's default action is `KillProcess`, so the worker dies of SIGSYS.
+
+**Demonstrated at BL-025** (hermetic localhost listener + kernel audit, 2026-07-23):
+
+```
+audit: type=1326 … comm="aetheris_worker" … sig=31 arch=c000003e syscall=54 code=0x80000000
+worker exit status 159   (128 + 31 = SIGSYS)
+Worker.Client.execute → {:error, "worker_crashed"}
+INBOUND TCP CONNECTIONS TO LISTENER: 1
+```
+
+So the TCP connection **does** land; only the HTTP request is never written.
+
+**Do not read this as containment.** It is an unintended truncation of a real egress path,
+and the "Network" heading shows egress was the intent. Two consequences:
+
+- **`http_call` is unusable.** Any agent using it gets a crashed worker, not a response. That
+  the defect went unnoticed suggests the tool has no live users — worth confirming before
+  choosing a fix direction.
+- **It is load-bearing by accident.** Adding `setsockopt` restores full egress instantly,
+  which widens BL-042's exposure. Sequence: BL-025 (landed) → BL-042 (netns) → this row, or
+  accept the widened window knowingly.
+
+**Second defect, same path:** `Verifier` starts the worker with `Client.start_link`, so a
+worker that dies takes the **caller** with it (`{:worker_crashed, 159}` propagates as an exit
+signal). A library function should not kill its caller because a sandboxed tool crashed; the
+BL-025 test traps exits to assert around it. Decide whether the verify worker should be
+started unlinked or supervised.
+
+**Operator-visible consequence, observed at BL-025:** the two defects compose, so
+`aetheris verify <traj> --allow-effects` on any trajectory containing `http_call` **crashes
+the CLI** rather than reporting a verdict:
+
+```
+** (stop) {:worker_crashed, 159}
+** (EXIT from #PID<0.95.0>) {:worker_crashed, 159}
+```
+
+BL-025's opt-in flag is proven to route correctly (the step is served without it, re-executed
+with it — 0 vs 1 inbound connections at a hermetic listener), but the opt-in is not
+practically usable for `http_call` until this row lands. Not a BL-025 regression: the same
+crash occurs on the pre-BL-025 code path and in record runs.
+
+**Done when:** `setsockopt` (and any other syscall a real `ureq` request needs — enumerate by
+running one, do not guess the list) is either added to the allowlist with an `http_call`
+round-trip test against a hermetic local listener, or `http_call` is explicitly retired; the
+worker-crash-kills-caller behaviour is resolved or consciously accepted with a reason.
+
+`Source: BL-025 execution, demonstrated 2026-07-23 (kernel audit + hermetic listener).`
+
+---
+
+### BL-044 — `mix aetheris` discards every command's exit code (#TBD)
+**Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
+
+`Mix.Tasks.Aetheris.run/1` is `_ = Aetheris.CLI.run(argv); :ok`
+(`lib/mix/tasks/aetheris.ex:10-11`). `Aetheris.CLI.run/1` returns `Formatter.print/2`'s
+`0 | 1` — which the escript entry point does halt on (`main.ex:33-34`) — but the Mix task
+throws it away. So **`mix aetheris <anything>` exits 0 regardless of outcome**, for every
+command, not just verify.
+
+Surfaced at BL-025, where `aetheris verify` was given a failure-reflecting exit code: the
+escript honours it, `mix aetheris verify` does not. The BL-025 test therefore asserts the code
+at `Formatter.print/2` rather than by shelling out through `mix`.
+
+**Not fixed at BL-025 deliberately** — making the Mix task halt non-zero would change
+behaviour for every command at once, and `scripts/sprint.sh` runs `mix aetheris` under
+`set -euo pipefail`, so any command that starts reporting failure honestly could abort the
+sprint. That is a wanted outcome eventually, but it needs the sprint audited in the same
+change rather than as a side effect.
+
+**Done when:** `mix aetheris` propagates the exit code (or documents why it cannot), and
+`sprint.sh` is audited for commands that would newly abort it.
+
+`Source: BL-025 execution, 2026-07-23.`
+
+---
+
+### BL-045 — `RunConfig mode: :verify` is a misnomer: no verification semantics (#TBD)
+**Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
+
+After BL-025 routed `aetheris verify` through `Aetheris.Execution.Verifier`, nothing in the
+harness treats `mode: :verify` as verification. The mode does exactly two things — skip
+context trimming (`loop.ex:409-411`) and skip pre-tools (`pre_tools.ex:59`) — and is
+otherwise a normal **live** run: live model calls, live tool execution, no comparison against
+any record.
+
+**This is not a BL-033-shaped deletion.** BL-033 removes `:fork` from the same union because
+it is unused; `:verify` is *still reachable* — from agent-file config
+(`run_helpers.ex`, `normalize_config_value(:mode, …)`) and from eval task templates
+(`eval/runner.ex:298`). The defect is naming, not deadness: a config author writing
+`mode: "verify"` reasonably expects verification and gets a live run. That mis-expectation is
+precisely what let the CLI diverge from determinism-contract §3 unnoticed for the life of the
+doc (BL-025 §3 edit separates the two by name).
+
+**Scope note:** this is the `RunConfig` **mode** union (`run_config.ex:115`), *not* the
+event-type union (BL-040). Conflating those two is a recorded sketch-failure; keep them apart.
+
+**Done when:** the mode is renamed to what it does (e.g. `:replay_context`) with its two
+call-site parsers updated, or kept with a docstring stating it performs no verification —
+decided, not left ambiguous.
+
+`Source: BL-025 execution, rev-2 adjacent finding, 2026-07-23.`
+
+---
+
 ## boxy-pipeline
 
 ### BL-010 — Clean order_formatter output: strip extra sheets and clear stale template formulas (#51)
@@ -1875,7 +2159,9 @@ multi-line street/city/state/zip.
 | 12 | BL-029 | Every run shows the wrong label today; one line per site. Batch with BL-004 — same file (`harness.rs`) |
 | 13 | BL-028 | Silent-empty is the worst failure shape: a fork proceeds from a wrong context with no signal |
 | 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
-| 15 | BL-025 | Verify can re-perform real external effects — the one BL-007 carry with a blast radius outside the repo |
+| ✔ | BL-025 | **Done 2026-07-23.** Grew in-cycle to include the CLI rewire (it never reached `Verifier`). Spawned BL-042/043/044/045 |
+| 15 | BL-042 | Inherits BL-025's slot: closes the *incidental* egress BL-025 named but could not fix. Must follow BL-025 (landed), and should precede BL-043 — repairing `setsockopt` before the netns exists widens the window |
+| 15a | BL-043 | `http_call` is dead in every mode, so nothing regresses by waiting; but it is the reason BL-042's exposure looks smaller than it is. Confirm the tool has no live users before choosing repair-vs-retire |
 | 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
 | 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
@@ -1887,5 +2173,8 @@ multi-line street/city/state/zip.
 | 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
 | 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |
 | 23 | BL-041 | Disposition (a) is a doc-only rule worth landing before the next export, since that export's own done-check is the case it governs. Disposition (b) batches with BL-036 — both are drift_check blind spots |
-| — | BL-026, BL-027 | Fire on their shared trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19). BL-027 shares BL-028's payload-key root cause — if BL-028 lands first, check whether one convention closes both |
+| 23b | BL-044, BL-045 | Small harness cleanups from BL-025; neither blocks anything. BL-045 is a naming decision, not a deletion — do not batch it with BL-033 |
+| 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
+| — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |
+| ✔ | BL-027 | **Done 2026-07-23, folded into BL-025.** Its trigger was too narrow — any failed contained tool call reached the crash — and BL-025 made `aetheris verify` real, which would have shipped it. Convention residue → BL-046 |
 | — | BL-006 | Fires on its own trigger |

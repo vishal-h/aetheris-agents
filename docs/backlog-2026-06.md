@@ -1726,12 +1726,54 @@ instance. Below the ≥2-ticket threshold on its own — promote when a second i
 or by explicit human ratification, per §7. Recorded here as the first instance so the
 recurrence is countable.
 
+---
+
+### Worked instance — BL-025, 2026-07-23 (second instance; disposition (b) now warranted)
+
+BL-025 edited **three** manifest-tracked docs (`docs/backlog-2026-06.md`,
+`../aetheris/docs/aetheris/runbook.md`,
+`../aetheris/docs/aetheris/determinism-contract.md`). The same gate, run either side of the
+commit boundary:
+
+```
+pre-commit   (working tree):   7 PASS  0 FAIL  1 WARN   backlog stale
+post-commit  (8021a59/00ddd34): 7 PASS  0 FAIL  3 WARN   + runbook, + determinism-contract
+```
+
+All three are the exempt staleness class and both runs exit 0, so nothing was *wrong* — but
+the pre-commit number was **understated by two**, and it was the number that went into the
+review packet's done-check section as the cross-repo gate result.
+
+**Why this instance is decisive for the disposition choice.** The executing session had
+already read this row, and *flagged the vacuity in the packet from this row's own text* —
+naming BL-041, stating that the pre-commit reading was vacuous in both directions and that
+the hash would move after commit. It then reported "1 WARN" anyway. So disposition **(a)**,
+the doc-only "run it post-commit" convention, was tested under the most favourable possible
+conditions — the rule was known, cited, and consciously applied by the person holding it —
+and still did not produce the right number. Discipline did not surface the gap; only the
+commit did.
+
+That moves **(b)** from "optional hardening" to warranted. A rule that fails while its own
+author is quoting it is not a rule problem to be solved with better wording; the checker has
+to say it. Recommended: implement (b), and keep (a) as the human-facing companion rather
+than the primary defence.
+
+**Class, in its own right.** "1 WARN" was well-formed, authoritative, and wrong by two —
+Silent-wrong-answer in the summary-headline carrier, not merely in the verification order.
+It would have looked identical had the run concealed ten stale docs instead of two.
+
+**§7 status: second instance, now countable at 2** (BL-034 fe8298c, BL-025 8021a59/00ddd34),
+same class and same verification-ordering form. That clears the ≥2 bar on its face; promotion
+wording is still a milestone-boundary act with human ratification, per §7 — recorded here, not
+self-promoted.
+
 **Done when:** the post-commit ordering rule is recorded (disposition a), and the tooling
 guard (disposition b) is either implemented in the `--strict` run with a
 `tests/test_drift_check.py` case both directions, or explicitly declined on this row with
 a reason.
 
-`Source: BL-034 review packet flagged observation, fe8298c, 2026-07-22.`
+`Source: BL-034 review packet flagged observation, fe8298c, 2026-07-22; worked instance
+BL-025, 8021a59 + 00ddd34, 2026-07-23.`
 
 ---
 

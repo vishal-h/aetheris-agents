@@ -1982,7 +1982,7 @@ the tag is excluded by default, so a plain `mix test` exercises neither arm):
 | pre-fix, unrouted | 0 | `:error` — `unknown_tool:run_command`, never ran |
 | pre-netns, routed | **1** | re-executed and egressed — the red arm |
 | default verify (netns) | **0** | `:output_mismatch` + isolation note |
-| `--allow-effects` | **≥1** | `:verified` — opt-in preserved (H4) |
+| `--allow-effects` | **≥1** | re-executed and egressed — opt-in preserved (H4); status not asserted, see BL-049 |
 
 **Decisions recorded** (implementation notes: `../aetheris/docs/aetheris/milestones/bl-042-implementation-notes.md`):
 H2 `lo` left down — no code brings it up. On a `/proc` mapping-write failure the worker keeps
@@ -2132,6 +2132,62 @@ are updated to remove the named gap.
 
 `Source: BL-042 execution, demonstrated 2026-07-23 at 8021a59. §5 correction landed with
 BL-042's contract edit; this row closes the gap that correction names.`
+
+---
+
+### BL-049 — A `run_command` step can essentially never verify: `duration_ms` is inside the compared payload (#TBD)
+**Size:** S · **Priority:** medium-high · **Section:** Harness (aetheris/)
+
+`Verifier.compare_status/4` compares recorded vs re-executed tool output by **value equality**
+over the whole payload string. The exec server's `run_command` payload is
+`{"duration_ms":N,"exit_code":N,"stderr":"…","stdout":"…"}` — it carries a wall-clock
+measurement. So two runs of an identical, perfectly reproducible command differ whenever the
+timing differs, which is almost always.
+
+Measured, six consecutive runs of the same `python3` one-liner, recorded and then re-executed
+under `--allow-effects` (no namespace, network reachable, identical stdout and exit code):
+
+```
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :verified         recorded: {"duration_ms":22,…}  actual: {"duration_ms":22,…}
+status: :output_mismatch  recorded: {"duration_ms":23,…}  actual: {"duration_ms":19,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":20,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :output_mismatch  recorded: {"duration_ms":21,…}  actual: {"duration_ms":20,…}
+```
+
+Five of six report a divergence that is purely timing; the sixth "verifies" by coincidence.
+
+**Exposed by BL-042, not caused by it.** Before BL-042 routed `run_command`, the step returned
+`unknown_tool:run_command` and never reached the comparison at all, so the defect was
+unreachable. It is now live for any operator running `aetheris verify` on a trajectory
+containing `run_command` steps: they get `Failed: N` on commands that reproduced exactly.
+
+**Not a patch — a §5 semantics decision.** Three directions, and they differ in what "verified"
+comes to mean:
+- **Exclude volatile fields from comparison** (`duration_ms` today; enumerate rather than
+  guess). Verify then compares what the tool *did*, not how long it took.
+- **Compare structurally** rather than by string equality, with a per-tool field policy. More
+  general, more machinery, and the policy is exactly the thing that needs deciding.
+- **Stop returning timing inside the compared payload** — move `duration_ms` out of the tool
+  output and into the step envelope, where it is recorded but not compared. Cleanest, and it
+  touches the exec server's response shape plus every recorded trajectory's expectations.
+
+Whichever is chosen, §5 must say what a `:verified` `run_command` step asserts, since today it
+asserts something no honest command can satisfy.
+
+**Adjacent, check before fixing:** `read_file`/`list_dir`/`write_file` go through the worker's
+own dispatch and their `duration_ms` sits *outside* the compared `output` (`parse_execute_response/1`
+splits `output`/`fs_hash`/`duration_ms`) — which is why this never surfaced for them, and why
+the third direction above is the one that matches the existing worker-native shape.
+
+**Done when:** the comparison semantics for timing-bearing payloads is decided and recorded in
+§5 with a human-approved edit (§8); a recorded `run_command` that reproduces exactly reports
+`:verified` deterministically; and a regression test asserts that across repeated runs, not
+once.
+
+`Source: BL-042 review, 2026-07-23 — reviewer challenged the packet's `:verified` claim for the
+--allow-effects arm; measurement showed the arm is nondeterministic and the claim was wrong.`
 
 ---
 
@@ -2442,6 +2498,7 @@ multi-line street/city/state/zip.
 | 15 | BL-043 | `http_call` is dead in every mode, so nothing regresses by waiting; but it is the reason BL-042's exposure looks smaller than it is. Confirm the tool has no live users before choosing repair-vs-retire. **Now unblocked**: BL-042's netns has landed, so restoring egress no longer widens an open window |
 | 15a | BL-047 | The `git_*` half of the routing gap BL-042's §5 correction names. Decide the mutating-vs-read-only classification *first*; the routing is three lines once the taxonomy is settled |
 | 15a2 | BL-048 | Known-red gate, tracked not carried. Triage before anything cites "the worker tests pass" |
+| 15a3 | BL-049 | Operator-facing *today*: BL-042 made `run_command` reach the comparison, and the comparison is wrong for it. Ahead of BL-047 — routing more exec-server tools into a comparison that mis-reports would multiply the defect |
 | 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
 | 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |

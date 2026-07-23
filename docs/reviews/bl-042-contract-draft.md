@@ -171,6 +171,15 @@ Replace the first bullet; leave the rest as they are.
 > - **`git_*` tools are not re-executed at all** — the exec-server routing gap above; a
 >   recorded `git_*` step reports `:error`. Tracked as **BL-047**, which also decides whether
 >   they *should* be re-executed.
+> - **A `run_command` step can essentially never report `:verified`.** Comparison is value
+>   equality over the tool's whole output payload, and the exec server's payload carries
+>   `duration_ms` — a wall-clock measurement that differs between the recording and the
+>   re-execution. A perfectly reproducible command therefore reports `:output_mismatch` on
+>   timing alone (measured: five of six runs; the sixth coincided). Verify tells the truth
+>   about the bytes it compared, but "the outputs differ" is not the claim an operator reads
+>   it as. Tracked as **BL-049**, which decides whether the comparison should exclude volatile
+>   fields, compare structurally, or the tool should stop returning timing in the compared
+>   payload — a §5 semantics decision, not a patch.
 
 ## Update to the §3 `verify` row
 
@@ -198,10 +207,32 @@ by a real worker, so both arms measure a **delta** against that recording.
 | pre-fix, routing unrouted | 0 | `:error` — `unknown_tool:run_command` (never ran) |
 | pre-netns, routing fixed | **1** | re-executed and egressed — the red arm |
 | default verify (netns) | **0** | `:output_mismatch`, with the isolation note |
-| `--allow-effects` (no netns) | **≥1** | `:verified` — the opt-in still egresses |
+| `--allow-effects` (no netns) | **≥1** | re-executed and egressed — status not asserted, see below |
 
 The middle row is why the routing fix rides this ticket: without it the "0 connections" of a
 default verify is true before the namespace exists, and proves nothing.
+
+**The `--allow-effects` arm's status is deliberately not asserted, and cannot be.** The exec
+server's `run_command` payload carries `duration_ms`, and §5's comparison is value equality
+over that whole JSON blob. Measured over six runs of an identical, perfectly reproducible
+command: five `:output_mismatch`, one `:verified` — decided entirely by whether the
+millisecond timing happened to coincide.
+
+```
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :verified         recorded: {"duration_ms":22,…}  actual: {"duration_ms":22,…}
+status: :output_mismatch  recorded: {"duration_ms":23,…}  actual: {"duration_ms":19,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":20,…}
+status: :output_mismatch  recorded: {"duration_ms":19,…}  actual: {"duration_ms":21,…}
+status: :output_mismatch  recorded: {"duration_ms":21,…}  actual: {"duration_ms":20,…}
+```
+
+So **a `run_command` step can essentially never verify**, whatever it does. This is not
+introduced by BL-042 — it is exposed by it, because BL-042 is what makes `run_command` reach
+the comparison at all (before, it errored). It is a live consequence of this ticket for any
+operator running `aetheris verify` on a trajectory with `run_command` steps, and it is
+tracked as **BL-049**. The default-verify row above is unaffected: that step diverges on
+`exit_code` and `stderr`, not on timing.
 
 ---
 

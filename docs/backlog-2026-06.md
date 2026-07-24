@@ -2379,6 +2379,16 @@ runtime behaviour change — and the r0 diff had nine clean default-suite runs a
 cycle. But attribution is *unknown*, not *cleared*, and this row says so rather than assuming
 the comfortable answer.
 
+**Rerun burst (r2 suggestion, run at `c80a8e4`+r2 notes): 20 of 20 clean** (`921 tests, 0
+failures` each). BL-049's default-suite additions are pure and deterministic
+(`VolatileMetadataTest`, `async: true`, no worker; the verdict/effects tests are
+`:requires_worker`, excluded from default `mix test`), so a flake in them would be a real
+ordering/async defect rather than env noise — and none surfaced in 20 runs. That is evidence
+toward "pre-existing / env, not BL-049's", **not** proof: the original occurrence still has no
+name, and one clean burst cannot clear a one-in-thirty-odd intermittent. Attribution stays
+*unknown*. The capture-discipline fix below is what actually closes this; the burst just lowers
+the prior that BL-049 introduced it.
+
 **Done when:** gate runs capture full test output to a file (summary *and* failure blocks) so
 a single occurrence is identifiable — this is a habit fix, not a code fix, and belongs in
 whatever runs the gates; and if the flake recurs with a name, it gets its own row with a
@@ -2386,7 +2396,8 @@ mechanism. Until then this row exists so a second sighting has something to atta
 than being met as a first sighting again.
 
 `Source: BL-049 review r1 done-check, 2026-07-24. Observed once at c80a8e4; unreproduced in 9
-subsequent runs; name lost to a truncated capture.`
+subsequent runs, then 0/20 in a dedicated r2 burst (29 clean total); name lost to a truncated
+capture.`
 
 ---
 

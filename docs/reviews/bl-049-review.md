@@ -157,6 +157,12 @@ BL-049's** — see §3.
 
 ### 1e. `drift_check --strict`, post-commit
 
+**0 FAIL.** The three WARNs are all `project_knowledge` manifest staleness — the standing
+exemption in CLAUDE.md, which is why `--strict` still exits 0. They are named, not chased.
+The `current=` hash in the backlog WARN names HEAD at run time; the commit that records
+this output is necessarily its successor, so that field is always one commit behind by
+construction.
+
 ```
 $ python3 scripts/drift_check.py --strict
 Rig doc-drift checker — 8 check(s)
@@ -175,7 +181,7 @@ Rig doc-drift checker — 8 check(s)
 [INFO] payload_fields: llm_responded.type in DB events but not listed in specs.md §6
 [PASS] payload_fields: sampled DB payload fields consistent with specs.md §6
 [PASS] milestone_status: 11 milestone READMEs all have Status: lines
-[WARN] project_knowledge: docs/backlog-2026-06.md stale — manifest=f0df85a current=cc257e1
+[WARN] project_knowledge: docs/backlog-2026-06.md stale — manifest=f0df85a current=bf7b9b0
 [WARN] project_knowledge: docs/aetheris/runbook.md stale — manifest=a935038 current=8021a59
 [WARN] project_knowledge: docs/aetheris/determinism-contract.md stale — manifest=9b2b102 current=9d994fd
 

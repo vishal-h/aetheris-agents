@@ -2266,10 +2266,14 @@ worker-native `read_file` result that merely *happens* to be JSON with a `durati
 file content, not execution metadata. `Verifier`'s `@exec_server_tools` stays `run_command`
 alone — verify only compares what it re-executes, and `git_*` is BL-047's decision.
 
-**§5 contract edits:** drafted in `docs/reviews/bl-049-contract-draft.md` as two statements —
-(a) the residual-limitation bullet replaced by a statement of what the comparison ranges over,
-resolved unqualified across both record eras, and (b) the "The opt-in" completeness gap noticed
-at BL-042: `--allow-effects` also waives the netns. Land only on human approval per §8.
+**§5/§3 contract edits: LANDED, harness `a926631` (§8, human-approved 2026-07-24).** Three,
+after review grew (a)'s two to three: (a) §5 gains "What the comparison ranges over" — the
+compare is value equality over the deterministic portion, volatile metadata excluded, resolved
+across both record eras (landed **restructured** per r2, out of Residual-limitations into the §5
+body with a one-line resolved pointer left behind); (b) "The opt-in" — `--allow-effects` also
+waives the netns; (c) §3 verify row qualified to "the deterministic portion … excluded on both
+sides" (added at r1 F3, an overstatement the r0 draft had claimed needed no change). Draft +
+before/after: `docs/reviews/bl-049-contract-draft.md`. Reviews: r0/r1/r2 in `docs/reviews/`.
 
 ---
 

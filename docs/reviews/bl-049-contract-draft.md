@@ -1,10 +1,15 @@
 # BL-049 — determinism contract §5 edits (draft for human approval)
 
-**Status:** DRAFT — awaiting human approval per contract §8.
+**Status:** LANDED — harness `a926631`, 2026-07-24. claude-ui ratified all three at review
+r2 ((b)/(c) as-is, (a) on content); human approved landing this cycle and chose the
+restructured placement for (a). Edit (a) landed **restructured** per the r2 non-blocking
+note: the positive statement went into §5's "What the comparison ranges over" body rather
+than staying as a paragraph inside "Residual limitations", where a one-line resolved pointer
+remains. (b) and (c) landed verbatim as drafted below.
 **Gate:** §8 — "Any code change that would alter a guarantee here lands only with a
 human-approved edit to this doc in the same review cycle." BL-049 changes what verify's
-comparison ranges over, which is a §5 semantics change, so the edits are drafted here and
-land only once approved.
+comparison ranges over, which is a §5 semantics change, so the edits were drafted here and
+landed once approved.
 **Drafted:** 2026-07-24, against harness `9d994fd` + the BL-049 working tree.
 **Verification basis:** §5 was re-read from
 `../aetheris/docs/aetheris/determinism-contract.md` at `9d994fd` this cycle. The
@@ -36,6 +41,13 @@ The implementation commit referenced below is `13ff59c` (harness).
 ---
 
 ## (a) Residual limitations — the `run_command` verdict bullet
+
+> **Landed restructured (see Status).** The "After" text below is the *content* that landed;
+> its *placement* changed on the r2 note. Rather than replacing the residual-limitation
+> bullet with this positive paragraph, the paragraph moved into a new §5 body subsection,
+> "What the comparison ranges over", and the residual-limitations bullet became a one-line
+> resolved pointer to it. The paragraph's wording is otherwise as below. See harness
+> `a926631` for the landed form.
 
 **Before** (§5 "Residual limitations", lines 313-321, verbatim):
 

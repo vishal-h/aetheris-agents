@@ -2191,6 +2191,75 @@ once.
 
 ---
 
+### BL-049 — DONE 2026-07-24
+
+**Direction chosen:** the third of the row's three, *"stop returning timing inside the compared
+payload"* — the one the row itself flagged as matching the existing worker-native shape. The
+verifier grew **one** change and it is reuse, not policy: it calls the same strip on the
+recorded side. It holds no field list of its own, which is what separates this from the
+rejected "exclude volatile fields in the compare".
+
+**Landed:** `Aetheris.Execution.VolatileMetadata` as the single definition of "volatile"
+(`fields/0`, `split/1`, `strip/1`); `Loop.exec_server_payload/2` splitting `duration_ms` into
+the step envelope for every `aetheris_exec`-routed tool; `Verifier` stripping both the
+re-executed output and — via `normalize_recorded/2` — the recorded one before comparing; the
+two LLM-facing `registry.ex` descriptions corrected; a tripwire test binding the worker-native
+envelope (`parse_execute_response/1`) to the same definition.
+
+**Why the read side is not optional.** Trajectory events are immutable (critical rule #1), so
+every trajectory recorded before this commit carries `duration_ms` inside the recorded blob
+forever. A parse-layer-only fix would have satisfied the invariant for new records while
+turning the old corpus's 1-in-6 flap into a deterministic `:output_mismatch` — a confident
+wrong verdict, which is worse than a flaky one. Normalizing both sides through one definition
+is what lets §5 say "resolved" without hedging to "resolved for records at or after `13ff59c`".
+
+**Evidence** — the same hermetic `python3 -c 'print("bl049")'` trajectory, six verifies:
+
+| | verdicts | note |
+|---|---|---|
+| before fix | 5 × `:output_mismatch`, 1 × `:verified` | `stdout`/`stderr`/`exit_code` byte-identical in all six; only `duration_ms` moved (recorded 10, actual 13/12/9/11/10/11) |
+| after fix, pre-fix recording | 6 × `:verified` | exercises the read-side normalization; fixture asserted to still contain `duration_ms` |
+| after fix, post-fix recording | 6 × `:verified` | exercises the parse-layer fix; fixture asserted to *not* contain it |
+
+Each run additionally asserts `verified: 1`, `served: 0` and a non-empty actual output — a
+served step cannot fail, so it must not be allowed to pass as a fix
+(`test/aetheris/execution/verify_verdict_test.exs`, `--include requires_worker`). The
+deterministic half of the proof needs no worker at all
+(`test/aetheris/execution/volatile_metadata_test.exs`): two responses differing only in
+`duration_ms` compare byte-identical.
+
+**BL-042's `--allow-effects` arm tightened.** It asserted only `!= :served` because the verdict
+was a coin flip; it now asserts `== :verified`, confirmed across six seeds. Two BL-042
+assertions comparing `recorded_output` to the raw exec-server blob were updated: they were
+asserting the pre-fix shape. They now assert the *compared* form **and** that the on-disk
+recording still carries `duration_ms` — immutability of the record and exclusion of the field
+from the compare are separate claims, and both are now asserted.
+
+**Deviation from the ticket's sketch, adjudicated.** The ticket said to extract the strip *out
+of* `parse_execute_response/1`. Nothing there is extractable: that function splits sibling keys
+of a decoded map, while the exec-server case removes keys from a JSON object embedded in the
+`output` string. The invariant ("one definition of volatile") binds; the sketch does not. It is
+met by `VolatileMetadata.fields/0` plus a tripwire test on the worker-native envelope.
+
+**Consequence stated rather than buried:** the agent no longer sees `duration_ms` in an
+exec-server tool result. `payload["output"]` *is* the transcript content (`fork.ex:107`), so
+the recorded and model-visible values cannot diverge without breaking fork replay. This is the
+worker-native behaviour, where the field was always envelope-only.
+
+**Decisions recorded** (implementation notes:
+`../aetheris/docs/aetheris/milestones/bl-049-implementation-notes.md`): `normalize_recorded/2`
+is restricted to `@exec_server_tools` rather than applied to every recorded output, because a
+worker-native `read_file` result that merely *happens* to be JSON with a `duration_ms` key is
+file content, not execution metadata. `Verifier`'s `@exec_server_tools` stays `run_command`
+alone — verify only compares what it re-executes, and `git_*` is BL-047's decision.
+
+**§5 contract edits:** drafted in `docs/reviews/bl-049-contract-draft.md` as two statements —
+(a) the residual-limitation bullet replaced by a statement of what the comparison ranges over,
+resolved unqualified across both record eras, and (b) the "The opt-in" completeness gap noticed
+at BL-042: `--allow-effects` also waives the netns. Land only on human approval per §8.
+
+---
+
 ### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
@@ -2226,6 +2295,52 @@ so it cannot rot invisibly again. Until then it is a **known-red gate named with
 ref** in packets, not re-triaged each time.
 
 `Source: BL-042 done-check, off-territory, 2026-07-23. Baseline captured on a clean tree.`
+
+---
+
+### BL-050 — `RunOverlayTest` races the worker handshake: overlay dirs are created *after* `ready` (#TBD)
+**Size:** S · **Priority:** medium-low · **Section:** Harness (aetheris/)
+
+`run_overlay_test.exs:38` asserts `File.dir?(upper)` immediately after `Client.start_link`
+returns. `start_link` returns as soon as the worker's `ready` handshake arrives
+(`client.ex`, `init/1`), but the worker writes `ready` at `main.rs:71-74` and only *then*
+runs `sandbox::mount_overlay` (`main.rs:79-94`), which is what creates `upper`/`work`/`merged`
+(`sandbox.rs:242-244`). The test therefore synchronises on a handshake that does not cover
+the side effect it asserts.
+
+The test's own comment — "always created by the Rust worker before attempting the mount" — is
+true and is not the issue: both the creation and the mount happen after `ready`.
+
+**Latent since BL-042**, which moved namespace entry (and with it the `ready` write) ahead of
+the rest of init so the handshake could carry `network_namespace`. The reorder was correct and
+is not in question; this test was left synchronising on the old ordering.
+
+**Load-dependent, which is why it reads as flaky.** It passes in isolation (3/3), passes
+under `--trace` (`max_cases: 1`), and fails 5 times in 8 seeds when run after a module that
+starts several workers in quick succession:
+
+```
+seed 1: 4 tests, 0 failures      seed 5: 4 tests, 0 failures
+seed 2: 4 tests, 1 failure       seed 6: 4 tests, 1 failure
+seed 3: 4 tests, 1 failure       seed 7: 4 tests, 1 failure
+seed 4: 4 tests, 0 failures      seed 8: 4 tests, 1 failure
+```
+
+**Not caused by BL-049, demonstrated rather than asserted.** With BL-049's `lib/` changes
+applied and its two new test files removed from the run, `mix test --include requires_worker`
+produces a **byte-identical failing set** to the clean tree (907 tests, 14 failures, same
+names). With the new test files present the set gains only this one entry (921 tests, 15
+failures) — they add worker churn ahead of it, they do not change what it exercises.
+
+**Done when:** the test waits for the condition it asserts rather than for `ready` — poll for
+the directory with a deadline, or have the worker report overlay establishment in the
+handshake the way BL-042 made it report `network_namespace`. The second is the better shape
+and is the same argument BL-042 made: a worker that announces itself ready before its setup
+exists leaves the BEAM no way to tell setup from its absence. Prefer it if the handshake is
+being touched anyway; the poll is acceptable otherwise. Do **not** add a `Process.sleep`.
+
+`Source: BL-049 done-check, off-territory, 2026-07-24. Mechanism read from main.rs/sandbox.rs
+at 9d994fd; non-causation demonstrated by a three-way run (clean / lib-only / full).`
 
 ---
 

@@ -2118,10 +2118,15 @@ under default AND `--allow-effects`; git-only starts no worker; non-vacuity — 
 a co-recorded `http_call` re-executes and egresses under `--allow-effects`. `mix test` 930/0,
 format/credo/dialyzer/hex.audit green. `requires_worker` red set unchanged (BL-048 + BL-050).
 
-**§5/§3 edits (five): DRAFTED, held for §8.** `docs/reviews/bl-047-contract-draft.md`
-(before/after at `a926631`). Not in `f41eb12` — the harness contract is unchanged. Land in a
-separate commit this cycle on human ratification, referencing `f41eb12`. Packet:
-`docs/reviews/bl-047-review.md`.
+**§5/§3 edits (five): LANDED, harness `af56a57` (§8, human-approved 2026-07-24).** §3 verify
+row (re-execution qualified to reproducible output; served set gains `git_*`; non-guarantee
+reframed), §5 three-classes split (`eleven`→`ten` ×2), the two-reasons-to-serve paragraph, the
+opt-in rider (`--allow-effects` does not lift the git serve), residual bullet → resolved.
+claude-ui r1 raised one non-blocking finding (F1: `non_reproducible?` scope) — answered by
+keeping it name-only (`classify/2` is name-first, so a colliding external `git_status` is
+`:contained` not `:uncontained`) plus the `@non_reproducible_tools ⊆ @contained_tools` guard;
+closed at r2. Draft: `docs/reviews/bl-047-contract-draft.md`. Reviews r0/r1/r2 +
+`bl-047-review-r1.md` in `docs/reviews/`.
 
 `Source: BL-042 execution (routing gap demonstrated 2026-07-23 at 8021a59); classification
 ratified + implemented 2026-07-24 at f41eb12.`

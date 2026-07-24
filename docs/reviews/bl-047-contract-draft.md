@@ -1,6 +1,8 @@
 # BL-047 — determinism contract §5/§3 edits (draft for human approval)
 
-**Status:** DRAFT — awaiting human approval per §8.
+**Status:** LANDED — harness `af56a57`, 2026-07-24. claude-ui ratified all five at r1/r2; human
+approved landing this cycle. All five landed verbatim as authored below (implementation is
+`f41eb12`; the contract commit is `af56a57`).
 **Gate:** §8 — a change that alters a guarantee lands only with a human-approved edit to this
 doc in the same review cycle. BL-047 changes how verify treats a whole tool family
 (`git_*` → served-not-verified), which is a §5/§3 semantics change.

@@ -2086,6 +2086,48 @@ change rather than as a side effect.
 
 ---
 
+### BL-047 — DONE (impl) 2026-07-24 · §5/§3 edits pending §8 ratification
+
+**Classification ratified (human, 2026-07-24): Option 3** — `git_*` is served-not-verified,
+always, **not** lifted by `--allow-effects`. It is `:contained` for *safety* (local-only; no
+`push`/`fetch`/`pull`/`clone`/`remote`, confirmed from source) but not verify-reproducible:
+verify mounts no overlay, so the recorded repo is absent and `git_commit` embeds a
+nondeterministic SHA. Re-executing would manufacture a spurious `:output_mismatch` — BL-049 at
+family scale. The read/mutate line does **not** split the family; none reproduce.
+
+**Landed (harness `f41eb12` code+tests, `68d2614` notes):** `EffectClass` gains `@git_tools`
+(single source of the **ten** names — read `git_status`/`git_diff`/`git_diff_staged`/`git_log`/
+`git_show`, mutate `git_add`/`git_commit`/`git_checkout`/`git_cherry_pick`/
+`git_cherry_pick_control`), referenced by both `@contained_tools` and the new
+`@non_reproducible_tools`, plus `non_reproducible?/1`. `Verifier.plan_step/2` serves
+non-reproducible tools **ahead of** the `--allow-effects` gate, so the git serve is
+unconditional. Union / `@classes` / `known_tools/0` / completeness test / `@exec_server_tools`
+(`[run_command]`) all untouched — git is served, never re-executed (3a; 3b rejected).
+
+**The family is TEN, not eleven.** All three authorities agree on ten; the landed §5 said
+"eleven" (×2), inherited from BL-042 — corrected in the held §5 edits, flagged not followed.
+
+**Tripwire (BL-049 F1 forward):** every `git_*` the *registry* exposes must be in
+`@non_reproducible_tools`, expected set derived from `Registry.names()` (a real source), not a
+literal — mutation-checked (drop `git_commit` → guard fails naming it; completeness stays
+green). A future `git_worktree` forgotten in the set fails loudly instead of shipping
+re-executable.
+
+**Done-check:** before-fix `git_commit` → `:error unknown_tool:git_commit`; after → `:served`
+under default AND `--allow-effects`; git-only starts no worker; non-vacuity — git served while
+a co-recorded `http_call` re-executes and egresses under `--allow-effects`. `mix test` 930/0,
+format/credo/dialyzer/hex.audit green. `requires_worker` red set unchanged (BL-048 + BL-050).
+
+**§5/§3 edits (five): DRAFTED, held for §8.** `docs/reviews/bl-047-contract-draft.md`
+(before/after at `a926631`). Not in `f41eb12` — the harness contract is unchanged. Land in a
+separate commit this cycle on human ratification, referencing `f41eb12`. Packet:
+`docs/reviews/bl-047-review.md`.
+
+`Source: BL-042 execution (routing gap demonstrated 2026-07-23 at 8021a59); classification
+ratified + implemented 2026-07-24 at f41eb12.`
+
+<details><summary>Original ticket (pre-implementation)</summary>
+
 ### BL-047 — Verify never re-executes the `git_*` family: exec-server routing gap + a taxonomy decision (#TBD)
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
@@ -2145,6 +2187,8 @@ route them.
 `Source: BL-042 execution, demonstrated 2026-07-23 at 8021a59. §5 correction landed with
 BL-042's contract edit; this row closes the gap that correction names. Pre-wiring note added
 from BL-049 review r1, 2026-07-24.`
+
+</details>
 
 ---
 

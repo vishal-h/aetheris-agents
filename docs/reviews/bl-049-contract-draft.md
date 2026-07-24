@@ -11,8 +11,25 @@ land only once approved.
 project-knowledge export is stale (pre-BL-025/042) and was not used. Line numbers below are
 at `9d994fd`.
 
-Two edits, both scoped by the ticket. (a) is the one BL-049 earns; (b) is a completeness
-gap noticed at BL-042 and folded here rather than spending a standalone §8 cycle.
+Three edits. (a) is the one BL-049 earns; (b) is a completeness gap noticed at BL-042 and
+folded here rather than spending a standalone §8 cycle; **(c) was added at review r1 (F3)** —
+an earlier version of this draft claimed §3 needed no change, and that claim was wrong. See
+"Why three, not two" below.
+
+## Why three, not two
+
+The first draft asserted that §3's verify row stayed "exactly true, since BL-049 changes what
+the recorded output *is*, not how it is compared." Read against the live row at `9d994fd`,
+that does not hold. The row says the mode "compares recorded vs. re-executed tool **output by
+value equality**". After BL-049 the equality is preceded by a normalization on *both* sides
+(`Verifier.normalize_recorded/2` on the recorded side, `VolatileMetadata.strip/1` on the
+re-executed one) — so what is compared is no longer the tool output but its deterministic
+portion. "Output by value equality" now reads as whole-output equality, which is the claim
+BL-049 makes false. §3 is a guarantee table; a row that overstates what was checked is
+exactly what §5's own residual-limitations discipline exists to prevent.
+
+Recorded here rather than quietly fixed: the omission was mine, and the correction is the
+reviewer's (r1 F3).
 
 The implementation commit referenced below is `13ff59c` (harness).
 
@@ -99,11 +116,33 @@ while leaving the namespace in place — the one reading it cannot have.
 
 ---
 
+## (c) §3 verify row — what the equality ranges over
+
+**Before** (§3 mode-guarantees table, the `verify` row's *Guarantees* cell, line 59,
+verbatim — the *Does NOT guarantee* cell is unchanged and is elided here):
+
+> | `verify` | Re-execution of every recorded tool call **whose effect class permits it** in a
+> fresh sandboxed worker (`verifier.ex`, `effect_class.ex`); compares recorded vs.
+> re-executed tool **output by value equality** and recorded vs. actual filesystem
+> **`fs_hash`**; serves the recorded result for `:uncontained` tools instead of re-executing
+> them (§5), reporting those steps as **served, not verified**; emits a per-step report with
+> verified/served/failed counts | … |
+
+**After** (only the emphasised clause changes; everything else in the cell stands):
+
+> … compares recorded vs. re-executed tool output by value equality **over the deterministic
+> portion of that output — volatile execution metadata is excluded from the comparison on
+> both sides (§5)** — and recorded vs. actual filesystem **`fs_hash`**; …
+
+**Scope note for the approver.** This is a precision fix to a row that became imprecise, not
+a new guarantee: the comparison is still value equality, and nothing about which tools are
+re-executed or served changes. The alternative — leaving the row as-is — asserts whole-output
+equality, which BL-049 deliberately no longer performs.
+
+---
+
 ## What this draft does **not** change
 
-- §3's verify row. It describes the compare as "recorded vs. re-executed tool **output by
-  value equality**", which remains exactly true — BL-049 changes what the recorded output
-  *is*, not how it is compared. No edit needed, and inventing one would overstate the change.
 - §5's three classes, the containment boundary, the fail-closed refusal, served-not-verified,
   or the tripwire. BL-049 is verdict-correctness only and touches no containment guarantee.
 - The `git_*` residual-limitation bullet (BL-047) and the `echo` bullet — both still open,

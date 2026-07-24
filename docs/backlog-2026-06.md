@@ -2130,8 +2130,21 @@ trajectory verifies to whatever verdict that decision implies — never to
 `unknown_tool:<name>`. §5's routing-gap paragraph and §3's verify row (both landed by BL-042)
 are updated to remove the named gap.
 
+**Pre-wired by BL-049, so read this before routing (BL-049 r1 F5).** The volatile-metadata
+strip is already in place for `git_*` on the **record** side: it keys off the exec-server id at
+dispatch (`loop.ex`, `dispatch_mcp_tool/4` → `exec_server_payload/2`), so all twelve routed
+tools are recorded with `duration_ms` in the step envelope, `git_*` included, and
+`VolatileMetadataTest` unit-covers the `git_*` response shape. The **verify** side is not:
+`Verifier`'s `@exec_server_tools` is `run_command` alone, and both `reexecute/3` and
+`normalize_recorded/2` key off it. So routing the family is one edit to that list — but the
+invariant between the two lists is **subset containment**, not equality: a name in `Verifier`'s
+list that `Loop` does not route would be normalized on read yet recorded unstripped, which is
+BL-049's failure mode reintroduced for exactly that tool. Confirm both sides agree when you
+route them.
+
 `Source: BL-042 execution, demonstrated 2026-07-23 at 8021a59. §5 correction landed with
-BL-042's contract edit; this row closes the gap that correction names.`
+BL-042's contract edit; this row closes the gap that correction names. Pre-wiring note added
+from BL-049 review r1, 2026-07-24.`
 
 ---
 
@@ -2341,6 +2354,35 @@ being touched anyway; the poll is acceptable otherwise. Do **not** add a `Proces
 
 `Source: BL-049 done-check, off-territory, 2026-07-24. Mechanism read from main.rs/sandbox.rs
 at 9d994fd; non-causation demonstrated by a three-way run (clean / lib-only / full).`
+
+---
+
+### BL-051 — One unidentified `mix test` failure, and the capture discipline that lost its name (#TBD)
+**Size:** XS · **Priority:** low (capture fix) / unknown (the flake itself) · **Section:** Harness (aetheris/)
+
+A single `mix test` run at `c80a8e4` (BL-049 r1) reported `921 tests, 1 failure, 122 excluded`.
+**Nine consecutive runs before and after were `0 failures`**, and the default suite has not
+otherwise been red on this branch. The failing test cannot be named: the gate command piped
+through `tail -2`, keeping the summary line and discarding the failure block.
+
+**The nameable defect is the capture, not the flake.** This is the Complete-output rule
+failing in its most ordinary form — a summary line preserved, the detail that made it
+actionable thrown away — and it cost the one occurrence that would have identified the test.
+BL-016 and BL-020 are the same class on counts; this is the class on failure identity.
+
+**Not attributed to BL-049.** The r1 diff is a test, a `@doc false` seam, and comments — no
+runtime behaviour change — and the r0 diff had nine clean default-suite runs across the
+cycle. But attribution is *unknown*, not *cleared*, and this row says so rather than assuming
+the comfortable answer.
+
+**Done when:** gate runs capture full test output to a file (summary *and* failure blocks) so
+a single occurrence is identifiable — this is a habit fix, not a code fix, and belongs in
+whatever runs the gates; and if the flake recurs with a name, it gets its own row with a
+mechanism. Until then this row exists so a second sighting has something to attach to rather
+than being met as a first sighting again.
+
+`Source: BL-049 review r1 done-check, 2026-07-24. Observed once at c80a8e4; unreproduced in 9
+subsequent runs; name lost to a truncated capture.`
 
 ---
 

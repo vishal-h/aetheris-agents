@@ -2384,8 +2384,16 @@ they must not be "fixed" by widening the filter.
 
 ### BL-050 + BL-055 + BL-056 — DONE 2026-07-25 (one reorder, three rows)
 
-Landed together at harness `9871059` — they were the same surgery. Contract draft:
-`docs/reviews/bl-050-055-056-contract-draft.md` (harness), §5 **pending §8 ratification**.
+Landed together at harness `9871059` — they were the same surgery — with the §5 contract edit
+ratified at `dd12dbb` (r1). Contract edit: `docs/reviews/bl-050-055-056-contract-draft.md`
+(harness), **RATIFIED (hedged)**, §8, 2026-07-25. Review: `docs/reviews/bl-050-055-056-review.md`.
+
+**§5 was hedged at review, and the operator message deliberately was not.** The r0 wording asserted
+that container runtimes refusing `unshare` do not refuse `seccomp` — the exact claim the scout memo
+had listed as *unverified*. §5 now says the filter is *rarely* refused and admits no survey was
+done; the one-line error in `verify.ex` still says "harness defect, not an environment limitation",
+because its job is to stop an operator reaching for `--allow-effects`. That split is recorded in §5
+itself and in the draft so a later reader does not reconcile one to the other.
 Scout memo that settled the directions: `docs/reviews/bl-055-bl-056-containment-decisions.md`.
 
 **The one change.** `ready` was written straight after the namespaces while cgroup, overlay,

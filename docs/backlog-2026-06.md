@@ -2314,6 +2314,114 @@ worker-crash-kills-caller behaviour is resolved or consciously accepted with a r
 
 ---
 
+### BL-043 — DONE 2026-07-25 — `http_call` repaired (5 syscalls), caller-kill fixed
+
+Landed at harness `515a4ab`. Direction: **repair, not retire**. Contract draft:
+`docs/reviews/bl-043-contract-draft.md` (harness) — §5 wording **pending §8 ratification**.
+
+**No-live-users checkpoint, run first as the row required.** The scan found only declarations,
+tests and contract examples — no working dependent, as expected of a tool that has SIGSYS-crashed
+since forever. Two agent files list it (`agents/news_research.exs`, `agents/pr_learner.exs`), and
+the m07→m08 handoff records `pr_learner.exs` as *"run after `http_call` stable"* — it was deferred
+pending exactly this fix. Two milestone docs list `tools: ["http_call"]` as a worker-start
+*workaround*, already resolved elsewhere. Repair therefore unblocks `pr_learner.exs` rather than
+disturbing anything.
+
+**Five syscalls, not one — and they took three rounds to find.** The row named `setsockopt`; the
+enumeration turned up four more. Method: patch the filter's default action to non-killing, drive
+the real worker binary over its stdio protocol against a hermetic localhost listener under
+`strace -ff`, diff the request-path syscalls against the allowlist, then restore `KillProcess` and
+re-probe. Each round's probe found the *next* wall:
+
+| Round | Probe | Syscall(s) found |
+|---|---|---|
+| 1 | `http://127.0.0.1:PORT/` (IP literal) | `setsockopt` (TCP_NODELAY, then SO_RCVTIMEO/SO_SNDTIMEO), `getsockname` |
+| 2 | `http://localhost:PORT/` (resolver via `/etc/hosts`) | `getsockopt` |
+| 3 | `http://…invalid/` (real nameserver query) | `sendmmsg`, `recvmmsg` — glibc sends A+AAAA in one call |
+
+Round 2 is why "enumerate, don't guess" earned its place: `localhost` resolves from `/etc/hosts`
+and never issues a DNS query, so a hostname probe that *looks* like it covers resolution does not.
+Only a name that must reach a nameserver surfaced the last two.
+
+**Verified against three paths under the live `KillProcess` filter**, all worker-exit-0: plaintext
+localhost round-trip returns `{"status":200,"body":"live"}`; a real DNS lookup returns a clean
+`Dns Failed … Name or service not known`; and HTTPS to a self-signed local listener returns a
+clean certificate-validation error — i.e. the TLS handshake path is covered too. The suite's
+`https://httpbin.org/get` test now reaches the real host and fails on *its* `503`, which is the
+clearest possible evidence the request completes end-to-end.
+
+**A near-miss worth recording.** The first "successful" round-trip was a false green: adding
+`setsockopt` to the allowlist without adding it to `syscall_number/1` made filter *construction*
+fail, and `apply_seccomp_filter` **fails open** — so the worker ran with **no filter at all** and
+`http_call` worked because the sandbox was gone. A typo in that list silently disables the entire
+sandbox while every tool test stays green. Three Rust tests now guard it: every allowlist name
+resolves, the filter builds, and the five socket calls are present by name.
+
+**Caller-kill (part 2): unlinking was necessary but not sufficient.** `Verifier` now starts the
+worker via a new `Client.start/1` (unlinked) plus a monitor, `demonitor(:flush)` on every exit
+path — unlinked+monitor rather than supervised because the worker has a one-call lifecycle and a
+re-executed step must not be restarted. But `GenServer.call` *independently* exits the caller with
+the server's reason when the server dies mid-call, so the unlink alone left the crash path intact;
+`execute/2` and `call_mcp_tool/4` now convert any such exit into `{:error, "worker_crashed"}`,
+matching what the port handler already replies to dispatched requests. Both halves are
+mutation-checked, and a verify-level test kills the worker *from inside a re-executed step* (via
+`/proc` to reach the grandparent pid) — without it, reverting to `start_link` reddened nothing.
+
+**Result: `requires_worker` 12 → 11 failures; SIGSYS 8 → 4.** Not the ~4 total the ticket
+predicted, because the 8 SIGSYS were **two different gaps**, not one — see BL-055. The four this
+row fixed are gone; the four that remain are MCP-stdio spawn hitting a *deliberate* exclusion, and
+they must not be "fixed" by widening the filter.
+
+`Source: BL-043, 2026-07-25. Captures: full_requires_worker{,2}.txt, strace rounds 1–3.`
+
+---
+
+### BL-055 — MCP stdio servers cannot be spawned after the seccomp filter: `execve` is excluded by design (#TBD)
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+Surfaced by BL-043's done-check, which expected to clear all 8 of BL-048's SIGSYS failures and
+cleared 4. The other 4 are a different defect wearing the same symptom.
+
+`Client.spawn_mcp_server/2` sends `mcp_spawn` to the worker **at request time**, i.e. *after*
+`apply_seccomp_filter`. Spawning a subprocess there needs `prilimit64` then `execve`, and neither
+is in the allowlist. Traced, not inferred — the worker dies at `prlimit64` immediately after two
+`pipe2` calls:
+
+```
+read(0, "…{\"id\": \"1\", \"command\": \"mcp_…"…) = 109
+pipe2([3, 4], O_CLOEXEC)                = 0
+pipe2([5, 6], O_CLOEXEC)                = 0
+prlimit64(0, RLIMIT_NOFILE, …)          = 302
++++ killed by SIGSYS (core dumped) +++
+```
+
+**This exclusion is deliberate, and BL-043 deliberately did not touch it.** `main.rs:95` says so
+in as many words — *"Spawn internal exec server before seccomp filter — execve is blocked after
+filter is applied"* — and the harness spawns its own exec server pre-filter for exactly this
+reason. Adding `execve` to the allowlist would let a sandboxed worker execute arbitrary binaries
+after the filter is installed, which is a containment decision far larger than a test fix, and
+BL-043's ticket explicitly forbade weakening containment to make tests pass.
+
+So the four affected tests (`spawn_mcp_server/2`, `list_mcp_tools/2`, `call_mcp_tool/4` in
+`client_test.exs`, and `McpGithubTest`, which spawns `github-mcp-server` over stdio) assert a
+capability the sandbox removes. One of three things is true and someone has to choose:
+
+1. **Stdio MCP servers must be spawned pre-filter**, like the internal exec server — i.e. from the
+   init payload, with the server list known at worker start. This preserves containment and makes
+   the capability real, at the cost of no longer being able to add servers mid-run.
+2. **Stdio MCP spawn is unsupported** and the tests are stale — HTTP-transport MCP and the
+   pre-spawned exec server remain the supported paths.
+3. **The filter is relaxed** for this case. Named for completeness; it is the option that trades
+   the sandbox for a convenience and should not be chosen quietly.
+
+**Done when:** one of the three is chosen and recorded; the four tests either pass under the
+chosen design or are removed/retagged with the reason; and if (1), the mid-run spawn API is
+removed rather than left as a call that always crashes the worker.
+
+`Source: BL-043 done-check, 2026-07-25 (strace of the mcp_spawn path).`
+
+---
+
 ### BL-044 — `mix aetheris` discards every command's exit code (#TBD)
 **Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
 
@@ -2624,6 +2732,21 @@ so it cannot rot invisibly again. Until then it is a **known-red gate named with
 ref** in packets, not re-triaged each time.
 
 `Source: BL-042 done-check, off-territory, 2026-07-23. Baseline captured on a clean tree.`
+
+**Status 2026-07-25, after BL-043:** `requires_worker` reports **11 failures** (940 tests / 65
+excluded) at harness `515a4ab`, and **SIGSYS is down 8 → 4**. BL-043 corrects this row's
+third bullet twice over: the nine residuals were never "network/credential-dependent integration
+tests", and they were never *one* cause either. They are now:
+
+| Cause | Count | Ticket |
+|---|---|---|
+| stale `pwd` allowlist | 3 | BL-048 (this row) |
+| MCP-stdio spawn vs. the deliberate `execve` exclusion (SIGSYS) | 4 | **BL-055** |
+| overlay (`RunOverlayTest`, `OverlayAutonomousTest`) | 2 | BL-050 / BL-054 slot |
+| external service — `httpbin.org` returning 503, and `McpHttpTest`'s `port_close` cleanup | 2 | genuinely environment-dependent |
+
+The `httpbin` one is worth reading closely: it now fails on a real **503 from the live host**,
+where before it died of SIGSYS. That is the repair working — the request reaches the internet.
 
 **Status 2026-07-25, after BL-053:** `mix test --include requires_worker` at harness
 `915d582` reports **12 failures** (was 15; 934 tests / 65 excluded). The fs_hash strand
@@ -3006,7 +3129,8 @@ multi-line street/city/state/zip.
 | 23b | BL-044, BL-045 | Small harness cleanups from BL-025; neither blocks anything. BL-045 is a naming decision, not a deletion — do not batch it with BL-033 |
 | 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
 | ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 corrected in both cells (strike + explicit non-guarantee, **§8-ratified option B**) plus five mirrors; dead arm deleted; stability tests re-pointed at `write_file` |
-| 24 | BL-043 | Raised by BL-053's done-check: it is **8 of BL-048's remaining 12** failures, not just an `http_call` defect. Best failure-count-per-fix on the board |
+| ✔ | BL-043 | **Done 2026-07-25.** Repaired (not retired): five syscalls enumerated over three probe rounds, caller-kill fixed in both its mechanisms. Cleared 4 of the 8 SIGSYS; the other 4 turned out to be a different defect → BL-055 |
+| 25 | BL-055 | The other half of BL-048's SIGSYS: MCP-stdio spawn needs `execve`, which the filter excludes **by design**. A containment decision, not a test fix — do not widen the allowlist to make tests green |
 | — | BL-054 | Fires whenever the `requires_worker` twelfth slot flakes; the row exists so it has a name. Fold into a polling-based rewrite of the fixed-ms windows when someone is in that file |
 | — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |

@@ -476,6 +476,11 @@ mod tests {
     /// operator's real harness store. Panics rather than skips when
     /// `AETHERIS_DB_PATH` is unset: a check that quietly passes when it did not run
     /// is worse than no check.
+    ///
+    /// Windows at `DEFAULT_LIMIT`, not a literal: `useRunList` passes no `limit`, so
+    /// the default *is* the window an operator sees, and the number this prints is
+    /// the one the UI's "N of M" badge will show. A hardcoded 250 proved the same
+    /// conclusion about a window nobody runs. (BL-038 review F1)
     #[test]
     #[ignore = "requires AETHERIS_DB_PATH — run with `cargo test -- --ignored`"]
     fn live_store_demo_01_absent_from_window_then_found_by_search() {
@@ -487,17 +492,17 @@ mod tests {
         )
         .unwrap();
 
-        let windowed = list_runs(&conn, 250, None).unwrap();
+        let windowed = list_runs(&conn, DEFAULT_LIMIT, None).unwrap();
         assert!(
             !ids(&windowed).contains(&"demo-01".to_string()),
-            "demo-01 is inside the 250-run window — the search arm proves nothing"
+            "demo-01 is inside the {DEFAULT_LIMIT}-run default window — the search arm proves nothing"
         );
         assert!(
             windowed.total_count > windowed.runs.len() as i64,
             "store is not larger than the window; nothing to disclose"
         );
 
-        let found = list_runs(&conn, 250, Some("demo-01")).unwrap();
+        let found = list_runs(&conn, DEFAULT_LIMIT, Some("demo-01")).unwrap();
         assert!(
             found.runs.iter().any(|r| r.run_id == "demo-01"),
             "search did not reach demo-01: {:?}",

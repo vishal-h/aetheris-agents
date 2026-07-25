@@ -81,6 +81,12 @@ The live arm panics rather than skips when `AETHERIS_DB_PATH` is unset — a che
 passes when it did not run is worse than no check. It is `#[ignore]`d so a machine without the
 harness store still gets a green `cargo test`.
 
+It windows at `DEFAULT_LIMIT`, not a literal (review F1). `useRunList` passes no `limit`, so the
+default *is* the operator's window; the arm first read `250`, which proved the same conclusion
+about a window nobody runs and put the wrong number into the GUI-gate instruction. Output is now
+`live: window 500 of 896 runs; search 'demo-01' → 1 match(es)`. `demo-01` at rank 879 is outside
+either window, so the conclusion is unchanged.
+
 ## Open / forwarded
 
 **specs §5 (TypeScript Interfaces) is unchecked and its `RunSummary` is stale** — it lacks
@@ -90,5 +96,12 @@ TS half of the same contract drifts silently. Out of BL-038's scope; the new `Ru
 added to §5 so this ticket adds no drift of its own. Filed as **BL-058** rather than left as prose.
 
 **Manual GUI pass gates merge** (BL-029 precedent — Rig has no frontend test runner, BL-017).
-Two arms: type a run_id fragment for an out-of-window run and confirm it appears; clear the box
-and confirm the "N of M" badge shows the truncation.
+Expected numbers are the **default 500-run window** over the current 896-run store — the badge
+reads `Showing 500 of 896 runs`, not 250 (review F1: 250 was the old live-test literal, and a
+correct 500 would have false-failed the gate). Three arms:
+
+1. Type `demo-01` (rank 879, outside the window) and confirm the row appears.
+2. Clear the box and confirm the badge reads `Showing 500 of 896 runs`.
+3. With the box empty, set the status filter and confirm the badge switches to the
+   `Showing F of 500 loaded · 896 runs in store` form rather than quoting server numbers over a
+   shorter table.

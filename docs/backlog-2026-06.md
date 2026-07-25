@@ -1395,7 +1395,7 @@ hardcoded check count, and the header/`Summary` lines were already computed from
 `Source: 11675cc, 2026-07-25. Notes:
 docs/rig/milestones/bl-041b-bl-036-drift-check-guards-implementation-notes.md.`
 
-**r1 (review F1/F2/F3), `<r1-commit>`.** The closing PASS in check 8 is now gated on
+**r1 (review F1/F2/F3), `0d5127b`.** The closing PASS in check 8 is now gated on
 structural failures too (see the BL-041 DONE section); `_field_types_match` carries a
 docstring line naming its textual-matching limitation (F2 — no row, conditional on §4 first
 documenting a qualified or aliased type); the ghost-struct scope became **BL-052** (F3).
@@ -1904,7 +1904,7 @@ exit 0, and both are recorded verbatim in the review packet and in the implement
 No new promotion is claimed here; (b) is the mechanical enforcement of the rule already
 promoted.
 
-**r1 — review F1 folded, `<r1-commit>`.** The closing PASS was suppressed for `stale` and
+**r1 — review F1 folded, `0d5127b`.** The closing PASS was suppressed for `stale` and
 `uncommitted` rows but **not** for rows that failed *structurally* (unknown repo, `git log`
 failure, and the new `git status` failure), so a skipped row could sit beside
 "`N` manifest entries all match git HEAD" — a count including rows never checked. Pre-existing

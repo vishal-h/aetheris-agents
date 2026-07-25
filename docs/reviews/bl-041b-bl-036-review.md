@@ -94,5 +94,5 @@ documents a qualified or aliased type.
 widen-to-`src-tauri/src/**/*.rs` fix sketched and a trigger-fired (`—`) entry in the suggested
 order. Packet prose does not file anything; the row makes a recurrence countable.
 
-Landed in `<r1 commit>`; done-check re-run post-commit, gates green. No change to check 9's
+Landed in `0d5127b`; done-check re-run post-commit, gates green. No change to check 9's
 result at HEAD (still 9 structs / 52 fields), and `check_tauri_commands` remains untouched.

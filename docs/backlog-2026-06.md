@@ -2382,6 +2382,50 @@ they must not be "fixed" by widening the filter.
 
 ---
 
+### BL-050 + BL-055 + BL-056 — DONE 2026-07-25 (one reorder, three rows)
+
+Landed together at harness `9871059` — they were the same surgery. Contract draft:
+`docs/reviews/bl-050-055-056-contract-draft.md` (harness), §5 **pending §8 ratification**.
+Scout memo that settled the directions: `docs/reviews/bl-055-bl-056-containment-decisions.md`.
+
+**The one change.** `ready` was written straight after the namespaces while cgroup, overlay,
+exec-server spawn and the seccomp filter all happened *after* it. `ready` is now the
+**fully-established barrier**:
+
+```
+namespaces → cgroup → overlay → exec server → stdio MCP servers → seccomp → ready(attests all)
+```
+
+and the handshake carries `overlay`, `exec_server`, `seccomp` (+ error) and a per-server
+`mcp_servers` attestation alongside `network_namespace`. Order is forced: the filter must be last
+because the exec server and the stdio servers both need `execve`, which it excludes.
+
+**BL-050** — the overlay is mounted before the handshake, so `RunOverlayTest`'s `File.dir?(upper)`
+immediately after start no longer races. Green, no sleep, no polling.
+
+**BL-055 (option 1)** — `config.mcp_servers` travels in the init payload (stdio entries only;
+`:http` still connects at request time through the exec server, which the filter permits). The
+worker spawns them pre-filter and attests each. `loop.ex` no longer spawns — it only lists tools.
+The request-time `mcp_spawn` is **removed** on both sides rather than left as a call that always
+killed the worker; `spawn_mcp_server/2` became `connect_http_mcp_server/2`, which refuses a stdio
+config. Verify passes no `mcp_servers`, so a verify worker spawns none.
+
+**BL-056** — the worker still fails open and now *attests*; policy moved to the BEAM, which is the
+only side that knows the mode. Verify **refuses** with a message that shares no wording with the
+netns refusal and does **not** offer `--allow-effects` (the flag would not install a filter and
+would drop the network guard too). Record **continues**, but no longer silently: `Logger.error` at
+worker start plus `meta.containment` in the trajectory, so a later reader can tell a sandboxed run
+from an unsandboxed one. That silence was the defect, not the fail-open.
+
+**Risks checked rather than assumed.** Time-to-ready after the reorder: **2–3 ms** bare, **17–20 ms**
+with a stdio MCP server declared, against the **5 000 ms** init timeout — three orders of magnitude
+of headroom, no adjustment needed. `requires_worker` run **twice**: 6 failures both times with
+**identical membership**, so the reorder introduced and shifted no flake; the BL-054 slot did not
+appear in either run.
+
+`Source: BL-050/055/056, harness 9871059, 2026-07-25.`
+
+---
 ### BL-056 — `apply_seccomp_filter` fails open: any filter-build failure runs the worker fully unsandboxed (#TBD)
 **Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
 
@@ -2787,6 +2831,27 @@ so it cannot rot invisibly again. Until then it is a **known-red gate named with
 ref** in packets, not re-triaged each time.
 
 `Source: BL-042 done-check, off-territory, 2026-07-23. Baseline captured on a clean tree.`
+
+**Status 2026-07-25, after BL-050/055/056 (`9871059`):** `requires_worker` is **6 failures**
+(951 tests / 65 excluded), down from 11 — and **stable across two consecutive runs with identical
+membership**. The four MCP failures and `RunOverlayTest` are gone. Residual, each named:
+
+| Cause | Count | Ticket |
+|---|---|---|
+| stale `pwd` allowlist | 3 | BL-048 (this row) — the last strand actually owned here |
+| `McpHttpTest` — `port_close` in an `on_exit` cleanup | 1 | environment |
+| `McpGithubTest` — the server now spawns fine; the agent did not choose to call an MCP tool | 1 | LLM-behaviour integration test, not containment |
+| `OverlayAutonomousTest` | 1 | **not BL-050** — see below |
+
+**`OverlayAutonomousTest` is a different defect wearing BL-050's clothes.** It fails with a
+byte-identical message before and after the reorder. Root cause: `supervisor.ex:62` starts **no
+worker at all** for `provider: "stub"` with empty `mcp_servers`, so that run never mounts an
+overlay and the probe cannot land in `upper/`. Diagnosed rather than assumed fixed, and left with
+BL-048 rather than silently claimed by BL-050. It needs its own decision — the test asserts overlay
+behaviour for a configuration that by design has no worker.
+
+**Zero real SIGSYS remain.** The only `worker_crashed, 159` lines in the capture are
+`verify_worker_lifecycle_test.exs` stopping workers with that reason deliberately.
 
 **Status 2026-07-25, after BL-043:** `requires_worker` reports **11 failures** (940 tests / 65
 excluded) at harness `515a4ab`, and **SIGSYS is down 8 → 4**. BL-043 corrects this row's

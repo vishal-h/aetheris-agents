@@ -213,7 +213,11 @@ routes (registry.ts ↔ App.tsx), payload field sampling (live DB ↔ specs.md �
 milestone README Status: lines.
 
 **When to run:** after any Rig milestone, after adding commands, event types, env vars,
-routes, or DB tables. Zero FAIL findings and zero WARN findings required before committing.
+routes, or DB tables. Zero FAIL findings and zero *unexplained* WARN findings required — for a
+**manifest-tracked** edit the `project_knowledge` (check 8) portion is meaningful only
+**post-commit** (it reads committed history; see the learning rule below), so run the `--strict`
+done-check after that commit and name the expected `project_knowledge` WARNs. Checks 1–7 remain
+valid pre-commit.
 
 **Strict mode (`--strict`, BL-009).** The sprint runs `drift_check.py --strict`: any
 WARN fails the sprint, so drift cannot accumulate into the next alarm-fatigue cycle.
@@ -225,6 +229,18 @@ So the strict invariant is **"zero *unexplained* WARNs"**, not "zero WARNs" — 
 manifest-staleness WARN in day-to-day output is the signal we chose to keep, not a
 regression to chase. Structural manifest problems (missing manifest, unknown repo, git
 failure) are **not** exempt and still fail under `--strict`.
+
+**A manifest-staleness done-check runs post-commit — a `drift_check --strict` before committing a
+manifest-tracked edit is vacuous.** Check 8 (`project_knowledge`) compares the manifest against
+committed history (`git log -1 --format=%h -- <file>`), so run *before* the commit it reads the
+file's pre-edit hash and cannot see the staleness the edit introduces — it passes green where a
+gap exists (the **Silent-wrong-answer** class — harness `CLAUDE.md` — in gate-ordering form). Run the `--strict`
+done-check *after* the commit that touches a manifest-tracked file, when check 8 can compare the
+new commit hash against the manifest; then **name** the exempt `project_knowledge` staleness
+WARNs rather than chasing them (mid-cycle staleness is expected truth, cleared only at the export
+boundary — the strict-mode exemption above). Checks 1–7 (source-vs-doc) remain valid pre-commit;
+it is check 8's committed-history dependency that forces the ordering.
+`Source: BL-034 (fe8298c — the export-prompt self-staling ordering hazard, real but latent; its "628f15f production-fired" claim withdrawn as false after a clean check-8 sweep of all 38 committed manifests), BL-025 (8021a59/00ddd34 — the vacuity fired on the caveat's own author: pre-commit 1 WARN, post-commit 3).`
 
 **Ticket text that quotes repo state** (counts, paths, expected outputs) cites the commit
 it was verified against; claude-code treats divergence between ticket text and repo reality

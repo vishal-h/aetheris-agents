@@ -74,11 +74,17 @@
 ```
 User opens Harness tab
   ↓
-useHarness.ts → invoke("harness_list_runs")
+useHarness.ts → invoke("harness_list_runs", { search? })
   ↓
-harness.rs → SELECT * FROM runs ORDER BY started_at DESC LIMIT 50
+harness.rs → one read txn, one WHERE (BL-038):
+    SELECT ... FROM runs
+      WHERE (?search IS NULL OR label LIKE ?search OR run_id LIKE ?search)
+      ORDER BY started_at DESC LIMIT ?   (default 500)
+    SELECT COUNT(*) FROM runs WHERE <same>   → total_count
   ↓
 RunList.tsx renders table (label, status, model, started, duration, steps)
+  + debounced search box (server-side; no client-side filter layer)
+  + "Showing N of M runs" whenever the window truncates the store
 
 User clicks a run
   ↓

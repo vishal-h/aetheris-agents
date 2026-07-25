@@ -31,7 +31,10 @@ export function DiffView() {
     setActiveB(null);
   }
 
-  const runs = runList.data ?? [];
+  // BL-038: harness_list_runs now returns { runs, total_count }. The picker keeps
+  // the same windowed list it had; reaching past the window from here is BL-024's
+  // lineage concern, not this dropdown's.
+  const runs = runList.data?.runs ?? [];
 
   // ── Selection phase ─────────────────────────────────────────────────────────
   const selectionPanel = (

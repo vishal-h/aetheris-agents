@@ -73,6 +73,11 @@ function payloadPreview(payload: string): string {
 const SELECT_CLASS =
   'h-8 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
+// Search is served by the store, not by filtering the loaded window (BL-038), so
+// each change is a round-trip. Local SQLite makes that sub-millisecond; the debounce
+// is only to avoid a query per keystroke.
+const SEARCH_DEBOUNCE_MS = 250;
+
 // A running run with no activity for this long is shown as "stalled?"
 const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -205,11 +210,18 @@ interface RunsContentProps {
 }
 
 function RunsContent({ onSelectRun }: RunsContentProps) {
-  const status  = useHarnessStatus();
-  const runList = useRunList();
+  const status = useHarnessStatus();
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm,  setSearchTerm]  = useState('');
+  const runList = useRunList({ search: searchTerm });
   const [statusFilter, setStatusFilter] = useState('all');
   const expanded = useSessionRecord('rig:runs:expanded', false);
   const showAll  = useSessionRecord('rig:runs:showAll', false);
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearchTerm(searchInput), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
   // Re-evaluate staleness every 60s without refetching data
   const [now, setNow] = useState(() => Date.now());
@@ -219,18 +231,41 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
   }, []);
 
   if (status.data && !status.data.connected) return <NotConnected />;
-  if (runList.loading) return <LoadingShell rows={6} />;
+  // `!runList.data` — only the first load replaces the whole pane. A refetch that
+  // unmounted the toolbar would take the search box (and its focus) with it on every
+  // debounce tick, which is unusable for the feature this gate now sits in front of.
+  if (runList.loading && !runList.data) return <LoadingShell rows={6} />;
   if (runList.error?.includes('harness not connected')) return <NotConnected />;
 
+  const loaded    = runList.data?.runs ?? [];
+  const total     = runList.data?.total_count ?? 0;
+  const searching = searchTerm.trim() !== '';
+
   // Filter first, then group — empty groups are hidden after filter.
-  const filtered = (runList.data ?? []).filter(
-    (r) => statusFilter === 'all' || r.status === statusFilter,
-  );
+  const filtered = loaded.filter((r) => statusFilter === 'all' || r.status === statusFilter);
   const groups = groupRuns(filtered);
+
+  // The truncation disclosure this ticket exists for. Two forms, because the status
+  // filter is a *client-side* narrowing of the loaded rows: quoting only the server's
+  // numbers while the table shows fewer would be the same kind of confidently wrong
+  // line the badge is here to retire.
+  const noun = searching ? (total === 1 ? 'match' : 'matches') : 'runs';
+  const windowNote =
+    statusFilter === 'all'
+      ? `Showing ${loaded.length} of ${total} ${noun}`
+      : `Showing ${filtered.length} of ${loaded.length} loaded · ${total} ${noun} in store`;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-4 py-2 border-b shrink-0">
+        <input
+          type="search"
+          className={`${SELECT_CLASS} w-64`}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search label or run id…"
+          aria-label="Search runs"
+        />
         <select
           className={SELECT_CLASS}
           value={statusFilter}
@@ -262,7 +297,16 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
             Expand all
           </Button>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          {(searching || total > loaded.length || statusFilter !== 'all') && (
+            <span className="text-xs tabular-nums text-muted-foreground" title={
+              searching
+                ? 'Matches are searched across the whole store, not just the loaded rows'
+                : 'The list is a window over the store — search to reach older runs'
+            }>
+              {windowNote}
+            </span>
+          )}
           <Button variant="outline" size="sm" onClick={runList.refetch}>
             <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             Refresh
@@ -273,8 +317,23 @@ function RunsContent({ onSelectRun }: RunsContentProps) {
       {groups.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-muted-foreground">
-            No runs found. Run an agent via{' '}
-            <code className="rounded bg-muted px-1">mix aetheris run</code>.
+            {loaded.length === 0 && searching ? (
+              <>
+                No runs match <span className="font-mono">{searchTerm}</span> — all{' '}
+                {status.data?.run_count ?? 0} runs in the store were searched, not just
+                the loaded window.
+              </>
+            ) : loaded.length === 0 ? (
+              <>
+                No runs found. Run an agent via{' '}
+                <code className="rounded bg-muted px-1">mix aetheris run</code>.
+              </>
+            ) : (
+              <>
+                No <span className="font-medium">{statusFilter}</span> runs among the{' '}
+                {loaded.length} shown.
+              </>
+            )}
           </p>
         </div>
       ) : (

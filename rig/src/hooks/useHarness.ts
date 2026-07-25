@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { HarnessStatus, RunSummary, EventRow, RunDetail } from './types';
+import { HarnessStatus, RunListResult, EventRow, RunDetail } from './types';
 
 interface AsyncState<T> {
   data: T | null;
@@ -39,8 +39,44 @@ export function useHarnessStatus(): AsyncState<HarnessStatus> {
   return useInvoke<HarnessStatus>('harness_connection_status');
 }
 
-export function useRunList(limit?: number): AsyncState<RunSummary[]> {
-  return useInvoke<RunSummary[]>('harness_list_runs', limit !== undefined ? { limit } : undefined);
+/**
+ * Run list with optional server-side search (BL-038).
+ *
+ * Not `useInvoke`: that hook keys its effect on the command name alone, so a
+ * changing argument would never refetch. Search is the whole point here, so this
+ * one keys on `limit` + `search` and re-queries the store on every change.
+ * Filtering is server-side only — a second, client-side filter over the window
+ * could disagree with the store, which is the gap this replaced.
+ */
+export function useRunList(options?: { limit?: number; search?: string }): AsyncState<RunListResult> {
+  const limit  = options?.limit;
+  const search = options?.search ?? '';
+
+  const [data, setData]       = useState<RunListResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const args: Record<string, unknown> = {};
+      if (limit !== undefined) args.limit = limit;
+      if (search !== '') args.search = search;
+      const result = await invoke<RunListResult>('harness_list_runs', args);
+      setData(result);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [limit, search]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, loading, error, refetch: fetch };
 }
 
 export function useRunEvents(

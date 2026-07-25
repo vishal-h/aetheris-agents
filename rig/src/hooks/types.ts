@@ -173,6 +173,14 @@ export interface RunSummary {
   total_output_tokens: number | null;
 }
 
+/** `harness_list_runs` result (BL-038). `total_count` is COUNT(*) under the same
+ *  filter as `runs`, from the same call — the window disclosure ("N of M") and the
+ *  rows it labels always describe one snapshot. */
+export interface RunListResult {
+  runs:        RunSummary[];
+  total_count: number;
+}
+
 export interface EventRow {
   id:          string;
   run_id:      string;

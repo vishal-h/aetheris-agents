@@ -148,6 +148,28 @@ Path derivation from `AETHERIS_DB_PATH`:
 ### Harness commands (`commands/harness.rs`)
 
 **`harness_list_runs`**
+
+Takes `limit: Option<i64>` (default 500) and `search: Option<String>` (BL-038).
+A present, non-blank `search` filters `WHERE runs.label LIKE ?term OR runs.run_id
+LIKE ?term` with `%term%` — the **raw** columns, not the `COALESCE(label, run_id)`
+alias, so an unlabelled run (`label IS NULL`) is still reachable by its run_id.
+Absent, empty, and whitespace-only terms are the same query. `%`, `_` and `\` in the
+term are escaped (`ESCAPE '\'`) so they match literally; matching is otherwise
+SQLite's default ASCII case-insensitive `LIKE`. Ordering and windowing are unchanged
+(`ORDER BY started_at DESC LIMIT ?`).
+
+Returns:
+```rust
+pub struct RunListResult {
+    pub runs:        Vec<RunSummary>,
+    pub total_count: i64,          // COUNT(*) under the SAME WHERE as `runs`, in the same
+                                   // read transaction: the whole store when unsearched, the
+                                   // match count when searching. Drives the UI's "N of M"
+                                   // window disclosure, which cannot disagree with the rows
+                                   // because both come from one call. (BL-038)
+}
+```
+
 ```rust
 pub struct RunSummary {
     pub run_id:         String,
@@ -397,6 +419,14 @@ interface RunSummary {
   finished_at:  string | null;
   step_count:   number;
   event_count:  number;
+}
+
+// What `harness_list_runs` resolves to — the rows plus the count they were drawn
+// from (BL-038). `useRunList({ search })` returns this; `total_count` is the store
+// (or match) count behind the window, not the length of `runs`.
+interface RunListResult {
+  runs:        RunSummary[];
+  total_count: number;
 }
 
 interface EventRow {

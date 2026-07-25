@@ -142,9 +142,58 @@ the full output is in the review packet. Both runs exit 0, and the two WARNs are
 named signals: the uncommitted one is this ticket's own guard reporting on itself, the staleness
 one is mid-cycle truth cleared at the next export boundary, **not** this ticket's to clear.
 
+**Correction (r1).** The r0 wording above and in the BL-041 DONE section said the two signals
+are mutually exclusive — "pre-commit only the uncommitted WARN can fire". That holds only for a
+path whose manifest entry is still *fresh*, which was the case for `backlog-2026-06.md` at r0.
+Once a path has any committed change since the export it is already stale, and while it is also
+dirty **both** WARNs fire — observed directly on r1's own edit to this same file
+(`8 PASS 0 FAIL 2 WARN`, stale from `de46ac0` and uncommitted at once). The compound state is
+correct: the uncommitted WARN says the staleness reading is *not final*, not that there is no
+staleness. The BL-041 DONE section is corrected to match.
+
 Before the guard existed, the pre-commit run would have printed
 `9 PASS 0 FAIL 0 WARN` — indistinguishable from a run where the backlog had never been edited.
 That is the whole finding, reproduced by the fix.
+
+## r1 — review dispositions (claude-ui, 2026-07-25)
+
+Review: `docs/reviews/bl-041b-bl-036-review.md`. No blocking findings; three non-blocking.
+
+**F1 — folded, not filed.** The closing PASS was gated on `stale` and `uncommitted` but not on
+the *structural* arms: unknown repo and `git log` failure both `continue`, and the new
+`git status` failure fell through, so a row that was skipped or unverifiable could sit beside
+"`N` manifest entries all match git HEAD" — a count including rows the run never checked.
+Pre-existing, and `--strict`-safe because structural WARNs promote to FAIL; the exposure is a
+contradictory headline in a non-strict manual run. It is this ticket's own Silent-wrong-answer
+class one arm over, in the function already being edited, so it was folded.
+`check_project_knowledge` now tracks `structural` alongside the other two lists, appended in all
+three arms, and the PASS is gated on all three being empty.
+
+The reviewer offered an alternative — narrow the PASS message to the count actually verified.
+Rejected: that keeps a PASS printing beside a structural WARN, which is the contradictory pair
+itself; and with the gate in place `len(rows)` *is* the verified count wherever the PASS prints,
+so nothing needed narrowing.
+
+Two tests, one per arm, because they take different paths: `git log` failure (falls through the
+loop body) and unknown repo (`continue`s before either guard). Both non-strict, so the WARN is
+not masked by promotion to FAIL. Mutation-checked — reverting the gate turns exactly those two
+red, and the run prints the finding verbatim:
+
+```
+[WARN] project_knowledge: unknown repo name 'not-a-repo' in manifest — cannot verify CLAUDE.md
+[PASS] project_knowledge: 2 manifest entries all match git HEAD
+```
+
+**F2 — docstring line, no row.** `_field_types_match` now names its limitation: matching is
+textual over whitespace-normalised type strings, so a path-qualified source type
+(`Vec<crate::EventRow>`) or one behind a `type` alias would draw a false mismatch against an
+unqualified §4 spelling. Left conditional per the review — nothing at HEAD triggers it, and the
+row is owed when §4 first documents such a type.
+
+**F3 — filed as BL-052.** The §8 flagged observation (ghost-struct arm scoped to
+`commands/*.rs`) promoted from packet prose to a backlog row, with the `rglob` fix sketched and a
+trigger-fired entry in the suggested order. Packet prose files nothing; the row makes a
+recurrence countable. Check 9's result at HEAD is unchanged — 9 structs, 52 fields.
 
 ## Scope held
 

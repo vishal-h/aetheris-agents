@@ -641,10 +641,12 @@ def check_project_knowledge() -> None:
 
     stale: list[str] = []
     uncommitted: list[str] = []
+    structural: list[str] = []
     for repo_path, repo_name, manifest_commit in rows:
         repo_dir = _REPO_DIR_MAP.get(repo_name)
         if repo_dir is None:
             _warn(check, f"unknown repo name {repo_name!r} in manifest — cannot verify {repo_path}")
+            structural.append(repo_path)
             continue
 
         # BL-041(b): this check compares COMMITTED history, so an uncommitted edit
@@ -655,6 +657,7 @@ def check_project_knowledge() -> None:
         if dirty is None:
             # Structural (same class as a git log failure) — NOT strict-exempt.
             _warn(check, f"{repo_path}: git status failed — cannot check for uncommitted edits")
+            structural.append(repo_path)
         elif dirty:
             _warn(
                 check,
@@ -668,6 +671,7 @@ def check_project_knowledge() -> None:
         current = _git_head_hash(repo_dir, repo_path)
         if current is None:
             _warn(check, f"{repo_path}: git log failed — cannot verify")
+            structural.append(repo_path)
             continue
 
         if current != manifest_commit:
@@ -681,9 +685,12 @@ def check_project_knowledge() -> None:
             )
             stale.append(repo_path)
 
-    # No PASS while a tracked path is uncommitted: "all match git HEAD" would be a
-    # well-formed answer to a question this run cannot yet answer (BL-041b).
-    if not stale and not uncommitted:
+    # No PASS unless every row was actually verified. "N manifest entries all match
+    # git HEAD" is a well-formed answer to a question this run could not answer
+    # whenever a row is uncommitted (BL-041b) or was skipped structurally (unknown
+    # repo, git log/status failure — BL-041b review F1); with the gate in place
+    # len(rows) is the count actually checked wherever the PASS prints.
+    if not stale and not uncommitted and not structural:
         _ok(check, f"{len(rows)} manifest entries all match git HEAD")
 
 # --------------------------------------------------------------------------- #
@@ -752,6 +759,14 @@ def _parse_command_structs_from_source(commands_dir: Path) -> dict[str, dict[str
 
 
 def _field_types_match(doc_type: str, src_type: str, optional: bool) -> bool:
+    """Compare a documented type against the Rust one.
+
+    LIMITATION (BL-041b review F2): matching is TEXTUAL over whitespace-normalised
+    type strings. A path-qualified source type (`Vec<crate::EventRow>`) or one behind
+    a `type` alias will draw a false mismatch against an unqualified §4 spelling.
+    Nothing in §4 documents such a type today; when one lands, either spell it the
+    same way on both sides or teach this function to normalise the qualification.
+    """
     if doc_type == src_type:
         return True
     # §6 convention reused: a documented `field?` is satisfied by Option<T>.

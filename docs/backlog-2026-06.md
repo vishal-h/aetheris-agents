@@ -1395,6 +1395,50 @@ hardcoded check count, and the header/`Summary` lines were already computed from
 `Source: 11675cc, 2026-07-25. Notes:
 docs/rig/milestones/bl-041b-bl-036-drift-check-guards-implementation-notes.md.`
 
+**r1 (review F1/F2/F3), `<r1-commit>`.** The closing PASS in check 8 is now gated on
+structural failures too (see the BL-041 DONE section); `_field_types_match` carries a
+docstring line naming its textual-matching limitation (F2 — no row, conditional on §4 first
+documenting a qualified or aliased type); the ghost-struct scope became **BL-052** (F3).
+Check 9's result at HEAD is unchanged: 9 structs, 52 fields.
+Review: `docs/reviews/bl-041b-bl-036-review.md`.
+
+---
+
+### BL-052 — drift_check check 9: ghost-struct arm is scoped to `commands/*.rs` (#TBD)
+**Size:** XS · **Priority:** low · **Trigger-fired**
+
+`check_command_fields` (check 9, BL-036, `11675cc`) resolves each §4-documented struct against
+`_parse_command_structs_from_source(COMMANDS_DIR)`, which globs
+`rig/src-tauri/src/commands/*.rs` only. A documented struct that the checker cannot find there
+draws a **ghost** WARN:
+
+```
+struct 'X' documented in specs.md §4 but not found in commands/*.rs (ghost)
+```
+
+All nine structs documented in §4 live in `commands/` today, so the arm is accurate at HEAD and
+the scope matches BL-036's ticket text. It is the arm most likely to produce the checker's first
+**false positive**: a §4 block documenting a struct defined elsewhere under `src-tauri/src`, or
+re-exported into `commands/` from another module, would be reported as a ghost that isn't one.
+A false WARN in a `--strict` sprint is a red gate, and a red gate that is wrong is what trains
+the "the check is probably stale" reflex the standing gates rule exists to prevent.
+
+**Fix (trivial):** widen the source scan to `rig/src-tauri/src/**/*.rs` (`rglob`), keeping the
+join on struct name. Nothing else changes — `_parse_structs_from_rust_text` is already
+file-agnostic. Adjust the ghost message to name the widened scope, and add a test that a struct
+defined outside `commands/` is found rather than ghosted.
+
+**Deliberately deferred, not overlooked.** Widening now would broaden the surface with no live
+case and no test that could distinguish the two behaviours at HEAD. This row makes the
+recurrence countable if it lands.
+
+**Done when:** the source scan covers `src-tauri/src/**/*.rs`, or the row is closed with a
+recorded reason for keeping the narrow scope; `tests/test_drift_check.py` covers a
+non-`commands/` struct either way.
+
+`Source: BL-041(b)+BL-036 review F3 (claude-ui, 2026-07-25), raised as the packet's §8 flagged
+observation and promoted from prose to a row. Review: docs/reviews/bl-041b-bl-036-review.md.`
+
 ---
 
 ### BL-037 — Nullable `label` in RunSummary/RunDetail: backend distinguishes real from fallback (#TBD)
@@ -1840,9 +1884,14 @@ answer — the Silent-wrong-answer carrier this row was filed against, and it wo
 survived the guard otherwise.
 
 **The two signals are complementary across the commit boundary**, which is what closes the
-gap discipline could not: pre-commit only the uncommitted WARN can fire and the staleness
-WARN cannot; post-commit the uncommitted signal clears and the real staleness WARN takes its
-place. Both are strict-exempt, both exit 0.
+gap discipline could not. For a path whose manifest entry is *fresh at the export*: pre-commit
+only the uncommitted WARN can fire and the staleness WARN cannot, because the committed hash
+still matches; post-commit the uncommitted signal clears and the real staleness WARN takes its
+place. They are not mutually exclusive in general — a path already stale from an earlier
+commit in the same cycle fires **both** while it is dirty (observed on this ticket's own r1
+edit to this file, stale from `de46ac0` and uncommitted at once). That compound state is
+correct and is the point: the uncommitted WARN says the staleness reading is not final, not
+that there is no staleness. Both are strict-exempt, both exit 0.
 
 **Self-exercised by its own landing.** This row's DONE edit is to `docs/backlog-2026-06.md`,
 itself manifest-tracked, so the ticket ran the boundary it describes: while the edit was
@@ -1854,6 +1903,19 @@ exit 0, and both are recorded verbatim in the review packet and in the implement
 `fe8298c`, BL-025 `8021a59`/`00ddd34`) and was promoted as disposition (a) at `1013a95`.
 No new promotion is claimed here; (b) is the mechanical enforcement of the rule already
 promoted.
+
+**r1 — review F1 folded, `<r1-commit>`.** The closing PASS was suppressed for `stale` and
+`uncommitted` rows but **not** for rows that failed *structurally* (unknown repo, `git log`
+failure, and the new `git status` failure), so a skipped row could sit beside
+"`N` manifest entries all match git HEAD" — a count including rows never checked. Pre-existing
+and `--strict`-safe (structural WARNs promote to FAIL), but it is this ticket's own
+Silent-wrong-answer class one arm over, in the function already being edited, so it was folded
+rather than filed. `check_project_knowledge` now tracks `structural` alongside the other two and
+gates the PASS on all three; with the gate in place `len(rows)` is accurate wherever the PASS
+prints, so the count needed no narrowing. Two tests, one per arm — `git log` failure, and the
+unknown-repo arm which `continue`s before either guard. Mutation-checked: without the fold both
+go red, and the run prints the contradictory pair the finding describes.
+Review: `docs/reviews/bl-041b-bl-036-review.md`.
 
 `Source: 1013a95 (a), 11675cc (b), 2026-07-25. Notes:
 docs/rig/milestones/bl-041a-promotion-implementation-notes.md,
@@ -2817,6 +2879,7 @@ multi-line street/city/state/zip.
 | 23 | BL-041 | Disposition (a) is a doc-only rule worth landing before the next export, since that export's own done-check is the case it governs. Disposition (b) batches with BL-036 — both are drift_check blind spots |
 | 23b | BL-044, BL-045 | Small harness cleanups from BL-025; neither blocks anything. BL-045 is a naming decision, not a deletion — do not batch it with BL-033 |
 | 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
+| — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |
 | ✔ | BL-027 | **Done 2026-07-23, folded into BL-025.** Its trigger was too narrow — any failed contained tool call reached the crash — and BL-025 made `aetheris verify` real, which would have shipped it. Convention residue → BL-046 |
 | — | BL-006 | Fires on its own trigger |

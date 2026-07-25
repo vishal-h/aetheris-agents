@@ -689,6 +689,58 @@ def test_project_knowledge_git_status_failure_fails_under_strict(tmp_path, monke
     assert any("git status failed" in f for f in fails), fails
 
 
+def test_project_knowledge_structural_failure_suppresses_pass(tmp_path, monkeypatch):
+    """BL-041b review F1: a row that could not be verified must suppress the PASS.
+
+    "N manifest entries all match git HEAD" beside a structural WARN is a count
+    that includes rows the run never checked — the Silent-wrong-answer carrier this
+    ticket exists to remove, one arm over. Non-strict, so the WARN is not masked by
+    promotion to FAIL."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    # git log cannot answer for one row; the others are clean and fresh.
+    monkeypatch.setattr(
+        drift_check, "_git_head_hash",
+        lambda repo_dir, path: None if path == "CLAUDE.md" else "abc1234",
+    )
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    assert warns_of("project_knowledge")
+    assert not passes_of("project_knowledge"), "PASS must not print beside a structural WARN"
+
+
+def test_project_knowledge_unknown_repo_suppresses_pass(tmp_path, monkeypatch):
+    """The unknown-repo arm `continue`s before either guard — its own case."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(
+        _MANIFEST_SAMPLE.replace("| aetheris |", "| not-a-repo |")
+    )
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    warns = warns_of("project_knowledge")
+    assert any("unknown repo name" in w for w in warns), warns
+    assert not passes_of("project_knowledge"), "PASS must not print beside a skipped row"
+
+
 def test_project_knowledge_dirty_check_runs_in_the_rows_own_repo(tmp_path, monkeypatch):
     """Each row's porcelain runs in the repo that OWNS it.
 

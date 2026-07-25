@@ -1356,6 +1356,47 @@ this is the §4 analogue. Likely approach: parse the ```rust fenced blocks in §
 
 ---
 
+### BL-036 — DONE 2026-07-25
+
+Landed as a **new check 9**, `command_fields` (`11675cc`), batched with BL-041(b) — both
+are `drift_check` blind spots on one file surface. `check_tauri_commands` stays names-only
+and three-way: the ratified shape was a separate check, not field logic folded into check 2.
+
+**What it does.** Parses the ` ```rust ` fenced blocks under specs §4 for
+`pub struct NAME { pub field: Type }` and compares against the same-named struct in
+`rig/src-tauri/src/commands/*.rs`. The join key is the **struct name** — it appears verbatim
+on both sides, and one fenced block may declare two structs (`TrajectoryEvent` +
+`TrajectoryFile`). One shared field parser serves both sides (the doc blocks and the Rust
+source are the same syntax); it drops `///` doc comments, trailing `// …` notes and `#[…]`
+attributes, and is line-based rather than comma-split because a type may contain a comma
+(`HashMap<String, String>`).
+
+**Signals.** WARN on documented-but-absent (the phantom-field case this row was filed for),
+struct-field-undocumented, type mismatch, and ghost struct. FAIL is reserved for the
+structural "zero structs parsed from §4", matching every other check's shape. The §6
+`?`-suffix optionality convention is reused: a documented `field?: T` is satisfied by
+`Option<T>`, and `?` relaxes the **type**, not existence — a `field?` absent from the struct
+still warns. §4 documents `Option<T>` directly today and uses no `?`; the convention is
+forward-compatible and carries its own tests.
+
+**Result at HEAD: clean** — 9 documented §4 structs, 52 fields, all matching
+(`RunSummary`, `EventRow`, `RunDetail`, `HarnessStatus`, `TrajectoryEvent`, `TrajectoryFile`,
+`PollResult`, `CapabilityMatrix`, `UsageStats`, against `commands/harness.rs`,
+`trajectory.rs`, `orchestrate.rs`, `capability_matrix.rs`, `usage.rs`). The phantom
+`RunDetail.events` was already corrected in the BL-029 commit, and nothing else had drifted,
+so **no specs §4 edit was needed** — the row closes with nothing to reconcile rather than
+with a silent fix. The green is mutation-checked, not asserted: neutering the absent-field
+branch turns its tests red.
+
+Sprint coverage is automatic — `sprint.sh`'s `drift_check` case invokes `--strict` with no
+hardcoded check count, and the header/`Summary` lines were already computed from
+`len(selected)`/`FINDINGS`.
+
+`Source: 11675cc, 2026-07-25. Notes:
+docs/rig/milestones/bl-041b-bl-036-drift-check-guards-implementation-notes.md.`
+
+---
+
 ### BL-037 — Nullable `label` in RunSummary/RunDetail: backend distinguishes real from fallback (#TBD)
 **Size:** XS–S · **Priority:** low
 
@@ -1774,6 +1815,49 @@ a reason.
 
 `Source: BL-034 review packet flagged observation, fe8298c, 2026-07-22; worked instance
 BL-025, 8021a59 + 00ddd34, 2026-07-23.`
+
+---
+
+### BL-041 — DONE 2026-07-25 (both dispositions)
+
+**(a) Convention — `1013a95`.** The post-commit ordering rule is in `CLAUDE.md`'s doc-sync
+section: a `drift_check --strict` before committing a manifest-tracked edit is vacuous;
+run it after the commit and *name* the exempt `project_knowledge` staleness WARNs rather
+than chasing them. Kept as the human-facing companion, not the primary defence.
+
+**(b) Tooling guard — `11675cc`.** `_git_is_dirty` runs `git status --porcelain -- <path>`
+per manifest row **in that row's owning repo** — the harness rows live in the sibling
+`../aetheris` checkout, and porcelain against `REPO_ROOT` would report every one of them
+clean, which is the same blindness one layer down. A dirty tracked path gets a per-path
+**strict-exempt WARN** naming that check 8 compares committed history, so its staleness
+reading for that path is vacuous, and to re-run after committing. Structural arms (missing
+manifest, unknown repo, git failure — now including a `git status` failure) stay
+**non-exempt** and still FAIL under `--strict`.
+
+The closing PASS is suppressed while any tracked path is dirty. "N manifest entries all
+match git HEAD" is a well-formed, authoritative answer to a question the run cannot yet
+answer — the Silent-wrong-answer carrier this row was filed against, and it would have
+survived the guard otherwise.
+
+**The two signals are complementary across the commit boundary**, which is what closes the
+gap discipline could not: pre-commit only the uncommitted WARN can fire and the staleness
+WARN cannot; post-commit the uncommitted signal clears and the real staleness WARN takes its
+place. Both are strict-exempt, both exit 0.
+
+**Self-exercised by its own landing.** This row's DONE edit is to `docs/backlog-2026-06.md`,
+itself manifest-tracked, so the ticket ran the boundary it describes: while the edit was
+uncommitted the new guard fired for that path and the staleness WARN could not; after the
+commit the guard cleared and the exempt staleness WARN took its place. Both `--strict` runs
+exit 0, and both are recorded verbatim in the review packet and in the implementation notes.
+
+**§7 status.** The Silent-wrong-answer verification-ordering instance stands at 2 (BL-034
+`fe8298c`, BL-025 `8021a59`/`00ddd34`) and was promoted as disposition (a) at `1013a95`.
+No new promotion is claimed here; (b) is the mechanical enforcement of the rule already
+promoted.
+
+`Source: 1013a95 (a), 11675cc (b), 2026-07-25. Notes:
+docs/rig/milestones/bl-041a-promotion-implementation-notes.md,
+docs/rig/milestones/bl-041b-bl-036-drift-check-guards-implementation-notes.md.`
 
 ---
 

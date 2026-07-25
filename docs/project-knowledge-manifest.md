@@ -34,11 +34,11 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `1013a95` | 2026-07-25 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `f624337` | 2026-07-24 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `6a8a32e` | 2026-07-25 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `1ebe971` | 2026-07-21 |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `8021a59` | 2026-07-23 |
-| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `ff971a8` | 2026-07-20 |
-| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `af56a57` | 2026-07-24 |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `915d582` | 2026-07-25 |
+| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
+| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `dd12dbb` | 2026-07-25 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
@@ -77,26 +77,13 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 
 ---
 
-Exported: 2026-07-25 at aetheris-agents `aad8415` / aetheris `af56a57` (post-arc export — the
-verify-effect-classes arc: BL-049, the BL-047 cluster, BL-041(a)). 24 rows: **24 carried, none
+Exported: 2026-07-25 at aetheris-agents `6a8a32e` / aetheris `dd12dbb` (the fs_hash / http_call /
+containment-reorder cluster — BL-053, BL-043, and BL-050/055/056). 24 rows: **24 carried, none
 added, none dropped.** Four rows re-pinned, clearing the four standing staleness WARNs:
-`backlog-2026-06.md` (`f0df85a`→`f624337`), `aetheris-agents--CLAUDE.md` (`c2729ac`→`1013a95`),
-`aetheris--determinism-contract.md` (`9b2b102`→`af56a57`), and `aetheris--runbook.md`
-(`a935038`→`8021a59`).
-
-**Two watermark fields, kept distinct.** The `Exported:` line names the boundary commit
-`aad8415` — aetheris-agents HEAD, the BL-041(a) light review packet, a
-non-manifest-tracked artifact (`docs/reviews/bl-041a-review.md`) that moves no row. The
-`aetheris-agents--CLAUDE.md` *row* pins `1013a95`, CLAUDE.md's last touch (the BL-041(a)
-promotion, `HEAD~1`). The boundary commit and the row's last-touch are different fields and are
-not the same hash this cycle.
-
-**Repo push state.** The harness is synced: `origin/main` = HEAD = `af56a57`; the whole
-verify-effect-classes cluster (`a926631` BL-049 through `af56a57` BL-047) was pushed in the
-BL-047 session. The determinism-contract content exported here is HEAD = origin = `af56a57`
-(carrying BL-049's and BL-047's §5/§3 edits) — the harness is **not** behind. Only
-aetheris-agents carries unpushed local commits: 2 ahead of `origin` (`f624337`) before this
-regen, 3 after, push held for the human.
+`backlog-2026-06.md` (`f624337`→`6a8a32e`), `aetheris--runbook.md` (`8021a59`→`915d582`),
+`aetheris--architecture.md` (`ff971a8`→`915d582`), and `aetheris--determinism-contract.md`
+(`af56a57`→`dd12dbb`). `aetheris-agents--CLAUDE.md` was **not** re-pinned this export — it stays
+`1013a95`, unchanged since BL-041(a).
 
 **Upload is remove-all then upload-all against the full 24-row set** — not a diff of the four
 re-pinned rows. Nineteen data rows are unchanged since the previous export and would look like
@@ -104,16 +91,20 @@ re-pinned rows. Nineteen data rows are unchanged since the previous export and w
 standing discipline that also covers the manifest-blind direction the header warns about (a file
 uploaded without a regen leaves the record silently under-describing project knowledge).
 
-**BL-034 — corrected finding, authored fresh; not fixed (deliberate).** The prior manifest
+**BL-034 — corrected finding, carried forward; not fixed (deliberate).** The prior manifest once
 claimed that following the refresh prompt's closing append step would reproduce a "born-stale
-instance at `628f15f`". **That claim is withdrawn as false.** A clean check-8 sweep of all 38
+instance at `628f15f`". **That claim is withdrawn as false.** A clean check-8 sweep of all
 committed manifests found **no** born-stale instance — `628f15f` never born-staled a row. BL-034
 remains a **latent** vacuity: `prompts/bl-002-refresh-project-knowledge.md` closes by appending a
 drift-baseline line to `docs/rig/current-state-2026-06.md` — a file this table tracks — *after*
-the manifest is written, which *would* born-stale that row **if the step were followed
-literally**. It has not been observed to fire and is not asserted to have; it remains BL-034's to
-fix. At this export the append was **not performed** (the manifest write is this session's only
-write to a tracked file), so `current-state-2026-06.md` stays pinned `f723ee5`, matching HEAD.
+the manifest is written, which *would* born-stale that row **if the step were followed literally**.
+It has not been observed to fire and is not asserted to have; it remains BL-034's to fix. At this
+export the append was **not performed** (the manifest write is this session's only write to a
+tracked file), so `current-state-2026-06.md` stays pinned `f723ee5`, matching HEAD.
 
-Previous export: 2026-07-22 at aetheris-agents `d11d4fb` / aetheris `1ebe971` (b1–b3 batch close —
-BL-028, BL-029/BL-004, BL-031, §7 promotion).
+**Repo push state.** Both repos are synced at the exported commits — aetheris-agents `origin/main`
+= `6a8a32e`, aetheris `origin/main` = `dd12dbb`; the whole fs_hash / http_call / containment-reorder
+cluster is on origin. Only this manifest regen commit is unpushed, held for the human.
+
+Previous export: 2026-07-25 at aetheris-agents `aad8415` / aetheris `af56a57` (post-verify-arc
+export — BL-049, the BL-047 cluster, BL-041(a); four rows re-pinned).

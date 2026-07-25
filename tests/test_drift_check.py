@@ -470,8 +470,11 @@ def test_project_knowledge_stale_entry_is_warn(tmp_path, monkeypatch):
     orig_manifest = drift_check.MANIFEST_MD
     drift_check.MANIFEST_MD = manifest
 
-    # Patch git to always return a hash different from the manifest values
+    # Patch git to always return a hash different from the manifest values.
+    # _git_is_dirty is patched too: it shells out to the real working tree, which
+    # would make this test depend on ambient repo state (BL-041b).
     monkeypatch.setattr(drift_check, "_git_head_hash", lambda repo_dir, path: "zzz9999")
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
     try:
         drift_check.check_project_knowledge()
     finally:
@@ -490,6 +493,7 @@ def test_project_knowledge_stale_exempt_under_strict(tmp_path, monkeypatch):
     orig_manifest = drift_check.MANIFEST_MD
     drift_check.MANIFEST_MD = manifest
     monkeypatch.setattr(drift_check, "_git_head_hash", lambda repo_dir, path: "zzz9999")
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
     drift_check._strict = True
     try:
         drift_check.check_project_knowledge()
@@ -514,6 +518,7 @@ def test_project_knowledge_structural_fails_under_strict(tmp_path, monkeypatch):
     drift_check.MANIFEST_MD = manifest
     # git_head_hash returns None → "git log failed — cannot verify" (structural WARN)
     monkeypatch.setattr(drift_check, "_git_head_hash", lambda repo_dir, path: None)
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
     drift_check._strict = True
     try:
         drift_check.check_project_knowledge()
@@ -539,6 +544,7 @@ def test_project_knowledge_fresh_entries_pass(tmp_path, monkeypatch):
         drift_check, "_git_head_hash",
         lambda repo_dir, path: commit_map.get(path, "abc1234"),
     )
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
     try:
         drift_check.check_project_knowledge()
     finally:
@@ -547,6 +553,310 @@ def test_project_knowledge_fresh_entries_pass(tmp_path, monkeypatch):
     assert not warns_of("project_knowledge")
     assert not fails_of("project_knowledge")
     assert passes_of("project_knowledge")
+
+
+# --------------------------------------------------------------------------- #
+# project_knowledge — uncommitted-edit guard (BL-041b)                         #
+# --------------------------------------------------------------------------- #
+#
+# check 8 compares COMMITTED history (`git log -1 -- <path>`), so an uncommitted
+# edit to a tracked path is invisible to it and a pre-commit --strict run reports
+# the manifest clean whether or not the edit was made. These tests cover both
+# directions of the guard that makes that vacuity visible.
+
+
+def _fresh_hashes(repo_dir, path):
+    """_git_head_hash stub: every manifest row matches, so staleness never fires."""
+    return {"docs/rig/specs.md": "abc1234", "CLAUDE.md": "def5678"}.get(path, "abc1234")
+
+
+def test_project_knowledge_uncommitted_path_is_warn(tmp_path, monkeypatch):
+    """A manifest-tracked path with working-tree changes must produce WARN."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(
+        drift_check, "_git_is_dirty",
+        lambda repo_dir, path: path == "docs/rig/specs.md",
+    )
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    warns = warns_of("project_knowledge")
+    assert any("uncommitted" in w and "docs/rig/specs.md" in w for w in warns), warns
+    assert not fails_of("project_knowledge")
+    # No PASS: "all match git HEAD" would answer a question this run cannot answer.
+    assert not passes_of("project_knowledge")
+
+
+def test_project_knowledge_uncommitted_exempt_under_strict(tmp_path, monkeypatch):
+    """BL-041b: the uncommitted-edit WARN is strict-exempt — WARN, never FAIL."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(
+        drift_check, "_git_is_dirty",
+        lambda repo_dir, path: path == "docs/rig/specs.md",
+    )
+    drift_check._strict = True
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+        drift_check._strict = False
+
+    assert warns_of("project_knowledge"), "uncommitted WARN must survive --strict"
+    assert not fails_of("project_knowledge"), "uncommitted WARN must NOT be promoted to FAIL"
+
+
+def test_project_knowledge_clean_tree_is_silent(tmp_path, monkeypatch):
+    """Clean tree + fresh hashes: no uncommitted signal at all, PASS emitted."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: False)
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    assert not warns_of("project_knowledge")
+    assert passes_of("project_knowledge")
+
+
+def test_project_knowledge_dirty_untracked_path_is_silent(tmp_path, monkeypatch):
+    """A dirty path that is NOT a manifest row produces no signal.
+
+    The guard is scoped to manifest-tracked paths — an unrelated working-tree
+    edit must not make check 8 noisy."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(
+        drift_check, "_git_is_dirty",
+        lambda repo_dir, path: path == "scripts/not_in_the_manifest.py",
+    )
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    assert not warns_of("project_knowledge")
+    assert passes_of("project_knowledge")
+
+
+def test_project_knowledge_git_status_failure_fails_under_strict(tmp_path, monkeypatch):
+    """A git status failure is STRUCTURAL, not exempt — it FAILs under --strict."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(drift_check, "_git_is_dirty", lambda repo_dir, path: None)
+    drift_check._strict = True
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+        drift_check._strict = False
+
+    fails = fails_of("project_knowledge")
+    assert any("git status failed" in f for f in fails), fails
+
+
+def test_project_knowledge_dirty_check_runs_in_the_rows_own_repo(tmp_path, monkeypatch):
+    """Each row's porcelain runs in the repo that OWNS it.
+
+    The harness rows live in the sibling ../aetheris checkout; running git status
+    against REPO_ROOT for them would report every harness path clean."""
+    reset()
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_MANIFEST_SAMPLE)
+
+    calls: list[tuple] = []
+
+    orig_manifest = drift_check.MANIFEST_MD
+    drift_check.MANIFEST_MD = manifest
+
+    def recording_is_dirty(repo_dir, path):
+        calls.append((repo_dir, path))
+        return False
+
+    monkeypatch.setattr(drift_check, "_git_head_hash", _fresh_hashes)
+    monkeypatch.setattr(drift_check, "_git_is_dirty", recording_is_dirty)
+    try:
+        drift_check.check_project_knowledge()
+    finally:
+        drift_check.MANIFEST_MD = orig_manifest
+
+    assert (drift_check.REPO_ROOT, "docs/rig/specs.md") in calls, calls
+    assert (drift_check.HARNESS_ROOT, "CLAUDE.md") in calls, calls
+
+
+# --------------------------------------------------------------------------- #
+# command_fields — behaviour tests (BL-036)                                    #
+# --------------------------------------------------------------------------- #
+
+_SPECS_S4_STRUCTS = """
+## 4. Tauri Command Shapes
+
+**`harness_get_run`**
+
+```rust
+pub struct RunDetail {
+    pub run_id:      String,
+    pub label:       String,       // COALESCE(runs.label, run_id) — the label column,
+                                   // NOT config_json
+    pub finished_at: Option<String>,
+}
+```
+
+## 5. TypeScript Interfaces
+"""
+
+_RUST_STRUCTS = """
+#[derive(Debug, serde::Serialize)]
+pub struct RunDetail {
+    pub run_id:      String,
+    /// COALESCE over the label column.
+    pub label:       String,
+    pub finished_at: Option<String>,
+}
+"""
+
+
+def _run_command_fields(monkeypatch, specs_text, rust_text):
+    """Drive check_command_fields against inline fixtures only (no repo files)."""
+    monkeypatch.setattr(drift_check, "_require_file", lambda path, check: specs_text)
+    monkeypatch.setattr(
+        drift_check, "_parse_command_structs_from_source",
+        lambda commands_dir: drift_check._parse_structs_from_rust_text(rust_text),
+    )
+    reset()
+    drift_check.check_command_fields()
+
+
+def test_parse_rust_struct_fields_strips_comments_and_attributes():
+    body = """
+    #[serde(rename = "id")]
+    pub run_id: String,
+    /// A doc comment.
+    pub label:  String,        // trailing note
+    pub extra:  HashMap<String, String>,
+"""
+    fields = drift_check._parse_rust_struct_fields(body)
+    assert fields == {
+        "run_id": "String",
+        "label": "String",
+        "extra": "HashMap<String,String>",
+    }
+
+
+def test_command_fields_matching_struct_passes(monkeypatch):
+    _run_command_fields(monkeypatch, _SPECS_S4_STRUCTS, _RUST_STRUCTS)
+    assert not warns_of("command_fields")
+    assert not fails_of("command_fields")
+    assert passes_of("command_fields")
+
+
+def test_command_fields_phantom_documented_field_is_warn(monkeypatch):
+    """The RunDetail.events case: documented in §4, never present in the struct."""
+    specs = _SPECS_S4_STRUCTS.replace(
+        "    pub finished_at: Option<String>,",
+        "    pub finished_at: Option<String>,\n    pub events:      Vec<EventRow>,",
+    )
+    _run_command_fields(monkeypatch, specs, _RUST_STRUCTS)
+
+    warns = warns_of("command_fields")
+    assert any("RunDetail.events" in w and "not in the Rust struct" in w for w in warns), warns
+    assert not passes_of("command_fields")
+
+
+def test_command_fields_undocumented_source_field_is_warn(monkeypatch):
+    rust = _RUST_STRUCTS.replace(
+        "    pub finished_at: Option<String>,",
+        "    pub finished_at: Option<String>,\n    pub status:      String,",
+    )
+    _run_command_fields(monkeypatch, _SPECS_S4_STRUCTS, rust)
+
+    warns = warns_of("command_fields")
+    assert any("RunDetail.status" in w and "not documented" in w for w in warns), warns
+
+
+def test_command_fields_type_mismatch_is_warn(monkeypatch):
+    rust = _RUST_STRUCTS.replace("pub run_id:      String,", "pub run_id:      i64,")
+    _run_command_fields(monkeypatch, _SPECS_S4_STRUCTS, rust)
+
+    warns = warns_of("command_fields")
+    assert any("RunDetail.run_id" in w and "type mismatch" in w for w in warns), warns
+
+
+def test_command_fields_optional_suffix_matches_option(monkeypatch):
+    """§6's `field?` convention, reused: documented `field?: T` ↔ Rust Option<T>."""
+    specs = _SPECS_S4_STRUCTS.replace(
+        "pub finished_at: Option<String>,", "pub finished_at?: String,"
+    )
+    _run_command_fields(monkeypatch, specs, _RUST_STRUCTS)
+
+    assert not warns_of("command_fields"), warns_of("command_fields")
+    assert passes_of("command_fields")
+
+
+def test_command_fields_optional_suffix_still_flags_absent_field(monkeypatch):
+    """`?` relaxes the TYPE, not existence — a `field?` absent from the struct warns."""
+    specs = _SPECS_S4_STRUCTS.replace(
+        "    pub finished_at: Option<String>,",
+        "    pub finished_at: Option<String>,\n    pub events?:     Vec<EventRow>,",
+    )
+    _run_command_fields(monkeypatch, specs, _RUST_STRUCTS)
+
+    warns = warns_of("command_fields")
+    assert any("RunDetail.events" in w and "not in the Rust struct" in w for w in warns), warns
+
+
+def test_command_fields_ghost_struct_is_warn(monkeypatch):
+    _run_command_fields(monkeypatch, _SPECS_S4_STRUCTS, "// no structs here\n")
+
+    warns = warns_of("command_fields")
+    assert any("RunDetail" in w and "ghost" in w for w in warns), warns
+
+
+def test_command_fields_zero_structs_parsed_is_fail(monkeypatch):
+    specs = "## 4. Tauri Command Shapes\n\nNo fenced blocks here.\n\n## 5. Next\n"
+    _run_command_fields(monkeypatch, specs, _RUST_STRUCTS)
+
+    assert fails_of("command_fields"), "expected FAIL when §4 has zero rust structs"
+
+
+def test_command_fields_section_anchor_missing_is_fail(monkeypatch):
+    _run_command_fields(monkeypatch, "# specs\n\nno section 4\n", _RUST_STRUCTS)
+
+    assert fails_of("command_fields"), "expected FAIL when the §4 anchor is missing"
 
 
 # --------------------------------------------------------------------------- #

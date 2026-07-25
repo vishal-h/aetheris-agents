@@ -17,12 +17,16 @@ Checks:
   routes           — registry.ts paths vs App.tsx Route paths
   payload_fields   — live DB payload sampling vs specs.md §6 (skipped if DB absent)
   milestone_status    — docs/rig/milestones/*/README.md has Status: line
-  project_knowledge   — project-knowledge-manifest.md commit hashes vs git HEAD (WARN if stale)
+  project_knowledge   — project-knowledge-manifest.md commit hashes vs git HEAD (WARN if stale),
+                        plus a WARN when a tracked path has uncommitted edits (BL-041b)
+  command_fields      — specs.md §4 ```rust struct fields vs commands/*.rs (BL-036)
 
 --strict promotes WARN to FAIL, with one exemption: project_knowledge
 manifest-STALENESS WARNs stay WARN and do not affect the exit code (mid-cycle
-staleness is expected truth between export boundaries). Structural manifest
-problems (missing file, unknown repo, git failure) are NOT exempt and still FAIL.
+staleness is expected truth between export boundaries). The uncommitted-edit WARN
+is exempt on the same terms — it reports that this run cannot answer the staleness
+question yet, not that something regressed. Structural manifest problems (missing
+file, unknown repo, git failure) are NOT exempt and still FAIL.
 So under --strict the invariant is "zero UNEXPLAINED WARNs", not "zero WARNs".
 """
 
@@ -599,6 +603,28 @@ def _git_head_hash(repo_dir: Path, path: str) -> str | None:
         return None
 
 
+def _git_is_dirty(repo_dir: Path, path: str) -> bool | None:
+    """True if `path` has uncommitted working-tree changes in `repo_dir`.
+
+    Returns None when git could not answer (structural problem, not exempt).
+    Counterpart to `_git_head_hash`, which reads committed history only — see
+    the BL-041(b) guard in check_project_knowledge.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain", "--", path],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return None
+        return bool(result.stdout.strip())
+    except Exception:
+        return None
+
+
 def check_project_knowledge() -> None:
     check = "project_knowledge"
 
@@ -614,11 +640,30 @@ def check_project_knowledge() -> None:
         return
 
     stale: list[str] = []
+    uncommitted: list[str] = []
     for repo_path, repo_name, manifest_commit in rows:
         repo_dir = _REPO_DIR_MAP.get(repo_name)
         if repo_dir is None:
             _warn(check, f"unknown repo name {repo_name!r} in manifest — cannot verify {repo_path}")
             continue
+
+        # BL-041(b): this check compares COMMITTED history, so an uncommitted edit
+        # to a tracked path is invisible to it — the run reports the manifest clean
+        # whether or not the edit was made. Say so, per path, in the row's OWN repo
+        # (the harness rows live in the sibling checkout, not REPO_ROOT).
+        dirty = _git_is_dirty(repo_dir, repo_path)
+        if dirty is None:
+            # Structural (same class as a git log failure) — NOT strict-exempt.
+            _warn(check, f"{repo_path}: git status failed — cannot check for uncommitted edits")
+        elif dirty:
+            _warn(
+                check,
+                f"{repo_path} has uncommitted working-tree changes — this check compares "
+                f"committed history, so its staleness reading for this path is vacuous; "
+                f"re-run --strict after committing",
+                strict_exempt=True,
+            )
+            uncommitted.append(repo_path)
 
         current = _git_head_hash(repo_dir, repo_path)
         if current is None:
@@ -636,8 +681,131 @@ def check_project_knowledge() -> None:
             )
             stale.append(repo_path)
 
-    if not stale:
+    # No PASS while a tracked path is uncommitted: "all match git HEAD" would be a
+    # well-formed answer to a question this run cannot yet answer (BL-041b).
+    if not stale and not uncommitted:
         _ok(check, f"{len(rows)} manifest entries all match git HEAD")
+
+# --------------------------------------------------------------------------- #
+# Check 9: command_fields                                                      #
+# --------------------------------------------------------------------------- #
+
+_RUST_FENCE_RE = re.compile(r"```rust\n(.*?)```", re.DOTALL)
+_RUST_STRUCT_RE = re.compile(r"pub struct (\w+)\s*\{(.*?)\n\}", re.DOTALL)
+# `pub field: Type` / `pub field?: Type` — one field per line, trailing comma optional.
+# Line-based rather than comma-split: a type may itself contain a comma
+# (e.g. HashMap<String, String>).
+_RUST_FIELD_RE = re.compile(r"^\s*pub\s+(\w+\??)\s*:\s*(.+?),?\s*$")
+
+
+def _parse_rust_struct_fields(body: str) -> dict[str, str]:
+    """Return {field_name: type} for a struct body, comments and attributes stripped.
+
+    Field names keep any `?` suffix (the §6 optionality convention, reused here).
+    Types are whitespace-normalised so `Vec< T >` and `Vec<T>` compare equal.
+    """
+    fields: dict[str, str] = {}
+    for line in body.splitlines():
+        line = re.sub(r"//.*$", "", line)          # /// doc comments and trailing // notes
+        if not line.strip() or line.strip().startswith("#["):
+            continue
+        m = _RUST_FIELD_RE.match(line)
+        if m:
+            fields[m.group(1)] = re.sub(r"\s+", "", m.group(2))
+    return fields
+
+
+def _parse_structs_from_rust_text(text: str) -> dict[str, dict[str, str]]:
+    return {
+        m.group(1): _parse_rust_struct_fields(m.group(2))
+        for m in _RUST_STRUCT_RE.finditer(text)
+    }
+
+
+def _parse_command_structs_from_specs(text: str, check: str) -> dict[str, dict[str, str]] | None:
+    """Parse the ```rust fenced blocks under specs.md §4 into {struct: {field: type}}."""
+    m = _require_section(
+        text,
+        r"## 4\. Tauri Command Shapes(.*?)(?=\n## |\Z)",
+        check,
+        "## 4. Tauri Command Shapes",
+    )
+    if not m:
+        return None
+
+    result: dict[str, dict[str, str]] = {}
+    for block in _RUST_FENCE_RE.finditer(m.group(1)):
+        # One fenced block may declare more than one struct (TrajectoryFile).
+        result.update(_parse_structs_from_rust_text(block.group(1)))
+
+    if not result:
+        _fail(check, "zero structs parsed from specs.md §4 ```rust blocks")
+        return None
+    return result
+
+
+def _parse_command_structs_from_source(commands_dir: Path) -> dict[str, dict[str, str]]:
+    result: dict[str, dict[str, str]] = {}
+    for rs_file in sorted(commands_dir.glob("*.rs")):
+        result.update(_parse_structs_from_rust_text(rs_file.read_text(encoding="utf-8")))
+    return result
+
+
+def _field_types_match(doc_type: str, src_type: str, optional: bool) -> bool:
+    if doc_type == src_type:
+        return True
+    # §6 convention reused: a documented `field?` is satisfied by Option<T>.
+    return optional and src_type == f"Option<{doc_type}>"
+
+
+def check_command_fields() -> None:
+    check = "command_fields"
+    specs_text = _require_file(SPECS_MD, check)
+    if specs_text is None:
+        return
+
+    doc_structs = _parse_command_structs_from_specs(specs_text, check)
+    if doc_structs is None:
+        return
+    src_structs = _parse_command_structs_from_source(COMMANDS_DIR)
+
+    field_count = 0
+    for struct_name, doc_fields in sorted(doc_structs.items()):
+        src_fields = src_structs.get(struct_name)
+        if src_fields is None:
+            _warn(
+                check,
+                f"struct {struct_name!r} documented in specs.md §4 but not found in "
+                f"commands/*.rs (ghost)",
+            )
+            continue
+
+        for doc_name, doc_type in doc_fields.items():
+            field_count += 1
+            optional = doc_name.endswith("?")
+            name = doc_name.rstrip("?")
+            if name not in src_fields:
+                _warn(
+                    check,
+                    f"{struct_name}.{name} documented in specs.md §4 but not in the Rust struct",
+                )
+            elif not _field_types_match(doc_type, src_fields[name], optional):
+                _warn(
+                    check,
+                    f"{struct_name}.{name} type mismatch — specs.md §4 {doc_type!r}, "
+                    f"Rust {src_fields[name]!r}",
+                )
+
+        documented = {n.rstrip("?") for n in doc_fields}
+        for name in sorted(set(src_fields) - documented):
+            _warn(check, f"{struct_name}.{name} in the Rust struct but not documented in specs.md §4")
+
+    if not any(l in ("FAIL", "WARN") and c == check for l, c, _ in FINDINGS):
+        _ok(
+            check,
+            f"{len(doc_structs)} documented §4 structs ({field_count} fields) "
+            f"match commands/*.rs",
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -653,6 +821,7 @@ CHECKS = [
     check_payload_fields,
     check_milestone_status,
     check_project_knowledge,
+    check_command_fields,
 ]
 
 _CHECK_NAMES = {fn.__name__.replace("check_", ""): fn for fn in CHECKS}

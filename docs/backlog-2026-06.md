@@ -1650,8 +1650,9 @@ disclosure renders "Showing N of M runs", with a second form while the client-si
 reads run inside one deferred read transaction — one command is not sufficient for
 the stated invariant on its own, since two statements can still straddle a harness
 insert. Notes: `docs/rig/milestones/bl-038-run-list-search-implementation-notes.md`.
-Merge gated on the manual GUI pass (BL-029 precedent; Rig has no frontend test
-runner, BL-017) — expected badge is `Showing 500 of 896 runs`, the **default** window,
+**Merge gate closed** — manual GUI pass executed 2026-07-25 against the real 896-run
+store: A/B/C/rider green, `Showing 500 of 896 runs` confirmed (BL-029 precedent; Rig
+has no frontend test runner, BL-017). The expected badge is the **default** 500 window,
 not the 250 the live test first used (review F1, fixed in `e4baddf`; arms and numbers
 in the implementation notes). Review: `docs/reviews/bl-038-review.md` — no blocking
 code findings; both in-cycle additions (LIKE-metacharacter escaping, single read
@@ -3405,7 +3406,7 @@ multi-line street/city/state/zip.
 | 15a | BL-047 | The `git_*` half of the routing gap BL-042's §5 correction names. Decide the mutating-vs-read-only classification *first*; the routing is three lines once the taxonomy is settled |
 | 15a2 | BL-048 | Known-red gate, tracked not carried. Triage before anything cites "the worker tests pass" |
 | 15a3 | BL-049 | Operator-facing *today*: BL-042 made `run_command` reach the comparison, and the comparison is wrong for it. Ahead of BL-047 — routing more exec-server tools into a comparison that mis-reports would multiply the defect |
-| ✔ | BL-038 | **Done 2026-07-25** (`c0977c2`, merge pending the manual GUI pass). Scope narrowed in-cycle to server-side search only — no client-side filter, no pagination — because two filtering paths can disagree. BL-024 (19b) inherits the find-run-by-id primitive as intended: a server-side `label`/`run_id` LIKE reaching the whole store, which a window-scoped client filter could not have been. Spawned BL-058 |
+| ✔ | BL-038 | **Done 2026-07-25** (`c0977c2` + F1 `e4baddf`; GUI merge gate green, 500 of 896). Scope narrowed in-cycle to server-side search only — no client-side filter, no pagination — because two filtering paths can disagree. BL-024 (19b) inherits the find-run-by-id primitive as intended: a server-side `label`/`run_id` LIKE reaching the whole store, which a window-scoped client filter could not have been. Spawned BL-058 |
 | 22b | BL-058 | Same surface as BL-036 (check 9) one section down. Do with or after BL-035/BL-036 cleanup; decide §5's scope rule before writing the check |
 | 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |

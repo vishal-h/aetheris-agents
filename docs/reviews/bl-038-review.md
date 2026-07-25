@@ -63,4 +63,10 @@ live arm `live: window 500 of 896 runs; search 'demo-01' → 1 match(es)`; `tsc 
 `architecture.md` `c0977c2`, `backlog-2026-06.md` `c1dd116`). The notes file is not manifest-tracked,
 so `e4baddf` adds no fourth WARN.
 
-**Merge gate: still open.** The manual GUI pass is the human's to execute, now against 500.
+**Merge gate: CLOSED 2026-07-25.** Manual GUI pass executed by the operator against the real
+896-run store — **A/B/C/rider green, 500 of 896 confirmed**. Arm A (`demo-01` absent unsearched,
+returned by search, badge `Showing 1 of 1 match`), arm B (`Showing 500 of 896 runs`), arm C (the
+status-filtered second form, F4's reason for existing), and the focus-retention rider — the only
+check that exists on the `runList.loading && !runList.data` guard, since BL-017 leaves it beyond
+any automated test. Recorded in the implementation notes with the arms marked executed. BL-038 is
+code-complete and merged.

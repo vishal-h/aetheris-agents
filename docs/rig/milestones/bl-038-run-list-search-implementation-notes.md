@@ -95,13 +95,24 @@ either window, so the conclusion is unchanged.
 TS half of the same contract drifts silently. Out of BL-038's scope; the new `RunListResult` was
 added to §5 so this ticket adds no drift of its own. Filed as **BL-058** rather than left as prose.
 
-**Manual GUI pass gates merge** (BL-029 precedent — Rig has no frontend test runner, BL-017).
-Expected numbers are the **default 500-run window** over the current 896-run store — the badge
-reads `Showing 500 of 896 runs`, not 250 (review F1: 250 was the old live-test literal, and a
-correct 500 would have false-failed the gate). Three arms:
+**Manual GUI pass — CLOSED. Executed 2026-07-25 by the operator against the real 896-run
+store: GUI pass: A/B/C/rider green, 500 of 896 confirmed.** This is the merge gate (BL-029
+precedent — Rig has no frontend test runner, BL-017); it is closed, and the arms below are
+recorded as executed, not pending.
 
-1. Type `demo-01` (rank 879, outside the window) and confirm the row appears.
-2. Clear the box and confirm the badge reads `Showing 500 of 896 runs`.
-3. With the box empty, set the status filter and confirm the badge switches to the
-   `Showing F of 500 loaded · 896 runs in store` form rather than quoting server numbers over a
-   shorter table.
+Expected numbers are the **default 500-run window** over the 896-run store — the badge reads
+`Showing 500 of 896 runs`, not 250 (review F1: 250 was the old live-test literal, and a correct
+500 would have false-failed the gate). Four arms, all green:
+
+- **A — search reaches past the window.** `demo-01` (rank 879) absent from the unsearched list;
+  typing it returns the row, badge `Showing 1 of 1 match`. Failure would have been the row never
+  appearing — search filtering the window rather than the store, the bug this ticket fixed.
+- **B — window disclosure.** Search cleared, badge reads `Showing 500 of 896 runs`. Any other
+  number would have meant the fetch limit is not the default.
+- **C — the status-filter badge form.** Search empty, status filter set: badge switches to
+  `Showing F of 500 loaded · 896 runs in store`, not a bare `Showing F of 896`. That second form
+  is what stops the badge quoting server numbers over a client-narrowed table (review F4).
+- **Rider — focus retention.** Typing a multi-character term slowly keeps focus in the search box
+  through every debounce/refetch. This is the only check on the `runList.loading && !runList.data`
+  guard; the old `runList.loading` form unmounted the toolbar on each refetch, and no automated
+  test can see it (BL-017).

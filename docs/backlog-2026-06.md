@@ -2795,6 +2795,101 @@ before/after: `docs/reviews/bl-049-contract-draft.md`. Reviews: r0/r1/r2 in `doc
 
 ---
 
+### BL-048 — DONE (pending first CI dispatch) 2026-07-25
+
+Landed at harness `6e2fad8`. **The set is green and wired.** `mix test --include
+requires_worker` on a capable machine: **951 tests, 0 failures, 67 excluded, 1 skipped**,
+identical across two consecutive runs.
+
+**One thing pends, and it is the human's move.** The wiring is a CI job gated on the worker's
+containment attestation, and the attestation only reports on `ubuntu-latest` once a job runs
+there (a PR or `workflow_dispatch`). If it reports capable, BL-048 closes as a CI job. If it
+reports *not* capable — GitHub's 24.04 image may restrict unprivileged user namespaces via
+AppArmor, which this repo has deliberately not surveyed — the harness sprint is the standing
+home and **BL-048 still closes**, just wired there: `scripts/sprint.sh` already prints the same
+probe. Either way the set has a gate; which gate is what the first dispatch decides.
+
+**The six, each triaged (the row's own done-when):**
+
+| Test | Disposition | Why |
+|---|---|---|
+| `RunCommandTest` ×3 | **fixed** | Three *different* non-permitted commands — `sleep`, `pwd`, `false` — not just `pwd`. Each asserted against a command the exec server is right to refuse, so none exercised what its name claimed. Rewritten on `python3` |
+| `McpHttpTest` | **fixed** | Test-hygiene, not environment: `on_exit` called `Port.close` on an already-closed port and raised, so the test's only failure mode was its own teardown. It is hermetic (local python mock) and stays in the set |
+| `McpGithubTest` | **retagged, kept** | `:requires_real_provider`. Needs a real model to *choose* to call the tool, plus a token and the binary. The stdio GitHub MCP path is live and surfaced, so the test is kept — it just cannot live in a sandbox-only set |
+| httpbin `http_call` | **retagged (extracted)** | `:requires_internet`, in a module of its own. See the correction below |
+| `OverlayAutonomousTest` | **skipped, filed as BL-057** | Cannot pass as written; no test-side config fixes it. See BL-057 |
+
+**A correction worth recording, because it nearly shipped.** The first attempt retagged the
+httpbin test in place with `@tag requires_worker: false`. That does **not** hold against a
+module-level `@moduletag :requires_worker` under an `--include` — the test still ran, and the
+set reported **green** because httpbin happened to return 200 on that run. The second run got a
+503 and exposed it. The fix is a module of its own; the lesson is that "the set is green" needed
+two runs to be worth saying, which is why the done-check asked for two.
+
+**Residual accounting, corrected one last time.** This row's characterisations were wrong twice
+before: "network/credential-dependent integration tests" (they were mostly SIGSYS → BL-043),
+then "mostly BL-043" (half were the MCP-stdio/`execve` exclusion → BL-055). Final state: **zero
+residual in the deterministic set.** What was environment-dependent is retagged out and still
+runs under its own include — verified, not assumed: both retagged tests were executed under
+`--include requires_internet` / `--include requires_real_provider` and fail for their
+environmental reasons (a live 503; the model not calling the tool). Retagged, not dropped.
+
+**Part B — the set cannot rot invisibly again.** `scripts/containment_probe.exs` asks the worker
+what it established (BL-050/055/056 made that a runtime fact) and reports
+netns/seccomp/exec-server/overlay. The CI `sandbox` job runs the probe, then runs the set if
+capable or **skips with the missing primitive named** — deliberately not red, because a job that
+reddens on a runner's limits gets disabled, which is how this set rotted in the first place.
+
+`Source: BL-048, closed at harness 6e2fad8, 2026-07-25.`
+
+---
+
+### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute (#TBD)
+**Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+Found during the BL-048 closeout while diagnosing `OverlayAutonomousTest`, which is skipped
+pending this.
+
+`Agent.Supervisor.worker_child_spec/1`'s **first** clause is
+
+```elixir
+defp worker_child_spec(%{provider: "stub", mcp_servers: []}), do: []
+defp worker_child_spec(%{tools: [], mcp_servers: []}), do: []
+```
+
+The first matches on `provider` and `mcp_servers` **without looking at `tools`**, and it is
+matched before the clause that does. So a run with `provider: "stub"` and
+`tools: ["write_file"]` starts **no worker at all**. Its stub responses can still drive tool
+calls; those calls silently do not execute; and the run reports `:done`.
+
+`OverlayAutonomousTest` is exactly that shape, which is why it fails identically before and
+after BL-050's reorder — no worker means nothing mounts an overlay, so the probe file lands
+nowhere and the test's `assert File.exists?(probe_in_upper)` cannot pass. It is **not** the
+BL-050 race, and BL-050 correctly did not claim it.
+
+**Why this was not fixed in the BL-048 closeout.** The honest fix is the clause — a stub run
+that declares tools does need a worker — but that clause governs **six test files, three of them
+in the default suite** (`loop_test.exs`, `pre_tools_test.exs`, `injector_test.exs`, plus
+`spawn_agent_test.exs`, `skill_extraction_test.exs`, and the overlay test). Changing it turns
+default-suite tests into worker-dependent runs, which is a product decision about what a stub run
+*is*, not a test fix — and BL-048 was explicitly forbidden from weakening or reshaping product
+behaviour to make tests green.
+
+**The question to settle:** should a `provider: "stub"` run that declares tools start a worker
+and execute them (making the stub a *model* stub only), or is a stub run defined as
+tool-inert — in which case declaring tools on one should be rejected at config validation rather
+than silently ignored? Either answer is defensible; the current behaviour — accept the config,
+start no worker, execute nothing, report success — is not.
+
+**Done when:** the question is answered and recorded; the behaviour matches the answer (worker
+started, or config rejected); `OverlayAutonomousTest`'s `@moduletag :skip` is removed and it
+passes, or the test is rewritten against whatever the answer makes correct; and the blast radius
+on the six files is walked, not assumed.
+
+`Source: BL-048 closeout, 2026-07-25 (harness 6e2fad8).`
+
+---
+
 ### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
@@ -3259,6 +3354,8 @@ multi-line street/city/state/zip.
 | ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 corrected in both cells (strike + explicit non-guarantee, **§8-ratified option B**) plus five mirrors; dead arm deleted; stability tests re-pointed at `write_file` |
 | ✔ | BL-043 | **Done 2026-07-25.** Repaired (not retired): five syscalls enumerated over three probe rounds, caller-kill fixed in both its mechanisms. Cleared 4 of the 8 SIGSYS; the other 4 turned out to be a different defect → BL-055 |
 | ✔ | BL-050, BL-055, BL-056 | **Done 2026-07-25 (`9871059`).** One reorder — `ready` became the fully-established barrier and now attests overlay/exec-server/seccomp/MCP. Verify refuses on a filter failure; record attests and continues. requires_worker 11 → 6, stable across two runs |
+| ✔ | BL-048 | **Done 2026-07-25 (`6e2fad8`), pending the first CI dispatch.** The set is green (951/0, two runs) and wired behind a containment-attestation gate: CI runs it if the runner is capable, skips with the missing primitive named if not. If `ubuntu-latest` cannot sandbox, the sprint is the standing home and it still closes |
+| 27 | BL-057 | Raised by BL-048's closeout: a stub run declaring tools starts no worker and its tool calls silently never execute. Blocks un-skipping `OverlayAutonomousTest`. A product question (what is a stub run?), not a test fix — walk the six affected files |
 | — | BL-054 | Fires whenever the `requires_worker` twelfth slot flakes; the row exists so it has a name. Fold into a polling-based rewrite of the fixed-ms windows when someone is in that file |
 | — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |

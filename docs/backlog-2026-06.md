@@ -1404,6 +1404,105 @@ Review: `docs/reviews/bl-041b-bl-036-review.md`.
 
 ---
 
+### BL-053 — DONE 2026-07-25 — verify makes no filesystem-hash claim (#TBD)
+**Size:** S · **Section:** Harness (aetheris/) · Closes the **fs_hash strand of BL-048**
+
+Landed at harness `915d582`. Diagnosis: `docs/reviews/bl-048-fs-hash-diagnosis.md`
+(harness, committed in the same change). Contract draft: `docs/reviews/bl-053-contract-draft.md`.
+**The §3 wording is applied but pending §8 human ratification.**
+
+**What was wrong.** `verify`'s comparison had a second arm —
+`recorded_fs_hash != actual_fs_hash -> :hash_mismatch` — that could not fire for any tool.
+`read_file`/`list_dir` stopped hashing at **`d4728af`** (2026-06-06), which removed a recursive
+whole-sandbox-tree SHA-256 that reliably blew the 30 s GenServer timeout on a 31 GB / 52k-file
+sandbox, and deleted `fs_hash.rs`. The exec-server family records and re-executes `nil`. Served
+steps never reach a comparison. `write_file`'s hash is a digest of the *recorded input content*,
+which re-execution reproduces by construction. So the arm compared `nil` to `nil`, fell through
+to `:verified` — while §3's mode table told operators a filesystem hash had been compared. Two
+Elixir tests still asserted the pre-`d4728af` `"sha256:"` shape and were three of BL-048's 15
+failures.
+
+**Ratified direction: delete and correct, do not restore.** `d4728af` is a correct fix for a real
+defect and is not reverted. Verify's comparison is output value-equality over the deterministic
+portion, full stop.
+
+**What landed.** Verify-side deletes: the `:hash_mismatch` arm, `compare_status/4` → `/2`, the
+`recorded_fs_hash`/`actual_fs_hash` extraction and step-map fields, the hardcoded exec-server
+`fs_hash: nil`, `:hash_mismatch` from the `verify_report.ex` status union, and the per-step
+rendering of both hashes. §3's clause struck; five mirrors corrected (`runbook.md`, `specs.md`
+×2, `architecture.md` ×2). **Record side untouched** — the trajectory `fs_hash` payload field
+stays (`null` for read tools, real for `write_file`); removing it is a schema migration touching
+fork and the `payload_fields` drift check.
+
+**Tests made honest, and one made non-vacuous.** `client_test.exs` now asserts
+`Map.fetch!(result, :fs_hash) == nil` — `fetch!`, so the key must be *present and null* rather
+than absent. `fs_hash_stability_test.exs` is **re-pointed at `write_file`**: it asserted
+`hash1 == hash2` over two nils, so the stability property it existed to guard had not been
+exercised since `d4728af` — the failing `"sha256:"` line was the only thing keeping it honest.
+It now writes identical content twice, asserts a 64-char hex digest *before* comparing, and adds
+a sensitivity case (different content → different hash) so the guarantee cannot be met by a
+constant. Two verify tests asserting `Map.get(step, :actual_fs_hash) == nil` were changed to
+`refute Map.has_key?` — `Map.get` on a deleted key also returns `nil`, so they would have kept
+passing while asserting nothing.
+
+**The real loss, stated plainly.** Whole-sandbox drift detection — an unrelated file changing
+between record and verify — was removed at `d4728af` and is **not** restored here. Nothing
+detects it today. If it is ever wanted it is a new, performance-aware feature (bounded to the
+files a step touched, not the whole tree), not a revert.
+
+**Evidence:** `requires_worker` 15 → 12 failures, the three fs_hash failures green and
+non-vacuous; default `mix test` 934/0; `grep` confirms no remaining `:hash_mismatch` producer or
+consumer outside explanatory comments; mutation-checked — reintroducing the arm turns the new
+output-only verify test red (`verified: 0`, expected 1).
+
+`Source: BL-048 fs_hash strand; diagnosis 2026-07-25. Review:
+docs/reviews/bl-053-review.md (pending).`
+
+---
+
+### BL-054 — The twelfth `requires_worker` failure is a load-sensitive flake with no stable identity (#TBD)
+**Size:** XS–S · **Priority:** low · **Section:** Harness (aetheris/)
+
+Filed 2026-07-25 during BL-053's done-check, per the standing rule that a red gate gets a tracked
+ticket the day it is found — and per **BL-051**, whose whole lesson is that a flake without a name
+is met as a first sighting every time.
+
+After BL-053 closed the fs_hash strand, `mix test --include requires_worker` reports 12 failures:
+pwd ×3 (BL-048), SIGSYS ×8 (BL-043) — and **one slot that changes identity between runs**:
+
+| Run | pwd | SIGSYS | Twelfth failure |
+|---|---|---|---|
+| diagnosis, 2026-07-25 (`af56a57`) | 3 | 8 | `RunOverlayTest` "overlay dirs are created and upper is empty…" — **BL-050**'s handshake race |
+| BL-053 done-check, run 1 | 3 | 8 | `RunHelpersTimeoutTest` "a status change alone counts as activity, with no events at all" (`run_helpers_timeout_test.exs:84`) |
+| BL-053 done-check, run 2 | 3 | 8 | `RunOverlayTest` again — `RunHelpersTimeoutTest` green |
+
+Three consecutive runs, same arithmetic (3 + 8 + 1 = 12), **two different occupants** of the
+twelfth slot and each green in the run where the other failed. That is the evidence the slot is a
+race rather than a defect: the two stable strands never move, and the twelfth never sits still.
+
+The `RunHelpersTimeoutTest` case asserts `await_bounded(run_id, await_inactivity_timeout_ms: 300)`
+reaches `:done`; under the full suite's load it instead returns
+`stalled: no status or event activity for 300ms (last status: running, last event seq: -1)`.
+**10/10 green in isolation** (five isolated runs × two tests). BL-053's diff touches only
+`verifier.ex`, `verify_report.ex` and verify/worker tests — nothing in the `await_bounded` path —
+so it is not attributable to that change. Both candidates are timing races whose window is a
+few hundred ms; the full suite is where the load exists to lose them.
+
+Not merged into BL-050: that row is one specific race with a mechanism, while this is the
+*pattern* — a fixed-ms inactivity window asserted inside a suite whose scheduling is not bounded.
+The candidates share the shape, not the site.
+
+**Done when:** the fixed-ms windows in `run_helpers_timeout_test.exs` are made load-insensitive
+(poll for the state transition rather than assert against a wall-clock budget — the pattern the
+harness `CLAUDE.md` already promotes, *"poll for trajectory events, not time"*), or the tests are
+tagged so a loaded full-suite run cannot flake them; and BL-050's race is settled. Until then the
+twelfth slot is **named here** rather than re-triaged each run.
+
+`Source: BL-053 done-check, 2026-07-25. Captures: full_requires_worker.txt (both runs),
+rht_1..5.txt (isolation).`
+
+---
+
 ### BL-052 — drift_check check 9: ghost-struct arm is scoped to `commands/*.rs` (#TBD)
 **Size:** XS · **Priority:** low · **Trigger-fired**
 
@@ -2488,12 +2587,21 @@ Three distinct causes, not one:
   in `PERMITTED_COMMANDS` (`aetheris_exec_server/src/runner.rs:7-24`); the exec server
   correctly answers `command not permitted: pwd`. 3 failures.
 - **`fs_hash` is nil where the test expects `sha256:…`** — `client_test.exs:53`,
-  `fs_hash_stability_test.exs` (×2). This one is **not** obviously a stale test and may be a
-  live defect in worker fs-hashing; it needs diagnosis, not a test edit.
+  `fs_hash_stability_test.exs` (×2). ~~This one is **not** obviously a stale test and may be a
+  live defect in worker fs-hashing; it needs diagnosis, not a test edit.~~ **CORRECTED — it is
+  nil by design, not a live defect. Diagnosed and closed as BL-053** (`d4728af` removed the
+  whole-sandbox hash for a real 30s-timeout reason; the tests were never updated). 3 failures,
+  now green.
 - **Network/credential-dependent integration tests pulled in by the include** — `httpbin.org`,
   the GitHub MCP server, the HTTP MCP transport. `--include requires_worker` overrides the
   `:integration` exclusion for tests carrying both tags, so these run whether or not the
-  environment can support them. 6+ failures.
+  environment can support them. 6+ failures. **CORRECTED — the characterization is mostly
+  wrong.** Eight of the nine carry `** (stop) {:worker_crashed, 159}` — 159 = 128+31 = SIGSYS —
+  which is **BL-043**'s `setsockopt` seccomp gap killing the worker, not a missing credential or
+  an unreachable host. Landing BL-043 should clear ~8 of these on its own. The ninth
+  (`RunOverlayTest`) is **BL-050**'s handshake race. So the strand is two tracked defects wearing
+  an environment-dependency costume; the `:integration` tagging question is real but secondary.
+  Do not re-triage per packet — this correction is the triage.
 
 **This is the gate-rot pattern the CLAUDE.md gate rule exists to catch**, running in the
 direction that is hardest to see: a set that no gate executes cannot go red visibly, so it
@@ -2507,6 +2615,15 @@ so it cannot rot invisibly again. Until then it is a **known-red gate named with
 ref** in packets, not re-triaged each time.
 
 `Source: BL-042 done-check, off-territory, 2026-07-23. Baseline captured on a clean tree.`
+
+**Status 2026-07-25, after BL-053:** `mix test --include requires_worker` at harness
+`915d582` reports **12 failures** (was 15; 934 tests / 65 excluded). The fs_hash strand
+is closed. Remaining: pwd ×3, SIGSYS/BL-043 ×8, and **one load-sensitive flake** — the twelfth
+slot is not stable. In the BL-053 run it was `RunHelpersTimeoutTest` "a status change alone
+counts as activity" (a 300 ms inactivity window, 10/10 green in isolation); in the diagnosis run
+it was `RunOverlayTest` (BL-050). Both are races that surface only under the full suite's load.
+Filed as **BL-054** so the twelfth slot has a name rather than being met as a first sighting each
+time (the BL-051 lesson).
 
 ---
 
@@ -2879,6 +2996,9 @@ multi-line street/city/state/zip.
 | 23 | BL-041 | Disposition (a) is a doc-only rule worth landing before the next export, since that export's own done-check is the case it governs. Disposition (b) batches with BL-036 — both are drift_check blind spots |
 | 23b | BL-044, BL-045 | Small harness cleanups from BL-025; neither blocks anything. BL-045 is a naming decision, not a deletion — do not batch it with BL-033 |
 | 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
+| ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 + five mirrors corrected; dead arm deleted; stability tests re-pointed at `write_file`. §3 wording pending §8 |
+| 24 | BL-043 | Raised by BL-053's done-check: it is **8 of BL-048's remaining 12** failures, not just an `http_call` defect. Best failure-count-per-fix on the board |
+| — | BL-054 | Fires whenever the `requires_worker` twelfth slot flakes; the row exists so it has a name. Fold into a polling-based rewrite of the fixed-ms windows when someone is in that file |
 | — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |
 | ✔ | BL-027 | **Done 2026-07-23, folded into BL-025.** Its trigger was too narrow — any failed contained tool call reached the crash — and BL-025 made `aetheris verify` real, which would have shipped it. Convention residue → BL-046 |

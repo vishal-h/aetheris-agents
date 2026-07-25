@@ -1651,8 +1651,12 @@ reads run inside one deferred read transaction — one command is not sufficient
 the stated invariant on its own, since two statements can still straddle a harness
 insert. Notes: `docs/rig/milestones/bl-038-run-list-search-implementation-notes.md`.
 Merge gated on the manual GUI pass (BL-029 precedent; Rig has no frontend test
-runner, BL-017). Spawned **BL-058** (specs §5 TypeScript interfaces are unchecked and
-already stale). Nothing pulled in from BL-037, BL-035, or BL-024.
+runner, BL-017) — expected badge is `Showing 500 of 896 runs`, the **default** window,
+not the 250 the live test first used (review F1, fixed in `e4baddf`; arms and numbers
+in the implementation notes). Review: `docs/reviews/bl-038-review.md` — no blocking
+code findings; both in-cycle additions (LIKE-metacharacter escaping, single read
+transaction) endorsed. Spawned **BL-058** (specs §5 TypeScript interfaces are
+unchecked and already stale). Nothing pulled in from BL-037, BL-035, or BL-024.
 
 ---
 

@@ -1623,6 +1623,69 @@ identically. Search/window and fork continuation are independent gaps.
 **Done when:** an operator can locate any run in the store by id or label from the UI,
 or the UI states plainly that it is showing a truncated window.
 
+**Decided scope (2026-07-25, ahead of implementation): server-side, one filtering
+path.** The row above offers "a text filter over label + run_id on the loaded rows"
+as the minimum and server-side search *or* pagination as the full fix. Adjudicated:
+**server-side search, no client-side filter layer, no pagination UI.** Two filtering
+paths — client over the window, server over the store — can disagree, which is the
+same silent-wrong-answer class the ticket exists to kill; a second path is a second
+thing that can lie. The round-trip against local SQLite is sub-millisecond, so a
+debounce is sufficient and the instant-filter layer buys nothing. Pagination is
+dropped rather than built alongside search: search subsumes the navigational need and
+building both is gold-plating an S.
+
+Wire shape: `harness_list_runs` returns `RunListResult { runs, total_count }` rather
+than `Vec<RunSummary>`; `total_count` is `COUNT(*)` under the same `WHERE` from the
+same call. A separate `harness_runs_count` command was rejected — two calls can
+straddle a concurrent write and desync the badge from the list.
+
+**Status:** Done 2026-07-25 — `c0977c2` (agents). Both faces closed. Search filters
+`WHERE runs.label LIKE ?term OR runs.run_id LIKE ?term` (`%term%`, metacharacters
+escaped) on the **raw** columns, so an unlabelled run is reachable by run_id — `LIKE`
+never matches the NULL label, and `demo-01` (NULL label, 879th of 896 by `started_at
+DESC`) is the verified instance: absent from the unsearched 250-run window, returned
+by search, proven against the real store by an opt-in live test arm. Window
+disclosure renders "Showing N of M runs", with a second form while the client-side
+*status* filter is active so the badge cannot misdescribe the rows on screen. Both
+reads run inside one deferred read transaction — one command is not sufficient for
+the stated invariant on its own, since two statements can still straddle a harness
+insert. Notes: `docs/rig/milestones/bl-038-run-list-search-implementation-notes.md`.
+Merge gated on the manual GUI pass (BL-029 precedent; Rig has no frontend test
+runner, BL-017). Spawned **BL-058** (specs §5 TypeScript interfaces are unchecked and
+already stale). Nothing pulled in from BL-037, BL-035, or BL-024.
+
+---
+
+### BL-058 — specs §5 (TypeScript Interfaces) is unchecked, and already stale (#TBD)
+**Size:** S · **Priority:** low-medium · **Section:** Rig (`aetheris-agents/rig/` + `scripts/drift_check.py`)
+
+Found during BL-038 while adding `RunListResult` to both halves of the doc contract.
+
+`drift_check` check 9 (`command_fields`, BL-036) compares specs §4's ` ```rust ` structs
+against `rig/src-tauri/src/commands/*.rs`. **Nothing checks §5**, the TypeScript half of
+the same contract, against `rig/src/hooks/types.ts` — so the frontend-facing types drift
+silently while the Rust-facing ones are guarded.
+
+It has already drifted. §5's `interface RunSummary` carries nine fields; `types.ts` has
+thirteen — `last_event_at`, `total_cost_usd`, `total_input_tokens`, `total_output_tokens`
+are all absent from §5, the last three since BL-004 (2026-07-20). §5 also narrows
+`status` to a five-member union where `types.ts` widens it with `| string`. A reader
+trusting §5 gets a well-formed, confidently wrong picture of the type — the same shape
+BL-036 closed one section up.
+
+**Not** a §4-style port: the two sections describe different surfaces (§4 is the Rust
+wire shape, §5 is what the hooks hand components), so the fix is a check keyed on the
+interfaces §5 actually declares, plus the one-time correction of `RunSummary`. Decide
+whether §5 is authoritative for *all* of `types.ts` or only the harness block before
+writing the check — the section is currently a partial mirror, and a check that demands
+totality would fail on types nobody intended to document there.
+
+`RunListResult` was added to §5 by BL-038, so that ticket contributed no new drift.
+
+**Done when:** a `drift_check` check compares specs §5 interfaces against
+`src/hooks/types.ts` with a documented scope rule, §5's `RunSummary` matches source, and
+`--strict` is green.
+
 ---
 
 ### BL-039 — Fork continuation fails against real providers: reconstructed transcript carries a `"tool"` role (#TBD)
@@ -3338,7 +3401,8 @@ multi-line street/city/state/zip.
 | 15a | BL-047 | The `git_*` half of the routing gap BL-042's §5 correction names. Decide the mutating-vs-read-only classification *first*; the routing is three lines once the taxonomy is settled |
 | 15a2 | BL-048 | Known-red gate, tracked not carried. Triage before anything cites "the worker tests pass" |
 | 15a3 | BL-049 | Operator-facing *today*: BL-042 made `run_command` reach the comparison, and the comparison is wrong for it. Ahead of BL-047 — routing more exec-server tools into a comparison that mis-reports would multiply the defect |
-| 15b | BL-038 | Medium, operator-facing, and it carries the shared find-run-by-id piece so BL-024 (19b) inherits it rather than the reverse — deciding which lands first rather than leaving "whichever" open |
+| ✔ | BL-038 | **Done 2026-07-25** (`c0977c2`, merge pending the manual GUI pass). Scope narrowed in-cycle to server-side search only — no client-side filter, no pagination — because two filtering paths can disagree. BL-024 (19b) inherits the find-run-by-id primitive as intended: a server-side `label`/`run_id` LIKE reaching the whole store, which a window-scoped client filter could not have been. Spawned BL-058 |
+| 22b | BL-058 | Same surface as BL-036 (check 9) one section down. Do with or after BL-035/BL-036 cleanup; decide §5's scope rule before writing the check |
 | 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
 | 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |

@@ -1407,9 +1407,18 @@ Review: `docs/reviews/bl-041b-bl-036-review.md`.
 ### BL-053 — DONE 2026-07-25 — verify makes no filesystem-hash claim (#TBD)
 **Size:** S · **Section:** Harness (aetheris/) · Closes the **fs_hash strand of BL-048**
 
-Landed at harness `915d582`. Diagnosis: `docs/reviews/bl-048-fs-hash-diagnosis.md`
-(harness, committed in the same change). Contract draft: `docs/reviews/bl-053-contract-draft.md`.
-**The §3 wording is applied but pending §8 human ratification.**
+Landed at harness `915d582`, with the §3 contract edit ratified at `b4857eb` (r1). Diagnosis:
+`docs/reviews/bl-048-fs-hash-diagnosis.md` (harness, committed in the same change). Contract
+edit: `docs/reviews/bl-053-contract-draft.md` — **RATIFIED, option B** (§8, human, 2026-07-25).
+
+**§3 changed in both cells, not one.** r0 struck "— and recorded vs. actual filesystem `fs_hash`"
+from the `verify` row's Guarantees cell; review chose **option B** over a bare strike, so r1 added
+an explicit non-guarantee to the same row's Does-NOT cell: *"any filesystem-state claim — the
+comparison ranges over tool output only, so an unrelated file changing between record and verify
+is not detected."* The reasoning: the row previously *told* operators verify compared filesystem
+state, so a pure strike would make that change invisible to anyone who trusted the old claim, and
+the loss below is exactly a non-guarantee worth stating where operators read guarantees. §5 is
+untouched in both rounds.
 
 **What was wrong.** `verify`'s comparison had a second arm —
 `recorded_fs_hash != actual_fs_hash -> :hash_mismatch` — that could not fire for any tool.
@@ -2996,7 +3005,7 @@ multi-line street/city/state/zip.
 | 23 | BL-041 | Disposition (a) is a doc-only rule worth landing before the next export, since that export's own done-check is the case it governs. Disposition (b) batches with BL-036 — both are drift_check blind spots |
 | 23b | BL-044, BL-045 | Small harness cleanups from BL-025; neither blocks anything. BL-045 is a naming decision, not a deletion — do not batch it with BL-033 |
 | 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
-| ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 + five mirrors corrected; dead arm deleted; stability tests re-pointed at `write_file`. §3 wording pending §8 |
+| ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 corrected in both cells (strike + explicit non-guarantee, **§8-ratified option B**) plus five mirrors; dead arm deleted; stability tests re-pointed at `write_file` |
 | 24 | BL-043 | Raised by BL-053's done-check: it is **8 of BL-048's remaining 12** failures, not just an `http_call` defect. Best failure-count-per-fix on the board |
 | — | BL-054 | Fires whenever the `requires_worker` twelfth slot flakes; the row exists so it has a name. Fold into a polling-based rewrite of the fixed-ms windows when someone is in that file |
 | — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |

@@ -2316,8 +2316,14 @@ worker-crash-kills-caller behaviour is resolved or consciously accepted with a r
 
 ### BL-043 — DONE 2026-07-25 — `http_call` repaired (5 syscalls), caller-kill fixed
 
-Landed at harness `515a4ab`. Direction: **repair, not retire**. Contract draft:
-`docs/reviews/bl-043-contract-draft.md` (harness) — §5 wording **pending §8 ratification**.
+Landed at harness `515a4ab`, with the §5 contract edit ratified at `1e00a52` (r1). Direction:
+**repair, not retire**. Contract edit: `docs/reviews/bl-043-contract-draft.md` (harness) —
+**RATIFIED (generalized)**, §8, 2026-07-25.
+
+**§5 names no syscalls, by review disposition.** The r0 draft listed three of the five and
+misattributed one (`getsockopt` is a resolver call, not a `ureq` call) — the contract had drifted
+from the code inside a single ticket. The ratified clause points at `sandbox.rs`'s commented
+"Network" list instead, which is the only copy that cannot fall out of step with the code.
 
 **No-live-users checkpoint, run first as the row required.** The scan found only declarations,
 tests and contract examples — no working dependent, as expected of a tool that has SIGSYS-crashed
@@ -2373,6 +2379,55 @@ row fixed are gone; the four that remain are MCP-stdio spawn hitting a *delibera
 they must not be "fixed" by widening the filter.
 
 `Source: BL-043, 2026-07-25. Captures: full_requires_worker{,2}.txt, strace rounds 1–3.`
+
+---
+
+### BL-056 — `apply_seccomp_filter` fails open: any filter-build failure runs the worker fully unsandboxed (#TBD)
+**Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+Filed from BL-043's flagged observation at review r1, per the standing rule that a deferred
+finding gets a row rather than packet prose.
+
+**The defect.** `Sandbox.apply_seccomp_filter/0` returns `Err` on any build failure, and the caller
+logs a single stderr line and **continues** (`main.rs`):
+
+```
+[sandbox] seccomp filter failed: unknown syscall: setsockopt
+```
+
+The worker then runs with **no filter at all**. Nothing else reports it: the handshake still says
+`ready`, tools still work — better than before, in fact — and every test stays green. The failure
+mode of a disabled sandbox is *more* capability, so nothing downstream notices.
+
+**BL-043 tripped this live, which is why it is filed rather than theorised.** Adding `"setsockopt"`
+to the allowlist without adding it to `syscall_number/1` made construction fail; the resulting
+`http_call` round-trip **passed**, and it passed *because the sandbox was gone*. A green test was
+the evidence of the protection's absence.
+
+**Why the BL-043 guards do not close it.** The three Rust tests added there (every allowlist name
+resolves; the filter builds; the five socket calls are present) close the **typo vector at test
+time**. The runtime fail-open remains for every other build-failure path: a seccompiler shape
+rejection (it rejects identical match/mismatch actions — also hit during BL-043), an architecture
+`TargetArch::try_from` failure, or a kernel that refuses `SECCOMP_SET_MODE_FILTER`.
+
+**The parallel that frames the decision.** Verify already **fail-closes** on its *other* containment
+primitive: a worker that cannot establish the network namespace never finishes starting, and
+`aetheris verify` reports `cannot establish network containment for verify; re-run with
+--allow-effects …` rather than a verdict (§5, "When containment cannot be established"). The
+seccomp filter — the primitive that confines everything the namespace does not — fail-opens
+instead. Those two should not disagree.
+
+Fail-open is **correct** for `enter_namespaces` in *record* mode, and that must not change: a
+normal run in a restricted container has to keep working, and §5 says so explicitly. The question
+is narrower — should **verify** proceed with an unfiltered worker?
+
+**Done when:** the question is decided and recorded — verify refuses to run unfiltered (the netns
+parallel), or accepts it with a reason written down — and the chosen behaviour is implemented with
+a test that exercises the *failure* path, not just the happy one. If refuse is chosen, the refusal
+must be distinguishable in the report from the netns refusal, since an operator needs to know
+which primitive was unavailable. The refuse-vs-accept call is **§8/human**; this row carries it.
+
+`Source: BL-043 done-check flagged observation, review r1 disposition, 2026-07-25.`
 
 ---
 
@@ -3131,6 +3186,7 @@ multi-line street/city/state/zip.
 | ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 corrected in both cells (strike + explicit non-guarantee, **§8-ratified option B**) plus five mirrors; dead arm deleted; stability tests re-pointed at `write_file` |
 | ✔ | BL-043 | **Done 2026-07-25.** Repaired (not retired): five syscalls enumerated over three probe rounds, caller-kill fixed in both its mechanisms. Cleared 4 of the 8 SIGSYS; the other 4 turned out to be a different defect → BL-055 |
 | 25 | BL-055 | The other half of BL-048's SIGSYS: MCP-stdio spawn needs `execve`, which the filter excludes **by design**. A containment decision, not a test fix — do not widen the allowlist to make tests green |
+| 26 | BL-056 | The seccomp filter fail-opens where the netns fail-closes. Sequence after BL-055: both are containment-boundary decisions and the same §8 pass should settle them together. BL-043's guards bought time, not closure |
 | — | BL-054 | Fires whenever the `requires_worker` twelfth slot flakes; the row exists so it has a name. Fold into a polling-based rewrite of the fixed-ms windows when someone is in that file |
 | — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |

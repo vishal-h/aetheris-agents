@@ -3250,8 +3250,7 @@ multi-line street/city/state/zip.
 | 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
 | ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 corrected in both cells (strike + explicit non-guarantee, **§8-ratified option B**) plus five mirrors; dead arm deleted; stability tests re-pointed at `write_file` |
 | ✔ | BL-043 | **Done 2026-07-25.** Repaired (not retired): five syscalls enumerated over three probe rounds, caller-kill fixed in both its mechanisms. Cleared 4 of the 8 SIGSYS; the other 4 turned out to be a different defect → BL-055 |
-| 25 | BL-055 | The other half of BL-048's SIGSYS: MCP-stdio spawn needs `execve`, which the filter excludes **by design**. A containment decision, not a test fix — do not widen the allowlist to make tests green |
-| 26 | BL-056 | The seccomp filter fail-opens where the netns fail-closes. Sequence after BL-055: both are containment-boundary decisions and the same §8 pass should settle them together. BL-043's guards bought time, not closure |
+| ✔ | BL-050, BL-055, BL-056 | **Done 2026-07-25 (`9871059`).** One reorder — `ready` became the fully-established barrier and now attests overlay/exec-server/seccomp/MCP. Verify refuses on a filter failure; record attests and continues. requires_worker 11 → 6, stable across two runs |
 | — | BL-054 | Fires whenever the `requires_worker` twelfth slot flakes; the row exists so it has a name. Fold into a polling-based rewrite of the fixed-ms windows when someone is in that file |
 | — | BL-052 | Fires on its trigger: the first §4 block documenting a struct defined outside `commands/`. Trivial (`rglob`) when it does; no live case today |
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |

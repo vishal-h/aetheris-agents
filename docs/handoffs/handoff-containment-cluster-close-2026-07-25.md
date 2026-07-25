@@ -4,7 +4,7 @@ Date: 2026-07-25 · From: claude-ui (design session, opened from
 `handoff-bl049-bl047-close-2026-07-24.md`) · For: fresh claude-ui design session, same project —
 **the BL-038 session, resuming the pre-arc mainline.**
 
-> **Note added at commit (claude-code) — three citations in this handoff do not resolve.**
+> **Note added at commit (claude-code) — three citations did not resolve; two are now fixed.**
 > Checked at commit time; flagged rather than silently corrected, because each is an instance of
 > the very transport rule this handoff restates — artifacts land as **files**, not chat.
 >
@@ -12,11 +12,14 @@ Date: 2026-07-25 · From: claude-ui (design session, opened from
 >    repo**; `git log --all` finds no commit that ever added it. Recover the BL-049/BL-047 detail
 >    from `../aetheris/docs/reviews/bl-049-review.md`, `bl-049-contract-draft.md`,
 >    `bl-047-review.md`, `bl-047-contract-draft.md` and the backlog rows instead.
-> 2. **`bl-053-review.md`** — not committed. The BL-053 review was relayed in chat; only its
->    contract draft landed (`bl-053-contract-draft.md`, RATIFIED, which does carry the r1
->    disposition and reasoning).
-> 3. **`bl-043-review.md`** — not committed, same reason; `bl-043-contract-draft.md` (RATIFIED)
->    carries the §5 disposition.
+> 2. ~~**`bl-053-review.md`** — not committed.~~ **Resolved:** transcribed from the relay and
+>    committed alongside this handoff, with the r1 response appended and a provenance note
+>    recording that it landed after the fact.
+> 3. ~~**`bl-043-review.md`** — not committed.~~ **Resolved:** same.
+>
+> Items 2 and 3 were fixed rather than left flagged, because the texts existed verbatim in the
+> relay — transcription, not reconstruction. Item 1 stands: that handoff's content is not
+> recoverable from this session, so it is left named rather than invented.
 >
 > Everything else this handoff cites was verified present at commit: the other six review-file
 > artifacts, `scripts/containment_probe.exs`, and the `sandbox` job in `.github/workflows/ci.yml`.

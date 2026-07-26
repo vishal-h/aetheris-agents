@@ -11,11 +11,14 @@
 #     (`run.label === run.run_id` -> parentLabel undefined -> unlabelled child).
 #     Adding a label here would silently defeat the only check this file exists
 #     for.
-#   - STUB PROVIDER. Real-provider fork continuations currently fail at the
-#     first LLM call (BL-039: fork.ex:104 emits a "tool" role Anthropic
-#     rejects, and the paired assistant tool_use turns are never reconstructed
-#     — fork.ex:95-96 drops non-text responses). Stub forks are the only forks
-#     that presently complete, so the gate check must run on one.
+#   - STUB PROVIDER. The gate check is about labels, not about continuation, so
+#     it must not depend on a live provider or an API key. (Historically this
+#     line also said stub was the *only* provider whose forks complete —
+#     real-provider fork continuations failed at the first LLM call until
+#     BL-039 reconstructed the assistant tool_use turns. That is fixed; the
+#     stub choice here is now about hermeticity alone.) Note a stub fork's
+#     response queue is empty unless overrides supply one, so this fixture's
+#     fork terminates at step 0 — which is all check 3 needs.
 #   - ONE TOOL CALL. A fork needs a forkable step. The step must be a *tool*
 #     step: a stub response of `type: :text` terminates the run immediately
 #     (harness CLAUDE.md, "Use `type: :tool_call` for intermediate stub

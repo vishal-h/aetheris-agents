@@ -118,20 +118,20 @@ a synthesized name, so a label in the list is always one an operator chose.
 
 ### Forking a run from a step
 
-> **Known failure — real-provider forks do not currently work (BL-039).** A fork whose
-> continuation runs against Anthropic fails at its **first LLM call** with
-> `HTTP 400: Unexpected role "tool"`. The reconstructed transcript carries a `"tool"`
-> role the API rejects, and relabeling alone would not fix it — the paired assistant
-> `tool_use` turns are never reconstructed. Tracked: BL-039 in
-> `docs/backlog-2026-06.md`. The button below is live and will happily start a fork
-> that then fails — the failure shows on the child run, not at the click.
+> **Real-provider forks reconstruct tool-call turns (BL-039, 2026-07-26).** The
+> reconstructed transcript carries assistant `tool_use` blocks paired with `user`
+> `tool_result` blocks, the shape a validating provider accepts. Before BL-039 it
+> carried a `"tool"` role and every fork continuation against Anthropic failed at its
+> **first LLM call** with `HTTP 400: Unexpected role "tool"`; that failure is fixed.
+> The determinism contract §4 states the pairing rule and its limits.
 >
-> **Stub-provider forks reach `done`, but their continuation is empty.** The fork
-> strips the response queue (`encode_config` drops `stub_responses`,
-> `../aetheris/lib/aetheris.ex:372`), so a stub fork gets `[stub exhausted]` on its
-> first call and terminates at step 0. So: **no fork on any provider has yet had a
-> meaningful continuation** — real ones are rejected at the first call, stub ones
-> exhaust at it. A green stub fork is not evidence that forking works.
+> **A stub-provider fork still starts with an empty response queue**, so it gets
+> `[stub exhausted]` on its first call and terminates at step 0. A green stub fork is
+> not evidence that forking works — only a continuation that runs past step 0 is.
+>
+> The button below starts a real run; if it fails, the failure shows on the child run,
+> not at the click. Since BL-039 the `Fork failed:` message carries the child run's
+> terminal error reason rather than only its run id.
 
 On the **Trajectory** tab, a completed step shows a **"Fork from here"** button. It
 starts a new run that replays the transcript up to that step and then continues live.

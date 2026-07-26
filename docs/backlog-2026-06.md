@@ -1806,6 +1806,80 @@ function is the scheduled-run template encoder). Conclusions unaffected.
 provider, or the contract states plainly that fork continuation is stub-only and the
 UI refuses real-provider forks rather than failing at the first call.
 
+**Status:** Done 2026-07-26 — harness `ebc3878` (docs-first §4 + §2 and runbook echo
+sweep), `e44d35c` (implementation), `3f561d9` (notes); agents `7d6013a` (rig runbook +
+fork fixture mirrors). Design A as ratified. A recorded tool step rebuilds as the
+canonical pair — an assistant `tool_use` block and a `user` `tool_result` block sharing
+a step-derived synthetic id — built through
+`Aetheris.Execution.CanonicalMessage`, extracted from `loop.ex` so the live loop and
+fork reconstruction have one definition. The record path is untouched: no `tool_use_id`
+is added to any event. Part C ships in the same change —
+`RunHelpers.terminal_error_reason/1` puts the fork's terminal `error` reason into the
+CLI message, which previously read only "run \<id\> failed". No provider/model fork
+overrides were built (BL-030).
+
+**Done-when is met, demonstrated not asserted.** The `:requires_real_provider` arm was
+run manually against Anthropic: **PASS**, and mutated back to the pre-fix shape the same
+arm returns `HTTP 400: messages: Unexpected role "tool"…` — byte-identical to the reason
+recorded in `fork-aa6a6a65804f6645`. That retires the hedge the §4 wording deliberately
+carried (`bl-039-contract-draft.md` obligation 2). All three done-check arms are
+mutation-checked; the stub-continuation arm asserts the reconstructed context as well as
+the continuation, because the stub validates nothing and continuation alone would be a
+fifteenth vacuous green. Notes:
+`../aetheris/docs/aetheris/milestones/bl-039-implementation-notes.md`.
+
+**Two corrections to the scout memo, recorded because they outlive this ticket.** The
+memo's §4 "one constraint the design must respect" attributes key-dropping to
+`Agent.Server.normalize_context_entry/1` and quotes both clauses fetching `"content"`;
+at HEAD the atom-key clause fetches `:content`, and the function is **not on the wire
+path** — it feeds `Agent.Server`'s `context:` state, while the adapter's messages come
+from `Loop.run/5`, which uses `config.fork_context` unnormalized. The design instruction
+(everything inside `content`) is unaffected; its stated reason was wrong. Also: the memo
+is at `docs/reviews/bl-039-fork-continuation-scout.md` in **this** repo, not
+`../aetheris/` as this row and the ticket text both say.
+
+**Spawned BL-060** (`mix hex.audit` red on an upstream `bandit` advisory), found by an
+off-territory gate run.
+
+---
+
+### BL-060 — `mix hex.audit` is red: bandit 1.11.1 carries EEF-CVE-2026-65623 (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/mix.exs`, `mix.lock`)
+
+Found 2026-07-26 by BL-039's ticket-boundary gate run — off-territory, exactly the way
+the gate rule intends. Filed the day it was found, not carried.
+
+```
+bandit 1.11.1 - EEF-CVE-2026-65623 (HIGH)
+  aka: CVE-2026-65623, GHSA-vg8x-66vg-5pxh
+  Quadratic CPU blow-up reassembling fragmented WebSocket messages in Bandit
+  https://osv.dev/vulnerability/EEF-CVE-2026-65623
+```
+
+**Upstream-triggered, not commit-triggered** — the advisory was published under a lock
+file nobody touched, which is the case `CLAUDE.md`'s `hex.audit` section names as the
+gate working rather than failing. BL-020 cleared all 15 advisories on 2026-07-17 with no
+residuals, so this is a fresh one, not a regression.
+
+`mix.exs` requires `{:bandit, "~> 1.0"}` and the lock pins **1.11.1**; hex advertises
+`Config: {:bandit, "~> 1.12"}` with 1.12.3 released 2026-07-25. So a patched line exists
+and the constraint already admits it — this looks like a lock bump plus a `mix.exs`
+floor, not a migration. **Confirm the advisory is actually fixed in the 1.12 line before
+bumping** (this row read the version list, not the changelog) and check the
+`thousand_island`/`websock`/`plug` co-resolution.
+
+Reachability is worth a sentence in the fix, not a reason to defer: bandit backs the
+playground API, which is **disabled by default** and started on demand
+(`api/server.ex`), and the WebSocket path is not something the harness exposes today.
+That bounds the exposure; it does not clear the advisory, and `hex.audit` has no
+suppression mechanism.
+
+Until it lands, the gate runs **expected-red, named with this row's ref** per the
+tracked-carry clause — named in packets, not re-triaged.
+
+**Done when:** `mix hex.audit` is clean, or the residual advisory has a recorded
+rationale here and the gate's expected-red state is stated with this ref.
+
 ---
 
 ### BL-059 — Parallel tool calls are silently discarded: the adapter keeps the first `tool_use` block (#TBD)
@@ -1890,6 +1964,14 @@ diff-invisible break the §4 clause guards against, running the other direction.
 the dependency from the fork side; this line names it from the adapter side, so neither
 ticket can land its half and leave the other silently wrong. Fork's done-check must be
 re-run as part of (a), not deferred to whoever next opens `fork.ex`.
+
+**BL-039 has landed (2026-07-26), so the fork side is now concrete.** The pairing lives
+in `Fork.event_to_messages/1` and the id in `Fork.synthetic_tool_use_id/1`, which derives
+`"fork-toolu-#{step}"` — one id per *step*, which is precisely the assumption (a)
+removes. Both the function's comment and §4 point here. Under (a) the id must become one
+per *call*, and the `:tool_result` clause must consume N results rather than one; the
+canonical blocks themselves need no change, since `CanonicalMessage` already builds one
+block at a time and both turns take a list.
 
 ---
 

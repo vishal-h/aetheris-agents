@@ -563,6 +563,29 @@ loop far less load-bearing.
 **Done when:** the fork CLI can emit the run id at start; Rig's affordance returns
 without waiting for completion.
 
+**Status:** Done 2026-07-26. Harness: `cli/commands/fork.ex` emits the run id
+between `start_fork/3` and `await_fork/1`, per resolved mode
+(`{"status":"forked","run_id":…}` under `--json`); `output_mode/1` moved from
+`Aetheris.CLI` to `Formatter.resolve_mode/1` so the command can resolve the same
+mode the closing `print/2` uses. The CLI still blocks to completion — deliberately:
+the fork run is a Task in the CLI process's own supervision tree, so an early
+return would kill it. Rig: `fork.rs` spawns piped and owns the child, returns at
+the first `run_id` line, and hands the running subprocess to a detached thread that
+drains both pipes and reaps; `handleForked` sets `status: 'running'` so
+`TrajectoryView`'s existing BL-005 events-fallback polling streams the child.
+`--detach`/`--follow` untouched (daemon path). Notes:
+`docs/rig/milestones/bl-030-early-return-fork-implementation-notes.md` +
+`../aetheris/docs/aetheris/milestones/bl-030-implementation-notes.md`. Scout:
+`docs/reviews/bl-030-fork-early-return-scout.md`.
+
+> **Dangling ref, deliberate.** Determinism contract §4 says "the CLI and Rig entry
+> points pass a label only (BL-030)". That sentence is still **true** after this
+> ticket — BL-030 did not add overrides — but its `(BL-030)` ref now points at a
+> closed ticket that never carried them. The override work split out as **BL-062**,
+> whose §8 edit repoints it. Flagged rather than left to rot: §4 already carries one
+> decayed parenthetical (D2's `cli/commands/fork.ex:47-55`, per the scout), so this
+> section has form.
+
 ---
 
 ### BL-031 — `await_run` has no timeout or cap (#TBD)

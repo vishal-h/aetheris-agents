@@ -344,7 +344,9 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, pa
   const { fork, forking, error, clearError } = useFork();
   const [forkingStep, setForkingStep] = useState<number | null>(null);
 
-  // A fork blocks to completion (minutes). If the user selects another run or leaves
+  // A fork resolves at fork-start (seconds, since BL-030) rather than at completion,
+  // so this window is far shorter than it was — but it is not zero, and the hazard is
+  // unchanged. If the user selects another run or leaves
   // the Trajectory tab meanwhile, this body unmounts (run change → the fileLoading
   // branch swaps in CentredMessage; tab switch → Radix TabsContent unmounts inactive
   // content). The pending promise still resolves, but `onForked` lives on the

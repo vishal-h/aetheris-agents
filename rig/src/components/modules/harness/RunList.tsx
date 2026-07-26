@@ -546,16 +546,20 @@ export function HarnessRoute() {
     setActiveTab('events');
   }, []);
 
-  // Surface a resolved fork (BL-007 t4): jump to the child run's trajectory so its
-  // provenance banner is immediately visible. `fork_run` resolves only on a `done`
-  // fork, and TrajectoryView reads all display data from the trajectory file's meta
-  // (not this summary) — the synthesized summary's `status: 'done'` only gates polling
-  // off. The Runs-list row appears on the next manual Refresh.
+  // Surface a started fork (BL-007 t4, early-return since BL-030): jump to the child
+  // run's trajectory so its provenance banner is immediately visible. `fork_run` now
+  // resolves as soon as the fork *starts*, so the child is still running when we land
+  // on it — `status: 'running'` is what turns TrajectoryView's event polling on, and
+  // the poll stops itself when `run_complete` reaches the stream. The trajectory file
+  // does not exist until the run finishes (it is written once, at completion), so
+  // TrajectoryView's file load fails and its events fallback reconstructs the view
+  // live; that fallback is the BL-005 path and needs no change here. The Runs-list
+  // row appears on the next manual Refresh.
   const handleForked = useCallback((runId: string) => {
     setSelectedRun({
       run_id:         runId,
       label:          '',
-      status:         'done',
+      status:         'running',
       provider:       '',
       model:          '',
       started_at:     '',

@@ -3769,29 +3769,28 @@ multi-line street/city/state/zip.
 
 | Order | Ticket | Why first |
 |-------|--------|-----------|
-| 1 | BL-001, BL-015, BL-002 | Minutes each; locks in everything just built. BL-015 before BL-002 so one export catches the §6 promotions |
+| ✔ | BL-001, BL-015, BL-002 | **Done 2026-07-15.** Baseline captured (`d24e482`); six canonical payload fields promoted to specs §6; repos rule added to root `CLAUDE.md` and the manifest regenerated. The BL-015-before-BL-002 ordering held — one export caught the §6 promotions |
 | 2 | BL-010 | First real run revealed output defects; fix before next client demo |
-| 3 | BL-003 | Done. 76 orphaned `running` rows (66 orphaned / 10 reconcilable) cured; pairs with the shipped stalled? marker |
-| 4 | BL-005 | Small, immediate daily-use value |
-| 5 | BL-009 | One-line change once baseline holds |
+| ✔ | BL-003 | **Done 2026-07-15.** `Aetheris.Sweep` ships the cure: startup hook (gated by `:sweep_on_start`, default on) plus `mix aetheris sweep`, and a new `run_orphaned` event type. 76 orphaned `running` rows cured (66 orphaned / 10 reconcilable) |
+| ✔ | BL-005 | **Done 2026-07-15.** `TrajectoryView` falls back to `harness_get_events` + `harness_get_run` on `trajectory_load` failure and rebuilds the step-grouped view via `src/lib/reconstructTrajectory.ts`. That fallback is the path BL-030 r1/r2 later built the live completion transition on |
+| ✔ | BL-009 | **Done 2026-07-15.** `drift_check.py --strict` exempts `project_knowledge` staleness via a `strict_exempt` flag on `record` — only the staleness WARN at the manifest-comparison site; structural pk WARNs still fail |
 | 6 | BL-011 | Refactor before more scripts share the helpers |
-| 7 | BL-004 | Trivial, batch with any harness.rs touch |
+| ✔ | BL-004 | **Done 2026-07-20.** `total_input_tokens` / `total_output_tokens` added to `RunSummary` as correlated subqueries mirroring `total_cost_usd`, surfaced in the Cost cell tooltip (table stays at 8 columns) |
 | 8 | BL-012 | Design decision first; implement after 1a t3 merges |
 | 9 | BL-013 | Needed before testing a second SO template |
 | 10 | BL-014 | Low-effort address fix; do with BL-013 pass |
-| 11 | BL-007 → BL-008 | Milestone-sized; docs-first per repo convention |
-| 12 | BL-029 | Every run shows the wrong label today; one line per site. Batch with BL-004 — same file (`harness.rs`) |
-| 13 | BL-028 | Silent-empty is the worst failure shape: a fork proceeds from a wrong context with no signal |
-| 14 | BL-031 | Small resilience fix; converts a class of hangs into a legible error. Cheaper before BL-030 changes the fork call shape |
+| ✔ | BL-007 | **Closed 2026-07-20.** All three sketched pieces exist: `fork_run` (`rig/src-tauri/src/commands/fork.rs`), the `useFork`/`TrajectoryView` frontend path, and the `specs.md` §4 entry. Its §7 promotions are in the root `CLAUDE.md`; BL-030 continued this surface |
+| 11 | BL-008 | Milestone-sized; docs-first per repo convention. **Row split 2026-07-26** — BL-007, previously ranked here with it, closed 2026-07-20; this half is still open |
+| ✔ | BL-029 | **Done 2026-07-20** (`c39bf7e`). Both queries read `runs.label` with the `COALESCE(…, run_id)` fallback retained. Measured at the fix: 878 runs, 596 labelled, **0** with a label in `config_json` |
+| ✔ | BL-028 | **Done 2026-07-21** (`9b2b102`). Read-side fix in `event_to_messages(:tool_result)` plus `normalize_content/1` (nil → `""`, non-binary → JSON-encoded, per contract §2's string invariant) |
+| ✔ | BL-031 | **Done 2026-07-21.** Inactivity bound on `{status, max_event_seq}` with a paused-run exemption via `Aetheris.RunPause` (shared with Sweep by construction); config key `:await_inactivity_timeout_ms`, default 300 000. BL-030's fork-start emit later measured against its 200 ms poll floor |
 | ✔ | BL-025 | **Done 2026-07-23.** Grew in-cycle to include the CLI rewire (it never reached `Verifier`). Spawned BL-042/043/044/045 |
 | ✔ | BL-042 | **Done 2026-07-23.** Grew in-cycle by one tool: `run_command` was never re-executed under verify at all (`unknown_tool`), so the netns had nothing to contain until the routing was fixed. Spawned BL-047 (the `git_*` half of that gap, plus its taxonomy question) and BL-048 (the red `requires_worker` set found off-territory) |
-| 15 | BL-043 | `http_call` is dead in every mode, so nothing regresses by waiting; but it is the reason BL-042's exposure looks smaller than it is. Confirm the tool has no live users before choosing repair-vs-retire. **Now unblocked**: BL-042's netns has landed, so restoring egress no longer widens an open window |
-| 15a | BL-047 | The `git_*` half of the routing gap BL-042's §5 correction names. Decide the mutating-vs-read-only classification *first*; the routing is three lines once the taxonomy is settled |
-| 15a2 | BL-048 | Known-red gate, tracked not carried. Triage before anything cites "the worker tests pass" |
-| 15a3 | BL-049 | Operator-facing *today*: BL-042 made `run_command` reach the comparison, and the comparison is wrong for it. Ahead of BL-047 — routing more exec-server tools into a comparison that mis-reports would multiply the defect |
+| ✔ | BL-047 | **DONE (impl) 2026-07-24** — implementation landed; **§5/§3 edits pending §8 ratification**, per the section's own heading. Ticked for the implementation, not for the doc half, which is the open remainder |
+| ✔ | BL-049 | **DONE 2026-07-24.** Direction chosen: the third of the row's three options — stop returning timing inside the compared payload, the one matching the existing worker-native shape |
 | ✔ | BL-038 | **Done 2026-07-25** (`c0977c2` + F1 `e4baddf`; GUI merge gate green, 500 of 896). Scope narrowed in-cycle to server-side search only — no client-side filter, no pagination — because two filtering paths can disagree. BL-024 (19b) inherits the find-run-by-id primitive as intended: a server-side `label`/`run_id` LIKE reaching the whole store, which a window-scoped client filter could not have been. Spawned BL-058 |
 | 22b | BL-058 | Same surface as BL-036 (check 9) one section down. Do with or after BL-035/BL-036 cleanup; decide §5's scope rule before writing the check |
-| 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it. §4 wording **ratified 2026-07-26** with three edits (`../aetheris/docs/reviews/bl-039-contract-draft.md`) — implementation is unblocked |
+| ✔ | BL-039 | **Done 2026-07-26.** Harness `ebc3878` (docs-first §4 + §2 and runbook echo sweep), `e44d35c` (implementation), `3f561d9` (notes); agents `7d6013a`. Design A as ratified. Spawned BL-061 |
 | 15d | BL-059 | Independent of BL-039 and **not** batchable with it (BL-039 forbids record-path changes). If disposition (a) lands first, BL-039's positional pairing must be revisited before it is written; if BL-039 lands first, its §4 clause already names this as the dependency to update |
 | 15e | BL-065 | Same family as 15d and the same class: a record-path Silent-wrong-answer, where a failed trajectory write still reports the run `done`. Independent of the fork chain and cheap (S). Do it while the record path is already open — and note BL-030's completion transition currently *relies* on terminal-status-≠-file-exists, so the fix must keep that degradation correct rather than assume the file is now guaranteed |
 | ✔ | BL-030 | **Done 2026-07-26** (harness `ae0c510`+`f79365a`, agents `b5e8eee`..`06b333e`; GUI merge gate green on both tabs). Three rounds: r0 early-return, r1 completion transition (folded BL-063), r2 source-seeded selection after r1's fix missed an Adjacent-case consumer. Both scouts changed the mechanism — the CLI must keep blocking (the run is a Task in its own tree), and the reload must gate on terminal *status*, not the `run_complete` event, which precedes the file write. Spawned BL-062, BL-064, BL-065 |
@@ -3801,10 +3800,10 @@ multi-line street/city/state/zip.
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |
 | 19 | BL-037 | Before BL-024 — the lineage view needs real-vs-fallback labels; building it first bakes in the string-comparison guard |
 | 19b | BL-024 | Design-led; compose with `caused_by` rather than a fork-only index. Handle both provenance shapes |
-| 20 | BL-034 | Do before the next export, not during one — the prompt's own ordering bug is easiest to fix when no export is in flight |
+| ✔ | BL-034 | **Done 2026-07-22.** Resolved by dropping the baseline append (human call). That append was the sole reason BL-002 wrote a manifest-tracked file other than the manifest |
 | 21 | BL-035 | Do with the next frontend ticket that touches a fourth formatter site — the trigger, not the calendar |
-| 22 | BL-036 | Closes the blind spot that hid the phantom `RunDetail.events` field. After BL-035; both are cleanup on the same surface |
-| 23 | BL-041 | Disposition (a) is a doc-only rule worth landing before the next export, since that export's own done-check is the case it governs. Disposition (b) batches with BL-036 — both are drift_check blind spots |
+| ✔ | BL-036 | **DONE 2026-07-25** (`11675cc`). Landed as a new check 9, `command_fields`, batched with BL-041(b) — both were `drift_check` blind spots on one file surface. `check_tauri_commands` stays names-only |
+| ✔ | BL-041 | **DONE 2026-07-25** (both dispositions). (a) Convention `1013a95` — the post-commit ordering rule now in `CLAUDE.md`'s doc-sync section; (b) batched with BL-036 |
 | 23b | BL-044, BL-045 | Small harness cleanups from BL-025; neither blocks anything. BL-045 is a naming decision, not a deletion — do not batch it with BL-033 |
 | 23c | BL-046 | The payload-key convention, after three read-side fixes. Low priority but rising: each new reader has cost a bug. Do with the next `:tool_result` reader, not on a calendar |
 | ✔ | BL-053 | **Done 2026-07-25.** Closed the fs_hash strand of BL-048: verify makes no filesystem-hash claim; §3 corrected in both cells (strike + explicit non-guarantee, **§8-ratified option B**) plus five mirrors; dead arm deleted; stability tests re-pointed at `write_file` |

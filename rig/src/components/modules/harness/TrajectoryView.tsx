@@ -340,18 +340,21 @@ export function TrajectoryView({ run, onForked }: Props) {
 
   // File loaded successfully — render it exactly as before.
   if (fileTrajectory) {
-    // A fork inherits its parent's label verbatim (BL-029 rider). Two ways `label`
-    // is not a real label, both of which must degrade to an unlabelled fork rather
-    // than to a synthesized one:
-    //   - server-side it is COALESCE(runs.label, run_id), so an unlabelled parent
-    //     yields the run_id — inheriting that writes a run_id into the child's label;
-    //   - the synthesized post-fork summary (RunList.tsx `handleForked`) carries
-    //     label: '', so forking a fork before a Refresh would inherit Some("").
-    // The second guard is not free: that child *does* carry the inherited label in
-    // the DB, so forking it before a Refresh drops a real label rather than passing
-    // it on. Chosen deliberately — the placeholder cannot tell us what the label is,
-    // and an unlabelled fork is legible where a wrong or empty one is not. A Refresh
-    // before the second fork gets the real row, and the label with it.
+    // A fork inherits its parent's label verbatim (BL-029 rider). `label` must
+    // degrade to an unlabelled fork when it is not a real label: server-side it is
+    // COALESCE(runs.label, run_id) (`harness.rs:300`), so an unlabelled parent
+    // yields its run_id, and inheriting that would write a run_id into the child's
+    // label.
+    //
+    // The empty-string arm of this guard used to carry a documented cost: the
+    // post-fork summary was *synthesized* with `label: ''` (RunList
+    // `handleForked`), so forking a fork before a Refresh dropped a real label
+    // rather than passing it on. Since r2 that summary is seeded from the real
+    // `runs` row, so a labelled fork now hands its label to a grandchild
+    // immediately — the compromise is gone, not merely tolerated. The `run.label &&`
+    // check is kept for the one path that can still produce a sparse selection
+    // (a failed `harness_get_run` in `handleForked`), where an unlabelled fork
+    // remains the legible outcome.
     const parentLabel =
       run && run.label && run.label !== run.run_id ? run.label : undefined;
     return <TrajectoryBody trajectory={fileTrajectory} banner={null} isPolling={false} showExport canFork parentLabel={parentLabel} onForked={onForked} />;

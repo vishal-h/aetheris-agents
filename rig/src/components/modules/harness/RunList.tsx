@@ -5,14 +5,34 @@ import { Tab } from '@/components/shell/TabBar';
 import { MainArea } from '@/components/shell/MainArea';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RunSummary } from '@/hooks/types';
+import { invoke } from '@tauri-apps/api/core';
+import { RunDetail, RunSummary } from '@/hooks/types';
 import { useHarnessStatus, useRunList, useRunEvents } from '@/hooks';
+import { runSummaryFromDetail } from '@/lib/runSummary';
 import { NotConnected, LoadingShell } from './shared';
 import { TrajectoryView } from './TrajectoryView';
 
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/**
+ * Render an ISO timestamp, or "—" when it is absent or unparseable (BL-030 r2).
+ *
+ * Not a substitute for the source fix — `handleForked` now seeds the selected run
+ * from the real `runs` row, so an empty `started_at` no longer arrives here on the
+ * normal path. This covers the one path that fix *introduces*: if
+ * `harness_get_run` fails, the fallback selection carries `started_at: ''`
+ * rather than an invented value, and `new Date('').toLocaleString()` would print
+ * "Invalid Date" — a broken-looking header where "—" is honest. Guarding the
+ * render, not teaching the header to fetch, keeps the data-source logic in one
+ * place.
+ */
+function formatTimestamp(iso: string): string {
+  if (!iso) return '—';
+  const ms = new Date(iso).getTime();
+  return Number.isNaN(ms) ? '—' : new Date(ms).toLocaleString();
+}
 
 function formatDuration(startedAt: string, finishedAt: string | null): string {
   if (!finishedAt) return '—';
@@ -471,7 +491,7 @@ function EventsContent({ selectedRun }: EventsContentProps) {
           {selectedRun.model.split('/').pop() ?? selectedRun.model}
         </span>
         <span className="text-muted-foreground">
-          Started: {new Date(selectedRun.started_at).toLocaleString()}
+          Started: {formatTimestamp(selectedRun.started_at)}
         </span>
         {isPolling && (
           <span className="flex items-center gap-1.5 text-xs text-green-600">
@@ -547,33 +567,57 @@ export function HarnessRoute() {
   }, []);
 
   // Surface a started fork (BL-007 t4, early-return since BL-030): jump to the child
-  // run's trajectory so its provenance banner is immediately visible. `fork_run` now
+  // run's trajectory so its provenance banner is immediately visible. `fork_run`
   // resolves as soon as the fork *starts*, so the child is still running when we land
-  // on it — `status: 'running'` is what turns TrajectoryView's event polling on, and
-  // the poll stops itself when `run_complete` reaches the stream. The trajectory file
-  // does not exist until the run finishes (it is written once, at completion), so
-  // TrajectoryView's file load fails and its events fallback reconstructs the view
-  // live; that fallback is the BL-005 path and needs no change here. The Runs-list
-  // row appears on the next manual Refresh.
-  const handleForked = useCallback((runId: string) => {
-    setSelectedRun({
-      run_id:         runId,
-      label:          '',
-      status:         'running',
-      provider:       '',
-      model:          '',
-      started_at:     '',
-      finished_at:    null,
-      step_count:     0,
-      event_count:    0,
-      last_event_at:  null,
-      total_cost_usd: null,
-      // Placeholder, like the rest of this literal — the real totals arrive with
-      // the row on the next manual Refresh. null (not 0) keeps the Cost cell and
-      // its token tooltip honest in the meantime.
-      total_input_tokens:  null,
-      total_output_tokens: null,
-    });
+  // on it — `status: 'running'` (from the row) is what turns TrajectoryView's event
+  // polling on, and the poll stops itself when `run_complete` reaches the stream. The
+  // trajectory file does not exist until the run finishes, so TrajectoryView's file
+  // load fails and its BL-005 events fallback reconstructs the view live, then swaps
+  // to the file in place when the run completes (r1). The Runs-list row appears on the
+  // next manual Refresh.
+  //
+  // **Seeded from the real row, not synthesized (r2).** This used to invent a summary
+  // with `started_at: ''`, `label: ''`, `model: ''`. Every consumer of the selected
+  // run inherited those blanks, and `new Date('')` renders "Invalid Date" — which r1
+  // fixed only for the consumers it enumerated (TrajectoryView, via
+  // reconstructTrajectory), leaving the Events tab header reading the placeholder
+  // directly. That is the Adjacent-case class: the fix's blast radius was one consumer
+  // wider than the view it was written against. Fixing the source removes the thing to
+  // enumerate.
+  //
+  // The row is guaranteed to exist by now: `Aetheris.start_run/1` calls `Server.run/1`,
+  // a synchronous `GenServer.call` (`server.ex:70-72`) whose `handle_call(:run, …)`
+  // upserts status / `started_at` / `config_json` / label before returning
+  // (`server.ex:229-235`), and the CLI's fork-start emit happens after that returns.
+  // So awaiting one local SQLite read here cannot race the insert — and it costs
+  // nothing next to the seconds `fork_run` itself just spent.
+  const handleForked = useCallback(async (runId: string) => {
+    try {
+      const detail = await invoke<RunDetail>('harness_get_run', { runId });
+      setSelectedRun(runSummaryFromDetail(detail));
+    } catch (e) {
+      // The fork itself succeeded — the id came off the CLI's stdout — so losing
+      // navigation would be a worse outcome than a sparse header. Select the run
+      // with what is certain (its id) and let the views fill themselves in: they
+      // read the row independently. `started_at: ''` is honest here rather than
+      // invented, and the header renders it as "—" (see EventsContent).
+      console.warn(`[HarnessRoute] harness_get_run failed for forked run ${runId}: ${String(e)}`);
+      setSelectedRun({
+        run_id:         runId,
+        label:          runId,
+        status:         'running',
+        provider:       '',
+        model:          '',
+        started_at:     '',
+        finished_at:    null,
+        step_count:     0,
+        event_count:    0,
+        last_event_at:  null,
+        total_cost_usd: null,
+        total_input_tokens:  null,
+        total_output_tokens: null,
+      });
+    }
     setActiveTab('trajectory');
   }, []);
 

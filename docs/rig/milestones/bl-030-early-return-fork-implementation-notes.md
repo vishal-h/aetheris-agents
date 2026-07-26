@@ -103,6 +103,38 @@ rather than decided silently.
 switches on are not covered by any automated test in this repo — the manual GUI pass
 is the merge gate for that half, not a formality. See the packet.
 
+### Post-review: the real subprocess path, measured
+
+Every automated test above exercises the CLI **in-process** (`Fork.run/2`,
+`CLI.run/1`). Rig does not: it shells out to `mix aetheris` and reads a pipe. That
+path was reasoned about but never run, so it was run:
+
+```
+$ mix aetheris --json fork priv/runs/fixture-unlabelled-fork-CbZX6w/trajectory.json --step 0
+11:45:37.572  {"status":"forked","run_id":"fork-d0b6042bcb44c369"}
+11:45:37.773  {"status":"done","run_id":"fork-d0b6042bcb44c369"}
+```
+
+Timestamps are arrival times at the far end of a **real pipe, not a tty**. Three
+things this settles that no in-process test could:
+
+1. **Erlang's stdout is line-flushed through a pipe, not block-buffered.** This is
+   the assumption Rig's incremental `read_line` rests on entirely. Had it been
+   block-buffered, both lines would have arrived together at process exit and the
+   Rig half would have been silently no better than `.output()` — well-formed and
+   wrong. 201 ms apart says otherwise.
+2. The gap is `await_run`'s poll floor, confirming end-to-end that the id really is
+   handed out at fork-start and not at completion.
+3. `mix`'s own Logger output (`[warning]`/`[info]` application-boot lines) shares
+   stdout and precedes both JSON lines, as `read_first_run_id` assumes — none of it
+   parses as JSON, so first-wins still lands on the fork-start line.
+
+One environment note for whoever repeats this: a trajectory produced by the **test**
+suite is not forkable from a dev-env shell — `RunHelpers.lookup_run/1` reads SQLite,
+and `MIX_ENV=test` writes a different database, so `mix aetheris fork` on a
+`fork-source-*` fixture fails with `run … not found in store`. Fork a run that
+exists in the dev DB (`mix aetheris list`).
+
 ## Gates
 
 `cargo test` (21 passed, 1 ignored) · `bun run lint` (clean) · `bunx tsc -b` (clean) ·

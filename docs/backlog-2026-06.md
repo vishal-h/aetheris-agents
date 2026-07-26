@@ -1867,12 +1867,29 @@ shipping (b) alone must be recorded as a deliberate capability limit, not a fix.
 docs-first with an explicit do-not-generate on record-path changes. If (a) lands first,
 BL-039's positional pairing needs revisiting before it is written.
 
+**(b) is not closure, and must not be recorded as it.** Disabling parallel tool use stops
+*future* silent loss. It tells you nothing about whether past runs dropped calls, and
+nothing ever will: the recorded step is byte-identical whether the model asked for one
+tool or four, so the corpus cannot be audited after the fact. That indistinguishability is
+why (a) is the real fix. If (b) ships alone, record it as a deliberate capability limit
+with the un-auditable history named — not as "parallel tool calls: handled".
+
 **Done when:** a run whose provider response carries multiple `tool_use` blocks either
 executes and records all of them (a), or cannot occur because the request disables
 parallel tool use (b) — with the choice recorded in the determinism contract, and a test
 that fails if the extra blocks are silently dropped. A stub response carrying two
 `tool_use` blocks is the cheap regression exercise; assert on the recorded events, not on
 the run's status.
+
+**Additionally, for disposition (a) — the reciprocal of BL-039's §4 note, and the reason
+this line exists:** the same commit must update fork reconstruction to pair *N* `tool_use`
+blocks against *N* `tool_result` blocks per step. BL-039's positional pairing is sound only
+under one-call-per-step; the day (a) lands, that premise is gone. **A (a) diff confined to
+`anthropic.ex`/`run_config.ex` breaks `fork.ex` without touching it** — the same
+diff-invisible break the §4 clause guards against, running the other direction. §4 names
+the dependency from the fork side; this line names it from the adapter side, so neither
+ticket can land its half and leave the other silently wrong. Fork's done-check must be
+re-run as part of (a), not deferred to whoever next opens `fork.ex`.
 
 ---
 

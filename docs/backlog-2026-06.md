@@ -1790,9 +1790,89 @@ forks cannot run at all. **Builds atop BL-028's landed state** — BL-028's
 `Map.get(payload, "output", "")` at `:103`). Land BL-028 (b2) first; BL-039 must not
 race it.
 
+**§4 wording ratified 2026-07-26** — `../aetheris/docs/reviews/bl-039-contract-draft.md`,
+with three edits (positional pairing named as an adapter dependency rather than a world
+property; the id claim scoped to the harness; cross-provider fork carrying its
+reachability caveat). Implementation is unblocked. The adjudication spawned **BL-059** —
+the adapter silently discards parallel `tool_use` blocks, which is the *only* reason
+one-call-per-step holds; BL-039 must not fix it, and its §4 clause records the coupling.
+This row's own citations were corrected at HEAD by the scout memo
+(`../aetheris/docs/reviews/bl-039-fork-continuation-scout.md`) — line numbers moved
+post-BL-028, the "only `role => tool` site" claim is false, and the `aetheris.ex:372`
+stub-strip attribution is wrong (the fork path never *sets* `stub_responses`; the cited
+function is the scheduled-run template encoder). Conclusions unaffected.
+
 **Done when:** a fork of a tool-using run continues successfully against a real
 provider, or the contract states plainly that fork continuation is stub-only and the
 UI refuses real-provider forks rather than failing at the first call.
+
+---
+
+### BL-059 — Parallel tool calls are silently discarded: the adapter keeps the first `tool_use` block (#TBD)
+**Size:** M · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
+
+Raised 2026-07-26 by BL-039's §8 contract adjudication, which was about to make this
+defect load-bearing. Not part of BL-039 — that ticket must not change the record path.
+
+**The defect.** `anthropic.ex`'s response parse selects the tool block with
+`Enum.find/2`:
+
+```elixir
+tool_block = Enum.find(content_blocks, fn b -> Map.get(b, "type") == "tool_use" end)
+```
+
+`find`, not `filter`. When a response carries several `tool_use` blocks, the first is
+executed and **every other one is dropped before any event is written** — no
+`tool_called`, no `tool_result`, no warning, no trace in the trajectory that a call was
+ever requested. The model's turn is answered with one result where it asked for several.
+
+**Why this is live, not theoretical.** Anthropic's API permits parallel tool use and it
+is **on by default**; the documented client contract is to execute every `tool_use` block
+and return all `tool_result` blocks in one user turn. The harness never opts out:
+`RunConfig` defaults `tool_choice: nil` (`run_config.ex:96`) and `build_request_body/2`'s
+`maybe_put` drops a nil, so `disable_parallel_tool_use` is never sent. Every real
+Anthropic run is therefore eligible for parallel calls, and would silently lose them.
+
+Whether any recorded run has actually hit it is **unknown and not established by the scout
+sweep**: 537 recorded tool steps across 91 trajectories all carry exactly one
+`tool_result`, but that is the *post-discard* record — it is what a step looks like both
+when the model asked for one tool and when it asked for four. The record cannot
+distinguish the two cases, which is the defect's own signature. Do not read that sweep as
+evidence the case has never fired.
+
+**Blast radius beyond the dropped call.** `loop.ex` builds one `assistant_tool_use_message`
+per step from the single surviving response, so the transcript sent back on the next step
+also claims the model made one call. The conversation the provider sees is not the
+conversation it produced.
+
+**Why BL-039 raised it.** Fork reconstruction pairs a recorded tool result with the tool
+call at the same step, positionally. That is sound *only* while a step carries at most one
+call — which is true today solely because of this discard. The ratified §4 clause
+(`../aetheris/docs/reviews/bl-039-contract-draft.md`) names the dependency and its
+enforcement point rather than asserting one-call-per-step as a property of the world, so
+fixing this row does not silently break fork pairing; it obliges a matching change there.
+
+**Two dispositions, and the choice is a product decision.** (a) Honour parallel calls —
+execute each block, record a `tool_called`/`tool_result` pair per call, and emit one
+assistant turn carrying all `tool_use` blocks followed by one user turn carrying all
+`tool_result` blocks. Touches the response shape (`tool_use_id` is already parsed but only
+one survives), the loop's per-step event model, and every reader that assumes one result
+per step — including `Fork.event_to_messages/1` and the verifier. (b) Decline them
+explicitly — send `disable_parallel_tool_use: true` so the provider returns one call and
+the record is honest. (b) is small and stops the silent loss immediately; (a) is the real
+fix. They are not exclusive: (b) is a defensible interim if (a) is not scheduled, but
+shipping (b) alone must be recorded as a deliberate capability limit, not a fix.
+
+**Sequencing.** Independent of BL-039 and must not be batched with it — BL-039 is
+docs-first with an explicit do-not-generate on record-path changes. If (a) lands first,
+BL-039's positional pairing needs revisiting before it is written.
+
+**Done when:** a run whose provider response carries multiple `tool_use` blocks either
+executes and records all of them (a), or cannot occur because the request disables
+parallel tool use (b) — with the choice recorded in the determinism contract, and a test
+that fails if the extra blocks are silently dropped. A stub response carrying two
+`tool_use` blocks is the cheap regression exercise; assert on the recorded events, not on
+the run's status.
 
 ---
 
@@ -3408,7 +3488,8 @@ multi-line street/city/state/zip.
 | 15a3 | BL-049 | Operator-facing *today*: BL-042 made `run_command` reach the comparison, and the comparison is wrong for it. Ahead of BL-047 — routing more exec-server tools into a comparison that mis-reports would multiply the defect |
 | ✔ | BL-038 | **Done 2026-07-25** (`c0977c2` + F1 `e4baddf`; GUI merge gate green, 500 of 896). Scope narrowed in-cycle to server-side search only — no client-side filter, no pagination — because two filtering paths can disagree. BL-024 (19b) inherits the find-run-by-id primitive as intended: a server-side `label`/`run_id` LIKE reaching the whole store, which a window-scoped client filter could not have been. Spawned BL-058 |
 | 22b | BL-058 | Same surface as BL-036 (check 9) one section down. Do with or after BL-035/BL-036 cleanup; decide §5's scope rule before writing the check |
-| 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it |
+| 15c | BL-039 | Ahead of BL-030 — an early-return fork UX matters little while real-provider forks fail at the first LLM call. Builds atop BL-028's landed state (same clause, `fork.ex:101-105`); must not race it. §4 wording **ratified 2026-07-26** with three edits (`../aetheris/docs/reviews/bl-039-contract-draft.md`) — implementation is unblocked |
+| 15d | BL-059 | Independent of BL-039 and **not** batchable with it (BL-039 forbids record-path changes). If disposition (a) lands first, BL-039's positional pairing must be revisited before it is written; if BL-039 lands first, its §4 clause already names this as the dependency to update |
 | 16 | BL-030 | Unblocks a non-blocking fork UX; do after BL-031 so the wait path is already bounded |
 | 17 | BL-032 | Decide WAL-or-not once the fork call pattern (BL-030) settles, since that changes the contention profile |
 | 18 | BL-033 | Trivial deletion, but do it after BL-024 confirms no lineage work wants the union member |

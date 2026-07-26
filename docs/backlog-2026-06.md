@@ -1839,7 +1839,56 @@ is at `docs/reviews/bl-039-fork-continuation-scout.md` in **this** repo, not
 `../aetheris/` as this row and the ticket text both say.
 
 **Spawned BL-060** (`mix hex.audit` red on an upstream `bandit` advisory), found by an
-off-territory gate run.
+off-territory gate run, and **BL-061** (review F1 — Gemini thought signatures are not
+recorded, so a forked Gemini run does not round-trip them).
+
+**Review:** `docs/reviews/bl-039-review.md` — approved, no blocking findings; two
+non-blocking items dispositioned in r1 (`ebc3878`..`0e14500` plus the r1 commit).
+
+---
+
+### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
+**Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
+
+Raised 2026-07-26 by BL-039's review (F1). **Not a demonstrated defect** — a reachable gap
+whose provider-side effect is unestablished, filed so the question has an owner and a
+trigger rather than living as a contract sentence with neither.
+
+**The gap.** Gemini returns a thought signature on a tool call. `gemini.ex` parses it off
+`extra_content.google.thought_signature`, carries it on the response as
+`:thought_signature_blob`, and `CanonicalMessage.assistant_tool_use_message/2` puts it on
+the canonical `tool_use` block; `build_tool_calls/1` re-attaches it on the way out. So a
+**live** Gemini run round-trips the signature. It is not among the ten keys `loop.ex`
+writes to `:llm_responded`, so a **forked** one cannot: reconstruction calls the same
+builder with a payload-derived map that lacks the key, `Map.get/2` returns nil, and the
+block is emitted signature-free. That degradation is deliberate and is what lets one
+builder serve both paths (BL-039 §4) — the open question is only what Gemini does with it.
+
+**What is *not* the gap.** The review sketched this as Anthropic interleaved thinking
+requiring a signed thinking block on a replayed assistant turn. That case cannot arise
+here: the harness sends no `thinking` parameter from any call site, so Anthropic returns
+no thinking blocks to lose. `:thought_signature_blob` has exactly one producer
+(`gemini.ex`) and one consumer (the same file). The invariant the review named holds —
+§4's "does not preserve" list was incomplete — but against the Gemini family, not the
+Anthropic one.
+
+**Trigger:** the first fork of a Gemini tool run. Nobody has run one; if the answer is
+"degrades silently and correctly", this closes as a one-line §4 confirmation with the
+run recorded.
+
+**Two dispositions, and the cheap one may be enough.** (a) Record the signature — add
+`"thought_signature"` to the `:llm_responded` payload and read it back in
+`tool_call_messages/2`. This is a **record-path change**, which BL-039 was explicitly
+forbidden; it also touches `payload_fields` in `drift_check` and specs.md §6 (a `?`-suffixed
+optional field, per the optional-payload-fields rule). (b) Confirm Gemini tolerates a
+missing signature on a replayed call and leave §4's limitation standing as documentation.
+Do **not** ship (a) before establishing (b) is insufficient — the harness records what it
+needs, not everything it sees, and one un-round-tripped provider hint is not obviously
+worth widening the event schema for.
+
+**Done when:** a Gemini fork of a tool step has been run and its outcome recorded — either
+§4's limitation is confirmed harmless and says so, or the signature is recorded and the
+fork round-trips it, with a test that fails if the block loses its signature.
 
 ---
 

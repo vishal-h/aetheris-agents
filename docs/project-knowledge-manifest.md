@@ -75,46 +75,53 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > `docs/handoffs/handoff-bl007-close-2026-07-20.md` is also out: handoffs have never
 > carried a manifest row.
 
-> **Re-applied unchanged at this (fork-arc) export.** The cycle added **fifteen** working
-> artifacts and no standing reference doc: nine `docs/reviews/*.md` in agents (the BL-030 scout,
-> review and three packets; the BL-038 review; the BL-039 scout, review and packet), four
-> `*-implementation-notes.md` in agents `docs/rig/milestones/` (BL-038 and BL-030 r0/r1/r2), and
-> two in the harness `docs/aetheris/milestones/` (BL-030, BL-039). The harness also gained
-> `docs/reviews/bl-039-contract-draft.md` — **RATIFIED contract wording, and still out**: §8's
-> artifact is the *record of ratification*; the ratified text itself lives in
-> `determinism-contract.md`, which is exported and re-pinned below. Two handoffs
-> (`handoff-containment-cluster-close-2026-07-25.md`, `handoff-fork-arc-close-2026-07-26.md`) are
-> out as always. As at BL-007 and b1–b3, this cycle's specifications are the BL-0xx rows, already
-> carried inside `backlog-2026-06.md`.
+> **Re-applied unchanged at this (fork-arc) export.** The cycle added **fifteen**
+> working artifacts and no standing reference doc: nine `docs/reviews/*.md` in agents
+> (the BL-030 scout, review and three packets; the BL-038 review; the BL-039 scout,
+> review and packet), four `*-implementation-notes.md` in agents
+> `docs/rig/milestones/` (BL-038 and BL-030 r0/r1/r2), and two in the harness
+> `docs/aetheris/milestones/` (BL-030, BL-039). The harness also gained
+> `docs/reviews/bl-039-contract-draft.md` — **RATIFIED contract wording, and still
+> out**: §8's artifact is the *record of ratification*; the ratified text itself
+> lives in `determinism-contract.md`, which is exported and re-pinned below. Two
+> handoffs (`handoff-containment-cluster-close-2026-07-25.md`,
+> `handoff-fork-arc-close-2026-07-26.md`) are out as always. As at BL-007 and b1–b3,
+> this cycle's specifications are the BL-0xx rows, already carried inside
+> `backlog-2026-06.md`.
 
 ---
 
-Exported: 2026-07-26 at aetheris-agents `53c97cb` / aetheris `f79365a` (the fork arc — BL-039 then
-BL-030 r0/r1/r2 — plus BL-038). 24 rows: **24 carried, none added, none dropped.** Six rows
-re-pinned, clearing all six standing staleness WARNs: `rig--specs.md` (`c39bf7e`→`b5e8eee`),
-`rig--architecture.md` (`d82cf7e`→`c0977c2`), `rig--runbook.md` (`d0690a6`→`7d6013a`),
-`backlog-2026-06.md` (`6a8a32e`→`c27dee4`), `aetheris--runbook.md` (`915d582`→`ae0c510`), and
-`aetheris--determinism-contract.md` (`dd12dbb`→`1ab24d8`). The other eighteen data rows are
-unchanged since the previous export.
+Exported: 2026-07-26 at aetheris-agents `53c97cb` / aetheris `f79365a` (the fork arc
+— BL-039 then BL-030 r0/r1/r2 — plus BL-038). 24 rows: **24 carried, none added, none
+dropped.** Six rows re-pinned, clearing all six standing staleness WARNs:
+`rig--specs.md` (`c39bf7e`→`b5e8eee`), `rig--architecture.md` (`d82cf7e`→`c0977c2`),
+`rig--runbook.md` (`d0690a6`→`7d6013a`), `backlog-2026-06.md` (`6a8a32e`→`c27dee4`),
+`aetheris--runbook.md` (`915d582`→`ae0c510`), and `aetheris--determinism-contract.md`
+(`dd12dbb`→`1ab24d8`). The other eighteen data rows are unchanged since the previous
+export.
 
-**Upload is remove-all then upload-all against the full 24-row set** — not a diff of the six
-re-pinned rows. Eighteen data rows are unchanged and would look like "nothing to re-upload" to any
-hash-driven shortcut; do not optimise the upload down. This is the standing discipline that also
-covers the manifest-blind direction the header warns about (a file uploaded without a regen leaves
-the record silently under-describing project knowledge).
+**Upload is remove-all then upload-all against the full 24-row set** — not a diff of
+the six re-pinned rows. Eighteen data rows are unchanged and would look like "nothing
+to re-upload" to any hash-driven shortcut; do not optimise the upload down. This is
+the standing discipline that also covers the manifest-blind direction the header
+warns about (a file uploaded without a regen leaves the record silently
+under-describing project knowledge).
 
-**BL-034 — closed; the paragraph this replaces was stale.** Previous manifests carried BL-034
-forward as a *latent* vacuity: the refresh prompt closed by appending a drift baseline to
-`docs/rig/current-state-2026-06.md` — a tracked file — *after* Step 2, which would born-stale that
-row the moment it landed. **That is fixed.** BL-034 is Done 2026-07-22 ("resolved by dropping the
-baseline append"), and `prompts/bl-002-refresh-project-knowledge.md` at HEAD no longer contains the
-step: it now states the invariant directly ("the manifest is the ONLY tracked file this task
-writes, and it is the LAST tracked write") and records the removal. Verified at HEAD this export,
-not carried on faith. `current-state-2026-06.md` stays pinned `f723ee5`, matching HEAD.
+**BL-034 — closed; the paragraph this replaces was stale.** Previous manifests
+carried BL-034 forward as a *latent* vacuity: the refresh prompt closed by appending
+a drift baseline to `docs/rig/current-state-2026-06.md` — a tracked file — *after*
+Step 2, which would born-stale that row the moment it landed. **That is fixed.**
+BL-034 is Done 2026-07-22 ("resolved by dropping the baseline append"), and
+`prompts/bl-002-refresh-project-knowledge.md` at HEAD no longer contains the step: it
+now states the invariant directly ("the manifest is the ONLY tracked file this task
+writes, and it is the LAST tracked write") and records the removal. Verified at HEAD
+this export, not carried on faith. `current-state-2026-06.md` stays pinned `f723ee5`,
+matching HEAD.
 
-**Repo push state.** Both repos are synced at the exported commits — aetheris-agents `origin/main`
-= `53c97cb`, aetheris `origin/main` = `f79365a`; the whole fork arc is on origin. Only this
-manifest regen commit is unpushed, held for the human.
+**Repo push state.** Both repos are synced at the exported commits — aetheris-agents
+`origin/main` = `53c97cb`, aetheris `origin/main` = `f79365a`; the whole fork arc is
+on origin. Only this manifest regen commit is unpushed, held for the human.
 
-Previous export: 2026-07-25 at aetheris-agents `6a8a32e` / aetheris `dd12dbb` (the fs_hash /
-http_call / containment-reorder cluster — BL-053, BL-043, BL-050/055/056; four rows re-pinned).
+Previous export: 2026-07-25 at aetheris-agents `6a8a32e` / aetheris `dd12dbb` (the
+fs_hash / http_call / containment-reorder cluster — BL-053, BL-043, BL-050/055/056;
+four rows re-pinned).

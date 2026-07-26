@@ -24,9 +24,9 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 
 | export name | repo path | repo | commit | last changed |
 |-------------|-----------|------|--------|--------------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `c39bf7e` | 2026-07-20 |
-| `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
-| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `d0690a6` | 2026-07-21 |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `b5e8eee` | 2026-07-26 |
+| `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 |
+| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
@@ -34,11 +34,11 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `1013a95` | 2026-07-25 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `6a8a32e` | 2026-07-25 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `c27dee4` | 2026-07-26 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `1ebe971` | 2026-07-21 |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `915d582` | 2026-07-25 |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
-| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `dd12dbb` | 2026-07-25 |
+| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
@@ -47,12 +47,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
 | `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `0a0439f` | 2026-07-20 |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `602bdf5` | 2026-06-19 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-25 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-26 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
 > the harness copy. `milestone-methodology.md` is single-copy in the harness repo.
-> Mirror re-verified byte-identical at this export (`diff -q`, 2026-07-25); the
+> Mirror re-verified byte-identical at this export (`diff -q`, 2026-07-26); the
 > mirror's own last change is `b1fd73f`, which is why it carries no manifest row —
 > the row tracks the canonical copy, and a second row would drift against it.
 
@@ -75,36 +75,46 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > `docs/handoffs/handoff-bl007-close-2026-07-20.md` is also out: handoffs have never
 > carried a manifest row.
 
+> **Re-applied unchanged at this (fork-arc) export.** The cycle added **fifteen** working
+> artifacts and no standing reference doc: nine `docs/reviews/*.md` in agents (the BL-030 scout,
+> review and three packets; the BL-038 review; the BL-039 scout, review and packet), four
+> `*-implementation-notes.md` in agents `docs/rig/milestones/` (BL-038 and BL-030 r0/r1/r2), and
+> two in the harness `docs/aetheris/milestones/` (BL-030, BL-039). The harness also gained
+> `docs/reviews/bl-039-contract-draft.md` — **RATIFIED contract wording, and still out**: §8's
+> artifact is the *record of ratification*; the ratified text itself lives in
+> `determinism-contract.md`, which is exported and re-pinned below. Two handoffs
+> (`handoff-containment-cluster-close-2026-07-25.md`, `handoff-fork-arc-close-2026-07-26.md`) are
+> out as always. As at BL-007 and b1–b3, this cycle's specifications are the BL-0xx rows, already
+> carried inside `backlog-2026-06.md`.
+
 ---
 
-Exported: 2026-07-25 at aetheris-agents `6a8a32e` / aetheris `dd12dbb` (the fs_hash / http_call /
-containment-reorder cluster — BL-053, BL-043, and BL-050/055/056). 24 rows: **24 carried, none
-added, none dropped.** Four rows re-pinned, clearing the four standing staleness WARNs:
-`backlog-2026-06.md` (`f624337`→`6a8a32e`), `aetheris--runbook.md` (`8021a59`→`915d582`),
-`aetheris--architecture.md` (`ff971a8`→`915d582`), and `aetheris--determinism-contract.md`
-(`af56a57`→`dd12dbb`). `aetheris-agents--CLAUDE.md` was **not** re-pinned this export — it stays
-`1013a95`, unchanged since BL-041(a).
+Exported: 2026-07-26 at aetheris-agents `53c97cb` / aetheris `f79365a` (the fork arc — BL-039 then
+BL-030 r0/r1/r2 — plus BL-038). 24 rows: **24 carried, none added, none dropped.** Six rows
+re-pinned, clearing all six standing staleness WARNs: `rig--specs.md` (`c39bf7e`→`b5e8eee`),
+`rig--architecture.md` (`d82cf7e`→`c0977c2`), `rig--runbook.md` (`d0690a6`→`7d6013a`),
+`backlog-2026-06.md` (`6a8a32e`→`c27dee4`), `aetheris--runbook.md` (`915d582`→`ae0c510`), and
+`aetheris--determinism-contract.md` (`dd12dbb`→`1ab24d8`). The other eighteen data rows are
+unchanged since the previous export.
 
-**Upload is remove-all then upload-all against the full 24-row set** — not a diff of the four
-re-pinned rows. Nineteen data rows are unchanged since the previous export and would look like
-"nothing to re-upload" to any hash-driven shortcut; do not optimise the upload down. This is the
-standing discipline that also covers the manifest-blind direction the header warns about (a file
-uploaded without a regen leaves the record silently under-describing project knowledge).
+**Upload is remove-all then upload-all against the full 24-row set** — not a diff of the six
+re-pinned rows. Eighteen data rows are unchanged and would look like "nothing to re-upload" to any
+hash-driven shortcut; do not optimise the upload down. This is the standing discipline that also
+covers the manifest-blind direction the header warns about (a file uploaded without a regen leaves
+the record silently under-describing project knowledge).
 
-**BL-034 — corrected finding, carried forward; not fixed (deliberate).** The prior manifest once
-claimed that following the refresh prompt's closing append step would reproduce a "born-stale
-instance at `628f15f`". **That claim is withdrawn as false.** A clean check-8 sweep of all
-committed manifests found **no** born-stale instance — `628f15f` never born-staled a row. BL-034
-remains a **latent** vacuity: `prompts/bl-002-refresh-project-knowledge.md` closes by appending a
-drift-baseline line to `docs/rig/current-state-2026-06.md` — a file this table tracks — *after*
-the manifest is written, which *would* born-stale that row **if the step were followed literally**.
-It has not been observed to fire and is not asserted to have; it remains BL-034's to fix. At this
-export the append was **not performed** (the manifest write is this session's only write to a
-tracked file), so `current-state-2026-06.md` stays pinned `f723ee5`, matching HEAD.
+**BL-034 — closed; the paragraph this replaces was stale.** Previous manifests carried BL-034
+forward as a *latent* vacuity: the refresh prompt closed by appending a drift baseline to
+`docs/rig/current-state-2026-06.md` — a tracked file — *after* Step 2, which would born-stale that
+row the moment it landed. **That is fixed.** BL-034 is Done 2026-07-22 ("resolved by dropping the
+baseline append"), and `prompts/bl-002-refresh-project-knowledge.md` at HEAD no longer contains the
+step: it now states the invariant directly ("the manifest is the ONLY tracked file this task
+writes, and it is the LAST tracked write") and records the removal. Verified at HEAD this export,
+not carried on faith. `current-state-2026-06.md` stays pinned `f723ee5`, matching HEAD.
 
 **Repo push state.** Both repos are synced at the exported commits — aetheris-agents `origin/main`
-= `6a8a32e`, aetheris `origin/main` = `dd12dbb`; the whole fs_hash / http_call / containment-reorder
-cluster is on origin. Only this manifest regen commit is unpushed, held for the human.
+= `53c97cb`, aetheris `origin/main` = `f79365a`; the whole fork arc is on origin. Only this
+manifest regen commit is unpushed, held for the human.
 
-Previous export: 2026-07-25 at aetheris-agents `aad8415` / aetheris `af56a57` (post-verify-arc
-export — BL-049, the BL-047 cluster, BL-041(a); four rows re-pinned).
+Previous export: 2026-07-25 at aetheris-agents `6a8a32e` / aetheris `dd12dbb` (the fs_hash /
+http_call / containment-reorder cluster — BL-053, BL-043, BL-050/055/056; four rows re-pinned).

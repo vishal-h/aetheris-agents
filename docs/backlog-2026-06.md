@@ -576,7 +576,9 @@ drains both pipes and reaps; `handleForked` sets `status: 'running'` so
 `--detach`/`--follow` untouched (daemon path). Notes:
 `docs/rig/milestones/bl-030-early-return-fork-implementation-notes.md` +
 `../aetheris/docs/aetheris/milestones/bl-030-implementation-notes.md`. Scout:
-`docs/reviews/bl-030-fork-early-return-scout.md`.
+`docs/reviews/bl-030-fork-early-return-scout.md`. Review: `docs/reviews/bl-030-review.md`
+(r1, approve; F1 non-blocking, fixed at harness `f79365a`). Merge gated on the
+manual GUI pass.
 
 > **Dangling ref, deliberate.** Determinism contract §4 says "the CLI and Rig entry
 > points pass a label only (BL-030)". That sentence is still **true** after this

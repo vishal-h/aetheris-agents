@@ -577,8 +577,34 @@ drains both pipes and reaps; `handleForked` sets `status: 'running'` so
 `docs/rig/milestones/bl-030-early-return-fork-implementation-notes.md` +
 `../aetheris/docs/aetheris/milestones/bl-030-implementation-notes.md`. Scout:
 `docs/reviews/bl-030-fork-early-return-scout.md`. Review: `docs/reviews/bl-030-review.md`
-(r1, approve; F1 non-blocking, fixed at harness `f79365a`). Merge gated on the
-manual GUI pass.
+(r1, approve; F1 non-blocking, fixed at harness `f79365a`).
+
+**Closed 2026-07-26 after three rounds and a confirmed GUI pass.**
+
+- **r0** — the early-return fork itself (harness `ae0c510`, agents `b5e8eee`).
+- **r1** — completion transition, folding BL-063 (agents `4bf0fd6`). A fork
+  watched to completion stayed in BL-005 reconstructed mode: the trajectory file
+  that now existed was never re-read, so provenance / `started_at` / duration
+  appeared only after a manual tab-out/in. Scouted first, and the scout changed
+  the mechanism: the `run_complete` **event** precedes the file write
+  (`loop.ex:267` → `server.ex:680` → `server.ex:456`), so a reload triggered by
+  the event races it, while one gated on the row's **terminal status** cannot.
+  Status-gated, no retry. Packet `docs/reviews/bl-030-r1-review-packet.md`.
+- **r2** — source-seeded selection (agents `c2af6cf`). r1's per-consumer fix left
+  the Events header reading the synthesized summary directly: `new Date('')` →
+  "Invalid Date", with `label` and `model` blank from the same cause. The
+  **Adjacent-case** class — the blast radius was one consumer wider than the view
+  the fix was written against. Closed at the source: `handleForked` now seeds the
+  selection from the real `runs` row (`runSummaryFromDetail/1`), so the invented
+  summary is gone and there is no consumer list to keep in step. Incidentally
+  retires a documented compromise — a labelled fork now hands its label to a
+  grandchild without a Refresh. Packet `docs/reviews/bl-030-r2-review-packet.md`.
+- **GUI pass confirmed end-to-end** on the real app: Trajectory (r1) — provenance
+  banner, the amber "live — reconstructed" banner clearing in place at completion,
+  incremental steps; Events (r2) — real label, run_id, model and `Started:` date
+  on first landing, no re-select.
+
+Carried out of this ticket as their own rows: **BL-062**, **BL-064**, **BL-065**.
 
 > **Dangling ref, deliberate.** Determinism contract §4 says "the CLI and Rig entry
 > points pass a label only (BL-030)". That sentence is still **true** after this
@@ -1869,6 +1895,103 @@ recorded, so a forked Gemini run does not round-trip them).
 
 **Review:** `docs/reviews/bl-039-review.md` — approved, no blocking findings; two
 non-blocking items dispositioned in r1 (`ebc3878`..`0e14500` plus the r1 commit).
+
+---
+
+### BL-062 — Fork provider/model overrides (#TBD)
+**Size:** S–M · **Priority:** medium · **Section:** harness CLI + Rig fork dialog · **§8 edit required**
+
+Split out of BL-030 during its scoping so that ticket stayed §8-free (adjudicated
+2026-07-26). `Aetheris.fork_run/3` already accepts arbitrary `RunConfig` overrides
+and the harness threads them into the fork's config; cross-provider forking works
+by design (determinism contract §4, ratified at BL-039). The CLI and Rig simply
+never expose it — `fork_overrides/1` (`../aetheris/lib/aetheris/cli/commands/fork.ex`)
+maps `--name` to `label` and nothing else.
+
+**Wanted.** CLI: widen `fork_overrides/1` and the fork `@switches` to accept
+`--provider` / `--model` into the overrides map. Rig: a provider/model picker in
+the fork dialog so the flag is operator-reachable rather than wired to nothing —
+or an explicit record of "CLI-only for now" with the picker deferred to its own
+row.
+
+**§8.** Determinism contract §4 currently says *"Selecting a different provider is
+a capability of `Aetheris.fork_run/3`'s `overrides`; the CLI and Rig entry points
+pass a label only (BL-030)."* That sentence stays **true** until this lands, but
+its `(BL-030)` ref already points at a closed ticket that never carried the
+overrides — this row's §8 edit corrects the sentence *and* repoints the ref. §4
+has form for decayed parentheticals (D2's `cli/commands/fork.ex:47-55`), so do not
+leave it.
+
+**Done when:** the CLI accepts the flags and they reach the fork run; the §4
+sentence is corrected and its ref repointed under §8 ratification; operator access
+(picker vs CLI-only) is decided and recorded.
+
+---
+
+### BL-064 — Fork with additional instructions (#TBD)
+**Size:** TBD · **Priority:** TBD · **Section:** TBD
+
+Parked at BL-030 closure, 2026-07-26. **Scope not yet written** — this row exists
+so the idea has an owner and a number rather than living in a review thread, per
+the deferred-finding rule. It is a stub, not a spec.
+
+**What is known:** the intent is to fork a run *and* supply new or amended
+instructions at the fork point, rather than replaying the recorded prefix and
+continuing unchanged. Nothing beyond that has been adjudicated here — not the
+surface (CLI flag, Rig dialog, or both), not where the instruction lands (appended
+user turn, `system_prompt` override, something else), and not what it means for
+the determinism contract's fork guarantee, which today describes a fork as the
+recorded prefix continued live.
+
+**Adjacent:** BL-062 is the same seam (fork-time overrides reaching CLI and Rig)
+and would likely share its plumbing; a `system_prompt` override is already an
+`overrides` key, so part of this may be reachable the same way.
+
+**Do not start from this row.** Get the scope from whoever parked it, write it
+here, then implement. Anyone who fills this in should treat the paragraph above as
+leads, not facts.
+
+---
+
+### BL-065 — A failed trajectory write still reports the run as `done` (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/agent/server.ex`)
+
+Raised by BL-030 r1 and carried through r2. Not introduced there — latent since
+the write was added.
+
+**The defect.** `execute_run/…` calls the trajectory write and then branches on a
+*different* value (`server.ex:680-684`):
+
+```elixir
+    Aetheris.Trajectory.File.write(config.run_id, events, meta)
+
+    case result do
+      :ok -> GenServer.cast(server_pid, {:run_complete, :done})
+      {:error, reason} -> GenServer.cast(server_pid, {:run_failed, reason})
+    end
+```
+
+`result` is the **loop's** result. `File.write/3`'s `{:ok, path} | {:error, …}` is
+never examined, so a disk-full, permission or rename failure produces a run whose
+status reads `done`, with no trajectory file and no error recorded anywhere. The
+same pattern is at the resume path (`server.ex:952`).
+
+**Class:** Silent-wrong-answer (harness `CLAUDE.md`) — the failure renders as a
+normal completion, which is exactly what lets it survive. Ask what a broken write
+looks like from outside: identical to a successful one.
+
+**Consequence already relied upon.** BL-030 r1's completion transition treats
+terminal status as "the harness has finished writing", *not* "the file exists",
+and its reload is best-effort for this reason — on this path Rig stays in the
+reconstructed view with its terminal banner. That degradation is correct and
+should stay correct after this is fixed; fixing it here means the operator also
+learns the write failed.
+
+**Done when:** a failed trajectory write is surfaced — the run does not report
+`done` on a write failure, or the failure is recorded as an event/log with the
+reason — and both call sites (`:680`, `:952`) are covered. Exercise the gap
+explicitly (a write forced to fail must not produce a `done` run), not just the
+happy path.
 
 ---
 

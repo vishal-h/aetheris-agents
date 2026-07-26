@@ -1886,9 +1886,16 @@ Do **not** ship (a) before establishing (b) is insufficient — the harness reco
 needs, not everything it sees, and one un-round-tripped provider hint is not obviously
 worth widening the event schema for.
 
-**Done when:** a Gemini fork of a tool step has been run and its outcome recorded — either
-§4's limitation is confirmed harmless and says so, or the signature is recorded and the
-fork round-trips it, with a test that fails if the block loses its signature.
+**Done when:** a Gemini fork of a tool step has been run and its outcome recorded, **and §4
+is updated from that work either way** — the limitation is confirmed harmless and the clause
+says so, *or* the signature is recorded, the fork round-trips it, and the clause's Gemini
+scoping is corrected in the same change, with a test that fails if the block loses its
+signature. §4 currently states the omission as unestablished-in-effect; the moment the effect
+is established, that sentence is stale in whichever direction the answer goes, so neither
+branch closes without touching it. (Review r2: the soft end of the same both-ends discipline
+BL-059 carries in its hard form — there the coupling is code-to-code and a diff can break the
+other side invisibly; here it is code-to-contract and the contract can go quietly wrong
+instead.)
 
 ---
 

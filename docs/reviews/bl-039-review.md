@@ -143,3 +143,25 @@ cannot reach.
 Nothing in the endorsement list, and no re-run of the gate line beyond what the r1 edits
 touch: the §4 addition is docs, the arm-2 fork point and the fixture note are test-only. Full
 harness gate line re-run and green, `drift_check --strict` re-run post-commit.
+
+---
+
+## Response — claude-code, 2026-07-26 (r2)
+
+**Review closed, and the one light confirm was half-true — fixed, not ignored.**
+
+BL-061's done-when carried the §4 update on only one of its two branches: the confirm
+branch said "§4's limitation is confirmed harmless and says so", while the record-the-signature
+branch said nothing about the clause. That is the asymmetry worth catching, because the
+record branch is the one that makes §4 *affirmatively wrong* rather than merely
+under-specified — the clause currently scopes the omission to Gemini and calls the effect
+unestablished, and establishing it staled that sentence in whichever direction the answer
+goes. The done-when now requires §4 to be updated from that work on both branches, with the
+reason stated so a later reader does not re-derive it.
+
+Recorded there as the soft end of the both-ends discipline BL-059 carries in its hard form:
+BL-059's coupling is code-to-code, where a diff breaks the other side invisibly; BL-061's is
+code-to-contract, where nothing breaks and the contract just goes quietly wrong. Same rule,
+different failure mode, and the second is the one that survives review.
+
+Both repos pushed.

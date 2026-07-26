@@ -1,5 +1,6 @@
 import type {
   EventRow,
+  RunDetail,
   RunSummary,
   TrajectoryEvent,
   TrajectoryFile,
@@ -82,6 +83,34 @@ function seedField(config: Record<string, unknown>): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
+/**
+ * Fork provenance for the reconstructed meta (BL-030 r1).
+ *
+ * The file path gets `fork_from`/`fork_step` from `meta` (`maybe_add_fork_meta`,
+ * `server.ex:720`), which only exists once the run has finished. They are also
+ * `RunConfig` fields, and `encode_config` (`server.ex:759-768`) strips only
+ * `stub_responses` / `coordinator_pid` / `blackboard_pid` / `label` /
+ * `max_duration` — so `runs.config_json` carries them from the moment the run is
+ * started. Verified against a live row: `fork_from` and `fork_step` both present.
+ * That is why the provenance banner can render while the fork is still running
+ * and does not have to wait for the file.
+ *
+ * Emitted only when present, because `TrajectoryBody` gates the banner on
+ * `meta.fork_from != null`. `fork_step` may legitimately be null
+ * (`run_config.ex:197`), and the banner already guards for that, so it is passed
+ * through as-is rather than being dropped or defaulted.
+ */
+function forkMeta(config: Record<string, unknown>): Partial<TrajectoryMeta> {
+  const forkFrom = config['fork_from' as keyof typeof config];
+  if (typeof forkFrom !== 'string' || forkFrom === '') return {};
+
+  const forkStep = config['fork_step' as keyof typeof config];
+  return {
+    fork_from: forkFrom,
+    fork_step: typeof forkStep === 'number' ? forkStep : null,
+  };
+}
+
 function parseConfig(configJson: string | null): Record<string, unknown> {
   if (!configJson) return {};
   try {
@@ -96,20 +125,21 @@ function parseConfig(configJson: string | null): Record<string, unknown> {
 }
 
 /**
- * Build a `TrajectoryFile` from live events + the run's `config_json`.
+ * Build a `TrajectoryFile` from live events + the run row.
  *
- * @param runId      the run being viewed
- * @param run        the run summary (status / provider / model / timestamps), or null
- * @param configJson `runs.config_json` (from `harness_get_run`), or null
- * @param rows       events from `harness_get_events`
+ * @param runId  the run being viewed
+ * @param run    the run summary the list handed over (may be synthesized), or null
+ * @param detail the real `runs` row from `harness_get_run` — `config_json`,
+ *               `started_at`, `finished_at` — or null if it has not arrived
+ * @param rows   events from `harness_get_events`
  */
 export function reconstructTrajectory(
   runId: string,
   run: RunSummary | null,
-  configJson: string | null,
+  detail: RunDetail | null,
   rows: EventRow[],
 ): TrajectoryFile {
-  const config = parseConfig(configJson);
+  const config = parseConfig(detail?.config ?? null);
   const events = rows.map(parseEventRow);
 
   // step_count: number of distinct step indices observed so far. Live runs
@@ -122,16 +152,24 @@ export function reconstructTrajectory(
     mode:            stringField(config, 'mode'),
     step_count:      stepCount,
     max_steps:       maxStepsField(config),
-    started_at:      run?.started_at ?? stringField(config, 'started_at'),
+    // The real `runs` row wins over the summary, and `||` (not `??`) is
+    // load-bearing: a run navigated to straight from a fork carries a
+    // *synthesized* summary whose `started_at` is `''` (RunList `handleForked`),
+    // and `''` is neither null nor undefined, so `??` kept it and the view
+    // rendered "Invalid Date". `||` falls through the empty string to the row's
+    // real timestamp. `config_json` has no timestamps — they are run-row
+    // columns — so there is no third source to consult (BL-030 r1).
+    started_at:      detail?.started_at || run?.started_at || '',
     // TrajectoryMeta.finished_at is '' when the run has not finished — mirrors
     // the Rust unwrap_or default on the file path (see types.ts).
-    finished_at:     run?.finished_at ?? '',
+    finished_at:     detail?.finished_at || run?.finished_at || '',
     tools:           toolsField(config),
     system_prompt:   stringField(config, 'system_prompt'),
     user_prompt:     stringField(config, 'user_prompt'),
     sandbox_path:    stringField(config, 'sandbox_path'),
     seed:            seedField(config),
     overlay_changes: [],
+    ...forkMeta(config),
   };
 
   return {

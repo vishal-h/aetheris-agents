@@ -229,7 +229,7 @@ interface Props {
  */
 export function TrajectoryView({ run, onForked }: Props) {
   const runId = run?.run_id ?? null;
-  const { trajectory: fileTrajectory, loading: fileLoading, error: fileError } =
+  const { trajectory: fileTrajectory, loading: fileLoading, error: fileError, reload } =
     useTrajectory(runId);
 
   // Only reach for the event stream once the file load has failed. Gating the
@@ -237,8 +237,23 @@ export function TrajectoryView({ run, onForked }: Props) {
   // the extra queries. Poll while the run is live so the view appends events.
   const fileMissing = fileError !== null;
   const fallbackRunId = fileMissing ? runId : null;
-  const events = useRunEvents(fallbackRunId, { polling: run?.status === 'running' });
-  const detail = useRunDetail(fallbackRunId);
+
+  // Poll the run row whenever the fallback is engaged. Not gated on a status of
+  // our own: `useRunDetail` stops itself the moment the row reads terminal, and
+  // gating it on the status it is the source of would be circular. The cost when
+  // the fallback engages for an already-terminal run (a BL-003-swept orphan) is
+  // one extra fetch before it stops. A completed run with a file never gets here
+  // at all — `fallbackRunId` stays null — so BL-005's "completed runs unaffected"
+  // gating is intact.
+  const detail = useRunDetail(fallbackRunId, { polling: fallbackRunId !== null });
+
+  // The *real* run row is the authority on status, not the summary we were
+  // handed. A run navigated to straight from a fork carries a synthesized
+  // summary (RunList `handleForked`) whose `status` is a seed that never
+  // changes; reading the row is what lets a run finishing in place be noticed.
+  // Falls back to the prop until the first row arrives.
+  const liveStatus = detail.data?.status ?? run?.status;
+  const events = useRunEvents(fallbackRunId, { polling: liveStatus === 'running' });
 
   // Preserve the interrupted-write / corrupt-file signal the runbook documents:
   // the banner reports the file as "unavailable" generically, so log the actual
@@ -248,6 +263,29 @@ export function TrajectoryView({ run, onForked }: Props) {
       console.warn(`[TrajectoryView] trajectory_load failed for ${runId}; reconstructing from events: ${fileError}`);
     }
   }, [fileError, runId]);
+
+  // Completion transition (BL-030 r1). A run being watched writes its
+  // `trajectory.json` only at the end, so the view is in reconstructed mode by
+  // the time the file appears and would otherwise never read it — the run's real
+  // provenance, started_at and duration stayed hidden until a manual tab-out/in.
+  //
+  // The trigger is the run row reaching a **terminal status**, not the
+  // `run_complete` event, and that choice is the whole race story. The harness
+  // appends `run_complete` to SQLite inside the loop (`loop.ex:267`), *then*
+  // writes the file (`server.ex:680`, tmp + atomic rename), *then* sets the
+  // status (`server.ex:456`). Reloading on the event would race the write and
+  // land back on `fileMissing`; reloading on the status cannot, because the
+  // status flip strictly follows the completed rename. No retry is needed, and
+  // none is used — if the load still fails at terminal status the file genuinely
+  // is not there (a failed write, a swept orphan) and staying reconstructed with
+  // the terminal banner is the correct final state, which `reload` preserves.
+  //
+  // Generalizes beyond forks: any run watched live through its own completion
+  // gets the same in-place transition.
+  const isTerminal = liveStatus !== undefined && liveStatus !== 'running';
+  useEffect(() => {
+    if (fileMissing && isTerminal) reload();
+  }, [fileMissing, isTerminal, reload]);
 
   if (!runId) {
     return <CentredMessage>Select a run to view its trajectory.</CentredMessage>;
@@ -281,14 +319,17 @@ export function TrajectoryView({ run, onForked }: Props) {
     const reconstructed = reconstructTrajectory(
       runId,
       run,
-      detail.data?.config ?? null,
+      detail.data,
       events.data ?? [],
     );
 
     return (
       <TrajectoryBody
         trajectory={reconstructed}
-        banner={reconstructedBanner(run?.status)}
+        // The row's status, not the (possibly synthesized) summary's — so a run
+        // that finishes while watched and whose file is genuinely absent stops
+        // claiming to be "live".
+        banner={reconstructedBanner(liveStatus)}
         isPolling={events.isPolling}
         showExport={false}
         canFork={false}

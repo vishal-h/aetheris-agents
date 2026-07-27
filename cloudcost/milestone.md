@@ -59,8 +59,15 @@ t1 needs the first before it can record real fixtures — so treat the token as 
    there is no need to fine-grain it to billing. Read-only is the security property that
    matters, and it trivially satisfies **D2**: a token that cannot write has nothing to
    separate at P1: the read/write split becomes real only at P3. Export it in the harness
-   process environment *before* `mix aetheris run`; per **D2** it must be the *only* DO token
-   in that environment. Gates: t1 (recording real fixtures + the live `--output` done-check)
+   process environment *before* `mix aetheris run`. The reporting run's environment must hold
+   `CLOUDCOST_DO_TOKEN` and **no other DO token** — not only for **D2**'s write-exclusion, but
+   because `pydo`/`doctl` default to reading `DO_TOKEN`/`DIGITALOCEAN_ACCESS_TOKEN`, so a
+   stray write token left in the environment can silently shadow the read-only one and do the
+   run. If `~/.profile` (or `~/.bashrc`, `~/.zshrc`, `/etc/profile`, …) exports any other DO
+   token, relocate it out of the harness login shell (e.g. a `~/.secrets/` file sourced only
+   where that token is used) and confirm in a fresh shell before the run:
+   `[ -z "$DO_TOKEN" ] && [ -z "$DIGITALOCEAN_ACCESS_TOKEN" ] && [ -n "$CLOUDCOST_DO_TOKEN" ]`.
+   Gates: t1 (recording real fixtures + the live `--output` done-check)
    and t5 (the end-to-end run). The offline unit tests (t1–t4) do **not** need it — so
    structural work can start before the token lands, but t1 can't *complete* (real fixtures)
    without it.
@@ -220,8 +227,10 @@ doc).
 inventory — droplets, volumes, reserved IPs, snapshots, load balancers, with `state`,
 `attached_to`, `created_at`, size/type — and emits **two normalized JSON files** per
 **§Normalized schemas**: `do_costs_{YYYY-MM}.json` and `do_inventory_{YYYY-MM}.json`. Auth via
-read-only `CLOUDCOST_DO_TOKEN` (env). Pagination + retry + rate-limit handling live in the
-adapter. `source_granularity: "service"`, `resource_id: null` on cost items;
+read-only `CLOUDCOST_DO_TOKEN`, read from the env and **passed to the DO client explicitly** —
+never rely on `pydo`/`requests` default `DO_TOKEN`/`DIGITALOCEAN_ACCESS_TOKEN` env pickup, so a
+stray token cannot shadow the intended read-only one. Pagination + retry + rate-limit handling
+live in the adapter. `source_granularity: "service"`, `resource_id: null` on cost items;
 `monthly_cost_estimate` derived from size/type on inventory items. `raw_ref` (`do://…`) on
 each resource for the evidence trail.
 
@@ -237,7 +246,9 @@ responses); `requirements.txt` (`pydo`/`requests`).
 
 **Do-not-generate.** The DO MCP path (REST only); any write/management call (list/get only —
 never create/modify/delete); resource-level *cost* fabrication (cost stays service-level;
-resource $ is the inventory estimate); any other provider; `python3 -c` inline logic.
+resource $ is the inventory estimate); reliance on the DO client's default token env lookup
+(construct with `CLOUDCOST_DO_TOKEN` explicitly); any other provider; `python3 -c` inline
+logic.
 
 **Done-check.**
 - `python3 -c "import cloudcost"` fails (dir name is stdlib-safe).
@@ -252,7 +263,8 @@ resource $ is the inventory estimate); any other provider; `python3 -c` inline l
 > §t1. Read `agent-creation-guide.md` and both `CLAUDE.md` learning sections first.
 > `fetch_do.py` fetches DO billing (balance/invoice/history) and resource inventory
 > (droplets/volumes/reserved-IPs/snapshots/load-balancers with state + attachment + age) via
-> the DO REST API (`pydo` or `requests`, read-only `CLOUDCOST_DO_TOKEN` from env), and emits
+> the DO REST API (`pydo` or `requests`, read-only `CLOUDCOST_DO_TOKEN` from env — passed to
+> the client explicitly, never the default `DO_TOKEN` pickup), and emits
 > the two normalized JSON files per §Normalized schemas — `source_granularity:"service"`,
 > `resource_id:null` on cost items; `monthly_cost_estimate` and `raw_ref` on inventory items.
 > Pagination/retry in the adapter. Standalone-runnable; pytest against recorded fixtures

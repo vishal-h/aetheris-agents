@@ -218,8 +218,8 @@ doc).
 **Scope.** Create the `cloudcost/` use-case tree and the DO adapter. `fetch_do.py` fetches
 (a) DO billing — balance, current-period invoice/billing-history — and (b) resource
 inventory — droplets, volumes, reserved IPs, snapshots, load balancers, with `state`,
-`attached_to`, `created_at`, size/type — and emits **two normalized JSON files** per the
-proposal schemas: `do_costs_{YYYY-MM}.json` and `do_inventory_{YYYY-MM}.json`. Auth via
+`attached_to`, `created_at`, size/type — and emits **two normalized JSON files** per
+**§Normalized schemas**: `do_costs_{YYYY-MM}.json` and `do_inventory_{YYYY-MM}.json`. Auth via
 read-only `CLOUDCOST_DO_TOKEN` (env). Pagination + retry + rate-limit handling live in the
 adapter. `source_granularity: "service"`, `resource_id: null` on cost items;
 `monthly_cost_estimate` derived from size/type on inventory items. `raw_ref` (`do://…`) on
@@ -253,7 +253,7 @@ resource $ is the inventory estimate); any other provider; `python3 -c` inline l
 > `fetch_do.py` fetches DO billing (balance/invoice/history) and resource inventory
 > (droplets/volumes/reserved-IPs/snapshots/load-balancers with state + attachment + age) via
 > the DO REST API (`pydo` or `requests`, read-only `CLOUDCOST_DO_TOKEN` from env), and emits
-> the two normalized JSON files per the proposal schemas — `source_granularity:"service"`,
+> the two normalized JSON files per §Normalized schemas — `source_granularity:"service"`,
 > `resource_id:null` on cost items; `monthly_cost_estimate` and `raw_ref` on inventory items.
 > Pagination/retry in the adapter. Standalone-runnable; pytest against recorded fixtures
 > (offline). Do NOT use the DO MCP, do NOT make any write/management call, do NOT let the
@@ -291,7 +291,7 @@ exercised; `evidence[]` names the facts that fired; `pytest` green.
 **Claude-code prompt.**
 > Build `detect_orphans.py` per `cloudcost/milestone.md` §t2 — deterministic heuristics over
 > the **normalized** inventory schema (not DO-specific), emitting candidates with
-> `confidence` + `evidence[]` + `monthly_saving_estimate`. Implement the proposal's rule
+> `confidence` + `evidence[]` + `monthly_saving_estimate`. Implement the §t2 Scope rule
 > catalog and modifiers; reported-only rules are never queued; `keep=true` excludes. Take a
 > reference-date parameter so age rules test deterministically. pytest over crafted fixture
 > inventories including a `keep=true` case, a reported-only untagged case, and each modifier.

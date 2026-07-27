@@ -1,0 +1,50 @@
+{
+  "invoice_uuid": "aaaaaaaa-0000-1111-2222-333333333333",
+  "billing_period": "2026-07",
+  "amount": "172.21",
+  "product_charges": {
+    "name": "Product usage charges",
+    "amount": "172.21",
+    "items": [
+      {
+        "amount": "3.71",
+        "name": "Droplets",
+        "count": "1"
+      },
+      {
+        "amount": "141.14",
+        "name": "Kubernetes Clusters",
+        "count": "2"
+      },
+      {
+        "amount": "25.07",
+        "name": "Kubernetes Clusters",
+        "count": "2"
+      },
+      {
+        "amount": "2.29",
+        "name": "Kubernetes Clusters",
+        "count": "13"
+      },
+      {
+        "amount": "0.00",
+        "name": "Container Registry Subscription",
+        "count": "1"
+      }
+    ]
+  },
+  "overages": {
+    "name": "Overages",
+    "amount": "0.00"
+  },
+  "taxes": {
+    "name": "Taxes",
+    "amount": "0.00"
+  },
+  "credits_and_adjustments": {
+    "name": "Credits & adjustments",
+    "amount": "0.00"
+  },
+  "usage_total": "172.21",
+  "invoice_id": "500000003"
+}

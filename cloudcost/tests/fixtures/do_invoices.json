@@ -1,0 +1,32 @@
+{
+  "invoices": [
+    {
+      "invoice_uuid": "bbbbbbbb-0000-1111-2222-333333333333",
+      "amount": "186.22",
+      "invoice_period": "2026-06",
+      "invoice_id": "500000002",
+      "status": "PAID",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555"
+    },
+    {
+      "invoice_uuid": "cccccccc-0000-1111-2222-333333333333",
+      "amount": "185.50",
+      "invoice_period": "2026-05",
+      "invoice_id": "500000001",
+      "status": "PAID",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555"
+    }
+  ],
+  "invoice_preview": {
+    "invoice_uuid": "aaaaaaaa-0000-1111-2222-333333333333",
+    "amount": "172.21",
+    "invoice_period": "2026-07",
+    "updated_at": "2026-07-27T04:41:53Z",
+    "invoice_id": "500000003",
+    "account_urn": "do:team:11111111-2222-3333-4444-555555555555"
+  },
+  "links": {},
+  "meta": {
+    "total": 2
+  }
+}

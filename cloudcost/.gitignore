@@ -1,0 +1,7 @@
+# Real data — never commit (cost/inventory snapshots carry account detail)
+data/*
+!data/.gitkeep
+
+# Generated output — local only
+output/*
+!output/.gitkeep

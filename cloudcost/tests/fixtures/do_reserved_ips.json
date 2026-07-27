@@ -1,0 +1,27 @@
+{
+  "reserved_ips": [
+    {
+      "ip": "203.0.113.10",
+      "region": {
+        "slug": "blr1"
+      },
+      "droplet": {
+        "id": 100000001,
+        "name": "droplet-1"
+      },
+      "locked": false
+    },
+    {
+      "ip": "203.0.113.11",
+      "region": {
+        "slug": "blr1"
+      },
+      "droplet": null,
+      "locked": false
+    }
+  ],
+  "links": {},
+  "meta": {
+    "total": 2
+  }
+}

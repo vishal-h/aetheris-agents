@@ -1,0 +1,51 @@
+{
+  "load_balancers": [
+    {
+      "id": "lb-0001",
+      "name": "lb-fixture-1",
+      "status": "active",
+      "created_at": "2026-06-20T01:54:45Z",
+      "size": "lb-small",
+      "size_unit": 1,
+      "region": {
+        "slug": "blr1"
+      },
+      "droplet_ids": [
+        100000001
+      ],
+      "tag": ""
+    },
+    {
+      "id": "lb-0002",
+      "name": "lb-fixture-2",
+      "status": "active",
+      "created_at": "2022-12-26T11:50:16Z",
+      "size": "lb-small",
+      "size_unit": 1,
+      "region": {
+        "slug": "blr1"
+      },
+      "droplet_ids": [
+        100000001
+      ],
+      "tag": ""
+    },
+    {
+      "id": "lb-orphan-1",
+      "name": "lb-no-backends",
+      "status": "active",
+      "created_at": "2026-01-05T10:00:00Z",
+      "size": "lb-small",
+      "size_unit": 1,
+      "region": {
+        "slug": "blr1"
+      },
+      "droplet_ids": [],
+      "tag": null
+    }
+  ],
+  "links": {},
+  "meta": {
+    "total": 3
+  }
+}

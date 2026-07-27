@@ -1,0 +1,62 @@
+{
+  "billing_history": [
+    {
+      "description": "Payment (card ending in 0000)",
+      "amount": "-186.22",
+      "date": "2026-07-05T13:54:36Z",
+      "type": "Payment",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555",
+      "receipt_id": "900000001"
+    },
+    {
+      "description": "Invoice for June 2026",
+      "amount": "186.22",
+      "date": "2026-07-01T06:22:06Z",
+      "type": "Invoice",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555",
+      "invoice_id": "500000002",
+      "invoice_uuid": "bbbbbbbb-0000-1111-2222-333333333333",
+      "invoice_status": "PAID"
+    },
+    {
+      "description": "Payment (card ending in 0000)",
+      "amount": "-185.50",
+      "date": "2026-06-05T02:04:21Z",
+      "type": "Payment",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555",
+      "receipt_id": "900000001"
+    },
+    {
+      "description": "Invoice for May 2026",
+      "amount": "185.50",
+      "date": "2026-06-01T04:25:46Z",
+      "type": "Invoice",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555",
+      "invoice_id": "500000002",
+      "invoice_uuid": "bbbbbbbb-0000-1111-2222-333333333333",
+      "invoice_status": "PAID"
+    },
+    {
+      "description": "Payment (card ending in 0000)",
+      "amount": "-192.72",
+      "date": "2026-05-04T14:54:02Z",
+      "type": "Payment",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555",
+      "receipt_id": "900000001"
+    },
+    {
+      "description": "Invoice for April 2026",
+      "amount": "192.72",
+      "date": "2026-05-01T04:37:57Z",
+      "type": "Invoice",
+      "account_urn": "do:team:11111111-2222-3333-4444-555555555555",
+      "invoice_id": "500000002",
+      "invoice_uuid": "bbbbbbbb-0000-1111-2222-333333333333",
+      "invoice_status": "PAID"
+    }
+  ],
+  "links": {},
+  "meta": {
+    "total": 6
+  }
+}

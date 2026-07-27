@@ -1,0 +1,11 @@
+{
+  "account": {
+    "uuid": "11111111-2222-3333-4444-555555555555",
+    "email": "billing@example.invalid",
+    "status": "active",
+    "team": {
+      "uuid": "11111111-2222-3333-4444-555555555555",
+      "name": "Example Team"
+    }
+  }
+}

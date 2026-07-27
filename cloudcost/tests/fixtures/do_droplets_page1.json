@@ -1,0 +1,62 @@
+{
+  "droplets": [
+    {
+      "id": 100000001,
+      "name": "droplet-1",
+      "status": "active",
+      "created_at": "2025-10-30T04:16:49Z",
+      "size_slug": "s-1vcpu-512mb-10gb",
+      "size": {
+        "slug": "s-1vcpu-512mb-10gb",
+        "memory": 512,
+        "vcpus": 1,
+        "disk": 10,
+        "price_monthly": 4,
+        "price_hourly": 0.00595
+      },
+      "region": {
+        "slug": "blr1",
+        "name": "Bangalore 1"
+      },
+      "tags": [
+        "basic",
+        "terraform"
+      ],
+      "volume_ids": []
+    },
+    {
+      "id": 100000002,
+      "name": "droplet-2",
+      "status": "active",
+      "created_at": "2025-12-17T03:56:15Z",
+      "size_slug": "s-8vcpu-16gb",
+      "size": {
+        "slug": "s-8vcpu-16gb",
+        "memory": 16384,
+        "vcpus": 8,
+        "disk": 320,
+        "price_monthly": 96,
+        "price_hourly": 0.14286
+      },
+      "region": {
+        "slug": "blr1",
+        "name": "Bangalore 1"
+      },
+      "tags": [
+        "k8s",
+        "k8s:d6ff64fc-cb4b-4076-a6d0-0147cc4c007f",
+        "k8s:worker"
+      ],
+      "volume_ids": []
+    }
+  ],
+  "links": {
+    "pages": {
+      "next": "https://api.digitalocean.com/v2/droplets?page=2&per_page=2",
+      "last": "https://api.digitalocean.com/v2/droplets?page=2&per_page=2"
+    }
+  },
+  "meta": {
+    "total": 3
+  }
+}

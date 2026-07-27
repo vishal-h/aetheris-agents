@@ -1,0 +1,13 @@
+# cloudcost — DigitalOcean adapter (m1 t1)
+#
+# The adapter talks to the DO REST API directly over `requests` rather than through
+# `pydo`. Both are sanctioned by milestone D6; `requests` was chosen because pagination,
+# retry and rate-limit handling are required to live in the adapter (§t1 Scope), because
+# it is what the harness environment already provides (§Prerequisites 3), and because a
+# plain HTTP client lets the offline suite assert on the actual outgoing Authorization
+# header — which is what makes the shadow guard a real test.
+#
+# pydo 0.39.0 billing coverage was confirmed before choosing (balance.get,
+# billing_history.list, invoices.list/get_by_uuid/get_summary_by_uuid) — the fallback
+# clause in §t1 does not apply; see docs/t1-implementation-notes.md.
+requests>=2.31

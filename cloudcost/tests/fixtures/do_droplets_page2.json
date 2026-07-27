@@ -1,0 +1,33 @@
+{
+  "droplets": [
+    {
+      "id": 100000003,
+      "name": "droplet-3",
+      "status": "active",
+      "created_at": "2026-05-23T14:32:07Z",
+      "size_slug": "s-4vcpu-8gb-intel",
+      "size": {
+        "slug": "s-4vcpu-8gb-intel",
+        "memory": 8192,
+        "vcpus": 4,
+        "disk": 160,
+        "price_monthly": 56,
+        "price_hourly": 0.08333
+      },
+      "region": {
+        "slug": "blr1",
+        "name": "Bangalore 1"
+      },
+      "tags": [
+        "k8s",
+        "k8s:df020006-4573-4cf5-a342-9d6d36ce4e00",
+        "k8s:worker"
+      ],
+      "volume_ids": []
+    }
+  ],
+  "links": {},
+  "meta": {
+    "total": 3
+  }
+}

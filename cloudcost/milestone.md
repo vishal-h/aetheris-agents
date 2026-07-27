@@ -52,12 +52,18 @@ The build runs mostly on offline fixtures, but three things are the human's to s
 t1 needs the first before it can record real fixtures — so treat the token as effectively a
 **t1-start dependency**, not a late one.
 
-1. **Read-only DO API token → `CLOUDCOST_DO_TOKEN`.** Create a DigitalOcean API token scoped
-   **read-only** (billing + resource read; no write), and export it in the harness process
-   environment *before* `mix aetheris run`. Per **D2** it must be the *only* DO token in that
-   environment. Gates: t1 (recording real fixtures + the live `--output` done-check) and t5
-   (the end-to-end run). The offline unit tests (t1–t4) do **not** need it — so structural
-   work can start before the token lands, but t1 can't *complete* (real fixtures) without it.
+1. **Read-only DO API token → `CLOUDCOST_DO_TOKEN`.** A **full-account Read-Only PAT is
+   sufficient** — DO's "list and retrieve information about all resources" read scope covers
+   both the inventory GETs and the billing GETs (balance/invoices/history; confirmed by DO's
+   own read-only billing MCP tools `balance-get`/`billing-history-list`/`invoice-list`), so
+   there is no need to fine-grain it to billing. Read-only is the security property that
+   matters, and it trivially satisfies **D2**: a token that cannot write has nothing to
+   separate at P1: the read/write split becomes real only at P3. Export it in the harness
+   process environment *before* `mix aetheris run`; per **D2** it must be the *only* DO token
+   in that environment. Gates: t1 (recording real fixtures + the live `--output` done-check)
+   and t5 (the end-to-end run). The offline unit tests (t1–t4) do **not** need it — so
+   structural work can start before the token lands, but t1 can't *complete* (real fixtures)
+   without it.
 
 2. **A real DO account carrying a genuine orphan.** The ≥1-orphan done-when needs the account
    to actually contain one — an unattached volume / unassociated reserved IP / aged snapshot.
@@ -131,14 +137,73 @@ holds either way, so it changes nothing m1 needs.)*
 
 ---
 
+## Normalized schemas (the adapter contract — this is what m1 proves)
+
+These are the two JSON shapes every adapter emits and every downstream script consumes. They
+are the contract the milestone exists to freeze; t1 must emit *these exact shapes* (not derive
+its own). Providers added later re-emit the same schemas — that is what makes fan-out
+mechanical.
+
+**Cost snapshot** — `do_costs_{YYYY-MM}.json`:
+
+```json
+{
+  "provider": "digitalocean",
+  "account": "<account id / email>",
+  "period": "2026-07",
+  "currency": "USD",
+  "source_granularity": "service",
+  "line_items": [
+    { "service": "Droplets", "resource_id": null, "region": null, "amount": 42.00,
+      "usage_qty": null, "usage_unit": null, "tags": [] }
+  ],
+  "totals": { "amount": 42.00 }
+}
+```
+
+- `source_granularity` is `"service"` for DO (invoice/service-level billing), so `resource_id`
+  is `null` on every cost line — the report never fabricates resource-level cost attribution
+  DO's API doesn't give (**D4**). `region`/`usage_qty`/`usage_unit` are populated only when the
+  provider's billing surfaces them; DO leaves them `null`.
+- `totals.amount` is the period total in `currency` (no conversion — original currency).
+
+**Resource inventory** — `do_inventory_{YYYY-MM}.json`:
+
+```json
+{
+  "provider": "digitalocean",
+  "account": "<account id / email>",
+  "period": "2026-07",
+  "resources": [
+    { "resource_id": "vol-123", "type": "volume", "state": "available",
+      "created_at": "2026-05-01T00:00:00Z", "last_activity_at": null, "attached_to": null,
+      "monthly_cost_estimate": 10.00, "tags": [], "raw_ref": "do://volumes/vol-123" }
+  ]
+}
+```
+
+- `monthly_cost_estimate` is the per-resource dollar figure (derived from size/type) —
+  where resource-level dollars live (**D4**); it feeds the orphan `monthly_saving_estimate`.
+- `attached_to` is `null` for an unattached/unassociated resource (the primary orphan signal).
+- `raw_ref` (`do://…`) is the evidence-trail pointer back to the source object.
+- `state`, `created_at`, `attached_to`, `last_activity_at`, `tags` are the fields the t2
+  heuristics key on — all provider-normalized, so `detect_orphans.py` never touches a DO shape.
+
+**Orphan-heuristic catalog** — the DO-relevant rules, base confidences, and modifiers are
+enumerated inline in **§t2 Scope**; that list is the authoritative catalog for m1 (no external
+doc).
+
+---
+
 ## Contract refs (read, do not restate)
 
 - `agent-creation-guide.md` (authoritative build reference + pre-flight checklist) and its
   conventions: `__ENV__.file` sandbox, `--output` flag, standalone + pytest with recorded
   fixtures, no `python3 -c` inline, dir-name stdlib-collision check.
 - `capability-matrix.md` and both `CLAUDE.md` learning sections.
-- The uc-cloudcost proposal — normalized schemas (cost snapshot, resource inventory) and the
-  orphan-heuristic catalog with base confidences and modifiers.
+- **§Normalized schemas** (above) for the cost-snapshot and resource-inventory shapes, and
+  **§t2 Scope** for the orphan-heuristic catalog with base confidences and modifiers. Both are
+  inlined in this milestone doc — there is no separate proposal doc in the repo.
 - DO Billing API reference (`/platform/billing/reference/` — balance, invoices, billing
   history) and the DO API reference list endpoints for droplets, volumes, reserved IPs,
   snapshots, load balancers. `docs.digitalocean.com/llms.txt` is the index.
@@ -160,9 +225,10 @@ adapter. `source_granularity: "service"`, `resource_id: null` on cost items;
 `monthly_cost_estimate` derived from size/type on inventory items. `raw_ref` (`do://…`) on
 each resource for the evidence trail.
 
-**Contract refs.** agent-creation-guide (adapter conventions); the proposal schemas; DO
-Billing API + resource list endpoints (via `llms.txt`); `pydo` (confirm its billing-endpoint
-coverage; fall back to `requests` for any endpoint it doesn't expose).
+**Contract refs.** agent-creation-guide (adapter conventions); **§Normalized schemas** (this
+milestone doc, not an external proposal); DO Billing API + resource list endpoints (via
+`llms.txt`); `pydo` (confirm its billing-endpoint coverage; fall back to `requests` for any
+endpoint it doesn't expose).
 
 **Touches.** `cloudcost/` scaffold (`agents/ scripts/ data/ tests/ docs/ output/.gitkeep`);
 `cloudcost/.gitignore` (excludes real data + `output/`); `scripts/fetch_do.py`;
@@ -207,8 +273,9 @@ activity −0.2; ephemeral name pattern (`tmp-`/`ci-`/`test-`) +0.1; `keep=true`
 excluded outright. All rules and modifiers are reviewable code, keyed to the **normalized
 schema** (not DO shapes).
 
-**Contract refs.** The proposal's heuristic table (rules, base confidences, modifiers); the
-normalized inventory schema.
+**Contract refs.** The heuristic catalog enumerated inline in this ticket's **Scope** (rules,
+base confidences, modifiers) — authoritative for m1; plus the normalized inventory schema
+(**§Normalized schemas**).
 
 **Touches.** `scripts/detect_orphans.py`; `tests/test_detect_orphans.py`;
 `tests/fixtures/inventory_*.json` (crafted edge cases).

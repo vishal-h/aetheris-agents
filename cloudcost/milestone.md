@@ -251,7 +251,10 @@ resource $ is the inventory estimate); reliance on the DO client's default token
 logic.
 
 **Done-check.**
-- `python3 -c "import cloudcost"` fails (dir name is stdlib-safe).
+- `cd /tmp && python3 -c "import cloudcost"` must fail (dir name is stdlib-safe). Run it from
+  a cwd that does not contain `cloudcost/`: from the repo root Python's implicit namespace
+  packages make the bare directory importable, so the check would report the cwd rather than
+  the name — and would pass for a genuinely colliding name too.
 - With `CLOUDCOST_DO_TOKEN` set: `python3 scripts/fetch_do.py --output-dir /tmp/cc` writes
   both files, each schema-valid, with real balance + a populated inventory.
 - `python3 -m pytest cloudcost/tests/test_fetch_do.py -v` green against recorded fixtures

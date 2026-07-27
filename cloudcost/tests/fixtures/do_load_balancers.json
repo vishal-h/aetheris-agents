@@ -42,10 +42,23 @@
       },
       "droplet_ids": [],
       "tag": null
+    },
+    {
+      "id": "lb-tagged-1",
+      "name": "lb-tag-targeted",
+      "status": "active",
+      "created_at": "2026-03-11T08:20:00Z",
+      "size": "lb-small",
+      "size_unit": 1,
+      "region": {
+        "slug": "blr1"
+      },
+      "droplet_ids": [],
+      "tag": "web"
     }
   ],
   "links": {},
   "meta": {
-    "total": 3
+    "total": 4
   }
 }

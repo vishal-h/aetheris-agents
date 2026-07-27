@@ -46,6 +46,14 @@ unverified list prices and should be spot-checked against an invoice at t3. Live
 estimate sums to $182.50 against an actual invoice of $172.21 — the right order, not a
 reconciliation.
 
+**A tag-targeted load balancer is not unattached.** DO load balancers select backends either by
+explicit `droplet_ids` or by `tag`. A tag-targeted LB has an empty `droplet_ids` but is fully in
+service, so `attached_to` falls back to `tag:{tag}` before it falls back to `null`. Emitting
+`null` there would false-positive t2's idle-LB rule, and — because the normalized schema freezes
+at m1 — the signal could not be recovered downstream: the tag would already be gone. Covered by
+`test_tag_targeted_load_balancer_is_not_reported_unattached` and a dedicated fixture
+(`lb-tagged-1`: `droplet_ids: []`, `tag: "web"`).
+
 **`state` for volumes is derived, not read.** The `/volumes` response has no status field
 (confirmed against the live response keys), so state is `attached` / `available` from
 `droplet_ids`. **`attached_to` for snapshots** is the source `resource_id`, not null — a
@@ -87,16 +95,27 @@ two tests.
    check would also have passed for a genuinely colliding name (`email/` → stdlib `email`
    imports fine), so from the repo root it cannot distinguish safe from unsafe at all.
 
-3. **Two additive keys on the cost snapshot.** §Normalized schemas is the frozen contract and
-   t1 must emit "these exact shapes"; §t1's own done-check requires "real balance", and its
-   Scope requires billing *history* to be fetched. The schema example has nowhere to put
-   either. Resolved additively: every specified key is emitted with the specified name, type
-   and value, plus `balance`, `billing_history`, `invoice` (provenance for the cost figures)
-   and `generated_at`. No specified key is changed or omitted, so a consumer keying on the
-   schema is unaffected. Inventory items likewise carry additive `name` / `region` / `size` —
-   without a name the orphan section of the report lists opaque UUIDs, against the milestone's
-   "reviewable without opening the DO console" done-when. Flagging for adjudication: if the
-   schema is meant to be *closed*, these belong in a nested `provider_extra` instead.
+3. **Additive keys on the cost snapshot — raised at t1 review, since adjudicated (closed).**
+   §Normalized schemas is the frozen contract and t1 must emit "these exact shapes"; §t1's own
+   done-check requires "real balance", and its Scope requires billing *history* to be fetched.
+   The schema example had nowhere to put either, so the first cut emitted them as flat
+   additive keys and flagged the question: additive, or nested under `provider_extra`?
+   **Adjudicated: both.** The cross-provider fields are promoted to first class and the
+   DO-shaped payload is nested:
+
+   - cost snapshot, first class: `provider`, `account`, `period`, `currency`,
+     `source_granularity`, `line_items`, `totals`, **`balance`**, **`generated_at`**
+   - cost snapshot, `provider_extra: {}`: **`invoice`**, **`billing_history`**
+   - inventory items, first class: the schema fields plus **`name`**, **`region`**, **`size`**
+     (without a name the orphan section lists opaque UUIDs, against the "reviewable without
+     opening the DO console" done-when)
+
+   The split is the point: a downstream script may key on anything at the top level across
+   providers, and must not key on `provider_extra` generically. Pinned by
+   `test_cost_snapshot_top_level_shape_matches_the_frozen_contract`, which asserts the exact
+   top-level key set rather than a subset, so a future stray addition fails the suite.
+   §Normalized schemas is being rewritten to match — that doc edit is **pending Vishal's
+   ratified wording** and is the one item not in this commit.
 
 ---
 

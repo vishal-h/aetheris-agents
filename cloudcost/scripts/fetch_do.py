@@ -243,7 +243,24 @@ def tags_of(raw: dict) -> list:
 # ------------------------------------------------------------------------ normalizers
 
 
-def normalize_cost(summary: dict, invoice: dict, account: str, period: str) -> dict:
+def normalize_balance(raw: dict | None) -> dict:
+    raw = raw or {}
+    return {
+        "month_to_date_balance": money(raw.get("month_to_date_balance")),
+        "account_balance": money(raw.get("account_balance")),
+        "month_to_date_usage": money(raw.get("month_to_date_usage")),
+        "generated_at": raw.get("generated_at"),
+    }
+
+
+def normalize_cost(
+    summary: dict,
+    invoice: dict,
+    account: str,
+    period: str,
+    balance: dict | None = None,
+    billing_history: list | None = None,
+) -> dict:
     """Build the cost snapshot from an invoice summary's service-level product charges.
 
     D4: DO bills at service granularity, so every line carries `resource_id: null` and
@@ -278,13 +295,28 @@ def normalize_cost(summary: dict, invoice: dict, account: str, period: str) -> d
         "source_granularity": "service",
         "line_items": line_items,
         "totals": {"amount": money(summary.get("amount"))},
-        # Additive beyond the schema example — see docs/t1-implementation-notes.md.
-        "invoice": {
-            "invoice_uuid": invoice.get("invoice_uuid"),
-            "invoice_id": invoice.get("invoice_id"),
-            "status": invoice.get("status", "preview"),
-        },
+        "balance": normalize_balance(balance),
         "generated_at": iso_now(),
+        # Provider-specific payload. Everything above is the frozen cross-provider
+        # contract; anything DO-shaped that downstream scripts must not depend on
+        # generically lives in here (§Normalized schemas).
+        "provider_extra": {
+            "invoice": {
+                "invoice_uuid": invoice.get("invoice_uuid"),
+                "invoice_id": invoice.get("invoice_id"),
+                "status": invoice.get("status", "preview"),
+            },
+            "billing_history": [
+                {
+                    "date": entry.get("date"),
+                    "type": entry.get("type"),
+                    "description": entry.get("description"),
+                    "amount": money(entry.get("amount")),
+                    "invoice_uuid": entry.get("invoice_uuid"),
+                }
+                for entry in (billing_history or [])
+            ],
+        },
     }
 
 
@@ -371,9 +403,20 @@ def normalize_snapshot(raw: dict) -> dict:
 
 def normalize_load_balancer(raw: dict) -> dict:
     droplet_ids = raw.get("droplet_ids") or []
+    tags = tags_of(raw)
     size_slug = raw.get("size") or "lb-small"
     nodes = raw.get("size_unit") or 1
     rate = LOAD_BALANCER_NODE_MONTHLY.get(size_slug, LOAD_BALANCER_NODE_MONTHLY["lb-small"])
+    # A DO load balancer targets backends either by explicit droplet id or by tag. A
+    # tag-targeted LB has an empty `droplet_ids` but is emphatically not idle, so the tag
+    # is carried through as the attachment signal — `attached_to: null` here would make
+    # t2's idle-LB rule false-positive, and the normalizer is frozen after m1.
+    if droplet_ids:
+        attached_to = str(droplet_ids[0])
+    elif tags:
+        attached_to = f"tag:{tags[0]}"
+    else:
+        attached_to = None
     return {
         "resource_id": str(raw.get("id")),
         "type": "load_balancer",
@@ -383,9 +426,9 @@ def normalize_load_balancer(raw: dict) -> dict:
         "state": raw.get("status"),
         "created_at": raw.get("created_at"),
         "last_activity_at": None,
-        "attached_to": str(droplet_ids[0]) if droplet_ids else None,
+        "attached_to": attached_to,
         "monthly_cost_estimate": round(nodes * rate, 2),
-        "tags": tags_of(raw),
+        "tags": tags,
         "raw_ref": f"do://load_balancers/{raw.get('id')}",
     }
 
@@ -425,28 +468,11 @@ def fetch_costs(client: DOClient, account: str, period: str) -> dict:
     invoice = select_invoice(client, period)
     uuid = invoice.get("invoice_uuid")
     summary = client.get(f"/customers/my/invoices/{uuid}/summary")
-    snapshot = normalize_cost(summary, invoice, account, period)
-
-    balance = client.get("/customers/my/balance") or {}
-    snapshot["balance"] = {
-        "month_to_date_balance": money(balance.get("month_to_date_balance")),
-        "account_balance": money(balance.get("account_balance")),
-        "month_to_date_usage": money(balance.get("month_to_date_usage")),
-        "generated_at": balance.get("generated_at"),
-    }
-
+    balance = client.get("/customers/my/balance")
     history = client.paginate("/customers/my/billing_history", "billing_history")
-    snapshot["billing_history"] = [
-        {
-            "date": entry.get("date"),
-            "type": entry.get("type"),
-            "description": entry.get("description"),
-            "amount": money(entry.get("amount")),
-            "invoice_uuid": entry.get("invoice_uuid"),
-        }
-        for entry in history
-    ]
-    return snapshot
+    return normalize_cost(
+        summary, invoice, account, period, balance=balance, billing_history=history
+    )
 
 
 def fetch_inventory(client: DOClient, account: str, period: str) -> tuple:

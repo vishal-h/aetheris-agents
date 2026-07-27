@@ -82,10 +82,25 @@ def test_normalize_snapshot_keeps_source_association():
 
 def test_normalize_load_balancer_without_backends():
     lbs = load_fixture("do_load_balancers")["load_balancers"]
-    orphan = fetch_do.normalize_load_balancer(lbs[-1])
+    orphan = fetch_do.normalize_load_balancer(
+        next(lb for lb in lbs if lb["id"] == "lb-orphan-1")
+    )
     assert orphan["attached_to"] is None
     assert orphan["monthly_cost_estimate"] == 12.0
     assert orphan["tags"] == []  # load balancers carry `tag`, not `tags`
+
+
+def test_tag_targeted_load_balancer_is_not_reported_unattached():
+    """A tag-targeted LB has no droplet_ids but is emphatically not idle. Emitting
+    attached_to: null here would false-positive t2's idle-LB rule, and the normalizer is
+    frozen after m1 — so the tag has to survive normalization."""
+    lbs = load_fixture("do_load_balancers")["load_balancers"]
+    tagged = fetch_do.normalize_load_balancer(
+        next(lb for lb in lbs if lb["id"] == "lb-tagged-1")
+    )
+    assert tagged["attached_to"] is not None
+    assert tagged["attached_to"] == "tag:web"
+    assert tagged["tags"] == ["web"]
 
 
 def test_tags_of_handles_both_do_spellings():
@@ -272,23 +287,43 @@ def test_main_writes_both_normalized_files(full_stub, tmp_path, monkeypatch, cap
     assert costs["account"] == "11111111-2222-3333-4444-555555555555"
     assert costs["totals"]["amount"] == 172.21
     assert costs["balance"]["month_to_date_usage"] == 173.65
-    assert costs["billing_history"], "billing history is fetched and emitted"
+    assert costs["provider_extra"]["billing_history"], "billing history is fetched"
+    assert costs["provider_extra"]["invoice"]["status"] == "preview"
 
     assert inventory["provider"] == "digitalocean"
-    # 3 droplets (paginated) + 4 volumes + 2 reserved IPs + 2 snapshots + 3 LBs
-    assert len(inventory["resources"]) == 14
+    # 3 droplets (paginated) + 4 volumes + 2 reserved IPs + 2 snapshots + 4 LBs
+    assert len(inventory["resources"]) == 15
     for resource in inventory["resources"]:
         assert resource["raw_ref"].startswith("do://")
-        assert set(resource) >= {
-            "resource_id", "type", "state", "created_at", "last_activity_at",
-            "attached_to", "monthly_cost_estimate", "tags", "raw_ref",
+        assert set(resource) == {
+            "resource_id", "type", "name", "region", "size", "state", "created_at",
+            "last_activity_at", "attached_to", "monthly_cost_estimate", "tags", "raw_ref",
         }
         assert isinstance(resource["monthly_cost_estimate"], float)
         assert isinstance(resource["tags"], list)
 
     summary = json.loads(capsys.readouterr().out)
     assert summary["status"] == "ok"
-    assert summary["counts"]["resources"] == 14
+    assert summary["counts"]["resources"] == 15
+
+
+def test_cost_snapshot_top_level_shape_matches_the_frozen_contract(
+    full_stub, tmp_path, monkeypatch
+):
+    """Everything DO-shaped lives under provider_extra; the rest is the cross-provider
+    contract downstream scripts may depend on."""
+    monkeypatch.setenv("CLOUDCOST_DO_TOKEN", READONLY_TOKEN)
+    run_main(full_stub, tmp_path)
+    costs = json.loads((tmp_path / f"do_costs_{PERIOD}.json").read_text())
+
+    assert set(costs) == {
+        "provider", "account", "period", "currency", "source_granularity",
+        "line_items", "totals", "balance", "generated_at", "provider_extra",
+    }
+    assert set(costs["balance"]) == {
+        "month_to_date_balance", "account_balance", "month_to_date_usage", "generated_at"
+    }
+    assert set(costs["provider_extra"]) == {"invoice", "billing_history"}
 
 
 def test_inventory_surfaces_the_unattached_resources(full_stub, tmp_path, monkeypatch):

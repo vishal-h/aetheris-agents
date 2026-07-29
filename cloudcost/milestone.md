@@ -540,6 +540,16 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   bills per resource (AWS/GCP). Until then the orphan section's saving subtotals inherit those
   estimates and are labelled as estimates in the payload.
   `Source: t3 notes §Open items forwarded.`
+- **Two of t4's rendered paths have never been looked at by a human — view them at
+  fan-out, before the first N≥2 report goes to anyone.** The browser check that cleared t4
+  (human, 2026-07-29) covered the **N=1 DO report**, which is the only path m1 ships. The
+  **new-provider caveat** and the **multi-currency "No combined total"** rendering exist only
+  in test fixtures: structurally tested (adjacency asserted by index, the withheld scalar
+  asserted absent) and rendered to PDF during the build, but no eyeball has hit them in a
+  browser. Correct for m1 — both are unreachable while DO is the only provider — but the
+  flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
+  the first ticket that makes either path reachable owes it the same two-minute look.
+  `Source: t4 review r0, human browser check.`
 - **Cross-currency aggregation is handled in one place and unhandled in four —
   `compose_report_data.py`.** When the bundles disagree on currency, `service_totals`
   withholds `cost_summary.grand_total`, reports `totals_by_currency` and warns (`:220–236`) —

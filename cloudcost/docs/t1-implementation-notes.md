@@ -1,7 +1,9 @@
 # t1 — cloudcost scaffold + DO adapter (`fetch_do.py`) — implementation notes
 
 **Ticket:** m1-cloudcost §t1. **Built:** 2026-07-27.
-**Deliverables:** `cloudcost/` scaffold, `scripts/fetch_do.py`, `tests/` (23 tests, offline),
+**Deliverables:** `cloudcost/` scaffold, `scripts/fetch_do.py`, `tests/` (**25** tests, offline
+— 23 at first submission; two shadow-guard tests were added in review and this line was not
+chased. Corrected at t3, where the stale 23 was quoted into a packet: `t3 review r0 F1`),
 `tests/fixtures/do_*.json`, `.gitignore`, `requirements.txt`.
 
 ---

@@ -415,6 +415,23 @@ built renderer.
 **Contract refs.** Docbuilder `generate_pdf.py` / `generate_html.py`; the report-data shape
 from t3.
 
+> **Carried into t4 from the t3 review — two requirements, one of them a correctness one.**
+>
+> 1. **The MoM headline must render its new-provider caveat adjacent to the number.** At N≥2,
+>    when a provider has no prior-month snapshot, `mom_delta.delta_amount` / `delta_pct` fold
+>    that provider's *entire* spend into "growth": the t3 packet's two-provider run reads
+>    +74.21 / +46.97 %, which is DO's real +14.21 plus someothercloud's first-time $60. t3
+>    labels this honestly and machine-readably — `mom_delta.providers_without_prior_snapshot`,
+>    per-service `change: "new"`, and a `warnings[]` entry — so nothing is hidden, but a
+>    template that prints the headline percentage without the caveat beside it converts an
+>    honest payload into a misleading report. Render the caveat next to the figure whenever
+>    that list is non-empty. `Source: t3 review r0 F2 (non-blocking, carried).`
+> 2. **The template computes nothing.** Everything t4 needs is already in
+>    `report_data_{period}.json` — the band cutoffs (`orphans.bands[]`), the `top_k` actually
+>    applied, the per-provider `reconciled` flags, and the two "estimate, not billed cost"
+>    notes. If a figure seems to be missing, it is a t3 change, not a template calculation.
+>    `Source: t3 notes §Open items forwarded.`
+
 **Touches.** `scripts/render_report.py`; `cloudcost/templates/` (the custom layout);
 `tests/test_render_report.py`.
 

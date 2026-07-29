@@ -1995,6 +1995,38 @@ happy path.
 
 ---
 
+### BL-066 — Bump `bandit` to `~> 1.12` (hex.audit HIGH, EEF-CVE-2026-65623) (#TBD)
+**Size:** XS · **Priority:** now (security gate red) · **Section:** harness (`../aetheris/mix.exs` + `mix.lock`)
+
+Quadratic CPU blow-up reassembling fragmented WebSocket frames. Fix is a **version
+bump, not an accepted advisory**: `aetheris/mix.lock` pins 1.11.1;
+`aetheris/mix.exs:30` declares `{:bandit, "~> 1.0"}`; `mix hex.info bandit`
+recommends `~> 1.12`.
+
+**Touches:** harness repo (`aetheris/mix.exs` + `mix.lock`), tracked here per the
+**BL-020** supply-chain precedent — same class, same ledger, so the advisory
+history stays in one series instead of forking across two.
+
+Surfaced off-territory by the m1-cloudcost t1 boundary gate, 2026-07-27. Until the
+bump lands, `mix hex.audit` runs **expected-red, named with this ref**
+(tracked-carry, not silent-carry).
+
+```
+Advisories:
+  bandit 1.11.1 - EEF-CVE-2026-65623 (HIGH)
+    aka: CVE-2026-65623, GHSA-vg8x-66vg-5pxh
+    Quadratic CPU blow-up reassembling fragmented WebSocket messages in Bandit
+    https://osv.dev/vulnerability/EEF-CVE-2026-65623
+
+Found packages with security advisories
+```
+
+**Done when:** `mix hex.audit` is clean (exit 0), or any residual advisory carries
+an explicit rationale on this row per the BL-020 accept path; the harness CI
+contract passes with the bumped dependency.
+
+---
+
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 

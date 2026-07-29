@@ -2,8 +2,9 @@
 
 **Ticket:** m1-cloudcost §t4. **Built:** 2026-07-29.
 **Deliverables:** `scripts/render_report.py`, `templates/report.html.j2`,
-`tests/test_render_report.py` (30 tests, offline; 1 marked `integration`),
+`tests/test_render_report.py` (31 tests, offline; 1 marked `integration`),
 `requirements.txt` (Jinja2).
+**Review:** r0 approved with three findings, all folded (`docs/reviews/m1-cloudcost-t4-review.md`).
 
 ---
 
@@ -73,8 +74,14 @@ becomes the stage-CLI error envelope rather than a traceback across the stdout c
 §Prerequisites 3 names exactly this trade ("rendering HTML instead avoids that system dep").
 The HTML inlines its CSS and fetches nothing — no CDN, stylesheet, font, script or image — so
 it opens from disk on any machine, and a test asserts that rather than trusting it. `--pdf`
-shells out to `wkhtmltopdf` where it exists; where it does not, the run gets a note and the
-PDF, not the report. The PDF test is `@pytest.mark.integration` and skips on an absent binary.
+shells out to `wkhtmltopdf` where it exists; where it does not, the run loses the PDF and gets
+a `pdf_note` on stdout — it stays `status: "ok"` / exit 0, because the HTML was already
+written and an *optional* companion must not flip the stage's status. The PDF test is
+`@pytest.mark.integration` and skips on an absent binary; a separate CLI-level test runs
+`--pdf` with an empty `PATH` and asserts the exit code, since that is the level the claim is
+made at. (First submission had the note in `render_warnings`, so it exited 1 / `partial` — the
+prose said "a note, not a failure" and the code did the opposite, with only a unit test on the
+return tuple to check it. `Source: t4 review r0 F2.`)
 
 **The template is anchored to the use-case root, not the cwd** (`Path(__file__).parent.parent /
 "templates"`), the same rationale as t3's history directory and `__ENV__.file` in agent files:
@@ -113,27 +120,35 @@ beside +46.97 %; the multi-currency render shows "No combined total" with per-cu
 | template: evidence lines replaced with a placeholder | 2 failed |
 | renderer: `autoescape` disabled | 2 failed |
 | renderer: `import compose_report_data` added | `…imports_no_stage_script_and_reads_no_clock` failed |
+| renderer: the PDF note folded back into `render_warnings` (the pre-review behaviour) | `test_a_missing_pdf_binary_does_not_fail_the_run` failed |
 
-Restored: 30 passed; the use case's suite is 156 passed (t1 25, t2 54, t3 47, t4 30).
+Restored: 31 passed; the use case's suite is 157 passed (t1 25, t2 54, t3 47, t4 31).
 
 ---
 
 ## Open items forwarded
 
-- **`month_on_month` sums across currencies where `service_totals` refuses to.** In the
-  multi-currency case t3 withholds `cost_summary.grand_total` and emits a warning — correctly —
-  but `mom_delta.current_total` is still `232.21` (172.21 USD + 60.00 EUR) with
-  `mom_delta.currency: null`, so the withheld scalar reappears one section down with no unit.
-  A t3 change (withhold the cross-currency delta the same way, or emit it per currency); the
-  template meanwhile prints the caveat beside it, which is the render-only response and not a
-  fix. Unreachable while DO is the only provider.
-- **t2's `reported` and `excluded` blocks never reach the report.** `detect_orphans.py` emits
-  `reported` (the untagged-in-tagged-account rule, reported-only by §t2 design, each entry
-  carrying its own `evidence[]`) and `excluded` (`keep=true` resources); `compose_report_data`'s
-  `orphan_section` carries `candidates` only, so `report_data` has no key for either and the
-  report cannot show them. The reported-only rule therefore exists in the pipeline and is
-  invisible in its output. A t3 change — the renderer will not invent a section the payload
-  does not carry. Visible today: the tagged-account fixture reports 2 such resources.
+- **Cross-currency aggregation: one site handled, four not — filed in full at
+  `milestone.md` §Open items carried forward, which is where an executor will see it.**
+  This ticket's first submission named only `mom_delta` and read the class as one/one. It is
+  one/four: `cost_summary.grand_total` withholds (`:220–236`), while
+  `mom_delta.prior_total`/`current_total`/`delta_amount` (`:333–342`),
+  `tag_coverage.untagged_monthly_cost_estimate` (`:419`),
+  `orphans.by_band[].monthly_saving_estimate` (`:487`) and
+  `orphans.totals.monthly_saving_estimate` (`:500`) all sum across providers with no currency
+  partition. Recorded here because the incomplete sweep is the more useful lesson than the
+  defect: a fix covering the site that was noticed would have left the class alive in three
+  sections. t4's mitigation is render-side only (the MoM caveat; the estimate aggregates print
+  unit-less) — the fix is t3's. Latent while m1 is DO-only single-currency.
+  `Source: t4 review r0 F1.`
+- **t2's `reported` list never reaches the report — a scope question, filed at
+  `milestone.md` §Open items.** `orphan_section` carries `candidates` only, so the
+  untagged-in-tagged-account governance rule fires in the pipeline and is invisible in its
+  output. Not a done-when gap: the milestone's stated sections don't include a governance-flags
+  section, and tag coverage + top untagged spenders — which t3/t4 do render — is that surface.
+  **`excluded` (`keep=true`) staying invisible is correct**, not a gap: the operator said keep.
+  This ticket's first submission bundled the two together and was wrong about the second half.
+  `Source: t4 review r0 F3.`
 - **Nothing here is delivered.** Local file only (m1 scope). Email/Drive delivery stays on the
   milestone's carried-forward list.
 - **t5 wires this as the fourth `run_command` step**:

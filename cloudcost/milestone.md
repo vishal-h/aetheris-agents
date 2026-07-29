@@ -540,6 +540,38 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   bills per resource (AWS/GCP). Until then the orphan section's saving subtotals inherit those
   estimates and are labelled as estimates in the payload.
   `Source: t3 notes §Open items forwarded.`
+- **Cross-currency aggregation is handled in one place and unhandled in four —
+  `compose_report_data.py`.** When the bundles disagree on currency, `service_totals`
+  withholds `cost_summary.grand_total`, reports `totals_by_currency` and warns (`:220–236`) —
+  the right behaviour, and m1's stated position (no conversion, original currency). Four
+  sibling aggregates sum straight across providers with no currency partition and no currency
+  field on the result:
+  `mom_delta.prior_total`/`current_total`/`delta_amount` (`:333–342`, with
+  `mom_delta.currency` null, so the withheld scalar reappears one section down without a
+  unit), `tag_coverage.untagged_monthly_cost_estimate` (`:419`),
+  `orphans.by_band[].monthly_saving_estimate` (`:487`) and
+  `orphans.totals.monthly_saving_estimate` (`:500`, derived from the former, so it follows
+  whatever that does). The fix is t3's and must cover **all four** — a partial fix leaves the
+  same class alive in the sections it skipped. Options: withhold like `grand_total` does, or
+  emit each per currency. **Latent while m1 is DO-only single-currency; live at the first
+  fan-out.** t4 mitigates on the render side only, which is the most a render-only stage may
+  do: the MoM headline carries a "this change spans more than one currency" caveat beside the
+  figure, and the three estimate aggregates print with no currency code rather than a wrong
+  one. `Source: t4 notes §Open items; t4 review r0 F1 (claude-code named the MoM site only —
+  the sweep was incomplete; the reviewer found the other three).`
+- **Decide whether the report carries t2's `reported` (reported-only) list — a scope
+  question, not a done-when gap.** `detect_orphans.py` emits a `reported` block (the
+  untagged-in-tagged-account governance rule, reported-only by §t2 design, each entry with its
+  own `evidence[]`); `compose_report_data.orphan_section` carries `candidates` only, so
+  `report_data` has no key for it and t4 cannot render it — the rule fires in the pipeline and
+  is invisible in its output (2 such resources on `inventory_tagged_account.json` today).
+  Not a done-when gap: the milestone's stated report sections are cost summary + MoM, tag
+  coverage + top untagged spenders, and orphan candidates — and tag coverage *is* the
+  governance surface t3/t4 already render. So the question is whether a separate governance-
+  flags section is wanted (t3 fast-follow / P2), not whether something is missing.
+  **`excluded` (`keep=true`) staying invisible is correct and not part of this** — those are
+  resources the operator asked to keep, and suppressing them is the intent.
+  `Source: t4 review r0 F3 (refining t4's own forward, which wrongly bundled `excluded` in).`
 - **Bound the recency modifier's window at both ends** (`detect_orphans.py`,
   `modifier_recent_activity`): today it rejects on `age > RECENT_ACTIVITY_WINDOW_DAYS` only, so
   a `last_activity_at` in the future relative to the reference date reads as "recent" and takes

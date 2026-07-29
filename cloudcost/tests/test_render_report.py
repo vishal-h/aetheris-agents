@@ -124,9 +124,9 @@ def candidates(data):
     return [c for band in data["orphans"]["by_band"] for c in band["candidates"]]
 
 
-def cli(args, cwd=USE_CASE_ROOT):
+def cli(args, cwd=USE_CASE_ROOT, env=None):
     return subprocess.run(
-        [sys.executable, str(SCRIPT), *args], cwd=cwd, capture_output=True, text=True
+        [sys.executable, str(SCRIPT), *args], cwd=cwd, capture_output=True, text=True, env=env
     )
 
 
@@ -561,16 +561,37 @@ def test_the_optional_pdf_companion_is_written(tmp_path, report):
     assert Path(summary["file"]).is_file()
 
 
-def test_a_missing_pdf_binary_is_a_note_not_a_failure(tmp_path, report, monkeypatch):
-    """The primary HTML path never depends on a system binary, so the binary being absent
-    costs the run a note and the PDF — not the report."""
+def test_write_pdf_returns_a_note_when_the_binary_is_absent(tmp_path, monkeypatch):
     monkeypatch.setattr(render_report.shutil, "which", lambda _: None)
     html_path = tmp_path / "report.html"
     html_path.write_text("<html></html>", encoding="utf-8")
 
-    path, warning = render_report.write_pdf(html_path)
+    path, note = render_report.write_pdf(html_path)
     assert path is None
-    assert "wkhtmltopdf" in warning and "the HTML report was written" in warning
+    assert "wkhtmltopdf" in note and "the HTML report was written" in note
+
+
+def test_a_missing_pdf_binary_does_not_fail_the_run(tmp_path, report):
+    """The claim is about the *run*, so it is asserted at the run level — the unit test
+    above checks the return tuple and could not have caught the stage exiting 1 with it.
+
+    `--pdf` is asked for and the binary is unreachable (an empty PATH, which is what
+    `shutil.which` consults). The HTML is the deliverable and it was written before the PDF
+    step ran, so the stage stays `ok` / exit 0 and says on stdout what it did not produce.
+    """
+    payload = write_payload(tmp_path, report)
+    env = {"PATH": "", "HOME": str(tmp_path)}
+    result = cli(
+        [str(payload), "--output-dir", str(tmp_path / "out"), "--pdf"], env=env
+    )
+    assert result.returncode == 0, result.stderr
+
+    summary = json.loads(result.stdout)
+    assert summary["status"] == "ok"
+    assert summary["pdf"] is None
+    assert "wkhtmltopdf" in summary["pdf_note"]
+    assert summary["render_warnings"] == []
+    assert Path(summary["file"]).is_file()
 
 
 def test_the_fixture_payloads_are_what_t3_actually_emits(report, first_run_report):

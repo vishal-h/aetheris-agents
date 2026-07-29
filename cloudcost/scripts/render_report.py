@@ -233,10 +233,11 @@ def render_html(data: dict, template_path=DEFAULT_TEMPLATE, source_file: str = "
 
 
 def write_pdf(html_path: Path) -> tuple:
-    """Optional PDF companion beside the HTML. Returns `(path, warning)`.
+    """Optional PDF companion beside the HTML. Returns `(path, note)`.
 
-    The binary being absent is a note, not a failure: the HTML — the deliverable — has
-    already been written by then, and the primary path never depended on this.
+    The binary being absent is a note, not a failure — at the level that claim is made:
+    the caller reports it on stdout and still exits 0, because the HTML has already been
+    written and the primary path never depended on this.
     """
     binary = shutil.which(PDF_BINARY)
     if binary is None:
@@ -314,11 +315,13 @@ def main(argv=None) -> int:
     tmp.write_text(html, encoding="utf-8")
     tmp.replace(path)
 
-    pdf_path = None
+    # The PDF is an optional companion, so its absence is a note on stdout and nothing more:
+    # it must not flip the stage's status, because the HTML — the deliverable — was written
+    # before this ran. It is kept out of `render_warnings` for that reason, and because that
+    # list is rendered *into* the HTML, which by now exists on disk.
+    pdf_path = pdf_note = None
     if args.pdf:
-        pdf_path, warning = write_pdf(path)
-        if warning:
-            render_warnings = [*render_warnings, warning]
+        pdf_path, pdf_note = write_pdf(path)
 
     orphans = data.get("orphans") if isinstance(data.get("orphans"), dict) else {}
     orphan_totals = orphans.get("totals") if isinstance(orphans.get("totals"), dict) else {}
@@ -331,6 +334,7 @@ def main(argv=None) -> int:
         "as_of": data.get("as_of"),
         "file": str(path),
         "pdf": str(pdf_path) if pdf_path else None,
+        "pdf_note": pdf_note,
         "bytes": len(html.encode("utf-8")),
         "template": str(args.template),
         "sections": [

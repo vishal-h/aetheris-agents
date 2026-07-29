@@ -1,7 +1,14 @@
 # m1-cloudcost — DigitalOcean cost report + orphan detection (report-only)
 
-**Status:** Milestone doc — Phase-1 approved-pending-commit. First milestone of the
-cloudcost use case; DO-only vertical slice.
+**Status:** **CLOSED 2026-07-29** — t1–t5 all landed and reviewed (t5: agents `6abc3e8`
++ `013c09d`, harness `ba49d06` + `4147b9d`). Done-when met on the real DO bill: the
+pipeline ran end-to-end via `cloudcost_orchestrator.exs` (`cloudcost-orch-qPCKmw`,
+re-proven at `cloudcost-orch-mhmohw`) and produced a local HTML report carrying **1 real
+orphan** — an unassociated reserved IP, HIGH confidence 0.95, ~$4.38/mo — with its evidence
+trail, reviewable without the DO console. The planted orphan has since been deleted and the
+account is back to clean read-only. §7 promotion pass folded into `../aetheris/CLAUDE.md`
+(`57d90d2`). Carried forward: **BL-067** (capability-matrix assembler derives its whole
+Step-2 block in the LLM). First milestone of the cloudcost use case; DO-only vertical slice.
 **Origin:** uc-cloudcost proposal (2026-07-26) + claude-ui review + Phase-1 iteration.
 **Repo:** `aetheris-agents/cloudcost/` (new use case). Runs in its own session, parallel
 to the harness backlog.

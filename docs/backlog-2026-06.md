@@ -1995,12 +1995,16 @@ happy path.
 
 ---
 
-### BL-067 — `capability_matrix_assemble.exs` asks the LLM to do arithmetic, so the Summary counts are wrong every regen (#TBD)
+### BL-067 — `capability_matrix_assemble.exs` computes its whole derived block in the LLM, so the Summary counts, the unique-tools line and the Overlap Report are unverified every regen (#TBD)
 **Size:** S · **Priority:** next · **Section:** aetheris-agents (`agents/capability_matrix_assemble.exs`)
 
-Step 3 of the assembler's prompt is *"Count agents and scripts per section… list all unique
-tools"* — a computation, handed to an LLM. It gets it wrong. Two consecutive runs at
-m1-cloudcost t5, same restored section files, both wrong and wrong differently:
+Steps 2 and 3 of the assembler's prompt ask the model to *detect overlaps*, *count agents and
+scripts per section*, and *list all unique tools* — three computations over content it has just
+read, handed to an LLM. **Everything the assembler derives rather than pastes is in scope
+here**; the counts are only the loudest instance.
+
+**The counts.** Two consecutive runs at m1-cloudcost t5, same restored section files, both
+wrong and wrong differently:
 
 ```
 run cap-matrix-assemble-QWY6QQ : docbuilder 27 · Total 27 / 70
@@ -2008,22 +2012,44 @@ run cap-matrix-assemble-9bx1Pw : docbuilder 25 · Total 27 / 68
 actual (counted from the emitted table rows) : docbuilder 24 · Total 26 / 67
 ```
 
+**The unique-tools line** (t5 review, finding 2 — the same defect one line lower). It is
+LLM-derived too, and it silently changed across this regen:
+
+```
+eeb37a1 : run_command, write_blackboard, send_message, read_blackboard, wait_for_event,
+          spawn_agent, wait_for_all, read_file,            MCP servers (corpus_search, lattice)
+6abc3e8 : run_command, read_file, write_file, spawn_agent, wait_for_all, write_blackboard,
+          send_message, read_blackboard, wait_for_event,   MCP servers (corpus_search, lattice)
+```
+
+`write_file` appeared. It was not new — `context_builder.exs` has carried
+`read_file, write_file, run_command` since m3, and that row is *in the same document*
+(`docs/capability-matrix.md:164`). So the line was **wrong at `eeb37a1` and is right now by
+luck, not by mechanism** — which is the proof that it is non-deterministic rather than
+authoritative. A derived line that silently heals trains the same "probably fine" reflex as one
+that silently rots. The **Overlap Report** (Step 2) is derived by the same means and has never
+been checked at all; its agent-name column also churned this regen.
+
 This is a direct violation of the repo's core principle (`CLAUDE.md` → "Scripts do; agents
-decide… Never ask the LLM to construct file content or compute values programmatically"),
-and it is a **Silent-wrong-answer**: the Summary is well-formed, plausible, and inside a
-generated artifact nobody recounts, so it reads as authoritative. It has been wrong before
-without being caught — HEAD (`eeb37a1`) happened to be right, but nothing was checking.
+decide… Never ask the LLM to construct file content or compute values programmatically"), and
+it is a **Silent-wrong-answer**: every one of these outputs is well-formed and plausible inside
+a generated artifact nobody recounts.
 
-Not fixed at t5: the fix needs a deterministic counter, which means giving the assembler
-`run_command` + a `scripts/matrix_summary.py`, beyond that ticket's scope. t5 hand-corrected
-the three numbers to the verified values and said so in its packet.
+Not fixed at t5: the fix needs a deterministic generator, which means giving the assembler
+`run_command` + a script, beyond that ticket's scope. t5 hand-corrected the three Summary
+numbers to the verified values and said so in its packet; the tools line and overlap block were
+left as the regen produced them.
 
-**Fix:** a `scripts/` counter that parses `docs/.sections/*.md`, emits the Summary table and
-the unique-tools line to a file; the assembler pastes it verbatim and does no counting.
-Same shape as every other "derived values come from a script" fix in this repo.
+**Fix:** a `scripts/` generator that parses `docs/.sections/*.md` and emits the **entire
+derived block** — Summary table, unique-tools line, and Overlap Report — to a file; the
+assembler pastes it verbatim and derives nothing. Same shape as every other "derived values
+come from a script" fix in this repo. The assembler's remaining job is concatenation, which is
+what it is actually good at.
 
-**Done when:** the Summary counts are produced by a script, a regen is byte-stable for
-unchanged sections, and a test asserts claimed totals == counted rows.
+**Done when:** the Summary counts, the unique-tools line and the Overlap Report are all
+script-produced; a regen is byte-stable for unchanged sections; and a test asserts each derived
+value against the emitted tables (claimed totals == counted rows, claimed tools == union of the
+tool cells, claimed overlaps == recomputed overlaps).
 
 ---
 

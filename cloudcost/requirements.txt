@@ -11,3 +11,9 @@
 # billing_history.list, invoices.list/get_by_uuid/get_summary_by_uuid) — the fallback
 # clause in §t1 does not apply; see docs/t1-implementation-notes.md.
 requests>=2.31
+
+# t4 — the report renderer. Jinja2 gives the custom layout conditional sections, loops and
+# autoescaping (resource names, tags and evidence strings are provider data, not markup).
+# The HTML report needs nothing else: no CDN, no system binary. `--pdf` is an optional
+# companion that shells out to wkhtmltopdf where it exists; the primary path never does.
+Jinja2>=3.1

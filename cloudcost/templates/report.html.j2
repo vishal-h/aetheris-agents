@@ -1,0 +1,537 @@
+{#-
+  cloudcost report — the custom m1 layout (t4).
+
+  Render-only. Every figure printed here is read from `report_data_{period}.json`; this
+  template re-totals nothing, re-ranks nothing, re-bands nothing and reads no clock. The
+  only transforms applied are formatting filters (thousands separators, a sign, a
+  fraction rendered as a percentage) registered in `render_report.py`.
+
+  Autoescaping is on: resource names, tags and evidence strings are data, not markup.
+-#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud cost report &mdash; {{ period | nz }}</title>
+<style>
+  :root {
+    --ink: #1c2430;
+    --muted: #5d6b7a;
+    --line: #dfe4ea;
+    --panel: #f7f9fb;
+    --accent: #1b6ca8;
+    --warn-bg: #fff6e5;
+    --warn-line: #e0a800;
+    --high: #b3261e;
+    --medium: #a26900;
+    --low: #4a6572;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto; padding: 2.5rem 1.5rem 4rem; max-width: 62rem;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); background: #fff;
+  }
+  h1 { font-size: 1.75rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  h2 {
+    font-size: 1.15rem; margin: 2.5rem 0 .9rem; padding-bottom: .35rem;
+    border-bottom: 2px solid var(--line);
+  }
+  h3 { font-size: .95rem; margin: 1.4rem 0 .5rem; color: var(--muted); font-weight: 600; }
+  p { margin: .5rem 0; }
+  .sub { color: var(--muted); margin: 0 0 1.25rem; }
+  /* Margins, not flex `gap`: the print/PDF renderers built on older WebKit ignore `gap`
+     and run the values together. Inline-block + margins degrade identically everywhere. */
+  .meta { margin: 0 0 .5rem; padding: 0; list-style: none; }
+  .meta li { display: inline-block; vertical-align: top; font-size: .875rem; margin: 0 2rem .5rem 0; }
+  .meta .label { color: var(--muted); display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+  table { border-collapse: collapse; width: 100%; margin: .5rem 0 1rem; font-size: .9rem; }
+  caption { text-align: left; color: var(--muted); font-size: .8rem; padding-bottom: .35rem; }
+  th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--panel); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tfoot td { font-weight: 600; border-top: 2px solid var(--line); border-bottom: none; }
+  .headline { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.15rem; margin: .75rem 0 1rem; }
+  .headline .figure { font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .headline .figure .unit { font-size: 1rem; color: var(--muted); font-weight: 400; }
+  .headline .from-to { color: var(--muted); font-size: .875rem; margin: .2rem 0 0; }
+  .caveat { margin: .75rem 0 0; padding: .65rem .8rem; background: var(--warn-bg); border-left: 4px solid var(--warn-line); font-size: .875rem; border-radius: 0 4px 4px 0; }
+  .caveat strong { display: block; }
+  .note { color: var(--muted); font-size: .82rem; margin: .35rem 0 0; }
+  .empty { color: var(--muted); font-style: italic; }
+  .band { margin: 1.25rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .band > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem; padding: .6rem .85rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .band h3 { margin: 0; font-size: 1rem; color: var(--ink); }
+  .band .cutoff { color: var(--muted); font-size: .8rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .band .subtotal { font-variant-numeric: tabular-nums; font-size: .9rem; }
+  .band-HIGH h3 { color: var(--high); }
+  .band-MEDIUM h3 { color: var(--medium); }
+  .band-LOW h3 { color: var(--low); }
+  .candidate { padding: .85rem; border-bottom: 1px solid var(--line); }
+  .candidate:last-child { border-bottom: none; }
+  .candidate > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem 1rem; align-items: baseline; }
+  .candidate h4 { margin: 0; font-size: .95rem; }
+  .candidate .saving { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .candidate .ident { color: var(--muted); font-size: .8rem; margin: .15rem 0 .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+  .candidate ul.evidence { margin: .35rem 0 0; padding-left: 1.15rem; font-size: .875rem; }
+  .candidate ul.evidence li { margin: .2rem 0; }
+  .tag { display: inline-block; padding: .05rem .4rem; border: 1px solid var(--line); border-radius: 10px; font-size: .72rem; color: var(--muted); background: var(--panel); }
+  .chip { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; color: var(--muted); margin-right: .5rem; word-break: break-all; }
+  .change-new { color: var(--accent); }
+  .change-removed { color: var(--high); }
+  .change-unchanged { color: var(--muted); }
+  .flag-bad { color: var(--high); font-weight: 600; }
+  footer { margin-top: 3rem; padding-top: .75rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+  @media print {
+    body { padding: 0; max-width: none; font-size: 11pt; }
+    h2 { break-after: avoid; }
+    .band, .candidate, table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+{# ------------------------------------------------------------------ header #}
+<header id="report-header">
+  <h1>Cloud cost report</h1>
+  <p class="sub">Period {{ period | nz }} &middot; {{ providers | length }} provider(s) &middot; read-only, report-only</p>
+  <ul class="meta">
+    <li><span class="label">Period</span>{{ period | nz }}</li>
+    <li><span class="label">Data as of</span>{{ as_of | nz }}</li>
+    <li><span class="label">Providers</span>{% if providers %}{{ providers | join(", ") }}{% else %}&mdash;{% endif %}</li>
+  </ul>
+  {%- if accounts %}
+  <ul class="meta">
+    {%- for entry in accounts %}
+    <li><span class="label">{{ entry.provider | nz }} account</span>{{ entry.account | nz }}</li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
+</header>
+
+{# ------------------------------------------------------------ cost summary #}
+<section id="cost-summary">
+  <h2>Cost summary</h2>
+  {%- if not cost_summary %}
+  <p class="empty">No cost summary in this report data &mdash; see Rendering notes below.</p>
+  {%- else %}
+
+  <div class="headline">
+    {%- if cost_summary.grand_total is not none %}
+    <div class="figure">{{ cost_summary.grand_total | amount }} <span class="unit">{{ cost_summary.currency | nz }}</span></div>
+    <p class="from-to">Total for {{ period | nz }} across {{ providers | length }} provider(s).</p>
+    {%- else %}
+    <div class="figure"><span class="unit">No combined total</span></div>
+    <p class="from-to">
+      The providers in this report do not share a currency and m1 performs no currency
+      conversion, so a single combined figure would be meaningless. The per-currency totals
+      below are the real ones.
+    </p>
+    <table>
+      <caption>Totals by currency</caption>
+      <thead><tr><th>Currency</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        {%- for code, total in cost_summary.totals_by_currency.items() %}
+        <tr><td>{{ code }}</td><td class="num">{{ total | amount }}</td></tr>
+        {%- endfor %}
+      </tbody>
+    </table>
+    {%- endif %}
+  </div>
+
+  {%- if cost_summary.by_provider %}
+  <table>
+    <caption>By provider &mdash; declared period total against the sum of its service lines</caption>
+    <thead>
+      <tr>
+        <th>Provider</th><th>Granularity</th><th class="num">Period total</th>
+        <th class="num">Service lines sum</th><th>Reconciled</th>
+      </tr>
+    </thead>
+    <tbody>
+      {%- for row in cost_summary.by_provider %}
+      <tr>
+        <td>{{ row.provider | nz }}</td>
+        <td>{{ row.source_granularity | nz }}</td>
+        <td class="num">{{ row.amount | amount }} {{ row.currency | nz("") }}</td>
+        <td class="num">{{ row.line_items_sum | amount }}</td>
+        <td>{% if row.reconciled %}yes{% else %}<span class="flag-bad">no &mdash; see Data notes</span>{% endif %}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  {%- if service_groups %}
+  {%- for group in service_groups %}
+  <table>
+    <caption>By service &mdash; {{ group.provider | nz }}</caption>
+    <thead><tr><th>Service</th><th class="num">Amount</th><th>Currency</th></tr></thead>
+    <tbody>
+      {%- for row in group.rows %}
+      <tr>
+        <td>{{ row.service | nz }}</td>
+        <td class="num">{{ row.amount | amount }}</td>
+        <td>{{ row.currency | nz }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endfor %}
+  {%- else %}
+  <p class="empty">No service-level cost lines in this report.</p>
+  {%- endif %}
+
+  {%- if cost_summary.granularity_note %}
+  <p class="note">{{ cost_summary.granularity_note }}</p>
+  {%- endif %}
+  {%- endif %}
+</section>
+
+{# --------------------------------------------------------- month on month #}
+<section id="month-on-month">
+  <h2>Month on month</h2>
+
+  {%- if mom_delta.status == "ok" %}
+  <div class="headline">
+    <div class="figure">
+      {{ mom_delta.delta_amount | signed_amount }}
+      <span class="unit">{{ mom_delta.currency | nz("") }}{% if mom_delta.delta_pct is not none %} &middot; {{ mom_delta.delta_pct | signed_pct }}{% endif %}</span>
+    </div>
+    <p class="from-to">
+      {{ mom_delta.prior_period | nz }} {{ mom_delta.prior_total | amount }}
+      &rarr;
+      {{ mom_delta.current_period | nz }} {{ mom_delta.current_total | amount }}
+    </p>
+    {%- if mom_delta.providers_without_prior_snapshot %}
+    <p class="caveat">
+      <strong>Not all of this change is organic growth.</strong>
+      No prior-month snapshot exists for
+      {{ mom_delta.providers_without_prior_snapshot | join(", ") }} &mdash;
+      {% if mom_delta.providers_without_prior_snapshot | length == 1 %}that provider's{% else %}those providers'{% endif %}
+      entire spend for {{ mom_delta.current_period | nz }} counts as an increase here, because there
+      is nothing to subtract it from. Read the figure above as "spend covered by this report",
+      not as month-on-month growth of a stable set of providers. The per-provider rows below
+      separate the two.
+    </p>
+    {%- endif %}
+    {%- if mom_delta.currency is none and cost_summary.totals_by_currency | default({}, true) | length > 1 %}
+    <p class="caveat">
+      <strong>This change spans more than one currency.</strong>
+      The cost summary above withholds a combined total because the providers do not share a
+      currency and m1 converts nothing &mdash; but the figure here is a single number over
+      {{ cost_summary.totals_by_currency.keys() | join(", ") }}, so it is not a quantity that
+      can be spent. Read the per-provider rows below, each of which is in one currency.
+    </p>
+    {%- endif %}
+    {%- if mom_delta.providers_only_in_prior %}
+    <p class="caveat">
+      <strong>A provider present last month is absent this month.</strong>
+      {{ mom_delta.providers_only_in_prior | join(", ") }} contributed to
+      {{ mom_delta.prior_period | nz }} but has no snapshot in {{ mom_delta.current_period | nz }},
+      so its prior spend shows here as a decrease.
+    </p>
+    {%- endif %}
+  </div>
+
+  {%- if mom_delta.by_provider %}
+  <table>
+    <caption>By provider</caption>
+    <thead>
+      <tr><th>Provider</th><th class="num">{{ mom_delta.prior_period | nz }}</th>
+      <th class="num">{{ mom_delta.current_period | nz }}</th><th class="num">Change</th><th class="num">Change %</th></tr>
+    </thead>
+    <tbody>
+      {%- for row in mom_delta.by_provider %}
+      <tr>
+        <td>{{ row.provider | nz }}{% if row.provider in mom_delta.providers_without_prior_snapshot %} <span class="tag">no prior snapshot</span>{% endif %}</td>
+        <td class="num">{{ row.prior_amount | amount }}</td>
+        <td class="num">{{ row.current_amount | amount }}</td>
+        <td class="num">{{ row.delta_amount | signed_amount }}</td>
+        <td class="num">{{ row.delta_pct | signed_pct }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  {%- if mom_delta.by_service %}
+  <table>
+    <caption>By service</caption>
+    <thead>
+      <tr><th>Provider</th><th>Service</th><th class="num">{{ mom_delta.prior_period | nz }}</th>
+      <th class="num">{{ mom_delta.current_period | nz }}</th><th class="num">Change</th>
+      <th class="num">Change %</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {%- for row in mom_delta.by_service %}
+      <tr>
+        <td>{{ row.provider | nz }}</td>
+        <td>{{ row.service | nz }}</td>
+        <td class="num">{{ row.prior_amount | amount }}</td>
+        <td class="num">{{ row.current_amount | amount }}</td>
+        <td class="num">{{ row.delta_amount | signed_amount }}</td>
+        <td class="num">{{ row.delta_pct | signed_pct }}</td>
+        <td class="change-{{ row.change | nz("") }}">{{ row.change | nz }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  {%- elif mom_delta.status == "no_prior_month" %}
+  <div class="headline">
+    <div class="figure"><span class="unit">No prior month (first run)</span></div>
+    <p class="from-to">
+      There is no persisted cost snapshot for
+      {% if mom_delta.prior_period %}{{ mom_delta.prior_period }}{% else %}the prior calendar month{% endif %},
+      so no month-on-month change can be shown. This is the expected state on a first run;
+      this period's snapshot has been persisted, and next month's report will carry the delta.
+    </p>
+    {%- if mom_delta.reason %}
+    <p class="note">{{ mom_delta.reason }}</p>
+    {%- endif %}
+  </div>
+
+  {%- else %}
+  <p class="empty">No month-on-month section in this report data{% if mom_delta.status %} (status: {{ mom_delta.status }}){% endif %}.</p>
+  {%- endif %}
+</section>
+
+{# ------------------------------------------------------------ tag coverage #}
+<section id="tag-coverage">
+  <h2>Tag coverage</h2>
+  {%- if not tag_coverage %}
+  <p class="empty">No tag-coverage section in this report data &mdash; see Rendering notes below.</p>
+  {%- else %}
+
+  <div class="headline">
+    <div class="figure">{{ tag_coverage.coverage | ratio_pct }} <span class="unit">tagged</span></div>
+    <p class="from-to">
+      {{ tag_coverage.tagged | nz }} of {{ tag_coverage.resources | nz }} usable resources carry
+      at least one tag; {{ tag_coverage.untagged | nz }} carry none.
+    </p>
+  </div>
+
+  {%- if tag_coverage.by_provider %}
+  <table>
+    <caption>By provider</caption>
+    <thead>
+      <tr><th>Provider</th><th class="num">Resources</th><th class="num">Tagged</th>
+      <th class="num">Untagged</th><th class="num">Coverage</th></tr>
+    </thead>
+    <tbody>
+      {%- for row in tag_coverage.by_provider %}
+      <tr>
+        <td>{{ row.provider | nz }}</td>
+        <td class="num">{{ row.resources | nz }}</td>
+        <td class="num">{{ row.tagged | nz }}</td>
+        <td class="num">{{ row.untagged | nz }}</td>
+        <td class="num">{{ row.coverage | ratio_pct }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  <h3>Top untagged spenders{% if tag_coverage.top_k is not none %} (top {{ tag_coverage.top_k }}){% endif %}</h3>
+  {%- if tag_coverage.top_untagged_spenders %}
+  <table>
+    <thead>
+      <tr><th>Provider</th><th>Name</th><th>Type</th><th>Region</th><th>Size</th>
+      <th class="num">Monthly cost estimate</th><th>Reference</th></tr>
+    </thead>
+    <tbody>
+      {%- for row in tag_coverage.top_untagged_spenders %}
+      <tr>
+        <td>{{ row.provider | nz }}</td>
+        <td>{{ row.name | nz }}</td>
+        <td>{{ row.type | nz }}</td>
+        <td>{{ row.region | nz }}</td>
+        <td>{{ row.size | nz }}</td>
+        <td class="num">{{ row.monthly_cost_estimate | amount }} {{ currency_of.get(row.provider) | nz("") }}</td>
+        <td><span class="chip">{{ row.raw_ref | nz }}</span></td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+    {%- if tag_coverage.untagged_monthly_cost_estimate is not none %}
+    <tfoot>
+      <tr>
+        <td colspan="5">All untagged resources ({{ tag_coverage.untagged | nz }})</td>
+        <td class="num">{{ tag_coverage.untagged_monthly_cost_estimate | amount }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+    {%- endif %}
+  </table>
+  {%- else %}
+  <p class="empty">No untagged resources to rank.</p>
+  {%- endif %}
+
+  {%- if tag_coverage.estimate_note %}
+  <p class="note">{{ tag_coverage.estimate_note }}</p>
+  {%- endif %}
+  {%- endif %}
+</section>
+
+{# -------------------------------------------------------- orphan candidates #}
+<section id="orphan-candidates">
+  <h2>Orphan candidates</h2>
+  {%- if not orphans %}
+  <p class="empty">No orphan section in this report data &mdash; see Rendering notes below.</p>
+  {%- else %}
+
+  <div class="headline">
+    <div class="figure">
+      {{ orphans.totals.monthly_saving_estimate | amount }}
+      <span class="unit">{{ cost_summary.currency | nz("") }} / month estimated</span>
+    </div>
+    <p class="from-to">
+      {{ orphans.totals.candidates | nz }} candidate(s) across
+      {{ orphans.by_band | default([], true) | length }} confidence band(s). Reported only &mdash;
+      nothing here has been queued, changed or deleted.
+    </p>
+  </div>
+
+  {%- if orphans.bands %}
+  <table>
+    <caption>Confidence bands &mdash; the cutoffs these candidates were grouped by</caption>
+    <thead><tr><th>Band</th><th>Rule</th><th class="num">Min confidence</th><th class="num">Max confidence</th></tr></thead>
+    <tbody>
+      {%- for band in orphans.bands %}
+      <tr>
+        <td>{{ band.band | nz }}</td>
+        <td><span class="chip">{{ band.rule | nz }}</span></td>
+        <td class="num">{{ band.min_confidence | nz }}</td>
+        <td class="num">{{ band.max_confidence | nz }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  {%- if orphans.evaluated_as_of %}
+  <table>
+    <caption>Evaluated as of &mdash; the date the age rules ran against, per provider</caption>
+    <thead><tr><th>Provider</th><th>Reference date</th><th>Inventory generated at</th></tr></thead>
+    <tbody>
+      {%- for row in orphans.evaluated_as_of %}
+      <tr>
+        <td>{{ row.provider | nz }}</td>
+        <td>{{ row.reference_date | nz }}</td>
+        <td>{{ row.inventory_generated_at | nz }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  {%- for band in orphans.by_band | default([], true) %}
+  <div class="band band-{{ band.band | nz("") }}">
+    <header>
+      <h3>{{ band.band | nz }} &mdash; {{ band.count | nz }} candidate(s)</h3>
+      <span class="cutoff">{{ band.rule | nz }}</span>
+      <span class="subtotal">{{ band.monthly_saving_estimate | amount }} {{ cost_summary.currency | nz("") }} / month estimated</span>
+    </header>
+    {%- if band.candidates %}
+    {%- for candidate in band.candidates %}
+    <article class="candidate">
+      <header>
+        <h4>{{ candidate.name | nz }} <span class="tag">{{ candidate.type | nz }}</span> <span class="tag">{{ candidate.provider | nz }}</span></h4>
+        <span class="saving">{{ candidate.monthly_saving_estimate | amount }} {{ currency_of.get(candidate.provider) | nz("") }} / month</span>
+      </header>
+      <p class="ident">
+        <span class="chip">{{ candidate.resource_id | nz }}</span>
+        <span class="chip">{{ candidate.region | nz }}</span>
+        <span class="chip">{{ candidate.raw_ref | nz }}</span>
+      </p>
+      <p class="note">
+        rule <strong>{{ candidate.rule | nz }}</strong> &middot;
+        confidence {{ candidate.confidence | nz }} (base {{ candidate.base_confidence | nz }}{% if candidate.modifiers %}, modifiers: {% for modifier in candidate.modifiers %}{{ modifier.modifier | nz }} {{ modifier.delta | signed_amount }}{% if not loop.last %}; {% endif %}{% endfor %}{% else %}, no modifiers{% endif %})
+      </p>
+      {%- if candidate.evidence %}
+      <ul class="evidence">
+        {%- for line in candidate.evidence %}
+        <li>{{ line }}</li>
+        {%- endfor %}
+      </ul>
+      {%- else %}
+      <p class="empty">No evidence recorded for this candidate.</p>
+      {%- endif %}
+    </article>
+    {%- endfor %}
+    {%- else %}
+    <div class="candidate"><p class="empty">No candidates in this band.</p></div>
+    {%- endif %}
+  </div>
+  {%- else %}
+  <p class="empty">No confidence bands in this report data.</p>
+  {%- endfor %}
+
+  <p class="note">
+    Saving figures are per-resource <em>estimates</em> derived from size/type, not billed cost
+    (the bill is service-level). They are shown so a candidate can be judged, and are never part
+    of the cost totals above.
+  </p>
+  {%- endif %}
+</section>
+
+{# ---------------------------------------------------------------- data notes #}
+<section id="data-notes">
+  <h2>Data notes</h2>
+
+  <h3>Warnings ({{ data_warnings | length }})</h3>
+  {%- if data_warnings %}
+  <table>
+    <caption>Composed, but worth knowing about</caption>
+    <thead><tr><th>Note</th><th>Detail</th></tr></thead>
+    <tbody>
+      {%- for row in data_warnings %}
+      <tr>
+        <td>{{ row.message }}</td>
+        <td>{% for key, value in row.details %}<span class="chip">{{ key }}={{ value }}</span>{% endfor %}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- else %}
+  <p class="empty">None &mdash; every input composed cleanly.</p>
+  {%- endif %}
+
+  <h3>Skipped inputs ({{ data_skipped | length }})</h3>
+  {%- if data_skipped %}
+  <table>
+    <caption>Inputs that could not be used &mdash; the sections they feed are incomplete</caption>
+    <thead><tr><th>Reason</th><th>Detail</th></tr></thead>
+    <tbody>
+      {%- for row in data_skipped %}
+      <tr>
+        <td>{{ row.message }}</td>
+        <td>{% for key, value in row.details %}<span class="chip">{{ key }}={{ value }}</span>{% endfor %}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- else %}
+  <p class="empty">None &mdash; every input was read.</p>
+  {%- endif %}
+
+  {%- if render_warnings %}
+  <h3>Rendering notes ({{ render_warnings | length }})</h3>
+  <ul>
+    {%- for line in render_warnings %}
+    <li>{{ line }}</li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
+</section>
+
+<footer>
+  Generated by <code>render_report.py</code> from <code>{{ source_file | nz }}</code>.
+  Report-only: read-only data, no write credential, nothing queued or changed.
+  Every figure above is read from that file &mdash; this report computes none of them.
+</footer>
+
+</body>
+</html>

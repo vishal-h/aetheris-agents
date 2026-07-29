@@ -456,7 +456,9 @@ first-run (no-MoM) data too.
 
 **Scope.** `agents/cloudcost_orchestrator.exs` — `%Aetheris.RunConfig{}` with
 `tools: ["run_command"]`, `sandbox_path` via `__ENV__.file`, `overlay_base_dir: nil`,
-`context_strategy: :rolling`, `max_context_steps: 6`, `provider: "anthropic"`,
+`context_strategy: :full` (corrected at t5 from `:rolling`/6 — four steps is well under the
+guide's ~10-step `:full` threshold, and the workflow threads file paths from step 1 through
+step 4, which a rolling window would truncate mid-pipeline), `provider: "anthropic"`,
 `model: "claude-haiku-4-5-20251001"`, `label: "Cloudcost Orchestrator"`. System prompt = the
 **linear** workflow: `run_command python3 fetch_do.py` → `detect_orphans.py` →
 `compose_report_data.py` → `render_report.py`, each with the exact `command:`/`args:` format,

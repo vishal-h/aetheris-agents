@@ -1995,6 +1995,38 @@ happy path.
 
 ---
 
+### BL-067 — `capability_matrix_assemble.exs` asks the LLM to do arithmetic, so the Summary counts are wrong every regen (#TBD)
+**Size:** S · **Priority:** next · **Section:** aetheris-agents (`agents/capability_matrix_assemble.exs`)
+
+Step 3 of the assembler's prompt is *"Count agents and scripts per section… list all unique
+tools"* — a computation, handed to an LLM. It gets it wrong. Two consecutive runs at
+m1-cloudcost t5, same restored section files, both wrong and wrong differently:
+
+```
+run cap-matrix-assemble-QWY6QQ : docbuilder 27 · Total 27 / 70
+run cap-matrix-assemble-9bx1Pw : docbuilder 25 · Total 27 / 68
+actual (counted from the emitted table rows) : docbuilder 24 · Total 26 / 67
+```
+
+This is a direct violation of the repo's core principle (`CLAUDE.md` → "Scripts do; agents
+decide… Never ask the LLM to construct file content or compute values programmatically"),
+and it is a **Silent-wrong-answer**: the Summary is well-formed, plausible, and inside a
+generated artifact nobody recounts, so it reads as authoritative. It has been wrong before
+without being caught — HEAD (`eeb37a1`) happened to be right, but nothing was checking.
+
+Not fixed at t5: the fix needs a deterministic counter, which means giving the assembler
+`run_command` + a `scripts/matrix_summary.py`, beyond that ticket's scope. t5 hand-corrected
+the three numbers to the verified values and said so in its packet.
+
+**Fix:** a `scripts/` counter that parses `docs/.sections/*.md`, emits the Summary table and
+the unique-tools line to a file; the assembler pastes it verbatim and does no counting.
+Same shape as every other "derived values come from a script" fix in this repo.
+
+**Done when:** the Summary counts are produced by a script, a regen is byte-stable for
+unchanged sections, and a test asserts claimed totals == counted rows.
+
+---
+
 ### BL-066 — Bump `bandit` to `~> 1.12` (hex.audit HIGH, EEF-CVE-2026-65623) (#TBD)
 **Size:** XS · **Priority:** now (security gate red) · **Section:** harness (`../aetheris/mix.exs` + `mix.lock`)
 

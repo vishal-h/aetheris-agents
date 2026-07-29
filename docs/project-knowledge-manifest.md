@@ -31,11 +31,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `1013a95` | 2026-07-25 |
+| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `9afd8e7` | 2026-07-29 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `9afd8e7` | 2026-07-29 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `eeb37a1` | 2026-06-27 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `c27dee4` | 2026-07-26 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `1ebe971` | 2026-07-21 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `6abc3e8` | 2026-07-29 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `013c09d` | 2026-07-29 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `57d90d2` | 2026-07-29 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
@@ -47,12 +48,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
 | `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `0a0439f` | 2026-07-20 |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `602bdf5` | 2026-06-19 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-26 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-29 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
 > the harness copy. `milestone-methodology.md` is single-copy in the harness repo.
-> Mirror re-verified byte-identical at this export (`diff -q`, 2026-07-26); the
+> Mirror re-verified byte-identical at this export (`diff -q`, 2026-07-29); the
 > mirror's own last change is `b1fd73f`, which is why it carries no manifest row —
 > the row tracks the canonical copy, and a second row would drift against it.
 
@@ -89,22 +90,50 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > this cycle's specifications are the BL-0xx rows, already carried inside
 > `backlog-2026-06.md`.
 
+> **m1-cloudcost export — the rule applied in both directions, one add.** The
+> milestone produced fourteen working artifacts, all out: five
+> `cloudcost/docs/t*-implementation-notes.md`, and nine `docs/reviews/*.md` (the t1–t5
+> reviews, the t4 browser-gate record, and the close's §7 promotion draft — *promotion
+> wording is review history; the ratified text itself lives in `aetheris--CLAUDE.md`,
+> which is exported and re-pinned below*, the same call made for
+> `bl-039-contract-draft.md` last export).
+>
+> **Added: `cloudcost--milestone.md`** — the third milestone-tree exception, on the same
+> test as `rig--protocol.md` and `rig--bl-007-milestone.md`: it is a milestone
+> *specification later work is written against*, not review history. Its §Normalized
+> schemas freezes the two-schema adapter contract that the AWS/GCP/Linode adapters will
+> be written to, and its D1–D6 and §Open items (multi-currency, `STOPPED_STATES`) are
+> the constraints on that fan-out. A reviewer reasoning about provider two needs it and
+> would otherwise be reading a stale sketch from memory.
+>
+> **`cloudcost/runbook.md` stays out**, and not as an oversight: no use-case runbook has
+> ever carried a row (docbuilder, eduloka and boxy-pipeline all have one; none is
+> exported). The two exported runbooks are the Rig and harness runbooks — system-level
+> operator docs, a different category from a single use case's how-to-run.
+
 ---
 
-Exported: 2026-07-26 at aetheris-agents `53c97cb` / aetheris `f79365a` (the fork arc
-— BL-039 then BL-030 r0/r1/r2 — plus BL-038). 24 rows: **24 carried, none added, none
-dropped.** Six rows re-pinned, clearing all six standing staleness WARNs:
-`rig--specs.md` (`c39bf7e`→`b5e8eee`), `rig--architecture.md` (`d82cf7e`→`c0977c2`),
-`rig--runbook.md` (`d0690a6`→`7d6013a`), `backlog-2026-06.md` (`6a8a32e`→`c27dee4`),
-`aetheris--runbook.md` (`915d582`→`ae0c510`), and `aetheris--determinism-contract.md`
-(`dd12dbb`→`1ab24d8`). The other eighteen data rows are unchanged since the previous
-export.
+Exported: 2026-07-29 at aetheris-agents `9afd8e7` / aetheris `57d90d2` (m1-cloudcost
+close — t1–t5, the §7 promotion, and the operator runbook). 25 rows: **24 carried, one
+added (`cloudcost--milestone.md`), none dropped.** Four rows re-pinned, clearing all
+four standing staleness WARNs: `aetheris-agents--CLAUDE.md` (`1013a95`→`9afd8e7`),
+`capability-matrix.md` (`eeb37a1`→`6abc3e8`), `backlog-2026-06.md`
+(`c27dee4`→`013c09d`), and `aetheris--CLAUDE.md` (`1ebe971`→`57d90d2`). The other
+twenty data rows are unchanged since the previous export.
 
-**Upload is remove-all then upload-all against the full 24-row set** — not a diff of
-the six re-pinned rows. Eighteen data rows are unchanged and would look like "nothing
-to re-upload" to any hash-driven shortcut; do not optimise the upload down. This is
-the standing discipline that also covers the manifest-blind direction the header
-warns about (a file uploaded without a regen leaves the record silently
+**Why this export matters beyond the WARNs.** The four re-pinned rows are all m1's own
+output, and one of them carries the milestone's marquee learning: the §7 rewrite of
+**Silent-wrong-answer** landed in `aetheris--CLAUDE.md` (`57d90d2`). Implementer
+sessions read that from the repo and already have it; the review side reads the
+*exported* copy and is served the superseded wording until this export lands. Until
+then the §7 loop is half-closed — live for the author, stale for the reviewer. That
+asymmetry, not the drift cosmetics, is what the export closes.
+
+**Upload is remove-all then upload-all against the full 25-row set** — not a diff of
+the four re-pinned rows plus the add. Twenty data rows are unchanged and would look
+like "nothing to re-upload" to any hash-driven shortcut; do not optimise the upload
+down. This is the standing discipline that also covers the manifest-blind direction
+the header warns about (a file uploaded without a regen leaves the record silently
 under-describing project knowledge).
 
 **BL-034 — closed; the paragraph this replaces was stale.** Previous manifests
@@ -119,9 +148,8 @@ this export, not carried on faith. `current-state-2026-06.md` stays pinned `f723
 matching HEAD.
 
 **Repo push state.** Both repos are synced at the exported commits — aetheris-agents
-`origin/main` = `53c97cb`, aetheris `origin/main` = `f79365a`; the whole fork arc is
+`origin/main` = `9afd8e7`, aetheris `origin/main` = `57d90d2`; all of m1-cloudcost is
 on origin. Only this manifest regen commit is unpushed, held for the human.
 
-Previous export: 2026-07-25 at aetheris-agents `6a8a32e` / aetheris `dd12dbb` (the
-fs_hash / http_call / containment-reorder cluster — BL-053, BL-043, BL-050/055/056;
-four rows re-pinned).
+Previous export: 2026-07-26 at aetheris-agents `53c97cb` / aetheris `f79365a` (the
+fork arc — BL-039 then BL-030 r0/r1/r2 — plus BL-038; six rows re-pinned, none added).

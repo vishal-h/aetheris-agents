@@ -16,6 +16,8 @@ import detect_orphans
 from conftest import FIXTURES, USE_CASE_ROOT, load_fixture
 
 SCRIPT = USE_CASE_ROOT / "scripts" / "detect_orphans.py"
+#: The normalized-schema helpers this module imports (extracted at t3, shared with it).
+SHARED = USE_CASE_ROOT / "scripts" / "_normalized.py"
 
 #: Every crafted fixture is written against this reference date.
 REF = detect_orphans.parse_timestamp("2026-07-27T00:00:00Z")
@@ -600,8 +602,12 @@ def test_the_adapter_output_feeds_detection_without_translation(
 
 
 def test_the_rules_never_read_a_provider_specific_field():
-    """Every field the catalog keys on is a first-class normalized-schema field."""
-    source = SCRIPT.read_text()
+    """Every field the catalog keys on is a first-class normalized-schema field.
+
+    Reads `_normalized.py` alongside the rule module: the shared helpers moved there at t3
+    and the guard follows the code it watches, so the refactor cannot shrink its reach.
+    """
+    source = SCRIPT.read_text() + SHARED.read_text()
     normalized_fields = {
         "resource_id",
         "type",

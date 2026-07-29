@@ -1,0 +1,55 @@
+{
+  "_comment": "Crafted prior-month cost snapshot, seeded into --history-dir/2026-06/ by the MoM tests. Deliberately not a copy of July: one service grew, one shrank into existence (Container Registry is absent here and new in July), and Spaces exists here and is gone in July — so the delta exercises grown / new / removed rather than one arithmetic case.",
+  "provider": "digitalocean",
+  "account": "aaaaaaaa-1111-2222-3333-444444444444",
+  "period": "2026-06",
+  "currency": "USD",
+  "source_granularity": "service",
+  "line_items": [
+    {
+      "service": "Kubernetes Clusters",
+      "resource_id": null,
+      "region": null,
+      "amount": 150.0,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    },
+    {
+      "service": "Spaces",
+      "resource_id": null,
+      "region": null,
+      "amount": 5.0,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    },
+    {
+      "service": "Droplets",
+      "resource_id": null,
+      "region": null,
+      "amount": 3.0,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    }
+  ],
+  "totals": {
+    "amount": 158.0
+  },
+  "balance": {
+    "month_to_date_balance": 158.0,
+    "account_balance": 0.0,
+    "month_to_date_usage": 158.0,
+    "generated_at": "2026-06-30T23:50:00Z"
+  },
+  "generated_at": "2026-06-30T23:50:00Z",
+  "provider_extra": {
+    "invoice": {
+      "invoice_uuid": "bbbbbbbb-0000-1111-2222-333333333333",
+      "invoice_id": "500000002",
+      "status": "paid"
+    },
+    "billing_history": []
+  }
+}

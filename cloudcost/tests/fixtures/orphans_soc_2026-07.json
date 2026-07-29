@@ -1,0 +1,55 @@
+{
+  "provider": "someothercloud",
+  "account": "acct-77281",
+  "period": "2026-07",
+  "reference_date": "2026-07-27T00:00:00Z",
+  "inventory_generated_at": "2026-07-26T12:00:00Z",
+  "parameters": {
+    "snapshot_age_days": 30,
+    "unattached_volume_min_age_days": 14,
+    "stopped_droplet_min_age_days": 30,
+    "recent_activity_window_days": 14,
+    "tagged_account_coverage_threshold": 0.5
+  },
+  "candidates": [
+    {
+      "resource_id": "disk-1",
+      "type": "volume",
+      "name": "tmp-orphan-disk",
+      "region": "eu-1",
+      "raw_ref": "soc://disks/disk-1",
+      "rule": "unattached_volume",
+      "base_confidence": 0.9,
+      "modifiers": [
+        {
+          "modifier": "ephemeral_name",
+          "delta": 0.1
+        }
+      ],
+      "confidence": 1.0,
+      "evidence": [
+        "attached_to is null \u2014 the volume is not attached to any instance",
+        "unattached for 207d (created 2026-01-01, ref 2026-07-27); threshold >14d",
+        "name 'tmp-orphan-disk' matches ephemeral pattern ^(tmp-|ci-|test-) ('tmp-'): +0.1"
+      ],
+      "monthly_saving_estimate": 40.0
+    }
+  ],
+  "reported": {
+    "untagged_in_tagged_account": {
+      "account_uses_tags": false,
+      "tag_coverage": 0.25,
+      "coverage_threshold": 0.5,
+      "resources": []
+    }
+  },
+  "excluded": [],
+  "warnings": [],
+  "skipped": [],
+  "totals": {
+    "resources": 4,
+    "candidates": 1,
+    "monthly_saving_estimate": 40.0,
+    "reported": 0
+  }
+}

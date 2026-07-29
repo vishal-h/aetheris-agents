@@ -1,0 +1,65 @@
+{
+  "_comment": "The second provider's inventory. Resource types and raw_ref scheme are its own; every first-class field is the frozen normalized one. One tagged resource in four (25% coverage), and its untagged compute is the costliest resource in the two-provider union — so the top-untagged ranking has to sort across providers, not within one.",
+  "provider": "someothercloud",
+  "account": "acct-77281",
+  "period": "2026-07",
+  "resources": [
+    {
+      "resource_id": "vm-1",
+      "type": "compute_instance",
+      "name": "prod-app",
+      "region": "eu-1",
+      "size": "c2-standard-8",
+      "state": "running",
+      "created_at": "2026-02-11T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 120.0,
+      "tags": ["env=prod"],
+      "raw_ref": "soc://compute/vm-1"
+    },
+    {
+      "resource_id": "vm-2",
+      "type": "compute_instance",
+      "name": "legacy-app",
+      "region": "eu-1",
+      "size": "c2-standard-4",
+      "state": "running",
+      "created_at": "2025-11-03T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 80.0,
+      "tags": [],
+      "raw_ref": "soc://compute/vm-2"
+    },
+    {
+      "resource_id": "disk-1",
+      "type": "volume",
+      "name": "tmp-orphan-disk",
+      "region": "eu-1",
+      "size": "400GiB",
+      "state": "available",
+      "created_at": "2026-01-01T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 40.0,
+      "tags": [],
+      "raw_ref": "soc://disks/disk-1"
+    },
+    {
+      "resource_id": "bucket-1",
+      "type": "object_store",
+      "name": "archive",
+      "region": "eu-1",
+      "size": "1200GiB",
+      "state": "available",
+      "created_at": "2025-09-01T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 3.0,
+      "tags": [],
+      "raw_ref": "soc://buckets/bucket-1"
+    }
+  ],
+  "generated_at": "2026-07-26T12:00:00Z"
+}

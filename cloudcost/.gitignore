@@ -5,3 +5,7 @@ data/*
 # Generated output — local only
 output/*
 !output/.gitkeep
+
+# Persisted monthly cost snapshots — real cost data; history accumulates locally
+history/*
+!history/.gitkeep

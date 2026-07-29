@@ -31,6 +31,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from _normalized import day, iso, money, parse_timestamp, tag_coverage, tags_of, usable_resources
+
 # --------------------------------------------------------------------------- thresholds
 
 #: Base confidences for the §t2 rule catalog.
@@ -70,46 +72,16 @@ STOPPED_STATES = {"off"}  # DO vocabulary
 
 
 # ------------------------------------------------------------------------------ helpers
-
-
-def parse_timestamp(value):
-    """Parse an ISO-8601 timestamp to an aware UTC datetime, or None if unparseable."""
-    if not isinstance(value, str) or not value.strip():
-        return None
-    text = value.strip()
-    if text.endswith(("Z", "z")):
-        text = text[:-1] + "+00:00"
-    try:
-        parsed = datetime.fromisoformat(text)
-    except ValueError:
-        return None
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
-
-
-def iso(moment: datetime) -> str:
-    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def day(moment: datetime) -> str:
-    return moment.strftime("%Y-%m-%d")
-
-
-def tags_of(resource: dict) -> list:
-    tags = resource.get("tags")
-    return [t for t in tags if isinstance(t, str)] if isinstance(tags, list) else []
+#
+# `parse_timestamp`, `iso`, `day`, `money`, `tags_of`, `usable_resources` and
+# `tag_coverage` are imported from `_normalized` — they are vocabulary of the normalized
+# schema shared with t3's `compose_report_data.py`, not of this stage. In particular the
+# coverage figure this module reports and the one the report renders are required to be
+# the same number, so there is one definition of it.
 
 
 def has_keep_tag(resource: dict) -> bool:
     return any(tag.strip().lower() == KEEP_TAG for tag in tags_of(resource))
-
-
-def money(value) -> float:
-    try:
-        return round(float(value), 2)
-    except (TypeError, ValueError):
-        return 0.0
 
 
 class Context:
@@ -342,13 +314,6 @@ def clamp(value: float) -> float:
 # ------------------------------------------------------------------------------- engine
 
 
-def tag_coverage(resources: list) -> float:
-    if not resources:
-        return 0.0
-    tagged = sum(1 for resource in resources if tags_of(resource))
-    return round(tagged / len(resources), 4)
-
-
 def identity(resource: dict) -> dict:
     """The human-facing identity carried onto a candidate so the report is reviewable
     without opening the provider console (the §Normalized schemas rationale for `name`)."""
@@ -359,25 +324,6 @@ def identity(resource: dict) -> dict:
         "region": resource.get("region"),
         "raw_ref": resource.get("raw_ref"),
     }
-
-
-def usable_resources(inventory: dict) -> tuple:
-    """Split the inventory's resources into usable entries and skipped ones.
-
-    A malformed entry is skipped and counted, never fatal — the stage degrades rather than
-    breaking the stdout contract.
-    """
-    usable, skipped = [], []
-    for index, resource in enumerate(inventory.get("resources") or []):
-        if not isinstance(resource, dict):
-            skipped.append({"index": index, "reason": "resource entry is not an object"})
-        elif not resource.get("resource_id"):
-            skipped.append({"index": index, "reason": "resource entry has no resource_id"})
-        elif not resource.get("type"):
-            skipped.append({"index": index, "reason": "resource entry has no type"})
-        else:
-            usable.append(resource)
-    return usable, skipped
 
 
 def timestamp_warnings(resources: list) -> list:

@@ -1,0 +1,63 @@
+{
+  "_comment": "Crafted cost snapshot in the frozen §Normalized schemas shape, carrying the same service totals the recorded DO invoice fixture aggregates to (168.50 + 3.71 + 0.00 = 172.21). The current period for the t3 merge tests.",
+  "provider": "digitalocean",
+  "account": "aaaaaaaa-1111-2222-3333-444444444444",
+  "period": "2026-07",
+  "currency": "USD",
+  "source_granularity": "service",
+  "line_items": [
+    {
+      "service": "Kubernetes Clusters",
+      "resource_id": null,
+      "region": null,
+      "amount": 168.5,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    },
+    {
+      "service": "Droplets",
+      "resource_id": null,
+      "region": null,
+      "amount": 3.71,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    },
+    {
+      "service": "Container Registry Subscription",
+      "resource_id": null,
+      "region": null,
+      "amount": 0.0,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    }
+  ],
+  "totals": {
+    "amount": 172.21
+  },
+  "balance": {
+    "month_to_date_balance": 172.21,
+    "account_balance": 0.0,
+    "month_to_date_usage": 172.21,
+    "generated_at": "2026-07-27T04:41:53Z"
+  },
+  "generated_at": "2026-07-27T04:41:53Z",
+  "provider_extra": {
+    "invoice": {
+      "invoice_uuid": "aaaaaaaa-0000-1111-2222-333333333333",
+      "invoice_id": "500000003",
+      "status": "preview"
+    },
+    "billing_history": [
+      {
+        "date": "2026-07-01T06:22:06Z",
+        "type": "Invoice",
+        "description": "Invoice for June 2026",
+        "amount": 158.0,
+        "invoice_uuid": "bbbbbbbb-0000-1111-2222-333333333333"
+      }
+    ]
+  }
+}

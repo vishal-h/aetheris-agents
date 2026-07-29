@@ -374,7 +374,16 @@ merge **N providers** (trivial at N=1). **Persist this run's cost snapshot** int
 > is stamped "as of". `Source: t2 notes §Decisions; confirmed at t2 review.`
 
 **Touches.** `scripts/compose_report_data.py`; `tests/test_compose_report_data.py`;
+`tests/fixtures/cost_*.json` + `inventory_soc_*.json` + `orphans_soc_*.json`;
 `cloudcost/history/.gitkeep`; `.gitignore` updated to exclude `history/*` (real cost data).
+*Widened at build (recorded, not silent):* `scripts/_normalized.py` — the shared
+normalized-schema helpers (`tags_of`/`usable_resources`/`tag_coverage` + timestamp/money
+coercion) extracted verbatim out of `scripts/detect_orphans.py`, which now imports them, so
+the tag-coverage figure t3 must report *equal* to t2's has one definition rather than two
+(m2b rule: shared plumbing goes in a `_helper.py`, not duplicated or cross-imported between
+CLIs). `tests/test_detect_orphans.py`'s provider-agnostic source guard was extended to read
+`_normalized.py` alongside the rule module so the extraction cannot shrink its reach.
+t2's 54 tests pass unchanged. `Source: t3 notes §Scope note.`
 
 **Do-not-generate.** LLM in the merge/delta; a crash on a missing prior month; committing
 history data (gitignored); resource-level cost totals (totals are service-level per D4).
@@ -499,6 +508,21 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   is a *harness* ticket if we want verify to enforce "never re-execute a delete").
 - Email/Drive delivery, automated monthly scheduling, currency conversion, DuckDB trend
   store.
+- **Give t2's output file a provider prefix before the first multi-provider run.**
+  `detect_orphans.py` writes `orphan_candidates_{period}.json`, which collides at N≥2 in one
+  directory. t3 is unaffected — it groups by document shape and by the `provider` field inside
+  the file, and its explicit `--cost/--inventory/--orphans` triples take any paths — so this is
+  a naming decision (per-provider output dirs, or
+  `{provider}_orphan_candidates_{period}.json`), not a defect. Lands with the second adapter.
+  `Source: t3 notes §Open items forwarded.`
+- **Spot-check t1's list-price rates against a resource-granular bill — re-forwarded past t3.**
+  t1 parked this on t3 "where invoice items are already in hand"; they are not, in the sense
+  that matters. DO bills at *service* granularity (D4), so its invoice carries no per-resource
+  line to check the volume/snapshot/reserved-IP/LB rates against, and only the volume rate was
+  invoice-derivable (t1 already did it). The check belongs to the first adapter whose provider
+  bills per resource (AWS/GCP). Until then the orphan section's saving subtotals inherit those
+  estimates and are labelled as estimates in the payload.
+  `Source: t3 notes §Open items forwarded.`
 - **Bound the recency modifier's window at both ends** (`detect_orphans.py`,
   `modifier_recent_activity`): today it rejects on `age > RECENT_ACTIVITY_WINDOW_DAYS` only, so
   a `last_activity_at` in the future relative to the reference date reads as "recent" and takes

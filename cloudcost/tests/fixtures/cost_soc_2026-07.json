@@ -1,0 +1,41 @@
+{
+  "_comment": "A second provider's cost snapshot in the same frozen shape — the N-provider proof. 'someothercloud' is deliberately not DigitalOcean and its emitted files were never touched by the DO adapter: if t3 needs a code change to merge it, the merge was not provider-agnostic.",
+  "provider": "someothercloud",
+  "account": "acct-77281",
+  "period": "2026-07",
+  "currency": "USD",
+  "source_granularity": "service",
+  "line_items": [
+    {
+      "service": "Compute",
+      "resource_id": null,
+      "region": null,
+      "amount": 50.0,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    },
+    {
+      "service": "Object Storage",
+      "resource_id": null,
+      "region": null,
+      "amount": 10.0,
+      "usage_qty": null,
+      "usage_unit": null,
+      "tags": []
+    }
+  ],
+  "totals": {
+    "amount": 60.0
+  },
+  "balance": {
+    "month_to_date_balance": 60.0,
+    "account_balance": 0.0,
+    "month_to_date_usage": 60.0,
+    "generated_at": "2026-07-26T12:00:00Z"
+  },
+  "generated_at": "2026-07-26T12:00:00Z",
+  "provider_extra": {
+    "billing_account": "acct-77281"
+  }
+}

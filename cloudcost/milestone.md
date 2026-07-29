@@ -146,10 +146,12 @@ holds either way, so it changes nothing m1 needs.)*
 
 ## Normalized schemas (the adapter contract — this is what m1 proves)
 
-These are the two JSON shapes every adapter emits and every downstream script consumes. They
-are the contract the milestone exists to freeze; t1 must emit *these exact shapes* (not derive
-its own). Providers added later re-emit the same schemas — that is what makes fan-out
-mechanical.
+Two JSON shapes every adapter emits and every downstream script consumes — the contract the
+milestone exists to freeze; t1 emits *these exact shapes*. Later providers re-emit them, which
+is what makes fan-out mechanical. Every **first-class** (top-level) field is part of the
+cross-provider contract: a later adapter emits it with a real value, or `null`/`[]`/`{}` where
+its provider lacks the concept — never by omission. Provider-specific payload lives under
+`provider_extra`, which downstream scripts must **not** key on generically.
 
 **Cost snapshot** — `do_costs_{YYYY-MM}.json`:
 
@@ -164,15 +166,38 @@ mechanical.
     { "service": "Droplets", "resource_id": null, "region": null, "amount": 42.00,
       "usage_qty": null, "usage_unit": null, "tags": [] }
   ],
-  "totals": { "amount": 42.00 }
+  "totals": { "amount": 42.00 },
+  "balance": {
+    "month_to_date_balance": 42.00, "account_balance": 0.00,
+    "month_to_date_usage": 42.00, "generated_at": "2026-07-27T04:41:53Z"
+  },
+  "generated_at": "2026-07-27T04:41:53Z",
+  "provider_extra": {
+    "invoice": { "invoice_uuid": "…", "invoice_id": "…", "status": "preview" },
+    "billing_history": [
+      { "date": "2026-07-01T06:22:06Z", "type": "Invoice", "description": "Invoice for June 2026",
+        "amount": 186.22, "invoice_uuid": "…" }
+    ]
+  }
 }
 ```
 
+- **First class** (cross-provider; downstream may key on these): `provider`, `account`,
+  `period`, `currency`, `source_granularity`, `line_items`, `totals`, `balance`,
+  `generated_at`.
 - `source_granularity` is `"service"` for DO (invoice/service-level billing), so `resource_id`
   is `null` on every cost line — the report never fabricates resource-level cost attribution
   DO's API doesn't give (**D4**). `region`/`usage_qty`/`usage_unit` are populated only when the
-  provider's billing surfaces them; DO leaves them `null`.
+  provider's billing surfaces them; DO leaves them `null`. Repeated service rows on one invoice
+  aggregate to one line per service, preserving `totals.amount`.
 - `totals.amount` is the period total in `currency` (no conversion — original currency).
+  `balance` is the account-level month-to-date position (cross-provider concept).
+  `generated_at` is the fetch timestamp (UTC).
+- **`provider_extra`** holds the DO-shaped billing provenance — `invoice` (period invoice
+  identity + status; `preview` for the live current month) and `billing_history` (the
+  chronological invoice/payment ledger that seeds MoM context at t3; amounts signed, payments
+  negative). Downstream scripts read cross-provider fields from the top level and treat
+  `provider_extra` as opaque unless they are provider-aware.
 
 **Resource inventory** — `do_inventory_{YYYY-MM}.json`:
 
@@ -182,23 +207,37 @@ mechanical.
   "account": "<account id / email>",
   "period": "2026-07",
   "resources": [
-    { "resource_id": "vol-123", "type": "volume", "state": "available",
+    { "resource_id": "vol-123", "type": "volume", "name": "detached-data-vol",
+      "region": "blr1", "size": "100GiB", "state": "available",
       "created_at": "2026-05-01T00:00:00Z", "last_activity_at": null, "attached_to": null,
       "monthly_cost_estimate": 10.00, "tags": [], "raw_ref": "do://volumes/vol-123" }
-  ]
+  ],
+  "generated_at": "2026-07-27T04:41:53Z"
 }
 ```
 
-- `monthly_cost_estimate` is the per-resource dollar figure (derived from size/type) —
-  where resource-level dollars live (**D4**); it feeds the orphan `monthly_saving_estimate`.
+- Every resource carries, first class: `resource_id`, `type`, `name`, `region`, `size`,
+  `state`, `created_at`, `last_activity_at`, `attached_to`, `monthly_cost_estimate`, `tags`,
+  `raw_ref`.
+- `monthly_cost_estimate` is the per-resource dollar figure — the provider's own price where
+  given (DO droplets carry a real `price_monthly`), else derived from size/type (**D4**); it
+  feeds the orphan `monthly_saving_estimate`.
 - `attached_to` is `null` for an unattached/unassociated resource (the primary orphan signal).
+  For a load balancer that targets backends **by tag**, `attached_to` is `"tag:<name>"` — a
+  tag-targeted LB has backends and must not read as unattached (**B2**). A snapshot's
+  `attached_to` is the source it was taken from; `null` there means the source is gone (the
+  aged-orphan case).
+- `name`, `region`, `size` are the human-facing identity fields — the orphan section shows
+  these so the report is reviewable without opening the DO console; a provider lacking one
+  emits `null`.
 - `raw_ref` (`do://…`) is the evidence-trail pointer back to the source object.
 - `state`, `created_at`, `attached_to`, `last_activity_at`, `tags` are the fields the t2
   heuristics key on — all provider-normalized, so `detect_orphans.py` never touches a DO shape.
+  `last_activity_at` is `null` for every DO resource type (DO exposes no such field), so t2 age
+  rules key on `created_at`, never `last_activity_at`.
 
-**Orphan-heuristic catalog** — the DO-relevant rules, base confidences, and modifiers are
-enumerated inline in **§t2 Scope**; that list is the authoritative catalog for m1 (no external
-doc).
+**Orphan-heuristic catalog** — enumerated inline in **§t2 Scope**; that list is the
+authoritative catalog for m1 (no external doc).
 
 ---
 

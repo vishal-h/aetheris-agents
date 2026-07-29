@@ -114,8 +114,10 @@ two tests.
    providers, and must not key on `provider_extra` generically. Pinned by
    `test_cost_snapshot_top_level_shape_matches_the_frozen_contract`, which asserts the exact
    top-level key set rather than a subset, so a future stray addition fails the suite.
-   §Normalized schemas is being rewritten to match — that doc edit is **pending Vishal's
-   ratified wording** and is the one item not in this commit.
+   §Normalized schemas was rewritten to match and is now the frozen contract; the doc's two
+   JSON blocks were diffed key-for-key against the live emitted files and against the tests'
+   assertions at every nesting level (`doc == emitter == tests`) before the doc landed, so the
+   contract and the code cannot have shipped disagreeing.
 
 ---
 

@@ -1,0 +1,55 @@
+{
+  "_comment": "Crafted (not recorded): degradation input. Four structurally unusable entries (null, non-object, no resource_id, no type), one resource whose created_at cannot be parsed, and one clean orphan. The stage must skip and warn, never crash, and still emit the candidate it can.",
+  "provider": "digitalocean",
+  "account": "aaaaaaaa-1111-2222-3333-444444444444",
+  "period": "2026-07",
+  "resources": [
+    null,
+    "not-a-resource-object",
+    {
+      "type": "volume",
+      "name": "missing-its-id",
+      "attached_to": null,
+      "created_at": "2026-01-01T00:00:00Z",
+      "monthly_cost_estimate": 10.0,
+      "tags": []
+    },
+    {
+      "resource_id": "vol-no-type-1",
+      "name": "missing-its-type",
+      "attached_to": null,
+      "created_at": "2026-01-01T00:00:00Z",
+      "monthly_cost_estimate": 10.0,
+      "tags": []
+    },
+    {
+      "resource_id": "vol-bad-date-1",
+      "type": "volume",
+      "name": "unparseable-created-at",
+      "region": "blr1",
+      "size": "10GiB",
+      "state": "available",
+      "created_at": "yesterday",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 1.0,
+      "tags": [],
+      "raw_ref": "do://volumes/vol-bad-date-1"
+    },
+    {
+      "resource_id": "vol-ok-orphan-1",
+      "type": "volume",
+      "name": "detached-data-vol",
+      "region": "blr1",
+      "size": "100GiB",
+      "state": "available",
+      "created_at": "2026-01-01T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 10.0,
+      "tags": [],
+      "raw_ref": "do://volumes/vol-ok-orphan-1"
+    }
+  ],
+  "generated_at": "2026-07-27T00:00:00Z"
+}

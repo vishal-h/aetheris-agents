@@ -1,0 +1,93 @@
+{
+  "_comment": "Crafted (not recorded): one resource per t2 rule, each past its threshold at ref 2026-07-27. Tag coverage is deliberately low (1/6) so the untagged governance rule stays quiet and the assertions are about the rules alone.",
+  "provider": "digitalocean",
+  "account": "aaaaaaaa-1111-2222-3333-444444444444",
+  "period": "2026-07",
+  "resources": [
+    {
+      "resource_id": "vol-orphan-1",
+      "type": "volume",
+      "name": "detached-data-vol",
+      "region": "blr1",
+      "size": "100GiB",
+      "state": "available",
+      "created_at": "2026-05-01T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 10.0,
+      "tags": [],
+      "raw_ref": "do://volumes/vol-orphan-1"
+    },
+    {
+      "resource_id": "203.0.113.10",
+      "type": "reserved_ip",
+      "name": "203.0.113.10",
+      "region": "blr1",
+      "size": null,
+      "state": "unassigned",
+      "created_at": "2026-07-20T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 4.38,
+      "tags": [],
+      "raw_ref": "do://reserved_ips/203.0.113.10"
+    },
+    {
+      "resource_id": "snap-aged-1",
+      "type": "snapshot",
+      "name": "pre-migration-snapshot",
+      "region": "blr1",
+      "size": "20GiB",
+      "state": "available",
+      "created_at": "2026-03-01T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 1.2,
+      "tags": [],
+      "raw_ref": "do://snapshots/snap-aged-1"
+    },
+    {
+      "resource_id": "lb-idle-1",
+      "type": "load_balancer",
+      "name": "orphaned-lb",
+      "region": "blr1",
+      "size": "lb-small",
+      "state": "active",
+      "created_at": "2026-04-10T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 12.0,
+      "tags": [],
+      "raw_ref": "do://load_balancers/lb-idle-1"
+    },
+    {
+      "resource_id": "drop-stopped-1",
+      "type": "droplet",
+      "name": "old-worker",
+      "region": "blr1",
+      "size": "s-2vcpu-4gb",
+      "state": "off",
+      "created_at": "2026-01-15T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 24.0,
+      "tags": ["env=staging"],
+      "raw_ref": "do://droplets/drop-stopped-1"
+    },
+    {
+      "resource_id": "vol-on-stopped-1",
+      "type": "volume",
+      "name": "old-worker-data",
+      "region": "blr1",
+      "size": "50GiB",
+      "state": "attached",
+      "created_at": "2026-01-15T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": "drop-stopped-1",
+      "monthly_cost_estimate": 5.0,
+      "tags": [],
+      "raw_ref": "do://volumes/vol-on-stopped-1"
+    }
+  ],
+  "generated_at": "2026-07-27T00:00:00Z"
+}

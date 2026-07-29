@@ -559,6 +559,14 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
   the first ticket that makes either path reachable owes it the same two-minute look.
   `Source: t4 review r0, human browser check.`
+- **`STOPPED_STATES` normalisation — the one seam where a provider's own vocabulary reaches
+  shared machinery.** `detect_orphans.py:71` is `STOPPED_STATES = {"off"}  # DO vocabulary`,
+  read by `rule_stopped_droplet_with_attached_storage` (`:218`) and pinned by three tests
+  (`test_detect_orphans.py:172/181/192`) precisely so a second provider cannot widen it
+  silently. Before that provider lands, the **adapter** should emit a common state enum and
+  this constant should shrink to a schema-level value. Raised in
+  `docs/t2-implementation-notes.md:170`; promoted here at m1 close because it gates the
+  fan-out and an implementation-notes file does not travel to the next ticket's session.
 - **Cross-currency aggregation is handled in one place and unhandled in four —
   `compose_report_data.py`.** When the bundles disagree on currency, `service_totals`
   withholds `cost_summary.grand_total`, reports `totals_by_currency` and warns (`:220–236`) —

@@ -170,10 +170,16 @@ decision on whether "no instance carries the tag" is enough evidence to queue. F
 - **`STOPPED_STATES` normalisation.** Before the second provider lands, the *adapter* should
   emit a common state enum and this constant should shrink to a schema-level value. Today it
   is the single documented seam where DO vocabulary reaches shared machinery.
-- **`RECENT_ACTIVITY_WINDOW_DAYS = 14` is a chosen constant, not a parameter.** §t2 asked for
-  the snapshot threshold to be tunable and said nothing about this one, so it stays a
-  documented module constant. If a provider that actually populates `last_activity_at` lands,
-  it likely wants a flag.
+- **`RECENT_ACTIVITY_WINDOW_DAYS = 14` is a chosen constant, not a parameter — and its window
+  is one-sided.** §t2 asked for the snapshot threshold to be tunable and said nothing about
+  this one, so it stays a documented module constant. If a provider that actually populates
+  `last_activity_at` lands, it likely wants a flag. **Bound the window at both ends when that
+  happens:** `modifier_recent_activity` rejects on `age > RECENT_ACTIVITY_WINDOW_DAYS` only, so
+  a `last_activity_at` stamped *after* the reference date yields a negative age, passes the
+  guard, and reads as "recent" — taking the −0.2 it should not. Unreachable on DO (the field is
+  null everywhere) and therefore untested rather than mistested; the fix is `0 <= age <=
+  RECENT_ACTIVITY_WINDOW_DAYS`, landed together with the flag.
+  `Source: t2 review (docs/reviews/m1-cloudcost-t2-review.md), non-blocking forward.`
 - **t1's open item stands:** the live account still carries no genuine orphan
   (§Prerequisites 2), so t5's "≥1 real orphan" done-when still needs one planted. t2's
   detection of it is exercised only against crafted and recorded fixtures until then.

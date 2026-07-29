@@ -365,6 +365,14 @@ merge **N providers** (trivial at N=1). **Persist this run's cost snapshot** int
 
 **Contract refs.** The normalized schemas; the report-data shape the t4 template consumes.
 
+> **The two inputs do not share an envelope.** t1's cost snapshot carries a wall-clock
+> `generated_at`; t2's `orphan_candidates_{period}.json` deliberately does **not** — it is
+> byte-deterministic, carrying only `reference_date` (what the age rules were evaluated
+> against) and `inventory_generated_at` (passed through from the adapter). Intentional and
+> owned, not drift: it makes t2's output diffable across runs. t3 must not assume a uniform
+> envelope across the files it merges, and should decide explicitly which timestamp the report
+> is stamped "as of". `Source: t2 notes §Decisions; confirmed at t2 review.`
+
 **Touches.** `scripts/compose_report_data.py`; `tests/test_compose_report_data.py`;
 `cloudcost/history/.gitkeep`; `.gitignore` updated to exclude `history/*` (real cost data).
 
@@ -491,3 +499,9 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   is a *harness* ticket if we want verify to enforce "never re-execute a delete").
 - Email/Drive delivery, automated monthly scheduling, currency conversion, DuckDB trend
   store.
+- **Bound the recency modifier's window at both ends** (`detect_orphans.py`,
+  `modifier_recent_activity`): today it rejects on `age > RECENT_ACTIVITY_WINDOW_DAYS` only, so
+  a `last_activity_at` in the future relative to the reference date reads as "recent" and takes
+  the −0.2. Unreachable while DO is the only provider (the field is null), so it lands with the
+  first adapter that populates it — together with making the window a parameter.
+  `Source: t2 review (docs/reviews/m1-cloudcost-t2-review.md).`

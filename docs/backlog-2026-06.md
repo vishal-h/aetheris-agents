@@ -2138,6 +2138,23 @@ Found packages with security advisories
 an explicit rationale on this row per the BL-020 accept path; the harness CI
 contract passes with the bumped dependency.
 
+**Status:** Done 2026-07-30 — commit `892b0f7`. `mix.exs:30` now declares
+`{:bandit, "~> 1.12"}`; `mix deps.update bandit` resolved **bandit 1.12.4**, and moved two
+co-resolved deps: `thousand_island` 1.4.3 → 1.5.0, `plug_crypto` 2.1.1 → 2.2.0 (`websock`
+0.5.3, `plug` 1.20.3, `hpax` 1.0.4 unchanged). `mix hex.audit` → **`No retired or security
+advisory packages found`**, exit 0 — verified after the bump, not assumed from the `~> 1.12`
+constraint. Full CI contract green on the bumped tree: `compile --warnings-as-errors`,
+`format --check-formatted`, `credo --strict` (2047 mods/funs, no issues), `dialyzer` (0
+errors), `test` (969 tests, 0 failures, 133 excluded), plus `./scripts/sprint.sh
+playground_api` — the Bandit-served path — green end to end.
+
+> **Duplicate of BL-060**, which filed the same advisory one day earlier from BL-039's gate
+> run; this row's "same class, same ledger" note missed it. Both closed by this commit. The
+> harness has exactly one Bandit call site (`lib/aetheris/api/server.ex:25`,
+> `Bandit.start_link(plug:, scheme:, port:, ip:)`) and no `WebSock` usage at all, so the
+> advisory's fragmented-frame path was never reachable here — a bound on the exposure, not a
+> reason the gate could have been left red.
+
 ---
 
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
@@ -2228,6 +2245,20 @@ tracked-carry clause — named in packets, not re-triaged.
 
 **Done when:** `mix hex.audit` is clean, or the residual advisory has a recorded
 rationale here and the gate's expected-red state is stated with this ref.
+
+**Status:** Done 2026-07-30 — commit `892b0f7`, the same bump that closes **BL-066**, which
+filed this identical advisory a day later (2026-07-27, off m1-cloudcost t1's gate run) without
+noticing this row. BL-060 is the original; keep the fix detail on BL-066's row.
+
+Both of this row's pre-conditions were checked rather than assumed: the advisory **is** fixed in
+the 1.12 line — `mix hex.audit` is clean at the resolved **bandit 1.12.4** — and the
+co-resolution moved `thousand_island` 1.4.3 → 1.5.0 and `plug_crypto` 2.1.1 → 2.2.0, leaving
+`websock`/`plug`/`hpax` where they were. The reachability sentence this row asked for: the
+playground API stays disabled by default and on-demand, and `grep` over `lib/` finds one Bandit
+call site and no `WebSock` usage, so the fragmented-frame path was never exposed.
+
+**The gate is green as of this commit** — the expected-red carry above no longer applies, and
+any packet naming `hex.audit` red against BL-060 or BL-066 is out of date.
 
 ---
 

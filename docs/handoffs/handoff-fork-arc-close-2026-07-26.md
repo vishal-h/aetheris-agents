@@ -39,6 +39,9 @@ push it and the two repos are level again. `drift_check --strict`: **0 FAIL, exi
 (`915d582` / `ae0c510`), `docs/aetheris/determinism-contract.md` (`dd12dbb` / `1ab24d8`) — all
 named in the r1/r2 packets; they clear at the next export boundary, which is human-owned.
 `hex.audit` is **expected-red on BL-060** (upstream bandit advisory), named not re-triaged.
+<!-- Superseded 2026-07-30: green as of harness `892b0f7` (bandit 1.12.4). BL-060 and its
+     duplicate BL-066 are both closed; there is no standing expected-red carry for this gate. -->
+
 **Verify via relay as your first move, and read both repos' `CLAUDE.md` learning sections before
 your first edit.** Recover specifics from repos + review files, not from this handoff.
 

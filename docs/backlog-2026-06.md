@@ -2106,6 +2106,28 @@ somewhere a regen cannot reach), so the restore-from-HEAD ritual is no longer ne
 runbook's "Full regen loses curation" limitation is removed rather than documented; and the
 eduloka question is resolved either way.
 
+**Status:** Done 2026-07-30 — commits `e60bcfd` (agents) + `fd9ac48` (harness). `docs/capability-matrix-overrides.json` is the
+durable home: committed, keyed by use case → `agents`/`scripts` → row key → field, merged by
+`scripts/assemble_matrix.py` **before** anything is counted, so claimed == counted still holds
+and an overridden Tools cell flows into the unique-tools line and the overlap tables like any
+other. Seeded with the twelve known-fragile cells (eleven docbuilder m3/m4/m5/m6/rig-p9 purpose
+annotations + provenance `search_agent.exs`'s prose Tools cell — the BL-067 §1e leak).
+
+*Demonstrated, not asserted:* a full nine-agent regen ran and the section agents reworded **all
+twelve** curated cells (every milestone marker gone), yet the emitted matrix is byte-identical to
+`HEAD` in each of them — the overrides were load-bearing on every one, and the matrix committed
+here is the regen's own output, with no restore-from-HEAD anywhere. An override matching no row
+**fails the run** (exit 1), so a renamed script can no longer drop its curation quietly. The
+runbook's "Full regen loses curation" limitation is deleted and replaced by a **Curated cells**
+section.
+
+**Eduloka: wired, not deleted** — `eduloka/` has a real surface (`eduloka_orchestrator.exs` +
+14 scripts), so it joined `SECTIONS`, sprint.sh and the matrix (`eduloka 1 / 14`; totals 26/67 →
+27/81). Wiring it exposed why it had never appeared: `max_steps: 15` against ~18 needed tool
+calls, so its first live run ended `max_steps_reached` before writing its section. Raised to 30,
+matching the scaling the other agents already use (provenance 16 scripts → 30, docbuilder 24 →
+50). It had never been run since the day it was written.
+
 ---
 
 ### BL-066 — Bump `bandit` to `~> 1.12` (hex.audit HIGH, EEF-CVE-2026-65623) (#TBD)

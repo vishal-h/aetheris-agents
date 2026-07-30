@@ -2040,16 +2040,71 @@ Not fixed at t5: the fix needs a deterministic generator, which means giving the
 numbers to the verified values and said so in its packet; the tools line and overlap block were
 left as the regen produced them.
 
-**Fix:** a `scripts/` generator that parses `docs/.sections/*.md` and emits the **entire
-derived block** — Summary table, unique-tools line, and Overlap Report — to a file; the
-assembler pastes it verbatim and derives nothing. Same shape as every other "derived values
-come from a script" fix in this repo. The assembler's remaining job is concatenation, which is
-what it is actually good at.
+**Fix:** `scripts/assemble_matrix.py` does the **whole assemble** — reads `docs/.sections/*.md`
+in an explicit `SECTIONS` order, concatenates them verbatim, computes the entire derived block
+(Summary table, unique-tools line, Overlap Report) from the sections' own table rows, and writes
+`docs/capability-matrix.md`. `agents/capability_matrix_assemble.exs` is retired; sprint.sh's
+`capability_matrix` case calls the script where it called the agent.
+
+> Widened from "the generator emits the derived block to a file, the assembler pastes it
+> verbatim" (this row's original Fix) because that leaves an LLM transcribing a counted block —
+> the same fallible actor the fix exists to remove, and the m2a blob round-trip says it will
+> improvise. Concatenation is not a task worth an LLM either.
 
 **Done when:** the Summary counts, the unique-tools line and the Overlap Report are all
-script-produced; a regen is byte-stable for unchanged sections; and a test asserts each derived
-value against the emitted tables (claimed totals == counted rows, claimed tools == union of the
-tool cells, claimed overlaps == recomputed overlaps).
+script-produced with no LLM in the assemble step; a regen is byte-stable for unchanged sections;
+and a test **per derived value** asserts claimed == counted against the emitted tables (per-section
+and total agent/script counts, claimed tools == union of the tool cells, claimed tool-set and
+script-name overlaps == recomputed overlaps).
+
+**Status:** Done 2026-07-30 — `scripts/assemble_matrix.py` + `tests/test_assemble_matrix.py`
+(24 tests, each derived-value check mutation-verified), `agents/capability_matrix_assemble.exs`
+deleted, `aetheris/scripts/sprint.sh` `capability_matrix` case calls the script. Commits
+`de685fe` (agents) + `27bcd94` (harness). The regen corrected three Overlap Report defects the LLM had left standing (the
+5-tool group listed 4 of 7 agents, the `write_blackboard, send_message, run_command` group was
+missing entirely, and `docbuilder_orchestrator` was absent from the `run_command` group) — none
+of which had ever been checked. Notes: `docs/milestones/bl-067-implementation-notes.md`.
+
+> The matrix committed with this ticket was assembled over sections **restored from
+> `HEAD:docs/capability-matrix.md`**, because a full section-agent regen still destroys curated
+> prose (BL-068). That restore is a stopgap ritual; BL-068 retires it.
+
+---
+
+### BL-068 — A full capability-matrix regen destroys hand-curated section content, because `docs/.sections/` is gitignored (#TBD)
+**Size:** S · **Priority:** next · **Section:** aetheris-agents (`agents/capability_matrix_{uc}.exs`, `docs/.sections/`)
+
+The section files are the only home for the matrix's curated prose, and they are gitignored.
+Re-running all eight section agents therefore rewrites every section — reordering rows,
+rewording purposes, and dropping the hand-added m3/m5/m6 provenance annotations in the
+docbuilder Scripts table. m1-cloudcost t5 measured it: a 121-line diff for a one-section
+addition, against 1–6 line diffs for the three prior matrix commits, i.e. previous sessions had
+been regenerating only the changed section. That practice is correct, undocumented, and
+unenforced — the artifact's durability rests on each session remembering it.
+
+The current workaround is a manual ritual: reconstruct the sections from
+`HEAD:docs/capability-matrix.md`, then re-run the assembler alone. BL-067 used it (its packet
+says so), and it is the reason a full sprint regen is discarded rather than committed.
+
+**Related:** `agents/capability_matrix_eduloka.exs` exists but is wired into neither sprint.sh's
+`capability_matrix` case nor `SECTIONS` in `scripts/assemble_matrix.py`, and there is no
+`docs/.sections/eduloka.md`; eduloka has never appeared in the matrix. Decide whether it joins
+the matrix or the agent is deleted — either way it stops being an unwired ninth file.
+
+**Fix direction:** give the curation a home the section agents cannot clobber — a committed
+overrides file (`docs/capability-matrix-overrides.md` or JSON, keyed by use case + script name)
+that `assemble_matrix.py` merges over the generated purpose cells, or a preserve step that
+re-applies curated cells after a regen. The overrides route is preferred: it is deterministic,
+diffable, and the assembler is already the single place every section passes through.
+
+Raised at m1-cloudcost t5 (implementation notes, "`docs/.sections/` is gitignored, so a full
+regen is destructive"); filed as a row at BL-067 per *a deferred finding gets a backlog row in
+the same round it's deferred* — t5 left it as prose, which files nothing.
+
+**Done when:** a full eight-agent regen preserves curated purpose text (or the curation lives
+somewhere a regen cannot reach), so the restore-from-HEAD ritual is no longer needed; the
+runbook's "Full regen loses curation" limitation is removed rather than documented; and the
+eduloka question is resolved either way.
 
 ---
 

@@ -1,0 +1,58 @@
+{
+  "_comment": [
+    "Curated cells for docs/capability-matrix.md (BL-068). This file is COMMITTED; the",
+    "section files in docs/.sections/ are gitignored scratch that the section agents",
+    "rewrite on every regen. scripts/assemble_matrix.py merges these over the generated",
+    "cells BEFORE counting, so the emitted tables and the derived block still agree.",
+    "Shape: {use case key: {agents|scripts: {row key: {field: text}}}}.",
+    "  agents  row key = agent file name, or 'file.exs::Label' when one file",
+    "          contributes several rows to a section; fields: label, tools",
+    "  scripts row key = script file name; field: purpose",
+    "An override matching no row FAILS the run (exit 1) — a renamed script must not",
+    "silently drop its curation, which is the failure this file exists to prevent."
+  ],
+  "provenance": {
+    "agents": {
+      "search_agent.exs": {
+        "tools": "MCP servers (corpus_search, lattice)"
+      }
+    }
+  },
+  "docbuilder": {
+    "scripts": {
+      "generate_pdf.py": {
+        "purpose": "Render document spec to PDF in structured or narrative mode with optional Markdown template support. Jinja2 path added in m6 (`has_jinja: true`)."
+      },
+      "render_template.py": {
+        "purpose": "Render Markdown narrative template with variable substitution and sheet table partials into HTML. Optional fields render as empty string when absent (m5). (Deprecated in m6 — use `generate_html.py` for new doc types; kept for backward compatibility.)"
+      },
+      "generate_html.py": {
+        "purpose": "Render a Jinja2 `.html.j2` template with a context dict to HTML; absent vars render empty (`jinja2.Undefined`), autoescaping on. Replaces `render_template.py` for new doc types (m6)."
+      },
+      "generate_docx_from_html.py": {
+        "purpose": "Convert an HTML file to DOCX via Pandoc using a Bitloka reference doc (`reference.docx`) for branding and styles (m6)."
+      },
+      "run_log_writer.py": {
+        "purpose": "Append a run entry (tenant, doc_type, run_id, timestamp, context, outputs) to the run log; idempotent by run_id (m3)."
+      },
+      "resolve_last_run.py": {
+        "purpose": "Resolve \"same as last month\" from the run log: bump date to month-end and increment the invoice number with FY-rolling sequence (m3)."
+      },
+      "chain_docbuilder.py": {
+        "purpose": "Chain context_builder → orchestrator as two sequential top-level mix runs; emits the orchestrator protocol (rig-p9 — the Rig Docbuilder panel entry point)."
+      },
+      "validate_fields.py": {
+        "purpose": "Validate and normalise a raw extracted-field JSON against the context schema; exits 1 with a structured error payload if required fields are missing or values are malformed (m4)."
+      },
+      "_table_html.py": {
+        "purpose": "Shared helper: HTML table markup for the PDF renderers (generate_pdf + render_template)."
+      },
+      "_drive.py": {
+        "purpose": "Shared helper: Google Drive auth, folder navigation, download/upload (fetch_template, list_templates, upload_output)."
+      },
+      "_format.py": {
+        "purpose": "Shared display formatter for cell values: currency → $1,234.56, number → thousands-separated with no trailing zeros. Used by the text renderers (generate_docx, _table_html)."
+      }
+    }
+  }
+}

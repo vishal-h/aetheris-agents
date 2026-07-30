@@ -11,12 +11,33 @@ whose tool sets match in different cell orders — so the overlap assertions can
 pass vacuously the way a "No overlaps found" document always would.
 """
 
+import json
 import re
 
 import pytest
 
 import assemble_matrix
-from assemble_matrix import SECTIONS, assemble, parse_tools
+from assemble_matrix import SECTIONS, parse_tools
+from assemble_matrix import assemble as _assemble
+
+
+def assemble(sections_dir, output, overrides=None):
+    """Assemble with no curated overrides unless a test supplies its own.
+
+    The real overrides file (docs/capability-matrix-overrides.json) is keyed to the
+    real sections, so it must not leak into fixture runs — every one of its keys
+    would be unmatched.
+    """
+    if overrides is None:
+        overrides = sections_dir.parent / "no-overrides.json"
+        overrides.write_text("{}", encoding="utf-8")
+    return _assemble(sections_dir, output, overrides)
+
+
+def _overrides_file(tmp_path, payload, name="overrides.json"):
+    path = tmp_path / name
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
 
 # --------------------------------------------------------------------------- #
 # Fixture builders                                                             #
@@ -357,6 +378,7 @@ def test_identical_tool_sets_list_every_sharing_agent(overlapping_matrix):
         "email_orchestrator (email)",
         "docbuilder_orchestrator (docbuilder)",
         "cloudcost_orchestrator (cloudcost)",
+        "eduloka_orchestrator (eduloka)",
     ]
 
 
@@ -494,16 +516,16 @@ def test_missing_section_degrades_to_partial(tmp_path, capsys):
 
 def test_unknown_section_file_is_reported_not_silently_dropped(tmp_path, capsys):
     sections = _write_sections(tmp_path / "sections")
-    (sections / "eduloka.md").write_text(_section_md("Eduloka", [], []), encoding="utf-8")
+    (sections / "nosuchuc.md").write_text(_section_md("Nosuchuc", [], []), encoding="utf-8")
     output = tmp_path / "matrix.md"
 
     code = assemble(sections, output)
     stderr = capsys.readouterr().err
 
     assert code == 0
-    assert "eduloka.md" in stderr
+    assert "nosuchuc.md" in stderr
     assert "not in SECTIONS" in stderr
-    assert "Eduloka" not in output.read_text(encoding="utf-8")
+    assert "Nosuchuc" not in output.read_text(encoding="utf-8")
 
 
 def test_section_without_tables_warns_and_counts_zero(tmp_path, capsys):
@@ -516,6 +538,264 @@ def test_section_without_tables_warns_and_counts_zero(tmp_path, capsys):
     assert code == 0
     assert "no rows found under '### Agents'" in stderr
     assert _summary_rows(output.read_text(encoding="utf-8"))["email"] == (0, 0)
+
+
+# --------------------------------------------------------------------------- #
+# Curated overrides (BL-068)                                                    #
+# --------------------------------------------------------------------------- #
+
+
+def test_override_replaces_the_generated_cell(tmp_path):
+    sections = _write_sections(
+        tmp_path / "sections",
+        {
+            "docbuilder": _section_md(
+                "docbuilder",
+                [("docbuilder_orchestrator.exs", "Docbuilder Orchestrator", "`run_command`")],
+                [("generate_pdf.py", "Render document spec to PDF.")],
+            )
+        },
+    )
+    curated = "Render document spec to PDF. Jinja2 path added in m6 (`has_jinja: true`)."
+    overrides = _overrides_file(tmp_path, {"docbuilder": {"scripts": {"generate_pdf.py": {"purpose": curated}}}})
+    output = tmp_path / "matrix.md"
+
+    assert assemble(sections, output, overrides) == 0
+    document = output.read_text(encoding="utf-8")
+
+    assert f"| generate_pdf.py | {curated} |" in document
+    assert "| generate_pdf.py | Render document spec to PDF. |" not in document
+
+
+def test_rows_without_an_override_are_untouched(tmp_path):
+    generated = _section_md(
+        "docbuilder",
+        [("docbuilder_orchestrator.exs", "Docbuilder Orchestrator", "`run_command`")],
+        [("generate_pdf.py", "Curated later."), ("fetch_data.py", "Fetch and parse data sources.")],
+    )
+    sections = _write_sections(tmp_path / "sections", {"docbuilder": generated})
+    overrides = _overrides_file(tmp_path, {"docbuilder": {"scripts": {"generate_pdf.py": {"purpose": "Curated."}}}})
+    output = tmp_path / "matrix.md"
+
+    assert assemble(sections, output, overrides) == 0
+    document = output.read_text(encoding="utf-8")
+
+    assert "| fetch_data.py | Fetch and parse data sources. |" in document
+    assert "| docbuilder_orchestrator.exs | Docbuilder Orchestrator | `run_command` |" in document
+
+
+def test_tools_override_flows_into_unique_tools_and_overlaps(tmp_path):
+    """The provenance MCP cell: the §1e leak BL-068 was filed for."""
+    generated = _section_md(
+        "provenance",
+        [
+            ("search_agent.exs", "Provenance Search Agent", "(MCP: corpus_search, lattice)"),
+            ("scan_orchestrator.exs", "Provenance Scan Orchestrator", "`run_command`"),
+        ],
+        [("init_db.py", "Initialise the schema.")],
+    )
+    curated = "MCP servers (corpus_search, lattice)"
+    sections = _write_sections(tmp_path / "sections", {"provenance": generated})
+    overrides = _overrides_file(
+        tmp_path, {"provenance": {"agents": {"search_agent.exs": {"tools": curated}}}}
+    )
+    output = tmp_path / "matrix.md"
+
+    assert assemble(sections, output, overrides) == 0
+    document = output.read_text(encoding="utf-8")
+
+    assert curated in _claimed_tools(document)
+    assert "(MCP: corpus_search, lattice)" not in document
+    # and the derived block still agrees with the emitted tables
+    counted = []
+    for table in _use_case_tables(document).values():
+        for cell in table["agents"]:
+            for tool in parse_tools(cell):
+                if tool not in counted:
+                    counted.append(tool)
+    assert _claimed_tools(document) == counted
+
+
+def test_override_changes_tool_set_grouping(tmp_path):
+    """A curated tools cell is counted, not decorative: it moves an overlap group."""
+    sections = _write_sections(
+        tmp_path / "sections",
+        {
+            "payslip": _section_md(
+                "payslip",
+                [("payslip_orchestrator.exs", "Payslip Orchestrator", "`read_file`")],
+                [("payslip_compute.py", "Compute.")],
+            )
+        },
+    )
+    output = tmp_path / "matrix.md"
+
+    assemble(sections, output)
+    before = _overlap_table(output.read_text(encoding="utf-8"), "### Identical tool sets")
+    assert not any("payslip_orchestrator (payslip)" in agents for _, agents in before)
+
+    overrides = _overrides_file(
+        tmp_path, {"payslip": {"agents": {"payslip_orchestrator.exs": {"tools": "`run_command`"}}}}
+    )
+    assemble(sections, output, overrides)
+    rows = _overlap_table(output.read_text(encoding="utf-8"), "### Identical tool sets")
+
+    assert rows and "payslip_orchestrator (payslip)" in rows[0][1]
+
+
+def test_override_key_disambiguates_multi_row_agent_files(tmp_path):
+    generated = _section_md(
+        "api_tenant",
+        [
+            ("at1cmd.exs", "at1cmd — Dispatcher", "`send_message`"),
+            ("at1cmd.exs", "cot1 — Gateway", "`read_blackboard`"),
+        ],
+        [("parse_csv.py", "Parse.")],
+    )
+    sections = _write_sections(tmp_path / "sections", {"api_tenant": generated})
+    overrides = _overrides_file(
+        tmp_path,
+        {"api_tenant": {"agents": {"at1cmd.exs::cot1 — Gateway": {"tools": "`read_blackboard`, `wait_for_event`"}}}},
+    )
+    output = tmp_path / "matrix.md"
+
+    assert assemble(sections, output, overrides) == 0
+    document = output.read_text(encoding="utf-8")
+
+    assert "| at1cmd.exs | at1cmd — Dispatcher | `send_message` |" in document
+    assert "| at1cmd.exs | cot1 — Gateway | `read_blackboard`, `wait_for_event` |" in document
+
+
+def test_override_matching_no_row_fails_the_run(tmp_path, capsys):
+    """A renamed script must not silently drop its curation — that is BL-068 itself."""
+    sections = _write_sections(tmp_path / "sections")
+    overrides = _overrides_file(
+        tmp_path, {"docbuilder": {"scripts": {"renamed_away.py": {"purpose": "Curated."}}}}
+    )
+    output = tmp_path / "matrix.md"
+
+    code = assemble(sections, output, overrides)
+    stderr = capsys.readouterr().err
+
+    assert code == 1
+    assert "docbuilder.renamed_away.py" in stderr
+    assert "matched no row" in stderr
+
+
+def test_overrides_for_a_missing_section_are_not_reported_as_stale(tmp_path, capsys):
+    sections = _write_sections(tmp_path / "sections", omit=("docbuilder",))
+    overrides = _overrides_file(
+        tmp_path, {"docbuilder": {"scripts": {"generate_pdf.py": {"purpose": "Curated."}}}}
+    )
+    output = tmp_path / "matrix.md"
+
+    code = assemble(sections, output, overrides)
+    stderr = capsys.readouterr().err
+
+    assert code == 1  # partial matrix, the missing section
+    assert "matched no row" not in stderr
+
+
+def test_unreadable_overrides_file_fails_rather_than_dropping_all_curation(tmp_path, capsys):
+    sections = _write_sections(tmp_path / "sections")
+    broken = tmp_path / "broken.json"
+    broken.write_text("{not json", encoding="utf-8")
+    output = tmp_path / "matrix.md"
+
+    code = assemble(sections, output, broken)
+    stderr = capsys.readouterr().err
+
+    assert code == 1
+    assert "not valid JSON" in stderr
+
+
+def test_absent_overrides_file_warns_and_assembles(tmp_path, capsys):
+    sections = _write_sections(tmp_path / "sections")
+    output = tmp_path / "matrix.md"
+
+    code = assemble(sections, output, tmp_path / "nope.json")
+    stderr = capsys.readouterr().err
+
+    assert code == 0
+    assert "overrides file missing" in stderr
+
+
+def test_override_section_outside_sections_is_reported(tmp_path, capsys):
+    sections = _write_sections(tmp_path / "sections")
+    overrides = _overrides_file(tmp_path, {"nosuchuc": {"scripts": {"x.py": {"purpose": "y"}}}})
+    output = tmp_path / "matrix.md"
+
+    code = assemble(sections, output, overrides)
+    stderr = capsys.readouterr().err
+
+    assert code == 0
+    assert "override section not in SECTIONS, ignored: nosuchuc" in stderr
+
+
+def test_comment_keys_are_not_reported_as_unknown_sections(tmp_path, capsys):
+    sections = _write_sections(tmp_path / "sections")
+    overrides = _overrides_file(tmp_path, {"_comment": ["docs for humans"]})
+    output = tmp_path / "matrix.md"
+
+    assert assemble(sections, output, overrides) == 0
+    assert "not in SECTIONS" not in capsys.readouterr().err
+
+
+def test_counts_still_claimed_equals_counted_with_overrides(tmp_path):
+    """Overrides apply before counting, so the BL-067 invariant is untouched."""
+    sections = _write_sections(tmp_path / "sections", OVERLAPPING)
+    overrides = _overrides_file(
+        tmp_path,
+        {
+            "provenance": {"agents": {"search_agent.exs": {"tools": "MCP servers (corpus_search, lattice)"}}},
+            "payslip": {"scripts": {"shared.py": {"purpose": "Curated purpose."}}},
+        },
+    )
+    output = tmp_path / "matrix.md"
+    assemble(sections, output, overrides)
+    document = output.read_text(encoding="utf-8")
+
+    claimed = _summary_rows(document)
+    tables = _use_case_tables(document)
+    for title, table in tables.items():
+        assert claimed[_label_for(title)] == (len(table["agents"]), len(table["scripts"])), title
+    assert claimed["Total"] == (
+        sum(len(t["agents"]) for t in tables.values()),
+        sum(len(t["scripts"]) for t in tables.values()),
+    )
+
+
+def test_overrides_are_byte_stable(tmp_path):
+    sections = _write_sections(tmp_path / "sections", OVERLAPPING)
+    overrides = _overrides_file(
+        tmp_path, {"payslip": {"scripts": {"shared.py": {"purpose": "Curated purpose."}}}}
+    )
+    first, second = tmp_path / "first.md", tmp_path / "second.md"
+
+    assemble(sections, first, overrides)
+    assemble(sections, second, overrides)
+
+    assert first.read_bytes() == second.read_bytes()
+
+
+def test_repo_overrides_file_is_wellformed():
+    """The committed overrides file parses and uses only known section keys/fields."""
+    import pathlib
+
+    payload = json.loads(
+        (pathlib.Path(__file__).parent.parent / "docs" / "capability-matrix-overrides.json").read_text()
+    )
+    keys = {key for key, _ in SECTIONS}
+
+    for section, entry in payload.items():
+        if section.startswith("_"):
+            continue
+        assert section in keys, section
+        assert set(entry) <= {"agents", "scripts"}, section
+        for fields in entry.get("agents", {}).values():
+            assert set(fields) <= {"label", "tools"}
+        for fields in entry.get("scripts", {}).values():
+            assert set(fields) <= {"purpose"}
 
 
 def test_warnings_do_not_leak_between_runs(tmp_path):

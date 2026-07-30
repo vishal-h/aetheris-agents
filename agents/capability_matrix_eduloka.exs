@@ -19,7 +19,10 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   label:            "cap-matrix: eduloka",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,
-  max_steps:        15,
+  # 1 agent + 14 scripts is ~18 tool calls; the default 15 ended the run at
+  # max_steps_reached before Step 5 wrote the section (BL-068, first live run).
+  # Same scaling as provenance (16 scripts / 30) and docbuilder (24 / 50).
+  max_steps:        30,
   context_strategy: :full,
   tools:            ["list_dir", "read_file", "write_file"],
   system_prompt:    """

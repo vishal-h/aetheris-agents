@@ -17,18 +17,24 @@ Derived values and their rules:
                           groups of >= 2, largest group first
   Script name overlaps  — a script row name appearing in more than one section
 
-Section content is pasted verbatim; only the derived block is generated.
+Section content is pasted verbatim except where a curated override replaces a cell
+(BL-068). `docs/capability-matrix-overrides.json` is the durable home for hand-written
+text the section agents would otherwise reword away — it is committed, the sections are
+not. Overrides are merged into the section's own table rows *before* anything is counted,
+so the emitted table and the derived block still agree. An override that matches no row
+fails the run rather than silently dropping the curation it was written to protect.
 
 Usage:
-  python3 scripts/assemble_matrix.py [--sections-dir DIR] [--output FILE]
+  python3 scripts/assemble_matrix.py [--sections-dir DIR] [--output FILE] [--overrides FILE]
 
 Exit codes:
-  0 — matrix written from a complete set of sections
-  1 — matrix written but partial (a section file was missing), or the output
-      could not be written
+  0 — matrix written from a complete set of sections, every override applied
+  1 — matrix written but partial (a section file was missing), an override matched
+      no row, or the output could not be written
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -37,10 +43,11 @@ from pathlib import Path
 # Repo layout                                                                  #
 # --------------------------------------------------------------------------- #
 
-SCRIPT_DIR   = Path(__file__).parent.resolve()
-REPO_ROOT    = SCRIPT_DIR.parent
-SECTIONS_DIR = REPO_ROOT / "docs" / ".sections"
-OUTPUT_MD    = REPO_ROOT / "docs" / "capability-matrix.md"
+SCRIPT_DIR    = Path(__file__).parent.resolve()
+REPO_ROOT     = SCRIPT_DIR.parent
+SECTIONS_DIR  = REPO_ROOT / "docs" / ".sections"
+OUTPUT_MD     = REPO_ROOT / "docs" / "capability-matrix.md"
+OVERRIDES_JSON = REPO_ROOT / "docs" / "capability-matrix-overrides.json"
 
 # Explicit section order — NOT directory order. (key, summary-table label)
 SECTIONS = [
@@ -52,6 +59,7 @@ SECTIONS = [
     ("provenance",  "provenance"),
     ("docbuilder",  "docbuilder"),
     ("cloudcost",   "cloudcost"),
+    ("eduloka",     "eduloka"),
 ]
 
 TITLE       = "# Aetheris-Agents — Capability Matrix"
@@ -76,18 +84,19 @@ def _warn(message: str) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def _table_rows(text: str, heading: str) -> list[list[str]]:
-    """Return the data rows of the markdown table under `heading`.
+def _table_rows(lines: list[str], heading: str) -> list[tuple[int, list[str]]]:
+    """Return `(line index, cells)` for the data rows of the table under `heading`.
 
     A row is every pipe line after the `|---|` separator, up to the first line
     that is neither blank nor a pipe line. Cells are stripped; leading/trailing
-    empty cells from the pipe delimiters are dropped.
+    empty cells from the pipe delimiters are dropped. The line index is what lets
+    a curated override replace a cell in place (see `apply_overrides`).
     """
-    rows: list[list[str]] = []
+    rows: list[tuple[int, list[str]]] = []
     seen_heading = False
     seen_separator = False
 
-    for line in text.splitlines():
+    for index, line in enumerate(lines):
         stripped = line.strip()
 
         if stripped.startswith("#"):
@@ -114,7 +123,7 @@ def _table_rows(text: str, heading: str) -> list[list[str]]:
                 seen_separator = True
             continue
 
-        rows.append(cells)
+        rows.append((index, cells))
 
     return rows
 
@@ -135,8 +144,10 @@ def parse_tools(cell: str) -> list[str]:
 
 def parse_section(key: str, label: str, text: str) -> dict:
     """Parse one section file into its agent and script rows."""
-    agent_rows  = _table_rows(text, "### Agents")
-    script_rows = _table_rows(text, "### Scripts")
+    lines = text.rstrip().splitlines()
+
+    agent_rows  = _table_rows(lines, "### Agents")
+    script_rows = _table_rows(lines, "### Scripts")
 
     if not agent_rows:
         _warn(f"{key}: no rows found under '### Agents'")
@@ -145,18 +156,22 @@ def parse_section(key: str, label: str, text: str) -> dict:
 
     agents = [
         {
-            "file":  row[0],
-            "label": row[1] if len(row) > 1 else "",
-            "tools": parse_tools(row[2] if len(row) > 2 else ""),
+            "line":  index,
+            "cells": cells,
+            "file":  cells[0],
+            "label": cells[1] if len(cells) > 1 else "",
+            "tools": parse_tools(cells[2] if len(cells) > 2 else ""),
         }
-        for row in agent_rows
+        for index, cells in agent_rows
     ]
-    scripts = [{"name": row[0]} for row in script_rows]
+    scripts = [
+        {"line": index, "cells": cells, "name": cells[0]} for index, cells in script_rows
+    ]
 
     return {
         "key":     key,
         "label":   label,
-        "text":    text.rstrip() + "\n",
+        "lines":   lines,
         "agents":  agents,
         "scripts": scripts,
         "present": True,
@@ -175,7 +190,7 @@ def load_sections(sections_dir: Path) -> list[dict]:
                 {
                     "key":     key,
                     "label":   label,
-                    "text":    f"## {label}\n\n_Section not available._\n",
+                    "lines":   [f"## {label}", "", "_Section not available._"],
                     "agents":  [],
                     "scripts": [],
                     "present": False,
@@ -191,6 +206,83 @@ def load_sections(sections_dir: Path) -> list[dict]:
                 _warn(f"section file not in SECTIONS, ignored: {sections_dir / extra}")
 
     return loaded
+
+
+# --------------------------------------------------------------------------- #
+# Curated overrides — applied BEFORE anything is counted                       #
+# --------------------------------------------------------------------------- #
+
+
+def load_overrides(path: Path) -> dict | None:
+    """Load the curated-cell overrides.
+
+    Returns `{}` when the file is absent (a repo may legitimately curate nothing) and
+    `None` when it is present but unreadable — that case drops *every* override at once,
+    which is the failure this file exists to prevent, so the caller fails the run.
+    """
+    if not path.is_file():
+        _warn(f"overrides file missing: {path} — sections used exactly as generated")
+        return {}
+
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        _warn(f"overrides file is not valid JSON ({path}): {exc} — all curation dropped")
+        return None
+
+
+def _row_line(cells: list[str]) -> str:
+    return "| " + " | ".join(cells) + " |"
+
+
+def _apply_cell(row: dict, lines: list[str], column: int, value: str) -> None:
+    """Replace one cell of a parsed row, in the row's own source line."""
+    cells = list(row["cells"])
+    while len(cells) <= column:
+        cells.append("")
+    cells[column] = value
+    row["cells"] = cells
+    lines[row["line"]] = _row_line(cells)
+
+
+def apply_overrides(section: dict, overrides: dict) -> list[str]:
+    """Merge curated cells over the generated ones. Returns unmatched override keys.
+
+    Overrides are applied to the section's own table rows *before* any derived value
+    is computed, so the emitted table and the derived block still agree — claimed ==
+    counted holds exactly as it did without overrides.
+
+    Agent keys are the agent file name, or `file::label` when one file contributes
+    several rows to a section (an OrbConfig with several RunConfigs).
+    """
+    entry = overrides.get(section["key"], {})
+    agent_overrides  = entry.get("agents", {})
+    script_overrides = entry.get("scripts", {})
+    matched: set[str] = set()
+
+    for agent in section["agents"]:
+        for key in (f"{agent['file']}::{agent['label']}", agent["file"]):
+            if key not in agent_overrides:
+                continue
+            matched.add(key)
+            fields = agent_overrides[key]
+            if "label" in fields:
+                _apply_cell(agent, section["lines"], 1, fields["label"])
+                agent["label"] = fields["label"]
+            if "tools" in fields:
+                _apply_cell(agent, section["lines"], 2, fields["tools"])
+                agent["tools"] = parse_tools(fields["tools"])
+            break
+
+    for script in section["scripts"]:
+        fields = script_overrides.get(script["name"])
+        if fields is None:
+            continue
+        matched.add(script["name"])
+        if "purpose" in fields:
+            _apply_cell(script, section["lines"], 1, fields["purpose"])
+
+    return sorted((set(agent_overrides) | set(script_overrides)) - matched)
 
 
 # --------------------------------------------------------------------------- #
@@ -286,7 +378,7 @@ def render_matrix(sections: list[dict]) -> str:
     parts = [TITLE, "", GENERATED_BY, ""]
 
     for section in sections:
-        parts += ["---", "", section["text"].rstrip(), ""]
+        parts += ["---", "", "\n".join(section["lines"]).rstrip(), ""]
 
     parts += ["---", "", "## Overlap Report", "", "### Script name overlaps", ""]
 
@@ -328,11 +420,34 @@ def render_matrix(sections: list[dict]) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def assemble(sections_dir: Path, output: Path) -> int:
+def assemble(sections_dir: Path, output: Path, overrides_path: Path = OVERRIDES_JSON) -> int:
     """Assemble the matrix and write it. Returns the process exit code."""
     WARNINGS.clear()
 
-    sections = load_sections(sections_dir)
+    sections  = load_sections(sections_dir)
+    overrides = load_overrides(overrides_path)
+    unreadable_overrides = overrides is None
+    overrides = overrides or {}
+
+    unmatched: list[str] = []
+    applied = 0
+
+    for section in sections:
+        if not section["present"]:
+            continue  # already reported as missing; its overrides are not "stale"
+        entry  = overrides.get(section["key"], {})
+        offered = len(entry.get("agents", {})) + len(entry.get("scripts", {}))
+        stale  = apply_overrides(section, overrides)
+        unmatched += [f"{section['key']}.{key}" for key in stale]
+        applied += offered - len(stale)
+
+    for key in unmatched:
+        _warn(f"override matches no row: {key} — curated text absent from the matrix")
+
+    known = {key for key, _ in SECTIONS}
+    for key in sorted(k for k in overrides if k not in known and not k.startswith("_")):
+        _warn(f"override section not in SECTIONS, ignored: {key}")
+
     document = render_matrix(sections)
 
     try:
@@ -346,11 +461,23 @@ def assemble(sections_dir: Path, output: Path) -> int:
 
     print(
         f"Wrote {output} — {len(sections) - len(missing)}/{len(sections)} sections, "
-        f"{total_agents} agents, {total_scripts} scripts"
+        f"{total_agents} agents, {total_scripts} scripts, {applied} curated override(s) applied"
     )
 
     if missing:
         print(f"[FAIL] partial matrix — missing section(s): {', '.join(missing)}", file=sys.stderr)
+        return 1
+
+    if unmatched:
+        print(
+            f"[FAIL] {len(unmatched)} override(s) matched no row — curation silently dropped: "
+            f"{', '.join(unmatched)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if unreadable_overrides:
+        print(f"[FAIL] unreadable overrides file: {overrides_path}", file=sys.stderr)
         return 1
 
     return 0
@@ -364,9 +491,12 @@ def main() -> int:
         "--sections-dir", type=Path, default=SECTIONS_DIR, help="directory of {uc}.md section files"
     )
     parser.add_argument("--output", type=Path, default=OUTPUT_MD, help="matrix file to write")
+    parser.add_argument(
+        "--overrides", type=Path, default=OVERRIDES_JSON, help="curated-cell overrides JSON"
+    )
     args = parser.parse_args()
 
-    return assemble(args.sections_dir, args.output)
+    return assemble(args.sections_dir, args.output, args.overrides)
 
 
 if __name__ == "__main__":

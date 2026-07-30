@@ -666,6 +666,33 @@ def test_override_key_disambiguates_multi_row_agent_files(tmp_path):
     assert "| at1cmd.exs | cot1 — Gateway | `read_blackboard`, `wait_for_event` |" in document
 
 
+def test_bare_file_key_applies_to_every_row_of_that_file(tmp_path):
+    """Documented semantics: a bare key is file-wide; `file::label` targets one row.
+
+    Pinned so the runbook's rule ("always use file::label for a multi-row file") stays
+    true of the code — if this ever becomes per-row, it should be a deliberate change.
+    """
+    generated = _section_md(
+        "api_tenant",
+        [
+            ("at1cmd.exs", "at1cmd — Dispatcher", "`send_message`"),
+            ("at1cmd.exs", "cot1 — Gateway", "`read_blackboard`"),
+        ],
+        [("parse_csv.py", "Parse.")],
+    )
+    sections = _write_sections(tmp_path / "sections", {"api_tenant": generated})
+    overrides = _overrides_file(
+        tmp_path, {"api_tenant": {"agents": {"at1cmd.exs": {"tools": "`run_command`"}}}}
+    )
+    output = tmp_path / "matrix.md"
+
+    assert assemble(sections, output, overrides) == 0
+    document = output.read_text(encoding="utf-8")
+
+    assert "| at1cmd.exs | at1cmd — Dispatcher | `run_command` |" in document
+    assert "| at1cmd.exs | cot1 — Gateway | `run_command` |" in document
+
+
 def test_override_matching_no_row_fails_the_run(tmp_path, capsys):
     """A renamed script must not silently drop its curation — that is BL-068 itself."""
     sections = _write_sections(tmp_path / "sections")

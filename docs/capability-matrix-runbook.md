@@ -108,6 +108,11 @@ lives instead. It is **committed**; `docs/.sections/` is not.
   contributes several rows to a section (an OrbConfig with several RunConfigs).
   Overridable fields: `label`, `tools`. Script row key is the script file name;
   field: `purpose`.
+- **A bare file key applies to every row with that file name.** For a file that
+  contributes more than one row, always use `file.exs::Label` — a bare key would put
+  the same curated cell on all of its rows. Today only single-row files are keyed
+  bare, and this is the rule that keeps it that way when one of them gains a second
+  RunConfig.
 - Top-level keys beginning with `_` are comments and are ignored.
 
 The merge happens **before** anything is counted, so an overridden Tools cell flows

@@ -34,8 +34,8 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `9afd8e7` | 2026-07-29 |
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `9afd8e7` | 2026-07-29 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `6abc3e8` | 2026-07-29 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `013c09d` | 2026-07-29 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e60bcfd` | 2026-07-30 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `63f48e1` | 2026-07-30 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `57d90d2` | 2026-07-29 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -48,7 +48,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
 | `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `0a0439f` | 2026-07-20 |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `602bdf5` | 2026-06-19 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-29 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-30 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
@@ -111,45 +111,56 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > exported). The two exported runbooks are the Rig and harness runbooks — system-level
 > operator docs, a different category from a single use case's how-to-run.
 
+> **BL-066/067/068 export — the rule applied unchanged, no adds, no drops.** The three
+> tickets produced eleven working artifacts, all out by the standing rule: three
+> `docs/reviews/*.md` (the BL-066, BL-067 and BL-068 reviews), two
+> `docs/milestones/bl-06{7,8}-implementation-notes.md`, and the harness-side gate
+> evidence carried inside the packets. Their *specifications* are the BL-0xx rows,
+> already exported inside `backlog-2026-06.md`.
+>
+> **`docs/capability-matrix-runbook.md` stays out**, on the precedent this manifest
+> already records: the two exported runbooks are the Rig and harness *system* runbooks,
+> and every artifact-specific how-to-run (docbuilder, eduloka, boxy-pipeline, cloudcost)
+> has stayed out. It governs regenerating an artifact from inside the repo, which is
+> repo-side work; the artifact it produces — `capability-matrix.md` — is exported and
+> re-pinned below. `docs/capability-matrix-overrides.json` is data read by
+> `assemble_matrix.py`, not a reference doc, and is out for the same reason.
+
 ---
 
-Exported: 2026-07-29 at aetheris-agents `9afd8e7` / aetheris `57d90d2` (m1-cloudcost
-close — t1–t5, the §7 promotion, and the operator runbook). 25 rows: **24 carried, one
-added (`cloudcost--milestone.md`), none dropped.** Four rows re-pinned, clearing all
-four standing staleness WARNs: `aetheris-agents--CLAUDE.md` (`1013a95`→`9afd8e7`),
-`capability-matrix.md` (`eeb37a1`→`6abc3e8`), `backlog-2026-06.md`
-(`c27dee4`→`013c09d`), and `aetheris--CLAUDE.md` (`1ebe971`→`57d90d2`). The other
-twenty data rows are unchanged since the previous export.
+Exported: 2026-07-30 at aetheris-agents `bd37e90` / aetheris `fd9ac48` (BL-066
+bandit bump; BL-067 deterministic matrix assembly; BL-068 curated-overrides home + eduloka
+wired). 25 rows: **25 carried, none added, none dropped.** Two rows re-pinned, clearing both
+standing staleness WARNs: `capability-matrix.md` (`6abc3e8`→`e60bcfd`) and
+`backlog-2026-06.md` (`013c09d`→`63f48e1`). The other twenty-two data rows are unchanged
+since the previous export.
 
-**Why this export matters beyond the WARNs.** The four re-pinned rows are all m1's own
-output, and one of them carries the milestone's marquee learning: the §7 rewrite of
-**Silent-wrong-answer** landed in `aetheris--CLAUDE.md` (`57d90d2`). Implementer
-sessions read that from the repo and already have it; the review side reads the
-*exported* copy and is served the superseded wording until this export lands. Until
-then the §7 loop is half-closed — live for the author, stale for the reviewer. That
-asymmetry, not the drift cosmetics, is what the export closes.
+**What the two re-pinned rows carry.** `capability-matrix.md` is a different artifact than
+the copy in project knowledge today: its whole derived block — Summary counts, unique-tools
+line, Overlap Report — is now script-counted rather than LLM-asserted (BL-067), which
+corrected three standing Overlap Report defects; it gained a ninth use case (eduloka, 1
+agent / 14 scripts, totals 26/67 → **27/81**); and its curated cells now survive a regen via
+`docs/capability-matrix-overrides.json` (BL-068). A reviewer reading the exported copy would
+otherwise reason from counts that were wrong and a use-case list that was short one entry.
+`backlog-2026-06.md` carries the three closes (BL-066 **and** its duplicate BL-060, BL-067,
+BL-068) — without it the review side still reads `hex.audit` as expected-red and BL-068 as
+open, which is the same half-closed asymmetry the m1-cloudcost export described.
 
-**Upload is remove-all then upload-all against the full 25-row set** — not a diff of
-the four re-pinned rows plus the add. Twenty data rows are unchanged and would look
-like "nothing to re-upload" to any hash-driven shortcut; do not optimise the upload
-down. This is the standing discipline that also covers the manifest-blind direction
-the header warns about (a file uploaded without a regen leaves the record silently
-under-describing project knowledge).
+**Upload is remove-all then upload-all against the full 25-row set** — not a diff of the two
+re-pinned rows. Twenty-two data rows are unchanged and would look like "nothing to
+re-upload" to any hash-driven shortcut; do not optimise the upload down. This is the
+standing discipline that also covers the manifest-blind direction the header warns about (a
+file uploaded without a regen leaves the record silently under-describing project knowledge).
 
-**BL-034 — closed; the paragraph this replaces was stale.** Previous manifests
-carried BL-034 forward as a *latent* vacuity: the refresh prompt closed by appending
-a drift baseline to `docs/rig/current-state-2026-06.md` — a tracked file — *after*
-Step 2, which would born-stale that row the moment it landed. **That is fixed.**
-BL-034 is Done 2026-07-22 ("resolved by dropping the baseline append"), and
-`prompts/bl-002-refresh-project-knowledge.md` at HEAD no longer contains the step: it
-now states the invariant directly ("the manifest is the ONLY tracked file this task
-writes, and it is the LAST tracked write") and records the removal. Verified at HEAD
-this export, not carried on faith. `current-state-2026-06.md` stays pinned `f723ee5`,
-matching HEAD.
+**Ordering invariant held.** The manifest is the only tracked file this task wrote and the
+last tracked write; nothing manifest-tracked was edited after the table was regenerated, so
+the two re-pinned rows are not born stale. (BL-034's hazard, verified fixed in
+`prompts/bl-002-refresh-project-knowledge.md` at HEAD last export, remains fixed — the
+prompt still carries the invariant and no baseline append.)
 
 **Repo push state.** Both repos are synced at the exported commits — aetheris-agents
-`origin/main` = `9afd8e7`, aetheris `origin/main` = `57d90d2`; all of m1-cloudcost is
-on origin. Only this manifest regen commit is unpushed, held for the human.
+`origin/main` = `bd37e90`, aetheris `origin/main` = `fd9ac48`. Only this manifest
+regen commit is unpushed, held for the human.
 
-Previous export: 2026-07-26 at aetheris-agents `53c97cb` / aetheris `f79365a` (the
-fork arc — BL-039 then BL-030 r0/r1/r2 — plus BL-038; six rows re-pinned, none added).
+Previous export: 2026-07-29 at aetheris-agents `9afd8e7` / aetheris `57d90d2` (m1-cloudcost
+close — t1–t5, the §7 promotion, and the operator runbook; four rows re-pinned, one added).

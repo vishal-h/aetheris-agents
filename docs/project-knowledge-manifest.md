@@ -158,9 +158,11 @@ the two re-pinned rows are not born stale. (BL-034's hazard, verified fixed in
 `prompts/bl-002-refresh-project-knowledge.md` at HEAD last export, remains fixed — the
 prompt still carries the invariant and no baseline append.)
 
-**Repo push state.** Both repos are synced at the exported commits — aetheris-agents
-`origin/main` = `bd37e90`, aetheris `origin/main` = `fd9ac48`. Only this manifest
-regen commit is unpushed, held for the human.
+**Repo push state.** Both repos are synced at the exported content commits —
+aetheris-agents `bd37e90`, aetheris `fd9ac48` — and the manifest regen commit on top of
+them is pushed too, so nothing about this export is held locally. (Deliberately no
+self-hash here: a line naming the manifest's own commit is stale the moment it is
+committed.)
 
 Previous export: 2026-07-29 at aetheris-agents `9afd8e7` / aetheris `57d90d2` (m1-cloudcost
 close — t1–t5, the §7 promotion, and the operator runbook; four rows re-pinned, one added).

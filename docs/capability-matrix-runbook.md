@@ -13,8 +13,12 @@ cd ~/sandbox/elixirws/aetheris
 ./scripts/sprint.sh capability_matrix
 ```
 
-Five sub-agents run sequentially (one per use case), then an assembler combines
-the sections and detects overlaps. Output is written to `docs/capability-matrix.md`.
+Eight sub-agents run sequentially (one per use case), then
+`scripts/assemble_matrix.py` combines the sections and computes the derived block.
+Output is written to `docs/capability-matrix.md`.
+
+The assemble step is deterministic — no LLM. Every number, the unique-tools line and
+both overlap tables are counted from the sections' own table rows (BL-067).
 
 Commit after each run:
 
@@ -44,15 +48,33 @@ just re-run the sprint and commit the updated matrix.
 ## How it works
 
 ```
-agents/capability_matrix_{uc}.exs      ← one per use case, runs standalone
-agents/capability_matrix_assemble.exs  ← assembler, runs after all sections
-docs/.sections/{uc}.md                 ← intermediate files (gitignored)
-docs/capability-matrix.md              ← final output (committed)
+agents/capability_matrix_{uc}.exs   ← one per use case, runs standalone (LLM)
+scripts/assemble_matrix.py          ← assembler, runs after all sections (deterministic)
+docs/.sections/{uc}.md              ← intermediate files (gitignored)
+docs/capability-matrix.md           ← final output (committed)
 ```
 
 Each sub-agent reads only its own use case directory (≤ 10 files, ≤ 15 steps).
 The assembler reads the section files and writes the final matrix with an overlap
 report and summary table.
+
+`assemble_matrix.py` pastes section content verbatim and derives everything else by
+counting rows:
+
+| Derived value | Rule |
+|---------------|------|
+| Summary counts | Agents/Scripts table row count per section; totals are sums |
+| Unique tools | backticked tokens of each Tools cell, first-appearance order; a cell with no backticks (e.g. `MCP servers (corpus_search, lattice)`) counts as one entry |
+| Identical tool sets | agents grouped by tool-*set* equality (cell order does not split a group), groups of ≥ 2, largest first |
+| Script name overlaps | a script row name appearing in more than one section |
+
+Section order is the `SECTIONS` constant at the top of the script — not directory
+order. A section file whose key is not in `SECTIONS` is ignored with a stderr WARN;
+a missing section file yields "_Section not available._", a 0/0 Summary row, and
+exit 1 (partial matrix).
+
+Two runs over unchanged sections produce byte-identical output, so a matrix diff
+only ever shows a real change.
 
 ---
 
@@ -63,12 +85,19 @@ If one sub-agent fails (rate limit, etc.) and the others succeed:
 ```bash
 cd ~/sandbox/elixirws/aetheris
 mix aetheris run ../aetheris-agents/agents/capability_matrix_{use_case}.exs
-mix aetheris run ../aetheris-agents/agents/capability_matrix_assemble.exs
+python3 ../aetheris-agents/scripts/assemble_matrix.py
 
 cd ~/sandbox/elixirws/aetheris-agents
 git add docs/capability-matrix.md
 git commit -m "docs: update capability matrix"
 ```
+
+**This is the normal path, not the exception.** `docs/.sections/` is gitignored, so
+re-running *all* section agents rewrites every section — reordering rows, rewording
+purposes, and dropping the hand-curated provenance annotations in the docbuilder
+table (a 121-line diff for a one-section change). Re-run only the section that
+changed, then the assembler. BL-068 tracks giving the curation a durable home so
+this stops being a manual discipline.
 
 ---
 
@@ -105,12 +134,15 @@ Also update `run_id` and `label`. Keep all other fields unchanged.
 
 **3. Update the assembler:**
 
-Add the new section file path to Step 1 in
-`agents/capability_matrix_assemble.exs` system_prompt:
+Add the new use case to the `SECTIONS` constant in `scripts/assemble_matrix.py`,
+in the position it should occupy in the matrix:
 
+```python
+("{use_case}", "{summary label}"),
 ```
-docs/.sections/{use_case}.md
-```
+
+The label is what the Summary table and the overlap tables print. Nothing else in
+the script is per-use-case.
 
 **4. Add to sprint.sh:**
 
@@ -128,7 +160,7 @@ run_agent "cap-matrix-{use_case}" "$OUT_DIR/capability_matrix/{use_case}.json" \
 ```bash
 # aetheris-agents
 git add agents/capability_matrix_{use_case}.exs \
-        agents/capability_matrix_assemble.exs
+        scripts/assemble_matrix.py
 git commit -m "feat(capability-matrix): add {use_case} sub-agent"
 
 # aetheris
@@ -162,7 +194,8 @@ Source file to copy: agents/capability_matrix_email.exs
 (or whichever capability_matrix_{uc}.exs exists — pick any one)
 
 Work in aetheris-agents/ for agent files, aetheris/ for sprint.sh.
-Follow all steps including the assembler update and sprint.sh addition.
+Follow all steps including the SECTIONS update in scripts/assemble_matrix.py
+and the sprint.sh addition.
 Do not re-run the matrix — just confirm the files are correct and stop.
 ```
 
@@ -180,23 +213,30 @@ git commit -m "docs: update capability matrix"
 
 ## Known limitations
 
-**Assembler reads hardcoded paths.** Adding a new use case requires updating
-the assembler's system_prompt (Step 3 above). The assembler does not
-auto-discover section files.
+**Assembler section list is explicit.** Adding a new use case requires adding it to
+`SECTIONS` in `scripts/assemble_matrix.py` (Step 3 above). This is deliberate — the
+matrix order is a decision, not directory order — but it means a section file with no
+`SECTIONS` entry is skipped. The script names it on stderr rather than dropping it
+silently.
 
 **Stale sections after removing a use case.** Section files in `docs/.sections/`
-persist between runs. If a use case is removed, delete its section file manually
-before re-running the assembler:
+persist between runs. If a use case is removed, drop its `SECTIONS` entry and delete
+its section file:
 
 ```bash
 rm docs/.sections/{use_case}.md
-mix aetheris run ../aetheris-agents/agents/capability_matrix_assemble.exs
+python3 scripts/assemble_matrix.py
 ```
 
 **Rate limits cause partial matrices.** The `|| warn` in sprint.sh lets the
 sprint continue when a sub-agent hits a rate limit. The assembler writes
-"Section not available." for missing sections. Re-run the failing sub-agent
-after the rate limit clears (usually 60 seconds), then re-run the assembler.
+"_Section not available._" for the missing section, prints a WARN and exits 1, so the
+sprint reports the matrix as partial. Re-run the failing sub-agent after the rate limit
+clears (usually 60 seconds), then re-run the assembler.
+
+**Full regen loses curation.** Because `docs/.sections/` is gitignored, running all
+eight section agents replaces every section — including hand-curated purpose prose.
+Re-run only what changed (see "Re-running a single section"). Tracked as BL-068.
 
 **api/ uses a two-level structure.** The api use case has separate tenant and
 gateway sub-agents (`capability_matrix_api_tenant.exs` and

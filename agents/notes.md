@@ -1,23 +1,28 @@
-Two files, clean separation:
+Two halves, clean separation:
 
-**`capability_matrix.exs`** — 5-agent orb, all parallel, each reads one use case directory (≤10 files) and writes `docs/.sections/{use_case}.md`. Max 15 steps each, well within context limits.
+**`capability_matrix_{uc}.exs`** — one solo agent per use case, each reads that use case's
+`agents/` and `scripts/` directories (≤10 files) and writes `docs/.sections/{uc}.md`. Max 15
+steps each, well within context limits. Eight are wired into sprint.sh's `capability_matrix`
+case; `capability_matrix_eduloka.exs` exists but is not wired (BL-068).
 
-**`capability_matrix_assemble.exs`** — solo run after the orb completes. Reads 5 small section files, detects overlaps, writes `docs/capability-matrix.md`. Reads only markdown files so context stays tiny.
+**`scripts/assemble_matrix.py`** — deterministic assembler, runs after the section agents.
+Concatenates the sections verbatim in `SECTIONS` order and computes the derived block (Summary
+counts, unique-tools line, Overlap Report) by counting the sections' own table rows, then writes
+`docs/capability-matrix.md`. This step used to be an LLM agent
+(`capability_matrix_assemble.exs`); its arithmetic was wrong on every regen, so BL-067 replaced
+it with the script. Do not put an LLM back in the assemble step.
 
 **To run:**
 
 ```bash
-# Step 1 — parallel section generation
-mix aetheris run ../aetheris-agents/agents/capability_matrix.exs
+# Both halves
+cd ~/sandbox/elixirws/aetheris
+./scripts/sprint.sh capability_matrix
 
-# Wait for orb to complete, then:
-mix aetheris list --limit 1   # confirm orb status: done
-
-# Step 2 — assemble
-mix aetheris run ../aetheris-agents/agents/capability_matrix_assemble.exs
-
-# Check output
-cat ../aetheris-agents/docs/capability-matrix.md
+# Or one section, then re-assemble (the usual case — see the runbook)
+mix aetheris run ../aetheris-agents/agents/capability_matrix_{uc}.exs
+python3 ../aetheris-agents/scripts/assemble_matrix.py
 ```
 
-One thing to confirm before running: `docs/.sections/` directory needs to exist in the repo. Either create it with a `.gitkeep` or let the first `write_file` create the parent directory — `write_file` in Aetheris calls `create_dir_all` for parent directories so it should work without pre-creating the folder.
+`docs/.sections/` is gitignored and holds a `.gitkeep`; the section agents' `write_file` calls
+`create_dir_all` for parents, so it also survives a missing directory.

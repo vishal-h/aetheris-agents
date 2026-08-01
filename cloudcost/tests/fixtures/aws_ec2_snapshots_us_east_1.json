@@ -1,0 +1,25 @@
+{
+  "_comment": "One snapshot whose source volume is still in the sweep and one whose source is gone. AWS keeps VolumeId on a snapshot after the volume is deleted, so `attached_to` is resolved by cross-referencing the volumes actually found \u2014 otherwise every snapshot would read as live and the aged-orphan signal would be lost.",
+  "Snapshots": [
+    {
+      "SnapshotId": "snap-0aaa1111",
+      "VolumeId": "vol-0aaa1111",
+      "VolumeSize": 100,
+      "State": "completed",
+      "StartTime": "2026-01-15T02:00:00Z",
+      "Description": "web-1 nightly",
+      "OwnerId": "111122223333",
+      "Tags": []
+    },
+    {
+      "SnapshotId": "snap-0aaa2222",
+      "VolumeId": "vol-deleted-9999",
+      "VolumeSize": 40,
+      "State": "completed",
+      "StartTime": "2025-04-02T02:00:00Z",
+      "Description": "orphaned-volume-snap",
+      "OwnerId": "111122223333",
+      "Tags": []
+    }
+  ]
+}

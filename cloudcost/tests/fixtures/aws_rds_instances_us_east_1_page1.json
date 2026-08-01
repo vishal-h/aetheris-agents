@@ -1,0 +1,21 @@
+{
+  "_comment": "Page 1 of 2 \u2014 carries Marker, the OTHER paging idiom (rds pages on Marker, ec2 on NextToken). A running database: compute rate plus allocated storage.",
+  "DBInstances": [
+    {
+      "DBInstanceIdentifier": "db-prod-1",
+      "DBInstanceClass": "db.t3.small",
+      "DBInstanceStatus": "available",
+      "Engine": "postgres",
+      "AllocatedStorage": 100,
+      "StorageType": "gp2",
+      "InstanceCreateTime": "2025-02-14T07:20:00Z",
+      "TagList": [
+        {
+          "Key": "env",
+          "Value": "prod"
+        }
+      ]
+    }
+  ],
+  "Marker": "us-east-1-db-page-2"
+}

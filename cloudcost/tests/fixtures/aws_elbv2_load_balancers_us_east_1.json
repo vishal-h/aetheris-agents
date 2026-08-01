@@ -1,0 +1,25 @@
+{
+  "_comment": "An ALB with a registered target and an NLB with none. The NLB is the idle-LB shape: its target group exists but holds zero targets, so attached_to must be null.",
+  "LoadBalancers": [
+    {
+      "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:loadbalancer/app/alb-prod-1/aaa1111aaa1111aa",
+      "LoadBalancerName": "alb-prod-1",
+      "Type": "application",
+      "Scheme": "internet-facing",
+      "State": {
+        "Code": "active"
+      },
+      "CreatedTime": "2025-03-12T08:00:00Z"
+    },
+    {
+      "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:loadbalancer/net/nlb-idle-1/bbb2222bbb2222bb",
+      "LoadBalancerName": "nlb-idle-1",
+      "Type": "network",
+      "Scheme": "internal",
+      "State": {
+        "Code": "active"
+      },
+      "CreatedTime": "2025-08-30T16:45:00Z"
+    }
+  ]
+}

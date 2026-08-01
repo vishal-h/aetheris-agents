@@ -1,0 +1,20 @@
+{
+  "_comment": "The swept-region set is DERIVED from this response, never hardcoded. Three regions, one of them opt-in (`ap-south-2`, OptInStatus 'opted-in') so the sweep is proven to cover opt-in regions and not just the always-on ones.",
+  "Regions": [
+    {
+      "RegionName": "us-east-1",
+      "OptInStatus": "opt-in-not-required",
+      "Endpoint": "ec2.us-east-1.amazonaws.com"
+    },
+    {
+      "RegionName": "eu-west-1",
+      "OptInStatus": "opt-in-not-required",
+      "Endpoint": "ec2.eu-west-1.amazonaws.com"
+    },
+    {
+      "RegionName": "ap-south-2",
+      "OptInStatus": "opted-in",
+      "Endpoint": "ec2.ap-south-2.amazonaws.com"
+    }
+  ]
+}

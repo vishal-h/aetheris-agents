@@ -1,0 +1,4 @@
+{
+  "_comment": "CRAFTED. A period Cost Explorer has no data for. The cost half must degrade to an errors[] entry and a partial run \u2014 the inventory is still written \u2014 rather than emitting a zero bill, which would read as a real $0.00 month.",
+  "ResultsByTime": []
+}

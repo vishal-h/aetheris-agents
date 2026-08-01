@@ -1,0 +1,32 @@
+{
+  "_comment": "Page 2 \u2014 no NextPageToken, so paging terminates. Same TimePeriod as page 1 (CE repeats it on every group-page), a different service group. Proves the groups from both pages are summed while the metadata is deduplicated.",
+  "GroupDefinitions": [
+    {
+      "Type": "DIMENSION",
+      "Key": "SERVICE"
+    }
+  ],
+  "ResultsByTime": [
+    {
+      "TimePeriod": {
+        "Start": "2026-08-01",
+        "End": "2026-09-01"
+      },
+      "Total": {},
+      "Estimated": true,
+      "Groups": [
+        {
+          "Keys": [
+            "AWS Secrets Manager"
+          ],
+          "Metrics": {
+            "UnblendedCost": {
+              "Amount": "4.14",
+              "Unit": "USD"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "_comment": "sts:GetCallerIdentity supplies the snapshot's `account`. Scrubbed to the AWS documentation-reserved account id; the ARN is the read-only user the milestone provisions (m2 Prereqs 1).",
+  "UserId": "AIDAEXAMPLEREADONLY01",
+  "Account": "111122223333",
+  "Arn": "arn:aws:iam::111122223333:user/aetheris-ro"
+}

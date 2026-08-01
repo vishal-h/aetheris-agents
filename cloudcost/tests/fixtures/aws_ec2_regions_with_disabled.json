@@ -1,0 +1,21 @@
+{
+  "_comment": "CRAFTED. What describe_regions returns when AllRegions=True is passed by mistake: a region the account has NOT opted into. Paired with a stub that fails that region, an adapter that drops the opt-in filter takes an OptInRequired and is detectable.",
+  "Regions": [
+    {
+      "RegionName": "us-east-1",
+      "OptInStatus": "opt-in-not-required"
+    },
+    {
+      "RegionName": "eu-west-1",
+      "OptInStatus": "opt-in-not-required"
+    },
+    {
+      "RegionName": "ap-south-2",
+      "OptInStatus": "opted-in"
+    },
+    {
+      "RegionName": "me-south-1",
+      "OptInStatus": "not-opted-in"
+    }
+  ]
+}

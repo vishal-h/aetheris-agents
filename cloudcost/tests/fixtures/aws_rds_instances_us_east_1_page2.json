@@ -1,0 +1,15 @@
+{
+  "_comment": "Page 2 of 2 \u2014 no Marker, so pagination terminates. `db-stopped-1` is the stopped RDS instance still paying for 200GiB of allocated storage: t2's stopped-database rule. Stopped, so attached_to is null (it serves nothing) and its estimate is storage only \u2014 no compute.",
+  "DBInstances": [
+    {
+      "DBInstanceIdentifier": "db-stopped-1",
+      "DBInstanceClass": "db.t3.medium",
+      "DBInstanceStatus": "stopped",
+      "Engine": "mysql",
+      "AllocatedStorage": 200,
+      "StorageType": "gp2",
+      "InstanceCreateTime": "2025-05-08T12:00:00Z",
+      "TagList": []
+    }
+  ]
+}

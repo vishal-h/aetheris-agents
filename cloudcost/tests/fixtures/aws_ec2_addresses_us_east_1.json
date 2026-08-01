@@ -1,0 +1,23 @@
+{
+  "_comment": "One associated and one UNASSOCIATED Elastic IP. The unassociated one (eipalloc-0aaa2222) is the milestone's primary done-when orphan target \u2014 no age threshold, it bills from the moment it is unassociated. DescribeAddresses has no paginator (verified), so this also covers the unpageable path.",
+  "Addresses": [
+    {
+      "AllocationId": "eipalloc-0aaa1111",
+      "PublicIp": "203.0.113.10",
+      "InstanceId": "i-0aaa1111",
+      "Domain": "vpc",
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "web-1-eip"
+        }
+      ]
+    },
+    {
+      "AllocationId": "eipalloc-0aaa2222",
+      "PublicIp": "203.0.113.11",
+      "Domain": "vpc",
+      "Tags": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "_comment": "The zero that ACTUALLY occurs, and the one that is NOT suppressed: Cost Explorer has the period and reports no spend in it yet. Observed live on 2026-08-01. Distinct from aws_ce_cost_and_usage_empty (no ResultsByTime at all), which IS suppressed. CE cannot tell '$0 so far' from '$0 total', so this sails through as a real $0.00 snapshot.",
+  "GroupDefinitions": [
+    {
+      "Type": "DIMENSION",
+      "Key": "SERVICE"
+    }
+  ],
+  "ResultsByTime": [
+    {
+      "TimePeriod": {
+        "Start": "2026-08-01",
+        "End": "2026-09-01"
+      },
+      "Total": {},
+      "Groups": [],
+      "Estimated": true
+    }
+  ]
+}

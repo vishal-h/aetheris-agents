@@ -1,0 +1,11 @@
+{
+  "_comment": "The idle NLB's target group \u2014 it exists, which is why the LB cannot be dismissed as misconfigured; it simply holds no targets (see aws_elbv2_target_health_empty).",
+  "TargetGroups": [
+    {
+      "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:targetgroup/tg-idle/ddd4444ddd4444dd",
+      "TargetGroupName": "tg-idle",
+      "Protocol": "TCP",
+      "Port": 443
+    }
+  ]
+}

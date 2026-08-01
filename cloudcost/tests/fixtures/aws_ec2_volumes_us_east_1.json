@@ -1,0 +1,59 @@
+{
+  "_comment": "Attached, unattached and stopped-instance-attached volumes. `vol-0aaa2222` is available with no attachments \u2014 the unattached-volume orphan shape. `vol-0aaa3333` is the storage that makes i-0aaa3333 a stopped-with-storage candidate.",
+  "Volumes": [
+    {
+      "VolumeId": "vol-0aaa1111",
+      "Size": 100,
+      "VolumeType": "gp3",
+      "State": "in-use",
+      "CreateTime": "2025-11-04T09:15:00Z",
+      "Attachments": [
+        {
+          "InstanceId": "i-0aaa1111",
+          "State": "attached",
+          "Device": "/dev/xvda"
+        }
+      ],
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "web-1-root"
+        }
+      ]
+    },
+    {
+      "VolumeId": "vol-0aaa2222",
+      "Size": 50,
+      "VolumeType": "gp2",
+      "State": "available",
+      "CreateTime": "2025-09-01T00:00:00Z",
+      "Attachments": [],
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "detached-data-vol"
+        }
+      ]
+    },
+    {
+      "VolumeId": "vol-0aaa3333",
+      "Size": 200,
+      "VolumeType": "gp3",
+      "State": "in-use",
+      "CreateTime": "2025-06-20T11:40:00Z",
+      "Attachments": [
+        {
+          "InstanceId": "i-0aaa3333",
+          "State": "attached",
+          "Device": "/dev/xvda"
+        }
+      ],
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "old-worker-data"
+        }
+      ]
+    }
+  ]
+}

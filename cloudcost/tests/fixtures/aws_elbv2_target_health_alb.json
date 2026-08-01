@@ -1,0 +1,14 @@
+{
+  "_comment": "The ALB's registered target \u2014 this is what makes attached_to non-null and keeps the ALB out of the idle-LB rule.",
+  "TargetHealthDescriptions": [
+    {
+      "Target": {
+        "Id": "i-0aaa1111",
+        "Port": 80
+      },
+      "TargetHealth": {
+        "State": "healthy"
+      }
+    }
+  ]
+}

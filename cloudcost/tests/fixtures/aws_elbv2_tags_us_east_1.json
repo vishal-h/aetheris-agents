@@ -1,0 +1,22 @@
+{
+  "_comment": "Load balancer tags come from a separate DescribeTags call \u2014 neither DescribeLoadBalancers returns them. The ALB is tagged and the NLB is not, so the fixture proves both directions: skipping this call would make every LB read as untagged, which is a wrong tag-coverage figure rather than a missing one.",
+  "TagDescriptions": [
+    {
+      "ResourceArn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:loadbalancer/app/alb-prod-1/aaa1111aaa1111aa",
+      "Tags": [
+        {
+          "Key": "env",
+          "Value": "prod"
+        },
+        {
+          "Key": "team",
+          "Value": "platform"
+        }
+      ]
+    },
+    {
+      "ResourceArn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:loadbalancer/net/nlb-idle-1/bbb2222bbb2222bb",
+      "Tags": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "A CLASSIC load balancer with an empty Instances list. Classic ELB is a different API shape (Instances[], no target groups, no State) unioned into the same normalized load_balancer type \u2014 the union is the point.",
+  "LoadBalancerDescriptions": [
+    {
+      "LoadBalancerName": "clb-legacy-1",
+      "Instances": [],
+      "CreatedTime": "2024-05-19T10:30:00Z",
+      "DNSName": "clb-legacy-1-000000000.us-east-1.elb.amazonaws.com"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "_comment": "Manual RDS snapshots only (the sweep passes SnapshotType='manual'; automated snapshots are lifecycle-managed and are not orphans). One with a live source DB and one aged snapshot whose source is gone \u2014 the aged-snapshot shape for t2.",
+  "DBSnapshots": [
+    {
+      "DBSnapshotIdentifier": "snap-db-manual-1",
+      "DBInstanceIdentifier": "db-prod-1",
+      "AllocatedStorage": 100,
+      "Status": "available",
+      "SnapshotType": "manual",
+      "Engine": "postgres",
+      "SnapshotCreateTime": "2026-03-01T03:00:00Z",
+      "TagList": []
+    },
+    {
+      "DBSnapshotIdentifier": "snap-db-manual-orphan",
+      "DBInstanceIdentifier": "db-deleted-9",
+      "AllocatedStorage": 50,
+      "Status": "available",
+      "SnapshotType": "manual",
+      "Engine": "mysql",
+      "SnapshotCreateTime": "2025-01-09T03:00:00Z",
+      "TagList": []
+    }
+  ]
+}

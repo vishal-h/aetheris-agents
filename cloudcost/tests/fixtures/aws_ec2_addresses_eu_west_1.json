@@ -1,0 +1,12 @@
+{
+  "_comment": "An Elastic IP associated with a NETWORK INTERFACE rather than an instance \u2014 an EIP fronting an NLB or NAT gateway is in service and must not read as unassociated.",
+  "Addresses": [
+    {
+      "AllocationId": "eipalloc-0bbb1111",
+      "PublicIp": "198.51.100.7",
+      "NetworkInterfaceId": "eni-0bbb1111",
+      "Domain": "vpc",
+      "Tags": []
+    }
+  ]
+}

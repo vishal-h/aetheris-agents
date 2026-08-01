@@ -12,6 +12,26 @@
 # clause in §t1 does not apply; see docs/t1-implementation-notes.md.
 requests>=2.31
 
+# m2 t1 — the AWS adapter. boto3 rather than the AWS Billing & Cost Management MCP: decision
+# F re-proves D6 — the MCP authenticates off the default credential chain (the exact D2 hazard
+# decision C exists to close), returns raw shapes that would push normalization onto the LLM
+# (breaking D3), and has no offline path, which would kill the pytest spine the whole milestone
+# rests on. Unlike the DO adapter there is no `requests` alternative worth weighing: AWS is
+# SigV4-signed, and hand-rolling that to keep the HTTP layer visible would be strictly worse
+# than using the client AWS maintains.
+#
+# Pagination, retry and rate-limit handling still live in the adapter, as §t1 requires — they
+# are configured explicitly (`Config(retries={"max_attempts": N, "mode": "standard"})`, and
+# `get_paginator` per operation) rather than left to defaults. Three of the operations the
+# sweep makes have no paginator at all (verified with `can_paginate`), so the adapter carries
+# its own fallback; see docs/m2-t1-implementation-notes.md.
+#
+# The offline suite reaches boto3's real request path through `--endpoint-url` (the analogue
+# of fetch_do.py's `--api-base`), so the credential that was actually signed with is an
+# observed wire fact rather than test wiring — which is what makes the default-chain poison
+# guard a real assertion.
+boto3>=1.34
+
 # t4 — the report renderer. Jinja2 gives the custom layout conditional sections, loops and
 # autoescaping (resource names, tags and evidence strings are provider data, not markup).
 # The HTML report needs nothing else: no CDN, no system binary. `--pdf` is an optional

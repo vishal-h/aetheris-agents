@@ -1,0 +1,14 @@
+{
+  "_comment": "Classic ELB tags \u2014 a different request/response shape from ELBv2 (LoadBalancerNames/LoadBalancerName, not ResourceArns/ResourceArn), unioned into the same normalized tag list.",
+  "TagDescriptions": [
+    {
+      "LoadBalancerName": "clb-legacy-1",
+      "Tags": [
+        {
+          "Key": "env",
+          "Value": "legacy"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "The ALB's target group. Served first in the DescribeTargetGroups sequence \u2014 target groups are queried once per load balancer, in fixture order.",
+  "TargetGroups": [
+    {
+      "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:targetgroup/tg-prod/ccc3333ccc3333cc",
+      "TargetGroupName": "tg-prod",
+      "Protocol": "HTTP",
+      "Port": 80
+    }
+  ]
+}

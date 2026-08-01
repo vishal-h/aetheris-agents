@@ -1,0 +1,25 @@
+{
+  "_comment": "Page 2 of 2 \u2014 no NextToken, so pagination terminates. `i-0aaa3333` is the stopped instance with attached storage (vol-0aaa3333): t2's stopped-compute-with-storage shape. Stopped, so its monthly_cost_estimate is 0.00 \u2014 a stopped EC2 instance bills no compute; its EBS bills on the volume row.",
+  "Reservations": [
+    {
+      "ReservationId": "r-0aaa0003",
+      "Instances": [
+        {
+          "InstanceId": "i-0aaa3333",
+          "InstanceType": "t3.large",
+          "State": {
+            "Code": 80,
+            "Name": "stopped"
+          },
+          "LaunchTime": "2025-06-20T11:40:00Z",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "old-worker"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

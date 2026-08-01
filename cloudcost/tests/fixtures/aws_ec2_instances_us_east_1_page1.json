@@ -1,0 +1,50 @@
+{
+  "_comment": "Page 1 of 2 \u2014 carries NextToken, which is what drives the ec2 paginator's NextToken idiom. `i-0aaa2222` deliberately runs an instance type absent from COMPUTE_MONTHLY: it must yield monthly_cost_estimate 0.00 plus a named warning, never a guess.",
+  "Reservations": [
+    {
+      "ReservationId": "r-0aaa0001",
+      "Instances": [
+        {
+          "InstanceId": "i-0aaa1111",
+          "InstanceType": "t3.micro",
+          "State": {
+            "Code": 16,
+            "Name": "running"
+          },
+          "LaunchTime": "2025-11-04T09:15:00Z",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "web-1"
+            },
+            {
+              "Key": "env",
+              "Value": "prod"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ReservationId": "r-0aaa0002",
+      "Instances": [
+        {
+          "InstanceId": "i-0aaa2222",
+          "InstanceType": "m9.xlarge",
+          "State": {
+            "Code": 16,
+            "Name": "running"
+          },
+          "LaunchTime": "2026-02-11T14:02:00Z",
+          "Tags": [
+            {
+              "Key": "Name",
+              "Value": "unpriced-box"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "NextToken": "us-east-1-instances-page-2"
+}

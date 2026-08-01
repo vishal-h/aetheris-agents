@@ -2179,6 +2179,126 @@ playground_api` — the Bandit-served path — green end to end.
 
 ---
 
+### BL-069 — DO ≥1-orphan assertion is armed: its planted reserved IP is deleted (#TBD)
+**Size:** S · **Priority:** now (live failure mode) · **Section:** aetheris-agents (cloudcost)
+
+The DO cloudcost pipeline's `≥1 orphan` end-to-end assertion is a **known-positive
+pipeline self-test**, not a business alert — it proves detection *fires* against the real
+bill, using a planted orphan as the fixture. Reserved IP **168.144.13.150** (NYC1),
+that fixture, was confirmed deleted 2026-07-30 (m1 loose end closed). So the next
+DO-inclusive run finds **0** DO orphans and the assertion either fails, or — worse —
+greens **vacuously** off a prior run's gitignored output (Silent-wrong-answer, harness
+`CLAUDE.md`). Independent of the AWS work; m2 is per-provider (decision H), so AWS carries
+its own planted Elastic IP and does not depend on this.
+
+**Done when:** before the next DO run, either a fresh DO orphan is planted, or the
+assertion is re-pointed to a recorded fixture rather than the live account — and a DO run
+confirms the assertion passes for the right reason (mutation posture: it must fail when no
+orphan is present).
+
+`Source: m2-cloudcost ratification, 2026-08-01; m1 loose end (reserved IP) closed 2026-07-30.`
+
+---
+
+### BL-070 — Retire the dormant cross-provider merge code in `compose_report_data.py` (#TBD)
+**Size:** S · **Priority:** low · **Section:** aetheris-agents (cloudcost)
+
+m2 adopted per-provider reporting (decision H, no cross-provider roll-up), which makes the
+N-merge, the `providers_without_prior_snapshot` caveat, the multi-currency "No combined
+total" path, and the cross-currency 4-site aggregation all **unreachable**. m2 left them
+**dormant** rather than deleting them, so `compose_report_data.py` stayed literally
+unchanged and the "contract is mechanical" negative proof stayed pristine. Dead code that
+is never exercised rots — delete it in a dedicated cleanup, not inside a ticket whose
+result depends on `compose` not moving.
+
+**Done when:** the unreachable cross-provider merge / caveat / currency paths are removed;
+the retained single-provider compose has a test asserting its behaviour is unchanged; and
+the four m1 open items those paths carried are marked resolved-by-deletion.
+
+`Source: m2-cloudcost decision H, ratified 2026-08-01.`
+
+---
+
+### BL-071 — Resource-level AWS cost + the resource-rate spot-check (#TBD)
+**Size:** M · **Priority:** low (deferred) · **Section:** aetheris-agents (cloudcost)
+
+m2 settled AWS cost at **service-level** (decision B) because current AWS usage is low, so
+resource-level (`GetCostAndUsageWithResources` — a paid hourly/resource opt-in, ~14-day
+window, EC2-centric; or a CUR→S3 pipeline) would prove little and risk a vacuous proof.
+The resource-level cost path is still unproven, and with it the m1 **resource-rate
+spot-check** (checking the inventory size/type estimates against a real per-resource bill),
+which has now been deferred past DO and AWS.
+
+**Trigger:** the first provider actually billed per resource, or AWS usage growing enough
+that enabling CE resource-level granularity is worthwhile. On trigger, the cost snapshot
+carries `source_granularity:"resource"` with per-line `resource_id` where the provider
+attributes it, and the rate spot-check lands as a test.
+
+**Done when:** a resource-level cost path emits per-resource cost lines for at least one
+provider, and the rate spot-check compares them against the inventory estimates.
+
+`Source: m2-cloudcost decision B, ratified 2026-08-01; m1 open item (rate spot-check), re-forwarded.`
+
+---
+
+### BL-072 — Cost Optimization Hub / Compute Optimizer optimization milestone (#TBD)
+**Size:** L · **Priority:** low · **Section:** Milestones
+
+m2's t4 is a **hand-rolled read-only spike** for S3/ECR/Secrets waste signals
+(no-lifecycle, incomplete-multipart, unused-secret), deliberately *not* the engine-backed
+integration. AWS's own **Cost Optimization Hub** and **Compute Optimizer** already compute
+rightsizing and waste recommendations across services; the full optimization milestone
+sources from them rather than reinventing per-service heuristics. This is also where the
+decision-F MCP evaluation's one genuine forward item lands (Hub/Compute Optimizer as an
+alternative signal source to cross-check `detect_orphans.py`).
+
+**Done when:** milestone docs exist (docs-first, per repo convention); t4's real-bill read
+seeds the scope (which signals are worth surfacing, what noise looks like); read-only,
+gated behind its own IAM.
+
+`Source: m2-cloudcost decisions F + G (t4 spike), ratified 2026-08-01.`
+
+---
+
+### BL-073 — Surface each run's report artifact against its run in Rig (#TBD)
+**Size:** S–M · **Priority:** low-medium · **Section:** Rig (aetheris-agents/rig/)
+
+Runs already appear in Harness → Runs, but a run that produces a **report artifact** (a
+cloudcost HTML/PDF, a docbuilder document) has no link to it from the run view — an
+operator opens the run and sees events, not the thing the run was for. This ticket records
+the generated report's path on the run and renders or links it in the run detail view, so
+the report is reachable from the run that produced it.
+
+Pairs naturally with per-provider **solo runs** (m2-cloudcost decision H): each run has
+exactly one report, so the run→artifact relation is 1:1 with no disambiguation needed. Not
+cloudcost-specific — scope it generically over "a run that emitted a deliverable file", so
+docbuilder and any future report-producing use case get it for free rather than each wiring
+its own surface.
+
+**Scoping note (the real design question).** The report is a **local file** today (m1
+cloudcost / docbuilder delivery to `output/`), which Rig cannot read by path alone across
+the harness/Rig boundary. So this needs one of: the run **recording the artifact path** in
+its metadata (and Rig resolving it), a stable Rig-readable output location, or the artifact
+being registered as a first-class run output. That delivery-side decision is the weight of
+the ticket — the UI affordance is small once the path is knowable. Decide it docs-first.
+
+Follow the runbook's "Adding a new module" pattern (`harness.rs` query + `types.ts` +
+`RunList.tsx`/detail view, per the BL-004/BL-029 precedent). Any new Tauri command or
+`RunSummary`/`RunDetail` field lands with its `specs.md` §4/§5 entry and `drift_check` in
+the same commit (repo doc-sync DoD; check 9 `command_fields` guards §4 structs).
+
+**Not cloudcost Python work** — it belongs to the Rig/harness surface and is referenced by,
+but out of scope for, m2-cloudcost t1–t4.
+
+**Done when:** a run that produced a report artifact links to (or renders) that artifact
+from its Rig run view; the artifact-path mechanism is decided and recorded; `tsc -b` +
+`bun run build` + `drift_check --strict` green.
+
+`Source: m2-cloudcost §Referenced Rig ticket, ratified 2026-08-01 (decision H, per-provider
+solo runs).`
+
+---
+
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 

@@ -278,7 +278,7 @@ not tracked carry. Source: BL-016, BL-005 (×2).
 | boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/m-boxy-pipeline-1a.md`, `boxy-pipeline/docs/runbook.md` |
 | eduloka | `eduloka/runbook.md`, `docs/milestones/m-eduloka-discovery-summary.md` |
 | docbuilder | `docbuilder/runbook.md`, `docbuilder/milestone.md` |
-| cloudcost | `cloudcost/runbook.md`, `cloudcost/milestone.md` |
+| cloudcost | `cloudcost/runbook.md`, `cloudcost/milestone.md`, `cloudcost/m2-milestone.md` |
 
 The `docs/agent-creation-guide.md` is the authoritative reference for building new agents.
 

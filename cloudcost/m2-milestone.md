@@ -1,12 +1,14 @@
 # m2-cloudcost — AWS cost report + orphan detection + optimization spike (report-only, per-provider)
 
-**Status:** **RATIFIED 2026-08-01 (rev 4)** — ratified by Vishal; Phase 1 closed. t1 unblocked
-(offline scaffolding may start immediately; the Elastic IP + `boto3`/`doctor` gate only t3's
-real-bill run).
+**Status:** **RATIFIED 2026-08-01 (rev 5)** — Phase 1 closed; **t1 MERGED** (aetheris-agents
+`3bc970b`, review `docs/reviews/m2-cloudcost-t1-review.md`). t2 next, against the corrected
+contract below.
 **Origin:** m1-cloudcost close (`cloudcost--milestone.md`, CLOSED 2026-07-29) +
 `handoff-m2-cloudcost-aws-2026-07-30.md`; decisions A–H settled 2026-07-30 (C amended rev 4).
-**Repo state at ratification:** aetheris-agents `d2667ad`, aetheris `fd9ac48`; project knowledge in
-sync; `drift_check --strict` 9/0/0 (re-run post-commit).
+**Repo state at ratification:** aetheris-agents `3bc970b` — t1 merged, t1 files only; the m1
+pipeline is otherwise untouched (two append-only edits, `tests/conftest.py` and
+`requirements.txt`). aetheris `fd9ac48`, untouched (t1 is single-repo). Rev 4 was ratified at
+`d2667ad`.
 **Draft state:** rev 4 drafted at aetheris-agents `bd37e90`.
 **Repo:** `aetheris-agents/cloudcost/` (existing use case from m1 — this milestone *adds*
 adapters/scripts, it does not re-scaffold).
@@ -19,18 +21,24 @@ adapters/scripts, it does not re-scaffold).
   H; decision A superseded. Retired the new-provider-caveat, multi-currency, and cross-currency
   open items; mooted the orchestrator-topology question.
 - rev 3 → 4: folded four operational corrections from IAM/env setup — (i) corrected S3 IAM action
-  `s3:GetBucketLifecycleConfiguration` → `s3:GetLifecycleConfiguration` (S3 drops "Bucket" for the
-  lifecycle action name); (ii) **D2 is enforced per-run via hermetic launch hygiene**, not a
-  global-env pre-flight (decision C amended) — the operator keeps their personal `~/.aws`; (iii) a
-  t1 **default-chain-poison regression guard**; (iv) the `env -u …` launch prefix baked into t3's
-  sprint case + the cloudcost runbook.
-- rev 4 ratified 2026-08-01 (Vishal): status flipped DRAFT → RATIFIED at commit so the committed
-  line is true on arrival (no false "awaiting ratification" line lands); repo state stamped at the
-  ratification commit `d2667ad`, draft provenance retained at `bd37e90`. No content change.
-- rev 4 housekeeping 2026-08-01 (post-ratification): folded the assigned backlog IDs
-  **BL-069–BL-073** into §Backlog rows, §Referenced Rig ticket, §Open items forwarded, and t3's
-  Touches — traceability only, no scope change. The rows themselves are filed in
-  `docs/backlog-2026-06.md` (the executor of record).
+  `s3:GetBucketLifecycleConfiguration` → `s3:GetLifecycleConfiguration`; (ii) **D2 enforced per-run
+  via hermetic launch hygiene** (decision C amended); (iii) a t1 default-chain-poison regression
+  guard; (iv) the `env -u …` launch prefix in t3's sprint + runbook. Ratified 2026-08-01; then
+  BL-069–BL-073 folded into §Backlog / §Referenced Rig ticket / §Open items (traceability only).
+- rev 4 → 5 (post-t1, 2026-08-01): folded the t1 review's ratified contract-changes so t2 starts
+  against the corrected contract — **§t2 (a′)** canonical `type` normalization (both adapters +
+  `detect_orphans` re-key) + the **canonical `type` vocabulary** enumerated below (completing the
+  m1 §Normalized schemas gap: the field existed, its allowed values never did); the **t2 (c)
+  cost-model half** (a stopped compute/DB bills no compute, so the stopped-with-storage rule's
+  saving must sum the *attached storage*); the **Decision C** profile-neutralization caveat (A2); a
+  **§t1** poison-guard offline/live note (A3); the **"one seam" → three seams** correction (state,
+  `type`, flat-billed cost model) + a seam-sweep row (**BL-074**); and the **A4** swept-regions t3
+  resolution. Applies t1's r0/r1 adjudications; no change to the milestone's goal or scope.
+  *Two citation corrections applied at commit, both flagged by claude-code and verified at
+  `3bc970b`: the m1 stopped-with-storage forward is `detect_orphans.py:243`, not `:250` (the wrong
+  line originated in t1's implementation notes and reached this doc's rev-5 draft; corrected in
+  both); and the §Repo-state line now stamps rev 5's own ratification commit rather than carrying
+  rev 4's.*
 
 ---
 
@@ -112,7 +120,7 @@ review queue, no email/Drive, no scheduling (m1 §NOT in scope carries verbatim)
 ## Design decisions
 
 D1–D6 from m1 carry verbatim (not restated). A–H are the m2-specific ratifications (2026-07-30).
-**A is superseded by H; C amended at rev 4; G and H are new since rev 1.**
+**A is superseded by H; C amended at rev 4 (+ profile caveat rev 5); G and H are new since rev 1.**
 
 **D1 (record-and-deliver, not a verify-target)** — unchanged; AWS fetch is `:contained`.
 
@@ -127,11 +135,17 @@ not by requiring a globally clean environment.
 **D3 (scripts do, agents decide)** — unchanged.
 
 **D4 (honest granularity)** — service-level for AWS cost (decision B); per-resource dollars are
-inventory estimates. Resource-level cost test forwarded.
+inventory estimates. Resource-level cost test forwarded. *Corollary the adapter owns (t1):* a
+provider's cost *model* lives in its adapter — a stopped AWS instance bills no compute, so its
+estimate is 0.0 (unlike DO, which bills a droplet on-or-off). Keeping that assumption out of shared
+machinery is why the stopped-with-storage rule's saving is the *attached storage* (§t2 c), not the
+instance's own estimate.
 
 **D5 (shared machinery is provider-agnostic; only the adapter is provider-specific)** — the
 decision m2's **core** tests, now in its cleanest form: each provider is its **own solo linear
-run** (already how m1's DO pipeline runs). No multi-provider orchestrator, no merge step.
+run** (already how m1's DO pipeline runs). No multi-provider orchestrator, no merge step. The
+`state` and `type` vocabularies and the cost-model assumption are the seams where this had leaked
+(§Canonical `type` vocabulary; BL-074).
 
 **D6 (integration is the SDK, not the MCP)** — reaffirmed (decision F).
 
@@ -141,7 +155,7 @@ Rev 1–2 settled A at "linear multi-provider orchestrator." Rev 3 dropped cross
 so there is no multi-provider orchestrator to make linear-vs-fan-out about. Each provider is a solo
 run. Retained only to record the supersession.
 
-### C — Credential env contract + per-run D2 hygiene (amended rev 4)
+### C — Credential env contract + per-run D2 hygiene (amended rev 4; profile caveat rev 5)
 
 Env names: `CLOUDCOST_AWS_ACCESS_KEY_ID` / `CLOUDCOST_AWS_SECRET_ACCESS_KEY` (+ optional
 `CLOUDCOST_AWS_SESSION_TOKEN` / `CLOUDCOST_AWS_REGION`). boto3 `Session(...)` built **explicitly**
@@ -164,19 +178,29 @@ credential; the harness run is made hermetic w.r.t. the default chain per invoca
   chain is never consulted even without the belt; t1 proves it with a hermetic default-chain-poison
   regression guard (§t1 Done-check).
 
+**Profile-neutralization caveat (t1, A2).** "Explicit-session construction alone" holds only once
+the profile config var is *removed from botocore's resolution*, not merely left unread: a stray
+`AWS_PROFILE` naming a nonexistent profile raises `ProfileNotFound` from `get_scoped_config`
+*before* boto3 looks at the explicit credentials, so a run supplying a good read-only key would die.
+`fetch_aws.py` neutralizes it with `botocore.session.Session(session_vars={"profile":(None,None,None,None)})`
+(verified boto3 1.43.14). It fails loud, never silent — so it was never a correctness hazard — but
+the "suspenders" clause is exact only with the neutralization. (Same shape as m1 t1's `pydo`
+default-pickup correction.)
+
 This replaces rev 1–3's "confirm the global env is clean" pre-flight: D2 holds by construction and
 by launch hygiene, every run, without disturbing the operator's personal AWS setup.
 
 ### B — AWS cost granularity: **SERVICE-LEVEL** (ratified 2026-07-30)
 
 `ce:GetCostAndUsage`, `MONTHLY`, `GroupBy=SERVICE`, unblended → service-level `line_items`,
-`resource_id:null`, mapping 1:1 to DO. Resource-level cost + rate spot-check forwarded.
+`resource_id:null`, mapping 1:1 to DO. Resource-level cost + rate spot-check forwarded (BL-071).
 
 ### D — Region scope: **FULL-REGION SWEEP** (ratified 2026-07-30)
 
 Enumerate opted-in regions (`ec2.describe_regions`, bootstrapped from `CLOUDCOST_AWS_REGION` or
 `us-east-1`), iterate per-region inventory, union. `CLOUDCOST_AWS_REGIONS` is a documented
-override. The report **states the swept-region set** (no-silent-caps). Paginated.
+override. The report **states the swept-region set** (no-silent-caps). Paginated. *(Render home for
+the swept set is a t3 decision — A4, §Open items.)*
 
 ### E — Billing currency: **USD** (confirmed 2026-07-30)
 
@@ -187,7 +211,7 @@ cross-currency aggregation is **moot** for m2 — see the retired open items.
 
 Re-proves D6: default-chain auth (D2 hazard), raw shapes (breaks D3), no offline/sandbox path
 (kills the pytest spine). **Forward:** Cost Optimization Hub / Compute Optimizer are AWS's own
-optimization engine — the natural source for the *full* S3/ECR/rightsizing milestone.
+optimization engine — the natural source for the *full* S3/ECR/rightsizing milestone (BL-072).
 
 ### G — Two-lane design: orphans vs optimization signals (ratified 2026-07-30, rev 2)
 
@@ -215,26 +239,55 @@ read-layer, never coupled to the pipeline.
 ## Contract refs (read, do not restate)
 
 - `cloudcost--milestone.md` **§Normalized schemas** — frozen shapes; `fetch_aws.py` re-emits
-  *these exact shapes*. **§t2 Scope** — orphan-heuristic catalog (RDS extends it in-shape).
-  **§t3/§t4** — report-data shape + render contract.
+  *these exact shapes*. §t2 (a′) **enumerates the canonical `type` vocabulary** there (completing a
+  gap m1 left — the field existed, its values were never enumerated). **§t2 Scope** — orphan-heuristic
+  catalog (RDS extends it in-shape). **§t3/§t4** — report-data shape + render contract.
 - `agent-creation-guide.md`; both repos' `CLAUDE.md` learning sections (read *both* — t3 touches
   `aetheris/`).
 - `capability-matrix.md`; the `sprint.sh` pattern; `agents/capability_matrix.exs`.
 - boto3: EC2, ELBv2 + classic ELB, RDS, Cost Explorer (core); S3, ECR, Secrets Manager, CloudWatch
   (t4 spike).
 
+### Canonical `type` vocabulary (schema-level — enumerated at m2, completing the m1 gap)
+
+`detect_orphans.py` keys every rule on the inventory `type` field, but m1's §Normalized schemas
+never enumerated its allowed *values* — so the DO adapter's `droplet` / `reserved_ip` were provider
+vocabulary sitting inside shared machinery (the same seam `STOPPED_STATES` occupies). Surfaced at t1
+and ratified with Vishal: `type` is **schema-level, not provider-flavoured**. Every adapter emits
+from this closed set; §t2 (a′) enumerates it in `cloudcost/milestone.md` §Normalized schemas and
+renames the DO adapter onto it.
+
+| Canonical `type` | AWS emits for | DO emits for (renamed at t2 a′) |
+|---|---|---|
+| `compute_instance` | EC2 instance | `droplet` → |
+| `static_ip` | Elastic IP | `reserved_ip` → |
+| `volume` | EBS volume | `volume` (unchanged) |
+| `snapshot` | EBS snapshot | `snapshot` (unchanged) |
+| `load_balancer` | ELB / ALB / NLB | `load_balancer` (unchanged) |
+| `database` | RDS instance | — (new at t2 c) |
+| `database_snapshot` | RDS manual snapshot | — (new at t2 c) |
+
+t1's `fetch_aws.py` already emits canonical from its first line (fixtures recorded canonical once).
+Between t1 and t2, AWS orphan detection does not fire — the rules still key on `droplet`/`reserved_ip`
+— which is harmless (detection isn't run end-to-end until t3, and t2 precedes it) and is the same
+ordering ratified for `state`.
+
 ### AWS field-mapping notes (how AWS populates the frozen §Normalized schemas — not a re-spec)
 
 **Cost snapshot** `aws_costs_{YYYY-MM}.json`: `provider:"aws"`, `currency:"USD"`,
 `source_granularity:"service"`, `resource_id:null`; `line_items[]` = CE groups by SERVICE (all
 services — Secrets Manager, Tax, S3, ECR, RDS, EC2, …), one line per service; `balance` from CE
-month-to-date (`account_balance:null`); `provider_extra` = CE `ResultsByTime` metadata (opaque).
+month-to-date (`account_balance:null`); `provider_extra` = CE `ResultsByTime` metadata + the opaque
+`swept_regions` list (downstream must not key on it generically; render home is A4/t3).
 
 **Resource inventory** `aws_inventory_{YYYY-MM}.json`: frozen first-class fields per resource;
-`region` a **real value**; `state` from the **normalized enum** (§t2 a), canonical `"stopped"` for
-stopped compute (EC2 `stopped`, RDS `stopped`); `attached_to` per m1 semantics (RDS instance→null
-when stopped-idle; RDS snapshot→source DB/null); `monthly_cost_estimate` from size/type; AWS `tags`;
-`raw_ref` = `aws://<service>/<region>/<id>`. RDS lands in first-class fields — no `provider_extra`.
+`region` a **real value**; `type` from the **canonical vocabulary** (§Canonical `type` vocabulary);
+`state` from the **normalized enum** (§t2 a), canonical `"stopped"` for stopped compute (EC2
+`stopped`, RDS `stopped`); `attached_to` per m1 semantics (RDS instance→null when stopped-idle; RDS
+snapshot→source DB/null, cross-referenced against the sweep and left face-value when the sweep
+didn't complete — t1 F1); `monthly_cost_estimate` from size/type (**0.0 for stopped compute** — no
+compute charge); AWS `tags` (incl. load balancers, via `DescribeTags`); `raw_ref` =
+`aws://<service>/<region>/<id>`. RDS lands in first-class fields — no `provider_extra`.
 
 **Optimization signals (t4, NOT a frozen-contract shape)** `optimization_signals_aws_{YYYY-MM}.json`:
 a *separate* loose list of `{service, resource_id, region, signal, evidence[],
@@ -248,7 +301,9 @@ Not confidence-scored like orphans; exploratory. The core pipeline never reads i
 
 | m1 open item | Status at m2 | Why |
 |---|---|---|
-| **`STOPPED_STATES={"off"}`** normalization | **LIVE — t2 a** | Both adapters emit canonical `"stopped"`; constant → schema-level value; 3 pinning tests + DO fixtures update. RDS `stopped` maps here too. |
+| **`STOPPED_STATES={"off"}`** normalization (seam #1) | **LIVE — t2 a** | Both adapters emit canonical `"stopped"`; constant → schema-level value; 3 pinning tests + DO fixtures update. RDS `stopped` maps here too. One of **three** seams (BL-074). |
+| **`type` vocabulary un-enumerated (seam #2)** | **LIVE — t2 a′** | m1 keyed rules on `type` but never enumerated its values; DO's `droplet`/`reserved_ip` were provider vocab in shared machinery. Canonical enum (above) + adapter renames. Surfaced at t1. |
+| **flat-billed cost assumption (seam #3)** | **Adapter half done (t1); saving half LIVE — t2 c** | DO bills a droplet on-or-off; AWS doesn't. Adapter emits 0.0 for stopped compute; the stopped-with-storage rule's saving must sum attached storage. BL-074. |
 | **t2 output filename collision** | **LIVE — t2 b** | Each provider writes `{provider}_orphan_candidates_{period}.json`. |
 | **Resource-level cost rate spot-check** | **DEFERRED (BL-071)** | B is service-level. Forwarded. |
 | **New-provider-caveat render path** | **RETIRED** | Unreachable without a cross-provider roll-up (H). |
@@ -265,15 +320,13 @@ Not confidence-scored like orphans; exploratory. The core pipeline never reads i
 1. **Read-only IAM user/role → `CLOUDCOST_AWS_*`.** Least-privilege (attached as
    `aetheris-cloudcost-aws` on user `aetheris-ro`):
    - *Core (t1–t3):* `ce:GetCostAndUsage`, `ce:GetDimensionValues`, `ec2:Describe*`,
-     `elasticloadbalancing:Describe*`, `rds:Describe*`.
+     `elasticloadbalancing:Describe*` (covers `DescribeTags`), `rds:Describe*`.
    - *Spike (t4):* `s3:ListAllMyBuckets`, `s3:GetBucketLocation`, `s3:GetLifecycleConfiguration`,
      `s3:ListBucketMultipartUploads`, `ecr:DescribeRepositories`, `ecr:DescribeImages`,
      `ecr:GetLifecyclePolicy`, `secretsmanager:ListSecrets`, `cloudwatch:GetMetricData`.
-   - **No** `GetCostAndUsageWithResources`; **no** write actions. (Note: the S3 lifecycle IAM
-     action is `s3:GetLifecycleConfiguration` — S3 drops "Bucket" from the action name even though
-     the API call is `GetBucketLifecycleConfiguration`.) Keys out-of-band, never in a packet.
-     **Status: DONE** — user `aetheris-ro`, policy `aetheris-cloudcost-aws` attached; secrets sourced
-     from `~/.secrets/aws-cloudcost.env` (`CLOUDCOST_AWS_*` confirmed present).
+   - **No** `GetCostAndUsageWithResources`; **no** write actions. **Status: DONE** — user
+     `aetheris-ro`, policy `aetheris-cloudcost-aws` attached; secrets sourced from
+     `~/.secrets/aws-cloudcost.env` (`CLOUDCOST_AWS_*` confirmed present).
 2. **D2 per-run launch hygiene (replaces the old global pre-flight).** The operator's personal AWS
    credential (`~/.aws/credentials` and/or `AWS_*` env) may remain in place. Every cloudcost AWS
    run is launched with the hermetic prefix so boto3's default chain cannot shadow the read-only
@@ -290,7 +343,9 @@ Not confidence-scored like orphans; exploratory. The core pipeline never reads i
    chosen enforcement.
 3. **A genuine orphan.** Unassociated **Elastic IP** (primary done-when target). Optional: stopped
    EC2 + attached EBS; stopped RDS instance (exercises the RDS heuristic on real data).
-   **Status: PENDING** — gates t3's real-bill run only, not t1/t2 offline work.
+   **Status: PENDING** — gates t3's real-bill run only, not t1/t2 offline work. *t1 confirmed the
+   live account carries no EC2/EBS/EIP/RDS at all, so the ≥1-orphan done-when rests wholly on the
+   planted Elastic IP; the live bill (Secrets Manager / S3 / ECR / Tax) is entirely t4's lane.*
 4. **Environment tooling.** `boto3` installed; `mix aetheris doctor` reads ✅/⚠. Optional smoke:
    `( export AWS_ACCESS_KEY_ID=$CLOUDCOST_AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$CLOUDCOST_AWS_SECRET_ACCESS_KEY; aws sts get-caller-identity )`
    → the `aetheris-ro` ARN. **Status: PENDING.**
@@ -302,105 +357,107 @@ write credential; the CE resource-level paid opt-in; email/Drive.
 
 ## Ticket set
 
-Weight in **t1** (adapter). **t2** = contract-adjustment + RDS rule. **t3** = AWS solo run,
-integration + core done-when. **t4** = the exploratory optimization spike (non-gating).
+Weight in **t1** (adapter, **MERGED** `3bc970b`). **t2** = contract-adjustments + RDS rule. **t3** =
+AWS solo run, integration + core done-when. **t4** = the exploratory optimization spike (non-gating).
 
-### t1 — AWS adapter (`fetch_aws.py`): cost (all services) + inventory (EC2-family + RDS)
+### t1 — AWS adapter (`fetch_aws.py`): cost (all services) + inventory (EC2-family + RDS) — **DONE (`3bc970b`)**
 
-**Scope.** Add `scripts/fetch_aws.py` (no re-scaffold). (a) Cost via CE `GetCostAndUsage`
-(`MONTHLY`, `GroupBy=SERVICE`, unblended) → service-level `line_items` (all services) + `balance`
-from CE month-to-date. (b) Inventory via **full-region sweep** — EC2 instances, EBS volumes,
-Elastic IPs, snapshots (owner=self), load balancers (ELBv2 + classic), **RDS instances + manual
-snapshots** — each with `state`, `attached_to`, `created_at`, size/type, `region`, `tags`,
-`raw_ref`; unioned. Emits `aws_costs_{YYYY-MM}.json` + `aws_inventory_{YYYY-MM}.json` per frozen
-§Normalized schemas. Explicit boto3 `Session` from `CLOUDCOST_AWS_*`; paginators; region
-enumeration via `describe_regions`. Canonical normalized `state`. `monthly_cost_estimate` from
-size/type (RDS: instance-class price + allocated storage; RDS snapshot: $/GB-mo).
+**Scope.** Add `scripts/fetch_aws.py` (no re-scaffold). Cost via CE `GetCostAndUsage` (service-level,
+all services). Inventory via **full-region sweep** — EC2/EBS/Elastic-IP/snapshot/ELB **+ RDS
+instances & manual snapshots** — unioned, emitting the two normalized JSON files per frozen
+§Normalized schemas, canonical `type` + `state`, `monthly_cost_estimate` (0.0 for stopped compute),
+`aws://…` `raw_ref`. Explicit boto3 `Session` from `CLOUDCOST_AWS_*`; paginators; region enumeration
+via `describe_regions`.
 
-**Contract refs.** agent-creation-guide; frozen §Normalized schemas (AWS field-mapping notes);
-boto3 EC2/ELBv2/RDS/CE; both `CLAUDE.md`.
-
-**Touches.** `cloudcost/scripts/fetch_aws.py`; `cloudcost/tests/test_fetch_aws.py`;
-`cloudcost/tests/fixtures/aws_*.json` (recorded, multi-region, incl. RDS); `requirements.txt`
-(`+= boto3`).
-
-**Do-not-generate.** The Billing MCP; any non-`Describe`/write call; resource-level cost; **any use
-of boto3's default credential chain** (construct the session explicitly from `CLOUDCOST_AWS_*`);
-other providers; `python3 -c`; `last_activity_at` population; S3/ECR/Secrets (that is t4).
-
-**Done-check.**
-- With `CLOUDCOST_AWS_*` set: `python3 scripts/fetch_aws.py --output-dir /tmp/cc --period <YYYY-MM>`
-  writes both files, schema-valid, real all-services totals + populated inventory incl. RDS.
-- **Region-sweep proof (mutation posture):** swept-region set recorded; a broken/single-region
-  sweep distinguishable from a real one; union fixture-tested across ≥2 regions.
-- **Default-chain poison guard (hermetic):** with a bogus `AWS_ACCESS_KEY_ID` (and
-  `AWS_SECRET_ACCESS_KEY`) exported to poison boto3's default chain, `fetch_aws.py` still succeeds
-  on the `CLOUDCOST_AWS_*` creds — a green run proves the adapter never falls back to the default
-  chain (a fallback would use the bogus key and fail auth). Encoded as a test /
-  `env`-prefixed done-check line.
-- `pytest cloudcost/tests/test_fetch_aws.py -v` green offline against recorded fixtures.
-- Credentials in neither stdout nor stderr on success or auth failure.
-
-**Claude-code prompt.**
-> Build `scripts/fetch_aws.py` in the existing `cloudcost/` tree per `cloudcost/m2-milestone.md`
-> §t1. Read `agent-creation-guide.md` + both `CLAUDE.md` learning sections first. Fetch AWS cost
-> (CE `GetCostAndUsage`, MONTHLY, GroupBy SERVICE → service-level, all services) and a full-region
-> inventory sweep (EC2/EBS/Elastic-IP/snapshot/ELB **+ RDS instances & manual snapshots**, unioned)
-> via boto3, auth from a `Session` built **explicitly** from `CLOUDCOST_AWS_*` (never the default
-> chain), emitting the two normalized JSON files per the frozen §Normalized schemas — canonical
-> normalized `state`, `monthly_cost_estimate` + `aws://…` `raw_ref`. Pagination + region enumeration
-> in the adapter. Standalone; pytest against recorded multi-region fixtures (offline). Include the
-> default-chain poison guard (bogus `AWS_ACCESS_KEY_ID` set → still runs on `CLOUDCOST_AWS_*`). Do
-> NOT use the Billing MCP, make any non-Describe/write call, emit resource-level cost, touch
-> S3/ECR/Secrets (that's t4), or let credentials reach stdout/stderr. Done-check per §t1.
+**Done-check (as shipped).** Both files schema-valid; region-sweep mutation-proven; default-chain
+poison guard green live + offline; credentials in neither stream. 62 AWS tests + 157 m1 baseline =
+219; 28/28 mutations. Live: 17-region sweep exit 0; real 2026-07 bill = 9 service lines / $4.99.
+- *A3 note (offline poison guard):* offline the guard holds only with an **access-key-enforcing**
+  stub — the exit-code arm alone goes green under a fallback against a permissive stub. "A green run
+  proves it" is exact for the **live** half (AWS is the oracle); the offline suite pins it via the
+  stub's key enforcement + a wire-observation assertion (`access_keys_seen() == {CLOUDCOST}`).
+  Recorded so the mechanism isn't mis-cited later.
 
 ### t2 — Contract adjustments + RDS heuristic + negative proof
 
-**Scope.** (a) **Normalized state enum:** shrink `detect_orphans.py:71 STOPPED_STATES={"off"}` →
-schema-level `{"stopped"}`; update `fetch_do.py` to emit `"stopped"` + regen its fixtures;
-`fetch_aws.py` already emits it; update the 3 pinning tests. (b) **Output filename prefix:**
-`{provider}_orphan_candidates_{period}.json`. (c) **RDS heuristic:** extend the §t2 catalog with RDS
-rules that fit existing shapes — stopped RDS instance with allocated storage (mirrors
-stopped-droplet+storage) and aged manual RDS snapshot (mirrors aged-snapshot) — keyed on the
-**normalized schema**. (d) **Negative proof:** `compose_report_data.py` / `render_report.py` run
-**unchanged** on AWS data (single-provider, as m1 shipped); the now-dead cross-provider merge code
-in `compose` is left **dormant** (not deleted; retirement is **BL-070**). Any *needed* change to
-compose/render = a **contract-leak finding**, documented, not silent.
+**Scope.**
+(a) **Normalized `state` enum:** shrink `detect_orphans.py:71 STOPPED_STATES={"off"}` → schema-level
+`{"stopped"}`; update `fetch_do.py` to emit `"stopped"` + regen its fixtures; `fetch_aws.py` already
+emits it; update the 3 pinning tests.
+(a′) **Normalized `type` vocabulary (canonical, schema-level):** enumerate the canonical `type`
+values (§Canonical `type` vocabulary) in `cloudcost/milestone.md` §Normalized schemas — an
+**amendment-to-complete** (the field existed, its values never did), not a behaviour change. Rename
+`fetch_do.py`'s two DO-vocabulary values — `droplet`→`compute_instance`, `reserved_ip`→`static_ip` —
+and regen its recorded fixtures (rides the (a) fixture regen). Re-key the two DO-specific rules in
+`detect_orphans.py` onto canonical: rename `rule_stopped_droplet_with_attached_storage` →
+`rule_stopped_compute_with_attached_storage` (keys on `compute_instance`) and the unassociated
+reserved-IP rule (keys on `static_ip`). The generic `volume`/`snapshot`/`load_balancer` rules already
+key on canonical values — unchanged. **Also confirm `compose_report_data.py` / `render_report.py`
+do not key on any `type` *value*** — a special-case on a value is a *third* leak and its own finding
+(extends the (d) negative proof to the `type` field).
+(b) **Output filename prefix:** `{provider}_orphan_candidates_{period}.json`.
+(c) **RDS heuristic + the cost-model half:** extend the §t2 catalog with RDS rules that fit existing
+shapes — stopped RDS instance with allocated storage (mirrors stopped-droplet+storage) and aged
+manual RDS snapshot (mirrors aged-snapshot) — keyed on the normalized schema. **Cost-model half
+(seam #3 saving side):** a *stopped* compute/database bills no compute, so the adapter emits
+`monthly_cost_estimate:0.0` for it; the stopped-with-storage rule's *saving* must therefore sum the
+**attached storage's** estimate, not the instance's own — else the stopped-EC2/RDS orphan reports a
+$0 saving and the headline value vanishes. This is m1's own forward (`detect_orphans.py:243`,
+"attached storage named but not summed") and is structural: `score()` derives
+`monthly_saving_estimate` uniformly from `resource["monthly_cost_estimate"]` and `fired()` carries
+no saving, so `fired()` gains an optional saving and `score()` honours it.
+(d) **Negative proof:** `compose_report_data.py` / `render_report.py` run **unchanged** on AWS data
+(single-provider, as m1 shipped); the now-dead cross-provider merge code in `compose` is left
+**dormant** (not deleted; retirement is **BL-070**). Any *needed* change to compose/render = a
+**contract-leak finding**, documented, not silent.
 
-**Contract refs.** frozen §Normalized schemas; §t2 Scope catalog; STOPPED_STATES + filename open
-items; decision H (single-provider compose; dormant merge).
+**Contract refs.** frozen §Normalized schemas + §Canonical `type` vocabulary; §t2 Scope catalog;
+STOPPED_STATES + filename open items; the seam sweep (BL-074); decision H (single-provider compose;
+dormant merge).
 
-**Touches.** `cloudcost/scripts/detect_orphans.py` (state constant + filename + RDS rules);
-`cloudcost/scripts/fetch_do.py` (state mapping — cross-adapter, recorded);
-`cloudcost/tests/test_detect_orphans.py`; `cloudcost/tests/fixtures/do_*.json` + `aws_*.json` +
-crafted RDS `inventory_*.json`; possibly `cloudcost/scripts/_normalized.py`. **Not**
-`compose_report_data.py` / `render_report.py`.
+**Touches.** `cloudcost/scripts/detect_orphans.py` (state constant + `type` re-key + rule rename +
+filename + RDS rules + `score()`/`fired()` saving); `cloudcost/scripts/fetch_do.py` (state + `type`
+mapping — cross-adapter, recorded); `cloudcost/milestone.md` (§Normalized schemas — enumerate the
+canonical `type` vocabulary, amendment-to-complete); `cloudcost/tests/test_detect_orphans.py`;
+`cloudcost/tests/fixtures/do_*.json` + `aws_*.json` + crafted RDS `inventory_*.json`; possibly
+`cloudcost/scripts/_normalized.py`. **Not** `compose_report_data.py` / `render_report.py` (a change
+there is the finding).
 
-**Do-not-generate.** Silently widening `STOPPED_STATES`; provider-specific field access in shared
-machinery; deleting/altering the dormant merge code (retire via BL-070, not here); any
-compose/render change absent a documented contract-leak finding; confidence-scoring S3/ECR-style
-signals here (that is t4).
+**Do-not-generate.** Silently widening `STOPPED_STATES`; leaving any provider-flavoured `type` value
+in shared machinery; keying compose/render on a `type` *value*; leaving the stopped-instance saving
+sourced from the instance's own (0.0) estimate; provider-specific field access in shared machinery;
+deleting/altering the dormant merge code (retire via BL-070, not here); any compose/render change
+absent a documented contract-leak finding; confidence-scoring S3/ECR-style signals here (that is t4).
 
 **Done-check.**
 - AWS fixtures with a stopped-EC2+EBS and a stopped-RDS+storage each produce the expected stopped
-  orphan via the normalized enum; **mutation:** a mis-normalized/reverted state fails the test.
+  orphan via the normalized enum; **mutation:** a mis-normalized/reverted `state` fails.
+- **`type` mutation:** reverting any canonical `type` to DO vocabulary (`compute_instance`→`droplet`,
+  `static_ip`→`reserved_ip`) fails a test; DO fixtures/tests green after the rename.
+- **Stopped-orphan saving is non-zero and sourced from attached storage:** the stopped-EC2 /
+  stopped-RDS candidate's `monthly_saving_estimate` equals the attached storage estimate; **mutation:**
+  sourcing it from the instance's own (0.0) estimate makes the saving $0 → fails.
 - Aged manual RDS snapshot fires the aged-snapshot-shaped rule with `evidence[]`.
 - `keep=true` excludes; untagged is reported-not-queued; filename carries the provider prefix.
-- `detect_orphans.py`'s m1 suite (54) + new RDS tests green; `fetch_do.py` tests green after fixture
-  regen.
-- `compose_report_data.py` / `render_report.py` unchanged (diff shows no edit) — or any edit filed
-  as a contract-leak finding.
+- `detect_orphans.py`'s m1 suite + new tests green; `fetch_do.py` tests green after fixture regen.
+- `compose_report_data.py` / `render_report.py` unchanged (diff shows no edit) and key on no `type`
+  value (grep) — or any edit filed as a contract-leak finding.
 
 **Claude-code prompt.**
 > Apply §t2 of `cloudcost/m2-milestone.md`. Read both `CLAUDE.md` first (cross-adapter). (a)
-> Normalize stopped-compute state to schema-level `"stopped"`: shrink `STOPPED_STATES`, update
-> `fetch_do.py` + its fixtures, confirm `fetch_aws.py` emits it, update the 3 pinning tests. (b)
-> `{provider}_` filename prefix on `detect_orphans.py` output. (c) Add RDS orphan rules reusing
-> existing heuristic shapes (stopped RDS + storage; aged manual RDS snapshot), keyed on the
-> normalized schema. (d) Leave `compose_report_data.py` / `render_report.py` **unchanged** and the
-> cross-provider merge code **dormant** (do not delete it here; BL-070 retires it) — if AWS forces a
-> change, STOP and report a contract-leak finding. Mutation-test the state normalization. Done-check
-> per §t2.
+> Normalize stopped-compute `state` to schema-level `"stopped"`: shrink `STOPPED_STATES`, update
+> `fetch_do.py` + its fixtures, confirm `fetch_aws.py` emits it, update the 3 pinning tests. (a′)
+> Enumerate the canonical `type` vocabulary (§Canonical `type` vocabulary) in
+> `cloudcost/milestone.md` §Normalized schemas (amendment-to-complete); rename `fetch_do.py`'s
+> `droplet`→`compute_instance`, `reserved_ip`→`static_ip` + regen its fixtures; re-key the two
+> DO-specific rules onto canonical (rename `rule_stopped_droplet_…`→`…_compute_…`); confirm
+> compose/render key on no `type` value. (b) `{provider}_` filename prefix. (c) Add RDS orphan rules
+> reusing existing shapes (stopped RDS + storage; aged manual RDS snapshot), and give `fired()` an
+> optional saving that `score()` honours so the stopped-with-storage rule's saving sums the
+> **attached storage** (a stopped instance's own estimate is 0.0). (d) Leave `compose_report_data.py`
+> / `render_report.py` **unchanged** and the cross-provider merge code **dormant** (BL-070 retires
+> it) — if AWS forces a change, STOP and report a contract-leak finding. Mutation-test the `state`
+> and `type` normalizations and the non-zero stopped-orphan saving. Done-check per §t2.
 
 ### t3 — AWS solo run: orchestrator + sprint + end-to-end + matrix regen (core done-when)
 
@@ -415,21 +472,26 @@ AWS_SECRET_ACCESS_KEY -u AWS_PROFILE AWS_SHARED_CREDENTIALS_FILE=/dev/null`) so 
 the launch hygiene, not just the pipeline. Document the canonical invocation in the cloudcost
 runbook. Regenerate `agents/capability_matrix.exs`. End-to-end on the real AWS bill (record mode):
 the AWS report is produced with **≥1 AWS orphan** + evidence, reviewable without the console; AWS's
-MoM is against its own prior snapshot (first run → m1-tested "no prior month" path).
+MoM is against its own prior snapshot (first run → m1-tested "no prior month" path). **Do not run
+the real-bill step on the first of a month** (CE returns the period with no groups → an honest but
+empty $0.00 cost section; DO finds no invoice — both degrade correctly to nothing useful; t1 notes).
+**Adjudicate A4** (below) — surface the swept-region set in the report.
 
 **Contract refs.** agent-creation-guide (orchestrator, run_command format, report-failures-and-stop);
 m1 §t5; the `sprint.sh` pattern; `capability_matrix.exs` + Rig `CapabilityMatrix` source; decision C
-(the launch prefix).
+(the launch prefix); A4 (swept-regions render).
 
 **Touches.** `cloudcost/agents/cloudcost_orchestrator.exs`; `aetheris/scripts/sprint.sh`;
-`cloudcost/runbook.md` (canonical hermetic invocation); `cloudcost/docs/m2-t3-implementation-notes.md`;
-`docs/capability-matrix.md` (regen — manifest staleness is an exempt WARN). DO-tripwire backlog row
-(**BL-069**).
+`cloudcost/runbook.md` (canonical hermetic invocation + the first-of-month caveat);
+`cloudcost/docs/m2-t3-implementation-notes.md`; `docs/capability-matrix.md` (regen — manifest
+staleness is an exempt WARN); possibly `compose_report_data.py`/`render_report.py`/`templates/` **if**
+A4 is resolved as an enumerated adjustment. DO-tripwire backlog row (**BL-069**).
 
 **Do-not-generate.** `spawn_agent`/`wait_for_all`; any multi-provider / cross-provider run;
 `write_file`/`read_file` in orchestrator tools; scheduling; any write op; resource-level cost; a
 non-hermetic sprint; a sprint that launches the AWS run **without** the default-chain prefix; reading
-the t4 optimization file.
+the t4 optimization file; a compose/render change for A4 that is *not* a deliberate enumerated
+adjustment (i.e. don't have compose key on `provider_extra` generically).
 
 **Done-check.**
 - `mix run --eval 'Code.eval_file("../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs")'`
@@ -437,9 +499,11 @@ the t4 optimization file.
 - `CLOUDCOST_PROVIDER=aws ./scripts/sprint.sh cloudcost` runs the AWS pipeline (through the hermetic
   launch prefix) and finds the report; hermetic output reset. (DO path still runs under its own
   provider value — regression check.)
-- Real AWS bill: report + **≥1 orphan** with evidence, reviewable without the console.
+- Real AWS bill: report + **≥1 orphan** with evidence (the planted Elastic IP), reviewable without
+  the console.
 - `CLOUDCOST_AWS_*` appears nowhere in the trajectory.
 - `capability_matrix.exs` re-run; matrix lists cloudcost's AWS adapter; Rig source confirmed + noted.
+- The report states the swept-region set (A4 resolution).
 
 **Claude-code prompt.**
 > Build the AWS solo run per §t3 of `cloudcost/m2-milestone.md`. Read both `CLAUDE.md` first
@@ -448,11 +512,14 @@ the t4 optimization file.
 > chain `fetch_{provider} → detect_orphans → compose_report_data → render_report` — one provider,
 > one report, one run; `:full`; `tools:["run_command"]`; no spawn_agent; no cross-provider logic; do
 > not read the t4 file. Add a hermetic `cloudcost` sprint case for the AWS provider that launches the
-> orchestrator through the D2 prefix (`env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u
-> AWS_PROFILE AWS_SHARED_CREDENTIALS_FILE=/dev/null`) and resets prior output; keep the DO path
-> green; document the canonical invocation in `cloudcost/runbook.md`. Re-run `capability_matrix.exs`;
-> confirm + note the Rig source. Verify credentials never reach the trajectory. Done-check per §t3
-> incl. the real-bill end-to-end (≥1 AWS orphan).
+> orchestrator through the D2 prefix and resets prior output; keep the DO path green; document the
+> canonical invocation + the first-of-month caveat in `cloudcost/runbook.md`. Resolve A4 — surface the
+> swept-region set in the report as a deliberate enumerated compose/render adjustment (a named
+> region-coverage field lifted into report_data, rendered generically), NOT by keying on
+> `provider_extra`; if that forces any other compose/render change, STOP and report it as a
+> contract-leak finding. Re-run `capability_matrix.exs`; confirm + note the Rig source. Verify
+> credentials never reach the trajectory. Done-check per §t3 incl. the real-bill end-to-end (≥1 AWS
+> orphan).
 
 ### t4 — Optimization-signals spike (S3 / ECR / Secrets) — exploratory, non-gating
 
@@ -466,7 +533,8 @@ renders only when the file is present (absent → the report is byte-identical t
 signal shows `evidence[]` + a `note`; a `monthly_cost_estimate` only where honestly available (secret
 charge; CloudWatch-derived S3 size × rate), else omitted — never invented. Launched under the same
 D2 hermetic prefix as t3. t4's real-bill read seeds the scope of the engine-backed optimization
-milestone (**BL-072**).
+milestone (**BL-072**). *This account's live bill is entirely non-orphan-shaped (Secrets Manager /
+S3 / ECR / Tax), so t4 is where the real value is here.*
 
 **Contract refs.** boto3 S3/ECR/Secrets Manager/CloudWatch; the render-data shape from t3 (additive
 section only); decision G (must not touch the frozen schema or `detect_orphans`); decision C (launch
@@ -514,43 +582,60 @@ view, so a human opens a run and sees its cost report. Pairs naturally with per-
 (decision H) — each run has exactly one report. Belongs to the Rig backlog (harness/Rig repo), is
 referenced by this milestone, and is **not** part of t1–t4. Scoping note: the report is a local file
 today (m1 delivery), so this needs a stable, Rig-readable location (or the run recording the artifact
-path) — a small delivery-side design the Rig ticket owns. **Filed as BL-073** in
-`docs/backlog-2026-06.md`; scoped generically over any report-producing use case (docbuilder too),
-not cloudcost-specifically.
+path). **Filed as BL-073** in `docs/backlog-2026-06.md`; scoped generically over any report-producing
+use case (docbuilder too), not cloudcost-specifically.
 
 ## Sequencing
 
-t1 → t2 → t3 is the **contract-proof core**, linear; t3 closes the core done-when and *is the clean
-mechanical result* (compose/render unchanged beyond §t2, single-provider). **t4 after t3** (offline
-parts may build in parallel; its render change lands after t3 so the isolation invariant is measured
-against a settled core). t4 is **non-gating**.
+t1 (**done**) → t2 → t3 is the **contract-proof core**, linear; t3 closes the core done-when and *is
+the clean mechanical result* (compose/render unchanged beyond §t2, single-provider). **t4 after t3**
+(offline parts may build in parallel; its render change lands after t3 so the isolation invariant is
+measured against a settled core). t4 is **non-gating**.
 
 ## Open items forwarded (post-m2)
 
+- **`swept_regions` render home (t3 decision, A4).** Decision D says the report states the swept
+  set; t1 emits it in the stdout summary and `provider_extra.swept_regions` (opaque — downstream
+  must not key on it generically), and §t2 (d) holds compose/render unchanged. Recommended t3
+  resolution: surface it as a **deliberate, enumerated compose/render adjustment** — a named
+  region-coverage field `compose` lifts from the snapshot into report_data, rendered generically —
+  **not** a leak and **not** by weakening Decision D. Adjudicate at t3.
 - **Cross-provider consolidation** as an optional aggregator read-layer over
   `history/{provider}/{period}/` snapshots (decision H) — if/when a FinOps roll-up is wanted.
-  (Not filed as a row — it is an optional read-layer with no live trigger; revisit when wanted.)
+  (Not filed as a row — no live trigger; revisit when wanted.)
 - **Full S3/ECR/rightsizing optimization** via **Cost Optimization Hub / Compute Optimizer**
   (decision F) — t4's real-bill read seeds its scope. **BL-072.**
 - **Rig report-surfacing** ticket (above). **BL-073.**
 - **Resource-level AWS cost** + rate spot-check — deferred (B). **BL-071.**
+- **Seam sweep** — enumerate every provider-vocabulary / provider-assumption seam in shared
+  machinery. **BL-074.**
 - **Recency-modifier window bound + `last_activity_at` guard** — at the first adapter populating
   `last_activity_at` (unchanged from m1; latent).
 - **P2 queue; P3 gated cleanup; email/Drive; scheduling; DuckDB; the `reported` governance
   section** — unchanged from m1.
 
-## Backlog rows filed with this milestone (BL-069–BL-073, in `docs/backlog-2026-06.md`)
+## Backlog rows filed with this milestone (`docs/backlog-2026-06.md`)
 
-- **BL-070 — Retire the dormant cross-provider merge code in `compose_report_data.py`** — the
-  N-merge, `providers_without_prior_snapshot` caveat, multi-currency, and cross-currency 4-site
-  paths are unreachable under per-provider reporting (H). Left dormant in m2 to keep `compose`
-  unchanged (pristine negative proof); delete in a dedicated cleanup so the dead code doesn't rot.
 - **BL-069 — DO ≥1-orphan tripwire (armed).** Reserved IP 168.144.13.150 (NYC1) confirmed deleted
-  2026-07-30 — arming the coupled self-test: the DO pipeline's ≥1-orphan *assertion* (a
-  known-positive pipeline test, not a business alert) depended on that IP. Next DO run finds 0 DO
-  orphans → the test fails, or greens vacuously off stale output. Re-plant a DO orphan or re-point
-  the assertion to a fixture before the next DO run. Independent of AWS.
+  2026-07-30 — the DO pipeline's ≥1-orphan *assertion* (a known-positive pipeline test) depended on
+  it. Next DO run finds 0 DO orphans → the test fails or greens vacuously off stale output. Re-plant
+  or re-point to a fixture before the next DO run. **Verified fired** at t1 (live DO: 18 resources,
+  0 orphans). Independent of AWS.
+- **BL-070 — Retire the dormant cross-provider merge code in `compose_report_data.py`** — N-merge,
+  `providers_without_prior_snapshot` caveat, multi-currency, cross-currency 4-site paths are
+  unreachable under per-provider reporting (H). Dormant in m2 to keep `compose` unchanged; delete in
+  a dedicated cleanup.
 - **BL-071 — Resource-level cost path** + the resource-rate spot-check — forwarded (B service-level).
 - **BL-072 — Cost Optimization Hub optimization milestone** — forwarded (t4's read seeds its scope).
 - **BL-073 — Surface each run's report artifact against its run in Rig** — the §Referenced Rig
   ticket above; Rig-repo concern, scoped generically.
+- **BL-074 — Seam sweep: enumerate every provider-vocabulary / provider-assumption seam in shared
+  machinery.** m1 called `STOPPED_STATES` "the one seam"; t1 found it is at least **three** —
+  `state`, `type` (both resolved at t2 a/a′), and the **flat-billed-regardless-of-state cost
+  assumption** (adapter half at t1, saving half at t2 c). The claim came from observation, not
+  enumeration (the **Adjacent-case** rule: enumerate every site of the class before fixing the
+  first). Sweep `detect_orphans.py` + the shared helpers for *any other* value/threshold/spelling a
+  provider could differ on — the rule-catalog **age thresholds** and the **`keep=true` tag spelling**
+  are the named next candidates — and correct m1's "the one seam" text where it appears. §7 promotion
+  candidate at m2 close (Adjacent-case / enumerate-the-class). *(ID confirmed next-free against
+  `docs/backlog-2026-06.md` at `3bc970b`: BL-073 was the highest.)*

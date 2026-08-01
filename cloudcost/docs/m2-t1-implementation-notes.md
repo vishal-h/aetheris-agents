@@ -68,8 +68,10 @@ alternative — leaving the running rate on the resource and teaching
 `rule_stopped_droplet_with_attached_storage` a per-provider cost model — would have put a
 third provider assumption into shared machinery. Under D5 the adapter owns its provider's cost
 model, so the seam dissolves rather than moving. **t2 still owes the other half**: the rule's
-saving must sum the attached storage, which is m1's own forward (`detect_orphans.py:250` —
-*"attached storage is named but not summed (m1)"*). That is structural, not a rule edit:
+saving must sum the attached storage, which is m1's own forward (`detect_orphans.py:243` —
+*"attached storage is named but not summed (m1)"*; this cited `:250` in the r0/r1 packets, an
+off-by-seven that reached the milestone doc's rev-5 draft — corrected in both). That is
+structural, not a rule edit:
 `score()` derives `monthly_saving_estimate` uniformly from `resource["monthly_cost_estimate"]`
 for every rule and `fired()` carries no saving, so `fired()` gains an optional saving and
 `score()` honours it.

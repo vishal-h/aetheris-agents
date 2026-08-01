@@ -2299,6 +2299,60 @@ solo runs).`
 
 ---
 
+### BL-074 — Seam sweep: enumerate every provider-vocabulary / provider-assumption seam in shared machinery (#TBD)
+**Size:** S–M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/`)
+
+m1 closed calling `STOPPED_STATES` *"the one seam where a provider's own vocabulary reaches
+shared machinery."* m2 t1 found it is at least **three**:
+
+1. **`state`** — `detect_orphans.py:71` `STOPPED_STATES = {"off"}` (DO vocabulary). Known at
+   m1, resolved at **t2 (a)**.
+2. **`type`** — every rule keys on the inventory `type` field, but m1's §Normalized schemas
+   never enumerated its *values*, so DO's `droplet` / `reserved_ip` were provider vocabulary
+   inside shared machinery. Surfaced at **t1**, resolved at **t2 (a′)**.
+3. **The flat-billed-regardless-of-state cost assumption** — `rule_stopped_droplet_with_attached_storage`
+   takes its saving from the instance's own `monthly_cost_estimate` (`detect_orphans.py:243`
+   states the m1 forward: *"saving estimate is the instance's own monthly_cost_estimate;
+   attached storage is named but not summed (m1)"*). True for DO, which bills a droplet on or
+   off; false for AWS, which bills no compute for a stopped instance. Adapter half resolved at
+   **t1** (a stopped instance reports `monthly_cost_estimate: 0.0`, keeping the provider's cost
+   model in its adapter per D5); saving half at **t2 (c)**.
+
+**Why a row rather than three fixes.** All three are being fixed. What is not fixed is the
+thing that produced them: the "one seam" claim came from **observation, not enumeration** —
+exactly the **Adjacent-case** rule (*"enumerate every site of that exact class before filing or
+fixing the first one"*). Fixing the three found by accident leaves the same blind spot for the
+fourth. So this ticket is the enumeration itself.
+
+**Scope.** Sweep `detect_orphans.py`, `_normalized.py`, `compose_report_data.py` and
+`render_report.py` for *any other* value, threshold, spelling or billing assumption a provider
+could legitimately differ on, and decide for each whether it is schema-level (enumerate it in
+§Normalized schemas) or adapter-owned (push it into the adapter). Named next candidates:
+
+- the rule-catalog **age thresholds** (`UNATTACHED_VOLUME_MIN_AGE_DAYS`,
+  `STOPPED_DROPLET_MIN_AGE_DAYS`, `DEFAULT_SNAPSHOT_AGE_DAYS`) — a provider whose billing
+  granularity differs may want different ones, and today they are global constants;
+- the **`keep=true` tag spelling** (`KEEP_TAG`) — DO tags are flat strings, AWS tags are
+  key/value pairs flattened to `k=v` by the adapter, so the spelling is already an adapter
+  convention masquerading as a shared constant;
+- `EPHEMERAL_NAME_PATTERN`, and `TAGGED_ACCOUNT_COVERAGE_THRESHOLD`.
+
+Also **correct m1's "the one seam" text where it appears** (`cloudcost/milestone.md` §Open
+items) so the next reader does not re-derive the wrong count.
+
+**Done when:** every provider-differing value in shared machinery is enumerated with a
+schema-level-or-adapter-owned ruling; the ones ruled schema-level are in §Normalized schemas;
+m1's "one seam" text is corrected; the sweep's *method* (how completeness was established) is
+recorded, so this is an enumeration and not another observation.
+
+**§7 promotion candidate at m2 close** — Adjacent-case / enumerate-the-class, in its
+"a uniqueness claim produced by observation" form.
+
+`Source: m2-cloudcost t1 review r0/r1 (docs/reviews/m2-cloudcost-t1-review.md), ratified
+2026-08-01. Line citations verified at aetheris-agents 3bc970b.`
+
+---
+
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 

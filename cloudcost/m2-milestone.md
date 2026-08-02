@@ -1,8 +1,8 @@
 # m2-cloudcost — AWS cost report + orphan detection + optimization spike (report-only, per-provider)
 
-**Status:** **RATIFIED 2026-08-01 (rev 5)** — Phase 1 closed; **t1 MERGED** (aetheris-agents
-`3bc970b`, review `docs/reviews/m2-cloudcost-t1-review.md`). t2 next, against the corrected
-contract below.
+**Status:** **RATIFIED 2026-08-02 (rev 5.1)** — Phase 1 closed; **t1 MERGED** (aetheris-agents
+`3bc970b`, review `docs/reviews/m2-cloudcost-t1-review.md`). t2 in progress, against the corrected
+contract below (rev 5.1 lands two pre-t2 contract corrections — see the revision log).
 **Origin:** m1-cloudcost close (`cloudcost--milestone.md`, CLOSED 2026-07-29) +
 `handoff-m2-cloudcost-aws-2026-07-30.md`; decisions A–H settled 2026-07-30 (C amended rev 4).
 **Repo state at ratification:** aetheris-agents `3bc970b` — t1 merged, t1 files only; the m1
@@ -39,6 +39,20 @@ adapters/scripts, it does not re-scaffold).
   line originated in t1's implementation notes and reached this doc's rev-5 draft; corrected in
   both); and the §Repo-state line now stamps rev 5's own ratification commit rather than carrying
   rev 4's.*
+- rev 5 → 5.1 (pre-t2, 2026-08-02): two **contract corrections** adjudicated with Vishal at the
+  opening of t2, landed before any t2 code so the ticket runs against the corrected contract.
+  (i) **The stopped-with-storage saving is `own + attached`, not `attached` replacing `own`** —
+  rev 5's "not the instance's own" hardcoded AWS's `own = 0` into a *shared* rule, i.e. it
+  re-created seam #3 while claiming to close it. The additive form is provider-agnostic because
+  each adapter already encodes its own cost model in the estimate (§t2 c, §t2 Done-check, §t2
+  prompt, D4 corollary, the seam-#3 open-items row). (ii) **The canonical `type`/`state`
+  vocabulary's one home is `cloudcost/scripts/_normalized.py`**, imported by `fetch_aws.py`,
+  `fetch_do.py` and `detect_orphans.py` — the alternative forces `fetch_do.py` either to
+  cross-import from another adapter or to re-declare the constants, which is drift on the very
+  seam t2 exists to remove (§t2 Touches, which now also names `fetch_aws.py`: its t1-local
+  constants become imports, a recorded byte-identical relocation, not scope creep). Also ratified,
+  no doc change needed: the aged manual RDS snapshot **widens** `rule_aged_snapshot` rather than
+  adding a second rule (§t2 c). No change to the milestone's goal or scope.
 
 ---
 
@@ -138,8 +152,10 @@ not by requiring a globally clean environment.
 inventory estimates. Resource-level cost test forwarded. *Corollary the adapter owns (t1):* a
 provider's cost *model* lives in its adapter — a stopped AWS instance bills no compute, so its
 estimate is 0.0 (unlike DO, which bills a droplet on-or-off). Keeping that assumption out of shared
-machinery is why the stopped-with-storage rule's saving is the *attached storage* (§t2 c), not the
-instance's own estimate.
+machinery is why the stopped-with-storage rule's saving is the instance's own estimate **plus** its
+attached storage (§t2 c); because the adapter encodes the model, AWS's own term is 0 and DO's is the
+full droplet price, so the same "own + attached" sum is correct for both — no provider fact in the
+shared rule.
 
 **D5 (shared machinery is provider-agnostic; only the adapter is provider-specific)** — the
 decision m2's **core** tests, now in its cleanest form: each provider is its **own solo linear
@@ -303,7 +319,7 @@ Not confidence-scored like orphans; exploratory. The core pipeline never reads i
 |---|---|---|
 | **`STOPPED_STATES={"off"}`** normalization (seam #1) | **LIVE — t2 a** | Both adapters emit canonical `"stopped"`; constant → schema-level value; 3 pinning tests + DO fixtures update. RDS `stopped` maps here too. One of **three** seams (BL-074). |
 | **`type` vocabulary un-enumerated (seam #2)** | **LIVE — t2 a′** | m1 keyed rules on `type` but never enumerated its values; DO's `droplet`/`reserved_ip` were provider vocab in shared machinery. Canonical enum (above) + adapter renames. Surfaced at t1. |
-| **flat-billed cost assumption (seam #3)** | **Adapter half done (t1); saving half LIVE — t2 c** | DO bills a droplet on-or-off; AWS doesn't. Adapter emits 0.0 for stopped compute; the stopped-with-storage rule's saving must sum attached storage. BL-074. |
+| **flat-billed cost assumption (seam #3)** | **Adapter half done (t1); saving half LIVE — t2 c** | DO bills a droplet on-or-off; AWS doesn't. Adapter emits 0.0 for stopped compute; the stopped-with-storage rule's saving must sum **own + attached storage** (own encodes each provider's model: AWS 0, DO full price). BL-074. |
 | **t2 output filename collision** | **LIVE — t2 b** | Each provider writes `{provider}_orphan_candidates_{period}.json`. |
 | **Resource-level cost rate spot-check** | **DEFERRED (BL-071)** | B is service-level. Forwarded. |
 | **New-provider-caveat render path** | **RETIRED** | Unreachable without a cross-provider roll-up (H). |
@@ -398,14 +414,21 @@ do not key on any `type` *value*** — a special-case on a value is a *third* le
 (b) **Output filename prefix:** `{provider}_orphan_candidates_{period}.json`.
 (c) **RDS heuristic + the cost-model half:** extend the §t2 catalog with RDS rules that fit existing
 shapes — stopped RDS instance with allocated storage (mirrors stopped-droplet+storage) and aged
-manual RDS snapshot (mirrors aged-snapshot) — keyed on the normalized schema. **Cost-model half
-(seam #3 saving side):** a *stopped* compute/database bills no compute, so the adapter emits
-`monthly_cost_estimate:0.0` for it; the stopped-with-storage rule's *saving* must therefore sum the
-**attached storage's** estimate, not the instance's own — else the stopped-EC2/RDS orphan reports a
-$0 saving and the headline value vanishes. This is m1's own forward (`detect_orphans.py:243`,
-"attached storage named but not summed") and is structural: `score()` derives
-`monthly_saving_estimate` uniformly from `resource["monthly_cost_estimate"]` and `fired()` carries
-no saving, so `fired()` gains an optional saving and `score()` honours it.
+manual RDS snapshot (**widens** `rule_aged_snapshot` to `type ∈ {snapshot, database_snapshot}`
+rather than adding a second rule: same age threshold, same 0.7, same type-agnostic evidence
+sentence; never fork the threshold — parameterize it if RDS ever needs its own) — keyed on the
+normalized schema.
+
+**Cost-model half (seam #3 saving side).** m1 reported the orphan's **own** estimate and named the
+attached storage but did not **sum** it (`detect_orphans.py:243`) — an *under-report*. The fix
+**adds** attached storage to own, it does not replace own:
+`saving = own.monthly_cost_estimate + Σ(attached separately-inventoried storage estimates)`.
+Provider-agnostic — the shared rule keys on no provider fact — because each adapter encodes its own
+cost model: AWS stopped own = 0.0 (`i-0aaa3333`→16.00), AWS stopped RDS own = storage with no
+separate resource (`db-stopped-1`→23.00), DO stopped droplet own = full price
+(`drop-stopped-1`→29.00). **Double-count guard:** only separately-inventoried storage counts; RDS
+storage is in the instance's own estimate. Structural: `fired()` gains an optional saving, `score()`
+honours it.
 (d) **Negative proof:** `compose_report_data.py` / `render_report.py` run **unchanged** on AWS data
 (single-provider, as m1 shipped); the now-dead cross-provider merge code in `compose` is left
 **dormant** (not deleted; retirement is **BL-070**). Any *needed* change to compose/render = a
@@ -417,15 +440,20 @@ dormant merge).
 
 **Touches.** `cloudcost/scripts/detect_orphans.py` (state constant + `type` re-key + rule rename +
 filename + RDS rules + `score()`/`fired()` saving); `cloudcost/scripts/fetch_do.py` (state + `type`
-mapping — cross-adapter, recorded); `cloudcost/milestone.md` (§Normalized schemas — enumerate the
-canonical `type` vocabulary, amendment-to-complete); `cloudcost/tests/test_detect_orphans.py`;
-`cloudcost/tests/fixtures/do_*.json` + `aws_*.json` + crafted RDS `inventory_*.json`; possibly
-`cloudcost/scripts/_normalized.py`. **Not** `compose_report_data.py` / `render_report.py` (a change
-there is the finding).
+mapping — cross-adapter, recorded); `cloudcost/scripts/_normalized.py` (**the canonical
+`type`/`state` vocabulary lives here** — `TYPE_*`, `STATE_STOPPED`, imported by `fetch_aws.py`,
+`fetch_do.py`, and `detect_orphans.py`); `cloudcost/scripts/fetch_aws.py` (t1-local
+`TYPE_*`/`STATE_STOPPED` → imports; byte-identical output, t1 tests stay green);
+`cloudcost/milestone.md` (§Normalized schemas — enumerate the canonical `type` vocabulary,
+amendment-to-complete); `cloudcost/tests/test_detect_orphans.py`;
+`cloudcost/tests/fixtures/do_*.json` + `aws_*.json` + crafted RDS `inventory_*.json`. **Not**
+`compose_report_data.py` / `render_report.py` (a change there is the finding).
 
 **Do-not-generate.** Silently widening `STOPPED_STATES`; leaving any provider-flavoured `type` value
-in shared machinery; keying compose/render on a `type` *value*; leaving the stopped-instance saving
-sourced from the instance's own (0.0) estimate; provider-specific field access in shared machinery;
+in shared machinery; keying compose/render on a `type` *value*; a stopped-with-storage saving that
+**replaces** own with attached (or leaves attached unsummed) instead of adding them, or that
+double-counts RDS storage already inside the instance's own estimate; a second aged-snapshot rule
+where widening the existing one suffices; provider-specific field access in shared machinery;
 deleting/altering the dormant merge code (retire via BL-070, not here); any compose/render change
 absent a documented contract-leak finding; confidence-scoring S3/ECR-style signals here (that is t4).
 
@@ -434,9 +462,10 @@ absent a documented contract-leak finding; confidence-scoring S3/ECR-style signa
   orphan via the normalized enum; **mutation:** a mis-normalized/reverted `state` fails.
 - **`type` mutation:** reverting any canonical `type` to DO vocabulary (`compute_instance`→`droplet`,
   `static_ip`→`reserved_ip`) fails a test; DO fixtures/tests green after the rename.
-- **Stopped-orphan saving is non-zero and sourced from attached storage:** the stopped-EC2 /
-  stopped-RDS candidate's `monthly_saving_estimate` equals the attached storage estimate; **mutation:**
-  sourcing it from the instance's own (0.0) estimate makes the saving $0 → fails.
+- **Stopped-orphan saving = own + attached, provider-correct:** DO stopped-droplet `== 29.00`
+  (24+5), AWS EC2 `== 16.00` (0+16), AWS RDS `== 23.00` (own, no separate storage). **Mutations:**
+  drop own → DO reads 5.00 (fails); drop attached → AWS EC2 reads 0.00 (fails); double-add RDS
+  storage → RDS reads 46.00 (fails).
 - Aged manual RDS snapshot fires the aged-snapshot-shaped rule with `evidence[]`.
 - `keep=true` excludes; untagged is reported-not-queued; filename carries the provider prefix.
 - `detect_orphans.py`'s m1 suite + new tests green; `fetch_do.py` tests green after fixture regen.
@@ -452,9 +481,12 @@ absent a documented contract-leak finding; confidence-scoring S3/ECR-style signa
 > `droplet`→`compute_instance`, `reserved_ip`→`static_ip` + regen its fixtures; re-key the two
 > DO-specific rules onto canonical (rename `rule_stopped_droplet_…`→`…_compute_…`); confirm
 > compose/render key on no `type` value. (b) `{provider}_` filename prefix. (c) Add RDS orphan rules
-> reusing existing shapes (stopped RDS + storage; aged manual RDS snapshot), and give `fired()` an
-> optional saving that `score()` honours so the stopped-with-storage rule's saving sums the
-> **attached storage** (a stopped instance's own estimate is 0.0). (d) Leave `compose_report_data.py`
+> reusing existing shapes (stopped RDS + storage; aged manual RDS snapshot **by widening
+> `rule_aged_snapshot` to both snapshot types, not a second rule**), and give `fired()` an optional
+> saving that `score()` honours so the saving = the orphan's own estimate **plus** each attached
+> separately-inventoried storage resource (stopped AWS own is 0.0, stopped DO own is full price, RDS
+> storage is in its own estimate — so "own + attached" is provider-correct without the rule knowing
+> the provider). Mutation-test DO 29 / AWS-EC2 16 / AWS-RDS 23. (d) Leave `compose_report_data.py`
 > / `render_report.py` **unchanged** and the cross-provider merge code **dormant** (BL-070 retires
 > it) — if AWS forces a change, STOP and report a contract-leak finding. Mutation-test the `state`
 > and `type` normalizations and the non-zero stopped-orphan saving. Done-check per §t2.

@@ -1,6 +1,7 @@
 # m2-cloudcost — AWS cost report + orphan detection + optimization spike (report-only, per-provider)
 
-**Status:** **RATIFIED 2026-08-01 (rev 5.2)** — Phase 1 closed. **t1 MERGED** (aetheris-agents
+**Status:** **RATIFIED 2026-08-01** (rev 4); current revision **5.2**, 2026-08-02 (`fb4dfe3`).
+Phase 1 closed. **t1 MERGED** (aetheris-agents
 `3bc970b`, review `docs/reviews/m2-cloudcost-t1-review.md`). **t2 MERGED** (doc-only rev 5.1
 `163e059` → code `7a7b7ec` → `b74b1d8`; review `docs/reviews/m2-cloudcost-t2-review.md` `ba623b1`)
 — r0 APPROVE, merge-clean: negative proof held, three seams closed, own+attached correct, 229
@@ -12,8 +13,10 @@ next** (the non-gating optimization spike). §Prereqs 3 (planted Elastic IP) sti
 ≥1-orphan close only.
 **Origin:** m1-cloudcost close (`cloudcost--milestone.md`, CLOSED 2026-07-29) +
 `handoff-m2-cloudcost-aws-2026-07-30.md`; decisions A–H settled 2026-07-30 (C amended rev 4).
-**Repo state at ratification:** aetheris-agents `d2667ad`, aetheris `fd9ac48` (t1 merged at
-`3bc970b`, t1 files only — the m1 pipeline is otherwise untouched, two append-only edits).
+**Repo state at ratification:** aetheris-agents `3bc970b` — t1 merged, t1 files only; the m1
+pipeline is otherwise untouched (two append-only edits, `tests/conftest.py` and
+`requirements.txt`). aetheris `fd9ac48`, untouched (t1 is single-repo). Rev 4 was ratified at
+`d2667ad`.
 **Draft state:** rev 4 drafted at aetheris-agents `bd37e90`.
 **Repo:** `aetheris-agents/cloudcost/` (existing use case from m1 — this milestone *adds*
 adapters/scripts, it does not re-scaffold).

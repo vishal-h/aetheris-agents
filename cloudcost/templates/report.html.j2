@@ -108,6 +108,20 @@
     {%- endfor %}
   </ul>
   {%- endif %}
+  {#- Swept-region coverage (m2 A4). Provenance, so it belongs beside "Data as of": it says
+      which regions the inventory was actually gathered from, making a narrowed sweep visible
+      instead of letting it shrink the inventory behind an unchanged-looking report.
+      `entry.count` is printed from the payload rather than computed with `| length` — the
+      template computes nothing, and a count that disagreed with the list would be a fact
+      worth seeing, not one worth hiding. Absent for a provider that does not sweep, and the
+      whole block then emits nothing. -#}
+  {%- if region_coverage %}
+  <ul class="meta">
+    {%- for entry in region_coverage %}
+    <li><span class="label">{{ entry.provider | nz }} regions swept ({{ entry.count | nz }})</span>{% if entry.swept %}{{ entry.swept | join(", ") }}{% else %}none &mdash; the sweep enumerated no region{% endif %}</li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
 </header>
 
 {# ------------------------------------------------------------ cost summary #}

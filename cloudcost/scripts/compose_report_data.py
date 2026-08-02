@@ -504,6 +504,55 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
     }
 
 
+# ------------------------------------------------------------------- region coverage
+
+#: The single provider-payload key this stage reads (m2 A4, adjudicated at t3).
+#:
+#: That payload block is opaque by contract — compose must never iterate it, copy it
+#: through, or key on it generically — so the lift is written as one *named* constant and
+#: every other key in the block stays invisible to the report. The distinction is the whole
+#: point of A4: a generic pass-through would put provider-shaped data into shared machinery,
+#: which is the leak this milestone exists to prove does not happen.
+SWEPT_REGIONS_KEY = "swept_regions"
+
+
+def region_coverage_section(bundles: list) -> list:
+    """Per-provider swept-region coverage, lifted from each cost snapshot's one named key.
+
+    Decision D's no-silent-caps clause: a provider that enumerates the regions it swept says
+    so in the report, so a sweep narrowed by an override or by a failed region enumeration is
+    visible rather than quietly shrinking the inventory behind an unchanged-looking report.
+
+    Nothing is derived. The list is the adapter's own, in the adapter's own order — it
+    already sorts and dedupes, and re-sorting here would be this stage inventing a figure.
+    `count` is taken once so the template does not have to compute it (t4 render contract:
+    the template computes nothing).
+
+    A provider whose snapshot carries no swept set contributes no entry, which is what keeps
+    a single-region provider's report identical to the one it produced before this field
+    existed. A provider that swept *nothing* contributes an entry saying zero — the honest
+    report of a broken sweep, and not the same thing as not sweeping.
+    """
+    entries = []
+    for bundle in bundles:
+        cost = bundle.get("cost")
+        extra = cost.get("provider_extra") if isinstance(cost, dict) else None
+        regions = extra.get(SWEPT_REGIONS_KEY) if isinstance(extra, dict) else None
+        if not isinstance(regions, list):
+            continue
+        entries.append(
+            {
+                "provider": bundle["provider"],
+                # str() rather than a type filter: a malformed element is *shown*, never
+                # dropped. A silently shorter region list is exactly the silent cap
+                # decision D forbids.
+                "swept": [str(region) for region in regions],
+                "count": len(regions),
+            }
+        )
+    return entries
+
+
 # --------------------------------------------------------------------------- compose
 
 
@@ -555,6 +604,7 @@ def compose(
     delta = month_on_month(costs, prior_snapshots, period, warnings)
     coverage = coverage_section(bundles, top_untagged, skipped)
     orphans = orphan_section(bundles, warnings, skipped)
+    regions = region_coverage_section(bundles)
 
     stamps = []
     for bundle in bundles:
@@ -587,6 +637,11 @@ def compose(
         "mom_delta": delta,
         "tag_coverage": coverage,
         "orphans": orphans,
+        # m2 A4 (t3): a *named* first-class field, never a generic copy of the provider
+        # payload block. Empty for every provider that does not sweep regions, which is what
+        # keeps the DigitalOcean report byte-identical to the one this milestone started
+        # from — the field is additive, not a new required section.
+        "region_coverage": regions,
         "totals": {
             "providers": len(bundles),
             "services": len(costs["by_service"]),

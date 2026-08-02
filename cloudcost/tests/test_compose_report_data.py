@@ -436,6 +436,79 @@ def test_a_candidate_without_a_numeric_confidence_is_skipped_not_banded():
     assert report["skipped"][0]["reason"].startswith("orphan candidate has no numeric confidence")
 
 
+# ------------------------------------------------------- region coverage (m2 t3, A4)
+
+
+def swept_bundle(regions, extra=None):
+    """A foreign bundle whose cost snapshot carries the one payload key A4 lifts.
+
+    Built on `soc_bundle()` so everything around the key is a real normalized document —
+    a hand-written stand-in would prove only that the lift reads what this file's author
+    wrote. `extra` seeds decoy keys alongside it.
+    """
+    bundle = soc_bundle()
+    bundle["cost"] = {
+        **bundle["cost"],
+        "provider_extra": {**(extra or {}), "swept_regions": regions},
+    }
+    return bundle
+
+
+def test_the_swept_region_set_is_lifted_into_a_named_report_field():
+    report = compose([swept_bundle(["eu-west-1", "us-east-1"])])
+    assert report["region_coverage"] == [
+        {"provider": "someothercloud", "swept": ["eu-west-1", "us-east-1"], "count": 2}
+    ]
+
+
+def test_a_provider_that_sweeps_no_regions_contributes_no_entry():
+    """The failable pair for the test above, and the invariant the DO report rests on: a
+    provider with no swept set leaves the field empty rather than inventing coverage."""
+    assert compose([do_bundle()])["region_coverage"] == []
+
+
+def test_the_lift_copies_one_named_key_and_nothing_else_out_of_the_provider_payload():
+    """The "never key on the provider payload block generically" clause, as an assertion.
+
+    An implementation that copied the block through — or iterated it — would carry these
+    decoys into the report and fail here. Only the one named key may cross.
+    """
+    decoys = {"results_by_time": [{"time_period": {"Start": "2026-07-01"}}], "raw_arn": "arn:aws:ec2:x"}
+    report = compose([swept_bundle(["us-east-1"], extra=decoys)])
+    payload = json.dumps(report)
+    assert "results_by_time" not in payload
+    assert "raw_arn" not in payload and "arn:aws:" not in payload
+    assert report["region_coverage"][0]["swept"] == ["us-east-1"]
+
+
+def test_the_region_list_is_the_adapters_own_order_and_is_never_re_sorted():
+    """compose derives nothing here. The adapter already sorts and dedupes; re-doing it in
+    shared machinery would be this stage inventing a figure, and would hide an adapter whose
+    sweep had started returning duplicates."""
+    report = compose([swept_bundle(["us-west-2", "ap-south-1", "us-west-2"])])
+    assert report["region_coverage"][0]["swept"] == ["us-west-2", "ap-south-1", "us-west-2"]
+    assert report["region_coverage"][0]["count"] == 3
+
+
+def test_a_malformed_swept_set_degrades_and_a_malformed_element_is_shown_not_dropped():
+    assert compose([swept_bundle("us-east-1")])["region_coverage"] == []
+    entry = compose([swept_bundle(["us-east-1", 42])])["region_coverage"][0]
+    assert entry["swept"] == ["us-east-1", "42"] and entry["count"] == 2
+
+
+def test_a_provider_that_swept_nothing_says_so_rather_than_going_silent():
+    """Zero regions and no sweep are different facts: the first is a broken sweep worth
+    seeing (decision D, no-silent-caps), the second is a provider with no such concept."""
+    assert compose([swept_bundle([])])["region_coverage"] == [
+        {"provider": "someothercloud", "swept": [], "count": 0}
+    ]
+
+
+def test_each_provider_states_its_own_sweep():
+    report = compose([do_bundle(), swept_bundle(["us-east-1"])])
+    assert [entry["provider"] for entry in report["region_coverage"]] == ["someothercloud"]
+
+
 # --------------------------------------------------------------------- N providers
 
 
@@ -793,3 +866,59 @@ def test_the_whole_pipeline_composes_end_to_end(full_stub, tmp_path, monkeypatch
 
     # And the run's snapshot is on disk for next month's delta.
     assert (tmp_path / "history" / "2026-07" / "digitalocean_costs_2026-07.json").exists()
+
+    # DigitalOcean sweeps no regions, so the A4 field stays empty on this pipeline.
+    assert report["region_coverage"] == []
+
+
+def test_the_aws_adapters_swept_set_reaches_report_data(full_aws_stub, tmp_path, monkeypatch):
+    """A4 across the same two seams, on the provider that motivated it.
+
+    The swept set is asserted equal to the *adapter's own* emitted value read back off disk,
+    not to a list written here: a hardcoded expectation would still pass if compose lifted
+    the wrong key, or lifted nothing and the constant happened to match.
+    """
+    import fetch_aws
+    from conftest import CLOUDCOST_ACCESS_KEY, CLOUDCOST_SECRET_KEY
+
+    monkeypatch.setenv("CLOUDCOST_AWS_ACCESS_KEY_ID", CLOUDCOST_ACCESS_KEY)
+    monkeypatch.setenv("CLOUDCOST_AWS_SECRET_ACCESS_KEY", CLOUDCOST_SECRET_KEY)
+    assert (
+        fetch_aws.main(
+            [
+                "--output-dir", str(tmp_path),
+                "--period", "2026-07",
+                "--endpoint-url", full_aws_stub.endpoint_url,
+            ]
+        )
+        == 0
+    )
+    costs_file = tmp_path / "aws_costs_2026-07.json"
+    inventory_file = tmp_path / "aws_inventory_2026-07.json"
+
+    detect = subprocess.run(
+        [
+            sys.executable, str(DETECT), str(inventory_file),
+            "--output-dir", str(tmp_path), "--reference-date", "2026-07-27",
+        ],
+        cwd=USE_CASE_ROOT, capture_output=True, text=True,
+    )
+    assert detect.returncode == 0, detect.stderr
+
+    result = cli(
+        [
+            "--cost", str(costs_file),
+            "--inventory", str(inventory_file),
+            "--orphans", str(tmp_path / "aws_orphan_candidates_2026-07.json"),
+            "--output-dir", str(tmp_path / "out"),
+            "--history-dir", str(tmp_path / "history"),
+        ]
+    )
+    assert result.returncode == 0, result.stderr
+    report = json.loads((tmp_path / "out" / "report_data_2026-07.json").read_text())
+
+    emitted = json.loads(costs_file.read_text())["provider_extra"]["swept_regions"]
+    assert emitted, "the adapter emitted no swept set — this test would assert nothing"
+    assert report["region_coverage"] == [
+        {"provider": "aws", "swept": emitted, "count": len(emitted)}
+    ]

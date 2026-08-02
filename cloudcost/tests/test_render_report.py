@@ -355,6 +355,103 @@ def test_a_skipped_input_is_visible_rather_than_hidden(report):
     assert "Skipped inputs (1)" in body
 
 
+# ------------------------------------------------------- region coverage (m2 t3, A4)
+#
+# The field is *additive*: it renders when a provider swept regions and is invisible
+# otherwise. The two invariants that matter are that it reaches the page when present, and
+# that it costs a payload without it exactly nothing — the second is what keeps every m1
+# DigitalOcean report byte-for-byte what it was.
+
+
+@pytest.fixture(scope="module")
+def swept_report():
+    """A payload carrying A4's field, composed by the real merge like every other here."""
+    bundle = soc_bundle()
+    bundle["cost"] = {
+        **bundle["cost"],
+        "provider_extra": {"swept_regions": ["ap-south-1", "eu-west-1", "us-east-1"]},
+    }
+    return compose([bundle])
+
+
+def test_the_swept_region_set_is_stated_in_the_report(swept_report):
+    header = text_of(section(render(swept_report), "report-header"))
+    entry = swept_report["region_coverage"][0]
+    assert f"{entry['provider']} regions swept ({entry['count']})" in header
+    for region in entry["swept"]:
+        assert region in header
+
+
+def test_a_mutated_region_figure_reaches_the_html(swept_report):
+    """The render-only guard for the new field. A template computing the count with
+    `| length` would print 3 here and fail — the payload's figure is the one on the page."""
+    mutated = json.loads(json.dumps(swept_report))
+    mutated["region_coverage"][0]["count"] = 999
+    mutated["region_coverage"][0]["swept"][0] = "xx-mutant-1"
+    header = text_of(section(render(mutated), "report-header"))
+    assert "regions swept (999)" in header
+    assert "xx-mutant-1" in header
+
+
+def test_a_provider_that_swept_nothing_renders_as_nothing_not_as_absent(swept_report):
+    mutated = json.loads(json.dumps(swept_report))
+    mutated["region_coverage"][0] = {"provider": "someothercloud", "swept": [], "count": 0}
+    header = text_of(section(render(mutated), "report-header"))
+    assert "regions swept (0)" in header and "the sweep enumerated no region" in header
+
+
+def test_a_payload_without_region_coverage_is_not_a_degraded_render(tmp_path, report):
+    """The load-bearing one: adding `region_coverage` to SECTIONS instead of OPTIONAL_FIELDS
+    turns this red. A missing *section* costs a rendering note and a `partial` exit — and
+    DigitalOcean, which has no regions to sweep, would then fail every run it ever makes."""
+    data = json.loads(json.dumps(report))
+    del data["region_coverage"]
+    result = cli([str(write_payload(tmp_path, data)), "--output-dir", str(tmp_path)])
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(result.stdout)
+    assert summary["status"] == "ok"
+    assert summary["render_warnings"] == []
+    # The stdout list is unchanged: A4 added a field inside the header, not a new section.
+    assert summary["sections"] == [
+        "header",
+        "cost-summary",
+        "month-on-month",
+        "tag-coverage",
+        "orphan-candidates",
+        "data-notes",
+    ]
+
+
+def test_the_report_is_byte_identical_whether_the_field_is_empty_or_absent(report):
+    """A non-sweeping provider's report must not move by one byte. `report` is a DO payload,
+    so compose already gives it `region_coverage: []`; deleting the key must render the same
+    page — the state every m1 report_data on disk is in."""
+    absent = json.loads(json.dumps(report))
+    del absent["region_coverage"]
+    assert report["region_coverage"] == []
+    assert render(report) == render(absent)
+    assert "regions swept" not in render(report)
+
+
+def test_the_region_block_names_no_provider_and_no_provider_payload_key():
+    """Rendered *generically*: the renderer and the template know a named report_data field,
+    not AWS, not the provider-payload block, not the key inside it that compose lifted."""
+    for source in (SCRIPT.read_text(), TEMPLATE.read_text()):
+        assert "provider_extra" not in source
+        assert "swept_regions" not in source
+        assert not re.search(r"\baws\b", source, re.I)
+        assert not re.search(r"\bdigitalocean\b", source, re.I)
+
+
+def test_two_providers_each_state_their_own_sweep():
+    one = soc_bundle()
+    one["cost"] = {**one["cost"], "provider_extra": {"swept_regions": ["us-east-1"]}}
+    html = render(compose([do_bundle(), one]))
+    header = text_of(section(html, "report-header"))
+    assert "someothercloud regions swept (1)" in header
+    assert "digitalocean regions swept" not in header
+
+
 # ------------------------------------------------------- render-only guard (failable)
 
 

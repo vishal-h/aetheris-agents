@@ -72,6 +72,17 @@ SECTIONS = (
     ("orphans", dict),
 )
 
+#: Additive top-level fields that only some payloads carry. Unlike SECTIONS, an absent one
+#: is **not** a degraded report — some providers emit it and some have no concept it maps to
+#: — so it costs no rendering note and does not flip the run to `partial`.
+#:
+#: The two tuples are kept apart deliberately. Putting an optional field in SECTIONS would
+#: make every run by a provider that has no such concept exit 1, with a rendering note about
+#: a section it had no reason to carry. Nothing here names a provider, a provider payload
+#: block, or a key inside one — a test asserts as much: the renderer renders whichever of
+#: these fields the payload brought, and learns nothing about where they came from (m2 A4).
+OPTIONAL_FIELDS = (("region_coverage", list),)
+
 #: Optional PDF companion. Never on the primary path: the HTML is produced by Python and
 #: Jinja2 alone, so a machine without this binary still gets the report.
 PDF_BINARY = "wkhtmltopdf"
@@ -198,6 +209,10 @@ def build_context(data: dict, source_file: str) -> tuple:
             )
             value = kind()
         context[key] = value
+
+    for key, kind in OPTIONAL_FIELDS:
+        value = data.get(key)
+        context[key] = value if isinstance(value, kind) else kind()
 
     context["service_groups"] = group_services(context["cost_summary"])
     context["currency_of"] = currencies_by_provider(context["cost_summary"])

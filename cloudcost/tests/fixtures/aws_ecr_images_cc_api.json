@@ -1,0 +1,21 @@
+{
+  "_comment": "Crafted. cc-api's images: all tagged, all recent. The negative control for ecr_untagged_image_accumulation — this repository must produce no signal at all, since it also has a lifecycle policy.",
+  "imageDetails": [
+    {
+      "registryId": "000000000000",
+      "repositoryName": "cc-api",
+      "imageDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "imageSizeInBytes": 210000000,
+      "imagePushedAt": "2026-07-25T12:00:00Z",
+      "imageTags": ["v2.9.1"]
+    },
+    {
+      "registryId": "000000000000",
+      "repositoryName": "cc-api",
+      "imageDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "imageSizeInBytes": 211500000,
+      "imagePushedAt": "2026-07-31T16:45:00Z",
+      "imageTags": ["v2.9.2", "latest"]
+    }
+  ]
+}

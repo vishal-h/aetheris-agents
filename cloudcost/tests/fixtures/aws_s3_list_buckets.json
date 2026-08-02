@@ -1,0 +1,9 @@
+{
+  "_comment": "Crafted. Three buckets spanning the S3 signal set and its negative control: cc-assets (us-east-1) has a lifecycle policy, no incomplete uploads and Standard-only bytes, so it must produce NO signal; cc-logs (eu-west-1) has no lifecycle, two incomplete multipart uploads and mixed Standard+Glacier bytes; cc-empty (us-east-1) has no lifecycle and zero objects. ListBuckets is region-independent, so the per-bucket region comes from GetBucketLocation, not from here.",
+  "Buckets": [
+    {"Name": "cc-assets", "CreationDate": "2024-03-11T09:14:02Z"},
+    {"Name": "cc-logs", "CreationDate": "2023-11-02T17:40:55Z"},
+    {"Name": "cc-empty", "CreationDate": "2025-06-19T08:00:00Z"}
+  ],
+  "Owner": {"DisplayName": "cloudcost-fixture", "ID": "fixtureowner0000000000000000000000000000000000000000000000000000"}
+}

@@ -13,6 +13,7 @@ import os
 import subprocess
 import sys
 
+import botocore.handlers
 import botocore.parsers
 import pytest
 
@@ -1028,10 +1029,31 @@ def test_every_fixture_round_trips_through_botocore():
         "aws_ce_cost_and_usage_zero_groups": ("ce", "GetCostAndUsage"),
         "aws_ce_cost_and_usage_page1": ("ce", "GetCostAndUsage"),
         "aws_ce_cost_and_usage_page2": ("ce", "GetCostAndUsage"),
+        # t4's optimization spike. These carry the encoder into three shapes the core sweep
+        # never exercised: rest-xml (s3), a second and third json target prefix (ecr,
+        # secretsmanager), and the one service whose advertised protocol is not the protocol
+        # botocore parses with (cloudwatch — see aws_wire._protocol).
+        "aws_s3_list_buckets": ("s3", "ListBuckets"),
+        "aws_s3_lifecycle_cc_assets": ("s3", "GetBucketLifecycleConfiguration"),
+        "aws_s3_multipart_cc_logs": ("s3", "ListMultipartUploads"),
+        "aws_s3_multipart_empty": ("s3", "ListMultipartUploads"),
+        "aws_ecr_repositories": ("ecr", "DescribeRepositories"),
+        "aws_ecr_images_cc_worker": ("ecr", "DescribeImages"),
+        "aws_ecr_images_cc_api": ("ecr", "DescribeImages"),
+        "aws_ecr_lifecycle_cc_api": ("ecr", "GetLifecyclePolicy"),
+        "aws_secretsmanager_secrets": ("secretsmanager", "ListSecrets"),
+        "aws_cloudwatch_metrics_cc_assets": ("cloudwatch", "GetMetricData"),
+        "aws_cloudwatch_metrics_cc_logs": ("cloudwatch", "GetMetricData"),
+        "aws_cloudwatch_metrics_cc_empty": ("cloudwatch", "GetMetricData"),
+        "aws_cloudwatch_metrics_cc_unknown": ("cloudwatch", "GetMetricData"),
     }
+    # GetBucketLocation is excluded here and pinned separately: botocore parses it with a
+    # bespoke response handler rather than from the output shape, so the generic loop below
+    # would assert against a parser that never runs in production.
+    location_fixtures = ("aws_s3_location_us_east_1", "aws_s3_location_eu_west_1")
     # Nothing may be added to fixtures/ and quietly skipped by this check.
     on_disk = {path.stem for path in FIXTURES.glob("aws_*.json")}
-    assert on_disk == set(operations)
+    assert on_disk == set(operations) | set(location_fixtures)
 
     def normalize(value):
         if isinstance(value, dict):
@@ -1046,12 +1068,45 @@ def test_every_fixture_round_trips_through_botocore():
         fixture = load_fixture(name)
         model = aws_wire.MODELS[service]
         body, _ = aws_wire.encode(service, action, fixture)
-        parsed = botocore.parsers.create_parser(model.protocol).parse(
+        parsed = botocore.parsers.create_parser(aws_wire._protocol(model)).parse(
             {"status_code": 200, "headers": {}, "body": body},
             model.operation_model(action).output_shape,
         )
         parsed.pop("ResponseMetadata", None)
         assert normalize(parsed) == normalize(fixture), name
+
+
+class _RawResponse:
+    """The two attributes `parse_get_bucket_location` touches: a non-None `raw`, and `content`.
+
+    Deliberately not a real `AWSResponse` — that reads its body by streaming from `raw`, so
+    constructing one around a bytestring means reimplementing a stream just to hand back the
+    bytes we already hold.
+    """
+
+    def __init__(self, body: bytes) -> None:
+        self.raw = object()
+        self.content = body
+
+
+def test_get_bucket_location_round_trips_through_botocores_own_handler():
+    """The one hand-written encoder case, pinned by the code that actually consumes it.
+
+    `s3:GetBucketLocation` is not parsed from its output shape: botocore ships
+    `handlers.parse_get_bucket_location`, which re-reads the raw body and takes the ROOT
+    element's text as the region. So the generic round-trip above would prove nothing about
+    this operation — it would exercise a parser production never reaches. Driving the real
+    handler is also what pins the us-east-1 convention: that bucket's constraint is the empty
+    string on the wire, and the handler hands back None for it.
+    """
+    for name, expected in (
+        ("aws_s3_location_us_east_1", None),
+        ("aws_s3_location_eu_west_1", "eu-west-1"),
+    ):
+        body, _ = aws_wire.encode("s3", "GetBucketLocation", load_fixture(name))
+        parsed = {}
+        botocore.handlers.parse_get_bucket_location(parsed, _RawResponse(body))
+        assert parsed["LocationConstraint"] == expected, name
 
 
 def test_every_crafted_fixture_documents_what_it_proves():

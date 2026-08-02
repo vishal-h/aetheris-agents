@@ -1,0 +1,23 @@
+{
+  "_comment": "Crafted. Two incomplete multipart uploads on cc-logs, the older one deliberately well aged so the evidence line can name it. Part SIZES are not here and cannot be: listing parts needs s3:ListParts, which the t4 spike policy does not grant, so the signal reports the count and the oldest initiation and never a byte figure it cannot see.",
+  "Bucket": "cc-logs",
+  "IsTruncated": false,
+  "Uploads": [
+    {
+      "UploadId": "fixture-upload-0001",
+      "Key": "archive/2025-02-bundle.tar.gz",
+      "Initiated": "2025-02-14T03:22:11Z",
+      "StorageClass": "STANDARD",
+      "Owner": {"DisplayName": "cloudcost-fixture", "ID": "fixtureowner0000"},
+      "Initiator": {"DisplayName": "cloudcost-fixture", "ID": "fixtureowner0000"}
+    },
+    {
+      "UploadId": "fixture-upload-0002",
+      "Key": "archive/2026-01-bundle.tar.gz",
+      "Initiated": "2026-01-30T22:05:47Z",
+      "StorageClass": "STANDARD",
+      "Owner": {"DisplayName": "cloudcost-fixture", "ID": "fixtureowner0000"},
+      "Initiator": {"DisplayName": "cloudcost-fixture", "ID": "fixtureowner0000"}
+    }
+  ]
+}

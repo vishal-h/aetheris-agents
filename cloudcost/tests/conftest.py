@@ -185,6 +185,30 @@ _CREDENTIAL_SCOPE = re.compile(r"Credential=([^/]+)/[^/]+/([^/]+)/([^/]+)/")
 
 #: `service:Action` -> the result key an empty response must carry. Used by `empty()`, which
 #: is always explicit: an unrouted call is a 400, never a silent `[]`.
+#: S3 is the one rest-xml service here, so it is the one addressed by HTTP method + path
+#: rather than by an `Action=` form field or an `X-Amz-Target` header. Pointed at a custom
+#: `--endpoint-url` on a bare IP, botocore uses **path-style** addressing, so the bucket is
+#: the first path segment and the operation is the lone query flag beside it. Verified against
+#: the real signed requests, not inferred: `GET /`, `GET /{bucket}?location`,
+#: `GET /{bucket}?lifecycle`, `GET /{bucket}?uploads`.
+S3_QUERY_FLAG_ACTIONS = {
+    "location": "GetBucketLocation",
+    "lifecycle": "GetBucketLifecycleConfiguration",
+    "uploads": "ListMultipartUploads",
+}
+
+
+def s3_action_for(path: str, query: dict):
+    """(action, bucket) for an S3 GET, or (None, None) if it addresses nothing known."""
+    bucket = path.strip("/").split("/")[0] or None
+    if bucket is None:
+        return "ListBuckets", None
+    for flag, action in S3_QUERY_FLAG_ACTIONS.items():
+        if flag in query:
+            return action, bucket
+    return None, bucket
+
+
 AWS_RESULT_KEYS = {
     "ec2:DescribeInstances": "Reservations",
     "ec2:DescribeVolumes": "Volumes",
@@ -229,37 +253,58 @@ class AWSStub:
         self._thread = None
 
     # ----------------------------------------------------------------- configuration
-    def route(self, key, fixture, region=ANY_REGION):
+    #
+    # Routes are keyed `(service, action, region, resource)`. `resource` is the S3 bucket and
+    # is `None` for every other service: S3 is the only one whose answer legitimately differs
+    # per named resource in the same region — one bucket has a lifecycle policy, its neighbour
+    # does not — and that per-bucket disagreement is the whole point of the S3 signals.
+    # Lookup narrows from most to least specific, so a bucket-specific route wins over the
+    # catch-all and an unrouted call is still an explicit 400 rather than a silent empty.
+
+    def route(self, key, fixture, region=ANY_REGION, bucket=None):
         """Serve `fixture` (a bare stem) for every `key` = "ec2:DescribeVolumes" in `region`."""
         service, action = key.split(":")
         body, ctype = aws_wire.encode(service, action, load_fixture(fixture))
-        self._routes[(service, action, region)] = [(200, body, ctype)]
+        self._routes[(service, action, region, bucket)] = [(200, body, ctype)]
 
-    def sequence(self, key, fixtures, region=ANY_REGION):
+    def sequence(self, key, fixtures, region=ANY_REGION, bucket=None):
         """Serve `fixtures` in order for successive calls; the last repeats.
 
         This is what drives the paginators: page 1 carries a paging token, the last page
         does not. A repeating `route()` for a token-bearing page would loop forever.
         """
         service, action = key.split(":")
-        self._routes[(service, action, region)] = [
+        self._routes[(service, action, region, bucket)] = [
             (200,) + aws_wire.encode(service, action, load_fixture(name)) for name in fixtures
         ]
 
-    def empty(self, key, region=ANY_REGION):
+    def empty(self, key, region=ANY_REGION, bucket=None):
         """An explicitly-empty result set — a region that carries none of this resource."""
         service, action = key.split(":")
         body, ctype = aws_wire.encode(service, action, {AWS_RESULT_KEYS[key]: []})
-        self._routes[(service, action, region)] = [(200, body, ctype)]
+        self._routes[(service, action, region, bucket)] = [(200, body, ctype)]
 
-    def fail(self, key, code, status=500, region=ANY_REGION):
+    def fail(self, key, code, status=500, region=ANY_REGION, bucket=None):
         service, action = key.split(":")
         body, ctype = aws_wire.encode_error(service, code)
-        self._routes[(service, action, region)] = [(status, body, ctype)]
+        self._routes[(service, action, region, bucket)] = [(status, body, ctype)]
 
     def route_fixtures(self, mapping, region=ANY_REGION):
         for key, fixture in mapping.items():
             self.route(key, fixture, region=region)
+
+    def _entries(self, service, action, region, resource):
+        """Narrowing lookup: bucket-specific beats catch-all, exact region beats ANY."""
+        for candidate in (
+            (service, action, region, resource),
+            (service, action, ANY_REGION, resource),
+            (service, action, region, None),
+            (service, action, ANY_REGION, None),
+        ):
+            entries = self._routes.get(candidate)
+            if entries is not None:
+                return entries
+        return None
 
     # ---------------------------------------------------------------------- lifecycle
     def start(self):
@@ -268,13 +313,60 @@ class AWSStub:
         class Handler(BaseHTTPRequestHandler):
             protocol_version = "HTTP/1.1"
 
+            def _credential_scope(self):
+                scope = _CREDENTIAL_SCOPE.search(self.headers.get("Authorization", "") or "")
+                return scope.groups() if scope else (None, None, None)
+
+            def _answer(self, service, action, region, access_key, signing_name, params,
+                        resource=None):
+                """Record the request, enforce the access key, resolve the route."""
+                with stub._lock:
+                    stub.requests.append(
+                        {
+                            "service": service,
+                            "action": action,
+                            "region": region,
+                            "access_key": access_key,
+                            "signing_name": signing_name,
+                            "params": params,
+                            "resource": resource,
+                            "headers": dict(self.headers),
+                        }
+                    )
+                    if access_key != stub.expected_access_key:
+                        # AWS's own answer to a key it does not know. Without this branch a
+                        # default-chain fallback would pass silently.
+                        return (403,) + aws_wire.encode_error(
+                            service or "sts",
+                            "InvalidClientTokenId",
+                            "The security token included in the request is invalid.",
+                        )
+                    entries = stub._entries(service, action, region, resource)
+                    if entries is None:
+                        where = f"{service}:{action} in {region}"
+                        return (400,) + aws_wire.encode_error(
+                            service or "sts",
+                            "NotStubbed",
+                            f"no route for {where}" + (f" on {resource}" if resource else ""),
+                        )
+                    if len(entries) == 1:
+                        return entries[0]
+                    return entries.pop(0)
+
+            def do_GET(self):  # noqa: N802 - S3 (rest-xml) reads are GETs, not POSTs
+                parsed = urlsplit(self.path)
+                query = parse_qs(parsed.query, keep_blank_values=True)
+                access_key, region, signing_name = self._credential_scope()
+                action, bucket = s3_action_for(parsed.path, query)
+                status, body, ctype = self._answer(
+                    "s3", action, region, access_key, signing_name, query, resource=bucket
+                )
+                self._respond(status, body, ctype)
+
             def do_POST(self):  # noqa: N802 - every AWS query/json call is a POST
                 length = int(self.headers.get("Content-Length") or 0)
                 raw = self.rfile.read(length).decode()
-                scope = _CREDENTIAL_SCOPE.search(self.headers.get("Authorization", "") or "")
-                access_key, region, signing_name = (
-                    scope.groups() if scope else (None, None, None)
-                )
+                access_key, region, signing_name = self._credential_scope()
 
                 target = self.headers.get("X-Amz-Target")
                 if target:
@@ -287,41 +379,12 @@ class AWSStub:
                     service = aws_wire.SERVICE_BY_VERSION.get(form.get("Version"))
                     params = form
 
-                with stub._lock:
-                    stub.requests.append(
-                        {
-                            "service": service,
-                            "action": action,
-                            "region": region,
-                            "access_key": access_key,
-                            "signing_name": signing_name,
-                            "params": params,
-                            "headers": dict(self.headers),
-                        }
-                    )
-                    if access_key != stub.expected_access_key:
-                        # AWS's own answer to a key it does not know. Without this branch a
-                        # default-chain fallback would pass silently.
-                        status, body, ctype = (403,) + aws_wire.encode_error(
-                            service or "sts",
-                            "InvalidClientTokenId",
-                            "The security token included in the request is invalid.",
-                        )
-                    else:
-                        entries = stub._routes.get(
-                            (service, action, region)
-                        ) or stub._routes.get((service, action, ANY_REGION))
-                        if entries is None:
-                            status, body, ctype = (400,) + aws_wire.encode_error(
-                                service or "sts",
-                                "NotStubbed",
-                                f"no route for {service}:{action} in {region}",
-                            )
-                        elif len(entries) == 1:
-                            status, body, ctype = entries[0]
-                        else:
-                            status, body, ctype = entries.pop(0)
+                status, body, ctype = self._answer(
+                    service, action, region, access_key, signing_name, params
+                )
+                self._respond(status, body, ctype)
 
+            def _respond(self, status, body, ctype):
                 self.send_response(status)
                 self.send_header("Content-Type", ctype)
                 self.send_header("Content-Length", str(len(body)))

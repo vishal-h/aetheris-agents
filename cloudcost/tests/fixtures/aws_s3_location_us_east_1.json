@@ -1,0 +1,4 @@
+{
+  "_comment": "Crafted. us-east-1's location constraint is the EMPTY string on the real API, not the literal region name — the caller must read absent/empty as us-east-1 rather than as 'unknown'. aws_wire encodes this as an empty <LocationConstraint/> element, which is what botocore's parse_get_bucket_location handler reads back as None.",
+  "LocationConstraint": ""
+}

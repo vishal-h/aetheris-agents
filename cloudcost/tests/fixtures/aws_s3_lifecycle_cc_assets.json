@@ -1,0 +1,11 @@
+{
+  "_comment": "Crafted. The negative control for s3_no_lifecycle_policy: cc-assets HAS a policy, so it must produce no signal. The no-lifecycle case is not a fixture at all — it is a NoSuchLifecycleConfiguration error, routed with AWSStub.fail(), because on the real API the absence IS an error response rather than an empty Rules list.",
+  "Rules": [
+    {
+      "ID": "expire-old-versions",
+      "Status": "Enabled",
+      "Filter": {"Prefix": ""},
+      "Expiration": {"Days": 365}
+    }
+  ]
+}

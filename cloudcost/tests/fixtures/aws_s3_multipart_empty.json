@@ -1,0 +1,5 @@
+{
+  "_comment": "Crafted. The negative control for s3_incomplete_multipart: a bucket with no incomplete uploads answers with the key absent entirely, not with an empty list. Serving this rather than leaving the call unrouted is what proves the detector reads 'no uploads' rather than inferring it from a failed call.",
+  "Bucket": "cc-assets",
+  "IsTruncated": false
+}

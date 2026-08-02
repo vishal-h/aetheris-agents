@@ -1,0 +1,15 @@
+{
+  "_comment": "Crafted. cc-empty: NumberOfObjects reports a real datapoint of 0, which is the empty-bucket signal. Every size class is dataless. The distinction this fixture exists to hold is that emptiness is asserted from an OBSERVED zero, never from the absence of a datapoint — aws_cloudwatch_metrics_cc_unknown is the counterpart where the observation is missing.",
+  "MetricDataResults": [
+    {"Id": "size_standardstorage", "Label": "StandardStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringfastorage", "Label": "IntelligentTieringFAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringiastorage", "Label": "IntelligentTieringIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_standardiastorage", "Label": "StandardIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_onezoneiastorage", "Label": "OneZoneIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_reducedredundancystorage", "Label": "ReducedRedundancyStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierinstantretrievalstorage", "Label": "GlacierInstantRetrievalStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierstorage", "Label": "GlacierStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_deeparchivestorage", "Label": "DeepArchiveStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "objects", "Label": "AllStorageTypes", "Timestamps": ["2026-08-01T00:00:00Z"], "Values": [0.0], "StatusCode": "Complete"}
+  ]
+}

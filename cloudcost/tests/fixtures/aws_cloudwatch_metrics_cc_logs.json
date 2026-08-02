@@ -1,0 +1,15 @@
+{
+  "_comment": "Crafted. cc-logs: 100 GiB Standard PLUS 50 GiB Glacier. This is the mixed-storage-class case and the reason the detector may not multiply a total size by the Standard rate — the Glacier half has no constant in the rate table, so its bytes are reported in the evidence, excluded from the figure, and named in a warning. Applying the Standard rate to all 150 GiB would overstate by more than 2x.",
+  "MetricDataResults": [
+    {"Id": "size_standardstorage", "Label": "StandardStorage", "Timestamps": ["2026-08-01T00:00:00Z"], "Values": [107374182400.0], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringfastorage", "Label": "IntelligentTieringFAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringiastorage", "Label": "IntelligentTieringIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_standardiastorage", "Label": "StandardIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_onezoneiastorage", "Label": "OneZoneIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_reducedredundancystorage", "Label": "ReducedRedundancyStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierinstantretrievalstorage", "Label": "GlacierInstantRetrievalStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierstorage", "Label": "GlacierStorage", "Timestamps": ["2026-08-01T00:00:00Z"], "Values": [53687091200.0], "StatusCode": "Complete"},
+    {"Id": "size_deeparchivestorage", "Label": "DeepArchiveStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "objects", "Label": "AllStorageTypes", "Timestamps": ["2026-08-01T00:00:00Z"], "Values": [48210.0], "StatusCode": "Complete"}
+  ]
+}

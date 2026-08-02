@@ -1,0 +1,6 @@
+{
+  "_comment": "Crafted. The negative control for ecr_no_lifecycle_policy: cc-api HAS a policy. As with S3, the no-policy case is not a fixture — it is a LifecyclePolicyNotFoundException, routed with AWSStub.fail(), because on the real API the absence IS an error response.",
+  "registryId": "000000000000",
+  "repositoryName": "cc-api",
+  "lifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"expire untagged after 14 days\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":14},\"action\":{\"type\":\"expire\"}}]}"
+}

@@ -1,0 +1,15 @@
+{
+  "_comment": "Crafted. cc-assets: 5 GiB of Standard bytes and 12000 objects. Every query id the detector sends comes back, including the storage classes this bucket has none of — that is what GetMetricData really does, and it is why 'no datapoints' has to mean UNKNOWN rather than zero: an empty Values array is indistinguishable between 'the class holds nothing' and 'the metric was never published'. Standard-only, so its cost estimate is fully rateable and carries no storage-class warning.",
+  "MetricDataResults": [
+    {"Id": "size_standardstorage", "Label": "StandardStorage", "Timestamps": ["2026-08-01T00:00:00Z"], "Values": [5368709120.0], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringfastorage", "Label": "IntelligentTieringFAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringiastorage", "Label": "IntelligentTieringIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_standardiastorage", "Label": "StandardIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_onezoneiastorage", "Label": "OneZoneIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_reducedredundancystorage", "Label": "ReducedRedundancyStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierinstantretrievalstorage", "Label": "GlacierInstantRetrievalStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierstorage", "Label": "GlacierStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_deeparchivestorage", "Label": "DeepArchiveStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "objects", "Label": "AllStorageTypes", "Timestamps": ["2026-08-01T00:00:00Z"], "Values": [12000.0], "StatusCode": "Complete"}
+  ]
+}

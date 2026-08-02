@@ -1,0 +1,4 @@
+{
+  "_comment": "Crafted. The ordinary case: a non-us-east-1 bucket names its region outright. Paired with aws_s3_location_us_east_1 so both halves of the empty-means-us-east-1 rule are exercised.",
+  "LocationConstraint": "eu-west-1"
+}

@@ -1,0 +1,15 @@
+{
+  "_comment": "Crafted. The failable counterpart to aws_cloudwatch_metrics_cc_empty: NOT ONE datapoint, including NumberOfObjects. A brand-new bucket looks exactly like this, and so does one whose daily storage metric has not published yet. The detector must emit NO s3_empty_bucket signal here and must warn that emptiness is unknown — a detector that read 'no datapoints' as zero would raise a false empty-bucket signal against this fixture, which is what makes it a mutation control rather than decoration.",
+  "MetricDataResults": [
+    {"Id": "size_standardstorage", "Label": "StandardStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringfastorage", "Label": "IntelligentTieringFAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_intelligenttieringiastorage", "Label": "IntelligentTieringIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_standardiastorage", "Label": "StandardIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_onezoneiastorage", "Label": "OneZoneIAStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_reducedredundancystorage", "Label": "ReducedRedundancyStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierinstantretrievalstorage", "Label": "GlacierInstantRetrievalStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_glacierstorage", "Label": "GlacierStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "size_deeparchivestorage", "Label": "DeepArchiveStorage", "Timestamps": [], "Values": [], "StatusCode": "Complete"},
+    {"Id": "objects", "Label": "AllStorageTypes", "Timestamps": [], "Values": [], "StatusCode": "Complete"}
+  ]
+}

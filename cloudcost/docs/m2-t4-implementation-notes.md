@@ -127,6 +127,37 @@ the same D2 proof, and two copies of that guard are two things to keep true.
 
 ---
 
+## Outside the §t4 Touches list
+
+Declared rather than left for the reviewer to find. Two items, both in tests.
+
+**1. `cloudcost/tests/test_fetch_aws.py` — edited, not listed.** Three changes, all forced by
+where the existing guards live:
+
+- `test_every_fixture_round_trips_through_botocore` holds the encoder pin **and** the
+  completeness guard `on_disk == set(operations)` — every `aws_*.json` fixture must be
+  registered or the test goes red. t4 adds thirteen fixtures, so registering them there is not
+  optional, and it is what carries the round-trip property onto all four new services.
+- The same test built its parser from `model.protocol`; it now uses `aws_wire._protocol`, or
+  CloudWatch would be pinned against a parser botocore never runs.
+- `test_get_bucket_location_round_trips_through_botocores_own_handler` added beside it, and
+  `poisoned_default_chain` moved out to `conftest.py`.
+
+The alternative was a second round-trip test in `test_optimization_signals.py`, which would
+have left the completeness guard blind to exactly the fixtures it exists to catch. Zero
+pre-existing tests moved, verified per node-id.
+
+**2. Fixtures are named `aws_{service}_{op}.json`, not `optimization_*.json`.** §t4 Touches
+says the latter. They are AWS wire recordings consumed by `AWSStub`, and every wire fixture in
+this suite is `aws_*` — which is also the prefix the completeness guard globs, so an
+`optimization_*` wire fixture would be silently exempt from the round-trip pin. The
+`optimization_*` naming would fit a *signals-file* fixture; the render tests build that payload
+inline instead (`optimization_payload()`), because `test_render_report.py`'s standing rule is
+that payloads come from the real upstream stage or from an explicit in-test constructor, never
+from a hand-written file masquerading as a recording.
+
+---
+
 ## Live read (best-effort, non-gating) — the BL-072 seed
 
 Ran under the D2 hermetic prefix. The t4 spike policy **is** attached and sufficient: **18

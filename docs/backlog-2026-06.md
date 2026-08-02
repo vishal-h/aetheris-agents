@@ -2398,6 +2398,64 @@ untouched).`
 
 ---
 
+### BL-076 — `compose_report_data` sums *every* provider's prior snapshot into one `prior_total` (#TBD)
+**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
+
+Filed 2026-08-02 at the m2-cloudcost **t3** boundary. A **Silent-wrong-answer**: the month-on-month
+headline is well-formed, plausible, and wrong.
+
+**The defect.** `load_prior_snapshots` (`:711`) globs the prior month's directory
+indiscriminately —
+
+```python
+for path in sorted(directory.glob("*.json")):   # history/{prior}/ — every provider
+```
+
+— and `month_on_month` sums whatever it returns into one figure (`:334`, `:342`):
+
+```python
+prior_total = round(sum(prior_providers.values()), 2)
+"delta_amount": round(current_total - prior_total, 2),
+```
+
+That is m1's N-provider merge assumption (*everything in the month belongs to this report*)
+meeting m2 decision H (*each provider is its own solo run*). Under H it is false: a solo run's
+report is about the providers **in that run**, so its delta must read those providers' prior
+snapshots and no others.
+
+**Demonstrated, not inferred.** t3 ran the real AWS pipeline's output through `compose` twice,
+changing only `--history-dir`:
+
+| history tree | `mom_delta.status` | headline |
+|---|---|---|
+| shared `history/2026-07/` | `ok` | `prior_total 185.50` (DigitalOcean, July) vs `current_total 0.29` (AWS, August) → **`delta_amount −185.21`** |
+| per-provider `history/aws/` | `no_prior_month` | — |
+
+The `ok` row is the wrong answer: it reports a −$185.21 month-on-month movement for an account
+whose first-ever snapshot this is. It also contradicts §t3's own done-check ("first run → the
+m1-tested 'no prior month' path"). `providers_only_in_prior: ["digitalocean"]` is emitted as a
+caveat, so the report is not *silent* — but the headline figure is the thing a human reads.
+
+**Why it is not fixed here.** §t3 permits exactly one enumerated `compose`/`render` change (A4);
+anything further is a contract-leak finding to report, not to write. t3 therefore mitigated it
+**at the orchestrator** — each provider gets `--history-dir history/{provider}`, decision H's own
+`history/{provider}/{period}/` layout, needing no script change. The mitigation is real and
+verified live, but it is a *convention* the caller must honour: a direct `compose` invocation
+with the m1-shaped shared tree still produces the wrong figure.
+
+**Done when:** `load_prior_snapshots`/`month_on_month` scope priors to the providers present in
+the run's own bundles, with a test asserting the `no_prior_month` path survives another
+provider's history sitting in the same tree, and a second asserting an N>1 run is unchanged (so
+the fix does not over-filter). Natural batch with **BL-070**, which retires the surrounding
+cross-provider merge code — this row is the one piece of that code that is not merely dead but
+actively wrong, so if BL-070 slips, do this alone. Fold in the duplicated `slug()`/`provider_slug()`
+convergence at the same time (t2 deferred it precisely to keep `compose` unedited).
+
+`Source: m2-cloudcost t3, 2026-08-02 (aetheris-agents cbf3fbf). Verified by reading
+compose_report_data.py:711/:334/:342 and by the two-run demonstration above.`
+
+---
+
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 
@@ -4234,3 +4292,4 @@ multi-line street/city/state/zip.
 | ✔ | BL-027 | **Done 2026-07-23, folded into BL-025.** Its trigger was too narrow — any failed contained tool call reached the crash — and BL-025 made `aetheris verify` real, which would have shipped it. Convention residue → BL-046 |
 | — | BL-006 | Fires on its own trigger |
 | — | BL-075 | Fires on the next `mix test` red: capture the full output that time. Fold into BL-054 only if the name matches the twelfth-slot flake — the connection is plausible, not established |
+| — | BL-076 | Batch with BL-070 — same file, and BL-070's cleanup has to touch this code anyway. Do it alone if BL-070 slips: this is the one piece of the cross-provider merge that is not merely dead but actively produces a wrong month-on-month headline. t3's per-provider `--history-dir` mitigates it by convention only, so a direct `compose` call still hits it |

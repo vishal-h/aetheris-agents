@@ -2802,6 +2802,99 @@ account-specific figures and would retire the static table rather than extend it
 
 `Source: m2-cloudcost t4 live read.`
 
+### BL-080 — `detect_optimization_signals` reports `partial` for intentional honesty, not only for a read gap (#TBD)
+**Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
+
+Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N1, non-blocking).
+
+**The observation.** The stdout `status` is `"partial" if (denied or warnings) else "ok"`. A
+fully-granted run that merely declined to price something — an unrated region, bytes in an
+unrated storage class — therefore reads as `partial`. On the live account **every** run will,
+because every bucket is in `ap-south-1` (BL-079). A status field that is permanently `partial`
+is a field readers learn to skip, which is the alarm-fatigue shape the strict-mode WARN
+exemption in `CLAUDE.md` exists to name. `status` is informational here — not gating, not the
+exit code — so this is cosmetic, not a defect.
+
+**Why the review's two-way fix is not quite it.** N1 suggests reserving `partial` for `denied[]`
+and letting figure-omission ride under `ok`. That would be right if `warnings[]` held only
+intentional omissions — but it currently holds two different kinds:
+
+- *intentional omission* — "no published Standard rate is held for ap-south-1", "GlacierStorage
+  is excluded from the cost estimate". Nothing is unknown; a figure was declined on purpose.
+- *a genuinely unknown fact* — "no NumberOfObjects datapoint published, so whether it is empty
+  is unknown", "size and object count are unknown". Something the run wanted to know and does
+  not.
+
+Collapsing both under `ok` would hide the second kind, which is the same
+absent-read-as-fine failure the `denied[]`/`warnings[]` split was introduced to prevent. So the
+fix is a **three-way** split, not a two-way one: `denied[]` (refused), `warnings[]` (unknown
+fact), and a new third bucket for priced-declined-on-purpose — with `status` keying on the first
+two only.
+
+**Done when:** the third category exists in the envelope, `status` reads `partial` for
+`denied[] or warnings[]` and `ok` for omissions alone, the render section distinguishes the
+third (it currently renders warnings under "Left unknown", which is the wrong heading for an
+intentional omission), and a test asserts a run whose ONLY finding is an unrated region reports
+`ok`.
+
+**Batch with BL-081** — same file, same envelope, and both are t4 review tidy-ups.
+
+`Source: m2-cloudcost t4 review N1.`
+
+### BL-081 — `s3_no_lifecycle_policy` fires on an observably empty bucket (#TBD)
+**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
+
+Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N2, non-blocking).
+
+**The observation.** A bucket with no lifecycle policy and zero objects raises both
+`s3_empty_bucket` and `s3_no_lifecycle_policy` (fixture `cc-empty` does exactly this). The
+second is low-value noise: an empty bucket has nothing to expire or transition, so the missing
+policy costs nothing today.
+
+**The care needed when fixing it.** Suppress only on an **observed** zero — `objects == 0` read
+from a real datapoint. An *absent* `NumberOfObjects` datapoint must NOT suppress, because absent
+means unknown, and a bucket whose metric has not published looks identical to an empty one. That
+is the same unknown-is-not-zero rule the empty-bucket signal itself already turns on
+(`aws_cloudwatch_metrics_cc_unknown` is the existing control), so the fix must not quietly
+invert it in the neighbouring branch — a suppression driven by `not metrics.get("objects")`
+would do precisely that.
+
+**Done when:** `s3_no_lifecycle_policy` is suppressed when and only when the object count was
+observed to be 0; a test asserts an unknown-count bucket with no policy still raises it.
+
+**Batch with BL-080.**
+
+`Source: m2-cloudcost t4 review N2.`
+
+### BL-082 — no end-to-end orchestrated run of the `CLOUDCOST_OPTIMIZATION=1` path (#TBD)
+**Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/agents/cloudcost_orchestrator.exs`, `../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N3, non-blocking). The row the
+note asked for: t4 flagged this as "no trigger yet", and a gap with no trigger is what a row is
+for.
+
+**What IS proven.** The prompt the orchestrator builds, both ways — byte-identical to t3's with
+the gate unset (same md5, for both providers), exactly one extra step with it set; the raise when
+the gate is set for a non-AWS provider; `detect_optimization_signals.py` end-to-end offline
+through the stub; and `render_report.py --optimization-file` against the live signals file.
+
+**What is NOT.** The LLM actually executing STEP 2b and threading the printed path into STEP 4's
+`--optimization-file`. Every link is verified; the chain is not. That is the shape m6-docbuilder
+promoted a learning about — cross-stage wiring defects pass the per-stage check and surface only
+when the real pipeline runs.
+
+**Why it was skipped:** the run needs live AWS credentials and an LLM call, and t4 is
+non-gating. The risk is genuinely low (the threading is one placeholder substitution, identical
+in form to the four the prompt already does) but it is not zero.
+
+**Done when:** either a `cloudcost` sprint leg runs the orchestrator with
+`CLOUDCOST_OPTIMIZATION=1` and asserts the rendered report contains the optimization section, or
+an operator runs it once and the trajectory is recorded in the implementation notes. Sequence
+after **BL-069** if the sprint route is chosen — that case is already known-red on its orphan
+assertion, and adding a second assertion to a red case buries it.
+
+`Source: m2-cloudcost t4 review N3.`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)
@@ -4407,3 +4500,5 @@ multi-line street/city/state/zip.
 | — | BL-076 | Batch with BL-070 — same file, and BL-070's cleanup has to touch this code anyway. Do it alone if BL-070 slips: this is the one piece of the cross-provider merge that is not merely dead but actively produces a wrong month-on-month headline. t3's per-provider `--history-dir` mitigates it by convention only, so a direct `compose` call still hits it |
 | — | BL-078 | Fires on its trigger: the next legitimate edit to `cloudcost/scripts/fetch_aws.py`. Exactly BL-070's shape — a duplication left alone because closing it means editing a file the current ticket froze |
 | — | BL-079 | Fires when someone has a verified `ap-south-1` S3 Standard rate, or is retired wholesale by BL-072. Never close it by copying another region's number — that is the failure the omit path exists to prevent |
+| — | BL-080, BL-081 | Batch: same file, same envelope, both t4 review tidy-ups. BL-080's fix is a three-way split (refused / unknown / declined-on-purpose), NOT the two-way collapse the note sketched — that would hide the genuine unknowns under `ok` |
+| — | BL-082 | Sequence after BL-069 if the sprint route is chosen: that case is already known-red on its orphan assertion, and a second assertion added to a red case is a buried one |

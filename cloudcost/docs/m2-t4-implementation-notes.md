@@ -210,4 +210,33 @@ the existing sprint cases untouched.
 
 **Not done, and why:** no sprint case exercises `CLOUDCOST_OPTIMIZATION=1`. §t4 does not ask for
 one, the gate defaults off so the existing cases are unaffected, and a hermetic case would need
-live credentials. Flagged here rather than filed — it has no trigger yet.
+live credentials. *Filed as BL-082 at review — the r0 reviewer's N3 correctly observed that
+"flagged here, no trigger yet" is exactly what a backlog row is for, and prose in a notes file
+executes nothing.*
+
+---
+
+## Review outcome (r0, `docs/reviews/m2-cloudcost-t4-review.md`)
+
+**APPROVE — merge-clean, no code changes requested.** Three non-blocking notes, all deferred with
+rows filed in the same round:
+
+| # | Note | Disposition |
+|---|---|---|
+| N1 | `status: "partial"` fires on intentional figure-omission, not only on a read gap — so on this account every run reads `partial` | deferred → **BL-080** |
+| N2 | `s3_no_lifecycle_policy` fires on an empty bucket, which has nothing to expire | deferred → **BL-081** |
+| N3 | The gated orchestrator path is proven link-by-link, never as one end-to-end run | deferred → **BL-082** |
+
+No code changed after the approval. Editing emitted behaviour post-APPROVE would mean the merged
+artifact is not the one that was reviewed, and all three are tidy-ups or watch-items rather than
+defects.
+
+**One place the row does not simply implement the note.** N1 suggests reserving `partial` for
+`denied[]` and letting figure-omission ride under `ok`. That is right about the symptom and
+under-specified about the fix: `warnings[]` today holds *both* intentional omissions ("no
+published Standard rate is held for ap-south-1") and genuinely unknown facts ("no
+NumberOfObjects datapoint published, so whether it is empty is unknown"). A two-way collapse
+would file the second kind under `ok` — the same absent-read-as-fine failure the
+`denied[]`/`warnings[]` split exists to prevent. BL-080 therefore specifies a three-way split
+with `status` keying on refused-and-unknown only. Recorded here because the row's shape diverges
+from the note's sketch, and the next reader should not have to re-derive why.

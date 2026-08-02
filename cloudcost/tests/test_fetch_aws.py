@@ -80,24 +80,8 @@ def cloudcost_creds(monkeypatch):
         monkeypatch.delenv(name, raising=False)
 
 
-@pytest.fixture
-def poisoned_default_chain(monkeypatch, tmp_path):
-    """Poison every arm of boto3's default chain a hermetic test can reach.
-
-    Env credentials, a shared-credentials file, and a profile name. IMDS is disabled rather
-    than poisoned — there is no metadata service to answer here, and leaving it enabled would
-    add a connection timeout to every test.
-    """
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", POISON_ACCESS_KEY)
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", POISON_SECRET_KEY)
-    credentials = tmp_path / "poison-credentials"
-    credentials.write_text(
-        f"[default]\naws_access_key_id = {POISON_ACCESS_KEY}\n"
-        f"aws_secret_access_key = {POISON_SECRET_KEY}\n"
-    )
-    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(credentials))
-    monkeypatch.setenv("AWS_PROFILE", "cloudcost-poison-profile-does-not-exist")
-    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+# `poisoned_default_chain` moved to conftest at t4: the spike has to prove the same D2
+# property this adapter does, and two copies of a guard are two things to keep true.
 
 
 def run_main(stub, tmp_path, period=PERIOD, extra=None):

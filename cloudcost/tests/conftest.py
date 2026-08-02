@@ -227,6 +227,21 @@ AWS_RESULT_KEYS = {
 #: Every inventory call the sweep makes in a region.
 AWS_INVENTORY_OPS = tuple(AWS_RESULT_KEYS)
 
+#: The t4 spike's result keys, kept OUT of `AWS_RESULT_KEYS` on purpose: that dict defines
+#: `AWS_INVENTORY_OPS`, which `test_the_stub_covers_every_operation_the_sweep_makes` asserts
+#: the core sweep exercises. Folding t4's operations in would make that test demand the m2 t1
+#: adapter call S3 and ECR, which it must never do (decision G's two lanes).
+AWS_OPTIMIZATION_RESULT_KEYS = {
+    "s3:ListBuckets": "Buckets",
+    "s3:ListMultipartUploads": "Uploads",
+    "ecr:DescribeRepositories": "repositories",
+    "ecr:DescribeImages": "imageDetails",
+    "secretsmanager:ListSecrets": "SecretList",
+    "cloudwatch:GetMetricData": "MetricDataResults",
+}
+
+_RESULT_KEYS = {**AWS_RESULT_KEYS, **AWS_OPTIMIZATION_RESULT_KEYS}
+
 
 class AWSStub:
     """A local stand-in for the AWS query/JSON endpoints.
@@ -272,16 +287,29 @@ class AWSStub:
 
         This is what drives the paginators: page 1 carries a paging token, the last page
         does not. A repeating `route()` for a token-bearing page would loop forever.
+
+        An entry may also be `{"error": code}` (optionally with `"status"`). That is not a
+        convenience: ECR is asked for each repository's lifecycle policy over one action, and
+        the absence of a policy arrives as `LifecyclePolicyNotFoundException` rather than as
+        an empty result — so a repository WITH a policy and one WITHOUT it can only be
+        expressed in the same sequence if a sequence can carry an error.
         """
         service, action = key.split(":")
-        self._routes[(service, action, region, bucket)] = [
-            (200,) + aws_wire.encode(service, action, load_fixture(name)) for name in fixtures
-        ]
+        entries = []
+        for item in fixtures:
+            if isinstance(item, dict):
+                entries.append(
+                    (item.get("status", 400),)
+                    + aws_wire.encode_error(service, item["error"])
+                )
+            else:
+                entries.append((200,) + aws_wire.encode(service, action, load_fixture(item)))
+        self._routes[(service, action, region, bucket)] = entries
 
     def empty(self, key, region=ANY_REGION, bucket=None):
         """An explicitly-empty result set — a region that carries none of this resource."""
         service, action = key.split(":")
-        body, ctype = aws_wire.encode(service, action, {AWS_RESULT_KEYS[key]: []})
+        body, ctype = aws_wire.encode(service, action, {_RESULT_KEYS[key]: []})
         self._routes[(service, action, region, bucket)] = [(200, body, ctype)]
 
     def fail(self, key, code, status=500, region=ANY_REGION, bucket=None):
@@ -465,6 +493,117 @@ AWS_SEQUENCED = {
     (REGION_A, "elbv2:DescribeTargetGroups"),
     (REGION_A, "elbv2:DescribeTargetHealth"),
 }
+
+
+#: The t4 spike account. Two regions, and the split matters: the S3 buckets straddle them, so
+#: a detector that queried CloudWatch in one fixed region rather than in each bucket's own
+#: would come back dataless for cc-logs and quietly lose its size and its Glacier warning.
+#:
+#: Every operation is routed for every region the sweep visits — an unrouted call is a 400,
+#: never a silent empty, so "no signals" can never be an artifact of a missing route.
+AWS_OPTIMIZATION_BUCKETS = {
+    "cc-assets": "aws_s3_location_us_east_1",
+    "cc-logs": "aws_s3_location_eu_west_1",
+    "cc-empty": "aws_s3_location_us_east_1",
+}
+
+
+def wire_optimization_stub(stub):
+    """Route a complete S3 / ECR / Secrets Manager spike sweep over REGION_A and REGION_B."""
+    stub.route_fixtures(AWS_GLOBAL_ROUTES)
+    stub.route("s3:ListBuckets", "aws_s3_list_buckets")
+    for bucket, fixture in AWS_OPTIMIZATION_BUCKETS.items():
+        stub.route("s3:GetBucketLocation", fixture, bucket=bucket)
+
+    # cc-assets is the only bucket with a lifecycle policy; the other two answer with the
+    # error that IS the signal.
+    stub.route(
+        "s3:GetBucketLifecycleConfiguration",
+        "aws_s3_lifecycle_cc_assets",
+        region=REGION_A,
+        bucket="cc-assets",
+    )
+    for bucket, region in (("cc-logs", REGION_B), ("cc-empty", REGION_A)):
+        stub.fail(
+            "s3:GetBucketLifecycleConfiguration",
+            "NoSuchLifecycleConfiguration",
+            status=404,
+            region=region,
+            bucket=bucket,
+        )
+
+    stub.route(
+        "s3:ListMultipartUploads",
+        "aws_s3_multipart_cc_logs",
+        region=REGION_B,
+        bucket="cc-logs",
+    )
+    for bucket in ("cc-assets", "cc-empty"):
+        stub.route(
+            "s3:ListMultipartUploads",
+            "aws_s3_multipart_empty",
+            region=REGION_A,
+            bucket=bucket,
+        )
+
+    # CloudWatch is a POST and carries the bucket inside the request body rather than in the
+    # path, so it cannot be routed per resource. It is sequenced per region in bucket order
+    # instead — the idiom the ELBv2 target-group routes already use.
+    stub.sequence(
+        "cloudwatch:GetMetricData",
+        ["aws_cloudwatch_metrics_cc_assets", "aws_cloudwatch_metrics_cc_empty"],
+        region=REGION_A,
+    )
+    stub.sequence(
+        "cloudwatch:GetMetricData", ["aws_cloudwatch_metrics_cc_logs"], region=REGION_B
+    )
+
+    stub.route("ecr:DescribeRepositories", "aws_ecr_repositories", region=REGION_A)
+    stub.sequence(
+        "ecr:GetLifecyclePolicy",
+        ["aws_ecr_lifecycle_cc_api", {"error": "LifecyclePolicyNotFoundException"}],
+        region=REGION_A,
+    )
+    stub.sequence(
+        "ecr:DescribeImages",
+        ["aws_ecr_images_cc_api", "aws_ecr_images_cc_worker"],
+        region=REGION_A,
+    )
+    stub.route("secretsmanager:ListSecrets", "aws_secretsmanager_secrets", region=REGION_A)
+
+    # REGION_B carries the S3 bucket and nothing else. Routed explicitly empty rather than
+    # left unrouted, so the run proves the region was swept and found nothing.
+    stub.empty("ecr:DescribeRepositories", region=REGION_B)
+    stub.empty("secretsmanager:ListSecrets", region=REGION_B)
+    return stub
+
+
+@pytest.fixture
+def optimization_stub(aws_stub):
+    return wire_optimization_stub(aws_stub)
+
+
+@pytest.fixture
+def poisoned_default_chain(monkeypatch, tmp_path):
+    """Poison every arm of boto3's default chain a hermetic test can reach.
+
+    Env credentials, a shared-credentials file, and a profile name. IMDS is disabled rather
+    than poisoned — there is no metadata service to answer here, and leaving it enabled would
+    add a connection timeout to every test.
+
+    Shared machinery since t4: the optimization spike builds its own clients and so owes the
+    same D2 proof the core adapter does.
+    """
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", POISON_ACCESS_KEY)
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", POISON_SECRET_KEY)
+    credentials = tmp_path / "poison-credentials"
+    credentials.write_text(
+        f"[default]\naws_access_key_id = {POISON_ACCESS_KEY}\n"
+        f"aws_secret_access_key = {POISON_SECRET_KEY}\n"
+    )
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(credentials))
+    monkeypatch.setenv("AWS_PROFILE", "cloudcost-poison-profile-does-not-exist")
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
 
 
 @pytest.fixture

@@ -53,6 +53,19 @@ adapters/scripts, it does not re-scaffold).
   constants become imports, a recorded byte-identical relocation, not scope creep). Also ratified,
   no doc change needed: the aged manual RDS snapshot **widens** `rule_aged_snapshot` rather than
   adding a second rule (§t2 c). No change to the milestone's goal or scope.
+- rev 5.1 → 5.2 (post-t3, 2026-08-02): **one factual correction**, cleared by the t3 review (N2 c)
+  as an inline edit rather than its own round. `agents/capability_matrix.exs` **does not exist**
+  and never did — the matrix is nine per-use-case section agents
+  (`agents/capability_matrix_{use_case}.exs`) plus the deterministic `scripts/assemble_matrix.py`.
+  Corrected at all five sites (§Contract refs, §t3 Scope, §t3 Contract refs, §t3 Done-check, §t3
+  prompt). The ticket's *invariant* — the matrix lists cloudcost's AWS adapter — held and was
+  implemented at t3; only the sketch naming the file was wrong (the **Cited-means-read** class:
+  a filename asserted from a plausible pattern, not read). No change to goal or scope.
+  *The other three items the t3 review listed under N2 were checked against this doc and are
+  **not** present in it — there is no "two enumerated adjustments" claim (§t3 Touches already
+  reads "possibly … **if** A4 is resolved as an enumerated adjustment"), no non-zero-sprint-exit
+  claim, and no exempt-WARN count. Those three came from the t3 session brief, not from here,
+  and are corrected in `docs/m2-t3-implementation-notes.md` and the t3 review.*
 
 ---
 
@@ -260,7 +273,8 @@ read-layer, never coupled to the pipeline.
   catalog (RDS extends it in-shape). **§t3/§t4** — report-data shape + render contract.
 - `agent-creation-guide.md`; both repos' `CLAUDE.md` learning sections (read *both* — t3 touches
   `aetheris/`).
-- `capability-matrix.md`; the `sprint.sh` pattern; `agents/capability_matrix.exs`.
+- `capability-matrix.md`; the `sprint.sh` pattern; `agents/capability_matrix_{use_case}.exs` +
+  `scripts/assemble_matrix.py` (there is no single `capability_matrix.exs` — see §t3 F3).
 - boto3: EC2, ELBv2 + classic ELB, RDS, Cost Explorer (core); S3, ECR, Secrets Manager, CloudWatch
   (t4 spike).
 
@@ -502,7 +516,8 @@ render_report` — one provider, one report, one run (maps to Rig). `:full` cont
 and **launch the orchestrator through the D2 hermetic prefix** (`env -u AWS_ACCESS_KEY_ID -u
 AWS_SECRET_ACCESS_KEY -u AWS_PROFILE AWS_SHARED_CREDENTIALS_FILE=/dev/null`) so the sprint proves
 the launch hygiene, not just the pipeline. Document the canonical invocation in the cloudcost
-runbook. Regenerate `agents/capability_matrix.exs`. End-to-end on the real AWS bill (record mode):
+runbook. Regenerate the matrix — `agents/capability_matrix_cloudcost.exs`, then
+`scripts/assemble_matrix.py`. End-to-end on the real AWS bill (record mode):
 the AWS report is produced with **≥1 AWS orphan** + evidence, reviewable without the console; AWS's
 MoM is against its own prior snapshot (first run → m1-tested "no prior month" path). **Do not run
 the real-bill step on the first of a month** (CE returns the period with no groups → an honest but
@@ -510,7 +525,8 @@ empty $0.00 cost section; DO finds no invoice — both degrade correctly to noth
 **Adjudicate A4** (below) — surface the swept-region set in the report.
 
 **Contract refs.** agent-creation-guide (orchestrator, run_command format, report-failures-and-stop);
-m1 §t5; the `sprint.sh` pattern; `capability_matrix.exs` + Rig `CapabilityMatrix` source; decision C
+m1 §t5; the `sprint.sh` pattern; `capability_matrix_cloudcost.exs` + `assemble_matrix.py` + Rig
+`CapabilityMatrix` source; decision C
 (the launch prefix); A4 (swept-regions render).
 
 **Touches.** `cloudcost/agents/cloudcost_orchestrator.exs`; `aetheris/scripts/sprint.sh`;
@@ -534,7 +550,8 @@ adjustment (i.e. don't have compose key on `provider_extra` generically).
 - Real AWS bill: report + **≥1 orphan** with evidence (the planted Elastic IP), reviewable without
   the console.
 - `CLOUDCOST_AWS_*` appears nowhere in the trajectory.
-- `capability_matrix.exs` re-run; matrix lists cloudcost's AWS adapter; Rig source confirmed + noted.
+- `capability_matrix_cloudcost.exs` re-run + `assemble_matrix.py`; matrix lists cloudcost's AWS
+  adapter; Rig source confirmed + noted.
 - The report states the swept-region set (A4 resolution).
 
 **Claude-code prompt.**
@@ -549,7 +566,8 @@ adjustment (i.e. don't have compose key on `provider_extra` generically).
 > swept-region set in the report as a deliberate enumerated compose/render adjustment (a named
 > region-coverage field lifted into report_data, rendered generically), NOT by keying on
 > `provider_extra`; if that forces any other compose/render change, STOP and report it as a
-> contract-leak finding. Re-run `capability_matrix.exs`; confirm + note the Rig source. Verify
+> contract-leak finding. Re-run `capability_matrix_cloudcost.exs` + `assemble_matrix.py`; confirm
+> + note the Rig source. Verify
 > credentials never reach the trajectory. Done-check per §t3 incl. the real-bill end-to-end (≥1 AWS
 > orphan).
 

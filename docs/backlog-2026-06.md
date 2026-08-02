@@ -2456,6 +2456,56 @@ compose_report_data.py:711/:334/:342 and by the two-run demonstration above.`
 
 ---
 
+### BL-077 — `sprint.sh` assertion failures do not affect the sprint's exit code (#TBD)
+**Size:** S–M · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-02 from the m2-cloudcost **t3** review (claude-ui N1). Pre-existing and
+**sprint-wide** — all 31 cases, not t3's to fix, which is why it is a row rather than a patch.
+
+**The gap.** `fail()` is a printer:
+
+```bash
+fail()    { echo -e "\033[0;31m[FAIL]\033[0m  $*"; }
+```
+(`sprint.sh:37`, verbatim.)
+
+It sets no exit status and no failure flag, and `run_agent`/`run_orb` wrap their invocation in
+an `if` so a non-zero child exit is swallowed too. Only the explicit `exit 1` preflights
+(missing tool, missing credential) can make the script exit non-zero. So a sprint whose
+**assertions** all fail still exits **0**.
+
+Observed concretely at t3: both cloudcost legs printed
+`[FAIL] orphan candidates: 0 …` and the sprint exited 0 either way. The red was real and
+correctly reported — but nothing downstream of `$?` could have known.
+
+**Why it matters.** It makes the sprint's exit code a check that passes identically whether or
+not the thing under test worked — the **Silent-wrong-answer** shape, one level up, in the
+apparatus rather than in a script. Any CI job, cron wrapper, or `&&` chain keying on `$?` reads
+a fully-red sprint as success. The gate rule (*every existing gate runs at ticket boundaries; a
+red gate gets a tracked ticket the day it's found*) leans on someone **reading** the output,
+which holds for a human at a terminal and fails for anything automated.
+
+**Not a trivial flip.** Making `fail` set a flag turns every currently-tolerated red into a
+sprint failure at once — including tracked known-reds like **BL-069**, which are *supposed* to
+stay visible without blocking. So the row has a design question, not just an edit:
+
+- a `FAILURES=$((FAILURES+1))` counter plus a final `exit $(( FAILURES > 0 ))`, and
+- a companion `expected_fail()` (or a `KNOWN_RED` allowlist keyed by ticket ref) so a tracked
+  carry prints its `[FAIL]` line and its ticket without flipping the exit code.
+
+Without the second half this fix cannot land while BL-069 is armed.
+
+**Done when:** the sprint exits non-zero when an untracked assertion fails, tracked known-reds
+are declared with their ticket ref and do not flip the exit, the summary block prints the
+pass/fail tally (it is static text today), and the change is mutation-checked — deliberately
+break one assertion in one case, confirm a non-zero exit; restore, confirm zero. Audit all 31
+cases for reds that would newly become blocking before flipping the default.
+
+`Source: m2-cloudcost t3 review, claude-ui N1, 2026-08-02 (aetheris fa158a4; observed on both
+cloudcost legs). Reported by claude-code in the t3 packet before the review raised it.`
+
+---
+
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 
@@ -4292,4 +4342,5 @@ multi-line street/city/state/zip.
 | ✔ | BL-027 | **Done 2026-07-23, folded into BL-025.** Its trigger was too narrow — any failed contained tool call reached the crash — and BL-025 made `aetheris verify` real, which would have shipped it. Convention residue → BL-046 |
 | — | BL-006 | Fires on its own trigger |
 | — | BL-075 | Fires on the next `mix test` red: capture the full output that time. Fold into BL-054 only if the name matches the twelfth-slot flake — the connection is plausible, not established |
+| — | BL-077 | Blocked in practice until BL-069 is re-armed or the `expected_fail()` half is designed — flipping `fail` to a real failure today would turn every tracked known-red into a blocking one. Do the counter and the known-red declaration together, never the counter alone |
 | — | BL-076 | Batch with BL-070 — same file, and BL-070's cleanup has to touch this code anyway. Do it alone if BL-070 slips: this is the one piece of the cross-provider merge that is not merely dead but actively produces a wrong month-on-month headline. t3's per-provider `--history-dir` mitigates it by convention only, so a direct `compose` call still hits it |

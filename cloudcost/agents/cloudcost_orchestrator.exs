@@ -24,6 +24,8 @@
 #   env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_PROFILE \
 #       AWS_SHARED_CREDENTIALS_FILE=/dev/null \
 #       mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+#   # AWS + the exploratory optimization spike (m2 t4) — add CLOUDCOST_OPTIMIZATION=1 to the
+#   # line above. Unset, the pipeline and the report are exactly the four-stage ones.
 
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
@@ -88,6 +90,68 @@ end
 output_dir = "output/#{provider_slug}"
 history_dir = "history/#{provider_slug}"
 
+# --- optional optimization spike (m2 t4) ---------------------------------------------
+#
+# CLOUDCOST_OPTIMIZATION=1 adds ONE step and threads its file into the render. Unset — the
+# default, and every run that predates t4 — the three chunks below are empty strings, so the
+# prompt this file builds is byte-for-byte the t3 prompt and the pipeline is exactly t3's.
+# That is the orchestrator half of §t4's isolation invariant, and it is measurable: render
+# the prompt with the variable set and unset and diff.
+#
+# The step is numbered 2b rather than 3 deliberately. Inserting a renumbered step would
+# rewrite the text of every step after it, so the unset case could no longer be compared to
+# t3's byte-for-byte — the isolation claim would rest on reading the diff instead of on
+# running it.
+#
+# There is no credential raise for this gate: it needs no credential of its own beyond the
+# CLOUDCOST_AWS_* key the provider check above already fails fast on, and `Code.eval_file/1`
+# must stay clean with the variable set on a machine with no credentials at all.
+optimization? = System.get_env("CLOUDCOST_OPTIMIZATION") == "1"
+
+# The spike reads S3, ECR, Secrets Manager and CloudWatch — it exists for one provider only.
+# Asking for it on another one raises rather than quietly dropping the flag: a silent no-op
+# would hand back a report with no optimization section and no reason given, which reads
+# exactly like a spike that ran and found nothing. Same posture as the two raises above.
+if optimization? and provider != "aws" do
+  raise "CLOUDCOST_OPTIMIZATION=1 is only meaningful with CLOUDCOST_PROVIDER=aws " <>
+          "(the optimization spike reads S3/ECR/Secrets Manager/CloudWatch); got " <>
+          "provider #{inspect(provider)}. Unset CLOUDCOST_OPTIMIZATION to run the " <>
+          "standard pipeline for this provider."
+end
+
+step_count = if optimization?, do: "five", else: "four"
+
+optimization_step =
+  if optimization? do
+    """
+
+    STEP 2b — Detect exploratory optimization signals (S3 / ECR / Secrets Manager).
+      run_command  command: "python3"
+                   args: ["scripts/detect_optimization_signals.py", "--output-dir", "#{output_dir}"]
+
+      Parse the JSON on stdout and keep `file` — the optimization-signals path.
+
+      This step is EXPLORATORY and best-effort. A thin or empty result is a normal
+      outcome, not a failure, and `"status": "partial"` here means some API was denied
+      or some fact was unavailable — the file was still written. Carry on either way.
+    """
+  else
+    ""
+  end
+
+render_optimization_arg =
+  if optimization?, do: ~s(, "--optimization-file", "<SIGNALS>"), else: ""
+
+render_optimization_note =
+  if optimization? do
+    """
+
+      Replace "<SIGNALS>" with the `file` path from STEP 2b.\
+    """
+  else
+    ""
+  end
+
 # provider/model are literals rather than the AETHERIS_MODEL/AETHERIS_PROVIDER env
 # override the sibling agents use: sprint.sh sources aetheris-agents/.env, so an
 # override there would silently change what the stub-guard done-check asserts
@@ -95,7 +159,7 @@ history_dir = "history/#{provider_slug}"
 
 system_prompt = """
 You are the cloudcost orchestrator. Run the #{provider_name} cost-report pipeline by
-executing the four steps below in order, then report the report file and the orphan
+executing the #{step_count} steps below in order, then report the report file and the orphan
 count. Every step is a `run_command` call; each script writes its own output file and
 prints a JSON summary to stdout containing the path it wrote.
 
@@ -119,7 +183,7 @@ STEP 2 — Detect orphan candidates from the inventory.
 
   Replace "<INVENTORY>" with the `files.inventory` path from STEP 1.
   Parse the JSON on stdout and keep `file` — the orphan-candidates path.
-
+#{optimization_step}
 STEP 3 — Compose the report data (merges cost + inventory + orphans, adds the MoM delta).
 
   If STEP 1 printed `files.costs`, use this form:
@@ -137,9 +201,9 @@ STEP 3 — Compose the report data (merges cost + inventory + orphans, adds the 
 
 STEP 4 — Render the HTML report.
   run_command  command: "python3"
-               args: ["scripts/render_report.py", "<REPORT_DATA>", "--output-dir", "#{output_dir}"]
+               args: ["scripts/render_report.py", "<REPORT_DATA>", "--output-dir", "#{output_dir}"#{render_optimization_arg}]
 
-  Replace "<REPORT_DATA>" with the `file` path from STEP 3.
+  Replace "<REPORT_DATA>" with the `file` path from STEP 3.#{render_optimization_note}
   Parse the JSON on stdout and keep `file` (the HTML report) and
   `counts.orphan_candidates`.
 

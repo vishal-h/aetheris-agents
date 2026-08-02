@@ -72,6 +72,36 @@ lookup at nothing, **for that process only**. `CLOUDCOST_AWS_*` are deliberately
 Keep the prefix even though the adapter's explicit-session construction already ignores the
 default chain: belt and suspenders, and the belt is the part that is visible in the command.
 
+**AWS with the exploratory optimization spike** (m2 t4) — the same invocation with one more
+variable:
+```
+cd ~/sandbox/elixirws/aetheris
+CLOUDCOST_PROVIDER=aws CLOUDCOST_OPTIMIZATION=1 \
+env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_PROFILE \
+    AWS_SHARED_CREDENTIALS_FILE=/dev/null \
+    mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+```
+This adds one step — `detect_optimization_signals.py`, writing
+`output/aws/optimization_signals_aws_{YYYY-MM}.json` — and threads that file into the render,
+which then carries an extra "Optimization signals (exploratory)" section. Notes:
+
+- **Unset, nothing changes.** The pipeline and the rendered report are exactly what they are
+  without it; the orchestrator builds a byte-identical prompt, and the report is byte-identical
+  to the core report. So there is no reason to unset it "to get a clean report" — leaving it
+  off *is* the clean report.
+- **It needs the t4 spike IAM actions** (§Prereqs 1: `s3:ListAllMyBuckets`,
+  `s3:GetBucketLocation`, `s3:GetLifecycleConfiguration`, `s3:ListBucketMultipartUploads`,
+  `ecr:DescribeRepositories`, `ecr:DescribeImages`, `ecr:GetLifecyclePolicy`,
+  `secretsmanager:ListSecrets`, `cloudwatch:GetMetricData`). Without them the step degrades:
+  it still exits 0 and still writes its file, and the refused calls are listed under
+  `denied[]` and rendered as "Not checked" — an unchecked family never reads as an empty one.
+- **A thin or empty result is a pass.** The spike is exploratory and non-gating.
+- **Dollar figures are list prices** for prioritization, not the bill, and appear only where a
+  published rate is held — a region or storage class without one is shown with no figure
+  rather than an estimated one.
+- **`CLOUDCOST_OPTIMIZATION=1` without `CLOUDCOST_PROVIDER=aws` raises**, rather than being
+  silently ignored: the spike reads S3/ECR/Secrets Manager and exists for one provider only.
+
 Sprint cases (same prereqs; each clears its own `output/{provider}/` first so its checks cannot
 green on a stale run):
 ```
@@ -91,6 +121,15 @@ python3 scripts/compose_report_data.py --cost output/digitalocean/do_costs_$P.js
     --orphans output/digitalocean/digitalocean_orphan_candidates_$P.json \
     --output-dir output/digitalocean --history-dir history/digitalocean
 python3 scripts/render_report.py output/digitalocean/report_data_$P.json --output-dir output/digitalocean
+```
+
+The optimization spike standalone (AWS only; needs the `CLOUDCOST_AWS_*` key in the
+environment, and the same `env -u …` prefix if a personal `~/.aws` is present):
+```
+P=$(date -u +%Y-%m)
+python3 scripts/detect_optimization_signals.py --output-dir output/aws
+python3 scripts/render_report.py output/aws/report_data_$P.json --output-dir output/aws \
+    --optimization-file output/aws/optimization_signals_aws_$P.json
 ```
 
 ## Output

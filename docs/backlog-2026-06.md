@@ -2353,6 +2353,38 @@ recorded, so this is an enumeration and not another observation.
 
 ---
 
+### BL-075 — `mix test` failed once then passed three times, identity uncaptured (#TBD)
+**Size:** XS–S · **Priority:** low · **Section:** harness (`../aetheris/test/`)
+
+Filed 2026-08-02 at the m2-cloudcost **t2** boundary, per the gate rule (*a red gate gets a
+tracked ticket the day it's found, never carried silently*). t2 is single-repo Python work, so
+`mix test` was an **off-territory** run — exactly the kind the rule exists to force.
+
+**What was observed.** First run: `969 tests, 1 failure, 133 excluded`. Three consecutive
+re-runs immediately after, same tree, same command: `969 tests, 0 failures, 133 excluded`.
+Nothing in this ticket touches the harness (`../aetheris` is untouched at t2), so the failure
+cannot be attributed to the change under test.
+
+**What is not known — and why.** *The failing test's name.* The first run's output was piped
+through `tail -12`, which showed the summary line and none of the failure block; by the time
+the gap was noticed the run was gone. That is the **Complete-output** rule failing in its
+mildest form — a count characterised from a fragment — and it is recorded here rather than
+quietly dropped, because "1 failure" with no name is not a finding anyone can act on.
+
+**Likely home, unconfirmed.** `BL-054` already exists for the `requires_worker` twelfth-slot
+flake, and a 1-in-4 timing failure in the 88s sync block fits that shape. It is **not** claimed
+as the same defect — no evidence connects them beyond plausibility.
+
+**Done when:** either the flake is reproduced with its name captured (run the suite in a loop
+with full output retained, e.g. `mix test --seed 0` plus repeated seeded runs) and folded into
+BL-054 or filed on its own, or three further full-output runs come back clean and this row is
+closed as unreproducible with that stated. Whichever way it goes, capture the **whole** output.
+
+`Source: m2-cloudcost t2 done-check, 2026-08-02 (aetheris-agents 7a7b7ec; aetheris fd9ac48,
+untouched).`
+
+---
+
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 
@@ -4188,3 +4220,4 @@ multi-line street/city/state/zip.
 | — | BL-026 | Fires on its trigger: first `verify` run against a multi-agent/orb trajectory (ratified 2026-07-19) |
 | ✔ | BL-027 | **Done 2026-07-23, folded into BL-025.** Its trigger was too narrow — any failed contained tool call reached the crash — and BL-025 made `aetheris verify` real, which would have shipped it. Convention residue → BL-046 |
 | — | BL-006 | Fires on its own trigger |
+| — | BL-075 | Fires on the next `mix test` red: capture the full output that time. Fold into BL-054 only if the name matches the twelfth-slot flake — the connection is plausible, not established |

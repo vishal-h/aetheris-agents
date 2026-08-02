@@ -118,7 +118,7 @@
     },
     {
       "resource_id": "203.0.113.30",
-      "type": "reserved_ip",
+      "type": "static_ip",
       "name": "tmp-egress-ip",
       "region": "blr1",
       "size": null,

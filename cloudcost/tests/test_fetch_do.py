@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import _normalized
 import fetch_do
 from conftest import USE_CASE_ROOT, load_fixture
 
@@ -36,10 +37,44 @@ def run_main(stub, tmp_path, period=PERIOD, extra=None):
 def test_normalize_droplet_uses_the_api_price_not_an_estimate():
     raw = load_fixture("do_droplets_page1")["droplets"][0]
     out = fetch_do.normalize_droplet(raw)
-    assert out["type"] == "droplet"
+    assert out["type"] == "compute_instance"
     assert out["monthly_cost_estimate"] == float(raw["size"]["price_monthly"])
     assert out["raw_ref"] == f"do://droplets/{raw['id']}"
     assert out["attached_to"] is None
+
+
+def test_the_adapter_emits_the_canonical_type_vocabulary_not_dos_own(
+    full_stub, tmp_path, monkeypatch
+):
+    """m2 t2 a′: `type` is schema-level. DO's `droplet`/`reserved_ip` were provider
+    vocabulary sitting in shared machinery — the rules key on the canonical values."""
+    monkeypatch.setenv("CLOUDCOST_DO_TOKEN", READONLY_TOKEN)
+    run_main(full_stub, tmp_path)
+    inventory = json.loads((tmp_path / f"do_inventory_{PERIOD}.json").read_text())
+
+    types = {r["type"] for r in inventory["resources"]}
+    assert types == {"compute_instance", "volume", "static_ip", "snapshot", "load_balancer"}
+    assert types <= _normalized.CANONICAL_TYPES
+    # The DO spellings are gone from the emitted contract (they survive only in raw_ref,
+    # which is provenance — a pointer back to the DO object, not vocabulary).
+    assert "droplet" not in types and "reserved_ip" not in types
+    assert all(r["raw_ref"].startswith("do://") for r in inventory["resources"])
+
+
+def test_droplet_state_off_is_normalized_to_the_canonical_stopped():
+    """m2 t2 a: DO says `off`, the schema says `stopped`, and `detect_orphans` keys on the
+    schema. DO's other statuses have no canonical spelling and pass through unchanged."""
+    raw = dict(load_fixture("do_droplets_page1")["droplets"][0])
+
+    assert fetch_do.normalize_droplet({**raw, "status": "off"})["state"] == "stopped"
+    assert fetch_do.normalize_droplet({**raw, "status": "off"})["state"] == (
+        _normalized.STATE_STOPPED
+    )
+    for passthrough in ("active", "new", "archive"):
+        assert (
+            fetch_do.normalize_droplet({**raw, "status": passthrough})["state"]
+            == passthrough
+        )
 
 
 def test_normalize_volume_attached_and_unattached():
@@ -333,7 +368,7 @@ def test_inventory_surfaces_the_unattached_resources(full_stub, tmp_path, monkey
 
     orphans = [r for r in inventory["resources"] if r["attached_to"] is None]
     types = {r["type"] for r in orphans}
-    assert {"volume", "reserved_ip", "load_balancer"} <= types
+    assert {"volume", "static_ip", "load_balancer"} <= types
 
 
 def test_a_failing_source_degrades_to_partial_rather_than_crashing(
@@ -352,7 +387,7 @@ def test_a_failing_source_degrades_to_partial_rather_than_crashing(
 
     inventory = json.loads((tmp_path / f"do_inventory_{PERIOD}.json").read_text())
     assert {r["type"] for r in inventory["resources"]} == {
-        "droplet", "volume", "reserved_ip", "load_balancer"
+        "compute_instance", "volume", "static_ip", "load_balancer"
     }
 
 

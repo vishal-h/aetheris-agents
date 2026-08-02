@@ -1,0 +1,65 @@
+{
+  "_comment": "The near-miss counterpart of inventory_rds_positive: every database resource here misses one condition of the stopped-database rule, and the manual snapshot is too young for the aged rule. Reference date 2026-07-27; the whole fixture must produce zero candidates.",
+  "provider": "aws",
+  "account": "000000000000",
+  "period": "2026-07",
+  "resources": [
+    {
+      "resource_id": "db-running-1",
+      "type": "database",
+      "name": "db-running-1",
+      "region": "us-east-1",
+      "size": "db.t3.medium",
+      "state": "available",
+      "created_at": "2025-05-08T12:00:00Z",
+      "last_activity_at": null,
+      "attached_to": "db-running-1",
+      "monthly_cost_estimate": 46.0,
+      "tags": [],
+      "raw_ref": "aws://rds/us-east-1/db-running-1"
+    },
+    {
+      "resource_id": "db-stopped-young-1",
+      "type": "database",
+      "name": "db-stopped-young-1",
+      "region": "us-east-1",
+      "size": "db.t3.small",
+      "state": "stopped",
+      "created_at": "2026-07-22T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 11.5,
+      "tags": [],
+      "raw_ref": "aws://rds/us-east-1/db-stopped-young-1"
+    },
+    {
+      "resource_id": "db-stopped-nostorage-1",
+      "type": "database",
+      "name": "db-stopped-nostorage-1",
+      "region": "eu-west-1",
+      "size": "db.t3.micro",
+      "state": "stopped",
+      "created_at": "2025-05-08T12:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 0.0,
+      "tags": [],
+      "raw_ref": "aws://rds/eu-west-1/db-stopped-nostorage-1"
+    },
+    {
+      "resource_id": "snap-db-manual-recent",
+      "type": "database_snapshot",
+      "name": "snap-db-manual-recent",
+      "region": "us-east-1",
+      "size": "50GiB",
+      "state": "available",
+      "created_at": "2026-07-24T03:00:00Z",
+      "last_activity_at": null,
+      "attached_to": "db-running-1",
+      "monthly_cost_estimate": 4.75,
+      "tags": [],
+      "raw_ref": "aws://rds/us-east-1/snap-db-manual-recent"
+    }
+  ],
+  "generated_at": "2026-07-27T00:00:00Z"
+}

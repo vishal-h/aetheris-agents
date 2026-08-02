@@ -1,0 +1,51 @@
+{
+  "_comment": "Crafted normalized inventory for the m2 t2 database rules — every value is a first-class field of §Normalized schemas, in the canonical `type`/`state` vocabulary. Written against reference date 2026-07-27. Mirrors the AWS recorded fixtures (db-stopped-1 = 200GiB gp2 = $23.00/mo; snap-db-manual-orphan's source DB is gone) so the crafted and cross-stage assertions agree.",
+  "provider": "aws",
+  "account": "000000000000",
+  "period": "2026-07",
+  "resources": [
+    {
+      "resource_id": "db-stopped-1",
+      "type": "database",
+      "name": "db-stopped-1",
+      "region": "us-east-1",
+      "size": "db.t3.medium",
+      "state": "stopped",
+      "created_at": "2025-05-08T12:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 23.0,
+      "tags": [],
+      "raw_ref": "aws://rds/us-east-1/db-stopped-1"
+    },
+    {
+      "resource_id": "snap-db-manual-orphan",
+      "type": "database_snapshot",
+      "name": "snap-db-manual-orphan",
+      "region": "us-east-1",
+      "size": "50GiB",
+      "state": "available",
+      "created_at": "2025-01-09T03:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 4.75,
+      "tags": [],
+      "raw_ref": "aws://rds/us-east-1/snap-db-manual-orphan"
+    },
+    {
+      "resource_id": "snap-ebs-aged-1",
+      "type": "snapshot",
+      "name": "old-ebs-snapshot",
+      "region": "us-east-1",
+      "size": "20GiB",
+      "state": "completed",
+      "created_at": "2026-03-01T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": null,
+      "monthly_cost_estimate": 1.0,
+      "tags": [],
+      "raw_ref": "aws://ec2/us-east-1/snap-ebs-aged-1"
+    }
+  ],
+  "generated_at": "2026-07-27T00:00:00Z"
+}

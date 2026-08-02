@@ -4,6 +4,7 @@ Every rule is asserted twice: once on a fixture that fires it, and once on the n
 fixture that must leave it silent. A rule that cannot fail to fire tests nothing.
 """
 
+import ast
 import inspect
 import json
 import subprocess
@@ -42,6 +43,34 @@ def reported_ids(result):
     return [r["resource_id"] for r in section["resources"]]
 
 
+def code_string_literals(path: Path) -> set:
+    """Every string literal in a module's *code*, docstrings excluded.
+
+    The provider-vocabulary guards below assert on what the engine can key on, which is the
+    literals in its code — never its prose. A comment that records what m1 used to do here
+    is documentation; the same word in a set literal is the seam coming back.
+    """
+    tree = ast.parse(path.read_text())
+    docstrings = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            body = getattr(node, "body", None) or []
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
+                docstrings.add(id(body[0].value))
+    return {
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and id(node) not in docstrings
+    }
+
+
 # ------------------------------------------------------------- rule: unattached volume
 
 
@@ -60,12 +89,12 @@ def test_unattached_volume_is_silent_when_attached_young_or_exactly_at_the_thres
     assert "vol-orphan-exactly-14d-1" not in fired
 
 
-# ---------------------------------------------------------- rule: unassociated reserved IP
+# ------------------------------------------------------------ rule: unassociated static IP
 
 
-def test_unassociated_reserved_ip_fires_regardless_of_age():
+def test_unassociated_static_ip_fires_regardless_of_age():
     candidate = by_id(run("inventory_rules_positive"))["203.0.113.10"]
-    assert candidate["rule"] == "unassociated_reserved_ip"
+    assert candidate["rule"] == "unassociated_static_ip"
     assert candidate["confidence"] == 0.95
     assert candidate["monthly_saving_estimate"] == 4.38
     # 7 days old and still a candidate — this rule carries no age threshold.
@@ -135,25 +164,32 @@ def test_droplet_targeted_load_balancer_is_silent():
     assert "lb-attached-1" not in rules_fired(run("inventory_rules_negative"))
 
 
-# ------------------------------------------- rule: stopped droplet with attached storage
+# ------------------------------------------- rule: stopped compute with attached storage
 
 
-def test_stopped_droplet_with_attached_storage_fires():
+def test_stopped_compute_with_attached_storage_fires():
     candidate = by_id(run("inventory_rules_positive"))["drop-stopped-1"]
-    assert candidate["rule"] == "stopped_droplet_with_attached_storage"
+    assert candidate["rule"] == "stopped_compute_with_attached_storage"
     assert candidate["confidence"] == 0.6
 
 
-def test_stopped_droplet_saving_is_the_droplet_estimate_not_the_storage():
+def test_stopped_compute_saving_is_the_instance_estimate_plus_its_attached_storage():
+    """m2 t2 c: m1 named the attached storage but did not sum it — an under-report. The
+    saving *adds* attached storage to the instance's own estimate; it never replaces it,
+    because a provider that bills a stopped instance (DO) and one that does not (AWS) are
+    both correct only if the own term survives."""
     candidate = by_id(run("inventory_rules_positive"))["drop-stopped-1"]
-    # The droplet's own estimate is 24.00; its attached volume is 5.00. m1 does not sum.
-    assert candidate["monthly_saving_estimate"] == 24.0
-    assert any("not summed (m1)" in fact for fact in candidate["evidence"])
+    # DO droplet's own estimate 24.00 (billed on-or-off) + its attached volume 5.00.
+    assert candidate["monthly_saving_estimate"] == 29.0
+    assert (
+        "saving estimate is the instance's own $24.00/mo plus its attached storage "
+        "$5.00/mo = $29.00/mo" in candidate["evidence"]
+    )
 
 
-def test_stopped_droplet_evidence_names_the_state_the_age_and_the_attached_volume():
+def test_stopped_compute_evidence_names_the_state_the_age_and_the_attached_volume():
     evidence = by_id(run("inventory_rules_positive"))["drop-stopped-1"]["evidence"]
-    assert "state is 'off' — the instance is stopped" in evidence
+    assert "state is 'stopped' — the instance is stopped" in evidence
     assert (
         "stopped instance age 193d (created 2026-01-15, ref 2026-07-27); threshold >30d"
         in evidence
@@ -161,35 +197,105 @@ def test_stopped_droplet_evidence_names_the_state_the_age_and_the_attached_volum
     assert "attached storage vol-on-stopped-1 (old-worker-data, 50GiB) — $5.00/mo" in evidence
 
 
-def test_stopped_droplet_is_silent_without_storage_when_young_or_when_running():
+def test_stopped_compute_is_silent_without_storage_when_young_or_when_running():
     fired = rules_fired(run("inventory_rules_negative"))
-    assert "drop-off-young-1" not in fired  # off + storage, but only 5d old
-    assert "drop-off-nostorage-1" not in fired  # off + old, but no attached volume
+    assert "drop-off-young-1" not in fired  # stopped + storage, but only 5d old
+    assert "drop-off-nostorage-1" not in fired  # stopped + old, but no attached volume
     assert "drop-active-1" not in fired  # old + storage, but running
 
 
-def test_the_only_provider_state_vocabulary_is_the_stopped_states_constant():
-    assert detect_orphans.STOPPED_STATES == {"off"}
-    source = SCRIPT.read_text()
+# ---------------------------------------------- rule: stopped database with its storage
 
-    # The DO state value appears in exactly one place in the module: the constant.
-    off_literals = [
-        line.strip()
-        for line in source.splitlines()
-        if '"off"' in line or "'off'" in line
-    ]
-    assert off_literals == ['STOPPED_STATES = {"off"}  # DO vocabulary']
 
-    # And `state` is read only inside the one rule that needs it.
-    rule_source = inspect.getsource(detect_orphans.rule_stopped_droplet_with_attached_storage)
+def test_stopped_database_with_storage_fires_and_the_saving_is_its_own_estimate():
+    """The storage of a database is not separately inventoried — the adapter prices it into
+    the instance's own estimate — so the saving is that estimate and nothing is summed onto
+    it. Summing an attached volume here would double-count (m2 t2 c)."""
+    candidate = by_id(run("inventory_rds_positive"))["db-stopped-1"]
+    assert candidate["rule"] == "stopped_database_with_storage"
+    assert candidate["confidence"] == 0.6
+    assert candidate["monthly_saving_estimate"] == 23.0
+    assert "state is 'stopped' — the database is stopped" in candidate["evidence"]
+    assert "attached_to is null — the database is serving nothing" in candidate["evidence"]
+    assert any("still bills" in fact for fact in candidate["evidence"])
+
+
+def test_stopped_database_is_silent_when_running_young_or_paying_nothing():
+    fired = rules_fired(run("inventory_rds_negative"))
+    assert "db-running-1" not in fired  # stopped-state absent: it is serving
+    assert "db-stopped-young-1" not in fired  # stopped + storage, but 5d old
+    assert "db-stopped-nostorage-1" not in fired  # stopped + old, but $0 — nothing to save
+
+
+def test_the_state_vocabulary_is_schema_level_not_any_providers_spelling():
+    """m2 t2 a: the constant m1 called "the one seam" now reads a value the schema defines.
+    DO's `off` is mapped in its adapter; nothing here knows the word."""
+    assert detect_orphans.STOPPED_STATES == {"stopped"}
+    assert detect_orphans.STOPPED_STATES == {detect_orphans.STATE_STOPPED}
+
+    # No provider's own state spelling appears in the shared machinery's *code*. Read from
+    # the AST rather than the raw text so the prose may still say what m1 did here — a
+    # comment recording the history is not a value the engine can key on.
+    literals = code_string_literals(SCRIPT) | code_string_literals(SHARED)
+    assert "off" not in literals
+
+    # And `state` is read only inside the two rules that need it.
+    rule_sources = inspect.getsource(
+        detect_orphans.rule_stopped_compute_with_attached_storage
+    ) + inspect.getsource(detect_orphans.rule_stopped_database_with_storage)
     state_reads = [
         line
-        for line in source.splitlines()
+        for line in SCRIPT.read_text().splitlines()
         if 'get("state")' in line or "get('state')" in line
     ]
-    assert len(state_reads) == 2  # the guard, and the evidence line that quotes it
-    assert all(line in rule_source for line in state_reads)
-    assert 'resource.get("state") not in STOPPED_STATES' in rule_source
+    assert len(state_reads) == 4  # two guards, two evidence lines that quote the state
+    assert all(line in rule_sources for line in state_reads)
+    assert 'resource.get("state") not in STOPPED_STATES' in rule_sources
+
+
+# ------------------------------------------ the aged-snapshot rule covers both snapshot types
+
+
+def test_one_aged_snapshot_rule_covers_both_canonical_snapshot_types():
+    """m2 t2 c: an RDS manual snapshot and an EBS snapshot are the same heuristic — age
+    plus a source that is gone — so one rule covers both, keyed on the canonical `type`
+    set. The candidate's own `type` is what distinguishes them downstream."""
+    candidates = by_id(run("inventory_rds_positive"))
+
+    database_snapshot = candidates["snap-db-manual-orphan"]
+    ebs_snapshot = candidates["snap-ebs-aged-1"]
+    assert database_snapshot["rule"] == ebs_snapshot["rule"] == "aged_snapshot"
+    assert database_snapshot["confidence"] == ebs_snapshot["confidence"] == 0.7
+    assert database_snapshot["type"] == "database_snapshot"
+    assert ebs_snapshot["type"] == "snapshot"
+    assert database_snapshot["monthly_saving_estimate"] == 4.75
+
+    # Same evidence sentences for both — the rule does not branch on the type.
+    assert (
+        "snapshot age 563d (created 2025-01-09, ref 2026-07-27); threshold >30d"
+        in database_snapshot["evidence"]
+    )
+    assert (
+        "attached_to is null — the source the snapshot was taken from is gone"
+        in database_snapshot["evidence"]
+    )
+    assert (
+        "attached_to is null — the source the snapshot was taken from is gone"
+        in ebs_snapshot["evidence"]
+    )
+
+
+def test_the_aged_rule_shares_one_threshold_across_both_snapshot_types():
+    """One `--snapshot-age-days` governs both; the threshold is never forked per type."""
+    assert detect_orphans.SNAPSHOT_TYPES == {"snapshot", "database_snapshot"}
+    fired = rules_fired(run("inventory_rds_positive", snapshot_age_days=600))
+    assert "snap-db-manual-orphan" not in fired  # 563d old — under the raised threshold
+    assert "snap-ebs-aged-1" not in fired  # 148d old — likewise
+    # ...and both come back when the shared threshold drops below their ages.
+    assert {"snap-db-manual-orphan", "snap-ebs-aged-1"} <= set(
+        rules_fired(run("inventory_rds_positive", snapshot_age_days=100))
+    )
+    assert "snap-db-manual-recent" not in rules_fired(run("inventory_rds_negative"))
 
 
 # -------------------------------------------------------------- the negative fixture as a whole
@@ -201,17 +307,32 @@ def test_the_near_miss_fixture_produces_no_candidates_at_all():
     assert result["totals"]["monthly_saving_estimate"] == 0.0
 
 
+def test_the_rds_near_miss_fixture_produces_no_candidates_at_all():
+    result = run("inventory_rds_negative")
+    assert result["candidates"] == []
+    assert result["totals"]["monthly_saving_estimate"] == 0.0
+
+
 def test_every_rule_in_the_catalog_fires_on_the_positive_fixture():
     result = run("inventory_rules_positive")
     assert set(c["rule"] for c in result["candidates"]) == {
         "unattached_volume",
-        "unassociated_reserved_ip",
+        "unassociated_static_ip",
         "aged_snapshot",
         "idle_load_balancer",
-        "stopped_droplet_with_attached_storage",
+        "stopped_compute_with_attached_storage",
     }
-    assert len(result["candidates"]) == len(detect_orphans.RULES) == 5
-    assert result["totals"]["monthly_saving_estimate"] == 51.58
+    # Six rules in the catalog, five fired: this DO-shaped fixture carries no database.
+    # The sixth fires on the RDS fixture — together the two cover the whole catalog.
+    assert len(result["candidates"]) == 5
+    assert len(detect_orphans.RULES) == 6
+    rds = set(c["rule"] for c in run("inventory_rds_positive")["candidates"])
+    assert rds == {"stopped_database_with_storage", "aged_snapshot"}
+    assert set(c["rule"] for c in result["candidates"]) | rds == {
+        rule.__name__.removeprefix("rule_") for rule in detect_orphans.RULES
+    }
+    # 4.38 + 10.00 + 12.00 + 1.20 + (24.00 own + 5.00 attached) = 56.58
+    assert result["totals"]["monthly_saving_estimate"] == 56.58
 
 
 def test_candidates_are_ordered_by_descending_confidence():
@@ -490,7 +611,9 @@ def test_cli_writes_the_candidates_file_and_prints_a_summary(tmp_path):
     }
 
     written = Path(summary["file"])
-    assert written == tmp_path / "orphan_candidates_2026-07.json"
+    # m2 t2 b: provider-prefixed, so a second provider's run into the same output
+    # directory cannot overwrite the first's candidates.
+    assert written == tmp_path / "digitalocean_orphan_candidates_2026-07.json"
     payload = json.loads(written.read_text())
     assert payload == run("inventory_rules_positive")
 
@@ -515,13 +638,15 @@ def test_cli_reports_a_partial_status_on_a_degraded_inventory(tmp_path):
     assert summary["counts"]["skipped"] == 4
     assert len(summary["warnings"]) == 1
     # Degraded, not aborted: the file it could produce is still written.
-    assert (tmp_path / "orphan_candidates_2026-07.json").exists()
+    assert (tmp_path / "digitalocean_orphan_candidates_2026-07.json").exists()
 
 
 def test_cli_snapshot_age_flag_changes_the_verdict(tmp_path):
     args = [str(FIXTURES / "inventory_rules_positive.json"), "--output-dir", str(tmp_path)]
     assert cli(args + ["--snapshot-age-days", "200"], tmp_path).returncode == 0
-    payload = json.loads((tmp_path / "orphan_candidates_2026-07.json").read_text())
+    payload = json.loads(
+        (tmp_path / "digitalocean_orphan_candidates_2026-07.json").read_text()
+    )
     assert "snap-aged-1" not in [c["resource_id"] for c in payload["candidates"]]
     assert payload["parameters"]["snapshot_age_days"] == 200
 
@@ -582,12 +707,14 @@ def test_the_adapter_output_feeds_detection_without_translation(
         tmp_path,
     )
     assert result.returncode == 0, result.stderr
-    payload = json.loads((tmp_path / "orphan_candidates_2026-07.json").read_text())
+    payload = json.loads(
+        (tmp_path / "digitalocean_orphan_candidates_2026-07.json").read_text()
+    )
     fired = {c["resource_id"]: c["rule"] for c in payload["candidates"]}
 
     assert fired == {
         "vol-orphan-1": "unattached_volume",
-        "203.0.113.11": "unassociated_reserved_ip",
+        "203.0.113.11": "unassociated_static_ip",
         "snap-0001": "aged_snapshot",
         "snap-0002": "aged_snapshot",
         "lb-orphan-1": "idle_load_balancer",
@@ -595,6 +722,68 @@ def test_the_adapter_output_feeds_detection_without_translation(
     # The tag-targeted LB survives the seam: t1 emits `tag:web`, t2 does not call it idle.
     assert "lb-tagged-1" not in fired
     assert payload["provider"] == "digitalocean"
+    assert payload["skipped"] == [] and payload["warnings"] == []
+
+
+def test_the_aws_adapter_output_feeds_detection_without_translation(
+    full_aws_stub, tmp_path, monkeypatch
+):
+    """The m2 seam, end to end: t1's AWS adapter → t2's rules, no translation between them.
+
+    This is the test the whole ticket exists for. Before t2, every rule keyed on DO's
+    vocabulary, so this same run produced *zero* candidates from an inventory full of them
+    — a green pipeline reporting nothing. Now the AWS-shaped orphans fire on the identical
+    catalog the DO run uses, with no provider knowledge anywhere in it.
+    """
+    import fetch_aws
+    from conftest import CLOUDCOST_ACCESS_KEY, CLOUDCOST_SECRET_KEY
+
+    monkeypatch.setenv("CLOUDCOST_AWS_ACCESS_KEY_ID", CLOUDCOST_ACCESS_KEY)
+    monkeypatch.setenv("CLOUDCOST_AWS_SECRET_ACCESS_KEY", CLOUDCOST_SECRET_KEY)
+    assert (
+        fetch_aws.main(
+            [
+                "--output-dir", str(tmp_path),
+                "--period", "2026-07",
+                "--endpoint-url", full_aws_stub.endpoint_url,
+            ]
+        )
+        == 0
+    )
+
+    inventory_file = tmp_path / "aws_inventory_2026-07.json"
+    assert inventory_file.exists()
+
+    result = cli(
+        [str(inventory_file), "--output-dir", str(tmp_path), "--reference-date", "2026-07-27"],
+        tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
+
+    # (b) the provider prefix, on the provider that motivated it.
+    payload = json.loads((tmp_path / "aws_orphan_candidates_2026-07.json").read_text())
+    assert payload["provider"] == "aws"
+    fired = {c["resource_id"]: c["rule"] for c in payload["candidates"]}
+    candidates = {c["resource_id"]: c for c in payload["candidates"]}
+
+    # Stopped EC2 + its EBS volume; stopped RDS; the aged manual RDS snapshot whose source
+    # DB is gone; the unassociated Elastic IP (the done-when shape on the live account).
+    assert fired["i-0aaa3333"] == "stopped_compute_with_attached_storage"
+    assert fired["db-stopped-1"] == "stopped_database_with_storage"
+    assert fired["snap-db-manual-orphan"] == "aged_snapshot"
+    assert any(rule == "unassociated_static_ip" for rule in fired.values())
+
+    # The saving is provider-correct without the rule knowing the provider: AWS bills no
+    # compute on a stopped instance (own 0.00), so the whole saving is the attached EBS.
+    stopped_ec2 = candidates["i-0aaa3333"]
+    assert stopped_ec2["monthly_saving_estimate"] == 16.0
+    assert (
+        "saving estimate is the instance's own $0.00/mo plus its attached storage "
+        "$16.00/mo = $16.00/mo" in stopped_ec2["evidence"]
+    )
+    # RDS storage is priced into the instance's own estimate — counted once, not summed.
+    assert candidates["db-stopped-1"]["monthly_saving_estimate"] == 23.0
+
     assert payload["skipped"] == [] and payload["warnings"] == []
 
 
@@ -635,6 +824,51 @@ def test_the_rules_never_read_a_provider_specific_field():
     )
     assert read_fields <= normalized_fields, read_fields - normalized_fields
     assert "provider_extra" not in source
+
+
+def test_the_rules_key_only_on_canonical_type_values():
+    """m2 t2 a′: `type` values are schema-level too. m1 keyed two rules on DO's own
+    `droplet`/`reserved_ip` — the second seam — so the guard now watches the values, not
+    just the field names."""
+    import _normalized
+
+    literals = code_string_literals(SCRIPT) | code_string_literals(SHARED)
+    assert "droplet" not in literals
+    assert "reserved_ip" not in literals
+
+    # Every canonical type is defined once, in the shared module, and imported here.
+    assert _normalized.CANONICAL_TYPES == {
+        "compute_instance",
+        "volume",
+        "static_ip",
+        "snapshot",
+        "load_balancer",
+        "database",
+        "database_snapshot",
+    }
+    for name in ("TYPE_COMPUTE_INSTANCE", "TYPE_STATIC_IP", "TYPE_DATABASE"):
+        assert getattr(detect_orphans, name) is getattr(_normalized, name)
+    assert detect_orphans.SNAPSHOT_TYPES <= _normalized.CANONICAL_TYPES
+
+
+def test_compose_and_render_key_on_no_type_value():
+    """§t2 (d), as an assertion rather than a claim: the downstream stages read the `type`
+    field but must never special-case one of its *values* — that would be a third leak of
+    provider-shaped knowledge into shared machinery, and its own finding."""
+    downstream = {
+        "compose_report_data.py": USE_CASE_ROOT / "scripts" / "compose_report_data.py",
+        "render_report.py": USE_CASE_ROOT / "scripts" / "render_report.py",
+    }
+    import _normalized
+
+    for name, path in downstream.items():
+        literals = code_string_literals(path)
+        leaked = literals & (_normalized.CANONICAL_TYPES | {"droplet", "reserved_ip"})
+        assert leaked == set(), f"{name} keys on type value(s): {leaked}"
+
+    template = (USE_CASE_ROOT / "templates" / "report.html.j2").read_text()
+    for value in _normalized.CANONICAL_TYPES | {"droplet", "reserved_ip"}:
+        assert f"'{value}'" not in template and f'"{value}"' not in template
 
 
 def test_detection_runs_on_a_non_do_inventory_unchanged():

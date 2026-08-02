@@ -5,13 +5,14 @@ Reads a normalized resource inventory (`cloudcost/milestone.md` §Normalized sch
 applies the §t2 heuristic catalog, emitting orphan candidates with a confidence, the
 `evidence[]` facts that fired, and a `monthly_saving_estimate`:
 
-    {output_dir}/orphan_candidates_{YYYY-MM}.json
+    {output_dir}/{provider}_orphan_candidates_{YYYY-MM}.json
 
 Provider-agnostic by construction. Every rule keys on normalized fields only — `state`,
 `type`, `attached_to`, `created_at`, `last_activity_at`, `tags`, `name`,
-`monthly_cost_estimate` — so a second provider needs a new adapter and nothing here. The
-single exception is `STOPPED_STATES`, the one place a provider's own state vocabulary is
-read; see its comment.
+`monthly_cost_estimate` — and on the *canonical values* of `type` and `state`, which are
+schema-level and imported from `_normalized.py`. A second provider needs a new adapter and
+nothing here. (m1 read DO's own vocabulary in two places — `STOPPED_STATES={"off"}` and
+rules keyed on `droplet`/`reserved_ip`. m2 t2 a/a′ closed both; BL-074 sweeps for the rest.)
 
 No LLM is involved anywhere in detection: rules, modifiers and thresholds are all
 reviewable code (D3). There is no hardcoded "now" — the analysis is stamped with an
@@ -31,20 +32,40 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from _normalized import day, iso, money, parse_timestamp, tag_coverage, tags_of, usable_resources
+from _normalized import (
+    STATE_STOPPED,
+    TYPE_COMPUTE_INSTANCE,
+    TYPE_DATABASE,
+    TYPE_DATABASE_SNAPSHOT,
+    TYPE_LOAD_BALANCER,
+    TYPE_SNAPSHOT,
+    TYPE_STATIC_IP,
+    TYPE_VOLUME,
+    day,
+    iso,
+    money,
+    parse_timestamp,
+    provider_slug,
+    tag_coverage,
+    tags_of,
+    usable_resources,
+)
 
 # --------------------------------------------------------------------------- thresholds
 
 #: Base confidences for the §t2 rule catalog.
 CONFIDENCE_UNATTACHED_VOLUME = 0.9
-CONFIDENCE_UNASSOCIATED_RESERVED_IP = 0.95
+CONFIDENCE_UNASSOCIATED_STATIC_IP = 0.95
 CONFIDENCE_AGED_SNAPSHOT = 0.7
 CONFIDENCE_IDLE_LOAD_BALANCER = 0.85
-CONFIDENCE_STOPPED_DROPLET_WITH_STORAGE = 0.6
+CONFIDENCE_STOPPED_COMPUTE_WITH_STORAGE = 0.6
+CONFIDENCE_STOPPED_DATABASE_WITH_STORAGE = 0.6
 
 #: Age thresholds, in days. A rule fires on age *strictly greater* than its threshold.
 UNATTACHED_VOLUME_MIN_AGE_DAYS = 14
-STOPPED_DROPLET_MIN_AGE_DAYS = 30
+#: One threshold for stopped compute and stopped databases: they are the same heuristic
+#: shape, and a per-type fork would be a provider assumption wearing a type's clothes.
+STOPPED_COMPUTE_MIN_AGE_DAYS = 30
 DEFAULT_SNAPSHOT_AGE_DAYS = 30  # overridable: --snapshot-age-days N
 
 #: Additive modifiers; the final confidence is clamped to [0.0, 1.0].
@@ -66,9 +87,16 @@ KEEP_TAG = "keep=true"
 #: resource with no tags is a governance flag — reported, never queued (§t2).
 TAGGED_ACCOUNT_COVERAGE_THRESHOLD = 0.5
 
-#: The one place a provider's own state vocabulary is read. Normalize to a common state
-#: enum in the adapter before the second provider lands (forward ticket).
-STOPPED_STATES = {"off"}  # DO vocabulary
+#: Stopped compute, in the canonical state vocabulary — schema-level, not any provider's
+#: spelling (m2 t2 a). Every adapter maps its own idiom onto it: DO's `off`, EC2's and RDS's
+#: `stopped`. This constant was m1's named seam; it now reads a value the schema defines.
+STOPPED_STATES = frozenset({STATE_STOPPED})
+
+#: Both snapshot kinds are the *same* heuristic — age, plus a source that is gone — and
+#: differ only in the canonical `type` the adapter emitted, which the candidate carries.
+#: One rule covers both; a second rule would duplicate the aging and evidence logic for no
+#: behavioural gain (m2 t2 c).
+SNAPSHOT_TYPES = frozenset({TYPE_SNAPSHOT, TYPE_DATABASE_SNAPSHOT})
 
 
 # ------------------------------------------------------------------------------ helpers
@@ -93,7 +121,7 @@ class Context:
         self.snapshot_age_days = snapshot_age_days
         self.volumes_by_attachment: dict = {}
         for resource in resources:
-            if resource.get("type") != "volume":
+            if resource.get("type") != TYPE_VOLUME:
                 continue
             attached_to = resource.get("attached_to")
             if isinstance(attached_to, str) and attached_to:
@@ -117,8 +145,14 @@ class Context:
         return text
 
 
-def fired(rule: str, confidence: float, evidence: list) -> dict:
-    return {"rule": rule, "base_confidence": confidence, "evidence": evidence}
+def fired(rule: str, confidence: float, evidence: list, saving=None) -> dict:
+    """A rule's hit. `saving` overrides the default `monthly_saving_estimate`, which is the
+    resource's own `monthly_cost_estimate` — used by the one rule whose saving spans more
+    than the resource itself (stopped compute plus its separately-inventoried storage)."""
+    hit = {"rule": rule, "base_confidence": confidence, "evidence": evidence}
+    if saving is not None:
+        hit["saving"] = money(saving)
+    return hit
 
 
 # -------------------------------------------------------------------------------- rules
@@ -130,7 +164,7 @@ def fired(rule: str, confidence: float, evidence: list) -> dict:
 
 def rule_unattached_volume(resource: dict, ctx: Context):
     """Unattached volume older than 14 days — 0.9."""
-    if resource.get("type") != "volume" or resource.get("attached_to") is not None:
+    if resource.get("type") != TYPE_VOLUME or resource.get("attached_to") is not None:
         return None
     age = ctx.age_days(resource.get("created_at"))
     if age is None or age <= UNATTACHED_VOLUME_MIN_AGE_DAYS:
@@ -150,24 +184,30 @@ def rule_unattached_volume(resource: dict, ctx: Context):
     )
 
 
-def rule_unassociated_reserved_ip(resource: dict, ctx: Context):
-    """Reserved IP associated with nothing — 0.95. No age threshold: an unassociated
-    reserved IP bills from the moment it is unassociated."""
-    if resource.get("type") != "reserved_ip" or resource.get("attached_to") is not None:
+def rule_unassociated_static_ip(resource: dict, ctx: Context):
+    """Static IP associated with nothing — 0.95. No age threshold: an unassociated static
+    IP bills from the moment it is unassociated (a DO reserved IP, an AWS Elastic IP)."""
+    if resource.get("type") != TYPE_STATIC_IP or resource.get("attached_to") is not None:
         return None
-    evidence = ["attached_to is null — the reserved IP is not associated with any instance"]
+    evidence = ["attached_to is null — the static IP is not associated with any instance"]
     age = ctx.age_days(resource.get("created_at"))
     if age is not None:
         evidence.append(
             ctx.age_phrase("reserved for", resource.get("created_at"), age)
             + "; this rule has no age threshold"
         )
-    return fired("unassociated_reserved_ip", CONFIDENCE_UNASSOCIATED_RESERVED_IP, evidence)
+    return fired("unassociated_static_ip", CONFIDENCE_UNASSOCIATED_STATIC_IP, evidence)
 
 
 def rule_aged_snapshot(resource: dict, ctx: Context):
-    """Snapshot older than N days (N is a parameter, default 30) — 0.7."""
-    if resource.get("type") != "snapshot":
+    """Snapshot older than N days (N is a parameter, default 30) — 0.7.
+
+    Covers both canonical snapshot types (`snapshot`, `database_snapshot`): the heuristic is
+    age plus a source that is gone, which is identical for an EBS snapshot and an RDS manual
+    snapshot. The candidate carries the `type`, so the report still distinguishes them; the
+    evidence sentences deliberately do not.
+    """
+    if resource.get("type") not in SNAPSHOT_TYPES:
         return None
     age = ctx.age_days(resource.get("created_at"))
     if age is None or age <= ctx.snapshot_age_days:
@@ -192,7 +232,7 @@ def rule_idle_load_balancer(resource: dict, ctx: Context):
     built at m1: a backend *tag* matching zero live instances is idle too, but proving it
     needs an instance cross-reference the inventory alone does not support.
     """
-    if resource.get("type") != "load_balancer" or resource.get("attached_to") is not None:
+    if resource.get("type") != TYPE_LOAD_BALANCER or resource.get("attached_to") is not None:
         return None
     return fired(
         "idle_load_balancer",
@@ -205,58 +245,116 @@ def rule_idle_load_balancer(resource: dict, ctx: Context):
     )
 
 
-def rule_stopped_droplet_with_attached_storage(resource: dict, ctx: Context):
+def rule_stopped_compute_with_attached_storage(resource: dict, ctx: Context):
     """Stopped instance older than 30 days that still carries attached storage — 0.6.
 
     "Attached storage" is an intra-inventory join: at least one volume whose `attached_to`
-    equals this resource's `resource_id`. The saving stays the instance's own estimate for
-    m1 — the attached volumes are named in the evidence with their cost, but summing them
-    into the saving is forwarded (a stopped instance's volumes may be intentionally kept).
+    equals this resource's `resource_id`. The saving is the instance's **own** estimate
+    **plus** those volumes' — m1 named them in the evidence but did not sum them, which
+    under-reported the saving (m2 t2 c closes that forward).
+
+    Adding rather than replacing is what keeps the rule provider-agnostic: each adapter has
+    already encoded its own cost model in `monthly_cost_estimate`, so the same sum is
+    correct for a provider that bills a stopped instance (DO: own is the full droplet price)
+    and one that does not (AWS: own is 0.0, and the EBS volume carries the whole charge).
+    Only *separately inventoried* storage is summed here — storage a provider folds into the
+    instance's own estimate is already counted once, in that estimate.
     """
-    if resource.get("type") != "droplet":
+    if resource.get("type") != TYPE_COMPUTE_INSTANCE:
         return None
     if resource.get("state") not in STOPPED_STATES:
         return None
     age = ctx.age_days(resource.get("created_at"))
-    if age is None or age <= STOPPED_DROPLET_MIN_AGE_DAYS:
+    if age is None or age <= STOPPED_COMPUTE_MIN_AGE_DAYS:
         return None
     attached = ctx.volumes_by_attachment.get(resource.get("resource_id")) or []
     if not attached:
         return None
 
+    own = money(resource.get("monthly_cost_estimate"))
     evidence = [
         f"state is '{resource.get('state')}' — the instance is stopped",
         ctx.age_phrase(
             "stopped instance age",
             resource.get("created_at"),
             age,
-            STOPPED_DROPLET_MIN_AGE_DAYS,
+            STOPPED_COMPUTE_MIN_AGE_DAYS,
         ),
     ]
+    storage_total = 0.0
     for volume in sorted(attached, key=lambda v: str(v.get("resource_id"))):
+        cost = money(volume.get("monthly_cost_estimate"))
+        storage_total += cost
         evidence.append(
             f"attached storage {volume.get('resource_id')} "
             f"({volume.get('name')}, {volume.get('size')}) — "
-            f"${money(volume.get('monthly_cost_estimate')):.2f}/mo"
+            f"${cost:.2f}/mo"
         )
+    saving = round(own + storage_total, 2)
     evidence.append(
-        "saving estimate is the instance's own monthly_cost_estimate; attached storage "
-        "is named but not summed (m1)"
+        f"saving estimate is the instance's own ${own:.2f}/mo plus its attached storage "
+        f"${storage_total:.2f}/mo = ${saving:.2f}/mo"
     )
     return fired(
-        "stopped_droplet_with_attached_storage",
-        CONFIDENCE_STOPPED_DROPLET_WITH_STORAGE,
+        "stopped_compute_with_attached_storage",
+        CONFIDENCE_STOPPED_COMPUTE_WITH_STORAGE,
         evidence,
+        saving=saving,
+    )
+
+
+def rule_stopped_database_with_storage(resource: dict, ctx: Context):
+    """Stopped database older than 30 days still paying for its storage — 0.6.
+
+    The same shape as the stopped-compute rule, for a resource whose storage the provider
+    does not inventory separately: a stopped RDS instance bills no compute but keeps paying
+    for its allocated storage, and that charge is already inside its own
+    `monthly_cost_estimate`. So the signal that storage remains is simply a non-zero
+    estimate on a stopped resource, and the saving is that estimate — summing an attached
+    volume here would double-count storage the adapter has already priced in.
+
+    `attached_to` is null for a stopped database (it serves nothing); a database still
+    serving traffic is attached to itself and never reaches this rule.
+    """
+    if resource.get("type") != TYPE_DATABASE:
+        return None
+    if resource.get("state") not in STOPPED_STATES:
+        return None
+    if resource.get("attached_to") is not None:
+        return None
+    own = money(resource.get("monthly_cost_estimate"))
+    if own <= 0:
+        return None
+    age = ctx.age_days(resource.get("created_at"))
+    if age is None or age <= STOPPED_COMPUTE_MIN_AGE_DAYS:
+        return None
+
+    return fired(
+        "stopped_database_with_storage",
+        CONFIDENCE_STOPPED_DATABASE_WITH_STORAGE,
+        [
+            f"state is '{resource.get('state')}' — the database is stopped",
+            "attached_to is null — the database is serving nothing",
+            ctx.age_phrase(
+                "stopped database age",
+                resource.get("created_at"),
+                age,
+                STOPPED_COMPUTE_MIN_AGE_DAYS,
+            ),
+            f"monthly_cost_estimate is ${own:.2f}/mo while stopped — the allocated storage "
+            f"still bills; it is priced into this estimate, so the saving is that estimate",
+        ],
     )
 
 
 #: Evaluated in order; each may contribute one candidate.
 RULES = (
     rule_unattached_volume,
-    rule_unassociated_reserved_ip,
+    rule_unassociated_static_ip,
     rule_aged_snapshot,
     rule_idle_load_balancer,
-    rule_stopped_droplet_with_attached_storage,
+    rule_stopped_compute_with_attached_storage,
+    rule_stopped_database_with_storage,
 )
 
 
@@ -362,7 +460,13 @@ def score(resource: dict, hit: dict, ctx: Context) -> dict:
         "modifiers": modifiers,
         "confidence": clamp(confidence),
         "evidence": evidence,
-        "monthly_saving_estimate": money(resource.get("monthly_cost_estimate")),
+        # The resource's own estimate unless the rule computed a saving spanning more than
+        # the resource itself (stopped compute + its separately-inventoried storage).
+        "monthly_saving_estimate": (
+            hit["saving"]
+            if "saving" in hit
+            else money(resource.get("monthly_cost_estimate"))
+        ),
     }
 
 
@@ -423,7 +527,7 @@ def detect(
         "parameters": {
             "snapshot_age_days": snapshot_age_days,
             "unattached_volume_min_age_days": UNATTACHED_VOLUME_MIN_AGE_DAYS,
-            "stopped_droplet_min_age_days": STOPPED_DROPLET_MIN_AGE_DAYS,
+            "stopped_compute_min_age_days": STOPPED_COMPUTE_MIN_AGE_DAYS,
             "recent_activity_window_days": RECENT_ACTIVITY_WINDOW_DAYS,
             "tagged_account_coverage_threshold": TAGGED_ACCOUNT_COVERAGE_THRESHOLD,
         },
@@ -518,7 +622,13 @@ def main(argv=None) -> int:
 
     result = detect(inventory, reference_date, snapshot_age_days=args.snapshot_age_days)
     period = result.get("period") or "unknown"
-    path = write_json(Path(args.output_dir) / f"orphan_candidates_{period}.json", result)
+    # Provider-prefixed: each provider is its own solo run writing into the same output
+    # directory (decision H), so an unprefixed name would have the second provider's
+    # candidates overwrite the first's (m1 open item, closed at m2 t2 b).
+    provider = provider_slug(result.get("provider"))
+    path = write_json(
+        Path(args.output_dir) / f"{provider}_orphan_candidates_{period}.json", result
+    )
 
     degraded = result["warnings"] or result["skipped"]
     summary = {

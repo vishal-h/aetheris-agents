@@ -6,7 +6,7 @@
   "resources": [
     {
       "resource_id": "drop-web-1",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "prod-web-1",
       "region": "blr1",
       "size": "s-2vcpu-4gb",
@@ -20,7 +20,7 @@
     },
     {
       "resource_id": "drop-web-2",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "prod-web-2",
       "region": "blr1",
       "size": "s-2vcpu-4gb",
@@ -34,7 +34,7 @@
     },
     {
       "resource_id": "drop-api-1",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "prod-api-1",
       "region": "blr1",
       "size": "s-4vcpu-8gb",
@@ -76,7 +76,7 @@
     },
     {
       "resource_id": "drop-legacy-1",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "legacy-box",
       "region": "blr1",
       "size": "s-1vcpu-2gb",

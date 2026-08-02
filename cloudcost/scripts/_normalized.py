@@ -1,4 +1,4 @@
-"""Shared vocabulary over the normalized cloudcost schemas (m1).
+"""Shared vocabulary over the normalized cloudcost schemas (m1; canonical values at m2 t2).
 
 The stages downstream of an adapter — `detect_orphans.py` (t2) and
 `compose_report_data.py` (t3) — must agree on a handful of definitions that are part of
@@ -8,6 +8,11 @@ is required to equal t2's, so that definition lives here once rather than being 
 in both CLIs (repo rule: factor cross-script plumbing into a shared `_helper.py` module
 rather than duplicating it or cross-importing between CLIs).
 
+The same argument, more strongly, holds for the canonical `type` / `state` *values* below:
+they are the definition of the schema seam, so by construction they have exactly one home
+— this module — which every adapter (`fetch_do.py`, `fetch_aws.py`) and the shared rule
+engine imports from (m2 t2 a/a′).
+
 Provider-agnostic by construction: every function here reads first-class fields of
 `cloudcost/milestone.md` §Normalized schemas and nothing else — no provider vocabulary,
 and nothing under the provider-specific payload block. (The name of that block is spelled
@@ -16,7 +21,45 @@ out nowhere in this module on purpose: t2's provider-agnostic guard greps for it
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
+
+# --------------------------------------------------------------- canonical vocabulary
+#
+# The `type` and `state` values the normalized schema itself defines (m2 t2 a/a′). These
+# are schema-level, not provider vocabulary: `detect_orphans.py` keys its rules on them, so
+# a provider-flavoured value anywhere here would put provider vocabulary inside shared
+# machinery — the seam m1 named as `STOPPED_STATES` and t1 found to be three (BL-074).
+#
+# This module is the single home, and every adapter imports from it: an adapter that
+# declared its own would let the vocabulary drift on the exact seam t2 exists to remove,
+# and an adapter importing from a *sibling adapter* is the cross-import anti-pattern.
+# `cloudcost/milestone.md` §Normalized schemas enumerates the same set in prose.
+
+TYPE_COMPUTE_INSTANCE = "compute_instance"  # EC2 instance / DO droplet
+TYPE_VOLUME = "volume"  # EBS volume / DO volume
+TYPE_STATIC_IP = "static_ip"  # Elastic IP / DO reserved IP
+TYPE_SNAPSHOT = "snapshot"  # EBS snapshot / DO snapshot
+TYPE_LOAD_BALANCER = "load_balancer"  # ELB/ALB/NLB / DO load balancer
+TYPE_DATABASE = "database"  # RDS instance
+TYPE_DATABASE_SNAPSHOT = "database_snapshot"  # RDS manual snapshot
+
+#: The closed set every adapter emits from. A `type` outside it is a contract violation.
+CANONICAL_TYPES = frozenset(
+    {
+        TYPE_COMPUTE_INSTANCE,
+        TYPE_VOLUME,
+        TYPE_STATIC_IP,
+        TYPE_SNAPSHOT,
+        TYPE_LOAD_BALANCER,
+        TYPE_DATABASE,
+        TYPE_DATABASE_SNAPSHOT,
+    }
+)
+
+#: Canonical state for stopped compute — an EC2 instance, an RDS instance, a DO droplet.
+#: `detect_orphans.STOPPED_STATES` is this value and nothing else.
+STATE_STOPPED = "stopped"
 
 
 def parse_timestamp(value):
@@ -49,6 +92,19 @@ def money(value) -> float:
         return round(float(value), 2)
     except (TypeError, ValueError):
         return 0.0
+
+
+def provider_slug(value) -> str:
+    """Filesystem-safe provider token for an output filename. Computed here, never by an
+    LLM (repo rule).
+
+    `compose_report_data.py` carries an identical private `slug()` for its history
+    filenames. It is deliberately not converged onto this one: §t2 (d) freezes that file so
+    the AWS run's "compose ran unchanged" result stays a clean negative proof. Converge the
+    two when compose is next legitimately edited (BL-070).
+    """
+    cleaned = re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
+    return cleaned or "unknown"
 
 
 def tags_of(resource: dict) -> list:

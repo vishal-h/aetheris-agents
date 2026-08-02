@@ -6,7 +6,7 @@
   "resources": [
     {
       "resource_id": "drop-1",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "box-1",
       "region": "blr1",
       "size": "s-1vcpu-1gb",
@@ -20,7 +20,7 @@
     },
     {
       "resource_id": "drop-2",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "box-2",
       "region": "blr1",
       "size": "s-1vcpu-1gb",
@@ -34,7 +34,7 @@
     },
     {
       "resource_id": "drop-3",
-      "type": "droplet",
+      "type": "compute_instance",
       "name": "box-3",
       "region": "blr1",
       "size": "s-1vcpu-1gb",

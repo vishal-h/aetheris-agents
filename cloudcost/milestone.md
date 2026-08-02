@@ -226,6 +226,33 @@ its provider lacks the concept — never by omission. Provider-specific payload 
 - Every resource carries, first class: `resource_id`, `type`, `name`, `region`, `size`,
   `state`, `created_at`, `last_activity_at`, `attached_to`, `monthly_cost_estimate`, `tags`,
   `raw_ref`.
+- **`type` — the canonical vocabulary (schema-level, closed set).** *Amendment-to-complete,
+  m2 t2 a′: m1 froze the field but never enumerated its allowed values, so the DO adapter's
+  `droplet` / `reserved_ip` were provider vocabulary that `detect_orphans.py`'s rules keyed
+  on — the second seam (BL-074), beside `STOPPED_STATES`. These values are part of the
+  contract, not of any provider: every adapter emits from this set and nothing else, and the
+  shared machinery keys on these values. They are defined once in `scripts/_normalized.py`
+  (`TYPE_*`, `CANONICAL_TYPES`) and imported by every adapter.*
+
+  | Canonical `type` | DigitalOcean emits for | AWS emits for |
+  |---|---|---|
+  | `compute_instance` | droplet | EC2 instance |
+  | `volume` | volume | EBS volume |
+  | `static_ip` | reserved IP | Elastic IP |
+  | `snapshot` | snapshot | EBS snapshot |
+  | `load_balancer` | load balancer | ELB / ALB / NLB |
+  | `database` | — | RDS instance |
+  | `database_snapshot` | — | RDS manual snapshot |
+
+  A provider lacking a concept simply emits no resource of that type; a provider with a
+  concept the set does not name needs the set extended here first, never a local spelling.
+  The provider's own name for the thing survives in `raw_ref` (`do://droplets/…`), which is
+  provenance rather than vocabulary.
+- **`state` — the canonical value for stopped compute is `"stopped"`** (`STATE_STOPPED`,
+  same module; m2 t2 a). Each adapter maps its own idiom onto it — DO's `off`, EC2's and
+  RDS's `stopped` — and `detect_orphans.STOPPED_STATES` is that one value. Other states have
+  no canonical spelling yet and pass through as the provider reports them; the moment a rule
+  needs one, it is enumerated here first.
 - `monthly_cost_estimate` is the per-resource dollar figure — the provider's own price where
   given (DO droplets carry a real `price_monthly`), else derived from size/type (**D4**); it
   feeds the orphan `monthly_saving_estimate`.
@@ -559,12 +586,19 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
   the first ticket that makes either path reachable owes it the same two-minute look.
   `Source: t4 review r0, human browser check.`
-- **`STOPPED_STATES` normalisation — the one seam where a provider's own vocabulary reaches
-  shared machinery.** `detect_orphans.py:71` is `STOPPED_STATES = {"off"}  # DO vocabulary`,
-  read by `rule_stopped_droplet_with_attached_storage` (`:218`) and pinned by three tests
-  (`test_detect_orphans.py:172/181/192`) precisely so a second provider cannot widen it
-  silently. Before that provider lands, the **adapter** should emit a common state enum and
-  this constant should shrink to a schema-level value. Raised in
+- **`STOPPED_STATES` normalisation — ~~the one seam~~ *one of three seams* where a provider's
+  own vocabulary or cost model reaches shared machinery. RESOLVED at m2 t2 a.**
+  `detect_orphans.py:71` was `STOPPED_STATES = {"off"}  # DO vocabulary`, read by
+  `rule_stopped_droplet_with_attached_storage` and pinned by three tests precisely so a
+  second provider could not widen it silently. m2 t2 shrank it to the schema-level
+  `{STATE_STOPPED}` and moved the mapping into each adapter.
+  *Correction (m2 t1/t2, BL-074): "the one seam" was observation, not enumeration — the
+  **Adjacent-case** rule's failure mode. There were at least three: (1) this one; (2) the
+  `type` vocabulary, un-enumerated by m1 so DO's `droplet`/`reserved_ip` sat inside the rules
+  (resolved at t2 a′ — see §Normalized schemas); (3) the assumption that a provider bills a
+  resource regardless of state, which made the stopped-with-storage saving under-report
+  (resolved at t2 c). BL-074 sweeps for the rest; the rule-catalog age thresholds and the
+  `keep=true` tag spelling are the named next candidates.* Raised in
   `docs/t2-implementation-notes.md:170`; promoted here at m1 close because it gates the
   fan-out and an implementation-notes file does not travel to the next ticket's session.
 - **Cross-currency aggregation is handled in one place and unhandled in four —

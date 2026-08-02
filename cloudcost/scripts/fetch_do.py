@@ -34,6 +34,15 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
+from _normalized import (
+    STATE_STOPPED,
+    TYPE_COMPUTE_INSTANCE,
+    TYPE_LOAD_BALANCER,
+    TYPE_SNAPSHOT,
+    TYPE_STATIC_IP,
+    TYPE_VOLUME,
+)
+
 DEFAULT_API_BASE = "https://api.digitalocean.com/v2"
 
 #: The only environment variable this adapter will authenticate with.
@@ -321,14 +330,19 @@ def normalize_cost(
 
 
 def normalize_droplet(raw: dict) -> dict:
+    """A DO droplet is a `compute_instance` in the canonical vocabulary (t2 a′), and its
+    `off` status is the canonical `stopped` state (t2 a). DO's other statuses — `new`,
+    `active`, `archive` — have no canonical spelling and pass through as themselves; only
+    the value a shared rule keys on is normalized."""
     size = raw.get("size") or {}
+    status = raw.get("status")
     return {
         "resource_id": str(raw.get("id")),
-        "type": "droplet",
+        "type": TYPE_COMPUTE_INSTANCE,
         "name": raw.get("name"),
         "region": (raw.get("region") or {}).get("slug"),
         "size": raw.get("size_slug"),
-        "state": raw.get("status"),
+        "state": STATE_STOPPED if status == "off" else status,
         "created_at": raw.get("created_at"),
         "last_activity_at": None,
         "attached_to": None,
@@ -343,7 +357,7 @@ def normalize_volume(raw: dict) -> dict:
     gib = raw.get("size_gigabytes") or 0
     return {
         "resource_id": str(raw.get("id")),
-        "type": "volume",
+        "type": TYPE_VOLUME,
         "name": raw.get("name"),
         "region": (raw.get("region") or {}).get("slug"),
         "size": f"{gib}GiB",
@@ -364,7 +378,7 @@ def normalize_reserved_ip(raw: dict) -> dict:
     attached_to = str(droplet.get("id")) if isinstance(droplet, dict) else None
     return {
         "resource_id": str(raw.get("ip")),
-        "type": "reserved_ip",
+        "type": TYPE_STATIC_IP,
         "name": raw.get("ip"),
         "region": (raw.get("region") or {}).get("slug"),
         "size": None,
@@ -385,7 +399,7 @@ def normalize_snapshot(raw: dict) -> dict:
     regions = raw.get("regions") or []
     return {
         "resource_id": str(raw.get("id")),
-        "type": "snapshot",
+        "type": TYPE_SNAPSHOT,
         "name": raw.get("name"),
         "region": regions[0] if regions else None,
         "size": f"{gib}GiB",
@@ -419,7 +433,7 @@ def normalize_load_balancer(raw: dict) -> dict:
         attached_to = None
     return {
         "resource_id": str(raw.get("id")),
-        "type": "load_balancer",
+        "type": TYPE_LOAD_BALANCER,
         "name": raw.get("name"),
         "region": (raw.get("region") or {}).get("slug"),
         "size": size_slug,

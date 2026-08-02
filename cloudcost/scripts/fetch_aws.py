@@ -38,6 +38,17 @@ import botocore.session
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
+from _normalized import (
+    STATE_STOPPED,
+    TYPE_COMPUTE_INSTANCE,
+    TYPE_DATABASE,
+    TYPE_DATABASE_SNAPSHOT,
+    TYPE_LOAD_BALANCER,
+    TYPE_SNAPSHOT,
+    TYPE_STATIC_IP,
+    TYPE_VOLUME,
+)
+
 #: The only environment variables this adapter will authenticate with.
 ACCESS_KEY_ENV = "CLOUDCOST_AWS_ACCESS_KEY_ID"
 SECRET_KEY_ENV = "CLOUDCOST_AWS_SECRET_ACCESS_KEY"
@@ -94,22 +105,10 @@ REGION_DISABLED_CODES = frozenset({"OptInRequired"})
 
 # ------------------------------------------------------------------ normalized vocabulary
 #
-# The canonical `type` values every adapter emits. These are schema-level, not provider
-# vocabulary: `detect_orphans.py` keys its rules on them, so a provider-flavoured value here
-# would put provider vocabulary inside shared machinery (the seam STOPPED_STATES already
-# occupies). Adjudicated at m2 t1; `fetch_do.py` is renamed onto the same values at t2 (a').
-
-TYPE_COMPUTE_INSTANCE = "compute_instance"  # EC2 instance / DO droplet
-TYPE_VOLUME = "volume"  # EBS volume / DO volume
-TYPE_STATIC_IP = "static_ip"  # Elastic IP / DO reserved IP
-TYPE_SNAPSHOT = "snapshot"  # EBS snapshot / DO snapshot
-TYPE_LOAD_BALANCER = "load_balancer"  # ELB/ALB/NLB / DO load balancer
-TYPE_DATABASE = "database"  # RDS instance
-TYPE_DATABASE_SNAPSHOT = "database_snapshot"  # RDS manual snapshot
-
-#: Canonical state for stopped compute. `detect_orphans.STOPPED_STATES` shrinks to this at
-#: t2 (a); until then AWS detection simply does not fire, which is the ratified ordering.
-STATE_STOPPED = "stopped"
+# The canonical `type` / `state` values are imported from `_normalized.py`, which is their
+# single home (m2 t2 a′). t1 declared them here, before the shared module was the agreed
+# home; the relocation is byte-identical in what this adapter emits — every t1 fixture and
+# test stays green, which is the check that it *was* a relocation and not a change.
 
 
 # ---------------------------------------------------------------------------- list prices

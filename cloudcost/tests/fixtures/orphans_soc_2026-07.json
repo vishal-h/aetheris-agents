@@ -7,7 +7,7 @@
   "parameters": {
     "snapshot_age_days": 30,
     "unattached_volume_min_age_days": 14,
-    "stopped_droplet_min_age_days": 30,
+    "stopped_compute_min_age_days": 30,
     "recent_activity_window_days": 14,
     "tagged_account_coverage_threshold": 0.5
   },

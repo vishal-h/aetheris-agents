@@ -405,7 +405,10 @@ def test_each_candidate_is_carried_through_verbatim_with_only_a_provider_key_add
 def test_each_band_carries_its_own_saving_subtotal_and_the_section_carries_the_overall():
     report = compose()
     subtotals = {band: b["monthly_saving_estimate"] for band, b in bands(report).items()}
-    assert subtotals == {"HIGH": 14.38, "MEDIUM": 13.2, "LOW": 24.0}
+    # LOW is the stopped-compute candidate: 24.00 own + 5.00 attached storage (m2 t2 c —
+    # compose is unchanged; the figure moved because the stage above it stopped
+    # under-reporting).
+    assert subtotals == {"HIGH": 14.38, "MEDIUM": 13.2, "LOW": 29.0}
     assert report["orphans"]["totals"] == {
         "candidates": 5,
         "monthly_saving_estimate": round(sum(subtotals.values()), 2),
@@ -448,7 +451,7 @@ def test_a_two_provider_bundle_composes_with_no_code_change():
     # The foreign candidate outranks every DO one and leads the HIGH band.
     assert banded_ids(report)["HIGH"] == ["disk-1", "203.0.113.10", "vol-orphan-1"]
     assert report["totals"]["orphan_candidates"] == 6
-    assert report["totals"]["orphan_monthly_saving_estimate"] == 91.58
+    assert report["totals"]["orphan_monthly_saving_estimate"] == 96.58
 
 
 def test_bundles_are_ordered_by_provider_whatever_order_they_arrive_in():
@@ -746,7 +749,7 @@ def test_the_whole_pipeline_composes_end_to_end(full_stub, tmp_path, monkeypatch
         cwd=USE_CASE_ROOT, capture_output=True, text=True,
     )
     assert detect.returncode == 0, detect.stderr
-    orphans_file = tmp_path / "orphan_candidates_2026-07.json"
+    orphans_file = tmp_path / "digitalocean_orphan_candidates_2026-07.json"
 
     result = cli(
         [

@@ -112,6 +112,32 @@ truth.
 - Anything outside the ticket's `Touches` list needs a note in the
   implementation notes; silent scope creep is a blocking finding.
 
+### Doc edits are section-scoped (claude-ui never replaces a whole file)
+
+claude-ui has no repo access, so every doc change it proposes is generated from a context
+snapshot rather than read from HEAD. A whole-file replacement built that way can only be
+last-write-wins: it silently discards anything committed to that file since the snapshot, and
+with no diff the discard is invisible. This failed twice in two turns — once inserting phantom
+corrections (fixing text HEAD never contained), once reverting three real fixes committed since
+the snapshot — the same bug in both directions. So claude-ui emits **section-scoped edits
+only**: "replace §t3 with …", "add this rev-log entry", "change the §Contract refs line to X" —
+never a full-file body. A scoped edit is merge-safe by construction — it cannot revert what it
+does not mention — so unrelated corrections survive automatically. The arbiter applies each edit
+against HEAD and diffs before committing; that diff is the optimistic-lock check, and it lives
+where the diff capability actually is. A scoped edit built on a stale reading of its own section
+can still be wrong on the merits — but that is a review question the diff surfaces, not a silent
+merge loss.
+
+Corollary: claude-ui keeps no writable mirror of a repo-owned doc. A mirror is a second writable
+copy of a file whose source of truth is the repo — a cache with no invalidation, and the drift
+surface both failures came through; dropping it removes the surface. The repo doc is canonical.
+claude-ui owns ratification — what the doc should say — and the arbiter owns the sync —
+mechanically making the doc say it. Only the first is a judgment call, which is why the sync
+belongs on the side that holds HEAD and the diff.
+
+`Source: m2-cloudcost t3, 2026-08-02 — the rev 5.2 mirror write (phantom N2 items) and its
+successor (three reverted F3/status fixes). Ratified with the human at the t3 close.`
+
 ---
 
 ### Phase 3 — milestone-end ritual

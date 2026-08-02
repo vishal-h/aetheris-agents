@@ -490,6 +490,97 @@
   </p>
   {%- endif %}
 </section>
+{%- if optimization %}
+
+{# ------------------------------------------------- optimization signals (exploratory)
+
+     A SEPARATE optional input, not part of the report payload. Absent, this whole block
+     emits nothing and the page is byte-identical to the core report — which is why the
+     guard is on the outside and every sub-block is nested within it.
+
+     `denied` and `warnings` render ABOVE the findings on purpose. A refused API means that
+     family was never checked, and a reader who sees only an empty findings list would take
+     "not checked" for "nothing found". #}
+<section id="optimization-signals">
+  <h2>Optimization signals (exploratory)</h2>
+
+  <p class="caveat">
+    Exploratory and best-effort. These are configuration and housekeeping observations about
+    resources that are still in use &mdash; not abandoned-resource candidates, and deliberately
+    not confidence-scored like the section above. Nothing here is part of the cost totals.
+  </p>
+
+  <div class="figure">
+    {{ optimization.totals.signals | nz }} <span class="unit">signals</span>
+  </div>
+
+  {%- if optimization.denied %}
+  <h3>Not checked ({{ optimization.denied | length }})</h3>
+  <p class="caveat">
+    These calls were refused, so the signals they would have produced are
+    <strong>unknown, not zero</strong>. Read the findings below as a partial view.
+  </p>
+  <table>
+    <thead><tr><th>Call</th><th>Region</th><th>Code</th></tr></thead>
+    <tbody>
+      {%- for row in optimization.denied %}
+      <tr>
+        <td><span class="chip">{{ row.call | nz }}</span></td>
+        <td>{{ row.region | nz }}</td>
+        <td>{{ row.code | nz }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- endif %}
+
+  {%- if optimization.warnings %}
+  <h3>Left unknown ({{ optimization.warnings | length }})</h3>
+  <ul class="evidence">
+    {%- for line in optimization.warnings %}
+    <li>{{ line }}</li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
+
+  <h3>Findings ({{ optimization.signals | length }})</h3>
+  {%- if optimization.signals %}
+  {%- for entry in optimization.signals %}
+  <article class="candidate">
+    <p>
+      <span class="chip">{{ entry.signal | nz }}</span>
+      <span class="chip">{{ entry.service | nz }}</span>
+      <span class="chip">{{ entry.resource_id | nz }}</span>
+      <span class="chip">{{ entry.region | nz }}</span>
+    </p>
+    {%- if entry.monthly_cost_estimate is defined %}
+    <p class="note">
+      {{ entry.monthly_cost_estimate | amount }} <span class="unit">USD / month</span> &middot;
+      {{ entry.rate_basis.rate | nz }} {{ entry.rate_basis.unit | nz }} &middot;
+      {{ entry.rate_basis.source | nz }} (as of {{ entry.rate_basis.as_of | nz }})
+    </p>
+    {%- endif %}
+    {%- if entry.evidence %}
+    <ul class="evidence">
+      {%- for line in entry.evidence %}
+      <li>{{ line }}</li>
+      {%- endfor %}
+    </ul>
+    {%- endif %}
+    <p class="note">{{ entry.note | nz }}</p>
+  </article>
+  {%- endfor %}
+  {%- else %}
+  <p class="empty">No signals were raised{% if optimization.denied %} by the calls that ran{% endif %}.</p>
+  {%- endif %}
+
+  <p class="note">
+    Figures are list prices for prioritization, not this account's bill, and appear only where
+    a published rate is held &mdash; a resource, region or storage class without one is shown
+    without a figure rather than with an estimated one.
+  </p>
+</section>
+{%- endif %}
 
 {# ---------------------------------------------------------------- data notes #}
 <section id="data-notes">

@@ -184,11 +184,16 @@ def currencies_by_provider(cost_summary: dict) -> dict:
     }
 
 
-def build_context(data: dict, source_file: str) -> tuple:
+def build_context(data: dict, source_file: str, optimization: dict | None = None) -> tuple:
     """The template context, plus the rendering notes gathered while building it.
 
     Absent or wrong-shaped sections degrade to empty containers and a note; every figure
     that *is* present is passed through untouched.
+
+    `optimization` is a SEPARATE optional input, not a member of `data`. It arrives from its
+    own file on its own flag and belongs to neither `SECTIONS` nor `OPTIONAL_FIELDS`, both of
+    which read the report payload. `None` and `{}` are the same thing here — no section, and
+    a page identical to the one this renderer produced before the flag existed.
     """
     render_warnings: list = []
     context: dict = {
@@ -214,6 +219,7 @@ def build_context(data: dict, source_file: str) -> tuple:
         value = data.get(key)
         context[key] = value if isinstance(value, kind) else kind()
 
+    context["optimization"] = optimization if isinstance(optimization, dict) else {}
     context["service_groups"] = group_services(context["cost_summary"])
     context["currency_of"] = currencies_by_provider(context["cost_summary"])
     context["data_warnings"] = note_rows(data.get("warnings"), ("warning",))
@@ -225,7 +231,12 @@ def build_context(data: dict, source_file: str) -> tuple:
 # ---------------------------------------------------------------------------- render
 
 
-def render_html(data: dict, template_path=DEFAULT_TEMPLATE, source_file: str = "") -> tuple:
+def render_html(
+    data: dict,
+    template_path=DEFAULT_TEMPLATE,
+    source_file: str = "",
+    optimization: dict | None = None,
+) -> tuple:
     """Render `data` through the template. Returns `(html, render_warnings)`.
 
     Pure with respect to the payload: no clock, no network, no environment. The same
@@ -243,7 +254,7 @@ def render_html(data: dict, template_path=DEFAULT_TEMPLATE, source_file: str = "
     )
     environment.filters.update(FILTERS)
     template = environment.get_template(template_path.name)
-    context, render_warnings = build_context(data, source_file)
+    context, render_warnings = build_context(data, source_file, optimization)
     return template.render(**context), render_warnings
 
 
@@ -287,6 +298,14 @@ def parse_args(argv=None):
         "--output", default=None, help="explicit output path (overrides --output-dir)"
     )
     parser.add_argument(
+        "--optimization-file",
+        default=None,
+        help=(
+            "optional optimization_signals_*.json; adds the exploratory section. Absent or "
+            "unreadable, the report is byte-identical to the core report"
+        ),
+    )
+    parser.add_argument(
         "--template", default=str(DEFAULT_TEMPLATE), help=f"default: {DEFAULT_TEMPLATE}"
     )
     parser.add_argument(
@@ -295,6 +314,29 @@ def parse_args(argv=None):
         help=f"also write a PDF beside the HTML (needs {PDF_BINARY}; the HTML never does)",
     )
     return parser.parse_args(argv)
+
+
+def load_optimization(path) -> tuple:
+    """`(payload, state)` for the optional exploratory input.
+
+    Returns `(None, None)` when the flag was not given — the state key is then omitted from
+    stdout entirely, so a core-pipeline run's envelope is exactly what it was before t4.
+
+    A path that was given but cannot be read yields `(None, "unreadable")`: the page is still
+    byte-identical to the core report, because that is the isolation invariant and it holds
+    unconditionally, but the failure is reported rather than swallowed. Silently ignoring a
+    file the operator explicitly asked for is how "the section is missing" becomes
+    indistinguishable from "there was nothing to show".
+    """
+    if not path:
+        return None, None
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return None, f"unreadable: {type(exc).__name__}"
+    if not isinstance(payload, dict):
+        return None, "unreadable: not a JSON object"
+    return payload, "rendered"
 
 
 def fail(message: str) -> int:
@@ -313,9 +355,18 @@ def main(argv=None) -> int:
     if not isinstance(data, dict):
         return fail(f"report data {args.report_data} is not a JSON object")
 
+    # The exploratory section's own input. It is read here rather than in `build_context` so
+    # the renderer stays a pure function of what it is handed, and its failure to load is a
+    # note about the SECTION — never a `render_warning`, which would flip the core report to
+    # `partial` and exit 1 over an optional extra that the core report does not depend on.
+    optimization, optimization_state = load_optimization(args.optimization_file)
+
     try:
         html, render_warnings = render_html(
-            data, template_path=args.template, source_file=str(args.report_data)
+            data,
+            template_path=args.template,
+            source_file=str(args.report_data),
+            optimization=optimization,
         )
     except (jinja2.TemplateError, OSError) as exc:
         # Covers a missing or malformed template and an undefined-value access the section
@@ -352,14 +403,17 @@ def main(argv=None) -> int:
         "pdf_note": pdf_note,
         "bytes": len(html.encode("utf-8")),
         "template": str(args.template),
+        # The exploratory section is listed only when it actually rendered, so a core run's
+        # list is exactly the list it has always been.
         "sections": [
             "header",
             "cost-summary",
             "month-on-month",
             "tag-coverage",
             "orphan-candidates",
-            "data-notes",
-        ],
+        ]
+        + (["optimization-signals"] if optimization else [])
+        + ["data-notes"],
         "counts": {
             "providers": len(data.get("providers") or []),
             "orphan_candidates": orphan_totals.get("candidates"),
@@ -369,6 +423,13 @@ def main(argv=None) -> int:
         "mom_status": (data.get("mom_delta") or {}).get("status"),
         "render_warnings": render_warnings,
     }
+    if optimization_state is not None:
+        summary["optimization"] = {
+            "state": optimization_state,
+            "file": str(args.optimization_file),
+            "signals": len((optimization or {}).get("signals") or []),
+            "denied": len((optimization or {}).get("denied") or []),
+        }
     print(json.dumps(summary, indent=2))
     return 1 if render_warnings else 0
 

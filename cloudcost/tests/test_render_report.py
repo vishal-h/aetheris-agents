@@ -435,7 +435,12 @@ def test_the_report_is_byte_identical_whether_the_field_is_empty_or_absent(repor
 
 def test_the_region_block_names_no_provider_and_no_provider_payload_key():
     """Rendered *generically*: the renderer and the template know a named report_data field,
-    not AWS, not the provider-payload block, not the key inside it that compose lifted."""
+    not AWS, not the provider-payload block, not the key inside it that compose lifted.
+
+    Scoped to the whole of both files rather than to the region block, so it also holds the
+    t4 optimization section to the same rule — that section exists for one provider today,
+    which is exactly the condition under which a provider name tends to get hardcoded.
+    """
     for source in (SCRIPT.read_text(), TEMPLATE.read_text()):
         assert "provider_extra" not in source
         assert "swept_regions" not in source
@@ -699,3 +704,288 @@ def test_the_fixture_payloads_are_what_t3_actually_emits(report, first_run_repor
     assert report["as_of"] == load_fixture("cost_do_2026-07")["generated_at"]
     assert first_run_report["mom_delta"]["status"] == "no_prior_month"
     assert (FIXTURES / "cost_do_2026-06.json").is_file()
+
+
+# ==================== optimization signals — the isolation invariant (m2 t4)
+#
+# §t4's ONE hard gate. The exploratory section is a second, separately sanctioned additive
+# change to shared render machinery (A4 was the first), and the whole basis for sanctioning it
+# is that a report without the optimization file cannot tell the difference. So the absent case
+# is asserted at the byte level, not by inspection, and the mutation that would break it — a
+# section rendered unconditionally — is what these tests exist to catch.
+
+
+def optimization_payload():
+    """The shape `detect_optimization_signals.py` emits, with both halves of the caveat."""
+    return {
+        "provider": "someothercloud",
+        "account": "000000000000",
+        "period": "2026-07",
+        "signals": [
+            {
+                "service": "objectstore",
+                "resource_id": "cc-logs",
+                "region": "somewhere-1",
+                "signal": "s3_no_lifecycle_policy",
+                "evidence": [
+                    "no lifecycle configuration (NoSuchLifecycleConfiguration)",
+                    "StandardStorage 100.0 GB (CloudWatch BucketSizeBytes)",
+                ],
+                "monthly_cost_estimate": 2.3,
+                "rate_basis": {
+                    "rate": 0.023,
+                    "unit": "USD/GB-month",
+                    "source": "list price, Standard storage, pre-discount",
+                    "as_of": "2026-08-02",
+                },
+                "note": "No lifecycle policy, so nothing expires on a schedule.",
+            },
+            {
+                "service": "registry",
+                "resource_id": "cc-worker",
+                "region": "somewhere-1",
+                "signal": "ecr_untagged_image_accumulation",
+                "evidence": ["3 untagged image(s), 1.122 GB total"],
+                "note": "Untagged does not mean unreferenced.",
+            },
+        ],
+        "denied": [
+            {"call": "secretsmanager:ListSecrets", "region": "somewhere-1", "code": "AccessDenied"}
+        ],
+        "warnings": ["cc-other: no NumberOfObjects datapoint published, so emptiness is unknown"],
+        "totals": {"signals": 2, "by_signal": {"s3_no_lifecycle_policy": 1}},
+    }
+
+
+def test_the_report_is_byte_identical_when_the_optimization_file_is_absent(report):
+    """The invariant itself, at the byte level.
+
+    `source_file` is held constant across the three renders — it is part of the render
+    context, and a measurement that let it vary would report a spurious difference (the trap
+    that caught t3's first attempt at exactly this measurement).
+    """
+    core = render_report.render_html(report, source_file="report_data.json")[0]
+    none_passed = render_report.render_html(
+        report, source_file="report_data.json", optimization=None
+    )[0]
+    empty_passed = render_report.render_html(
+        report, source_file="report_data.json", optimization={}
+    )[0]
+
+    assert core == none_passed
+    assert core == empty_passed
+    assert "Optimization signals" not in core
+    assert 'id="optimization-signals"' not in core
+
+    # Failable: the same payload WITH the file renders a different page. Without this the
+    # three-way equality above would hold just as well for a section that never renders.
+    with_signals = render_report.render_html(
+        report, source_file="report_data.json", optimization=optimization_payload()
+    )[0]
+    assert with_signals != core
+
+
+def test_an_absent_optimization_file_is_not_a_degraded_render(tmp_path, report):
+    """The CLI half, mirroring A4's load-bearing absent-case test.
+
+    Putting the section in SECTIONS instead of keeping it out of both tuples turns this red:
+    a missing SECTIONS member costs a rendering note and a `partial` exit, which would make
+    every run that has no optimization file — every DigitalOcean run, forever — exit 1.
+    """
+    result = cli([str(write_payload(tmp_path, report)), "--output-dir", str(tmp_path)])
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(result.stdout)
+    assert summary["status"] == "ok"
+    assert summary["render_warnings"] == []
+    # Unchanged, and the state key is absent entirely: a core run's envelope is what it was.
+    assert summary["sections"] == [
+        "header",
+        "cost-summary",
+        "month-on-month",
+        "tag-coverage",
+        "orphan-candidates",
+        "data-notes",
+    ]
+    assert "optimization" not in summary
+
+
+def test_a_named_optimization_file_that_cannot_be_read_still_renders_the_core_report(
+    tmp_path, report
+):
+    """Isolation holds unconditionally — but the failure is reported, not swallowed.
+
+    A file the operator explicitly named and that did not load must not leave the run looking
+    like one that was never asked for; otherwise "the section is missing" is indistinguishable
+    from "there was nothing to show".
+    """
+    payload_path = write_payload(tmp_path, report)
+    broken = tmp_path / "not-json.json"
+    broken.write_text("{ this is not json", encoding="utf-8")
+
+    plain = cli([str(payload_path), "--output", str(tmp_path / "plain.html")])
+    named = cli(
+        [
+            str(payload_path),
+            "--output", str(tmp_path / "named.html"),
+            "--optimization-file", str(broken),
+        ]
+    )
+
+    assert plain.returncode == 0 and named.returncode == 0, named.stderr
+    assert (tmp_path / "plain.html").read_text() == (tmp_path / "named.html").read_text()
+
+    summary = json.loads(named.stdout)
+    assert summary["status"] == "ok"
+    assert summary["render_warnings"] == []
+    assert summary["optimization"]["state"].startswith("unreadable")
+    assert "optimization-signals" not in summary["sections"]
+
+    # A path that does not exist at all takes the same route.
+    missing = cli(
+        [
+            str(payload_path),
+            "--output", str(tmp_path / "missing.html"),
+            "--optimization-file", str(tmp_path / "nope.json"),
+        ]
+    )
+    assert missing.returncode == 0
+    assert (tmp_path / "missing.html").read_text() == (tmp_path / "plain.html").read_text()
+
+
+def test_the_exploratory_section_renders_its_evidence_when_the_file_is_present(report):
+    html = render_report.render_html(
+        report, source_file="report_data.json", optimization=optimization_payload()
+    )[0]
+    block = section(html, "optimization-signals")
+    body = text_of(block)
+
+    assert "Optimization signals (exploratory)" in text_of(html)
+    # Every signal's evidence and note reach the page.
+    assert "no lifecycle configuration (NoSuchLifecycleConfiguration)" in body
+    assert "StandardStorage 100.0 GB (CloudWatch BucketSizeBytes)" in body
+    assert "3 untagged image(s), 1.122 GB total" in body
+    assert "Untagged does not mean unreferenced." in body
+    assert "s3_no_lifecycle_policy" in body and "ecr_untagged_image_accumulation" in body
+
+
+def test_a_figure_is_shown_only_where_the_signal_carried_one_and_never_without_its_basis(
+    report
+):
+    """Both directions. The unpriced signal must not acquire a figure from anywhere."""
+    html = render_report.render_html(
+        report, source_file="report_data.json", optimization=optimization_payload()
+    )[0]
+    articles = re.findall(r'<article class="candidate">(.*?)</article>',
+                          section(html, "optimization-signals"), re.S)
+    assert len(articles) == 2
+
+    priced, unpriced = text_of(articles[0]), text_of(articles[1])
+    assert "2.30 USD / month" in priced
+    assert "0.023 USD/GB-month" in priced
+    assert "as of 2026-08-02" in priced
+    assert "USD / month" not in unpriced
+
+
+def test_a_refused_call_reads_as_not_checked_rather_than_as_nothing_found(report):
+    """No-silent-caps, reaching the page.
+
+    A denied family and an empty result look identical to a reader unless the report says so,
+    and the difference between "unknown" and "zero" is the whole reason the envelope carries
+    `denied[]` separately from `signals[]`.
+    """
+    payload = optimization_payload()
+    body = text_of(
+        section(
+            render_report.render_html(
+                report, source_file="report_data.json", optimization=payload
+            )[0],
+            "optimization-signals",
+        )
+    )
+
+    assert "Not checked (1)" in body
+    assert "unknown, not zero" in body
+    assert "secretsmanager:ListSecrets" in body
+    assert "AccessDenied" in body
+    assert "no NumberOfObjects datapoint published" in body
+
+    # And with nothing found AND something refused, the page still says so rather than
+    # implying a clean bill.
+    payload["signals"] = []
+    payload["totals"] = {"signals": 0, "by_signal": {}}
+    empty_body = text_of(
+        section(
+            render_report.render_html(
+                report, source_file="report_data.json", optimization=payload
+            )[0],
+            "optimization-signals",
+        )
+    )
+    assert "Not checked (1)" in empty_body
+    assert "No signals were raised by the calls that ran" in empty_body
+
+
+def test_the_cli_threads_the_optimization_file_into_the_section(tmp_path, report):
+    """End to end through argv, as the orchestrator calls it."""
+    signals_path = tmp_path / "optimization_signals_aws_2026-07.json"
+    signals_path.write_text(json.dumps(optimization_payload()), encoding="utf-8")
+
+    result = cli(
+        [
+            str(write_payload(tmp_path, report)),
+            "--output-dir", str(tmp_path),
+            "--optimization-file", str(signals_path),
+        ]
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(result.stdout)
+    assert summary["status"] == "ok"
+    assert summary["optimization"] == {
+        "state": "rendered",
+        "file": str(signals_path),
+        "signals": 2,
+        "denied": 1,
+    }
+    assert summary["sections"] == [
+        "header",
+        "cost-summary",
+        "month-on-month",
+        "tag-coverage",
+        "orphan-candidates",
+        "optimization-signals",
+        "data-notes",
+    ]
+    assert 'id="optimization-signals"' in Path(summary["file"]).read_text(encoding="utf-8")
+
+
+def test_the_exploratory_section_is_not_confidence_scored_like_the_orphan_section(report):
+    """Decision G at the page level: two lanes that must not read as one.
+
+    The orphan section prints a rule and a confidence for every candidate. This one must not,
+    or a reader would take an exploratory observation for a scored abandonment verdict.
+    """
+    block = section(
+        render_report.render_html(
+            report, source_file="report_data.json", optimization=optimization_payload()
+        )[0],
+        "optimization-signals",
+    )
+
+    # No FINDING carries a score. Scoped to the articles rather than to the whole section,
+    # because the section's own caveat says "not confidence-scored" — and that disclaimer is
+    # asserted separately below, so a section that dropped it would not pass here by accident.
+    for article in re.findall(r'<article class="candidate">(.*?)</article>', block, re.S):
+        assert "confidence" not in text_of(article).lower()
+    assert "not confidence-scored" in text_of(block)
+
+    # The positive control: the orphan section next door does score every candidate, so the
+    # absence above is a property of this section and not of the way it is being read.
+    orphan_articles = re.findall(
+        r'<article class="candidate">(.*?)</article>',
+        section(render(report), "orphan-candidates"),
+        re.S,
+    )
+    assert orphan_articles
+    assert any("confidence" in text_of(article).lower() for article in orphan_articles)

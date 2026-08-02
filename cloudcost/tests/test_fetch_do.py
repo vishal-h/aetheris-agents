@@ -47,7 +47,15 @@ def test_the_adapter_emits_the_canonical_type_vocabulary_not_dos_own(
     full_stub, tmp_path, monkeypatch
 ):
     """m2 t2 a′: `type` is schema-level. DO's `droplet`/`reserved_ip` were provider
-    vocabulary sitting in shared machinery — the rules key on the canonical values."""
+    vocabulary sitting in shared machinery — the rules key on the canonical values.
+
+    LOAD-BEARING — do not weaken (t2 review N2). This test and its `state` sibling below are
+    the only ones binding a canonical *string value* to the schema. Everywhere else, adapter
+    and engine import the same constant, so renaming it moves both sides together and every
+    AWS-path test stays green (mutation M1 demonstrates exactly that). What catches a
+    vocabulary rename is DO's raw API value — `droplet`, `off` — no longer mapping onto the
+    renamed constant. Assert the literals, not the constants, or the drift goes silent.
+    """
     monkeypatch.setenv("CLOUDCOST_DO_TOKEN", READONLY_TOKEN)
     run_main(full_stub, tmp_path)
     inventory = json.loads((tmp_path / f"do_inventory_{PERIOD}.json").read_text())
@@ -63,7 +71,12 @@ def test_the_adapter_emits_the_canonical_type_vocabulary_not_dos_own(
 
 def test_droplet_state_off_is_normalized_to_the_canonical_stopped():
     """m2 t2 a: DO says `off`, the schema says `stopped`, and `detect_orphans` keys on the
-    schema. DO's other statuses have no canonical spelling and pass through unchanged."""
+    schema. DO's other statuses have no canonical spelling and pass through unchanged.
+
+    LOAD-BEARING — see the note on the canonical-type test above. The first assertion below
+    is against the literal `"stopped"` on purpose; the second, against `STATE_STOPPED`, would
+    pass under any rename on its own.
+    """
     raw = dict(load_fixture("do_droplets_page1")["droplets"][0])
 
     assert fetch_do.normalize_droplet({**raw, "status": "off"})["state"] == "stopped"

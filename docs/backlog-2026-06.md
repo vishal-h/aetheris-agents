@@ -2211,11 +2211,24 @@ unchanged and the "contract is mechanical" negative proof stayed pristine. Dead 
 is never exercised rots — delete it in a dedicated cleanup, not inside a ticket whose
 result depends on `compose` not moving.
 
-**Done when:** the unreachable cross-provider merge / caveat / currency paths are removed;
-the retained single-provider compose has a test asserting its behaviour is unchanged; and
-the four m1 open items those paths carried are marked resolved-by-deletion.
+**Also converge the two slug functions — the risk class is silent-wrong-answer, not tidiness
+(t2 review N1).** t2 added `_normalized.provider_slug()`, used by `detect_orphans` to write
+`{provider}_orphan_candidates_{period}.json`; `compose_report_data.py` keeps an identical
+private `slug()` for its history filenames. They were deliberately *not* converged at t2 —
+that edit would have touched `compose` and spoilt the negative proof. Today both transforms
+agree on every live provider token (`aws`, `digitalocean`), so there is no divergence to fix,
+only one to prevent: a future provider whose name the two functions transform differently
+would have `compose` silently find no orphans file and under-report — a well-formed report
+with a section missing, not an error. Converge on the shared helper here, where `compose` is
+already being edited.
 
-`Source: m2-cloudcost decision H, ratified 2026-08-01.`
+**Done when:** the unreachable cross-provider merge / caveat / currency paths are removed;
+`compose` uses `_normalized.provider_slug()` and its private `slug()` is gone; the retained
+single-provider compose has a test asserting its behaviour is unchanged; and the four m1 open
+items those paths carried are marked resolved-by-deletion.
+
+`Source: m2-cloudcost decision H, ratified 2026-08-01; slug convergence added from the t2
+review's N1 (docs/reviews/m2-cloudcost-t2-review.md), 2026-08-02.`
 
 ---
 

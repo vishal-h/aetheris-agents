@@ -2741,6 +2741,67 @@ mentioned the atom first (`docs/reviews/bl-031-review.md`).
 > absence from `@event_types` is not a deliberate removal, and there is no
 > interaction between the two rows. Sequence BL-040 on its own merits.
 
+### BL-078 — Converge the AWS client plumbing into a shared `scripts/_aws.py` (#TBD)
+**Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/`)
+
+Filed 2026-08-02 at the m2-cloudcost **t4** boundary, deferred deliberately rather than
+discovered.
+
+**The state.** `detect_optimization_signals.py` needs the same AWS plumbing `fetch_aws.py`
+already carries — `load_credentials`, `warn_shadowing_env`, `AWSClients` (explicit-session
+construction, the `AWS_PROFILE` neutralization, `redact`), `enumerate_regions`, `paginate`,
+`error_code`, `write_json` — so it **imports them from `fetch_aws`**. That is a CLI-to-CLI
+import, which the repo's own rule (`CLAUDE.md`, m2b learning) says should be a shared
+`scripts/_helper.py` instead.
+
+**Why it was not done at t4.** Lifting them means editing `fetch_aws.py`, and t4's
+Do-not-generate list forbids touching it. The alternative — duplicating `AWSClients` — would
+put a second copy of the D2 credential guarantee in the tree, which is strictly worse than one
+import: two copies of that guarantee are two things that can drift apart, and the one that
+drifts silently is a credential falling back to the default chain.
+
+**Done when:** `AWSClients` / `load_credentials` / `warn_shadowing_env` / `enumerate_regions`
+live in `scripts/_aws.py`; both CLIs import from there; `fetch_aws.py`'s existing 62 AWS tests
+and t4's suite stay green with no fixture change (the check that it *was* a relocation and not
+a change — the same evidence t2 used when the type constants moved to `_normalized.py`).
+
+**Trigger, not a calendar:** do it the next time `fetch_aws.py` is legitimately edited. This is
+the BL-070 precedent exactly — compose's duplicated `slug()` was left alone for the same reason
+and for the same duration.
+
+`Source: m2-cloudcost t4.`
+
+### BL-079 — cloudcost holds no S3 storage rate for `ap-south-1`, where this account's buckets live (#TBD)
+**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
+
+Filed 2026-08-02 from the m2-cloudcost **t4 live read**. Not a defect — the designed
+omit-and-warn path firing in production — but it means the S3 half of the spike produces no
+dollar figure on the one account it is pointed at.
+
+**Observed.** All three buckets are in `ap-south-1`, which `S3_STANDARD_USD_PER_GB_MONTH` does
+not carry, so all three `s3_no_lifecycle_policy` signals omitted `monthly_cost_estimate` and
+warned by name:
+
+```
+s3 s3-b1-campustrack-net: no published Standard rate is held for ap-south-1, so its cost
+estimate is omitted rather than taken from another region
+```
+
+That is the rule working: never a fallback to another region's rate. The nine `secret_unused`
+signals were priced (flat charge), so the run still produced figures — $3.60/month against a
+Secrets Manager line that t1 measured at $4.14 of a $4.99 bill.
+
+**Done when:** an `ap-south-1` Standard rate is added **from a verified source with its
+`as_of`**, or the table is dropped in favour of whatever BL-072's engine-backed integration
+returns. Do **not** close this by copying another region's number — that is the exact failure
+the omit path exists to prevent, and the table is deliberately partial rather than
+optimistically complete.
+
+**Batch with BL-072** if that milestone lands first: Cost Optimization Hub returns real,
+account-specific figures and would retire the static table rather than extend it.
+
+`Source: m2-cloudcost t4 live read.`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)
@@ -4344,3 +4405,5 @@ multi-line street/city/state/zip.
 | — | BL-075 | Fires on the next `mix test` red: capture the full output that time. Fold into BL-054 only if the name matches the twelfth-slot flake — the connection is plausible, not established |
 | — | BL-077 | Blocked in practice until BL-069 is re-armed or the `expected_fail()` half is designed — flipping `fail` to a real failure today would turn every tracked known-red into a blocking one. Do the counter and the known-red declaration together, never the counter alone |
 | — | BL-076 | Batch with BL-070 — same file, and BL-070's cleanup has to touch this code anyway. Do it alone if BL-070 slips: this is the one piece of the cross-provider merge that is not merely dead but actively produces a wrong month-on-month headline. t3's per-provider `--history-dir` mitigates it by convention only, so a direct `compose` call still hits it |
+| — | BL-078 | Fires on its trigger: the next legitimate edit to `cloudcost/scripts/fetch_aws.py`. Exactly BL-070's shape — a duplication left alone because closing it means editing a file the current ticket froze |
+| — | BL-079 | Fires when someone has a verified `ap-south-1` S3 Standard rate, or is retired wholesale by BL-072. Never close it by copying another region's number — that is the failure the omit path exists to prevent |

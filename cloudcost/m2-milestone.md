@@ -344,10 +344,19 @@ compute charge); AWS `tags` (incl. load balancers, via `DescribeTags`); `raw_ref
 `aws://<service>/<region>/<id>`. RDS lands in first-class fields — no `provider_extra`.
 
 **Optimization signals (t4, NOT a frozen-contract shape)** `optimization_signals_aws_{YYYY-MM}.json`:
-a *separate* loose list of `{service, resource_id, region, signal, evidence[],
-monthly_cost_estimate?, note}` (`signal` ∈ `s3_no_lifecycle_policy` / `s3_incomplete_multipart` /
-`s3_empty_bucket` / `ecr_no_lifecycle_policy` / `ecr_untagged_image_accumulation` / `secret_unused`).
-Not confidence-scored like orphans; exploratory. The core pipeline never reads it.
+a *separate* file whose `signals[]` is a loose list of `{service, resource_id, region, signal,
+evidence[], monthly_cost_estimate?, note}` (`signal` ∈ `s3_no_lifecycle_policy` /
+`s3_incomplete_multipart` / `s3_empty_bucket` / `ecr_no_lifecycle_policy` /
+`ecr_untagged_image_accumulation` / `secret_unused`), wrapped in the standard cloudcost envelope
+(`provider` / `account` / `period` / `generated_at` / `parameters` / `denied` / `warnings` /
+`totals`). Not confidence-scored like orphans; exploratory. The core pipeline never reads it.
+
+`denied[]` and `warnings[]` are the envelope's no-silent-caps half, and they are distinct.
+`denied[]` = `{call, region, code}` for an API the IAM policy refused — that signal family is
+**UNKNOWN, not zero**. `warnings[]` = a soft degradation that leaves a fact unknown (e.g. CloudWatch
+returned no datapoints for a bucket, so its emptiness is unknown). Neither is ever smuggled into
+`signals[]` as a fake entry, and the render section surfaces both as visible caveats — a denied or
+unknown family must read as "not checked", never silently as "nothing found".
 
 ---
 
@@ -689,6 +698,19 @@ D2 hermetic prefix as t3. t4's real-bill read seeds the scope of the engine-back
 milestone (**BL-072**). *This account's live bill is entirely non-orphan-shaped (Secrets Manager /
 S3 / ECR / Tax), so t4 is where the real value is here.*
 
+**`monthly_cost_estimate`: static AWS list-price table, mandatory per-figure
+`rate_basis{rate,unit,source,as_of}`; omit+warn for any region or storage class without a constant;
+account-specific rates are BL-072, not here.** Two hard rules, both asserted in *both* directions.
+(1) *No figure without its basis* — a `monthly_cost_estimate` unaccompanied by a `rate_basis` is the
+fabricated case the Do-not-generate line forbids. The `source` states the assumption plainly (AWS
+LIST price, S3 Standard class, pre-discount) and the `note` says the figure is a prioritization
+signal, not the account's bill. (2) *No silent caps on any dimension lacking a rate* — a region
+absent from the table, or S3 bytes in a storage class held at no constant (`BucketSizeBytes` carries
+a `StorageType` dimension), omits the figure and warns naming the dimension. Never a default-rate
+fallback, and never a Standard rate applied to Glacier/IA/unknown-class bytes. Every rate constant
+carries `as_of`. Account-specific accuracy — discounts, savings plans, real per-class rates — is
+explicitly BL-072's scope; t4's estimate is list-price exploratory and labels itself so.
+
 **Contract refs.** boto3 S3/ECR/Secrets Manager/CloudWatch; the render-data shape from t3 (additive
 section only); decision G (must not touch the frozen schema or `detect_orphans`); decision C (launch
 prefix).
@@ -696,8 +718,24 @@ prefix).
 **Touches.** `cloudcost/scripts/detect_optimization_signals.py`;
 `cloudcost/scripts/render_report.py` (**additive** optional section only); `cloudcost/templates/`;
 `cloudcost/tests/test_optimization_signals.py`; `cloudcost/tests/test_render_report.py` (absent-file
-= unchanged core render); `cloudcost/tests/fixtures/optimization_*.json`; orchestrator gains one
-optional step + `CLOUDCOST_OPTIMIZATION=1` gate. IAM spike actions (§Prereqs 1).
+= unchanged core render); `cloudcost/tests/fixtures/optimization_*.json`; `cloudcost/tests/conftest.py`
++ `cloudcost/tests/aws_wire.py` (shared AWS stub: +s3/ecr/secretsmanager/cloudwatch,
+resolved-per-service protocol, rest-xml + S3 GET routing — **test-harness only, no production
+surface**); orchestrator gains one optional step + `CLOUDCOST_OPTIMIZATION=1` gate. IAM spike
+actions (§Prereqs 1).
+
+*Touches-sketch adjudication (t4).* The first four entries under-named the test surface: the §t4
+Done-check demands an end-to-end **offline CLI** proof of the script, and the offline seam for every
+AWS-touching script in this use case is `--endpoint-url` pointed at `conftest.AWSStub`, whose
+`aws_wire.SERVICES` tuple carries none of t4's four services. So the done-check and the D2
+credential/poison guard govern over the sketch — the same shape as t3's F3, where the doc named a
+`capability_matrix.exs` that does not exist. The extension is additive but for **one** behavioural
+change: `aws_wire` must read botocore's `resolved_protocol`, not `metadata.protocol`. CloudWatch is
+the only service where the two differ (`smithy-rpc-v2-cbor` vs the `json` botocore actually
+serializes), so the switch is gated on the full existing suite staying byte-for-byte green — one
+pre-existing test moving means it regressed the query/EC2 path. The
+round-trip-through-the-real-botocore-parser property extends to all four new services, S3's GET/
+rest-xml path included; that property is what makes the offline stub trustworthy.
 
 **Do-not-generate.** Any write/non-read call; forcing S3/ECR/Secrets into `detect_orphans.py` or the
 frozen schema; confidence scores dressed up as orphan candidates; a fabricated dollar figure; a

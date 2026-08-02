@@ -1,20 +1,92 @@
 # cloudcost/agents/cloudcost_orchestrator.exs
 #
 # m1-cloudcost t5 — the report pipeline orchestrator.
+# m2-cloudcost t3 — generalized over CLOUDCOST_PROVIDER.
 #
-# Linear, four stages, one provider (DigitalOcean):
-#   fetch_do.py → detect_orphans.py → compose_report_data.py → render_report.py
+# Linear, four stages, ONE provider per run (decision H): the provider is chosen at eval
+# time and the run fetches, detects, composes and renders for that provider alone. Two
+# providers are two runs and two reports — there is no fan-out and no merge step, which is
+# what keeps provider specifics out of the shared machinery downstream of the adapter.
+#
+#   fetch_{provider}.py → detect_orphans.py → compose_report_data.py → render_report.py
 #
 # Record-and-deliver: `run_command` is a :contained effect, so there is no verify
 # support here (D1). No spawn_agent/wait_for_all — a single provider needs no fan-out.
-# No write op, no scheduling. The read-only DO token is env-only (D2): it is read by
-# fetch_do.py from CLOUDCOST_DO_TOKEN and never appears in a prompt, an argument, or
-# the trajectory.
+# No write op, no scheduling. Credentials are env-only (D2): CLOUDCOST_DO_TOKEN and
+# CLOUDCOST_AWS_* are read by the adapter from the environment and never appear in a
+# prompt, an argument, or the trajectory.
 #
 #   cd ~/sandbox/elixirws/aetheris
+#   # DigitalOcean (the default — unchanged from m1):
 #   mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+#   # AWS — always through the D2 hermetic prefix (m2 decision C):
+#   CLOUDCOST_PROVIDER=aws \
+#   env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_PROFILE \
+#       AWS_SHARED_CREDENTIALS_FILE=/dev/null \
+#       mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
 
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
+
+# --- provider selection (m2 t3) ------------------------------------------------------
+#
+# CLOUDCOST_PROVIDER is the one env-overridable knob in this file, and deliberately so: it
+# selects a *pipeline*, not a model. Unset ⇒ DigitalOcean, and the prompt below then renders
+# exactly as m1's did — the DO run is not a new run shape, it is the same one with its
+# provider named.
+#
+# An unrecognised value raises rather than defaulting: a silent fall-through to DO would run
+# the wrong pipeline and label the report for a cloud it never queried.
+
+provider = System.get_env("CLOUDCOST_PROVIDER") || "digitalocean"
+
+{provider_name, provider_short, provider_slug, fetch_script} =
+  case provider do
+    "digitalocean" -> {"DigitalOcean", "DO", "digitalocean", "scripts/fetch_do.py"}
+    "aws" -> {"AWS", "AWS", "aws", "scripts/fetch_aws.py"}
+    other -> raise ~s(CLOUDCOST_PROVIDER must be "digitalocean" or "aws", got: #{inspect(other)})
+  end
+
+# Fail fast on the selected sink's credential (repo rule: explicit sink selection with
+# fail-fast — a required-but-absent credential raises immediately, never a silent fallback
+# to a different sink). CLOUDCOST_PROVIDER is the selector, so `aws` without the read-only
+# AWS key is exactly the case that rule names: without this raise the run burns an LLM call
+# and reaches STEP 1 before fetch_aws.py says the same thing.
+#
+# Names only, never a value — the credential must not reach the trajectory (D2).
+#
+# There is deliberately no symmetric DO raise: DO is the *default* sink rather than a
+# selected one, and §t3's offline done-check (`Code.eval_file/1`) has to keep evaluating
+# clean on a machine that carries no DO token. sprint.sh preflights CLOUDCOST_DO_TOKEN.
+if provider == "aws" do
+  missing =
+    for name <- ["CLOUDCOST_AWS_ACCESS_KEY_ID", "CLOUDCOST_AWS_SECRET_ACCESS_KEY"],
+        System.get_env(name) in [nil, ""],
+        do: name
+
+  if missing != [] do
+    raise "CLOUDCOST_PROVIDER=aws requires #{Enum.join(missing, " and ")} to be set. " <>
+            "cloudcost authenticates with the CLOUDCOST_AWS_* read-only key only and never " <>
+            "falls back to boto3's default credential chain."
+  end
+end
+
+# Per-provider output and history trees (decision H: one provider, one report, one run).
+#
+# `output/` — `report_data_{period}.json` and `cloudcost_report_{period}.html` carry no
+# provider in their names (m2 t2 prefixed the orphan-candidates file only), so two providers
+# sharing one directory would overwrite each other's report. The directory carries the
+# provider instead, which needs no change to any script.
+#
+# `history/` — `compose_report_data.load_prior_snapshots` globs *every* provider's snapshot
+# in `history/{prior_period}/` and `month_on_month` sums them into one `prior_total`. That is
+# m1's N-merge assumption meeting decision H: under per-provider solo runs it makes the first
+# AWS run's headline "AWS this month minus DigitalOcean last month" — a well-formed wrong
+# figure rather than the honest no-prior-month path. Giving each provider its own history
+# tree (decision H's own `history/{provider}/{period}/` layout) scopes the lookup to the
+# provider that is actually running. The underlying shared-machinery defect is filed, not
+# fixed here: compose stays unedited outside the A4 lift.
+output_dir = "output/#{provider_slug}"
+history_dir = "history/#{provider_slug}"
 
 # provider/model are literals rather than the AETHERIS_MODEL/AETHERIS_PROVIDER env
 # override the sibling agents use: sprint.sh sources aetheris-agents/.env, so an
@@ -22,16 +94,16 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 # `resolved_model` against. §t5 names both literally; keep them that way.
 
 system_prompt = """
-You are the cloudcost orchestrator. Run the DigitalOcean cost-report pipeline by
+You are the cloudcost orchestrator. Run the #{provider_name} cost-report pipeline by
 executing the four steps below in order, then report the report file and the orphan
 count. Every step is a `run_command` call; each script writes its own output file and
 prints a JSON summary to stdout containing the path it wrote.
 
 ---
 
-STEP 1 — Fetch the DO cost snapshot and inventory.
+STEP 1 — Fetch the #{provider_short} cost snapshot and inventory.
   run_command  command: "python3"
-               args: ["scripts/fetch_do.py", "--output-dir", "output"]
+               args: ["#{fetch_script}", "--output-dir", "#{output_dir}"]
 
   Parse the JSON on stdout. Keep three values for later steps:
     - `period`           (e.g. "2026-07")
@@ -43,7 +115,7 @@ STEP 1 — Fetch the DO cost snapshot and inventory.
 
 STEP 2 — Detect orphan candidates from the inventory.
   run_command  command: "python3"
-               args: ["scripts/detect_orphans.py", "<INVENTORY>", "--output-dir", "output"]
+               args: ["scripts/detect_orphans.py", "<INVENTORY>", "--output-dir", "#{output_dir}"]
 
   Replace "<INVENTORY>" with the `files.inventory` path from STEP 1.
   Parse the JSON on stdout and keep `file` — the orphan-candidates path.
@@ -52,12 +124,12 @@ STEP 3 — Compose the report data (merges cost + inventory + orphans, adds the 
 
   If STEP 1 printed `files.costs`, use this form:
     run_command  command: "python3"
-                 args: ["scripts/compose_report_data.py", "--cost", "<COSTS>", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "output"]
+                 args: ["scripts/compose_report_data.py", "--cost", "<COSTS>", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "#{output_dir}", "--history-dir", "#{history_dir}"]
 
   If STEP 1 did NOT print `files.costs`, use this form instead — drop the flag and its
   value together, and change nothing else:
     run_command  command: "python3"
-                 args: ["scripts/compose_report_data.py", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "output"]
+                 args: ["scripts/compose_report_data.py", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "#{output_dir}", "--history-dir", "#{history_dir}"]
 
   Replace "<COSTS>" with `files.costs` from STEP 1, "<INVENTORY>" with `files.inventory`
   from STEP 1, and "<ORPHANS>" with the `file` path from STEP 2.
@@ -65,7 +137,7 @@ STEP 3 — Compose the report data (merges cost + inventory + orphans, adds the 
 
 STEP 4 — Render the HTML report.
   run_command  command: "python3"
-               args: ["scripts/render_report.py", "<REPORT_DATA>", "--output-dir", "output"]
+               args: ["scripts/render_report.py", "<REPORT_DATA>", "--output-dir", "#{output_dir}"]
 
   Replace "<REPORT_DATA>" with the `file` path from STEP 3.
   Parse the JSON on stdout and keep `file` (the HTML report) and
@@ -100,7 +172,9 @@ Rules:
 """
 
 %Aetheris.RunConfig{
-  run_id:           "cloudcost-orch-#{Aetheris.ID.generate()}",
+  # The provider is in the run id so Rig's run list tells the two solo runs apart at a
+  # glance (decision H: one provider, one report, one run).
+  run_id:           "cloudcost-orch-#{provider_slug}-#{Aetheris.ID.generate()}",
   mode:             :record,
   provider:         "anthropic",
   model:            "claude-haiku-4-5-20251001",

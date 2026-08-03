@@ -2895,6 +2895,130 @@ assertion, and adding a second assertion to a red case buries it.
 
 `Source: m2-cloudcost t4 review N3.`
 
+### BL-083 — Run list: classify the four unclassified use cases; provider in the cloudcost label (#TBD)
+**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`, `cloudcost/agents/`)
+
+Filed 2026-08-03. **Scoped wider than the cloudcost symptom that surfaced it** — the open question
+("why does payslip group but cloudcost not?") resolved on first read, and the answer showed the
+class.
+
+**Mechanism.** `RunList.tsx:133` `classifyRun(run.label)` matches the **label**, not the run_id,
+against the hardcoded `USE_CASE_PREFIXES` list (`:118`). There is no `cloudcost` entry, so it falls
+through to `Unclassified` (`:138`). Nothing about run_id prefixes is involved.
+
+**The class, counted from the live store (`mix aetheris list --limit 200`), not inferred:**
+
+| Label | Runs | Today |
+|---|---|---|
+| `Docbuilder Orchestrator` / `Context Builder` / `Context Orchestrator` | **54** | Unclassified |
+| `Cloudcost Orchestrator` | 9 | Unclassified |
+| `Capability Matrix -- Provenance` (legacy label; `cap-matrix:` siblings match) | 5 | Unclassified |
+| `cap-matrix: *`, `Payslip *`, `Email *` | 49 | correct |
+
+So cloudcost is **not** the main occupant of Unclassified — docbuilder is, by 6×. Fixing only
+cloudcost leaves 59 runs misfiled and the next reader re-derives all of this. Also **two dead
+entries**: `api-tenant` and `api-gateway` match nothing, because the api agents are labelled
+`at1cmd` / `at1qry` / `cot1` / `cot1_stub`; and `eduloka` has an orchestrator but no prefix.
+
+**Scope.** Add `cloudcost`, `docbuilder`, `eduloka`; fix or drop the two dead api entries (decide
+against the real labels, not against the use-case directory names); handle the legacy
+`Capability Matrix -- Provenance` label. Separately, `cloudcost_orchestrator.exs` sets a
+provider-distinct `label` — `Cloudcost · AWS` / `Cloudcost · DigitalOcean`. Note the two halves
+compose: `classifyRun` lowercases and does `startsWith`, so `"cloudcost · aws"` still matches a
+`cloudcost` prefix — changing the label cannot break the grouping, but only in that direction.
+
+**Done when:** no use case with a live orchestrator lands in Unclassified; the cloudcost rows name
+their provider without the search filter; every remaining `USE_CASE_PREFIXES` entry matches at
+least one real label (a prefix matching nothing is the dead-entry defect, re-armed).
+
+`Source: m2-cloudcost close-out, 2026-08-03.`
+
+### BL-084 — Tools manifests for the four use cases that have none (#TBD)
+**Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`cloudcost/`, `docbuilder/`, …)
+
+Filed 2026-08-03. Cloudcost's six pipeline scripts show undeclared/amber in the Tools tree —
+runnable but raw-args, no descriptions. Add `cloudcost/tools.json` declaring `fetch_aws`,
+`fetch_do`, `detect_orphans`, `detect_optimization_signals`, `compose_report_data`,
+`render_report` with descriptions (reuse the capability-matrix wording) and arg forms.
+`_normalized.py` is an import-only shared module, not a CLI — describe-only or omit, never Run.
+
+**Same adjacent-case as BL-083:** `tools.json` exists for payslip, drive, email, api and eduloka;
+it is **absent for cloudcost, docbuilder, provenance and boxy-pipeline**. Cloudcost is one of four.
+Do cloudcost first (its scripts are freshly documented), but file the others in the same sweep
+rather than rediscovering the gap per use case.
+
+**Sequence before BL-085, because it partly delivers it.** `env_deps` is *derived from the
+manifests* — `tools.rs:594` walks every script's `env` array and the Settings tab renders any key
+not in the static `AGENT_CONFIG_DEFS` as a dynamic config row (`AgentConfigTab.tsx:185`).
+`api/tools.json` already declares 16 such keys, so the path is exercised, not theoretical.
+Declaring `CLOUDCOST_AWS_*` in the manifest therefore produces the config rows **without** editing
+`agentConfigDefs.ts` at all.
+
+**Done when:** the six cloudcost scripts show without the amber badge and with structured arg
+forms; descriptions match `capability-matrix.md`; the other three use cases are filed or done.
+
+`Source: m2-cloudcost close-out, 2026-08-03.`
+
+### BL-085 — Cloudcost credentials + per-launch provider selection in Rig (#TBD)
+**Size:** M · **Priority:** medium · **Section:** aetheris-agents (`rig/`, `cloudcost/runbook.md`)
+
+Filed 2026-08-03. Surface the read-only AWS key in Rig's Agent Config and let an operator launch
+the cloudcost orchestrator from Rig. **This is the one row of the four with unresolved design** —
+the other three are drop-in.
+
+**Config surface — mostly free once BL-084 lands.** Declaring `CLOUDCOST_AWS_ACCESS_KEY_ID`,
+`CLOUDCOST_AWS_SECRET_ACCESS_KEY` (masked), and optional `_REGION` / `_REGIONS` / `_SESSION_TOKEN`
+in `cloudcost/tools.json` renders them as dynamic config rows already. A static `agentConfigDefs.ts`
+group is then only worth adding for grouping/labels/masking polish — decide which, don't do both.
+
+**Open question 1 — launch affordance.** How does an operator launch
+`cloudcost_orchestrator.exs` from Rig: the meta-orchestrator prefill (`/orchestrator`, which adds
+an LLM planning turn) or a direct control? Prefer the direct path if one exists; do not route a
+four-stage deterministic pipeline through an LLM planner just because that is the existing door.
+
+**Open question 2 — per-launch provider, and it has no home today.** `CLOUDCOST_PROVIDER` must be
+selectable **per launch**, and agent config is single-valued and global. The nearest precedent
+(`PAYSLIP_MONTH`, `PAYSLIP_START_STEP` — static defs an operator edits *between* runs) is exactly
+the shape this row rejects. So either the launch control grows a parameter concept, or the
+selection lives in the request the meta-orchestrator reads. **If the answer is "Rig needs a
+launch-parameter concept", that is the trigger to peel this row into its own small milestone** —
+it stops being a ticket at that point.
+
+**D2 posture — decide and document, do not code.** A Rig-launched run injects the config env but
+**not** the `env -u AWS_* AWS_SHARED_CREDENTIALS_FILE=/dev/null` hermetic prefix (Rig cannot set it
+per-agent). That is **suspenders-only**, and the suspenders genuinely hold: the adapter's explicit
+session refuses boto3's default chain by construction, proven live and offline by t1's poison
+guard. One sharpening the belt-and-suspenders framing misses, found while scoping: `api/tools.json`
+**already declares `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as env deps**, so Rig's own
+config surface actively *invites* the operator to set the two variables the D2 belt exists to
+strip. A Rig-launched cloudcost run is therefore not merely missing the belt — it may run with the
+poison present. The guard still holds, but say so in `cloudcost/runbook.md` rather than leaving the
+next reader to infer that "no belt" means "clean environment". Also: `agent-config.json` is
+plaintext on disk — a read-only key there is the same trust level as the GitHub PAT already stored
+there; a write key must never go in it.
+
+**Done when:** with the credentials set, a Rig-launched AWS run authenticates with the read-only
+key and produces its report; `CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`;
+the operator can pick aws vs do per launch; the runbook records the posture above.
+
+`Source: m2-cloudcost close-out, 2026-08-03.`
+
+### BL-086 — Trajectory: label steps by their `run_command` stage (#TBD)
+**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-03. `TrajectoryView` shows a generic "Step N". For each step carrying a
+`run_command` tool call whose first arg is a `.py`, derive `stage = basename(arg, ".py")` and
+render it as the step badge — "Step 0 · fetch_aws", "Step 1 · detect_orphans". Pure frontend, no
+harness or event change, retroactive on existing runs, and **generic**: every scripted pipeline
+gets it, not just cloudcost. Steps with no script call — the orchestrator's final summary turn —
+stay "Step N".
+
+**Done when:** a cloudcost run labels its stages (`fetch_aws` → `detect_orphans` →
+`compose_report_data` → `render_report`, plus `detect_optimization_signals` when
+`CLOUDCOST_OPTIMIZATION=1`); a docbuilder run shows its stages; non-script steps render unchanged.
+
+`Source: m2-cloudcost close-out, 2026-08-03.`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)
@@ -4502,3 +4626,6 @@ multi-line street/city/state/zip.
 | — | BL-079 | Fires when someone has a verified `ap-south-1` S3 Standard rate, or is retired wholesale by BL-072. Never close it by copying another region's number — that is the failure the omit path exists to prevent |
 | — | BL-080, BL-081 | Batch: same file, same envelope, both t4 review tidy-ups. BL-080's fix is a three-way split (refused / unknown / declined-on-purpose), NOT the two-way collapse the note sketched — that would hide the genuine unknowns under `ok` |
 | — | BL-082 | Sequence after BL-069 if the sprint route is chosen: that case is already known-red on its orphan assertion, and a second assertion added to a red case is a buried one |
+| — | BL-083, BL-084 | Batch: both are "the list/manifest was written once and four use cases arrived since". BL-084 sequences before BL-085 — declaring env in the manifest renders the config rows for free, so doing 085 first duplicates work in agentConfigDefs.ts |
+| — | BL-085 | The only one of the four with unresolved design. Peel into its own small milestone IF open question 2 resolves to "Rig needs a launch-parameter concept" — a per-launch value has no home in single-valued global agent config today |
+| — | BL-086 | Independent, pure frontend, retroactive. Do whenever someone is in TrajectoryView |

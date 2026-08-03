@@ -2273,42 +2273,75 @@ gated behind its own IAM.
 
 ---
 
-### BL-073 — Surface each run's report artifact against its run in Rig (#TBD)
-**Size:** S–M · **Priority:** low-medium · **Section:** Rig (aetheris-agents/rig/)
+### BL-073 — Surface a run's report artifact in Rig ("View report"), minimal (#TBD)
+**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
 
-Runs already appear in Harness → Runs, but a run that produces a **report artifact** (a
-cloudcost HTML/PDF, a docbuilder document) has no link to it from the run view — an
-operator opens the run and sees events, not the thing the run was for. This ticket records
-the generated report's path on the run and renders or links it in the run detail view, so
-the report is reachable from the run that produced it.
+**Rescoped 2026-08-03** from the m2-filed generic row ("deferred; the delivery-side decision is
+the weight of the ticket") to an actionable minimal build. The original's open question — how does
+Rig learn the path — is **answered below against a real run**, which is what makes it buildable.
+Generic over any report-producing use case (docbuilder too), **not** cloudcost-specific: no
+cloudcost strings in Rig.
 
-Pairs naturally with per-provider **solo runs** (m2-cloudcost decision H): each run has
-exactly one report, so the run→artifact relation is 1:1 with no disambiguation needed. Not
-cloudcost-specific — scope it generically over "a run that emitted a deliverable file", so
-docbuilder and any future report-producing use case get it for free rather than each wiring
-its own surface.
+**The gap.** The report is a self-contained HTML at
+`output/{provider}/cloudcost_report_{period}.html`; Rig shows the run but not the report, so "test
+from Rig" ends at the file system. Pairs with per-provider **solo runs** (decision H): one run,
+one report, so the run→artifact relation is 1:1 with nothing to disambiguate.
 
-**Scoping note (the real design question).** The report is a **local file** today (m1
-cloudcost / docbuilder delivery to `output/`), which Rig cannot read by path alone across
-the harness/Rig boundary. So this needs one of: the run **recording the artifact path** in
-its metadata (and Rig resolving it), a stable Rig-readable output location, or the artifact
-being registered as a first-class run output. That delivery-side decision is the weight of
-the ticket — the UI affordance is small once the path is knowable. Decide it docs-first.
+**Decision 1 — discovery: SCRAPE. Verified against run `cloudcost-orch-aws-oFbapA`,** not
+inferred — the path is present in the completed run's trajectory twice, so no harness change and
+no new event type is needed:
 
-Follow the runbook's "Adding a new module" pattern (`harness.rs` query + `types.ts` +
-`RunList.tsx`/detail view, per the BL-004/BL-029 precedent). Any new Tauri command or
-`RunSummary`/`RunDetail` field lands with its `specs.md` §4/§5 entry and `drift_check` in
-the same commit (repo doc-sync DoD; check 9 `command_fields` guards §4 structs).
+| Where | Event | Content |
+|---|---|---|
+| step 4, seq 28 | `tool_result` | the render step's stdout JSON, `file` = `output/aws/cloudcost_report_2026-08.html` |
+| step 5, seq 32 | `llm_responded` | the same path restated in the LLM's closing prose |
 
-**Not cloudcost Python work** — it belongs to the Rig/harness surface and is referenced by,
-but out of scope for, m2-cloudcost t1–t4.
+**Read the `tool_result`, never the `llm_responded`.** The orchestrator prompt forbids the LLM
+editing a path, but a UI affordance must not depend on a model honouring an instruction when the
+tool's own structured output is right there. Parse `payload.output` → `stdout` → `file`.
 
-**Done when:** a run that produced a report artifact links to (or renders) that artifact
-from its Rig run view; the artifact-path mechanism is decided and recorded; `tsc -b` +
-`bun run build` + `drift_check --strict` green.
+*Two things this row would otherwise discover mid-ticket:*
+- **The path is relative** (`output/aws/…`). Resolve it against the run's `sandbox_path`, which is
+  already in `runs.config_json` (`/home/it/…/aetheris-agents/cloudcost` for the verified run).
+  Both halves are already stored — that is what makes "no harness change" true rather than hopeful.
+- **Guard on `overlay_base_dir`.** It is `nil` for cloudcost by requirement, so the file really is
+  at that path. A use case running under an overlay would resolve the same relative path into the
+  overlay instead — show no control rather than a broken link, which the done-when already demands.
 
-`Source: m2-cloudcost §Referenced Rig ticket, ratified 2026-08-01 (decision H, per-provider
-solo runs).`
+The alternative — a run that *formally records* an artifact path — is cleaner and
+cross-provider-stable but touches the harness/orchestrator and likely the event union (the
+three-change rule + `drift_check`), so it is **deferred**. Settle that convention before provider
+three *if* you want it recorded rather than scraped; for this row, scrape.
+
+**Decision 2 — surface + security: open-external or sandboxed.** A "View report" control in the
+run detail. The HTML is our template and `render_report` escapes provider-supplied strings
+(`test_provider_supplied_strings_are_escaped_not_injected`), but it still embeds provider data — so
+**never `innerHTML` it into Rig's React tree**. Open in the OS browser (Tauri shell), or a
+sandboxed `<iframe>` with a restrictive CSP, or a separate webview window. Open-external is the
+smallest honest version.
+
+**Scope guard — discover + open, nothing more.** Explicitly OUT: inline render with section
+navigation, orphan/optimization panels, live refresh. That is the rich version, a separate small
+milestone, and it is the scope-creep magnet of this batch; do not let it grow this row.
+
+**Do-not-generate.** `innerHTML` of use-case HTML into the app DOM; any cloudcost-specific path or
+logic in Rig (derive from the trajectory, keep it generic); a new event type unless the
+recorded-path option is deliberately chosen (it is not, for minimal); trusting the LLM's prose path
+over the tool's JSON.
+
+**Doc-sync DoD carried from the original row:** any new Tauri command or `RunSummary`/`RunDetail`
+field lands with its `specs.md` §4/§5 entry in the same commit (check 9 `command_fields` guards §4
+structs). Follow the runbook's "Adding a new module" pattern (`harness.rs` query + `types.ts` +
+detail view, the BL-004/BL-029 precedent).
+
+**Done when:** from a completed cloudcost run's detail, "View report" opens the produced HTML
+(external or sandboxed); the same control works for a docbuilder run with no cloudcost-specific
+code; a run that produced no artifact shows no control or a disabled one, never a broken link;
+`tsc -b` + `bun run build` + `drift_check --strict` green.
+
+`Source: m2-cloudcost §Referenced Rig ticket, ratified 2026-08-01 (decision H); rescoped from the
+m2-filed generic row at the m2 Rig thread, 2026-08-03, with discovery verified against run
+cloudcost-orch-aws-oFbapA.`
 
 ---
 
@@ -4629,3 +4662,4 @@ multi-line street/city/state/zip.
 | — | BL-083, BL-084 | Batch: both are "the list/manifest was written once and four use cases arrived since". BL-084 sequences before BL-085 — declaring env in the manifest renders the config rows for free, so doing 085 first duplicates work in agentConfigDefs.ts |
 | — | BL-085 | The only one of the four with unresolved design. Peel into its own small milestone IF open question 2 resolves to "Rig needs a launch-parameter concept" — a per-launch value has no home in single-valued global agent config today |
 | — | BL-086 | Independent, pure frontend, retroactive. Do whenever someone is in TrajectoryView |
+| — | BL-073 | Rescoped 2026-08-03 to minimal ("View report": scrape the path from the render step's tool_result, open external/sandboxed). Independent drop-in; pairs thematically with BL-085 (launch-from-Rig + view-report-in-Rig) but does not depend on it — a CLI-launched run's report views the same way. The rich inline render is a separate milestone and is this batch's scope-creep magnet |

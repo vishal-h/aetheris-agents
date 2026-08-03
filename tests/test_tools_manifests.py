@@ -107,8 +107,8 @@ MANIFEST_BEARING = [uc for uc in SWEPT if (REPO_ROOT / uc / "tools.json").exists
 NO_MANIFEST_YET = ("boxy-pipeline", "docbuilder", "provenance")
 
 _NO_MANIFEST_REASON = (
-    "no tools.json yet — filed alongside BL-084 (cloudcost was implemented first); "
-    "every runnable CLI in this use case is undeclared and amber in Rig"
+    "no tools.json yet — tracked by BL-089 (filed alongside BL-084, which did cloudcost "
+    "first); every runnable CLI in this use case is undeclared and amber in Rig"
 )
 
 

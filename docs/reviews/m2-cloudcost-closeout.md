@@ -45,20 +45,32 @@ exploratory section; the live read produced 18 signals across 17 regions and see
 
 ## §7 learnings promoted (m2 ratification packet, 2026-08-03)
 
-| # | Learning | Kind | Home |
-|---|---|---|---|
-| P1 | Resolved-value over advertised-value | new | aetheris-agents/CLAUDE.md |
-| P2 | Absent is unknown, not zero | new | aetheris-agents/CLAUDE.md |
-| P3 | Section-scoped edits from the no-repo party | new | triad-loop.md (Phase 2) |
-| P4 | Adjacent-case: "the one X" is an observation, not a census | refinement | Adjacent-case learning |
-| P5 | Cited-means-read: an inherited citation is still uncited | refinement | Cited-means-read learning |
-| P6 | Tracked-carry + the coupling constraint | refinement + new | aetheris-agents/CLAUDE.md |
-| P7 | A figure carries its basis or it does not exist | new | aetheris-agents/CLAUDE.md |
+**All seven ratified and landed 2026-08-03.** Homed by **family, not by milestone** — the packet
+had homed the discipline items where m2 happened, and P4/P5 exposed that as a guess.
 
-Authoritative text lands in each home on ratification; this table is the index. The packet itself
-is `docs/reviews/m2-cloudcost-section7-promotion.md`, landed as a file before any promotion commit
-(BL-007: promotion wording travels as an artifact, not as chat). **P3 is confirmed already landed**
-(`7328755`, verified at HEAD); P1/P2/P4/P5/P6/P7 await per-item ratification.
+| # | Learning | Kind | Home as landed |
+|---|---|---|---|
+| P1 | Resolved-value over advertised-value | new | aetheris-agents/CLAUDE.md (Python conventions) |
+| P2 | Absent is unknown, not zero | new | aetheris/CLAUDE.md — **Silent-wrong-answer** carrier |
+| P3 | Section-scoped edits from the no-repo party | new | triad-loop.md Phase 2 (`7328755`, pre-landed) |
+| P4 | Adjacent-case: "the one X" is an observation, not a census | refinement | aetheris/CLAUDE.md — Adjacent-case |
+| P5 | Cited-means-read: an inherited citation is still uncited | refinement | aetheris/CLAUDE.md — Cited-means-read |
+| P6 | Tracked-carry + the coupling constraint | refinement + new | aetheris-agents/CLAUDE.md — the gate rule |
+| P7 | A figure carries its basis or it does not exist | new | aetheris/CLAUDE.md — new sibling bullet |
+
+Three homes diverge from the packet's guess, each verified by grep rather than assumed: P2's named
+sibling (`no-silent-caps`) is not a learning at all — the real family is Silent-wrong-answer, which
+P2's own text names; P6's parent is in the agents repo, not the harness; P7's named parent
+(`no-fabrication / D4`) does not exist as a learning, D4 being a cloudcost milestone decision. Full
+adjudication, plus the `:250 → :243` self-refuting-citation fix inside P5, is in the packet file:
+`docs/reviews/m2-cloudcost-section7-promotion.md`, landed as a file **before** any promotion commit
+(BL-007: promotion wording travels as an artifact, not as chat).
+
+This made the promotion a **cross-repo** change (harness `710ecd2` + the agents-side pair),
+cross-cited per the BL-003 precedent, with the done-check run in **both** repos before either
+landed. Consequence for the next export: `aetheris/CLAUDE.md` is now edited too, so the harness
+repo's `project_knowledge` manifest must be regenerated alongside the agents repo's or it will
+report its own staleness WARN.
 
 ## Backlog filed during m2
 

@@ -8,9 +8,41 @@ Ground rule from the packet: each item is a **scoped add**, applied against the 
 diffed. Where a learning already exists the item is a refinement clause, not a duplicate, and the
 diff shows which. Items are marked NEW / REFINEMENT.
 
-**Ratification state (2026-08-03):** P3 confirmed already landed (`7328755`, `triad-loop.md`
-Phase 2 — verified at HEAD, no action). P1, P2, P4, P5, P6, P7 await the human's per-item y/n
-before their text lands in `CLAUDE.md`.
+**Ratification: COMPLETE, 2026-08-03. All seven ratified and landed.**
+
+| # | Home as landed | Commit |
+|---|---|---|
+| P1 | `aetheris-agents/CLAUDE.md` — Python script conventions, beside "verify a foreign table's live DDL" (same don't-trust-the-inferred-shape genre) | agents |
+| P2 | `aetheris/CLAUDE.md` — **Silent-wrong-answer**, as its quietest carrier | `710ecd2` |
+| P3 | `triad-loop.md` Phase 2 — already landed, verified at HEAD, no action | `7328755` |
+| P4 | `aetheris/CLAUDE.md` — appended to **Adjacent-case** | `710ecd2` |
+| P5 | `aetheris/CLAUDE.md` — appended to **Cited-means-read** | `710ecd2` |
+| P6 | `aetheris-agents/CLAUDE.md` — appended to the gate/tracked-carry rule | agents |
+| P7 | `aetheris/CLAUDE.md` — new sibling bullet after Silent-wrong-answer | `710ecd2` |
+
+**Homing rule applied: a learning is homed by its FAMILY, not by the milestone that surfaced
+it.** The packet homed the discipline items in `aetheris-agents` because that is where m2
+happened; P4/P5 exposed that as a guess, since both are refinements to parents living in the
+harness repo. Three homes therefore diverge from the packet, each verified by grep rather than
+assumed:
+
+- **P2** — packet said "sibling of no-silent-caps". `no-silent-caps` is **not a learning** in
+  either `CLAUDE.md`; it is a cloudcost decision-D phrase. The real family is
+  **Silent-wrong-answer**, which P2's own closing sentence names ("absent→zero is the
+  silent-wrong-answer's quietest form"). Homed by mechanism, not by the name in the sketch.
+- **P6** — packet said "likely the same harness home". It is not: the gate rule carrying the
+  tracked-carry clause lives in `aetheris-agents/CLAUDE.md`; `aetheris/CLAUDE.md` only
+  *references* that clause from its `hex.audit` section. P6 stayed in agents, beside its parent.
+- **P7** — packet said "beside no-fabrication / D4". No learning of that name exists, and D4 is
+  a cloudcost *milestone decision* in a third document. Landed as a new sibling bullet in the
+  harness learnings section, adjacent to the class it sharpens, pointing at both.
+
+**One correction inside P5's own text.** The packet's incident line cites
+`detect_orphans.py:250`. That is precisely the inherited-never-opened miss the clause is *about*
+— the rule it describes lives at `:243`. Writing "do not repeat a number you did not open" while
+repeating that number would be self-refuting, so the landed source ref reads
+`detect_orphans.py:243 (the :250→:243 inherited-citation miss)`. `:243` was verified by opening
+the file (`rule_stopped_compute_with_attached_storage`), not inherited from this packet.
 
 ---
 

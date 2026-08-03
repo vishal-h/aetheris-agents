@@ -163,6 +163,17 @@ cot1_id   = "#{orb_id}-cot1"
 - **Explicit sink selection with fail-fast.** When a pipeline supports multiple operational sinks (e.g., DB upsert vs. file export), select via an env var resolved at agent eval time. A required-but-absent credential must `raise` immediately — never silently fall back to a different sink. Regression-guard the raise in sprint with a hermetic env check: `env -u MISSING_VAR SINK=mode mix run --eval ...`.
 - **Parallel sub-agent file isolation.** When an orchestrator spawns parallel sub-agents that each write files for the same logical output, give each sub-agent a per-term directory (e.g., `data/raw/{slug}/`) rather than a shared flat directory. Without isolation, parallel agents silently overwrite each other's output.
 - **Stage CLIs degrade, they don't crash.** A pipeline script hitting empty, null, or malformed input (a provider returning `null`, one bad JSONL line) emits a partial result with a `{"status": "partial"}` envelope and `exit 1` — never an uncaught exception that breaks the stdout contract. Guard per-line/per-item (skip + count `skipped`/`errors`), and treat an API's explicit `null` the same as absent (`x or []`, not `dict.get(k, default)`).
+- **Bind to the value a library *resolved*, never the one it advertises.** When a library exposes
+  both — protocol, API version, endpoint, region — read the resolved one (`resolved_protocol`,
+  not `protocol`). The advertised field states a preference; the resolved value is what the
+  library's own serializer and parser are actually built from, and the two diverge exactly where
+  the library has fallen back. A hand-typed table of the same information is the same bug with
+  an extra copy to maintain. The divergence hides until the one case where they differ: the
+  cloudcost AWS stub encoded from `ServiceModel.protocol` and nine of its ten services agreed —
+  CloudWatch advertises `smithy-rpc-v2-cbor` and resolves to `json`, so encoding to the
+  advertised value drove the cbor parser over a json body and raised `MemoryError`. Read what the
+  tool resolved; never re-derive it.
+  `Source: m2-cloudcost t4 (tests/aws_wire.py; the switch landed alone with the full suite captured per-test before and after, zero pre-existing tests moved).`
 - **Verify a foreign table's live DDL before writing raw SQL to it.** When a script writes to a table owned by another system (e.g. an Ecto/ActiveRecord schema), confirm the real column types and write semantics (`\d table`) before trusting an inferred schema — raw SQL breaks on array types (`jsonb[]` vs `jsonb`), `NOT NULL` timestamps with no DB default, and update-field semantics (don't clobber columns the owner manages, e.g. soft-delete `status`). Test against a faithful schema clone, not a hand-rolled table.
 
 ### conftest.py pattern
@@ -259,7 +270,22 @@ way: a gate that silently *heals* trains the same "the note is probably stale" r
 that silently rots, and the stale red note is what makes a real red one ignorable.
 A known-red gate that already has a tracked ticket is
 **named in the packet with its ticket ref, not re-triaged** — the rule prevents silent carry,
-not tracked carry. Source: BL-016, BL-005 (×2).
+not tracked carry. It is also left **red**: never quietly relaxed, re-pointed at something that
+passes, or downgraded to a warning to get a clean run. A quiet downgrade is how a real
+regression later goes unnoticed, and it destroys the one thing the carry was preserving — that
+the gate still means what it said. BL-069's ≥1-orphan assertion was carried red and named on
+every leg of m2 rather than relaxed, and it closed by planting the resource the assertion was
+always about.
+
+**Before making a soft failure hard, enumerate what else that gate holds.** If flipping it turns
+*every* tracked known-red blocking at once, then the enforcement and the exempt/expected-fail
+declaration are **one landing, not two** — and the hardening cannot ship while any carried red
+is still armed. BL-077 is the worked case: `sprint.sh`'s `fail()` only prints, so a sprint whose
+assertions all fail still exits 0. Fixing that alone would have made BL-069 — deliberately armed
+— block every sprint the moment it landed, so the counter and an `expected_fail()`/`KNOWN_RED`
+declaration keyed by ticket ref have to arrive together. Sequencing a hardening without first
+enumerating the reds it will trip is how a correct fix becomes an outage.
+Source: BL-016, BL-005 (×2); m2-cloudcost (BL-069 carried red to its close, BL-077 coupling).
 
 **Optional payload fields:** suffix with `?` in the §6 table cell (e.g. `` `stop_reason?` ``) to allow the field to be absent from current DB events without triggering a FAIL. The drift check emits INFO instead. Add the `?` suffix when the field is valid but not yet emitted by the harness version in use; the INFO firing is the trigger to drop the `?` and promote the field to required.
 

@@ -3069,6 +3069,114 @@ stay "Step N".
 
 `Source: m2-cloudcost close-out, 2026-08-03.`
 
+### BL-087 — `payslip/tools.json` omits a runnable CLI (#TBD)
+**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`payslip/`)
+
+Filed 2026-08-03 by BL-084. `payslip/scripts/merge_employee_payslips.py` is a real CLI
+(`argparse` at :48, `if __name__ == "__main__":` at :76) and is absent from
+`payslip/tools.json`, which declares only `scripts/payslip_compute.py` and
+`scripts/generate_employee_payslips.py`. So it renders in Rig with the amber badge, the
+"not declared in tools.json" banner, and a raw-args box instead of a structured form.
+
+**Found by an off-territory sweep, not by working payslip.** BL-084's new
+`tests/test_tools_manifests.py` audits every manifest, not just the one it was written for;
+this was the only pre-existing red across api/drive/eduloka/email/payslip. It is carried as
+`xfail(strict=True)` on `test_no_undeclared_scripts[payslip]` **only** — payslip's parse,
+declared-files and env-dep params are unmarked and green. `strict=True` means the marker must
+be deleted in the same commit that fixes this, or the suite fails on the unexpected pass.
+
+Not auto-fixed at BL-084 because payslip is outside that ticket's cloudcost scope, and a
+manifest entry needs its arg forms read off `--help` rather than guessed.
+
+**Done when:** the entry is declared with arg forms derived from
+`python3 scripts/merge_employee_payslips.py --help`; the `xfail` marker in
+`tests/test_tools_manifests.py` is removed in the same commit.
+
+`Source: BL-084, 2026-08-03.`
+
+### BL-088 — `ManifestScript.runnable`: mark a manifest entry describe-only (#TBD)
+**Size:** S · **Priority:** low · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-03 by BL-084. A `tools.json` entry cannot say "this is not a CLI". The Run
+button at `ToolDetail.tsx:175-186` renders for every script, declared or not, gated only on
+empty required args, and `ManifestScript` (`tools.rs:29-46`) has no field to suppress it.
+
+The live case is `cloudcost/scripts/_normalized.py`, an import-only shared module. BL-084's
+row asked for it to be "describe-only, never Run"; only the describe half was deliverable, so
+BL-084 declares it with `args: []` and a description saying it is import-only. Running it is
+genuinely harmless there — no `__main__`, so `python3 scripts/_normalized.py` exits 0 with no
+output — which is why this is low priority rather than a correctness bug. Omitting the entry
+instead is strictly worse: the walker synthesises it as `undeclared` anyway
+(`tools.rs:560-575`), so it stays amber *and* stays runnable.
+
+Not unique to cloudcost: `docbuilder/scripts/_drive.py`, `_format.py`, `_table_html.py`,
+eduloka's eight import-only modules and `drive/scripts/drive_utils.py` are the same class —
+enumerate them when this lands rather than fixing the one that was noticed.
+
+**Done when:** `runnable: Option<bool>` (serde default true) exists on `ManifestScript`,
+mirrors into `src/hooks/types.ts`, gates the Run button, and is rejected server-side in
+`tools_run_script` so the gate is not frontend-only; `p4-001-manifest-spec.md` documents it.
+
+`Source: BL-084, 2026-08-03.`
+
+### BL-089 — tools.json for the three use cases that still have none (#TBD)
+**Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`docbuilder/`, `provenance/`, `boxy-pipeline/`)
+
+Filed 2026-08-03 by BL-084 (Decision A). `tools.json` is absent for docbuilder, provenance and
+boxy-pipeline; every runnable CLI in each renders amber with a raw-args box in Rig. BL-084 did
+cloudcost only and carried these three as `xfail(strict=True)` in `tests/test_tools_manifests.py`
+(`test_manifest_parses` + `test_no_undeclared_scripts`), so they cannot rot silently.
+
+Declare each use case's runnable CLIs (arg forms off each script's `--help`, descriptions from
+`capability-matrix.md`), import-only modules describe-only per BL-088. May land per-use-case or
+together; each landing must delete that use case from `NO_MANIFEST_YET` in the suite in the same
+commit, or the strict xfail fails on the unexpected pass.
+
+`Source: BL-084, 2026-08-03.`
+
+### BL-090 — capability-matrix stale: cloudcost omits detect_optimization_signals (#TBD)
+**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`docs/`, matrix generator)
+
+Filed 2026-08-03 by BL-084. `docs/capability-matrix.md` §Cloudcost lists six scripts and its summary
+reads `| cloudcost | 1 | 6 |`, but seven `.py` are on disk — `detect_optimization_signals.py` is
+absent. Cross-checked against BL-084's serde script counts: every other use case's matrix count
+matches disk (drive/payslip differ from their manifests only by import-only/undeclared scripts, as
+expected); cloudcost is uniquely short, i.e. the script was added after the last matrix regen.
+
+The matrix is GENERATED — fix by re-running the capability_matrix sprint case, not by hand-editing.
+One reconciliation at regen: the generator will source detect_optimization_signals' cell from its
+docstring, which differs from BL-084's code-derived manifest description (written from the signal
+constants, deliberately more precise than the docstring). Either improve the script docstring to
+match, or accept the manifest wording as canonical and let the cells differ. "descriptions match
+capability-matrix.md" is not re-opened by this — BL-084 satisfied it 5-of-6 with the 6th documented.
+
+`Source: BL-084, 2026-08-03.`
+
+### BL-091 — exportConfig() drops every manifest-derived env key (#TBD)
+**Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-03 by BL-084. `exportConfig()` (`rig/src/hooks/useAgentConfig.ts:33-41`) iterates
+`AGENT_CONFIG_DEFS` only, so every dynamic env_deps key — api's 16, cloudcost's 6 — is editable and
+persisted in agent-config but silently omitted from Export. Pre-existing (api already affected);
+BL-084 surfaced it. Decide the masked-key policy deliberately when fixing: omitting secret keys from
+export may be intended hygiene, but omitting the non-masked keys (region, access-key-id) is silent
+data loss on config transfer.
+
+`Source: BL-084, 2026-08-03.`
+
+### BL-092 — tools.rs manifest-deserialization test coverage (#TBD)
+**Size:** S · **Priority:** low · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-03 by BL-084. `tools.rs` has zero `#[cfg(test)]`. BL-084 proved cloudcost/tools.json
+deserializes into `ToolsManifest` via a temporary test module, then discarded it (tools.rs is
+byte-identical to HEAD). Make it permanent: a `#[cfg(test)]` module round-tripping every committed
+manifest into `ToolsManifest` and asserting Ok plus the env_deps dedup walk. This is the only
+standing offline guard against the pytest suite's transcription gap — a manifest that passes pytest
+but fails serde is dropped to None with every script going amber and nothing saying why. Seed is in
+`cloudcost/docs/bl-084-implementation-notes.md` §"What is proven offline."
+
+`Source: BL-084, 2026-08-03.`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)
@@ -4680,3 +4788,9 @@ multi-line street/city/state/zip.
 | — | BL-085 | The only one of the four with unresolved design. Peel into its own small milestone IF open question 2 resolves to "Rig needs a launch-parameter concept" — a per-launch value has no home in single-valued global agent config today |
 | — | BL-086 | Independent, pure frontend, retroactive. Do whenever someone is in TrajectoryView |
 | — | BL-073 | Rescoped 2026-08-03 to minimal ("View report": scrape the path from the render step's tool_result, open external/sandboxed). Independent drop-in; pairs thematically with BL-085 (launch-from-Rig + view-report-in-Rig) but does not depend on it — a CLI-launched run's report views the same way. The rich inline render is a separate milestone and is this batch's scope-creep magnet |
+| — | BL-087 | Do whenever someone is in payslip. Carried `xfail(strict=True)` by `tests/test_tools_manifests.py`, so it cannot rot silently — but the marker must be deleted in the fixing commit or the suite fails on the unexpected pass |
+| — | BL-088 | Fires when an import-only module's Run button actually costs something. It does not today: `_normalized.py` has no `__main__`, so running it is a no-op. Enumerate the whole import-only class (docbuilder ×3, eduloka ×8, drive ×1) when it lands — BL-084 noticed one, which is an observation, not a census |
+| — | BL-089 | The Decision-A sweep. Carried xfail(strict) by tests/test_tools_manifests.py per use case; each landing deletes its NO_MANIFEST_YET entry in the same commit |
+| — | BL-090 | Regenerate the matrix, don't hand-edit — it's generated. Pure staleness; reconcile the detect_optimization_signals cell to the BL-084 manifest wording at regen |
+| — | BL-091 | Wider than cloudcost (api's 16 keys already affected). Decide masked-key export policy when fixing |
+| — | BL-092 | Makes the discarded BL-084 round-trip permanent. The offline guard the pytest suite structurally cannot be |

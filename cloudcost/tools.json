@@ -1,0 +1,454 @@
+{
+  "manifest_version": "1",
+  "use_case": "cloudcost",
+  "description": "Cloud cost and orphan-resource reporting — read-only AWS and DigitalOcean adapters, deterministic detection, and a self-contained HTML report",
+  "scripts": [
+    {
+      "name": "fetch_aws",
+      "file": "scripts/fetch_aws.py",
+      "description": "AWS read-only cost and inventory adapter that fetches costs from Cost Explorer and resources across all opted-in regions, normalizes them, and emits JSON artifacts.",
+      "args": [
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory the normalized cost and inventory artifacts are written to; the pipeline convention is a per-provider tree (output/aws)"
+        },
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM (default: current UTC month)"
+        },
+        {
+          "name": "endpoint_url",
+          "flag": "--endpoint-url",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Override every AWS endpoint (offline tests point this at a local stub)"
+        },
+        {
+          "name": "timeout",
+          "flag": "--timeout",
+          "type": "integer",
+          "required": false,
+          "default": "30",
+          "description": "Per-request timeout in seconds"
+        },
+        {
+          "name": "max_attempts",
+          "flag": "--max-attempts",
+          "type": "integer",
+          "required": false,
+          "default": "4",
+          "description": "botocore retry attempts per API call"
+        }
+      ],
+      "env": [
+        {
+          "key":         "CLOUDCOST_AWS_ACCESS_KEY_ID",
+          "label":       "AWS access key ID",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "AKIA..."
+        },
+        {
+          "key":         "CLOUDCOST_AWS_SECRET_ACCESS_KEY",
+          "label":       "AWS secret access key",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        },
+        {
+          "key":         "CLOUDCOST_AWS_SESSION_TOKEN",
+          "label":       "AWS session token (optional)",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        },
+        {
+          "key":         "CLOUDCOST_AWS_REGION",
+          "label":       "AWS bootstrap region",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "us-east-1"
+        },
+        {
+          "key":         "CLOUDCOST_AWS_REGIONS",
+          "label":       "AWS regions to sweep (optional override)",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "us-east-1,ap-south-1"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/fetch_aws.py --output-dir output/aws"
+    },
+    {
+      "name": "fetch_do",
+      "file": "scripts/fetch_do.py",
+      "description": "DigitalOcean read-only cost and inventory adapter that fetches billing data and resource snapshot, normalizes them, and emits JSON artifacts.",
+      "args": [
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory the normalized cost and inventory artifacts are written to; the pipeline convention is a per-provider tree (output/digitalocean)"
+        },
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM (default: current UTC month)"
+        },
+        {
+          "name": "api_base",
+          "flag": "--api-base",
+          "type": "string",
+          "required": false,
+          "default": "https://api.digitalocean.com/v2",
+          "description": "DigitalOcean API base URL"
+        },
+        {
+          "name": "timeout",
+          "flag": "--timeout",
+          "type": "integer",
+          "required": false,
+          "default": "30",
+          "description": "Per-request timeout in seconds"
+        },
+        {
+          "name": "max_retries",
+          "flag": "--max-retries",
+          "type": "integer",
+          "required": false,
+          "default": "4",
+          "description": "Retry attempts per API call"
+        },
+        {
+          "name": "retry_base_delay",
+          "flag": "--retry-base-delay",
+          "type": "float",
+          "required": false,
+          "default": "1.0",
+          "description": "Base delay in seconds for exponential retry backoff"
+        }
+      ],
+      "env": [
+        {
+          "key":         "CLOUDCOST_DO_TOKEN",
+          "label":       "DigitalOcean API token",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/fetch_do.py --output-dir output/digitalocean"
+    },
+    {
+      "name": "detect_orphans",
+      "file": "scripts/detect_orphans.py",
+      "description": "Deterministic orphan detection engine that applies heuristic rules to a normalized inventory to identify orphaned resources with confidence scores and evidence.",
+      "args": [
+        {
+          "name": "inventory",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Normalized inventory JSON (from an adapter)"
+        },
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory the orphan-candidates artifact is written to; keep it alongside the inventory it was derived from"
+        },
+        {
+          "name": "reference_date",
+          "flag": "--reference-date",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM-DD or ISO-8601 timestamp; age rules are evaluated against this (default: the inventory's generated_at)"
+        },
+        {
+          "name": "snapshot_age_days",
+          "flag": "--snapshot-age-days",
+          "type": "integer",
+          "required": false,
+          "default": "30",
+          "description": "Snapshot orphan threshold N in days (default: 30)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/detect_orphans.py output/digitalocean/do_inventory_2026-08.json --output-dir output/digitalocean"
+    },
+    {
+      "name": "detect_optimization_signals",
+      "file": "scripts/detect_optimization_signals.py",
+      "description": "Exploratory AWS optimization signals over S3, ECR, and Secrets Manager — missing S3 and ECR lifecycle policies, incomplete multipart uploads, empty buckets, untagged-image accumulation, and unused secrets — emitted as a separate signals/denied/warnings artifact that the core report pipeline never reads.",
+      "args": [
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory optimization_signals_aws_{period}.json is written to; the pipeline convention is a per-provider tree (output/aws)"
+        },
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM (default: current UTC month)"
+        },
+        {
+          "name": "reference_date",
+          "flag": "--reference-date",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM-DD or ISO-8601; age rules run against this (default: now)"
+        },
+        {
+          "name": "endpoint_url",
+          "flag": "--endpoint-url",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Override every AWS endpoint (offline tests point this at a local stub)"
+        },
+        {
+          "name": "old_image_days",
+          "flag": "--old-image-days",
+          "type": "integer",
+          "required": false,
+          "default": "90",
+          "description": "Age in days past which an untagged ECR image counts toward the accumulation signal"
+        },
+        {
+          "name": "secret_unused_days",
+          "flag": "--secret-unused-days",
+          "type": "integer",
+          "required": false,
+          "default": "90",
+          "description": "Days since last access past which a secret is reported unused"
+        },
+        {
+          "name": "s3_size_lookback_days",
+          "flag": "--s3-size-lookback-days",
+          "type": "integer",
+          "required": false,
+          "default": "3",
+          "description": "CloudWatch lookback window in days for bucket size and object-count metrics"
+        },
+        {
+          "name": "timeout",
+          "flag": "--timeout",
+          "type": "integer",
+          "required": false,
+          "default": "30",
+          "description": "Per-request timeout in seconds"
+        },
+        {
+          "name": "max_attempts",
+          "flag": "--max-attempts",
+          "type": "integer",
+          "required": false,
+          "default": "4",
+          "description": "botocore retry attempts per API call"
+        }
+      ],
+      "env": [
+        {
+          "key":         "CLOUDCOST_AWS_ACCESS_KEY_ID",
+          "label":       "AWS access key ID",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "AKIA..."
+        },
+        {
+          "key":         "CLOUDCOST_AWS_SECRET_ACCESS_KEY",
+          "label":       "AWS secret access key",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        },
+        {
+          "key":         "CLOUDCOST_AWS_SESSION_TOKEN",
+          "label":       "AWS session token (optional)",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        },
+        {
+          "key":         "CLOUDCOST_AWS_REGION",
+          "label":       "AWS bootstrap region",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "us-east-1"
+        },
+        {
+          "key":         "CLOUDCOST_AWS_REGIONS",
+          "label":       "AWS regions to sweep (optional override)",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "us-east-1,ap-south-1"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/detect_optimization_signals.py --output-dir output/aws"
+    },
+    {
+      "name": "compose_report_data",
+      "file": "scripts/compose_report_data.py",
+      "description": "Merges normalized cost, inventory, and orphan artifacts into a single report-data JSON file with service totals, month-on-month delta, tag coverage, and confidence-banded orphans.",
+      "args": [
+        {
+          "name": "cost",
+          "flag": "--cost",
+          "type": "file",
+          "required": false,
+          "default": null,
+          "description": "Normalized cost snapshot. Repeatable on the command line (once per provider, paired positionally with --inventory and --orphans); this form supplies one. Cannot be combined with --input-dir"
+        },
+        {
+          "name": "inventory",
+          "flag": "--inventory",
+          "type": "file",
+          "required": false,
+          "default": null,
+          "description": "Normalized inventory. Repeatable on the command line, paired positionally with --cost and --orphans; this form supplies one. Cannot be combined with --input-dir"
+        },
+        {
+          "name": "orphans",
+          "flag": "--orphans",
+          "type": "file",
+          "required": false,
+          "default": null,
+          "description": "Orphan candidates. Repeatable on the command line, paired positionally with --cost and --inventory; this form supplies one. Cannot be combined with --input-dir"
+        },
+        {
+          "name": "input_dir",
+          "flag": "--input-dir",
+          "type": "directory",
+          "required": false,
+          "default": null,
+          "description": "Group every normalized artifact in this directory into per-provider bundles. Use this instead of --cost/--inventory/--orphans; at least one of the two forms is required"
+        },
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory report_data_{period}.json is written to"
+        },
+        {
+          "name": "history_dir",
+          "flag": "--history-dir",
+          "type": "directory",
+          "required": false,
+          "default": null,
+          "description": "Persisted monthly cost snapshots, used for the month-on-month delta. Give each provider its own tree (history/aws, history/digitalocean); left blank the script falls back to the shared cloudcost/history, where the prior-month lookup sums every provider's snapshot into one prior_total"
+        },
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM (default: from the inputs)"
+        },
+        {
+          "name": "top_untagged",
+          "flag": "--top-untagged",
+          "type": "integer",
+          "required": false,
+          "default": "10",
+          "description": "How many untagged resources to list in the tag-coverage section"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/compose_report_data.py --input-dir output/aws --output-dir output/aws --history-dir history/aws"
+    },
+    {
+      "name": "render_report",
+      "file": "scripts/render_report.py",
+      "description": "Renders report data into a self-contained HTML file with inlined CSS and no external dependencies.",
+      "args": [
+        {
+          "name": "report_data",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "report_data_{YYYY-MM}.json from compose_report_data"
+        },
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory the HTML report is written to (default: output)"
+        },
+        {
+          "name": "output",
+          "flag": "--output",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Explicit output path (overrides --output-dir)"
+        },
+        {
+          "name": "optimization_file",
+          "flag": "--optimization-file",
+          "type": "file",
+          "required": false,
+          "default": null,
+          "description": "Optional optimization_signals_*.json; adds the exploratory section. Absent or unreadable, the report is byte-identical to the core report"
+        },
+        {
+          "name": "template",
+          "flag": "--template",
+          "type": "file",
+          "required": false,
+          "default": "templates/report.html.j2",
+          "description": "Jinja2 template for the report (default: cloudcost/templates/report.html.j2)"
+        },
+        {
+          "name": "pdf",
+          "flag": "--pdf",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Also write a PDF beside the HTML (needs wkhtmltopdf; the HTML never does)"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/render_report.py output/aws/report_data_2026-08.json --output-dir output/aws --optimization-file output/aws/optimization_signals_aws_2026-08.json"
+    },
+    {
+      "name": "_normalized",
+      "file": "scripts/_normalized.py",
+      "description": "Shared vocabulary for canonical resource types, states, and schema-level fields across adapters and detection stages. Import-only module, not a CLI: running it is a no-op.",
+      "args": [],
+      "output": "text",
+      "example": "PYTHONPATH=scripts python3 -c \"from _normalized import CANONICAL_TYPES; print(sorted(CANONICAL_TYPES))\""
+    }
+  ]
+}

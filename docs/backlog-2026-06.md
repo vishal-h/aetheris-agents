@@ -2300,7 +2300,24 @@ no new event type is needed:
 editing a path, but a UI affordance must not depend on a model honouring an instruction when the
 tool's own structured output is right there. Parse `payload.output` → `stdout` → `file`.
 
-*Two things this row would otherwise discover mid-ticket:*
+**Selecting WHICH `file` — do not key on the render step, and do not key on `.html`.** A pipeline
+emits a file from most of its stages, so "the render step's tool_result" is exact for cloudcost and
+wrong as a general rule. Measured on the two real pipelines:
+
+| Run | file-emitting `tool_result`s | Final artifact |
+|---|---|---|
+| `cloudcost-orch-aws-oFbapA` | 4 (costs+inventory, orphans, report_data, report) | `…/cloudcost_report_2026-08.html` |
+| `docbuilder-orch-iDGIIQ` | 1, carrying **4 paths** | `…offer_letter….docx` **and** `.pdf` |
+
+So the discriminator is the **document extension set** (`.html`, `.pdf`, `.docx`, …) — never
+`.html` alone, which would find *nothing* in the docbuilder run and leave the control permanently
+absent on the case this row exists to prove generic. Take the **last** qualifying artifact across
+tool_results (later steps are more final; the intermediates are all `.json`). Note docbuilder emits
+several documents in one result — two formats of two documents — so "last wins" is not
+self-evidently right there: either offer the qualifying set, or take the last and say so, but do
+not silently pick one of four and label it "the report".
+
+*Two more things this row would otherwise discover mid-ticket:*
 - **The path is relative** (`output/aws/…`). Resolve it against the run's `sandbox_path`, which is
   already in `runs.config_json` (`/home/it/…/aetheris-agents/cloudcost` for the verified run).
   Both halves are already stored — that is what makes "no harness change" true rather than hopeful.

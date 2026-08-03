@@ -31,12 +31,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `9afd8e7` | 2026-07-29 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `9afd8e7` | 2026-07-29 |
+| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `7a7b7ec` | 2026-08-02 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `0fc9396` | 2026-08-03 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e60bcfd` | 2026-07-30 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `63f48e1` | 2026-07-30 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `57d90d2` | 2026-07-29 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b7cb6ca` | 2026-08-02 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `f12dfa6` | 2026-08-02 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `710ecd2` | 2026-08-03 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
@@ -47,14 +47,21 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
 | `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `0a0439f` | 2026-07-20 |
-| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `602bdf5` | 2026-06-19 |
+| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `265d336` | 2026-08-03 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-30 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
 > the harness copy. `milestone-methodology.md` is single-copy in the harness repo.
-> Mirror re-verified byte-identical at this export (`diff -q`, 2026-07-29); the
-> mirror's own last change is `b1fd73f`, which is why it carries no manifest row —
+> Mirror re-verified at this export (`diff -q`, 2026-08-03) — and it had **drifted**: the
+> P3 section-scoped rule landed in the *mirror* only (agents `7328755`, 2026-08-02), so
+> canonical was 26 lines short of it and would have been exported without the rule
+> claude-ui operates under. Synced canonical (`265d336`, purely additive: 26 insertions,
+> 0 deletions) and the pair is byte-identical again. Note what this means for the check
+> itself: `drift_check` compares the manifest against git history and has **no
+> byte-identity check between mirrors**, so this class is invisible to it — the `diff -q`
+> at the export boundary is the only thing that catches it. Edit the harness copy.
+> The mirror's own last change is `7328755`, which is why it carries no manifest row —
 > the row tracks the canonical copy, and a second row would drift against it.
 
 > **What this table does not include, by rule.** Milestone working artifacts —
@@ -128,12 +135,21 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 
 ---
 
-Exported: 2026-07-30 at aetheris-agents `bd37e90` / aetheris `fd9ac48` (BL-066
-bandit bump; BL-067 deterministic matrix assembly; BL-068 curated-overrides home + eduloka
-wired). 25 rows: **25 carried, none added, none dropped.** Two rows re-pinned, clearing both
-standing staleness WARNs: `capability-matrix.md` (`6abc3e8`→`e60bcfd`) and
-`backlog-2026-06.md` (`013c09d`→`63f48e1`). The other twenty-two data rows are unchanged
-since the previous export.
+Exported: 2026-08-03 at aetheris-agents `0fc9396` / aetheris `265d336` (m2-cloudcost CLOSED —
+AWS as provider two, contract-proof held; t4 optimization spike; the §7 promotion of seven
+learnings). 25 rows: **25 carried, none added, none dropped.** Six rows re-pinned, clearing
+every standing staleness WARN: `cloudcost--milestone.md` (`9afd8e7`→`7a7b7ec`),
+`aetheris-agents--CLAUDE.md` (`9afd8e7`→`0fc9396`), `capability-matrix.md`
+(`e60bcfd`→`b7cb6ca`), `backlog-2026-06.md` (`63f48e1`→`f12dfa6`), `aetheris--CLAUDE.md`
+(`57d90d2`→`710ecd2`) and `methodology--triad-loop.md` (`602bdf5`→`265d336`). The other
+nineteen data rows are unchanged since the previous export.
+
+**This export is cross-repo on both sides**, which the previous one was not: the §7 promotion
+put learnings in *both* `CLAUDE.md`s (four in the harness, three in agents), and the
+triad-loop mirror sync moved the canonical harness copy. Both repos' rows were therefore
+re-pinned from their own histories, and both repos must be pushed together — a manifest
+pinning a hash that exists only locally in the sibling describes an export nobody else can
+reproduce.
 
 **What the two re-pinned rows carry.** `capability-matrix.md` is a different artifact than
 the copy in project knowledge today: its whole derived block — Summary counts, unique-tools

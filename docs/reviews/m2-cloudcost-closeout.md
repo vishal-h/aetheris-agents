@@ -50,13 +50,17 @@ had homed the discipline items where m2 happened, and P4/P5 exposed that as a gu
 
 | # | Learning | Kind | Home as landed |
 |---|---|---|---|
-| P1 | Resolved-value over advertised-value | new | aetheris-agents/CLAUDE.md (Python conventions) |
-| P2 | Absent is unknown, not zero | new | aetheris/CLAUDE.md — **Silent-wrong-answer** carrier |
-| P3 | Section-scoped edits from the no-repo party | new | triad-loop.md Phase 2 (`7328755`, pre-landed) |
-| P4 | Adjacent-case: "the one X" is an observation, not a census | refinement | aetheris/CLAUDE.md — Adjacent-case |
-| P5 | Cited-means-read: an inherited citation is still uncited | refinement | aetheris/CLAUDE.md — Cited-means-read |
-| P6 | Tracked-carry + the coupling constraint | refinement + new | aetheris-agents/CLAUDE.md — the gate rule |
-| P7 | A figure carries its basis or it does not exist | new | aetheris/CLAUDE.md — new sibling bullet |
+| P1 | Resolved-value over advertised-value | new | **aetheris-agents** `CLAUDE.md` — Python conventions |
+| P2 | Absent is unknown, not zero | new | **aetheris** `CLAUDE.md` — Silent-wrong-answer carrier |
+| P3 | Section-scoped edits from the no-repo party | new | **aetheris-agents** `docs/triad-loop.md` Phase 2 (`7328755`, pre-landed) |
+| P4 | Adjacent-case: "the one X" is an observation, not a census | refinement | **aetheris** `CLAUDE.md` — Adjacent-case |
+| P5 | Cited-means-read: an inherited citation is still uncited | refinement | **aetheris** `CLAUDE.md` — Cited-means-read |
+| P6 | Tracked-carry + the coupling constraint | refinement + new | **aetheris-agents** `CLAUDE.md` — the gate rule |
+| P7 | A figure carries its basis or it does not exist | new | **aetheris** `CLAUDE.md` — new sibling bullet |
+
+Split as landed: **aetheris-agents ×3** (P1, P3, P6) · **aetheris ×4** (P2, P4, P5, P7). Every row
+carries its repo explicitly — this table is the one document a future session reads to find these
+learnings, and a bare filename is ambiguous across two repos that both have a `CLAUDE.md`.
 
 Three homes diverge from the packet's guess, each verified by grep rather than assumed: P2's named
 sibling (`no-silent-caps`) is not a learning at all — the real family is Silent-wrong-answer, which

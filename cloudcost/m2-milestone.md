@@ -1,6 +1,13 @@
 # m2-cloudcost — AWS cost report + orphan detection + optimization spike (report-only, per-provider)
 
-**Status:** **RATIFIED 2026-08-01** (rev 4); current revision **5.2**, 2026-08-02 (`fb4dfe3`).
+**Status: CLOSED 2026-08-03.** Every done-when met. The ≥1-orphan core done-when closed at sprint
+`20260803_062310`, run `cloudcost-orch-aws-oFbapA` — the AWS pipeline end-to-end on the real bill
+with one real orphan (a planted unassociated Elastic IP, **since released, so BL-069 is re-armed
+for AWS**: re-plant before any future run that must assert ≥1). Close-out record:
+`docs/reviews/m2-cloudcost-closeout.md`; §7 promotion packet:
+`docs/reviews/m2-cloudcost-section7-promotion.md`.
+
+Ratified 2026-08-01 (rev 4); final revision **5.2**, 2026-08-02 (`fb4dfe3`).
 Phase 1 closed. **t1 MERGED** (aetheris-agents
 `3bc970b`, review `docs/reviews/m2-cloudcost-t1-review.md`). **t2 MERGED** (doc-only rev 5.1
 `163e059` → code `7a7b7ec` → `b74b1d8`; review `docs/reviews/m2-cloudcost-t2-review.md` `ba623b1`)
@@ -8,9 +15,15 @@ Phase 1 closed. **t1 MERGED** (aetheris-agents
 tests / 8-of-8 mutations. **t3 MERGED + PUSHED** (aetheris-agents `ba623b1..fb4dfe3`, aetheris
 `fa158a4`; review `docs/reviews/m2-cloudcost-t3-review.md` `ff03d1f`) — r0 APPROVE, merge-clean:
 negative proof held with **one** compose/render edit (A4), F1 silent-wrong-answer mitigated at the
-orchestrator + filed (BL-076), BL-069 carried named on both legs, 244 tests / drift exit 0. **t4
-next** (the non-gating optimization spike). §Prereqs 3 (planted Elastic IP) still gates the
-≥1-orphan close only.
+orchestrator + filed (BL-076), BL-069 carried named on both legs, 244 tests / drift exit 0.
+**t4 MERGED + PUSHED** (aetheris-agents `255d04b..f12dfa6`; review
+`docs/reviews/m2-cloudcost-t4-review.md`) — r0 APPROVE, merge-clean: one compose/render edit
+(render's isolated optional section, decision G's separate lane), compose **untouched**, the
+isolation invariant mutation-proven (removing the template guard reddens six tests, three of them
+pre-existing), the `resolved_protocol` switch landed alone with zero pre-existing tests moved,
+envelope + pricing rule as ratified, BL-078/BL-079 filed at build and BL-080/BL-081/BL-082 from
+the review's three non-blocking notes, live read 18 signals / 0 denied. §Prereqs 3 (planted
+Elastic IP) is **discharged** — it gated the ≥1-orphan close, which is now closed.
 **Origin:** m1-cloudcost close (`cloudcost--milestone.md`, CLOSED 2026-07-29) +
 `handoff-m2-cloudcost-aws-2026-07-30.md`; decisions A–H settled 2026-07-30 (C amended rev 4).
 **Repo state at ratification:** aetheris-agents `3bc970b` — t1 merged, t1 files only; the m1
@@ -683,7 +696,7 @@ rejected); re-pointing/relaxing the DO ≥1-orphan assertion (that is BL-069's o
 > the real-bill ≥1-orphan close is a deferred operator step (Prereq 3 EIP pending — 0 orphans today
 > is pass-not-fail). Done-check per §t3. Do NOT push.
 
-### t4 — Optimization-signals spike (S3 / ECR / Secrets) — exploratory, non-gating
+### t4 — Optimization-signals spike (S3 / ECR / Secrets) — exploratory, non-gating — **DONE (`e20e33e`, review `f12dfa6`)**
 
 **Scope.** A **separate** `scripts/detect_optimization_signals.py` (+ a render addition), read-only,
 best-effort. Signals: **S3** — no lifecycle policy, incomplete multipart uploads, empty buckets,

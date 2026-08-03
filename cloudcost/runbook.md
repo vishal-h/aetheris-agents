@@ -48,6 +48,18 @@ Then the selected provider's read-only credential — and only that one:
   Selecting AWS without the key pair raises at agent-eval time rather than falling back to
   anything else, so a misconfigured run fails loud and costs no LLM call.
 
+- **Load the key with `set -a`, not a bare `source`.** If the credential lives in a
+  `KEY=value` file, export it:
+  ```
+  set -a; source ~/.secrets/aws-cloudcost.env; set +a
+  ```
+  The sprint and the orchestrator run as **child processes**, so `CLOUDCOST_AWS_*` must be
+  *exported*, not merely set. A bare `source` of a `KEY=val` file leaves the variables
+  shell-local: `[ -n "$CLOUDCOST_AWS_ACCESS_KEY_ID" ]` in your own shell says they are there,
+  the preflight in the child says they are unset, and the two disagree with no error in
+  between. `set -a`/`set +a` exports everything the file sets. The `env -u` prefix below is
+  unaffected and still strips your personal `AWS_*` for the child.
+
 The credentials gate only the *live* steps; the offline test suite needs none of them.
 
 ## Run it

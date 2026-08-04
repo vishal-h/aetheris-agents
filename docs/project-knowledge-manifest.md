@@ -35,7 +35,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `0fc9396` | 2026-08-03 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b7cb6ca` | 2026-08-02 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `064664a` | 2026-08-04 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `9b5da48` | 2026-08-04 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `710ecd2` | 2026-08-03 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -187,8 +187,16 @@ close — t1–t5, the §7 promotion, and the operator runbook; four rows re-pin
 
 **Export boundary — 2026-08-04, cloudcost-in-Rig batch close.** Two rows advanced:
 `rig--specs.md` (`b5e8eee`→`99a46df`, BL-073's `harness_run_artifacts` +
-`harness_open_artifact` §4 entries) and `backlog-2026-06.md` (`f12dfa6`→`064664a`, BL-083's
-DONE section plus the BL-093..BL-097 satellite rows and BL-090's appended second staleness).
+`harness_open_artifact` §4 entries) and `backlog-2026-06.md` (`f12dfa6`→`9b5da48`, the BL-083 / BL-073 /
+BL-095 / BL-096 DONE sections, the BL-093..BL-097 satellite rows, and BL-090's appended second
+staleness).
+
+> Re-pinned once within this boundary. The first regen pinned `064664a`, which snapshotted the
+> batch **one step before its last two rows closed** — BL-073 and BL-095 were merged but not yet
+> marked DONE, so the exported backlog would have read them as open. Caught by reading the pinned
+> hash against the repo rather than trusting the 0-WARN result: `drift_check` verifies the pin is
+> *current*, never that it is *complete*. Fixed by marking both rows DONE and re-pinning; the
+> ordering rule held both times (backlog written first, manifest last).
 
 > Mirror-pair check run before regen per the BL-002 convention: `triad-loop.md` canonical
 > (`aetheris/docs/methodology/`) and its `aetheris-agents/docs/` mirror are byte-identical, so

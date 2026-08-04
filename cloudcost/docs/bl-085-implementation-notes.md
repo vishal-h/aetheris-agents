@@ -124,18 +124,53 @@ in the harness `CLAUDE.md`. The probe file was deleted.
    trajectory write). Env set this way is invisible to the harness as *data*; it is only ever the
    process environment. So a clean shell-run trajectory implies a clean Rig-run trajectory.
 
-**What the live leg does NOT prove**, and is honestly owed:
+**What the DO leg did not prove** — both since closed by the operator's Rig launch below:
 
-- The AWS adapter authenticating with a read-only `CLOUDCOST_AWS_*` key (no such key here).
+- The AWS adapter authenticating with a read-only `CLOUDCOST_AWS_*` key (no such key in the
+  shell environment).
 - The `extra_env` panel → `orchestrate_start` wiring end-to-end. That is a Tauri GUI action over
-  in-process IPC; it has no HTTP or CLI entry point (verified: `orchestrate_start` appears only at
-  its definition `orchestrate.rs:9`, its registration `lib.rs:78`, and the single `invoke` at
-  `useOrchestrator.ts:88` — Rig has no server, and `reqwest` is a client used by `playground.rs` to
-  call *out*). It is the operator's single click, and it is the one thing a shell run structurally
-  cannot stand in for.
+  in-process IPC with no HTTP or CLI entry point (verified: `orchestrate_start` appears only at its
+  definition `orchestrate.rs:9`, its registration `lib.rs:78`, and the single `invoke` at
+  `useOrchestrator.ts:88` — Rig runs no server, and `reqwest` is a client `playground.rs` uses to
+  call *out*). The operator's click is the only way to exercise it.
 
-When that Rig run happens, grep its trajectory the same way and add the row to
-`runbook.md` §"D2 posture" beside this one.
+---
+
+## The Rig-launched AWS run — both gaps closed
+
+`cloudcost-orch-aws--ez4vQ`, 2026-08-04, launched from the Orchestrator view with
+`CLOUDCOST_PROVIDER=aws` typed into "Additional env vars". Status `done` in 2 m 18 s;
+`output/aws/cloudcost_report_2026-08.html` (13,063 B) produced from the real bill.
+
+That single run closes both open claims at once. It could only have taken the AWS branch if
+`CLOUDCOST_PROVIDER=aws` reached `cloudcost_orchestrator.exs:42` — and the only thing that put it
+there was the panel, since the key is absent from `agent-config.json`. The run id's `aws` slug,
+built at `:241` from the `case` at `:45-49`, is therefore itself the proof the wiring works: a
+`digitalocean` slug or a pre-run raise would have been the alternatives.
+
+Every value in the stored agent-config map was checked against this run's trajectory (45,395 B) and
+`config_json` (4,865 B) — all 22 keys, not just cloudcost's. Every secret: **0 / 0**. One non-secret,
+`CLOUDCOST_AWS_REGION`, appears once in the trajectory as a region string in cost data, and it
+serves as the control — the same method found a value that *is* present, so the zeros are
+observations rather than a matcher that never fires. `RunConfig.env` serialised `{}` again.
+
+**The DoD nuance, recorded rather than smoothed over.** BL-085's done-check says
+"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`." Literally read, **not met**:
+the two key *names* appear twice, inside the shadowing warning `fetch_aws.py:255-259` emits when the
+bare `AWS_*` poison is present. Read for intent — no credential leaks — met, with every secret value
+at zero.
+
+The names are there *because the guard fired*. This is the D2 posture demonstrated on the real Rig
+door rather than simulated: Rig injected the whole config map unfiltered (`orchestrate.rs:57-59`),
+`api/tools.json` had supplied bare `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` rows, the poison was
+therefore actively present in the run's environment — and the adapter ignored it and said so. The
+done-check wording should be tightened to say **values**; a guard that names the variable it
+honoured is evidence, not leakage.
+
+**Incidental find.** Both AWS legs timed out on STEP 1 at the 60 s `run_command` default and
+recovered by retrying with `timeout_ms: 300000`. Chronic across all five AWS runs on record —
+including `cloudcost-orch-aws-oFbapA`, m2's own cited evidence run — and tracked as **BL-096**. The
+reports are unaffected; the concern is that the recovery is model-chosen rather than instructed.
 
 ---
 
@@ -230,5 +265,6 @@ next reader does not re-propose the entry.
 | Credentials do not reach the trajectory | live DO run, mutation-checked greps |
 | The D2 guard holds without the belt | live raise under bare AWS keys + `~/.aws/credentials` |
 | Manifest alone renders group + masking | trace `SettingsRoute:18` → `AgentConfigTab:184-189` → `:109-113`, `:41-61` |
-| AWS read-only key authenticates from Rig | **not proven** — no AWS key in this environment |
-| The panel → `orchestrate_start` wiring end-to-end | **not proven** — GUI-only, operator's click |
+| AWS read-only key authenticates from Rig | live Rig run `cloudcost-orch-aws--ez4vQ` → report from the real bill |
+| The panel → `orchestrate_start` wiring end-to-end | same run — the `aws` slug could only come from the panel |
+| No secret value reaches trajectory or `config_json` | all 22 stored config values checked, 0/0, with a present-value control |

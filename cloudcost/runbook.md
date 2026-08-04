@@ -356,6 +356,44 @@ zeros are observations and not an empty-pattern artefact. See
 `docs/bl-085-implementation-notes.md` for why a shell-launched run is representative of a
 Rig-launched one, and for the structural argument that these keys *cannot* land in `config_json`.
 
+**Confirmed on the real Rig door.** Run `cloudcost-orch-aws--ez4vQ`, 2026-08-04, launched from the
+Orchestrator view with `CLOUDCOST_PROVIDER=aws` typed into "Additional env vars" — status `done`,
+`output/aws/cloudcost_report_2026-08.html` (13,063 B) produced, authenticated with the read-only
+`CLOUDCOST_AWS_*` key. Every value in the stored agent-config map was checked against this run's
+trajectory (45,395 B) and `config_json` (4,865 B), not just cloudcost's:
+
+| Stored key | value in trajectory | value in `config_json` |
+|---|---|---|
+| `CLOUDCOST_AWS_ACCESS_KEY_ID` | 0 | 0 |
+| `CLOUDCOST_AWS_SECRET_ACCESS_KEY` | 0 | 0 |
+| `CLOUDCOST_DO_TOKEN`, `ANTHROPIC_API_KEY`, `SMTP_PASSWORD`, `GITHUB_*`, `CT_API_TOKEN` | 0 | 0 |
+| `CLOUDCOST_AWS_REGION` (not a secret) | 1 | 0 |
+| `RunConfig.env` as serialised | `{}` | — |
+
+The single `CLOUDCOST_AWS_REGION` hit is the region string appearing in cost data, and it doubles as
+the control: the same method found a value that *is* present, so the zeros above are observations
+rather than a matcher that never fires.
+
+**One DoD nuance, stated rather than smoothed over.** BL-085's done-check reads
+"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`". Read literally that is
+**not** met: the *names* `CLOUDCOST_AWS_ACCESS_KEY_ID` and `CLOUDCOST_AWS_SECRET_ACCESS_KEY` appear
+twice in the trajectory — inside the shadowing warning that `fetch_aws.py:255-259` emits:
+
+```
+warning: AWS_ACCESS_KEY_ID is set in this environment and is IGNORED; cloudcost authenticates
+with CLOUDCOST_AWS_ACCESS_KEY_ID/CLOUDCOST_AWS_SECRET_ACCESS_KEY only.
+```
+
+Read for intent — no credential leaks — it is met, with every secret value at zero. The names are
+present *because the guard fired and announced itself*, which is the D2 posture working on the Rig
+door: the poison was actively present (Rig injects the whole config map unfiltered, and
+`api/tools.json` supplies the bare rows) and the adapter ignored it. The done-check wording should
+say **values**, not `CLOUDCOST_AWS_*`; a guard that names the variable it honoured is evidence, not
+leakage.
+
+> Both AWS runs above hit a 60 s timeout on STEP 1 and recover by retrying — chronic across every
+> AWS run on record, tracked as **BL-096**. It is not a failure and the report is unaffected.
+
 **Interim.** Everything above describes the LLM-planner door, which is what Rig offers today. The
 direct, non-LLM launch door is tracked by **BL-094** — it is blocked on a correctness defect
 (`mix run` on a config-style `.exs` exits 0 having created no run), not on a missing parameter

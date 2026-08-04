@@ -3215,6 +3215,42 @@ was added there (a cloudcost entry would have printed `CLOUDCOST_AWS_SECRET_ACCE
 
 `Source: BL-085, 2026-08-04.`
 
+### BL-096 — `fetch_aws.py` exceeds the 60 s `run_command` default on every AWS run (#TBD)
+**Size:** XS · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/`)
+
+Filed 2026-08-04 by BL-085, found while diagnosing a Rig-launched run reported as "timed out".
+`cloudcost/agents/cloudcost_orchestrator.exs` mentions `timeout` **nowhere**, so STEP 1's
+`run_command` uses the exec server's 60 000 ms default
+(`../aetheris/native/aetheris_exec_server/src/main.rs:472`, documented `:127`).
+`fetch_aws.py` takes **63–67 s** against the real bill, so the first call always times out.
+
+**Chronic, not a regression — 5 of 5 AWS runs in the DB:**
+
+| run | fetch_aws calls | timeouts | tool durations (ms) |
+|---|---|---|---|
+| `cloudcost-orch-aws--ez4vQ` (Rig, 2026-08-04) | 2 | 1 | 60000, 66991, 49, 47, 134 |
+| `cloudcost-orch-aws-oFbapA` (m2 milestone run, `m2-milestone.md:4`) | 2 | 1 | 60000, 66136, 43, 42, 129 |
+| `cloudcost-orch-aws-SdBOkw` | 2 | 1 | 60000, 66454, 44, 42, 172 |
+| `cloudcost-orch-aws-XWjM8A` | 2 | 1 | 60000, 63818, 42, 45, 121 |
+| `cloudcost-orch-aws-cwB8KA` | 2 | 1 | 60000, 63352, 38, 45, 119 |
+
+Every run recovers: the LLM retries the identical command with `timeout_ms: 300000` and succeeds.
+That recovery is why this went unnoticed through all of m2 — including the milestone's own cited
+evidence run.
+
+**Why it is worth fixing rather than tolerating.** (1) It burns a guaranteed-wasted 60 s, ~45 % of
+a 2 m 18 s run. (2) The recovery is **not** instructed anywhere — it is the model choosing to retry
+with a larger timeout, and it has held 5/5 only under `claude-haiku-4-5-20251001`. Nothing makes it
+reproducible; a model swap or a differently-worded plan turns a slow-but-working pipeline into a
+failed run. (3) It inverts *scripts do, agents decide*: the run duration of `fetch_aws.py` is a
+deterministic property being rediscovered by an LLM at runtime, once per run, forever.
+
+**Fix:** set `timeout_ms` explicitly on STEP 1 in the orchestrator prompt (300 000 matches what the
+model already picks). Check the other stages while there — they run in 38–172 ms and need nothing.
+Consider whether the DO path has the same latent gap at a different threshold.
+
+`Source: BL-085, 2026-08-04 (diagnosing cloudcost-orch-aws--ez4vQ).`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)

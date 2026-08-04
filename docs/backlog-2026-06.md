@@ -2360,6 +2360,28 @@ code; a run that produced no artifact shows no control or a disabled one, never 
 m2-filed generic row at the m2 Rig thread, 2026-08-03, with discovery verified against run
 cloudcost-orch-aws-oFbapA.`
 
+### BL-073 — DONE 2026-08-04
+
+Landed `2bfa984` → `11e53ef`, merged `d4f44e4`. Discovery scrapes document-extension paths from
+`tool_result` (four guarded hops: `output` → JSON → `stdout` → JSON → recursive value-scan);
+resolution + **existence gate** are server-side, which subsumes the overlay case *and* drops
+docbuilder's `rename_output` `original` paths (renamed away by the step that reported them —
+value-scanning yields six candidates for a three-document run, the gate keeps three). Offer-the-set:
+one artifact → button, N → list. 8 unit tests + a live arm, with an explicit anti-vacuity control.
+
+**Reopened once (r2).** The first cut opened via the frontend shell plugin, whose `open` is
+URL-scoped and rejects filesystem paths — so it could never have worked. Fixed by opening
+server-side (`harness_open_artifact`), which re-vets the path against a freshly computed artifact
+set before `open::that_detached`; the shell scope is untouched, since widening it would have let
+the frontend open any local file and discarded the existence-gated invariant. **The residual
+concealed the defect** — "the open is owed" read as an unverified step when the primitive behind
+it was unusable; promoted as a review learning.
+
+**Live acceptance:** cloudcost's HTML opens; `docbuilder-orch-wFwf_g` (3 artifacts) renders the
+offer-the-set list. Doc-sync in the same commits: `specs.md` §4 carries both commands.
+
+`Source: BL-073, closed 2026-08-04.`
+
 ---
 
 ### BL-074 — Seam sweep: enumerate every provider-vocabulary / provider-assumption seam in shared machinery (#TBD)
@@ -3255,6 +3277,27 @@ was added there (a cloudcost entry would have printed `CLOUDCOST_AWS_SECRET_ACCE
 `CLOUDCOST_DO_TOKEN` in clear). Pre-existing — BL-085 surfaced it, payslip owns the live exposure.
 
 `Source: BL-085, 2026-08-04.`
+
+### BL-095 — DONE 2026-08-04
+
+Landed `63ea4b5`, merged `5fe1903`. **Deny by default, not mask-if-flagged**: `StepCard` renders a
+hint value only on an explicit `masked === false`, so masked keys, the two hint keys carrying no
+metadata at all (`DOCBUILDER_CONTEXT_FILE`, `DOCBUILDER_REQUEST`), and any future undeclared key
+show `set` rather than their value.
+
+**Enumeration falsified both candidate rules.** Of the 15 hint keys exactly one is `masked: true`
+(`SMTP_PASSWORD`) — and `GOOGLE_SERVICE_ACCOUNT`, the other key this row names as leaked, was
+explicitly `masked: false`. Mask-if-flagged would have left it in clear; so would a
+"show if `masked === false`" rule. Resolved by fixing the metadata rather than special-casing the
+rule: it is now `masked: true`, being a credential-*file* locator. A plan-card-only secrecy list
+was rejected — duplicated secrecy metadata is a drift class this repo already pays for.
+
+11 of 15 keys still render their values, so `PAYSLIP_MONTH: 2026-04` survives as plan-review
+signal. Predicate proven against the real `AGENT_CONFIG_DEFS` with **two** anti-vacuity arms,
+because the obvious cheat is hiding everything. Live: the card reads `set` for both secrets and
+Settings dots the service-account path.
+
+`Source: BL-085 (filed), closed 2026-08-04.`
 
 ### BL-096 — `fetch_aws.py` exceeds the 60 s `run_command` default on every AWS run (#TBD)
 **Size:** XS · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/`)

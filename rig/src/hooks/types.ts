@@ -235,6 +235,12 @@ export interface TrajectoryMeta {
   fork_step?:      number | null;
 }
 
+/** A run's report artifact — absolute path, verified to exist server-side (BL-073). */
+export interface RunArtifact {
+  path:     string;
+  filename: string;
+}
+
 export interface TrajectoryEvent {
   id:          string;
   run_id:      string;

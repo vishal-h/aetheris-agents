@@ -4,6 +4,7 @@ export { useDuplicates } from './useDuplicates';
 export { useWatchedFolders } from './useWatchedFolders';
 export { useScanStatus } from './useScanStatus';
 export { useProvenanceStatus } from './useProvenanceStatus';
+export { useRunArtifacts } from './useHarness';
 export { useCorpusSummary, useClientBreakdown, useScanRuns, useDuplicateGroups } from './useCorpusOverview';
 
 // Type exports

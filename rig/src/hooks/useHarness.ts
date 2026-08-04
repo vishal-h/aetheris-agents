@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { HarnessStatus, RunListResult, EventRow, RunDetail } from './types';
+import { HarnessStatus, RunListResult, EventRow, RunDetail, RunArtifact } from './types';
 
 interface AsyncState<T> {
   data: T | null;
@@ -213,4 +213,37 @@ export function useRunDetail(
   }, [activelyPolling, runId, fetch]);
 
   return { data, loading, error, refetch: fetch, isPolling: activelyPolling };
+}
+
+/**
+ * A run's report artifacts, or an empty list when it produced none (BL-073).
+ *
+ * Existence is verified server-side (`harness_run_artifacts`), so an empty list is the
+ * signal to render no control at all — the UI never has to decide whether a path is
+ * openable, which is how "never a broken link" stays structural rather than defensive.
+ * Errors degrade to empty for the same reason: a failed lookup must hide the control,
+ * not offer one that cannot open.
+ */
+export function useRunArtifacts(runId: string | null): {
+  artifacts: RunArtifact[];
+  loading:   boolean;
+} {
+  const [artifacts, setArtifacts] = useState<RunArtifact[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!runId) {
+      setArtifacts([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    invoke<RunArtifact[]>('harness_run_artifacts', { runId })
+      .then((result) => { if (!cancelled) setArtifacts(result); })
+      .catch(() => { if (!cancelled) setArtifacts([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [runId]);
+
+  return { artifacts, loading };
 }

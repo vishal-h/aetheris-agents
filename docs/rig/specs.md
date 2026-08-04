@@ -218,6 +218,21 @@ pub struct RunDetail {
 }
 ```
 
+**`harness_run_artifacts`** (BL-073)
+
+Takes `run_id: String`. Returns the run's report artifacts that **exist on disk**, resolved to
+absolute paths — empty when the run produced none. Discovery scrapes `tool_result` payloads
+(`payload.output` → JSON → `stdout` → JSON), scanning *values* for document extensions rather
+than keying on a field name, so it is generic across use cases. Existence is verified server-side,
+which is what makes "never a broken link" structural and makes an overlay run resolve to nothing
+without special-casing `overlay_base_dir`.
+```rust
+pub struct RunArtifact {
+    pub path:     String,          // absolute, verified to exist
+    pub filename: String,          // basename, for display
+}
+```
+
 **`harness_connection_status`**
 
 Returns:

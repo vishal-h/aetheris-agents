@@ -70,6 +70,8 @@ pub fn run() {
       commands::harness::harness_list_runs,
       commands::harness::harness_get_events,
       commands::harness::harness_get_run,
+      commands::harness::harness_run_artifacts,
+      commands::harness::harness_open_artifact,
       commands::agent_config::agent_config_get_all,
       commands::agent_config::agent_config_set,
       commands::agent_config::agent_config_delete,

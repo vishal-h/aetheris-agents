@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { ChevronDown, ChevronRight, Download, GitBranch, Loader2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, GitBranch, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTrajectory, useRunEvents, useRunDetail, useFork } from '@/hooks';
+import { useTrajectory, useRunEvents, useRunDetail, useFork, useRunArtifacts } from '@/hooks';
 import type { RunSummary, TrajectoryEvent, TrajectoryFile, TokenSummary } from '@/hooks/types';
 import { reconstructTrajectory, reconstructedBanner } from '@/lib/reconstructTrajectory';
 import { stepBadge } from './stageLabel';
@@ -102,6 +102,91 @@ function EventRow({ event }: { event: TrajectoryEvent }) {
         <pre className="px-4 py-3 text-xs font-mono bg-muted/30 overflow-x-auto whitespace-pre-wrap break-all">
           {JSON.stringify(event.payload, null, 2)}
         </pre>
+      )}
+    </div>
+  );
+}
+
+/** Open failures are surfaced, not swallowed — a control that silently does nothing is worse
+ *  than one that says why. */
+function OpenError({ message }: { message: string }) {
+  return (
+    <span className="text-xs text-destructive font-mono max-w-[20rem] truncate" title={message}>
+      {message}
+    </span>
+  );
+}
+
+/**
+ * "View report" — opens a run's produced document(s) in the OS handler (BL-073).
+ *
+ * Renders nothing when the run produced no artifact. That is not a styling choice: the
+ * backend only returns artifacts it verified exist, so an empty list is the signal that
+ * there is nothing openable, and the control's absence is how "never a broken link" is
+ * satisfied. A run under an overlay resolves to nothing by the same route.
+ *
+ * One artifact (the cloudcost case) is a plain button. Several (docbuilder emits two
+ * formats) offers the set rather than silently picking one and calling it "the report".
+ * Opening is external only — the HTML embeds provider data and must never be
+ * innerHTML'd into Rig's React tree.
+ */
+function ViewReport({ runId }: { runId: string }) {
+  const { artifacts } = useRunArtifacts(runId);
+  const [listOpen, setListOpen] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
+
+  // Goes to the backend, never to the shell plugin's frontend `open`: that primitive is
+  // URL-scoped and rejects filesystem paths, and widening its scope to accept them would
+  // let the frontend open any local file. harness_open_artifact re-resolves the path
+  // against this run's artifacts before opening. (BL-073)
+  async function openArtifact(path: string) {
+    setOpenError(null);
+    try {
+      await invoke('harness_open_artifact', { runId, path });
+    } catch (e) {
+      setOpenError(String(e));
+    }
+  }
+
+  if (artifacts.length === 0) return null;
+
+  if (artifacts.length === 1) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => openArtifact(artifacts[0].path)}>
+          <FileText className="h-3.5 w-3.5 mr-1.5" />
+          View report
+        </Button>
+        {openError && <OpenError message={openError} />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <Button variant="outline" size="sm" onClick={() => setListOpen((o) => !o)}>
+        <FileText className="h-3.5 w-3.5 mr-1.5" />
+        View reports ({artifacts.length})
+        {listOpen
+          ? <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
+          : <ChevronRight className="h-3.5 w-3.5 ml-1.5" />}
+      </Button>
+      {openError && <div className="absolute right-0 top-full mt-1 z-20"><OpenError message={openError} /></div>}
+      {listOpen && (
+        <div className="absolute right-0 top-full mt-1 z-10 min-w-[16rem]
+                        rounded-md border bg-background shadow-sm overflow-hidden">
+          {artifacts.map((a) => (
+            <button
+              key={a.path}
+              type="button"
+              title={a.path}
+              className="block w-full text-left text-xs font-mono px-3 py-2 hover:bg-muted/50"
+              onClick={() => { openArtifact(a.path); setListOpen(false); }}
+            >
+              {a.filename}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -513,12 +598,15 @@ function TrajectoryBody({ trajectory, banner, isPolling, showExport, canFork, pa
               : <ChevronRight className="h-4 w-4" />}
             Run metadata
           </button>
-          {showExport && (
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="h-3.5 w-3.5 mr-1.5" />
-              Export JSON
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <ViewReport runId={trajectory.run_id} />
+            {showExport && (
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Export JSON
+              </Button>
+            )}
+          </div>
         </div>
 
         {metaOpen && (

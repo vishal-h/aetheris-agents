@@ -218,6 +218,30 @@ pub struct RunDetail {
 }
 ```
 
+**`harness_run_artifacts`** (BL-073)
+
+Takes `run_id: String`. Returns the run's report artifacts that **exist on disk**, resolved to
+absolute paths — empty when the run produced none. Discovery scrapes `tool_result` payloads
+(`payload.output` → JSON → `stdout` → JSON), scanning *values* for document extensions rather
+than keying on a field name, so it is generic across use cases. Existence is verified server-side,
+which is what makes "never a broken link" structural and makes an overlay run resolve to nothing
+without special-casing `overlay_base_dir`.
+```rust
+pub struct RunArtifact {
+    pub path:     String,          // absolute, verified to exist
+    pub filename: String,          // basename, for display
+}
+```
+
+**`harness_open_artifact`** (BL-073)
+
+Takes `run_id: String`, `path: String`. Opens the artifact with the OS default application;
+returns nothing. **Server-side by design**: `tauri-plugin-shell`'s frontend `open` is URL-scoped
+(`^((mailto:\w+)|(tel:\w+)|(https?://\w+)).+`) and rejects local paths, and widening that scope
+would let the frontend open any local file. The `path` is **re-resolved**: it is opened only if
+`harness_run_artifacts` independently returns it for that run, so the command cannot open an
+arbitrary file even if asked to.
+
 **`harness_connection_status`**
 
 Returns:

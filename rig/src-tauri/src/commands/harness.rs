@@ -320,6 +320,219 @@ pub fn harness_get_run(
 }
 
 // ============================================================================
+// harness_run_artifacts (BL-073)
+// ============================================================================
+
+/// A document a run produced, resolved to an absolute path and **verified to exist**.
+///
+/// Existence is checked here rather than in the UI so "never a broken link" is a
+/// structural property: the frontend can only render controls for artifacts that were
+/// on disk when it asked. It also makes the overlay case fall out for free — a run under
+/// a non-nil `overlay_base_dir` writes into the overlay, so the sandbox-resolved path
+/// does not exist and the artifact is simply absent, with no overlay special-casing.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RunArtifact {
+    /// Absolute path on disk.
+    pub path:     String,
+    /// Basename, for display.
+    pub filename: String,
+}
+
+/// Extensions that mean "a document a human would open".
+///
+/// Derived from what the generators actually emit — cloudcost renders `.html` (+ `.pdf`
+/// when wkhtmltopdf is present), docbuilder emits `.xlsx`/`.docx`/`.pdf` — plus a small
+/// forward-looking margin. `.json` is deliberately absent: every pipeline's intermediate
+/// stages emit `.json`, which is exactly what must not be offered as "the report".
+///
+/// Matching is on the **value**, not the key: cloudcost puts its report under `file`,
+/// docbuilder under `renamed`/`original` inside a list. Keying on `file` would be
+/// cloudcost-specific and silently find nothing in docbuilder.
+const DOCUMENT_EXTENSIONS: &[&str] = &[
+    ".html", ".htm", ".pdf", ".docx", ".xlsx", ".pptx", ".csv", ".md", ".xml",
+];
+
+fn is_document_path(s: &str) -> bool {
+    let lower = s.to_ascii_lowercase();
+    DOCUMENT_EXTENSIONS.iter().any(|ext| lower.ends_with(ext))
+}
+
+/// Collect every string value anywhere in `value` that looks like a document path.
+///
+/// Recursive because the shapes genuinely differ: cloudcost's parsed stdout is an object
+/// with `file` at the top level; docbuilder's `rename_output` stdout is a **list** of
+/// `{original, renamed}` objects. A top-level-keys-only scan finds the first and misses
+/// the second entirely.
+fn collect_document_paths(value: &serde_json::Value, out: &mut Vec<String>) {
+    match value {
+        serde_json::Value::String(s) => {
+            if is_document_path(s) {
+                out.push(s.clone());
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                collect_document_paths(item, out);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            for item in map.values() {
+                collect_document_paths(item, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Document paths carried by one `tool_result` payload, or none.
+///
+/// Four fallible hops, every one of which occurs in real data (BL-086 §7, measured over
+/// 68 trajectories): the payload may carry `result` instead of `output` (native tools —
+/// they produce no documents, so they are skipped rather than parsed); `output` is a JSON
+/// *string* and is null 16×; that JSON's `stdout` is itself a string; and 63 of those
+/// stdouts are not JSON at all. Any failure yields no artifacts and never propagates.
+fn document_paths_in_payload(payload_json: &str) -> Vec<String> {
+    let mut found = Vec::new();
+
+    let Ok(payload) = serde_json::from_str::<serde_json::Value>(payload_json) else {
+        return found;
+    };
+    // `output` is the MCP/exec key. Native tools use `result` and emit no documents.
+    let Some(output) = payload.get("output").and_then(|v| v.as_str()) else {
+        return found;
+    };
+    let Ok(outer) = serde_json::from_str::<serde_json::Value>(output) else {
+        return found;
+    };
+    let Some(stdout) = outer.get("stdout").and_then(|v| v.as_str()) else {
+        return found;
+    };
+    let Ok(inner) = serde_json::from_str::<serde_json::Value>(stdout) else {
+        return found;
+    };
+
+    collect_document_paths(&inner, &mut found);
+    found
+}
+
+/// Query core, split out so it is reachable from `cargo test` against a real connection.
+///
+/// `exists` is injected rather than calling the filesystem directly, so the existence
+/// gate — the thing that makes "never a broken link" true — is testable without writing
+/// files. Production passes a real `Path::exists`.
+pub(crate) fn run_artifacts_with(
+    conn: &rusqlite::Connection,
+    run_id: &str,
+    exists: &dyn Fn(&str) -> bool,
+) -> Result<Vec<RunArtifact>, String> {
+    let config_json: Option<String> = conn
+        .query_row(
+            "SELECT config_json FROM runs WHERE run_id = ?",
+            params![run_id],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("query error: {}", e))?;
+
+    // No config → no sandbox → nothing can be resolved. Not an error; an empty answer.
+    let Some(config_json) = config_json else {
+        return Ok(vec![]);
+    };
+    let Ok(config) = serde_json::from_str::<serde_json::Value>(&config_json) else {
+        return Ok(vec![]);
+    };
+    let Some(sandbox) = config.get("sandbox_path").and_then(|v| v.as_str()) else {
+        return Ok(vec![]);
+    };
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT payload_json FROM events
+             WHERE run_id = ? AND type = 'tool_result'
+             ORDER BY seq ASC",
+        )
+        .map_err(|e| format!("prepare error: {}", e))?;
+
+    let payloads = stmt
+        .query_map(params![run_id], |row| row.get::<_, Option<String>>(0))
+        .map_err(|e| format!("query error: {}", e))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("row error: {}", e))?;
+
+    let mut seen = std::collections::HashSet::new();
+    let mut artifacts = Vec::new();
+
+    for payload in payloads.into_iter().flatten() {
+        for rel in document_paths_in_payload(&payload) {
+            let abs = if std::path::Path::new(&rel).is_absolute() {
+                rel.clone()
+            } else {
+                format!("{}/{}", sandbox.trim_end_matches('/'), rel)
+            };
+            if !seen.insert(abs.clone()) {
+                continue;
+            }
+            // The existence gate. docbuilder's rename_output reports both `original` and
+            // `renamed`; the originals were renamed away, so they fail here and only the
+            // real files survive — without this resolver knowing what those keys mean.
+            if !exists(&abs) {
+                continue;
+            }
+            let filename = abs.rsplit('/').next().unwrap_or(&abs).to_string();
+            artifacts.push(RunArtifact { path: abs, filename });
+        }
+    }
+
+    Ok(artifacts)
+}
+
+/// Report artifacts a run produced that still exist on disk. Empty when it produced none.
+#[tauri::command]
+pub fn harness_run_artifacts(
+    state:  State<'_, HarnessState>,
+    run_id: String,
+) -> Result<Vec<RunArtifact>, String> {
+    let conn = get_harness_conn(&state)?;
+    run_artifacts_with(&conn, &run_id, &|p| std::path::Path::new(p).exists())
+}
+
+/// Open one of a run's artifacts with the OS default application.
+///
+/// **Why this exists rather than the frontend shell `open`.** `tauri-plugin-shell`'s
+/// frontend `open` is URL-scoped — its allowlist regex is
+/// `^((mailto:\w+)|(tel:\w+)|(https?://\w+)).+`, so a local filesystem path is rejected
+/// outright. The obvious "fix" is to widen that scope to accept file paths, which would
+/// hand the frontend the ability to open *any* local file and throw away the whole point
+/// of the existence-gated resolver. Opening server-side instead keeps the surface closed:
+/// there is no frontend primitive taking a raw path at all.
+///
+/// **The path is re-resolved, not trusted.** The caller passes a path, but it is only
+/// opened if `run_artifacts_with` independently produces it for this run — the same
+/// scrape, the same existence check, run again here. So the command can only ever open a
+/// document some `tool_result` of that run actually recorded and that is on disk now. A
+/// caller cannot use it to open an arbitrary file by passing one, which is exactly the
+/// property widening the shell scope would have destroyed.
+#[tauri::command]
+pub fn harness_open_artifact(
+    state:  State<'_, HarnessState>,
+    run_id: String,
+    path:   String,
+) -> Result<(), String> {
+    let allowed = {
+        let conn = get_harness_conn(&state)?;
+        run_artifacts_with(&conn, &run_id, &|p| std::path::Path::new(p).exists())?
+    };
+
+    if !allowed.iter().any(|a| a.path == path) {
+        // Covers both "never an artifact of this run" and "was, but is gone now".
+        return Err(format!(
+            "not an existing artifact of run {run_id}: {path}"
+        ));
+    }
+
+    open::that_detached(&path).map_err(|e| format!("open failed: {e}"))
+}
+
+// ============================================================================
 // Tests — harness_list_runs search + window disclosure (BL-038)
 // ============================================================================
 
@@ -514,5 +727,260 @@ mod tests {
             windowed.total_count,
             found.total_count
         );
+    }
+
+    // ========================================================================
+    // BL-073 — run_artifacts: the four-hop parse, value-scan, existence gate
+    // ========================================================================
+
+    /// Wrap a script's structured stdout in the two envelopes the exec server adds,
+    /// exactly as observed on disk: payload.output is a JSON *string* whose `stdout`
+    /// is itself a JSON string.
+    fn tool_result_payload(stdout_json: &str) -> String {
+        let outer = serde_json::json!({
+            "tool_name": "run_command",
+            "fs_hash": serde_json::Value::Null,
+            "output": serde_json::json!({
+                "exit_code": 0, "stderr": "", "stdout": stdout_json
+            }).to_string(),
+        });
+        outer.to_string()
+    }
+
+    fn insert_event(conn: &Connection, run_id: &str, seq: i64, ty: &str, payload: Option<&str>) {
+        conn.execute(
+            "INSERT INTO events (id, run_id, step, seq, type, payload_json, timestamp)
+             VALUES (?1, ?2, 0, ?3, ?4, ?5, '2026-08-04T00:00:00Z')",
+            params![format!("{run_id}-{seq}"), run_id, seq, ty, payload],
+        )
+        .unwrap();
+    }
+
+    fn store_with_run(run_id: &str, config_json: &str) -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        seed(&conn);
+        conn.execute(
+            "INSERT INTO runs (run_id, label, status, config_json, started_at, finished_at)
+             VALUES (?1, 'L', 'done', ?2, '2026-08-04T00:00:00Z', NULL)",
+            params![run_id, config_json],
+        )
+        .unwrap();
+        conn
+    }
+
+    const SANDBOX: &str = "/sbx";
+    fn cfg() -> String {
+        serde_json::json!({"sandbox_path": SANDBOX, "overlay_base_dir": serde_json::Value::Null})
+            .to_string()
+    }
+    /// Everything exists — isolates parsing/selection from the existence gate.
+    fn all_exist(_: &str) -> bool { true }
+
+    /// cloudcost: object-shaped stdout, report under `file`, `template` beside it.
+    #[test]
+    fn cloudcost_shape_yields_only_the_report() {
+        let conn = store_with_run("cc", &cfg());
+        insert_event(&conn, "cc", 1, "tool_result", Some(&tool_result_payload(
+            r#"{"status":"ok","file":"output/aws/aws_orphan_candidates_2026-08.json"}"#)));
+        insert_event(&conn, "cc", 2, "tool_result", Some(&tool_result_payload(
+            r#"{"status":"ok","file":"output/aws/cloudcost_report_2026-08.html",
+                "pdf":null,"bytes":13063,
+                "template":"/home/it/x/cloudcost/templates/report.html.j2"}"#)));
+
+        let got = run_artifacts_with(&conn, "cc", &all_exist).unwrap();
+        assert_eq!(
+            got.iter().map(|a| a.path.as_str()).collect::<Vec<_>>(),
+            vec!["/sbx/output/aws/cloudcost_report_2026-08.html"],
+            "expected exactly the report: the .json intermediate must be excluded, and \
+             `template` (report.html.j2) must NOT match — it ends .j2, not .html"
+        );
+        assert_eq!(got[0].filename, "cloudcost_report_2026-08.html");
+    }
+
+    /// docbuilder: stdout parses to a LIST of {original, renamed}. A top-level-keys-only
+    /// scan finds nothing here, which is why the walk recurses.
+    #[test]
+    fn docbuilder_list_shape_is_found_by_recursion() {
+        let conn = store_with_run("db", &cfg());
+        insert_event(&conn, "db", 1, "tool_result", Some(&tool_result_payload(
+            r#"[{"original":"output/invoice_v1.xlsx","renamed":"output/xyz_invoice.xlsx"},
+                {"original":"output/invoice_v1.pdf","renamed":"output/xyz_invoice.pdf"}]"#)));
+
+        let got = run_artifacts_with(&conn, "db", &all_exist).unwrap();
+        assert_eq!(got.len(), 4, "all four paths are candidates before the existence gate");
+    }
+
+    /// The existence gate is what reduces docbuilder's 4 candidates to the 2 real files —
+    /// without this resolver knowing what `original` and `renamed` mean.
+    #[test]
+    fn existence_gate_drops_the_renamed_away_originals() {
+        let conn = store_with_run("db", &cfg());
+        insert_event(&conn, "db", 1, "tool_result", Some(&tool_result_payload(
+            r#"[{"original":"output/invoice_v1.xlsx","renamed":"output/xyz_invoice.xlsx"},
+                {"original":"output/invoice_v1.pdf","renamed":"output/xyz_invoice.pdf"}]"#)));
+
+        let on_disk = |p: &str| !p.contains("_v1.");
+        let got = run_artifacts_with(&conn, "db", &on_disk).unwrap();
+        assert_eq!(
+            got.iter().map(|a| a.filename.as_str()).collect::<Vec<_>>(),
+            vec!["xyz_invoice.xlsx", "xyz_invoice.pdf"]
+        );
+    }
+
+    /// Overlay falls out of the existence gate: nothing is at the sandbox-resolved path,
+    /// so the answer is empty and no control renders. No overlay special-casing exists.
+    #[test]
+    fn overlay_run_yields_nothing_via_the_existence_gate() {
+        let cfg = serde_json::json!({
+            "sandbox_path": SANDBOX, "overlay_base_dir": "/tmp/overlay"
+        }).to_string();
+        let conn = store_with_run("ov", &cfg);
+        insert_event(&conn, "ov", 1, "tool_result", Some(&tool_result_payload(
+            r#"{"file":"output/aws/cloudcost_report_2026-08.html"}"#)));
+
+        let nothing_at_sandbox = |p: &str| !p.starts_with(SANDBOX);
+        assert!(run_artifacts_with(&conn, "ov", &nothing_at_sandbox).unwrap().is_empty());
+    }
+
+    /// Every malformed hop observed in real data degrades to "no artifact", never an error.
+    #[test]
+    fn every_malformed_hop_degrades() {
+        let conn = store_with_run("bad", &cfg());
+        // native tool: `result`, not `output`
+        insert_event(&conn, "bad", 1, "tool_result",
+            Some(r#"{"tool_name":"read_file","result":"output/x.html"}"#));
+        insert_event(&conn, "bad", 2, "tool_result", Some(r#"{"tool_name":"run_command"}"#));
+        insert_event(&conn, "bad", 3, "tool_result",
+            Some(r#"{"tool_name":"run_command","output":null}"#));
+        insert_event(&conn, "bad", 4, "tool_result",
+            Some(r#"{"tool_name":"run_command","output":"not json"}"#));
+        insert_event(&conn, "bad", 5, "tool_result", Some(&tool_result_payload("not json either")));
+        insert_event(&conn, "bad", 6, "tool_result", Some("{ this is not json"));
+        insert_event(&conn, "bad", 7, "tool_result", None);
+        insert_event(&conn, "bad", 8, "tool_result", Some(&tool_result_payload(
+            r#"{"file":"output/report_data.json"}"#)));
+
+        assert!(run_artifacts_with(&conn, "bad", &all_exist).unwrap().is_empty());
+    }
+
+    /// A `result`-carrying native tool must not be mined for paths even though its value
+    /// looks like one — the anti-vacuity arm for the previous test, which would pass
+    /// identically if the resolver simply found nothing anywhere.
+    #[test]
+    fn the_degrade_test_is_not_vacuous() {
+        let conn = store_with_run("ok", &cfg());
+        insert_event(&conn, "ok", 1, "tool_result", Some(&tool_result_payload(
+            r#"{"file":"output/aws/cloudcost_report_2026-08.html"}"#)));
+        assert_eq!(
+            run_artifacts_with(&conn, "ok", &all_exist).unwrap().len(), 1,
+            "the same harness DOES find an artifact in a well-formed payload, so the \
+             all-empty assertions above are observations rather than a resolver that \
+             never finds anything"
+        );
+    }
+
+    /// Duplicate paths across results collapse; ordering is first-seen.
+    #[test]
+    fn duplicates_collapse() {
+        let conn = store_with_run("dup", &cfg());
+        for seq in 1..=3 {
+            insert_event(&conn, "dup", seq, "tool_result", Some(&tool_result_payload(
+                r#"{"file":"output/r.html"}"#)));
+        }
+        assert_eq!(run_artifacts_with(&conn, "dup", &all_exist).unwrap().len(), 1);
+    }
+
+    /// A run with no config_json resolves to nothing rather than erroring.
+    #[test]
+    fn missing_config_yields_empty() {
+        let conn = Connection::open_in_memory().unwrap();
+        seed(&conn);
+        conn.execute(
+            "INSERT INTO runs (run_id, label, status, config_json, started_at, finished_at)
+             VALUES ('nc', 'L', 'done', NULL, '2026-08-04T00:00:00Z', NULL)", params![],
+        ).unwrap();
+        assert!(run_artifacts_with(&conn, "nc", &all_exist).unwrap().is_empty());
+    }
+
+    /// Live arm — the real store and the real filesystem, both reference runs (BL-073).
+    ///
+    /// The unit tests above inject `exists`; this one uses the actual `Path::exists`, so
+    /// it is the only place the resolution + existence gate is exercised end to end
+    /// against files that really are (and are not) on disk.
+    #[test]
+    #[ignore = "requires AETHERIS_DB_PATH — run with `cargo test -- --ignored`"]
+    fn live_artifacts_for_cloudcost_and_docbuilder() {
+        let path = std::env::var("AETHERIS_DB_PATH")
+            .expect("AETHERIS_DB_PATH must be set for the live arm");
+        let conn =
+            Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        let real = |p: &str| std::path::Path::new(p).exists();
+
+        // cloudcost: exactly one artifact, the HTML report.
+        let cc = run_artifacts_with(&conn, "cloudcost-orch-aws-3KU2NQ", &real).unwrap();
+        eprintln!("live cloudcost → {:?}", cc.iter().map(|a| &a.filename).collect::<Vec<_>>());
+        assert_eq!(cc.len(), 1, "expected a single report, got {cc:?}");
+        assert!(cc[0].filename.ends_with(".html"));
+        assert!(cc[0].path.starts_with('/') && real(&cc[0].path));
+
+        // docbuilder: several documents, and ONLY the ones that survived the rename.
+        let db = run_artifacts_with(&conn, "docbuilder-orch-wFwf_g", &real).unwrap();
+        eprintln!("live docbuilder → {:?}", db.iter().map(|a| &a.filename).collect::<Vec<_>>());
+        assert!(db.len() > 1, "expected the multi-document case, got {db:?}");
+        assert!(
+            db.iter().all(|a| real(&a.path)),
+            "every returned artifact must exist on disk"
+        );
+        assert!(
+            !db.iter().any(|a| a.filename.contains("_v1.")),
+            "the renamed-away `original` paths must have been dropped by the existence \
+             gate, but some survived: {db:?}"
+        );
+
+        // A run that produced no document at all → no control.
+        let none = run_artifacts_with(&conn, "docbuilder-ctx-0nDlug", &real).unwrap();
+        eprintln!("live no-artifact run → {} artifact(s)", none.len());
+        assert!(none.is_empty(), "expected no artifacts, got {none:?}");
+    }
+
+    /// Live open arm (BL-073 reopen) — exercises the exact server-side path the button
+    /// calls, including the real `open::that_detached`, against real artifacts.
+    ///
+    /// This is the acceptance for the shell-scope fix: the frontend `open` rejected local
+    /// paths with a regex-validation error, and the question is whether opening from Rust
+    /// works. SIDE EFFECT: actually launches the OS handler for two files.
+    #[test]
+    #[ignore = "opens real files in the OS default app — run with `cargo test -- --ignored`"]
+    fn live_open_artifact_end_to_end() {
+        let path = std::env::var("AETHERIS_DB_PATH")
+            .expect("AETHERIS_DB_PATH must be set for the live arm");
+        let conn =
+            Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        let real = |p: &str| std::path::Path::new(p).exists();
+
+        for (run, want_ext) in [
+            ("cloudcost-orch-aws-3KU2NQ", ".html"),
+            ("docbuilder-orch-wFwf_g", ".pdf"),
+        ] {
+            let allowed = run_artifacts_with(&conn, run, &real).unwrap();
+            let target = allowed
+                .iter()
+                .find(|a| a.filename.ends_with(want_ext))
+                .unwrap_or_else(|| panic!("no {want_ext} artifact for {run}: {allowed:?}"));
+
+            // The membership check the command performs before opening.
+            assert!(allowed.iter().any(|a| a.path == target.path));
+            eprintln!("opening {}", target.path);
+            open::that_detached(&target.path)
+                .unwrap_or_else(|e| panic!("open failed for {}: {e}", target.path));
+        }
+
+        // The guard: a path that is not one of the run's artifacts is refused.
+        let allowed = run_artifacts_with(&conn, "cloudcost-orch-aws-3KU2NQ", &real).unwrap();
+        assert!(
+            !allowed.iter().any(|a| a.path == "/etc/hostname"),
+            "an arbitrary local file must never appear in the allowed set"
+        );
+        eprintln!("guard ok: arbitrary path not in allowed set");
     }
 }

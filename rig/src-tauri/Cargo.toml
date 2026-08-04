@@ -25,6 +25,9 @@ tauri = { version = "2.10.3", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
+# Server-side OS-default open for vetted local artifacts (BL-073). Already vendored
+# transitively via tauri-plugin-shell; declared directly so harness.rs can call it.
+open = "5"
 tokio = { version = "1", features = ["full"] }
 walkdir = "2"
 sha2 = "0.10"

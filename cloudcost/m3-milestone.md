@@ -1,7 +1,7 @@
 # m3-cloudcost — Linode as provider three (report-only)
 
 **Status:** **RATIFIED 2026-08-04** — approved by the human and committed per
-`milestone-methodology.md` §4 (rev 1). Not started; t1 next.
+`milestone-methodology.md` §4 (rev 2). Not started; t1 next.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved
@@ -9,6 +9,10 @@ ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retriev
 Nothing here is inferred from Linode's rendered docs.
 **Predecessors:** m1-cloudcost (`cloudcost/milestone.md` — §Normalized schemas is the frozen
 contract this adapter is written to); m2-cloudcost (`cloudcost/m2-milestone.md`, AWS).
+
+**Rev 2 (2026-08-04):** §Prerequisites 2 gains its closure test (removal from one init file
+is not closure); §t2 Done-check gains the `CC_HERMETIC` Linode arm and the `set -a` load
+requirement. Both from the t1-kickoff review; neither changes scope, tickets or done-when.
 
 ---
 
@@ -60,12 +64,27 @@ which fold into this arc.
    **NodeBalancers**, **Images**. No Access on everything else, **including Databases** (§D-L7)
    and **Events** (§D-L8). Record the token's expiry date in `cloudcost/runbook.md` alongside the
    posture: an unrecorded expiry becomes a failed run months from now with no obvious cause.
-2. **Resolve `LINODE_BILLING`.** The build machine already carries a 64-character,
-   credential-shaped environment variable under that name (scout §B8, U12). No Linode library
-   reads it. If it is a PAT under a non-standard name it is a live instance of the exact
-   shadowing class this milestone writes a guard for, and it must be relocated out of the harness
-   login shell before t1's live steps — the same treatment `cloudcost/milestone.md` prescribes for
-   a stray `DO_TOKEN`.
+2. **Resolve `LINODE_BILLING`.** The build machine carried a 64-character,
+   credential-shaped environment variable under that name (scout §B8, U12). No Linode
+   library reads it. If it is a PAT under a non-standard name it is a live instance of the
+   exact shadowing class this milestone writes a guard for. **Removing it from one init
+   file is not closure.** Two checks and one decision close it:
+   - **Fresh login shell, all three shadow names absent.** `~/.bashrc`, `~/.zshrc`,
+     `/etc/profile` and `/etc/profile.d/*` can each re-export it, and an already-running
+     shell keeps the old value:
+     ```bash
+     env -i bash -lc '[ -z "$LINODE_BILLING" ] && [ -z "$LINODE_TOKEN" ] \
+       && [ -z "$LINODE_CLI_TOKEN" ] && echo SHADOW-CLEAN'
+     ```
+   - **The run environment carries the intended token, and only it.** Loaded from
+     `~/.secrets/linode-cloudcost.env` with `set -a` (see §t2), a child process must see
+     `CLOUDCOST_LINODE_TOKEN` set and the three names above unset.
+   - **Decide what it was.** If it held a live Linode PAT, revoke it rather than relocate
+     it: a credential of unknown provenance that reached a login shell under an
+     undocumented name has an unknown exposure history, and the replacement PAT is being
+     created for this milestone anyway. Record the disposition in t1's implementation
+     notes. If it held something else, record that instead — an unexplained
+     credential-shaped variable is not closed by deleting the line that set it.
 3. **A plantable orphan.** An **unattached Block Storage volume** is the cheapest and the most
    certainly-detectable choice — see §Rule reachability. Plant it before t3's run (BL-069) or the
    ≥1-orphan assertion is expected-red.
@@ -315,11 +334,25 @@ CLOUDCOST_PROVIDER=bogus mix run --eval '…'      # must still raise
 python3 -m pytest cloudcost/tests/test_tools_manifests.py -v
 cd rig/src-tauri && cargo test tools::            # BL-092: every committed manifest round-trips
 ```
-Plus: the run-id slug is `cloudcost-orch-linode-…` and the label is `Cloudcost · Linode`, so BL-083's
-`classifyRun` still groups it; **`sprint.sh` gains a fourth arm in the credential preflight `case`**
-(the `*)` arm at `:2394` kills the run otherwise); `cloudcost/runbook.md` gains a `### Linode`
-subsection inserted at `:62` (before the "credentials gate only the live steps" line), recording the
-read-only PAT scope set, the token expiry date, the `LINODE_CLI_TOKEN` shadowing note and the
+Plus: the run-id slug is `cloudcost-orch-linode-…` and the label is `Cloudcost · Linode`, so
+BL-083's `classifyRun` still groups it; **`sprint.sh` gains a fourth arm in the credential
+preflight `case`** (the `*)` arm at `:2394` kills the run otherwise); **and the hermetic
+machinery gains its Linode analogue, which the fourth arm alone does not provide.**
+`CC_HERMETIC` (`sprint.sh:2371-2373`) is AWS-shaped — it unsets `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_PROFILE` and neutralises the shared-credentials file — so a
+Linode run today inherits any `LINODE_CLI_TOKEN` or `LINODE_TOKEN` in the ambient
+environment. Add `-u LINODE_CLI_TOKEN -u LINODE_TOKEN` to the array, and extend the
+poison-control block (`:2453-2487`) with the Linode arm it already performs for AWS: the
+probe must see the poison **without** the prefix, see nothing **through** it, and
+`CLOUDCOST_LINODE_TOKEN` must survive the prefix. Without this the hermetic proof passes
+while covering a provider it never tested. `cloudcost/runbook.md` gains a `### Linode`
+subsection inserted at `:62` (before the "credentials gate only the live steps" line),
+recording the read-only PAT scope set, the credential file path
+(`~/.secrets/linode-cloudcost.env`), **the `set -a` load requirement** — a `KEY=value` file
+sourced bare leaves the variables shell-local, so the operator's shell reports them present
+while the child preflight reports them unset, with no error in between (`runbook.md:51-61`
+records the AWS instance of exactly this, and both the sprint and the orchestrator run as
+children) — the token expiry date, the `LINODE_CLI_TOKEN` shadowing note and the
 `LINODE_CLI_API_*` endpoint-redirection hazard; the BL-096 confirmation is **recorded** —
 `fetch_linode`'s measured duration against the shared `fetch_timeout_ms = 300_000`, per
 `runbook.md:420-428` — and the number changes only if the margin is inadequate.

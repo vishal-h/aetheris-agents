@@ -5,11 +5,11 @@
 The five-row cloudcost-in-Rig batch is complete: BL-084, BL-085, BL-083, BL-086, BL-073.
 All verified, all doc-synced.
 
-**Four are merged to `main` (`67df3ec`). BL-073 is complete and held on `bl-073-view-report`
-(`11e53ef`), unpushed and unmerged.** It is held by this handoff's own promoted learning: its
-Done-when names a user-facing action, so the click-through is a **merge gate**, not a post-merge
-residual — and that click has not happened. Everything behind the click is proven (§BL-073 below);
-what is unverified is the React `invoke` wiring alone.
+**All five are merged to `main`, and so is BL-095** (`5fe1903`). BL-073 and BL-095 were each held
+unmerged until their in-app click-through passed — this handoff's own promoted learning applied to
+itself — and both passed on 2026-08-04: cloudcost's report opens, docbuilder shows
+"View reports (3)", the plan card renders `SMTP_PASSWORD` / `GOOGLE_SERVICE_ACCOUNT` as `set`, and
+Settings dots the service-account path. **Nothing owed.**
 
 *Applied against `main@67df3ec` + `bl-073-view-report@11e53ef`, 2026-08-04. Three claims in the
 draft diverged from repo state and were corrected rather than followed — the divergences are named
@@ -61,19 +61,22 @@ spine. claude-ui's doc edits are section-scoped, applied against HEAD and diffed
   `type` → `event_type` rename — without it every assertion passes vacuously. Retrospective:
   257 of 268 pipeline runs back to 2026-05-21 label correctly.
 
-- **BL-073** (`11e53ef`, **held on branch**) — "View report": scrape document-extension paths from
+- **BL-073** (`11e53ef`, merged `d4f44e4`) — "View report": scrape document-extension paths from
   `tool_result` (4-hop guarded parse: `output` → JSON → `stdout` → JSON → value-scan), server-side
   resolve + existence-gate (subsumes overlays **and** docbuilder's `rename_output`
   `original`/`renamed`), offer-the-set (1 → button, N → list), open server-side via
   `harness_open_artifact`, which re-vets the path against the freshly computed set before
   `open::that_detached`. Shell scope untouched.
-  **To close:** rebuild Rig, click "View report" on a cloudcost run and a docbuilder run, then merge.
+  **Closed 2026-08-04** by in-app click-through: cloudcost's HTML opens, and
+  `docbuilder-orch-wFwf_g` (3 artifacts) renders the offer-the-set list. The open is server-side
+  (`harness_open_artifact`) because the frontend shell `open` is URL-scoped and rejects file paths.
 
 ## Satellite ledger (filed, unstarted unless noted)
 
-- **BL-095 — TEETH:** `StepCard` renders secret config values (`SMTP_PASSWORD`,
-  `GOOGLE_SERVICE_ACCOUNT`) in **cleartext** in the plan card. Live exposure today.
-  **Take this first**, ahead of the cosmetic satellites.
+**With BL-095 and BL-096 closed, the cold set is BL-087–BL-094 and there are no teeth left in it** —
+priority-ordered cleanup plus the BL-094 direct-launch milestone. Provider three is the real next
+chapter, not this list.
+
 - **BL-087** — `payslip/tools.json` omits `merge_employee_payslips.py` (xfail-tracked in the
   manifest suite).
 - **BL-088** — `ManifestScript.runnable`: mark a manifest entry describe-only (the `_normalized` case).
@@ -90,6 +93,11 @@ spine. claude-ui's doc edits are section-scoped, applied against HEAD and diffed
   `mix aetheris run` loads it; the two `.exs` kinds need distinct paths); plus no UI supplies
   `script_path`, the Capability-Matrix Run button discards `agent.file`, and `RunConfig.env` is a
   latent unused hook.
+- **BL-095 — DONE** (`63ea4b5`, merged `5fe1903`) — the plan card no longer prints secret values.
+  Deny-by-default: a value renders only on an explicit `masked === false`, so the two keys with no
+  metadata at all, and any future undeclared key, show `set` rather than leaking.
+  `GOOGLE_SERVICE_ACCOUNT` was `masked: false` and is now `true` — it is a credential-file locator,
+  and neither candidate rule would have hidden it otherwise.
 - **BL-096 — DONE** — fetch-step timeout instructed in the agent file (determinism-contract fix).
 - **BL-097 — DONE** — Recent-prompt suggestions-dropdown overlay unbroken.
 
@@ -120,8 +128,11 @@ BL-077 — sprint `fail` sets no exit status; read `[OK]`/`[FAIL]`, not `$?`.
   behind it is *known-good*. BL-073's "the open is owed" concealed that the shell primitive could
   not take a file path at all — "is the path right" was proven while "can this primitive open a
   path" was never asked. **For a UI ticket whose Done-when names a user-facing action, the
-  click-through is a merge gate, not a post-merge residual.** Applied to this handoff: BL-073 is
-  held unmerged for exactly that reason.
+  click-through is a merge gate, not a post-merge residual.** Applied here twice: BL-073 and
+  BL-095 were both held unmerged until their report/card was seen in a rebuilt Rig, and both
+  discharged 2026-08-04. Corollary learned the hard way in the same round: **name the branch under
+  test when handing over a click-through** — BL-095's first check ran against a BL-073 build that
+  did not contain it, and read as a broken fix.
 - **Re-derive, don't copy.** Row claims (docbuilder bare-`Context` labels, stale counts) were false
   at HEAD; the live store is the oracle. Enumerate before extracting. This handoff's own draft
   carried three such divergences (see §Status and the BL-084 note).

@@ -3177,6 +3177,44 @@ but fails serde is dropped to None with every script going amber and nothing say
 
 `Source: BL-084, 2026-08-03.`
 
+### BL-093 — runbook drift: PAYSLIP_MONTH described as non-persistent (#TBD)
+**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`rig/docs/`)
+
+Filed 2026-08-04 by BL-085. `rig/docs/runbook.md:316-317` states "`PAYSLIP_MONTH` is injected
+per-invocation by the orchestrator — it is not a persistent Agent Config setting." That is true of
+the meta-orchestrator's `params` mechanism (`agents/orchestrator.exs:272-273`, restored `:295-298`)
+and **false** of `rig/src/components/modules/settings/agentConfigDefs.ts:38`, which renders it as a
+persistent, savable, exported row alongside `PAYSLIP_START_STEP` and `PAYSLIP_EMPLOYEE_ID`. Both
+realities ship; the runbook denies one of them.
+
+Fix by describing both mechanisms, or by moving the three payslip rows out of the static defs —
+decide deliberately. Note the second option is the same question BL-085 answered for cloudcost
+(per-launch values belong in `extra_env`, not in global config), so this row is the payslip half of
+that adjudication and should not be closed by editing the sentence alone without deciding which
+mechanism is intended.
+
+`Source: BL-085, 2026-08-04.`
+
+### BL-095 — plan-card renders secret config values in clear (#TBD)
+**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-04 by BL-085. `StepCard` builds `` `${k}: ${configValues[k]}` `` for every
+`STEP_CONFIG_HINTS` key that is set and renders the result as visible text
+(`rig/src/components/modules/orchestrator/OrchestratorView.tsx:83-86`, rendered `:105-111`;
+`configValues` is the persisted agent config, `:130`). The `payslip/agents/payslip_pipeline.exs`
+hint list includes `SMTP_PASSWORD` and `GOOGLE_SERVICE_ACCOUNT` (`:20-30`), so an approved payslip
+plan card displays those secrets in clear today.
+
+Fix by consulting the same `masked` flag the config tab already uses (`AgentConfigTab.tsx:41-61`),
+or by showing set/unset status only — the `ToolDetail.tsx:83-101` "Required config" dots are the
+existing pattern for exactly this and render no values.
+
+Found while adjudicating BL-085's STEP_CONFIG_HINTS question; it is the reason no cloudcost entry
+was added there (a cloudcost entry would have printed `CLOUDCOST_AWS_SECRET_ACCESS_KEY` and
+`CLOUDCOST_DO_TOKEN` in clear). Pre-existing — BL-085 surfaced it, payslip owns the live exposure.
+
+`Source: BL-085, 2026-08-04.`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)
@@ -3255,6 +3293,59 @@ Scope sketch:
 
 **Done when:** milestone docs exist; a normal sprint run leaves at least
 one skill row behind and Rig can show it.
+
+### BL-094 — A direct, non-LLM launch door for config-style orchestrators (#TBD)
+**Size:** M/L · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-04, peeled off BL-085 by its own pre-agreed trigger. BL-085 asked whether per-launch
+provider selection needed a new Rig launch-parameter concept; it does not — `extra_env` already
+exists, ships, and is operator-editable. What is missing is a **direct (non-LLM) door**, and BL-085
+shipped its launch recipe on the LLM planner as an explicit interim. This row is that door.
+
+**The blocking correctness defect — fix this first, it is not cosmetic.**
+`cloudcost/agents/cloudcost_orchestrator.exs` is a pure `%Aetheris.RunConfig{}` config file
+(`:238-256`; no `Aetheris.start_run`, no protocol emission), while `orchestrate_start`'s
+non-Python branch spawns plain `mix run` (`rig/src-tauri/src/commands/orchestrate.rs:46-49`).
+`mix run` on a config file **evaluates the struct and discards it** — exit 0, nothing on stdout, so
+`orchestrate_poll` reports `done: true` with zero messages and no run is ever created. That is a
+well-formed success over a gap (**Silent-wrong-answer**, harness `CLAUDE.md`). Only
+`mix aetheris run` → `RunHelpers.load_agent_file/1`
+(`../aetheris/lib/aetheris/cli/commands/run_helpers.ex:356-368`, which pattern-matches
+`%RunConfig{}`/`%OrbConfig{}` and errors on anything else) turns that value into a run.
+
+**Code-vs-intended, not mere doc drift.** `docs/rig/specs.md:307-309` and
+`rig/docs/milestones/p9/t4-implementation-notes.md:11-15` both already describe the branch as
+`mix aetheris run` — i.e. the docs describe the behaviour the code lacks.
+`docs/rig/architecture.md:123` correctly documents `mix run` for the planner path. So the docs are
+not uniformly wrong; they disagree with each other because two different paths are being described.
+
+**Flipping the branch globally is unsafe — enumerate before fixing.** `agents/orchestrator.exs` is
+a *driver* `.exs`: it calls `Aetheris.start_run` itself (`:287-289`) and emits the newline-delimited
+JSON protocol (`:301-311`), which is exactly what `mix run` must do for it. Driver and config `.exs`
+files therefore need **distinct paths**; the fix is a discriminator, not a one-line swap. Enumerate
+every `.exs` reachable through this branch before choosing the discriminator (return-value shape vs.
+a manifest flag vs. a directory convention).
+
+**Also in scope:**
+- A UI that supplies `script_path`. The parameter exists (`orchestrate.rs:14`, default `:25`) but no
+  operator-facing control sets it; the only non-LLM caller hardcodes a module constant
+  (`rig/src/hooks/useDocbuilder.ts:4,19`).
+- The Capability-Matrix Run button discards the one thing it knows — `handleLaunch` forwards only
+  `agent.label` as textarea prefill and drops `agent.file`
+  (`rig/src/components/modules/harness/CapabilityMatrixView.tsx:123-125`), forcing the planner LLM
+  to re-derive a path the UI already had.
+- The latent unused `RunConfig.env` hook: declared at `../aetheris/lib/aetheris/run_config.ex:81`
+  (typespec `:195`) with **no consumer in `lib/`**. Confirmed empirically at BL-085 — a live run's
+  `config_json` carries `"env": {}`. Decide whether the direct door populates it or it is removed;
+  leaving an unimplemented per-run env field beside a working one invites the wrong call site.
+
+**Done when:** an operator can launch a named config-style orchestrator from Rig without an LLM
+planning turn; the driver-vs-config discriminator is explicit and tested (including the negative —
+a config file through the wrong path must fail loudly, not exit 0); `specs.md`, `architecture.md`
+and the p9 t4 notes agree with the code; cloudcost is the first consumer and its runbook §Rig loses
+the "interim" caveat.
+
+`Source: BL-085 scout, 2026-08-04 (peel-off trigger fired on the direct-door half only).`
 
 ---
 
@@ -4785,7 +4876,8 @@ multi-line street/city/state/zip.
 | — | BL-080, BL-081 | Batch: same file, same envelope, both t4 review tidy-ups. BL-080's fix is a three-way split (refused / unknown / declined-on-purpose), NOT the two-way collapse the note sketched — that would hide the genuine unknowns under `ok` |
 | — | BL-082 | Sequence after BL-069 if the sprint route is chosen: that case is already known-red on its orphan assertion, and a second assertion added to a red case is a buried one |
 | — | BL-083, BL-084 | Batch: both are "the list/manifest was written once and four use cases arrived since". BL-084 sequences before BL-085 — declaring env in the manifest renders the config rows for free, so doing 085 first duplicates work in agentConfigDefs.ts |
-| — | BL-085 | The only one of the four with unresolved design. Peel into its own small milestone IF open question 2 resolves to "Rig needs a launch-parameter concept" — a per-launch value has no home in single-valued global agent config today |
+| — | BL-085 | ~~The only one of the four with unresolved design. Peel into its own small milestone IF open question 2 resolves to "Rig needs a launch-parameter concept"~~ **Resolved 2026-08-04: the trigger did NOT fire.** `extra_env` (`orchestrate.rs:13,57-66`) + the shipped "Additional env vars" panel already carry a per-launch value that wins over global config and persists nowhere — the premise "a per-launch value has no home" was false. Landed docs-only on the existing door; the *direct/non-LLM* door peeled to BL-094 |
+| — | BL-094 | The half of BL-085 that did peel. Blocked on a correctness defect, not a design gap: `mix run` on a config-style `.exs` exits 0 having created no run. Do the discriminator before the UI |
 | — | BL-086 | Independent, pure frontend, retroactive. Do whenever someone is in TrajectoryView |
 | — | BL-073 | Rescoped 2026-08-03 to minimal ("View report": scrape the path from the render step's tool_result, open external/sandboxed). Independent drop-in; pairs thematically with BL-085 (launch-from-Rig + view-report-in-Rig) but does not depend on it — a CLI-launched run's report views the same way. The rich inline render is a separate milestone and is this batch's scope-creep magnet |
 | — | BL-087 | Do whenever someone is in payslip. Carried `xfail(strict=True)` by `tests/test_tools_manifests.py`, so it cannot rot silently — but the marker must be deleted in the fixing commit or the suite fails on the unexpected pass |
@@ -4794,3 +4886,5 @@ multi-line street/city/state/zip.
 | — | BL-090 | Regenerate the matrix, don't hand-edit — it's generated. Pure staleness; reconcile the detect_optimization_signals cell to the BL-084 manifest wording at regen |
 | — | BL-091 | Wider than cloudcost (api's 16 keys already affected). Decide masked-key export policy when fixing |
 | — | BL-092 | Makes the discarded BL-084 round-trip permanent. The offline guard the pytest suite structurally cannot be |
+| — | BL-093 | XS doc fix, but decide the mechanism (describe both, or move the payslip rows out of static defs) — it is the payslip half of the question BL-085 answered for cloudcost |
+| — | BL-095 | Live secret exposure in the payslip plan card today. Fix with the `masked` flag or the `ToolDetail` set/unset dots; pairs with BL-091 as the "masked-key policy" pair |

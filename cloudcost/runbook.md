@@ -240,6 +240,127 @@ capability-matrix view (Rig reads the regenerated `docs/capability-matrix.md` vi
 `rig/src-tauri/src/commands/capability_matrix.rs`). There is no dedicated cloudcost panel, and
 the report is not yet surfaced against its run — that's BL-073.
 
+### Launching from Rig (interim — the LLM planner door)
+
+**This door adds an LLM planning turn.** Rig has no direct "run this orchestrator" control today;
+the only path to a top-level named `.exs` run is the Orchestrator view, which asks a model to
+turn your request into a plan of agent files. For a four-stage deterministic pipeline that is a
+detour, and it is deliberate interim scope — the direct door is **BL-094**. The CLI recipe under
+[Run it](#run-it) stays the deterministic path and is what sprint uses.
+
+**1 — Credentials, once.** Settings → Agent Config → **CLOUDCOST**. The six rows come from
+`cloudcost/tools.json` alone; no `agentConfigDefs.ts` entry exists or is needed (BL-085 confirmed
+the manifest path renders the group header and the masking by itself). Set:
+
+| Row | Required for | Masked in the UI |
+|---|---|---|
+| `CLOUDCOST_AWS_ACCESS_KEY_ID` | AWS | no |
+| `CLOUDCOST_AWS_SECRET_ACCESS_KEY` | AWS | yes |
+| `CLOUDCOST_AWS_SESSION_TOKEN` | AWS, optional | yes |
+| `CLOUDCOST_AWS_REGION` | AWS, optional (default `us-east-1`) | no |
+| `CLOUDCOST_AWS_REGIONS` | AWS, optional sweep override | no |
+| `CLOUDCOST_DO_TOKEN` | DigitalOcean | yes |
+
+Set the `CLOUDCOST_`-prefixed rows and **never** the bare `AWS_ACCESS_KEY_ID` /
+`AWS_SECRET_ACCESS_KEY` rows. Those belong to `api/tools.json` (group `aws`,
+`api/tools.json:389-402`) and are the D2 poison — see the next section.
+
+**2 — Provider, per launch.** Orchestrator → **"Additional env vars"** (collapsed by default,
+above the Run button) → add a row:
+
+```
+CLOUDCOST_PROVIDER = aws          # or: digitalocean
+```
+
+Exact literals, lowercase. Unset ⇒ `digitalocean`. Anything else raises *before* the run starts,
+at `cloudcost/agents/cloudcost_orchestrator.exs:42-49`. These values are ephemeral: they are never
+written to `agent-config.json`, they override a stored key of the same name for that launch only
+(`rig/src-tauri/src/commands/orchestrate.rs:57-66`), and the rows clear themselves once the run
+reaches a terminal phase (`OrchestratorView.tsx:139-141`).
+
+Optionally add `CLOUDCOST_OPTIMIZATION = 1` — **AWS only**; it raises against any other provider
+(`cloudcost_orchestrator.exs:115-120`).
+
+**3 — Request text.** Write it so the planner names cloudcost, e.g. *"Run the cloudcost report
+pipeline"*. The planner picks agent files out of `docs/capability-matrix.md`, where cloudcost is
+listed at `:198`. Approve the plan when it appears; the run then behaves exactly as a CLI run.
+
+> The provider hint is **not** surfaced on the plan card. `STEP_CONFIG_HINTS`
+> (`OrchestratorView.tsx:13-33`) only displays keys that are set in *persisted* agent config, and
+> `CLOUDCOST_PROVIDER` is deliberately not one — so a hint would render nothing, or worse, show a
+> stale global while the run used your per-launch override. No cloudcost entry was added there on
+> purpose; this section is the instruction instead.
+
+### D2 posture — credentials in Rig (documented, not coded)
+
+A Rig-launched run does **not** get the hermetic prefix. The canonical AWS invocation under
+[Run it](#run-it) is wrapped in `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_PROFILE
+AWS_SHARED_CREDENTIALS_FILE=/dev/null`; Rig cannot apply that per agent, and `sprint.sh` gets it
+only by building the prefix itself (`../aetheris/scripts/sprint.sh:2371-2373`).
+
+It is worse than merely missing the belt. Rig injects the **entire** agent-config map as
+environment, unfiltered by any script's declared `env`
+(`rig/src-tauri/src/commands/orchestrate.rs:57-59`; same pattern for the Tools tab at
+`tools.rs:662-664`), and `api/tools.json` declares bare `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY` as config rows — so Rig's own settings surface actively *invites* setting
+the two variables the belt exists to strip. **A Rig-launched cloudcost run may therefore have the
+poison actively present, not merely lack the belt. "No belt" is not the same as "clean
+environment" — do not read it as one.**
+
+The guard holds anyway, by construction rather than by hygiene. Credentials are read from
+`CLOUDCOST_AWS_*` only (`cloudcost/scripts/fetch_aws.py:229-250`) and passed to an explicitly
+constructed session (`:301-310`) that both supplies the keys directly **and** nulls botocore's
+`profile` session var, so neither the environment chain nor `~/.aws` is consulted. The shadowing
+variables are read solely to emit a warning (`fetch_aws.py:257`). Verified live on 2026-08-04 in
+exactly the poisoned condition — bare
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` exported **and** `~/.aws/credentials` present, no
+`env -u` prefix:
+
+```
+$ CLOUDCOST_PROVIDER=aws mix run --eval \
+    'Code.eval_file("../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs")'
+** (RuntimeError) CLOUDCOST_PROVIDER=aws requires CLOUDCOST_AWS_ACCESS_KEY_ID and
+CLOUDCOST_AWS_SECRET_ACCESS_KEY to be set. cloudcost authenticates with the CLOUDCOST_AWS_*
+read-only key only and never falls back to boto3's default credential chain.
+                                                                        # exit 1
+```
+
+It refused rather than silently authenticating with the ambient key. That is the belt-and-suspenders
+claim demonstrated, not asserted.
+
+**Storage.** `agent-config.json` is plaintext on disk in the app data directory
+(`rig/src-tauri/src/lib.rs:188-202`; the tab says so at `AgentConfigTab.tsx:195-199`). A read-only
+key there is the same trust level as the GitHub PAT already stored there. **A write-capable key
+must never go in it.**
+
+**Export gap.** The six `CLOUDCOST_*` keys are editable and persisted, but `exportConfig()`
+iterates the static defs only (`rig/src/hooks/useAgentConfig.ts:33-41`), so they are silently
+omitted from Export until **BL-091**. Import is unaffected.
+
+**Non-leak, verified.** Credentials do not reach the trajectory or `config_json`. Confirmed on a
+live run — `cloudcost-orch-digitalocean-TW2-sA`, 2026-08-04, launched with `CLOUDCOST_DO_TOKEN`
+set and the bare `AWS_*` poison present, producing
+`output/digitalocean/cloudcost_report_2026-08.html`:
+
+| Check | Result |
+|---|---|
+| `CLOUDCOST_` key names in trajectory (39,488 B) | 0 |
+| `CLOUDCOST_DO_TOKEN` **value** in trajectory | 0 |
+| bare `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` values in trajectory | 0 / 0 |
+| `CLOUDCOST_` key names in `config_json` | 0 |
+| `CLOUDCOST_DO_TOKEN` value in `config_json` | 0 |
+| `RunConfig.env` as serialised | `{}` |
+
+Both greps were mutation-checked against a file containing the token (each returned 1), so the
+zeros are observations and not an empty-pattern artefact. See
+`docs/bl-085-implementation-notes.md` for why a shell-launched run is representative of a
+Rig-launched one, and for the structural argument that these keys *cannot* land in `config_json`.
+
+**Interim.** Everything above describes the LLM-planner door, which is what Rig offers today. The
+direct, non-LLM launch door is tracked by **BL-094** — it is blocked on a correctness defect
+(`mix run` on a config-style `.exs` exits 0 having created no run), not on a missing parameter
+concept.
+
 ## Adding a provider
 
 A new provider is a new adapter emitting the two frozen normalized schemas (`milestone.md`

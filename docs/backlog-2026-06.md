@@ -3264,7 +3264,39 @@ gap there is unproven, not absent (**Absent is unknown, not zero**).
 the timeout value is declared in the agent file rather than chosen at runtime; and the
 determinism-contract cross-reference is recorded when the fix lands.
 
-`Source: BL-085, 2026-08-04 (diagnosing cloudcost-orch-aws--ez4vQ).`
+### BL-096 — DONE 2026-08-04
+
+Fixed in `32933d8`: `fetch_timeout_ms = 300_000` declared on STEP 1 of
+`cloudcost/agents/cloudcost_orchestrator.exs`. Exec-server default untouched.
+
+Live acceptance — run `cloudcost-orch-aws-3KU2NQ`, status `done`, report produced:
+
+| check | before (`--ez4vQ`) | after (`3KU2NQ`) |
+|---|---|---|
+| `fetch_aws` `tool_called` | 2 | **1** |
+| timeout events | 1 | **0** |
+| `timeout_ms` on the **first** call | absent (defaulted to 60 000) | **300000** |
+| tool durations (ms) | 60000, 66991, 49, 47, 134 | **63882, 45, 47, 115** |
+| wall clock | 2 m 18 s | **1 m 18 s** |
+
+The first call now carries the declared value and completes in 63.9 s — inside the measured
+63–67 s band, and no longer a retry. The third row is the load-bearing one: without it a run that
+merely finished fast would read as a passing fix.
+
+Non-leak re-checked under the settled BL-085 criterion: all 20 stored agent-config values with
+length ≥ 8 grepped against this run's trajectory and `config_json` — zero secret hits.
+The only value matches are non-secrets (`AETHERIS_MODEL`, `AETHERIS_PROVIDER`,
+`CLOUDCOST_AWS_REGION`), `RunConfig.env` is `{}`, and both D2 guard warnings fired, so the run was
+in the poisoned-but-guarded posture the criterion expects.
+
+**Still open, deliberately:** a prompt declaration *instructs* the timeout, it does not
+structurally remove the model from the success path. `pre_tools`
+(`../aetheris/lib/aetheris/run_config.ex:44-47`) is the only mechanism that would; not taken, for
+the three reasons in `cloudcost/docs/bl-096-implementation-notes.md`. File a follow-up if
+prompt-adherence ever proves insufficient.
+
+`Source: BL-085, 2026-08-04 (diagnosing cloudcost-orch-aws--ez4vQ); closed same day by
+cloudcost-orch-aws-3KU2NQ.`
 
 ---
 

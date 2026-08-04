@@ -155,9 +155,33 @@ PY
 
 Pass = exactly one `fetch_aws` `tool_called`, zero timeout events, and `timeout_ms: 300000` present
 on that **first** call — the last check is what distinguishes "the fix worked" from "the run
-happened to be fast today". Record the run_id here and in the BL-096 row.
+happened to be fast today".
 
-**Not yet run:** no `CLOUDCOST_AWS_*` key in this environment, same constraint as BL-085.
+### Result — `cloudcost-orch-aws-3KU2NQ`, 2026-08-04, PASS
+
+Status `done` in 1 m 18 s; `output/aws/cloudcost_report_2026-08.html` produced.
+
+| check | before (`--ez4vQ`) | after (`3KU2NQ`) | |
+|---|---|---|---|
+| `fetch_aws` `tool_called` | 2 | 1 | ✅ |
+| timeout events | 1 | 0 | ✅ |
+| `timeout_ms` on the **first** call | absent → defaulted to 60 000 | 300000 | ✅ |
+| tool durations (ms) | 60000, 66991, 49, 47, 134 | 63882, 45, 47, 115 | |
+| wall clock | 2 m 18 s | 1 m 18 s | |
+
+The first call carries the declared value and completes in 63.9 s — inside the 63–67 s band
+measured before the fix, so the script did not get faster; the call simply stopped being killed at
+60 s. The 60 s that used to be spent failing is gone, which is the whole delta in wall clock.
+
+One run is dispositive here rather than indicative, because the mechanism is deterministic: the
+value is in the prompt or it is not, and the trajectory shows which.
+
+**Non-leak re-checked under the settled BL-085 criterion.** All 20 stored agent-config values of
+length ≥ 8 grepped against this run's trajectory and `config_json`: zero secret hits. The only
+value matches are non-secrets — `AETHERIS_MODEL`, `AETHERIS_PROVIDER`, `CLOUDCOST_AWS_REGION` —
+`RunConfig.env` serialised `{}`, and both D2 guard warnings fired
+(`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` each once), confirming the run was in the
+poisoned-but-guarded posture the criterion expects rather than a trivially clean environment.
 
 ---
 

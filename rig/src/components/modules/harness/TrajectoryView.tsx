@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useTrajectory, useRunEvents, useRunDetail, useFork } from '@/hooks';
 import type { RunSummary, TrajectoryEvent, TrajectoryFile, TokenSummary } from '@/hooks/types';
 import { reconstructTrajectory, reconstructedBanner } from '@/lib/reconstructTrajectory';
+import { stepBadge } from './stageLabel';
 
 const EVENT_COLOURS: Record<string, string> = {
   prompt_built:           'bg-blue-100 text-blue-800',
@@ -138,7 +139,10 @@ function StepGroup({ step, events, isForking, forkingStep, onFork }: StepGroupPr
           {open
             ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
             : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-          Step {step}
+          {/* BL-086: "Step 3 · fetch_aws" when the step ran a .py via run_command,
+              plain "Step 3" otherwise. Derivation lives in stageLabel.ts so it can be
+              proven against real trajectories without rendering. */}
+          {stepBadge(step, events)}
           <span className="ml-2 text-xs text-muted-foreground font-normal">
             {events.length} event{events.length !== 1 ? 's' : ''}
           </span>

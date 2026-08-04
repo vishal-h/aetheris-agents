@@ -19,6 +19,15 @@
  *   - 331 of 359 `run_command` calls carry exactly one `.py` arg; 28 carry none.
  *   - No step in 468 contained more than one `run_command`, so "first match wins" is a
  *     safety rule for a case that does not currently occur, not a guess about ordering.
+ *
+ * Accepted latent case: keying on `tool_name` + a `.py` arg rather than on
+ * `command === 'python3'` means a non-python command that merely *mentions* a script —
+ * `cat scripts/fetch_aws.py` — would be labelled as that stage. Deliberate: gating on
+ * `command` under-matches real runs (see the command spread above), and the mislabel
+ * occurs 0× in 468 steps. Revisit only if inspection-style `cat`/`ls` calls on `.py`
+ * files start appearing in pipelines; the fix would be to require `command` to be a
+ * python interpreter *and* the arg to be `.py`, which trades this edge for the
+ * under-matching one.
  */
 
 /** The subset of TrajectoryEvent this needs (types.ts:238-247). */

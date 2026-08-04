@@ -3298,6 +3298,45 @@ prompt-adherence ever proves insufficient.
 `Source: BL-085, 2026-08-04 (diagnosing cloudcost-orch-aws--ez4vQ); closed same day by
 cloudcost-orch-aws-3KU2NQ.`
 
+### BL-097 — Orchestrator: selecting a Recent prompt covers Run and the env disclosure (#TBD)
+**Size:** XS · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
+
+Filed 2026-08-04. On the Orchestrator idle view, clicking a **Recent** entry renders a card over the
+Run button and the "Additional env vars" disclosure. The screen is unusable — env cannot be set, no
+other prompt can be picked, the run cannot be started — until you navigate away and back.
+
+**Mechanism (one line).** The overlaying element is the *filter-suggestions* dropdown, not the
+Recent list: it is absolutely positioned (`absolute left-0 right-0 top-full mt-1 z-10`,
+`OrchestratorView.tsx:170-171`) inside the `relative` wrapper that holds only the textarea (`:159`),
+so it paints over everything below — the env disclosure (`:186-239`) and Run (`:241-246`). Its
+visibility is derived **purely** from `suggestions.length > 0` (`:169`), and `suggestions` is
+`history.filter(h => h.toLowerCase().includes(request.toLowerCase()))` (`:133-135`). Selecting a
+Recent entry calls `setRequest(h)` (`:257`), after which `h` trivially contains itself — so the
+dropdown opens and **can never close**, because the condition that opens it is now permanently true.
+Navigating away "fixes" it only by unmounting the component and resetting `request`.
+
+The Recent list itself is innocent and correctly hides once the box is populated (`:247`, gated on
+an empty request).
+
+**Wider than the reported repro.** The same permanent overlay appears whenever *typed* text
+substring-matches any stored history entry — Recent selection is just the reliable way to reach it,
+since it guarantees an exact self-match. There is no blur, Escape, or selection dismissal anywhere.
+
+**Minimal fix (this row).** Give the dropdown an explicit open flag instead of deriving visibility
+from the filter result: opened by typing, closed by selection, Escape, and blur. No relayout, no
+relocation, no change to the `extra_env` panel or `ParamsStrip`.
+
+**Done when:** selecting a Recent entry populates the request box and dismisses cleanly; Run and the
+env disclosure stay clickable; a second selection works inline with no click-away; `bun run lint`
+and `bun run build` green.
+
+**Follow-up, deliberately NOT in scope here:** move Recent into a scrollable right-side panel. That
+is a UX enhancement — it would also make Recent reachable while the box is populated, which the
+current design intentionally does not do — and it should be decided on its own merits, not folded
+into an unbreak.
+
+`Source: BL-097, 2026-08-04 (reported from the Rig UI during the cloudcost batch).`
+
 ---
 
 ## Milestones (L — issue docs first, per repo convention)

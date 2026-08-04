@@ -134,6 +134,12 @@ export function OrchestratorView() {
     ? history.history.filter((h) => h.toLowerCase().includes(request.toLowerCase()))
     : [];
 
+  // BL-097: the dropdown's visibility is explicit state, not `suggestions.length > 0`.
+  // Deriving it from the filter made it impossible to dismiss — picking an entry sets
+  // `request` to that entry, which then matches itself forever, so the absolutely-positioned
+  // list stayed open on top of the env disclosure and Run.
+  const [suggestOpen, setSuggestOpen] = useState(false);
+
   // Clear staged per-run vars once a run reaches a terminal state, so the next run
   // starts with a fresh form.
   useEffect(() => {
@@ -164,9 +170,11 @@ export function OrchestratorView() {
                 rows={3}
                 placeholder="Describe what you want to do…"
                 value={request}
-                onChange={(e) => setRequest(e.target.value)}
+                onChange={(e) => { setRequest(e.target.value); setSuggestOpen(true); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') setSuggestOpen(false); }}
+                onBlur={() => setSuggestOpen(false)}
               />
-              {suggestions.length > 0 && (
+              {suggestOpen && suggestions.length > 0 && (
                 <div className="absolute left-0 right-0 top-full mt-1 z-10
                                 rounded-md border bg-background shadow-sm overflow-hidden">
                   {suggestions.slice(0, 5).map((h, i) => (
@@ -174,7 +182,10 @@ export function OrchestratorView() {
                       key={i}
                       type="button"
                       className="text-sm px-3 py-2 hover:bg-muted/50 text-left w-full"
-                      onClick={() => setRequest(h)}
+                      // Keep focus on the textarea so onBlur does not fire and unmount
+                      // this button before its onClick lands.
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setRequest(h); setSuggestOpen(false); }}
                     >
                       {h}
                     </button>
@@ -254,7 +265,7 @@ export function OrchestratorView() {
                     className="text-left text-sm px-2 py-1.5 rounded-md
                                hover:bg-muted/50 transition-colors text-muted-foreground
                                hover:text-foreground"
-                    onClick={() => setRequest(h)}
+                    onClick={() => { setRequest(h); setSuggestOpen(false); }}
                   >
                     {h}
                   </button>

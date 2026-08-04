@@ -415,7 +415,17 @@ concept.
 
 A new provider is a new adapter emitting the two frozen normalized schemas (`milestone.md`
 §Normalized schemas) using the canonical `type`/`state` vocabulary from `scripts/_normalized.py`,
-plus recorded fixtures, plus a clause in the orchestrator's provider `case`. `detect_orphans.py`,
+plus recorded fixtures, plus a clause in the orchestrator's provider `case`.
+
+**Declare the fetch step's `timeout_ms` explicitly** (BL-096 convention). STEP 1 is the only step
+that calls a live cloud API and the only one whose runtime approaches `run_command`'s 60 000 ms
+default. AWS exceeded that default on every run ever recorded and the pipeline survived only
+because the model chose to retry — a recovery nothing instructs. STEP 1 is shared across
+providers, so the existing `fetch_timeout_ms` declaration already covers a third adapter; the
+thing to carry forward is the *habit* of measuring the new adapter's real duration and confirming
+the declared value still has margin, rather than inheriting a number and assuming it fits. Do not
+raise the exec-server default to solve this — a low global default is a fail-fast property for
+every other script. `detect_orphans.py`,
 `compose_report_data.py` and `render_report.py` are provider-agnostic and do not change — m2
 tested that claim on AWS and it held, with one deliberate enumerated exception (the named
 `region_coverage` field, A4).

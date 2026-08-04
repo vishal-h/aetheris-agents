@@ -90,13 +90,43 @@ end
 output_dir = "output/#{provider_slug}"
 history_dir = "history/#{provider_slug}"
 
+# --- fetch-step timeout, declared rather than defaulted (BL-096) ----------------------
+#
+# STEP 1 is the only step that calls a live cloud API, and it is the only one whose runtime
+# approaches `run_command`'s 60_000 ms default (the exec server's
+# `unwrap_or(60_000)` — ../aetheris/native/aetheris_exec_server/src/main.rs:472, advertised
+# in the tool schema at :127). Measured: fetch_aws 63–67 s against the real bill, fetch_do
+# 8.2–9.3 s. So AWS exceeded the default on every run ever recorded, and the pipeline only
+# finished because the model chose to retry with a larger timeout_ms — a recovery nothing
+# instructs, observed 5/5 under claude-haiku-4-5-20251001 and guaranteed by nothing.
+#
+# That put the model on the success path for whether a deterministic four-stage pipeline
+# COMPLETES, which is a harness-side property: "The harness is deterministic; the model is
+# not" (../aetheris/docs/aetheris/determinism-contract.md:31). Declaring the value here
+# moves the timeout from something rediscovered at runtime to something stated once.
+#
+# One number for both providers: STEP 1 is shared, and fetch_do is declared defensively
+# rather than because it needs the headroom — it fits inside the default today with ~6.5x
+# margin, and the point is that it no longer *depends* on that remaining true. A third
+# provider's adapter declares its own step timeout by this same convention.
+#
+# Deliberately NOT raising the exec-server default: a low global default is a fail-fast
+# safety property for every other script in every use case. Per-step declaration is the
+# right lever for the one step that legitimately exceeds it.
+fetch_timeout_ms = 300_000
+
 # --- optional optimization spike (m2 t4) ---------------------------------------------
 #
 # CLOUDCOST_OPTIMIZATION=1 adds ONE step and threads its file into the render. Unset — the
-# default, and every run that predates t4 — the three chunks below are empty strings, so the
-# prompt this file builds is byte-for-byte the t3 prompt and the pipeline is exactly t3's.
-# That is the orchestrator half of §t4's isolation invariant, and it is measurable: render
-# the prompt with the variable set and unset and diff.
+# default — the three chunks below are empty strings, so the prompt carries no trace of the
+# spike and the pipeline is exactly the unoptimized one. That is the orchestrator half of
+# §t4's isolation invariant, and it is measurable: render the prompt with the variable set
+# and unset and diff — the difference is the optimization chunks and nothing else.
+#
+# t4 stated this as "byte-for-byte the t3 prompt". That equality no longer holds and is not
+# what the invariant needs: BL-096 added STEP 1's `timeout_ms` declaration below, which
+# changes the base prompt in the set and unset cases identically. The invariant is set-vs-unset
+# isolation, not equality with a frozen historical prompt.
 #
 # The step is numbered 2b rather than 3 deliberately. Inserting a renumbered step would
 # rewrite the text of every step after it, so the unset case could no longer be compared to
@@ -168,6 +198,12 @@ prints a JSON summary to stdout containing the path it wrote.
 STEP 1 — Fetch the #{provider_short} cost snapshot and inventory.
   run_command  command: "python3"
                args: ["#{fetch_script}", "--output-dir", "#{output_dir}"]
+               timeout_ms: #{fetch_timeout_ms}
+
+  Pass `timeout_ms` on this call exactly as written. It is part of the call, not an
+  entry in the args array. This step reaches a live cloud API and legitimately runs
+  longer than the default timeout; the value above is already sized for it, so there
+  is never a reason to retry this step with a different timeout.
 
   Parse the JSON on stdout. Keep three values for later steps:
     - `period`           (e.g. "2026-07")

@@ -199,3 +199,29 @@ DONE section plus the BL-093..BL-097 satellite rows and BL-090's appended second
 > (BL-073, BL-083, BL-086, BL-095, BL-097) and
 > `docs/handoffs/handoff-cloudcost-rig-batch-close-2026-08-04.md` are milestone *working*
 > artifacts, not specifications.
+
+**Upload is remove-all then upload-all against the full 25-row set** — not a diff of the two
+re-pinned rows. Twenty-three data rows are unchanged and would look like "nothing to re-upload"
+to any hash-driven shortcut; do not optimise the upload down. This is the standing discipline
+that covers the manifest-blind direction the header warns about: `drift_check` compares
+manifest-vs-git, so it catches the repo running ahead (the stale WARN that cleared at this
+boundary) but cannot see a partial or under-described upload — an incremental upload can leave
+project knowledge silently wrong while drift still reports green.
+
+> Recorded because it was nearly got wrong here: this session first proposed staging only the
+> two advanced rows plus the manifest. That is exactly the shortcut this paragraph forbids, and
+> the tooling would not have caught it — 9 PASS / 0 FAIL / 0 WARN either way.
+
+**All 25 rows verified against their owning repos at regen** — every pinned commit equals
+`git log -1 --format=%h -- <path>` in the owning repo (`../aetheris` for the 12 harness rows),
+and all 25 files exist on disk. Only the two named above moved since the previous boundary.
+
+**Ordering invariant held.** The manifest is the last tracked write of this export; nothing
+manifest-tracked was edited after the table was regenerated, so the two re-pinned rows are not
+born stale. Verified by the post-commit `drift_check --strict`: 9 PASS / 0 FAIL / **0 WARN** —
+the manifest-staleness class cleared, which is what an export boundary is supposed to produce.
+
+**Repo push state.** `aetheris-agents` is synced at the exported content commits; the harness
+repo was not written this batch, so its 12 rows carry their prior hashes unchanged.
+
+Previous export: 2026-08-03 (m2-cloudcost close).

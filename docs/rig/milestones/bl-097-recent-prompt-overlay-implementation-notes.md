@@ -78,11 +78,16 @@ Escape, blur, or selecting an entry all close it, where previously nothing did. 
 never overlay would require moving it out of the absolute layer, which is the relayout this row
 explicitly excluded.
 
-**Not verified interactively.** Rig is a Tauri desktop app; the frontend was started under `vite`
-to attempt a browser check, but no browser automation was available in this session, so the
-click-through confirmation — Run and the env disclosure clickable after selecting Recent, and a
-second selection working inline — is owed to the operator. The predicate check and the build are
-what is closed here.
+**Interactive click-through — verified by the operator, 2026-08-04.** Selecting a Recent entry
+populates the request box and dismisses cleanly; Run and the "Additional env vars" disclosure stay
+clickable; a second selection works inline with no navigate-away. This was the one part the
+predicate check could not close, since it is a hit-testing and focus question rather than a state
+question.
+
+Recorded here rather than left implicit: the automated evidence in this ticket is `lint`, `build`,
+and a gate-model check. The claim that the *screen is usable again* rests on that operator
+confirmation, not on anything CI would catch — there is no component-render test in `rig/`, so a
+regression here would return silently.
 
 ---
 

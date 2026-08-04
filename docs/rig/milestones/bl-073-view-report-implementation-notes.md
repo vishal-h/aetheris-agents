@@ -134,3 +134,66 @@ path", and the walks differ. They read the same events and should stay consisten
 The deferred alternative — a run that *formally records* its artifact path — remains the cleaner
 long-run answer and is untouched here; it would need a harness change and probably an event-union
 change. Worth settling before provider three if recording is wanted over scraping.
+
+---
+
+## Reopen — the open failed; server-side open (BL-073 r2)
+
+**The bug.** Clicking "View report" threw a Tauri shell-scope error:
+
+```
+Scoped command argument at position 0 ... failed regex validation
+^((mailto:\w+)|(tel:\w+)|(https?://\w+)).+
+```
+
+`tauri-plugin-shell`'s frontend `open` is **URL-scoped**. It accepts `mailto:`, `tel:` and
+`http(s)://` and rejects everything else — so a local filesystem path, which is the only kind of
+path this feature produces, could never work. The first implementation handed `artifact.path`
+straight to it.
+
+This is a case where the derivation being proven made the surface look safer than it was: the
+resolver was tested end-to-end against real files, and every one of those tests passed while the
+button could not open anything. The offline proof covered "is the path right", never "can this
+primitive take a path at all".
+
+**Not fixed by widening the scope.** Adding a file-path pattern to `shell:allow-open` would let the
+frontend open *any* local file, which discards the whole point of the existence-gated resolver —
+the invariant that only vetted artifacts are openable. The allowlist would become the weakest link
+in a feature whose entire design is about not offering paths that shouldn't be opened.
+
+**Fixed by moving the open into Rust.** New `harness_open_artifact(run_id, path)`:
+
+1. Re-runs `run_artifacts_with` for that run — the same scrape, the same existence check.
+2. Refuses unless `path` is in that freshly computed set. This covers both "never an artifact of
+   this run" and "was one, but is gone now".
+3. Opens with `open::that_detached`.
+
+So the command **cannot open an arbitrary file even when asked to**, and there is no frontend
+primitive taking a raw filesystem path at all. The shell plugin's scope is untouched.
+
+`open` 5.3.5 was already vendored transitively via `tauri-plugin-shell`; declaring it directly adds
+no download (`cargo build --offline` succeeds).
+
+The frontend's `openArtifact` now calls the command and surfaces failures inline rather than
+swallowing them — a control that silently does nothing is worse than one that says why.
+
+**Acceptance.** The exact server-side path the button calls, run against real artifacts including
+the real `open::that_detached`:
+
+```
+opening /home/it/…/cloudcost/output/aws/cloudcost_report_2026-08.html
+opening /home/it/…/docbuilder/output/xyz_inc_invoice_30-Jun-2026.pdf
+guard ok: arbitrary path not in allowed set
+test result: ok. 3 passed
+```
+
+Both launched in the OS handler — the operation that previously threw. The guard arm asserts an
+arbitrary local path (`/etc/hostname`) never appears in the allowed set.
+
+**Still owed: the in-app button click.** The test exercises the command's code path, not the React
+`invoke`. What that leaves unverified is only the wiring — command name and argument casing
+(`{ runId, path }`, camelCase per the Tauri convention, confirmed by inspection). Rig needs a
+rebuild before eyeballing; Tauri does not hot-reload the Rust side.
+
+Doc-sync: `specs.md` §4 carries `harness_open_artifact` in the same commit; `drift_check` counts
+49 → 50 commands.

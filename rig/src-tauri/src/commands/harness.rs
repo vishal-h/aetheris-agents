@@ -495,6 +495,43 @@ pub fn harness_run_artifacts(
     run_artifacts_with(&conn, &run_id, &|p| std::path::Path::new(p).exists())
 }
 
+/// Open one of a run's artifacts with the OS default application.
+///
+/// **Why this exists rather than the frontend shell `open`.** `tauri-plugin-shell`'s
+/// frontend `open` is URL-scoped — its allowlist regex is
+/// `^((mailto:\w+)|(tel:\w+)|(https?://\w+)).+`, so a local filesystem path is rejected
+/// outright. The obvious "fix" is to widen that scope to accept file paths, which would
+/// hand the frontend the ability to open *any* local file and throw away the whole point
+/// of the existence-gated resolver. Opening server-side instead keeps the surface closed:
+/// there is no frontend primitive taking a raw path at all.
+///
+/// **The path is re-resolved, not trusted.** The caller passes a path, but it is only
+/// opened if `run_artifacts_with` independently produces it for this run — the same
+/// scrape, the same existence check, run again here. So the command can only ever open a
+/// document some `tool_result` of that run actually recorded and that is on disk now. A
+/// caller cannot use it to open an arbitrary file by passing one, which is exactly the
+/// property widening the shell scope would have destroyed.
+#[tauri::command]
+pub fn harness_open_artifact(
+    state:  State<'_, HarnessState>,
+    run_id: String,
+    path:   String,
+) -> Result<(), String> {
+    let allowed = {
+        let conn = get_harness_conn(&state)?;
+        run_artifacts_with(&conn, &run_id, &|p| std::path::Path::new(p).exists())?
+    };
+
+    if !allowed.iter().any(|a| a.path == path) {
+        // Covers both "never an artifact of this run" and "was, but is gone now".
+        return Err(format!(
+            "not an existing artifact of run {run_id}: {path}"
+        ));
+    }
+
+    open::that_detached(&path).map_err(|e| format!("open failed: {e}"))
+}
+
 // ============================================================================
 // Tests — harness_list_runs search + window disclosure (BL-038)
 // ============================================================================
@@ -904,5 +941,46 @@ mod tests {
         let none = run_artifacts_with(&conn, "docbuilder-ctx-0nDlug", &real).unwrap();
         eprintln!("live no-artifact run → {} artifact(s)", none.len());
         assert!(none.is_empty(), "expected no artifacts, got {none:?}");
+    }
+
+    /// Live open arm (BL-073 reopen) — exercises the exact server-side path the button
+    /// calls, including the real `open::that_detached`, against real artifacts.
+    ///
+    /// This is the acceptance for the shell-scope fix: the frontend `open` rejected local
+    /// paths with a regex-validation error, and the question is whether opening from Rust
+    /// works. SIDE EFFECT: actually launches the OS handler for two files.
+    #[test]
+    #[ignore = "opens real files in the OS default app — run with `cargo test -- --ignored`"]
+    fn live_open_artifact_end_to_end() {
+        let path = std::env::var("AETHERIS_DB_PATH")
+            .expect("AETHERIS_DB_PATH must be set for the live arm");
+        let conn =
+            Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        let real = |p: &str| std::path::Path::new(p).exists();
+
+        for (run, want_ext) in [
+            ("cloudcost-orch-aws-3KU2NQ", ".html"),
+            ("docbuilder-orch-wFwf_g", ".pdf"),
+        ] {
+            let allowed = run_artifacts_with(&conn, run, &real).unwrap();
+            let target = allowed
+                .iter()
+                .find(|a| a.filename.ends_with(want_ext))
+                .unwrap_or_else(|| panic!("no {want_ext} artifact for {run}: {allowed:?}"));
+
+            // The membership check the command performs before opening.
+            assert!(allowed.iter().any(|a| a.path == target.path));
+            eprintln!("opening {}", target.path);
+            open::that_detached(&target.path)
+                .unwrap_or_else(|e| panic!("open failed for {}: {e}", target.path));
+        }
+
+        // The guard: a path that is not one of the run's artifacts is refused.
+        let allowed = run_artifacts_with(&conn, "cloudcost-orch-aws-3KU2NQ", &real).unwrap();
+        assert!(
+            !allowed.iter().any(|a| a.path == "/etc/hostname"),
+            "an arbitrary local file must never appear in the allowed set"
+        );
+        eprintln!("guard ok: arbitrary path not in allowed set");
     }
 }

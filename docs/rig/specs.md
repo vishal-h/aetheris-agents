@@ -233,6 +233,15 @@ pub struct RunArtifact {
 }
 ```
 
+**`harness_open_artifact`** (BL-073)
+
+Takes `run_id: String`, `path: String`. Opens the artifact with the OS default application;
+returns nothing. **Server-side by design**: `tauri-plugin-shell`'s frontend `open` is URL-scoped
+(`^((mailto:\w+)|(tel:\w+)|(https?://\w+)).+`) and rejects local paths, and widening that scope
+would let the frontend open any local file. The `path` is **re-resolved**: it is opened only if
+`harness_run_artifacts` independently returns it for that run, so the command cannot open an
+arbitrary file even if asked to.
+
 **`harness_connection_status`**
 
 Returns:

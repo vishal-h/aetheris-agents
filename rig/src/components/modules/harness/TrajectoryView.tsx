@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-shell';
 import { ChevronDown, ChevronRight, Download, FileText, GitBranch, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTrajectory, useRunEvents, useRunDetail, useFork, useRunArtifacts } from '@/hooks';
@@ -108,6 +107,16 @@ function EventRow({ event }: { event: TrajectoryEvent }) {
   );
 }
 
+/** Open failures are surfaced, not swallowed — a control that silently does nothing is worse
+ *  than one that says why. */
+function OpenError({ message }: { message: string }) {
+  return (
+    <span className="text-xs text-destructive font-mono max-w-[20rem] truncate" title={message}>
+      {message}
+    </span>
+  );
+}
+
 /**
  * "View report" — opens a run's produced document(s) in the OS handler (BL-073).
  *
@@ -124,15 +133,32 @@ function EventRow({ event }: { event: TrajectoryEvent }) {
 function ViewReport({ runId }: { runId: string }) {
   const { artifacts } = useRunArtifacts(runId);
   const [listOpen, setListOpen] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
+
+  // Goes to the backend, never to the shell plugin's frontend `open`: that primitive is
+  // URL-scoped and rejects filesystem paths, and widening its scope to accept them would
+  // let the frontend open any local file. harness_open_artifact re-resolves the path
+  // against this run's artifacts before opening. (BL-073)
+  async function openArtifact(path: string) {
+    setOpenError(null);
+    try {
+      await invoke('harness_open_artifact', { runId, path });
+    } catch (e) {
+      setOpenError(String(e));
+    }
+  }
 
   if (artifacts.length === 0) return null;
 
   if (artifacts.length === 1) {
     return (
-      <Button variant="outline" size="sm" onClick={() => open(artifacts[0].path)}>
-        <FileText className="h-3.5 w-3.5 mr-1.5" />
-        View report
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => openArtifact(artifacts[0].path)}>
+          <FileText className="h-3.5 w-3.5 mr-1.5" />
+          View report
+        </Button>
+        {openError && <OpenError message={openError} />}
+      </div>
     );
   }
 
@@ -145,6 +171,7 @@ function ViewReport({ runId }: { runId: string }) {
           ? <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
           : <ChevronRight className="h-3.5 w-3.5 ml-1.5" />}
       </Button>
+      {openError && <div className="absolute right-0 top-full mt-1 z-20"><OpenError message={openError} /></div>}
       {listOpen && (
         <div className="absolute right-0 top-full mt-1 z-10 min-w-[16rem]
                         rounded-md border bg-background shadow-sm overflow-hidden">
@@ -154,7 +181,7 @@ function ViewReport({ runId }: { runId: string }) {
               type="button"
               title={a.path}
               className="block w-full text-left text-xs font-mono px-3 py-2 hover:bg-muted/50"
-              onClick={() => { open(a.path); setListOpen(false); }}
+              onClick={() => { openArtifact(a.path); setListOpen(false); }}
             >
               {a.filename}
             </button>

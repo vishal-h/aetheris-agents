@@ -1,7 +1,7 @@
 # m3-cloudcost — Linode as provider three (report-only)
 
 **Status:** **RATIFIED 2026-08-04** — approved by the human and committed per
-`milestone-methodology.md` §4 (rev 2). Not started; t1 next.
+`milestone-methodology.md` §4 (rev 3). Not started; t1 next.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved
@@ -13,6 +13,10 @@ contract this adapter is written to); m2-cloudcost (`cloudcost/m2-milestone.md`,
 **Rev 2 (2026-08-04):** §Prerequisites 2 gains its closure test (removal from one init file
 is not closure); §t2 Done-check gains the `CC_HERMETIC` Linode arm and the `set -a` load
 requirement. Both from the t1-kickoff review; neither changes scope, tickets or done-when.
+
+**Rev 3 (2026-08-04):** one citation corrected in §t2 — the `*)` arm is `sprint.sh:2393`;
+`:2394` is its fail line. The rev-2 text attached the arm's identity to the body's line
+number. No scope, ticket or done-when change.
 
 ---
 
@@ -336,8 +340,9 @@ cd rig/src-tauri && cargo test tools::            # BL-092: every committed mani
 ```
 Plus: the run-id slug is `cloudcost-orch-linode-…` and the label is `Cloudcost · Linode`, so
 BL-083's `classifyRun` still groups it; **`sprint.sh` gains a fourth arm in the credential
-preflight `case`** (the `*)` arm at `:2394` kills the run otherwise); **and the hermetic
-machinery gains its Linode analogue, which the fourth arm alone does not provide.**
+preflight `case`** (`sprint.sh:2378-2397`; without it the `*)` arm at `:2393` kills the run
+at its `fail` + `exit 1` on `:2394`); **and the hermetic machinery gains its Linode
+analogue, which the fourth arm alone does not provide.**
 `CC_HERMETIC` (`sprint.sh:2371-2373`) is AWS-shaped — it unsets `AWS_ACCESS_KEY_ID`,
 `AWS_SECRET_ACCESS_KEY`, `AWS_PROFILE` and neutralises the shared-credentials file — so a
 Linode run today inherits any `LINODE_CLI_TOKEN` or `LINODE_TOKEN` in the ambient

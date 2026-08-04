@@ -24,7 +24,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 
 | export name | repo path | repo | commit | last changed |
 |-------------|-----------|------|--------|--------------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `b5e8eee` | 2026-07-26 |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `99a46df` | 2026-08-04 |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 |
 | `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
@@ -35,7 +35,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `0fc9396` | 2026-08-03 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b7cb6ca` | 2026-08-02 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `f12dfa6` | 2026-08-02 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `064664a` | 2026-08-04 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `710ecd2` | 2026-08-03 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -182,3 +182,20 @@ committed.)
 
 Previous export: 2026-07-29 at aetheris-agents `9afd8e7` / aetheris `57d90d2` (m1-cloudcost
 close — t1–t5, the §7 promotion, and the operator runbook; four rows re-pinned, one added).
+
+---
+
+**Export boundary — 2026-08-04, cloudcost-in-Rig batch close.** Two rows advanced:
+`rig--specs.md` (`b5e8eee`→`99a46df`, BL-073's `harness_run_artifacts` +
+`harness_open_artifact` §4 entries) and `backlog-2026-06.md` (`f12dfa6`→`064664a`, BL-083's
+DONE section plus the BL-093..BL-097 satellite rows and BL-090's appended second staleness).
+
+> Mirror-pair check run before regen per the BL-002 convention: `triad-loop.md` canonical
+> (`aetheris/docs/methodology/`) and its `aetheris-agents/docs/` mirror are byte-identical, so
+> no canonical sync was needed this boundary. `drift_check` cannot see that class — the `diff -q`
+> is the only thing that catches it.
+
+> Not exported, per the inclusion rule: this batch's `docs/rig/milestones/bl-0*-implementation-notes.md`
+> (BL-073, BL-083, BL-086, BL-095, BL-097) and
+> `docs/handoffs/handoff-cloudcost-rig-batch-close-2026-08-04.md` are milestone *working*
+> artifacts, not specifications.

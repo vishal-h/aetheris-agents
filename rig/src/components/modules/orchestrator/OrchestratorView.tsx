@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useOrchestrator } from '@/hooks/useOrchestrator';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useRequestHistory } from '@/hooks/useRequestHistory';
+import { buildMaskedMap, hintLine } from './hintVisibility';
 import type { PlanStep, StepStatus } from '@/hooks/types';
 
 // ── Config hints — which env vars are relevant for each agent ─────────────────
@@ -81,9 +82,13 @@ interface StepCardProps {
 
 function StepCard({ step, index, configValues, status, error }: StepCardProps) {
   const hints = STEP_CONFIG_HINTS[step.agent] ?? [];
+  // BL-095: a value is printed only when the key is explicitly declared non-secret.
+  // Everything else — masked, or carrying no metadata at all — shows its status. Deny by
+  // default, so a hint key added without metadata cannot leak. See hintVisibility.ts.
+  const masked = buildMaskedMap();
   const configLines = hints
     .filter((k) => configValues[k] !== undefined && configValues[k] !== '')
-    .map((k) => `${k}: ${configValues[k]}`);
+    .map((k) => hintLine(k, configValues[k], masked));
 
   return (
     <div className="rounded-md border p-3 flex items-start gap-3">

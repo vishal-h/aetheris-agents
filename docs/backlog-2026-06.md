@@ -3238,16 +3238,31 @@ Every run recovers: the LLM retries the identical command with `timeout_ms: 3000
 That recovery is why this went unnoticed through all of m2 — including the milestone's own cited
 evidence run.
 
-**Why it is worth fixing rather than tolerating.** (1) It burns a guaranteed-wasted 60 s, ~45 % of
-a 2 m 18 s run. (2) The recovery is **not** instructed anywhere — it is the model choosing to retry
-with a larger timeout, and it has held 5/5 only under `claude-haiku-4-5-20251001`. Nothing makes it
-reproducible; a model swap or a differently-worded plan turns a slow-but-working pipeline into a
-failed run. (3) It inverts *scripts do, agents decide*: the run duration of `fetch_aws.py` is a
-deterministic property being rediscovered by an LLM at runtime, once per run, forever.
+**This is a determinism-contract item, not a cosmetic one.** The contract's §1 opens *"The harness
+is deterministic; the model is not"* (`../aetheris/docs/aetheris/determinism-contract.md:31`,
+manifest-tracked as `aetheris--determinism-contract.md`). Whether a four-stage deterministic
+pipeline **completes** is a harness-side property, and today it is not one: STEP 1 always fails, and
+the run only finishes because the model elects to retry with a larger `timeout_ms`. Nothing
+instructs that retry — not the agent file, not the exec server, not the tool description. It has
+held 5/5, but only under `claude-haiku-4-5-20251001`; a model swap, a temperature change, or a
+differently-worded plan converts a working pipeline into a failed run with no code change anywhere.
+The LLM is on the success path for a question it should never have been asked.
 
-**Fix:** set `timeout_ms` explicitly on STEP 1 in the orchestrator prompt (300 000 matches what the
-model already picks). Check the other stages while there — they run in 38–172 ms and need nothing.
-Consider whether the DO path has the same latent gap at a different threshold.
+It also inverts *scripts do, agents decide* in its purest form: the run duration of `fetch_aws.py`
+is a fixed, measurable property of the script, rediscovered by an LLM at runtime, once per run,
+forever. And it burns a guaranteed-wasted 60 s — ~45 % of a 2 m 18 s run — to rediscover it.
+
+**Fix — instruct the timeout so the model is off the success path.** Declare an explicit
+`timeout_ms` on the `fetch_aws` step in `cloudcost/agents/cloudcost_orchestrator.exs`
+(300 000 matches what the model already converges on), or raise the exec-server default for that
+call. Either way completion becomes deterministic and the retry stops being a lucky behaviour. The
+other three stages run in 38–172 ms and need nothing. Check whether the DO path carries the same
+latent gap at a different threshold — `fetch_do.py` currently completes inside the default, so the
+gap there is unproven, not absent (**Absent is unknown, not zero**).
+
+**Done when:** an AWS run shows one `fetch_aws` `tool_called` and zero timeouts in its trajectory;
+the timeout value is declared in the agent file rather than chosen at runtime; and the
+determinism-contract cross-reference is recorded when the fix lands.
 
 `Source: BL-085, 2026-08-04 (diagnosing cloudcost-orch-aws--ez4vQ).`
 

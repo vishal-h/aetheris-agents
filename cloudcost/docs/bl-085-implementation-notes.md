@@ -154,23 +154,44 @@ Every value in the stored agent-config map was checked against this run's trajec
 serves as the control — the same method found a value that *is* present, so the zeros are
 observations rather than a matcher that never fires. `RunConfig.env` serialised `{}` again.
 
-**The DoD nuance, recorded rather than smoothed over.** BL-085's done-check says
-"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`." Literally read, **not met**:
-the two key *names* appear twice, inside the shadowing warning `fetch_aws.py:255-259` emits when the
-bare `AWS_*` poison is present. Read for intent — no credential leaks — met, with every secret value
-at zero.
+**The non-leak criterion — settled, superseding the original DoD line.** BL-085 was filed with
+"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`". That wording was too broad;
+it fails on a run that is in fact clean. The criterion as adopted:
 
-The names are there *because the guard fired*. This is the D2 posture demonstrated on the real Rig
-door rather than simulated: Rig injected the whole config map unfiltered (`orchestrate.rs:57-59`),
-`api/tools.json` had supplied bare `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` rows, the poison was
-therefore actively present in the run's environment — and the adapter ignored it and said so. The
-done-check wording should be tightened to say **values**; a guard that names the variable it
-honoured is evidence, not leakage.
+> **No secret *values* in the trajectory or `config_json` — 0/0 across all 22 stored agent-config
+> entries. Key *names* may appear only inside the D2 guard warning at `fetch_aws.py:255-259`, where
+> their presence is proof the guard fired on actively-present poison.**
 
-**Incidental find.** Both AWS legs timed out on STEP 1 at the 60 s `run_command` default and
-recovered by retrying with `timeout_ms: 300000`. Chronic across all five AWS runs on record —
-including `cloudcost-orch-aws-oFbapA`, m2's own cited evidence run — and tracked as **BL-096**. The
-reports are unaffected; the concern is that the recovery is model-chosen rather than instructed.
+The two names do appear, twice, in that warning. They are there *because the guard fired*, and that
+is the D2 posture demonstrated on the real Rig door rather than simulated: Rig injected the whole
+config map unfiltered (`orchestrate.rs:57-59`), `api/tools.json` had supplied the bare
+`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` rows, so the poison was actively present in the run's
+environment — and the adapter ignored it and announced that it had. A guard that names the variable
+it honoured is evidence, not leakage.
+
+Note the inversion this buys: under the settled wording, a run with bare `AWS_*` set and those names
+**absent** is the finding, because it would mean the warning path never executed. The original
+wording would have scored that silent run as the passing one — the **Silent-wrong-answer** shape,
+in done-check form.
+
+**Incidental find — a determinism-contract breach, not a slow step.** Both AWS legs timed out on
+STEP 1 at the exec server's 60 000 ms `run_command` default
+(`../aetheris/native/aetheris_exec_server/src/main.rs:472`) and recovered by retrying at
+`timeout_ms: 300000`. Chronic across all five AWS runs on record — including
+`cloudcost-orch-aws-oFbapA`, m2's own cited evidence run — and tracked as **BL-096**.
+
+The reports are unaffected, so it is easy to file this as cosmetic. It is not. The contract's §1 is
+*"The harness is deterministic; the model is not"*
+(`../aetheris/docs/aetheris/determinism-contract.md:31`). Whether this pipeline completes is a
+harness-side property, and right now it is model-dependent: STEP 1 always fails, and the run only
+finishes because the model elects to retry. That retry is instructed nowhere. It has held 5/5 under
+`claude-haiku-4-5-20251001` and would silently stop holding under a different model. The fix is to
+declare the timeout in the agent file so the LLM is off the success path entirely.
+
+Note also that this is the door BL-085 shipped on — so the interim launch recipe inherits a step
+that visibly times out. That is an exec-server default, **not** a limitation of the Orchestrator
+door: the run reaches `done` and produces its report either way. The runbook says so explicitly so
+the next operator does not read the timeout as the LLM door failing and re-open a settled question.
 
 ---
 

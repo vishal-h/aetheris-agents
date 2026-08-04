@@ -374,25 +374,37 @@ The single `CLOUDCOST_AWS_REGION` hit is the region string appearing in cost dat
 the control: the same method found a value that *is* present, so the zeros above are observations
 rather than a matcher that never fires.
 
-**One DoD nuance, stated rather than smoothed over.** BL-085's done-check reads
-"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`". Read literally that is
-**not** met: the *names* `CLOUDCOST_AWS_ACCESS_KEY_ID` and `CLOUDCOST_AWS_SECRET_ACCESS_KEY` appear
-twice in the trajectory — inside the shadowing warning that `fetch_aws.py:255-259` emits:
+**The non-leak criterion — settled wording.** BL-085's original done-check said "`CLOUDCOST_AWS_*`
+appears nowhere in the trajectory or `config_json`". That was too broad and is superseded. The
+criterion is:
+
+> **No secret *values* in the trajectory or `config_json` — 0/0 across all 22 stored agent-config
+> entries. Key *names* may appear only inside the D2 guard warning at
+> `cloudcost/scripts/fetch_aws.py:255-259`, where their presence is proof the guard fired on
+> actively-present poison.**
+
+The names do appear, twice, and that is expected and wanted:
 
 ```
 warning: AWS_ACCESS_KEY_ID is set in this environment and is IGNORED; cloudcost authenticates
 with CLOUDCOST_AWS_ACCESS_KEY_ID/CLOUDCOST_AWS_SECRET_ACCESS_KEY only.
 ```
 
-Read for intent — no credential leaks — it is met, with every secret value at zero. The names are
-present *because the guard fired and announced itself*, which is the D2 posture working on the Rig
-door: the poison was actively present (Rig injects the whole config map unfiltered, and
-`api/tools.json` supplies the bare rows) and the adapter ignored it. The done-check wording should
-say **values**, not `CLOUDCOST_AWS_*`; a guard that names the variable it honoured is evidence, not
-leakage.
+Rig injects the whole agent-config map unfiltered and `api/tools.json` supplies the bare `AWS_*`
+rows, so the poison was genuinely in the run's environment; the adapter ignored it and said so. A
+guard that names the variable it honoured is evidence, not leakage. A run in which those names were
+*absent* while bare `AWS_*` was set would be the finding — it would mean the warning path never
+executed.
 
-> Both AWS runs above hit a 60 s timeout on STEP 1 and recover by retrying — chronic across every
-> AWS run on record, tracked as **BL-096**. It is not a failure and the report is unaffected.
+> **Step 1 shows a timeout, and the run still completes.** `fetch_aws.py` takes 63–67 s against the
+> real bill; `run_command`'s default timeout is 60 000 ms
+> (`../aetheris/native/aetheris_exec_server/src/main.rs:472`), and the orchestrator declares no
+> `timeout_ms`. So STEP 1 times out, the agent retries the same command at `timeout_ms: 300000`, and
+> the pipeline finishes normally. Chronic across every AWS run on record — including m2's own cited
+> evidence run — and tracked as **BL-096**.
+>
+> This is an **exec-server default**, not a limitation of the Orchestrator door: the run reaches
+> `done` and produces its report either way. Expect to see it until BL-096 lands.
 
 **Interim.** Everything above describes the LLM-planner door, which is what Rig offers today. The
 direct, non-LLM launch door is tracked by **BL-094** — it is blocked on a correctness defect

@@ -74,7 +74,7 @@ anything else that makes a recorded path stale, none of which the resolver has t
 | A | Offer the set, never silently pick one | 1 artifact → plain "View report"; >1 → "View reports (N)" with a filename list, each opening externally |
 | B | Guard every hop | four shapes; `result`-carrying native tools are skipped rather than parsed — they produce no documents |
 | C | Resolve + existence-gate server-side | subsumes the overlay guard; no `overlay_base_dir` branch exists in the code |
-| D | Open external via Tauri shell | never `innerHTML` — the HTML embeds provider data even though `render_report` escapes it |
+| D | Open external | never `innerHTML` — the HTML embeds provider data even though `render_report` escapes it. **Superseded at r2:** the open moved from the frontend shell plugin to a Rust command; see the reopen section. |
 
 The frontend receives only existing artifacts, so an empty list means "render nothing". The hook
 degrades errors to empty for the same reason: a failed lookup must hide the control, not offer one
@@ -118,9 +118,9 @@ checked rather than assumed.
 `drift_check --strict` 8 PASS / 0 FAIL — commands 48 → 49 and §4 structs 10 → 11 (56 fields), both
 validated against `specs.md`, which carries the `harness_run_artifacts` entry in this commit.
 
-**Owed: the open itself.** `open()` from the Tauri shell plugin cannot be exercised headless. That
-the correct absolute path is produced and verified to exist is proven; that the OS opens it is a
-click-through owed to the operator. Same split as BL-086's derivation-vs-badge.
+**Owed: the open itself.** ~~`open()` from the Tauri shell plugin cannot be exercised headless.~~
+**Superseded at r2** — and this is where the residual turned out to be hiding a defect rather than
+merely an unverified step: the frontend `open` could not have worked at all. See the reopen section.
 
 ---
 

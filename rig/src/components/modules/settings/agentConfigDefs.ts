@@ -26,8 +26,12 @@ export const AGENT_CONFIG_DEFS: Omit<AgentConfigEntry, 'value'>[] = [
     masked: false, placeholder: 'payroll@example.com' },
 
   // Google Drive
+  // masked (BL-095): this is the path to a service-account *key file* — a credential
+  // locator, and one of the two values the plan card was printing in clear. Masking it
+  // here is what makes the plan card's deny-by-default rule hide it; the Settings row
+  // keeps its reveal toggle, so it stays editable.
   { key: 'GOOGLE_SERVICE_ACCOUNT', label: 'Service account key path', group: 'Google Drive',
-    masked: false, placeholder: '/path/to/service-account.json' },
+    masked: true,  placeholder: '/path/to/service-account.json' },
   { key: 'DRIVE_ROOT_FOLDER_ID',   label: 'Payslips folder ID',       group: 'Google Drive',
     masked: false, placeholder: 'Google Drive folder ID for the payslips folder',
     linkPrefix: 'https://drive.google.com/drive/folders/' },

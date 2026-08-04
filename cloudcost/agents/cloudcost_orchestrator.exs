@@ -278,7 +278,12 @@ Rules:
   mode:             :record,
   provider:         "anthropic",
   model:            "claude-haiku-4-5-20251001",
-  label:            "Cloudcost Orchestrator",
+  # Provider in the label, not only in the run id (BL-083): Rig's run list groups on
+  # COALESCE(label, run_id) and renders the label, so this is what makes an AWS row
+  # distinguishable from a DO one at a glance instead of via the search filter.
+  # The suffix is safe for grouping — classifyRun lowercases and does startsWith, so
+  # "cloudcost · aws" still matches the `cloudcost` prefix (RunList.tsx:118-140).
+  label:            "Cloudcost · #{provider_name}",
   sandbox_path:     agent_root,
   overlay_base_dir: nil,
   max_steps:        20,

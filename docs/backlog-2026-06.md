@@ -2981,7 +2981,41 @@ compose: `classifyRun` lowercases and does `startsWith`, so `"cloudcost · aws"`
 their provider without the search filter; every remaining `USE_CASE_PREFIXES` entry matches at
 least one real label (a prefix matching nothing is the dead-entry defect, re-armed).
 
-`Source: m2-cloudcost close-out, 2026-08-03.`
+### BL-083 — DONE 2026-08-04
+
+Landed as a **label patch, not run_id re-keying** — reversing handoff §Corrections 3, which had
+recorded the opposite as answered. The run_ids it rests on were verified at HEAD and the api ones
+break it: `uc-api-t2-AeGOtw-at1cmd` / `uc-api-t2-tuquiQ-cot1`, where the first segment is `uc` (not
+the use case, and zero run_ids start with `api`), the tenant/gateway discriminator is a **suffix**,
+and the shared prefix embeds a milestone number that `t3` would invalidate. Full adjudication in
+`docs/rig/milestones/bl-083-run-classifier-implementation-notes.md`.
+
+Three of the row's own claims did not survive re-derivation and are corrected there: the docbuilder
+"bare `Context Builder`" variants **do not exist** (all three labels start with `Docbuilder`, so one
+prefix covers all 57); the legacy capability-matrix label has **14** runs, not 5, plus a missed
+`Capability matrix generator`; and **eduloka has never produced a run** — it is covered because a
+real agent *declares* the label, which is why "real label" was defined as declared ∪ observed.
+
+**Result over 957 runs — Unclassified 693 → 565, 128 rescued:**
+API/Gateway 0→15, API/Tenant 0→29, Cloudcost 0→12, Docbuilder 0→57, Capability Matrix 85→100;
+Drive/Email/Payslip/Provenance unchanged.
+
+`cloudcost_orchestrator.exs` now emits `Cloudcost · AWS` / `Cloudcost · DigitalOcean`, which still
+groups as Cloudcost (`startsWith` on the lowercased label).
+
+**Standing guard added** — `scripts/check_run_classifier.py` + `tests/test_run_classifier.py`
+(15 tests, hermetic). It parses `USE_CASE_PREFIXES` out of `RunList.tsx` rather than duplicating it,
+and fails on either rot direction: a prefix matching no known label, or a declared agent label
+falling through. Mutation-checked both ways.
+
+**Residual, conceded:** label-keying is safe for suffix appends (proven by the `· AWS` change) but
+a change to a label's *leading* word unfiles its runs. That is what the guard watches.
+
+**Not verified visually:** the run list renders via Tauri `invoke`, so grouping was confirmed by
+computation over the same store, not by looking at Rig. The group headings are the one thing that
+does not cover.
+
+`Source: m2-cloudcost close-out, 2026-08-03; closed 2026-08-04.`
 
 ### BL-084 — Tools manifests for the four use cases that have none (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`cloudcost/`, `docbuilder/`, …)
@@ -3150,7 +3184,14 @@ constants, deliberately more precise than the docstring). Either improve the scr
 match, or accept the manifest wording as canonical and let the cells differ. "descriptions match
 capability-matrix.md" is not re-opened by this — BL-084 satisfied it 5-of-6 with the 6th documented.
 
-`Source: BL-084, 2026-08-03.`
+**Second staleness in the same section, added 2026-08-04 by BL-083.** `docs/capability-matrix.md`
+§Cloudcost still shows the agent Label as `Cloudcost Orchestrator`; BL-083 changed it to
+`Cloudcost · #{provider_name}`, so the live values are `Cloudcost · AWS` / `Cloudcost ·
+DigitalOcean`. Filed rather than hand-fixed for the reason this row already gives — the matrix is
+generated — and noted here so the regen reconciles both cells in one pass instead of discovering
+the second one afterwards.
+
+`Source: BL-084, 2026-08-03; label drift appended by BL-083, 2026-08-04.`
 
 ### BL-091 — exportConfig() drops every manifest-derived env key (#TBD)
 **Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`rig/`)

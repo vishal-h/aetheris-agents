@@ -115,14 +115,29 @@ function staleMinsAgo(referenceAt: string, now: number): number {
 const DEFAULT_SHOW = 10;
 
 // Order matters — more specific prefixes must appear before less specific ones.
-const USE_CASE_PREFIXES: Array<{ prefix: string; label: string }> = [
-  { prefix: 'payslip',     label: 'Payslip' },
-  { prefix: 'drive',       label: 'Drive' },
-  { prefix: 'email',       label: 'Email' },
-  { prefix: 'api-tenant',  label: 'API / Tenant' },
-  { prefix: 'api-gateway', label: 'API / Gateway' },
-  { prefix: 'provenance',  label: 'Provenance' },
-  { prefix: 'cap-matrix',  label: 'Capability Matrix' },
+//
+// ONE ENTRY PER GROUP. `prefixes` is a list because a use case can emit several label
+// shapes, and groupRuns() below pushes one group per *entry* — two entries sharing a
+// `label` would render the same runs under duplicate headings. (BL-083)
+//
+// Matched against COALESCE(label, run_id) (harness.rs:161), lowercased, startsWith —
+// so an appended suffix such as "Cloudcost · AWS" still matches its `cloudcost` prefix,
+// but a change to a label's *leading* word unfiles its runs.
+const USE_CASE_PREFIXES: Array<{ prefixes: string[]; label: string }> = [
+  { prefixes: ['payslip'],                         label: 'Payslip' },
+  { prefixes: ['drive'],                           label: 'Drive' },
+  { prefixes: ['email'],                           label: 'Email' },
+  { prefixes: ['cloudcost'],                       label: 'Cloudcost' },
+  { prefixes: ['docbuilder'],                      label: 'Docbuilder' },
+  { prefixes: ['eduloka'],                         label: 'Eduloka' },
+  // The api agents are labelled by their agent id, not by use-case directory name —
+  // `api-tenant` / `api-gateway` matched nothing and were the dead entries BL-083 found.
+  { prefixes: ['at1cmd', 'at1qry'],                label: 'API / Tenant' },
+  { prefixes: ['cot1'],                            label: 'API / Gateway' },
+  { prefixes: ['provenance'],                      label: 'Provenance' },
+  // Legacy "Capability Matrix -- Provenance" / "Capability matrix generator" predate
+  // the `cap-matrix: …` convention and share no prefix with it.
+  { prefixes: ['cap-matrix', 'capability matrix'], label: 'Capability Matrix' },
 ];
 
 interface RunGroup {
@@ -132,8 +147,8 @@ interface RunGroup {
 
 function classifyRun(label: string): string {
   const lower = label.toLowerCase();
-  for (const { prefix, label: groupLabel } of USE_CASE_PREFIXES) {
-    if (lower.startsWith(prefix)) return groupLabel;
+  for (const { prefixes, label: groupLabel } of USE_CASE_PREFIXES) {
+    if (prefixes.some((p) => lower.startsWith(p))) return groupLabel;
   }
   return 'Unclassified';
 }

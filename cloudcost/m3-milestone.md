@@ -1,9 +1,11 @@
 # m3-cloudcost — Linode as provider three (report-only)
 
 **Status:** **RATIFIED 2026-08-04** — approved by the human and committed per
-`milestone-methodology.md` §4 (rev 6). t1 DONE — `fetch_linode.py`, fixtures and offline suite;
+`milestone-methodology.md` §4 (rev 7). t1 DONE — `fetch_linode.py`, fixtures and offline suite;
 three review rounds, merged at `cb3ca63`. t2 DONE — orchestrator literal and credential raise,
-manifest, sprint case, runbook, BL-092. t3 next.
+manifest, sprint case, runbook, BL-092. t3 DONE — the live run
+(`cloudcost-orch-linode-h5lltQ`, 18 `[OK]` / 0 `[FAIL]`), the negative proof, BL-090, the PAT
+expiry; see §Milestone summary. Merge pending the click-through gate.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved
@@ -38,6 +40,10 @@ and §t2's insert-position pointer re-anchored to the surrounding headings, whic
 same decay from the other direction: a number that was a target when written and a claim
 once the work landed; the two stale `fetch_linode.py` strings
 recorded in §Open items. No scope or ticket-set change.
+
+**Rev 7 (2026-08-05):** §t3's expected matrix Summary count corrected from seven to eight —
+the earlier figure predated `fetch_linode.py`. Found at t3 by the regen producing the right
+answer against a stale expectation. No scope or ticket-set change.
 
 ---
 
@@ -492,7 +498,11 @@ opens the Linode HTML; the hand-off to the human names **the branch under test**
 only valid if that build holds the change. The report shows ≥1 orphan with its evidence and is
 reviewable without the Linode console. BL-090's two stale cells are both reconciled at regen
 (`detect_optimization_signals` added; the Label cell now reading `Cloudcost · <provider>`), and the
-Summary row updates to seven scripts. `CLOUDCOST_LINODE_TOKEN` appears nowhere in `run.json`.
+Summary row updates to **eight** scripts — the seven runnable CLIs plus the
+import-only `_normalized.py`, which the section agent collects like any other `.py`
+(`agents/capability_matrix_cloudcost.exs:41-45`). Earlier drafts said seven, carried from a
+scout count taken at `dc8c077`, before t1 added `fetch_linode.py`.
+`CLOUDCOST_LINODE_TOKEN` appears nowhere in `run.json`.
 
 **Claude-code prompt.**
 > Run and close m3 per `cloudcost/m3-milestone.md` §t3. Plant a zero-backend NodeBalancer first
@@ -540,3 +550,103 @@ counts scripts on disk, so it regenerates after `fetch_linode.py` exists).
   covered month); and `:1386` cites `runbook.md:420-428`, shifted by t2 to `:553-566`. Fix
   both the next time someone is legitimately in that file — trigger, not calendar, per the
   BL-078 precedent.
+
+---
+
+## Milestone summary (methodology §7)
+
+Written at t3 close from the three tickets' implementation notes, not from the diffs.
+
+### What shipped
+
+**The bet, proved a third time.** A new provider was a new adapter plus its fixtures plus its own
+run. `detect_orphans.py`, `compose_report_data.py`, `render_report.py` and `_normalized.py` are
+**byte-identical to `dc8c077`** at close, and the shared engine produced a real candidate from
+Linode-shaped input on the live run. No §Normalized extension was needed: every in-scope class
+mapped onto an existing canonical type. Linode was the smaller adapter, so this was the faster
+proof — and it generalises past AWS, which was the point.
+
+- **t1** — `fetch_linode.py`, recorded fixtures, offline suite (no token). Three review rounds,
+  merged `cb3ca63`. Three evidence-gated findings settled by live read rather than by design:
+  the state mapping is `offline` (§D-L4); the static-IP rule *is* reachable, via a `reserved`
+  flag the OpenAPI spec does not declare (§D-L9); the volume rate is per-GB.
+- **t2** — orchestrator provider literal and credential raise, `tools.json`, the sprint case,
+  the runbook posture, BL-092's serde guard over every committed manifest. Merged `f552094`.
+  Zero blocking findings.
+- **t3** — the live run (`cloudcost-orch-linode-h5lltQ`, 18 `[OK]` / 0 `[FAIL]`), the negative
+  proof, BL-090's regen, the PAT expiry, the click-through gate.
+
+**Done-when, at close:** 1 positive run with ≥1 orphan and its evidence trail ✓ · 2 negative proof
+empty, mutation-checked ✓ · 3 offline suite green, 351 tests, no token ✓ · 4 click-through gate ✓ ·
+5 BL-090 both cells reconciled, BL-092 landed over every manifest ✓ · 6 §D-L1 tax, §D-L2 currency
+and the timeout margin all recorded ✓ · 7 credential absent from stdout, stderr and trajectory,
+verified with a control ✓ · 8 six excluded classes each recorded as an exclusion with its reason ✓.
+
+### What was deferred, with refs
+
+- **`rate_basis` as a uniform §Normalized companion** (§D-L5, §Open items) — retro-fit to all three
+  adapters at once, not here, where it would confound the proof.
+- **BL-098** — persisting `not_inventoried` onto an artifact; a §D-C doc-first extension (t1 §5).
+- **BL-074's remaining sweep** — age thresholds, `KEEP_TAG` spelling, `EPHEMERAL_NAME_PATTERN`,
+  `TAGGED_ACCOUNT_COVERAGE_THRESHOLD`. Linode confirmed the `KEEP_TAG` finding.
+- **BL-070** — retire the now-unreachable cross-provider merge code in `compose_report_data.py`.
+- **Two stale `fetch_linode.py` strings** (`:1291`, `:1386`) — §Open items, BL-078 trigger shape.
+- **The sprint's D2 credential grep is AWS-only** (t3 §3.3) — done-when 7 was met by a hand-run arm
+  with its own anti-vacuity control, because no sprint assertion covers it on the Linode leg.
+- **`run.json` is unparseable by `jq`** — `2>&1` prepends harness boot output, so the sprint's
+  status line reads `no-json` on every provider (t3 §4). Display only; the assertion is the exit
+  status.
+
+### Surprises
+
+- **The spec was wrong in the direction that mattered.** §D-L9's rule was written as probably
+  unreachable; the live API returns an undeclared `reserved` flag that makes it reachable. Had the
+  spec been complete, a same-day plant would have had exactly one option instead of two — and the
+  one it would have forced (a reserved IP) prices at `0.00`, which is a weak proof for a cost
+  report. The milestone's best evidence exists because a scouted document was incomplete.
+- **`period` means the *covered* month, and Linode is structurally a month behind.** No preview
+  invoice exists (§Seam 7). This was a t1 **blocking** finding on a first-class contract field, and
+  it propagated: the sprint had been locating the report by `date -u +%Y-%m`, right for two
+  providers and wrong for the third. t1 found it by reading the file; t2 replaced construction with
+  discovery; t3's run confirmed it in production (invoice `#32251471`, issued 2026-08-01, covering
+  July, read on 2026-08-05, artifacts named `2026-07`).
+- **An environment variable has no retraction channel.** `LINODE_BILLING` had **three** carriers —
+  `~/.profile`, the systemd user manager's imported block, and a `gnome-terminal-server` process
+  that had snapshotted it at launch. A file edit cannot reach an imported copy;
+  `unset-environment` cannot reach a process that already forked. The check that would have
+  declared it clean (`env -i bash -lc`) tested init files only. "Where does this value live" is an
+  observation, not a census.
+- **The wiring is five places, not one.** §"Adding a provider" had said "plus a clause in the
+  orchestrator's provider `case`". t2 found the other four one at a time and enumerated them in the
+  runbook — the first prospective application of enumerate-the-class in this milestone rather than
+  a retrospective one.
+- **`main` was red for a suite no ticket's done-check ran.** t1 added the seventh cloudcost CLI;
+  declaring it was t2's. Two tests in the repo-root `tests/` suite failed at `main` for a day. The
+  suite asserts *about* a use case from outside its directory, so it belonged in the done-check of
+  the ticket that changed the script inventory, not only the one that edited the manifest.
+- **The plant was the milestone's one hard dependency on a human, and it was absent at t3.** The
+  first live read found zero zero-backend NodeBalancers. Stopping there — rather than running the
+  sprint and reading the answer off a `[FAIL]` — is what kept the `≥1` assertion meaningful.
+
+### Open items for the next milestone
+
+- **BL-069 is still armed.** t3 discharged the Linode leg only, and only while the plant lives; the
+  plant is deleted after the run. The DO reserved IP was deleted 2026-07-30 and the AWS Elastic IP
+  (`m2-milestone.md` §Prereqs 3) is still pending. What t3 proves is that the assertion *can* go
+  green on real account state with a real dollar figure through an unchanged engine.
+- **DO's `totals.amount` tax treatment is undetermined** (`fetch_do.py:306`). Only AWS and Linode
+  are known-comparable. File it; do not assume it.
+- **The provider-prefix convention is two conventions**, and Linode masks the divergence by
+  coincidence (`provider_slug("linode") == "linode"`). Provider four is where it stops being masked.
+- **Rate limits are undocumented** in the spec and were not read off the rendered page. An absence
+  of information, not an absence of limits.
+- **Before provider four:** read BL-074 and BL-070, and read §"Adding a provider"'s five-place
+  enumeration instead of rediscovering it.
+
+### Not part of this milestone's close
+
+The **project-knowledge export boundary** (manifest regen, remove-all-upload-all) and the **§7
+learning promotions** both follow the merge. The promotions come from the reviewer's scan of the
+three review files plus this summary — §7 step 1 is explicit that review files are not the only
+input, and at least two classes here (the `main`-red suite, the environment-carrier census) were
+found by work rather than by a reviewer.

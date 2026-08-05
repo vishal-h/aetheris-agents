@@ -1,8 +1,9 @@
 # m3-cloudcost — Linode as provider three (report-only)
 
 **Status:** **RATIFIED 2026-08-04** — approved by the human and committed per
-`milestone-methodology.md` §4 (rev 5). t1 DONE — `fetch_linode.py`, fixtures and offline suite;
-reviewed over three rounds (`docs/reviews/m3-cloudcost-t1-review.md`), merged at `cb3ca63`. t2 next.
+`milestone-methodology.md` §4 (rev 6). t1 DONE — `fetch_linode.py`, fixtures and offline suite;
+three review rounds, merged at `cb3ca63`. t2 DONE — orchestrator literal and credential raise,
+manifest, sprint case, runbook, BL-092. t3 next.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved
@@ -30,6 +31,14 @@ the determinability gate is shaped; §Seam analysis gains seam 7 (no preview inv
 snapshot is a month behind); §t2's done-check gains the report-filename verification and the
 partial-run runbook line. No scope or ticket-set change.
 
+**Rev 6 (2026-08-05):** from the t2 review — §Done-when 5 corrected from "three manifests" to
+every committed manifest; §t2's unsound "or from STEP 1's reported period" alternative removed;
+seven `runbook.md` references corrected after t2's insert — six line citations re-pinned,
+and §t2's insert-position pointer re-anchored to the surrounding headings, which was the
+same decay from the other direction: a number that was a target when written and a claim
+once the work landed; the two stale `fetch_linode.py` strings
+recorded in §Open items. No scope or ticket-set change.
+
 ---
 
 ## Goal
@@ -56,9 +65,10 @@ rather than the bigger coverage win.
    Rig. The hand-off names the branch under test.
 5. **BL-090** regenerated — both stale cloudcost cells reconciled (`detect_optimization_signals`
    omission and the pre-BL-083 `Cloudcost Orchestrator` label). **BL-092** serde guard landed,
-   covering three manifests.
+   covering **every committed manifest** — discovered by walk rather than listed, so the figure
+   cannot go stale.
 6. The tax ruling (§D-L1), the currency basis (§D-L2) and the fetch-timeout margin
-   confirmation (`cloudcost/runbook.md:420-428`) are each recorded in the repo.
+   confirmation (`cloudcost/runbook.md:553-566`) are each recorded in the repo.
 7. `CLOUDCOST_LINODE_TOKEN` appears in neither stdout, stderr, nor the trajectory.
 8. **Every excluded resource class is recorded as an exclusion**, with its reason — never left
    as an absence. *Absent is unknown, not zero.*
@@ -379,7 +389,7 @@ enumerated, and land the serde guard alongside the new manifest.
 
 **Contract refs.** `cloudcost_orchestrator.exs:42-49` (the provider literal table) and `:93-116`
 (the BL-096 timeout rationale); `rig/src-tauri/src/commands/tools.rs:6-46` (the serde structs);
-`tests/test_tools_manifests.py`; `cloudcost/runbook.md:15-63` and `:414-437`; methodology §6's
+`tests/test_tools_manifests.py`; `cloudcost/runbook.md:17-137` and `:538-580`; methodology §6's
 runbook-update rule.
 
 **Touches.** `cloudcost/agents/cloudcost_orchestrator.exs`; `cloudcost/tools.json`;
@@ -412,25 +422,28 @@ poison-control block (`:2453-2487`) with the Linode arm it already performs for 
 probe must see the poison **without** the prefix, see nothing **through** it, and
 `CLOUDCOST_LINODE_TOKEN` must survive the prefix. Without this the hermetic proof passes
 while covering a provider it never tested. `cloudcost/runbook.md` gains a `### Linode`
-subsection inserted at `:62` (before the "credentials gate only the live steps" line),
+posture subsection, between the `### AWS` subsection and the "credentials gate only the
+*live* steps" line that closes §Prerequisites (landed at `:65`),
 recording the read-only PAT scope set, the credential file path
 (`~/.secrets/linode-cloudcost.env`), **the `set -a` load requirement** — a `KEY=value` file
 sourced bare leaves the variables shell-local, so the operator's shell reports them present
-while the child preflight reports them unset, with no error in between (`runbook.md:51-61`
+while the child preflight reports them unset, with no error in between (`runbook.md:53-63`
 records the AWS instance of exactly this, and both the sprint and the orchestrator run as
 children) — the token expiry date, the `LINODE_CLI_TOKEN` shadowing note and the
 `LINODE_CLI_API_*` endpoint-redirection hazard.
 Verify how the cloudcost sprint case locates the report file: a Linode run's artifacts are
 named for the **covered** month, so a check that builds `cloudcost_report_$(date +%Y-%m).html`
 passes for AWS and DO and fails for Linode on a reason unrelated to the report. Locate it by
-glob or from STEP 1's reported period. Record in the `### Linode` runbook subsection that a
+glob over what the run actually wrote. **Not** from STEP 1's reported period: that value reaches
+the sprint only through the model's closing prose, so parsing it would put a deterministic check
+back on model output. Record in the `### Linode` runbook subsection that a
 class going `not_inventoried` now makes the run partial and exit 1 — a transient failure on one
 resource class stops the pipeline rather than producing a report with a silent hole
 (methodology §6: changed observable semantics belong in the runbook of the ticket that changes
 them).
 The BL-096 confirmation is **recorded** —
 `fetch_linode`'s measured duration against the shared `fetch_timeout_ms = 300_000`, per
-`runbook.md:420-428` — and the number changes only if the margin is inadequate.
+`runbook.md:553-566` — and the number changes only if the margin is inadequate.
 
 **Claude-code prompt.**
 > Wire Linode as the third provider per `cloudcost/m3-milestone.md` §t2. Add the `"linode"` arm to
@@ -449,8 +462,8 @@ The BL-096 confirmation is **recorded** —
 **Scope.** The live Linode run, the merge-gate click-through, the matrix regen, and the milestone's
 negative proof.
 
-**Contract refs.** This doc's §Done-when; `cloudcost/runbook.md:197-232` (the BL-069 planting
-procedure) and `:414-437`; the regen ritual at scout §A9.
+**Contract refs.** This doc's §Done-when; `cloudcost/runbook.md:283-346` (the BL-069 planting
+procedure) and `:538-580`; the regen ritual at scout §A9.
 
 **Touches.** `cloudcost/docs/m3-t3-implementation-notes.md`; `docs/.sections/cloudcost.md`
 (gitignored, regenerated); `docs/capability-matrix.md` (regenerated); `cloudcost/m3-milestone.md`
@@ -483,7 +496,7 @@ Summary row updates to seven scripts. `CLOUDCOST_LINODE_TOKEN` appears nowhere i
 
 **Claude-code prompt.**
 > Run and close m3 per `cloudcost/m3-milestone.md` §t3. Plant a zero-backend NodeBalancer first
-> (BL-069 — `cloudcost/runbook.md:197`; a same-day unattached volume cannot fire, since its rule
+> (BL-069 — `cloudcost/runbook.md:283`; a same-day unattached volume cannot fire, since its rule
 > requires 14 days of age), then run the sprint case with
 > `CLOUDCOST_PROVIDER=linode`. **`sprint.sh`'s `fail` sets no exit status (BL-077) — read the
 > `[OK]`/`[FAIL]` lines, never `$?`.** Produce the milestone's **negative proof**: `git diff --stat`
@@ -521,3 +534,9 @@ counts scripts on disk, so it regenerates after `fetch_linode.py` exists).
 - **BL-074's remaining sweep** (age thresholds, `KEEP_TAG` spelling, `EPHEMERAL_NAME_PATTERN`,
   `TAGGED_ACCOUNT_COVERAGE_THRESHOLD`) is untouched here. Linode confirms the `KEEP_TAG` finding —
   flat string tags, so `k=v` remains an adapter convention wearing a shared constant's clothes.
+- **Two stale strings in `cloudcost/scripts/fetch_linode.py`**, both outside any m3 ticket's
+  Touches: the `--period` help at `:1291` still says "default: current UTC month", which is
+  the billing-failed fallback rather than the real default (the newest settled invoice's
+  covered month); and `:1386` cites `runbook.md:420-428`, shifted by t2 to `:553-566`. Fix
+  both the next time someone is legitimately in that file — trigger, not calendar, per the
+  BL-078 precedent.

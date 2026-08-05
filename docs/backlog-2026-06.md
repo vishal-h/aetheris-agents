@@ -5463,3 +5463,59 @@ rather than leaving the reader the fork it leaves today.
 against a 25-row manifest; document identified by the human at filing.`
 
 ---
+
+### BL-104 — sprint.sh's hermetic prefix is a denylist; invert it to an allowlist (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`scripts/sprint.sh`)
+
+Filed from the m3-cloudcost close. `CC_HERMETIC` (`../aetheris/scripts/sprint.sh:2371-2373`)
+neutralises **named** variables: `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY
+-u AWS_PROFILE`, plus `AWS_SHARED_CREDENTIALS_FILE=/dev/null`, plus (m3 t2) `-u LINODE_CLI_TOKEN
+-u LINODE_TOKEN`. Every one of those is a name someone thought of. **A denylist cannot cover the
+name nobody thought of**, and the list grows by one entry per provider forever.
+
+**The live instance.** During m3 t1's preflight a 64-character credential-shaped variable named
+`LINODE_BILLING` was found in the session environment — read by no Linode library, present in no
+denylist, and surviving three separate cleanup passes (`~/.profile`, the systemd user-manager's
+imported block, and a `gnome-terminal-server` process that snapshotted it at launch). Had it been
+an active credential for the account under test, the hermetic proof would have reported green
+while the run inherited it. The three-carrier finding is recorded in `aetheris/CLAUDE.md`
+(Adjacent-case, *the class is not only code*).
+
+**Fix direction — default-deny.** `env -i` with an explicit passthrough list rather than `-u` per
+hazard. Establishing that list empirically is the whole risk of the ticket: `PATH`, `HOME`, the
+`CLOUDCOST_*` keys the selected provider actually needs, and whatever the mix/BEAM invocation
+genuinely requires (`MIX_ENV`, `ERL_*`, locale, possibly `ANTHROPIC_API_KEY`). Build it by
+starting from nothing and adding only what the run demonstrably fails without, recording why each
+entry is on it — a passthrough list assembled by guessing is the denylist problem wearing the
+other hat.
+
+**What the inversion buys beyond coverage.** The poison-control block (`:2453-2487`) then proves a
+*structural* property rather than an enumerated one, and its per-provider arms collapse: with
+`env -i` there is nothing provider-specific to unset, so the AWS arm's `[[ "$CC_PROVIDER" == "aws" ]]`
+gate (`:2465`) disappears rather than being duplicated per provider. Adding provider four stops
+touching this file at all.
+
+**Sequence with BL-099 and BL-100 — all three edit the same block, and two of them interact.**
+BL-099 generalises the D2 credential grep past AWS; this row changes what reaches the child at
+all, so arm (iii) — *the credential the adapter reads survives the strip* — must hold for every
+provider under the new passthrough list, or the run cannot authenticate. BL-100's stream-splitting
+option changes what the grep searches. One pass over the cloudcost sprint case beats three, and
+the interaction is only visible when they are read together.
+
+**The standing-rule form of this is deliberately held.** *Environment isolation wants an
+allowlist, not a denylist* is true and generalises past `sprint.sh` to any hermetic prefix or
+container invocation, but it is one instance and its full argument is already here, where someone
+acting on it will be standing. Filing it as a `CLAUDE.md` rule now puts one argument in two files.
+Trigger for promoting it: a second denylist-shaped isolation found anywhere else — at which point
+it promotes on the normal ≥2 bar with two citations.
+
+**Done when:** `CC_HERMETIC` passes an explicit allowlist rather than unsetting names; the
+poison-control block proves a non-allowlisted variable does not reach the child **without naming
+it**; the AWS, DO and Linode legs all pass unchanged in behaviour; each passthrough entry is
+recorded with the reason it is there; and the mutation posture is shown — a variable added to the
+ambient environment and not to the list must not appear in the child.
+
+`Source: m3-cloudcost t1 preflight, 2026-08-05 — LINODE_BILLING found in the session environment
+under a name no denylist carried.`
+
+---

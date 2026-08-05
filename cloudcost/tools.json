@@ -1,7 +1,7 @@
 {
   "manifest_version": "1",
   "use_case": "cloudcost",
-  "description": "Cloud cost and orphan-resource reporting — read-only AWS and DigitalOcean adapters, deterministic detection, and a self-contained HTML report",
+  "description": "Cloud cost and orphan-resource reporting — read-only AWS, DigitalOcean and Linode adapters, deterministic detection, and a self-contained HTML report",
   "scripts": [
     {
       "name": "fetch_aws",
@@ -154,6 +154,72 @@
       ],
       "output": "json",
       "example": "python3 scripts/fetch_do.py --output-dir output/digitalocean"
+    },
+    {
+      "name": "fetch_linode",
+      "file": "scripts/fetch_linode.py",
+      "description": "Linode read-only cost and inventory adapter that fetches the settled invoice and its items, sweeps instances, volumes, IPs, NodeBalancers and images, prices them from the unauthenticated types endpoints, normalizes them, and emits JSON artifacts.",
+      "args": [
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory the normalized cost and inventory artifacts are written to; the pipeline convention is a per-provider tree (output/linode)"
+        },
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM, the month the figures COVER. Left unset the adapter selects the newest settled invoice, so a snapshot is structurally one month behind — Linode publishes no preview invoice. A period no invoice covers is reported, never invented"
+        },
+        {
+          "name": "api_base",
+          "flag": "--api-base",
+          "type": "string",
+          "required": false,
+          "default": "https://api.linode.com/v4",
+          "description": "Linode API base URL. Constructed here and never taken from LINODE_CLI_API_HOST/_VERSION/_SCHEME, which redirect where a credential is sent"
+        },
+        {
+          "name": "timeout",
+          "flag": "--timeout",
+          "type": "integer",
+          "required": false,
+          "default": "30",
+          "description": "Per-request timeout in seconds"
+        },
+        {
+          "name": "max_retries",
+          "flag": "--max-retries",
+          "type": "integer",
+          "required": false,
+          "default": "4",
+          "description": "Retry attempts per API call"
+        },
+        {
+          "name": "retry_base_delay",
+          "flag": "--retry-base-delay",
+          "type": "float",
+          "required": false,
+          "default": "1.0",
+          "description": "Base delay in seconds for exponential retry backoff"
+        }
+      ],
+      "env": [
+        {
+          "key":         "CLOUDCOST_LINODE_TOKEN",
+          "label":       "Linode API token (read-only PAT)",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/fetch_linode.py --output-dir output/linode"
     },
     {
       "name": "detect_orphans",

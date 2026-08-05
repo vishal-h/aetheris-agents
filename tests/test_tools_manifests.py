@@ -143,8 +143,10 @@ def test_discovery_sweep_intact():
         "payslip",
         "provenance",
     ]
-    # The subject of BL-084: six runnable CLIs plus the import-only `_normalized.py`.
-    assert len(_flat_cli_scripts("cloudcost")) == 6
+    # The subject of BL-084: seven runnable CLIs plus the import-only `_normalized.py`.
+    # Six until m3-cloudcost t1 added `fetch_linode.py`; t2 declares it in the manifest and
+    # bumps this count in the same commit, so the two never disagree silently.
+    assert len(_flat_cli_scripts("cloudcost")) == 7
 
     # api's manifest is real, but its scripts live in `api/tenant/scripts/` and
     # `api/gateway/scripts/` — nested, so neither the walker nor this suite scans them.

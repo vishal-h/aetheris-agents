@@ -253,6 +253,22 @@ boundary — the strict-mode exemption above). Checks 1–7 (source-vs-doc) rema
 it is check 8's committed-history dependency that forces the ordering.
 `Source: BL-034 (fe8298c — the export-prompt self-staling ordering hazard, real but latent; its "628f15f production-fired" claim withdrawn as false after a clean check-8 sweep of all 38 committed manifests), BL-025 (8021a59/00ddd34 — the vacuity fired on the caveat's own author: pre-commit 1 WARN, post-commit 3).`
 
+**`drift_check` verifies a pin is current, never that it is complete — read the pinned content
+against what it should say, do not trust the green.** Check 8 compares the manifest's commit
+column against `git log -1 --format=%h -- <file>`: a currency test, and silent on whether the
+pinned document still says what it claims to. A current pin over a document that has gone
+incomplete reports exactly the same green as one over a correct document, so the green is
+evidence about the export, not about the content.
+`Source: cloudcost-in-Rig batch close, 2026-08-04 — recorded only in handoff-linode-provider-three-kickoff-2026-08-04.md §Review-discipline learnings promoted (:87), and found absent from both CLAUDE.md files at the m3-cloudcost close.`
+
+**Export is remove-all-upload-all against the full manifest set, never a hash-driven diff.**
+Uploading only what changed leaves the project-knowledge store and the manifest describing
+different sets, and the tooling cannot see it: check 8 detects the repo moving ahead of an
+export, never a file uploaded without a regen (`docs/project-knowledge-manifest.md`, the header
+paragraph above the table). The check is blind in that direction by construction; the procedure
+is the only thing covering it.
+`Source: cloudcost-in-Rig batch close, 2026-08-04 — recorded only in handoff-linode-provider-three-kickoff-2026-08-04.md §Review-discipline learnings promoted (:89), and found absent from both CLAUDE.md files at the m3-cloudcost close.`
+
 **Ticket text that quotes repo state** (counts, paths, expected outputs) cites the commit
 it was verified against; claude-code treats divergence between ticket text and repo reality
 as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002.

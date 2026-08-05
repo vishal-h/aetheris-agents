@@ -5467,7 +5467,8 @@ against a 25-row manifest; document identified by the human at filing.`
 ### BL-104 — sprint.sh's hermetic prefix is a denylist; invert it to an allowlist (#TBD)
 **Size:** S · **Priority:** medium · **Section:** harness (`scripts/sprint.sh`)
 
-Filed from the m3-cloudcost close. `CC_HERMETIC` (`../aetheris/scripts/sprint.sh:2371-2373`)
+Filed from the m3-cloudcost close. The `CC_HERMETIC=(env -u …)` array in the cloudcost case
+(`../aetheris/scripts/sprint.sh`, verified at `aetheris@082b37c:2383-2386`)
 neutralises **named** variables: `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY
 -u AWS_PROFILE`, plus `AWS_SHARED_CREDENTIALS_FILE=/dev/null`, plus (m3 t2) `-u LINODE_CLI_TOKEN
 -u LINODE_TOKEN`. Every one of those is a name someone thought of. **A denylist cannot cover the
@@ -5489,11 +5490,15 @@ starting from nothing and adding only what the run demonstrably fails without, r
 entry is on it — a passthrough list assembled by guessing is the denylist problem wearing the
 other hat.
 
-**What the inversion buys beyond coverage.** The poison-control block (`:2453-2487`) then proves a
-*structural* property rather than an enumerated one, and its per-provider arms collapse: with
-`env -i` there is nothing provider-specific to unset, so the AWS arm's `[[ "$CC_PROVIDER" == "aws" ]]`
-gate (`:2465`) disappears rather than being duplicated per provider. Adding provider four stops
-touching this file at all.
+**What the inversion buys beyond coverage.** The poison-control block — the `CC_POISON` /
+`CC_PROBE` arms (i)–(iii), and their Linode siblings `CC_LINODE_POISON` / `CC_LINODE_PROBE`
+(verified at `082b37c:2480-2560`) — then proves a *structural* property rather than an
+enumerated one, and its per-provider arms collapse: with `env -i` there is nothing
+provider-specific to unset, so the AWS arm's `[[ "$CC_PROVIDER" == "aws" ]]` gate **inside the
+poison-control block** (verified at `082b37c:2512`) — the same test also guards the region
+assertions (`:2651`) and the D2 credential grep (`:2671`), and this row means only the first —
+disappears rather than being duplicated per provider. Adding provider four stops touching this
+file at all.
 
 **Sequence with BL-099 and BL-100 — all three edit the same block, and two of them interact.**
 BL-099 generalises the D2 credential grep past AWS; this row changes what reaches the child at
@@ -5517,5 +5522,10 @@ ambient environment and not to the list must not appear in the child.
 
 `Source: m3-cloudcost t1 preflight, 2026-08-05 — LINODE_BILLING found in the session environment
 under a name no denylist carried.`
+
+`Citations verified at aetheris@082b37c. Anchors name the construct; the line numbers are
+parentheticals against that commit, so a later insert makes them checkable rather than
+silently wrong — the fix the m3 promotion prescribes, applied to a row that had already
+drifted three times before it was filed.`
 
 ---

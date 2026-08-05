@@ -1,7 +1,7 @@
 # m3-cloudcost — Linode as provider three (report-only)
 
 **Status:** **RATIFIED 2026-08-04** — approved by the human and committed per
-`milestone-methodology.md` §4 (rev 3). Not started; t1 next.
+`milestone-methodology.md` §4 (rev 4). Not started; t1 next.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved
@@ -17,6 +17,11 @@ requirement. Both from the t1-kickoff review; neither changes scope, tickets or 
 **Rev 3 (2026-08-04):** one citation corrected in §t2 — the `*)` arm is `sprint.sh:2393`;
 `:2394` is its fail line. The rev-2 text attached the arm's identity to the body's line
 number. No scope, ticket or done-when change.
+
+**Rev 4 (2026-08-05):** §Prerequisites 3 and §Rule reachability corrected — the BL-069 plant
+is a zero-backend NodeBalancer, not an unattached volume, because every other reachable rule
+carries an age threshold a same-day plant cannot satisfy. §t3's done-check and prompt follow.
+Found at t1 kickoff; the rev-1 text would have produced an expected-red ≥1-orphan assertion.
 
 ---
 
@@ -89,9 +94,15 @@ which fold into this arc.
      created for this milestone anyway. Record the disposition in t1's implementation
      notes. If it held something else, record that instead — an unexplained
      credential-shaped variable is not closed by deleting the line that set it.
-3. **A plantable orphan.** An **unattached Block Storage volume** is the cheapest and the most
-   certainly-detectable choice — see §Rule reachability. Plant it before t3's run (BL-069) or the
-   ≥1-orphan assertion is expected-red.
+3. **Two account actions, and they are not the same one.**
+   - **A powered-off Linode instance**, for t1's D-L4 fixture. Any instance, no age
+     requirement; a throwaway nano is fine if you would rather not disturb a real one.
+     Powering off costs nothing — Linode bills a powered-off instance the same (§Seam 3).
+     If the account holds no instances at all, D-L4 and both compute rules are untestable
+     and that is a scope conversation, not a fixture problem.
+   - **A zero-backend NodeBalancer**, for t3's BL-069 plant. Create it before the run or the
+     ≥1-orphan assertion is expected-red. **Not** an unattached volume — see §Rule
+     reachability.
 
 ---
 
@@ -243,9 +254,21 @@ anything", and the ≥1-orphan done-when depends on the difference.
 | `rule_unassociated_static_ip` | **Unestablished** | §D-L9 — settled by live read at t1, or recorded as not-reachable |
 | `rule_stopped_database_with_storage` | **No** | §D-L7 — class excluded |
 
-**Consequence for the plant (BL-069):** an unattached volume is the only candidate that is both
-certainly reachable and cheap to create. Plant that, not a static IP — the DO milestone's headline
-orphan type is the one Linode may not be able to express.
+**Consequence for the plant (BL-069) — the age thresholds decide this, not the confidence
+scores.** Of the rules reachable on Linode, `rule_unattached_volume` requires `created_at`
+age **> 14 days** and `rule_stopped_compute_with_attached_storage` **> 30 days**
+(`detect_orphans.py:165-184`, `:248-303`), so a resource planted the same day produces no
+candidate. `rule_aged_snapshot`'s threshold is overridable via `--snapshot-age-days`, but
+lowering a threshold to make an orphan appear games the assertion rather than satisfying it.
+**`rule_idle_load_balancer` is the only reachable rule with no age requirement** (`:227-245`
+keys on type and `attached_to is None` alone), so the plant is a **zero-backend
+NodeBalancer**, at 0.85 confidence — which additionally exercises the 1+N configs read that
+is Linode's most distinctive inventory path.
+
+*Why m1's recipe does not transfer:* DO's planted orphan was an unassociated reserved IP, and
+`rule_unassociated_static_ip` is the other rule with no age threshold (`:187-199`) — which on
+Linode is precisely the rule that may not be expressible (§D-L9). A same-day plant needs a
+no-threshold rule, and Linode has exactly one.
 
 ---
 
@@ -392,7 +415,8 @@ procedure) and `:414-437`; the regen ritual at scout §A9.
 
 **Done-check.**
 ```bash
-# 1. plant an unattached volume first (BL-069) — see §Rule reachability
+# 1. plant a zero-backend NodeBalancer first (BL-069) — see §Rule reachability;
+#    a same-day volume cannot fire, its rule needs 14 days
 CLOUDCOST_PROVIDER=linode ./scripts/sprint.sh cloudcost   # READ [OK]/[FAIL] LINES, NOT $?  (BL-077)
 # 2. the negative proof
 git diff --stat dc8c077 -- cloudcost/scripts/detect_orphans.py \
@@ -411,8 +435,9 @@ reviewable without the Linode console. BL-090's two stale cells are both reconci
 Summary row updates to seven scripts. `CLOUDCOST_LINODE_TOKEN` appears nowhere in `run.json`.
 
 **Claude-code prompt.**
-> Run and close m3 per `cloudcost/m3-milestone.md` §t3. Plant an unattached Block Storage volume
-> first (BL-069 — `cloudcost/runbook.md:197`), then run the sprint case with
+> Run and close m3 per `cloudcost/m3-milestone.md` §t3. Plant a zero-backend NodeBalancer first
+> (BL-069 — `cloudcost/runbook.md:197`; a same-day unattached volume cannot fire, since its rule
+> requires 14 days of age), then run the sprint case with
 > `CLOUDCOST_PROVIDER=linode`. **`sprint.sh`'s `fail` sets no exit status (BL-077) — read the
 > `[OK]`/`[FAIL]` lines, never `$?`.** Produce the milestone's **negative proof**: `git diff --stat`
 > against `dc8c077` for the four shared scripts must be empty, and that output goes in the packet.

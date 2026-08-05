@@ -655,3 +655,70 @@ def full_aws_stub(aws_stub):
             if key not in routes and (region, key) not in AWS_SEQUENCED:
                 aws_stub.empty(key, region=region)
     return aws_stub
+
+
+# =========================================================================== Linode (m3 t1)
+
+
+class LinodeStub(DOStub):
+    """A local stand-in for the Linode APIv4.
+
+    Deliberately the DO stub with a different base path: both providers are plain JSON over
+    HTTP with a bearer token, so the machinery that serves recorded fixtures over real HTTP
+    and records what the adapter actually sent is identical. What differs is pagination —
+    Linode increments a `page` query parameter rather than following a `next` URL — and the
+    existing `sequence()` already covers that: successive GETs of one path return successive
+    pages, which is exactly what a page-number walk produces.
+    """
+
+    @property
+    def api_base(self):
+        return f"{self.base_url}/v4"
+
+
+#: The invoice the recorded items belong to (`linode_invoices.json`, newest of three). It is
+#: dated 2026-08-01 and bills 2026-07-01 -> 2026-08-01, so the period it COVERS is 2026-07 —
+#: which is the period the adapter labels the run with (r0 F1).
+LINODE_INVOICE_ID = 32251471
+LINODE_PERIOD = "2026-07"
+
+#: Every endpoint the sweep touches, wired to its recorded fixture. NodeBalancer configs are
+#: per-parent: the two ids are the ones in `linode_nodebalancers.json`.
+LINODE_FULL_ROUTES = {
+    "/v4/account": "linode_account",
+    "/v4/account/invoices": "linode_invoices",
+    f"/v4/account/invoices/{LINODE_INVOICE_ID}/items": "linode_invoice_items",
+    "/v4/volumes": "linode_volumes",
+    "/v4/nodebalancers": "linode_nodebalancers",
+    "/v4/nodebalancers/1343674/configs": "linode_nodebalancer_configs",
+    "/v4/nodebalancers/1433944/configs": "linode_nodebalancer_configs",
+    "/v4/images": "linode_images",
+    "/v4/networking/ips": "linode_ips",
+    "/v4/linode/types": "linode_types_linode",
+    "/v4/volumes/types": "linode_types_volumes",
+    "/v4/nodebalancers/types": "linode_types_nodebalancers",
+}
+
+
+@pytest.fixture
+def linode_stub():
+    stub = LinodeStub().start()
+    try:
+        yield stub
+    finally:
+        stub.stop()
+
+
+@pytest.fixture
+def full_linode_stub(linode_stub):
+    """A stub wired for a complete successful sweep, instances paginated across two pages."""
+    linode_stub.route_fixtures(LINODE_FULL_ROUTES)
+    linode_stub.sequence(
+        "/v4/linode/instances",
+        [
+            (200, load_fixture("linode_instances_page1")),
+            (200, load_fixture("linode_instances_page2")),
+        ],
+    )
+    return linode_stub
+    return aws_stub

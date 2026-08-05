@@ -1,0 +1,53 @@
+{
+  "_comment": "Recorded 2026-08-05. The account returned 140 invoices; the newest 3 are kept. Note `tax: 0.0` throughout \u2014 this account is zero-rated, so the live data cannot exercise \u00a7D-L1's synthetic Tax row. linode_invoice_taxed.json does.",
+  "data": [
+    {
+      "id": 31827594,
+      "label": "Invoice #31827594",
+      "date": "2026-06-01T04:39:18",
+      "subtotal": 422.0,
+      "tax": 0.0,
+      "tax_summary": [
+        {
+          "name": "Zero Rate",
+          "tax": 0.0
+        }
+      ],
+      "total": 422.0,
+      "billing_source": "linode"
+    },
+    {
+      "id": 32044317,
+      "label": "Invoice #32044317",
+      "date": "2026-07-01T04:36:07",
+      "subtotal": 429.83,
+      "tax": 0.0,
+      "tax_summary": [
+        {
+          "name": "Zero Rate",
+          "tax": 0.0
+        }
+      ],
+      "total": 429.83,
+      "billing_source": "linode"
+    },
+    {
+      "id": 32251471,
+      "label": "Invoice #32251471",
+      "date": "2026-08-01T04:36:37",
+      "subtotal": 422.0,
+      "tax": 0.0,
+      "tax_summary": [
+        {
+          "name": "Zero Rate",
+          "tax": 0.0
+        }
+      ],
+      "total": 422.0,
+      "billing_source": "linode"
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 3
+}

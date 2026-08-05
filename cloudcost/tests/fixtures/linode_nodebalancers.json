@@ -1,0 +1,65 @@
+{
+  "data": [
+    {
+      "id": 1343674,
+      "label": "ccm-8cac00823f9b",
+      "region": "ap-west",
+      "type": "common",
+      "hostname": "hostname-placeholder.invalid",
+      "ipv4": "192.0.2.24",
+      "ipv6": "2001:db8::18",
+      "frontend_address_type": "public",
+      "frontend_vpc_subnet_id": null,
+      "created": "2025-03-07T14:47:57",
+      "updated": "2026-07-29T14:54:04",
+      "client_conn_throttle": 0,
+      "client_udp_sess_throttle": 0,
+      "lke_cluster": {
+        "id": 366503,
+        "type": "lkecluster",
+        "label": "uat",
+        "url": "/v4/lke/clusters/366503"
+      },
+      "tags": [
+        "kubernetes"
+      ],
+      "transfer": {
+        "in": 33.7871150970459,
+        "out": 163.7833423614502,
+        "total": 197.5704574584961
+      }
+    },
+    {
+      "id": 1433944,
+      "label": "ccm-ba3fa112725b",
+      "region": "ap-west",
+      "type": "common",
+      "hostname": "hostname-placeholder.invalid",
+      "ipv4": "192.0.2.26",
+      "ipv6": "2001:db8::19",
+      "frontend_address_type": "public",
+      "frontend_vpc_subnet_id": null,
+      "created": "2025-03-24T11:39:23",
+      "updated": "2026-07-29T14:54:05",
+      "client_conn_throttle": 0,
+      "client_udp_sess_throttle": 0,
+      "lke_cluster": {
+        "id": 381165,
+        "type": "lkecluster",
+        "label": "prod2",
+        "url": "/v4/lke/clusters/381165"
+      },
+      "tags": [
+        "kubernetes"
+      ],
+      "transfer": {
+        "in": 38.716965675354004,
+        "out": 547.6780548095703,
+        "total": 586.3950204849243
+      }
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 2
+}

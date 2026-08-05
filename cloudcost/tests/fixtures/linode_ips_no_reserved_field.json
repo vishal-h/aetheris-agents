@@ -1,0 +1,34 @@
+{
+  "_comment": "SYNTHETIC — not a recording. The future in which Linode stops returning the undeclared `reserved` and `assigned_entity` fields. Neither is declared by OpenAPI 4.215.0, so neither is contractual and both could disappear without notice. Every row here carries the spec's declared field set and nothing more. The adapter must mark the whole class not_inventoried rather than emit an empty static_ip list, because with no `reserved` field a reserved address cannot be told from the free primary every Linode has — and an empty list would read as 'this account holds no reserved address'.",
+  "data": [
+    {
+      "address": "192.0.2.30",
+      "gateway": "192.0.2.1",
+      "subnet_mask": "255.255.255.0",
+      "prefix": 24,
+      "type": "ipv4",
+      "public": true,
+      "rdns": null,
+      "linode_id": 19294655,
+      "region": "ap-west",
+      "interface_id": null,
+      "vpc_nat_1_1": null
+    },
+    {
+      "address": "192.0.2.31",
+      "gateway": "192.0.2.1",
+      "subnet_mask": "255.255.255.0",
+      "prefix": 24,
+      "type": "ipv4",
+      "public": true,
+      "rdns": null,
+      "linode_id": null,
+      "region": "ap-west",
+      "interface_id": null,
+      "vpc_nat_1_1": null
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 2
+}

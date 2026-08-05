@@ -1,0 +1,44 @@
+{
+  "_comment": "SYNTHETIC \u2014 not a recording. Items for linode_invoice_taxed. Two `Linode 4GB` rows in DIFFERENT regions, so the group's region must resolve to null rather than to either one; the volume row is single-region and must keep `ap-west`. \u03a3 amount == 100.00 == subtotal.",
+  "data": [
+    {
+      "label": "Linode 4GB - alpha (1)",
+      "amount": 60.0,
+      "tax": 0.0,
+      "total": 60.0,
+      "from": "2026-07-01T04:00:00",
+      "to": "2026-08-01T03:59:59",
+      "quantity": null,
+      "region": "ap-west",
+      "type": "hourly",
+      "unit_price": "0.036"
+    },
+    {
+      "label": "Linode 4GB - beta (2)",
+      "amount": 25.0,
+      "tax": 0.0,
+      "total": 25.0,
+      "from": "2026-07-01T04:00:00",
+      "to": "2026-08-01T03:59:59",
+      "quantity": null,
+      "region": "in-maa",
+      "type": "hourly",
+      "unit_price": "0.036"
+    },
+    {
+      "label": "Storage Volume - gamma (3) - 150 GiB",
+      "amount": 15.0,
+      "tax": 0.0,
+      "total": 15.0,
+      "from": "2026-07-01T04:00:00",
+      "to": "2026-08-01T03:59:59",
+      "quantity": null,
+      "region": "ap-west",
+      "type": "hourly",
+      "unit_price": "0.0225"
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 3
+}

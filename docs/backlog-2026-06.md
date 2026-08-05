@@ -5094,3 +5094,42 @@ multi-line street/city/state/zip.
 | — | BL-092 | Makes the discarded BL-084 round-trip permanent. The offline guard the pytest suite structurally cannot be |
 | — | BL-093 | XS doc fix, but decide the mechanism (describe both, or move the payslip rows out of static defs) — it is the payslip half of the question BL-085 answered for cloudcost |
 | — | BL-095 | Live secret exposure in the payslip plan card today. Fix with the `masked` flag or the `ToolDetail` set/unset dots; pairs with BL-091 as the "masked-key policy" pair |
+
+### BL-098 — The inventory envelope has no extras key, so adapter run-metadata dies at stdout (#TBD)
+**Size:** M · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/`)
+
+Filed 2026-08-05, from m3-cloudcost t1 review r0 F3 / r1 F5. An adapter's run metadata —
+`not_inventoried`, `surveyed`, `undetermined`, `warnings`, `exclusions`, `duration_ms` — is emitted
+only on the CLI summary and is lost when the process exits. It never reaches
+`compose_report_data.py` and so never reaches the rendered report.
+
+**Not a Linode regression.** `fetch_aws.py` behaves identically: `"warnings"`, `"errors"` and
+`"regions_swept"` each occur exactly once in that file, in its own stdout summary
+(`fetch_aws.py:1113-1128`). This is the established behaviour of the use case, surfaced by m3
+rather than introduced by it.
+
+**Why it was not fixed in m3.** The **cost** schema sanctions `provider_extra`, but the m1
+**inventory** schema has no extras key at all (`provider`, `account`, `period`, `resources`,
+`generated_at`), so there is no contract-sanctioned home on the inventory side. Adding one is a
+§Normalized change, and it is **not free**: §Normalized's emit-with-a-real-value-or-`null`
+rule (never by omission) would oblige `fetch_do.py` and `fetch_aws.py` to emit the new key too,
+so the extension touches all three adapters at once. Doing that inside the milestone whose entire
+purpose is proving §Normalized does not change would confound the proof — which is exactly why it
+is filed rather than done.
+
+**Mitigated, not open-ended.** m3 t1 made `not_inventoried` non-empty fail the run (`status:
+partial`, exit 1), so a class going UNKNOWN now stops the pipeline rather than producing a report
+with a quiet hole. That is louder than a JSON field no consumer currently reads, and it is why this
+row is medium rather than high.
+
+**Done when:** the §Normalized inventory envelope carries a sanctioned extras key, ratified
+doc-first per m3 §D-C (section-scoped edit applied against HEAD and diffed by the arbiter, before
+any adapter emits it); all three adapters emit it; `compose_report_data.py` carries it through; and
+the report surfaces "this class could not be assessed" distinctly from "this class is empty".
+
+**Sequence after** BL-070 / BL-076 / BL-078 if any of those is opening `compose_report_data.py` or
+`fetch_aws.py` anyway — this touches both.
+
+`Source: m3-cloudcost t1 review r0 F3, r1 F5 (2026-08-05).`
+
+---

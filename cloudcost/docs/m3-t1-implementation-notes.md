@@ -221,8 +221,27 @@ Two consequences, both stated in the output rather than left to a reader:
   that encoded it would be asserting something the provider never stated. Candidates are
   *ordered* by that observation (a cheap heuristic) and *confirmed* by their items.
 
-`summary.period_basis` states which of `invoice-covered` / `requested` / `fallback-current-month`
-produced the label, and `provider_extra.invoice` carries both `issued` and `period_covered`.
+`period_basis` states which of `invoice-covered` / `requested` / `fallback-current-month`
+produced the label. It is on **both** the run summary and the cost artifact
+(`provider_extra.period_basis`, symmetric with `currency_basis` — r1 Q1), so a reader holding
+only the JSON can tell an invoice-backed month from any other kind.
+`provider_extra.invoice` carries both `issued` and `period_covered`.
+
+### What each `period_basis` value emits (r1 F4)
+
+| Value | When | What is written |
+|---|---|---|
+| `invoice-covered` | an invoice covering the period was found | **both** artifacts; this is the only value that can appear on a cost snapshot |
+| `requested` | `--period` was given and billing failed | **inventory only**, `status: partial`, exit 1 |
+| `fallback-current-month` | no `--period` and billing failed | **inventory only**, `status: partial`, exit 1, plus a `warnings[]` entry saying the label is not invoice-confirmed |
+
+**There is no empty-cost-snapshot case, so the ambiguity F4 asks about cannot arise.** A run
+that could not read an invoice writes **no cost document at all** — `costs` stays `None` and
+only the inventory is emitted. So a zero-spend month (a real invoice whose items total 0.00) and
+a failed-billing month are never both "a cost snapshot with empty `line_items`": the first is a
+cost snapshot, the second is the *absence* of one, alongside `status: partial`, a non-zero exit
+and an `errors[]` entry naming the cause. `test_a_period_no_invoice_covers_is_reported_not_invented`
+asserts the explicit-`--period` half, including that no `linode_costs_*.json` is written.
 
 The orchestrator needs no change: it passes no `--period`
 (`cloudcost_orchestrator.exs:200`) and reads the period back from STEP 1's summary (`:249`), so
@@ -428,6 +447,7 @@ Silent-wrong-answer rule: a check only ever seen passing is not yet a check).
 | M16 | `surveyed["images"]` never recorded (r1 F5) | `images_survey…` |
 | M17 | an unattached volume reports as attached (r1 F6) | `shared_rule_engine_FIRES` |
 | M18 | `complete` ignores `not_inventoried` | `vanished_reserved_field` |
+| M19 | `period_basis` dropped from the artifact (r1 Q1) | `period_is_the_covered_month…` |
 
 **M10 was re-run after the guard was narrowed.** The guard initially failed on a true positive:
 Linode's price-table id is `"volume"`, spelled identically to the canonical `TYPE_VOLUME` and
@@ -459,7 +479,32 @@ consumes the measurement and the number changes only if the margin is inadequate
   is a weak proof of a cost report. The unattached volume remains the cheapest certain choice
   (§Rule reachability), and at the live per-GB rate a 20 GB volume carries a real $2.00.
 - **Persisting `not_inventoried` onto an artifact** is a §D-C doc-first extension and is not
-  t1's to make (§5).
+  t1's to make (§5). **Filed as BL-098** — prose in a packet files nothing.
+
+### Obligations t2 inherits (r1 F2, F3)
+
+**1. `sprint.sh` constructs the report filename from the current month, and that is now wrong
+for Linode — CONFIRMED, not predicted.** `../aetheris/scripts/sprint.sh:2504` reads:
+
+```bash
+  # The report is named for the billing period — the current UTC month, which is what
+  # both adapters default to.
+  CLOUDCOST_PERIOD=$(date -u +%Y-%m)
+  CLOUDCOST_REPORT="${CLOUDCOST_OUT}/cloudcost_report_${CLOUDCOST_PERIOD}.html"
+```
+
+That comment is true of DO and AWS and **false of Linode as of t1**: a Linode run on 2026-08-05
+writes `cloudcost_report_2026-07.html`, so the existence assertion at `:2511` fails for a reason
+that has nothing to do with the report, and `report_data_${PERIOD}.json` at `:2506` misses too.
+Verified by reading the file at t1 rather than left for t3's run to discover. The fix belongs to
+t2 (`sprint.sh` is in §t2's Touches, not §t1's): take the period from STEP 1's reported
+`period` — the orchestrator already passes no `--period` (`cloudcost_orchestrator.exs:200`) and
+reads the period back (`:249`) — or glob, but do not construct it from the wall clock.
+
+**2. The runbook owes a line on run-level completeness.** `not_inventoried` non-empty now makes
+the run `partial` and exit 1, so a transient 500 on one class stops the pipeline instead of
+producing a report with a quiet hole. That is changed observable semantics, which methodology §6
+puts in the runbook; it belongs in t2's `### Linode` subsection beside the credential posture.
 - **§D-L9 is stated against a stale spec** — the milestone text says the rule may be
   unreachable; the live API says otherwise (§2). Arbiter's call whether to amend the doc.
 - **`period` semantics differ from DO** — issue month versus covered month (§4).

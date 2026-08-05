@@ -318,6 +318,9 @@ def test_period_is_the_covered_month_not_the_issue_month(
 
     costs = json.loads((tmp_path / "linode_costs_2026-07.json").read_text())
     assert costs["period"] == "2026-07"
+    # r1 Q1: the basis is ON THE ARTIFACT, symmetric with currency_basis — a reader holding
+    # only this JSON can tell an invoice-backed month from any other kind.
+    assert costs["provider_extra"]["period_basis"] == "invoice-covered"
     # Both facts are stated: what it covers, and when it was cut.
     assert costs["provider_extra"]["invoice"]["issued"] == "2026-08-01T04:36:37"
     assert costs["provider_extra"]["invoice"]["period_covered"] == {

@@ -92,3 +92,66 @@ rev 3 (§t1 is byte-unchanged in rev 4; the rev-3 citation is correct, not stale
   the specific mechanism, and `git diff --stat` against `main` is the two-second check.
 - Self-reported defects, the mutation record with M10 replayed after narrowing, and the
   §Prerequisites closure record are all exemplary and want no change.
+
+---
+
+# Review — m3-cloudcost t1 — round 1
+
+Reviewed at `a1ad55f`. All seven r0 findings dispositioned; F3's answer is accepted as
+answered-not-changed, and its reasoning is right. **Zero blocking findings against t1.**
+Merge on a one-line answer to Q1.
+
+## Findings
+
+1. **[question — merge-gating, one line] Where does `period_basis` live?** The r1 artifact
+   listing shows top-level keys unchanged and `provider_extra: currency_basis invoice`, so
+   `period_basis` is either inside `provider_extra.invoice` or stdout-only. It must be on the
+   artifact, symmetric with `currency_basis`: the `fallback-current-month` value is the one
+   case where the `period` label is *not* backed by an invoice, and a reader holding only the
+   JSON cannot otherwise tell that snapshot from an invoice-covered one. If it is already under
+   `provider_extra`, say so and this is closed. If it is stdout-only, move it.
+
+2. **[carried — blocking at t2, not at t1] A Linode run's artifacts are named for the previous
+   month, and `sprint.sh` may not expect that.** F1 is correct and I am not asking for a change
+   here. But the consequence is that a Linode run on 2026-08-05 writes
+   `linode_costs_2026-07.json` and `cloudcost_report_2026-07.html`, while an AWS run the same
+   day writes `…2026-08…`. If the cloudcost sprint case locates the report by constructing a
+   filename from the current month rather than by glob or by reading STEP 1's reported period,
+   the Linode arm fails its report-exists assertion for a reason that has nothing to do with the
+   report. Verify it explicitly in t2 rather than discovering it at t3's run; §t2's done-check
+   is being amended to name it.
+
+3. **[non-blocking] The run-level completeness change is operator-visible semantics and owes a
+   runbook line.** Your Observation is the best finding in this round — `not_inventoried`
+   non-empty now makes the run partial and exit 1, closing a silent-success path no finding
+   named. It is also a behaviour an operator will meet: a transient 500 on one class now stops
+   the whole pipeline instead of producing a report with a quiet hole. That is the right trade
+   and it matches `fetch_aws`'s exit-0-clean / exit-1-partial precedent, but methodology §6's
+   runbook rule covers changed observable semantics, so it belongs in t2's `### Linode`
+   subsection alongside the credential posture.
+
+4. **[non-blocking] State what `fallback-current-month` emits.** With no settled invoice at all,
+   what does the cost snapshot contain — empty `line_items` and zero totals? If so, note in the
+   implementation notes how that is distinguished from a genuine zero-spend month, since the two
+   are identical in the artifact except for `period_basis`. `test_a_period_no_invoice_covers_is_reported_not_invented`
+   may already cover the explicit-`--period` half; the bare-run half is the one to state.
+
+5. **[non-blocking] Your F3 residual is correct and is being filed rather than fixed here.** The
+   inventory envelope has no extras key, so `surveyed`, `undetermined` and `not_inventoried` die
+   at stdout. Worth recording, when it is filed, that extending it is not free: §Normalized's
+   emit-or-null rule would oblige `fetch_do` and `fetch_aws` to emit the new key too, so the
+   extension touches both existing adapters — which is exactly why it is not m3's to make. Note
+   also that finding 3 above mitigates most of the practical gap behaviourally: a class going
+   UNKNOWN now stops the run, which is louder than a JSON field no consumer reads.
+
+## Cross-ticket notes
+
+- **The r0 correction is the round's most valuable line.** "Every address carries `reserved:
+  false`" was true of the 15 IPv4 rows and false of the 11 IPv6 rows — a field set that is not
+  uniform across subtypes of one class. The general form, and a promotion candidate at m3 close:
+  a claim quantified over "every row" from a response whose rows are heterogeneous is an
+  observation about the subtype you happened to read. It is the same class as "the one seam" and
+  as the three carriers of `LINODE_BILLING`, now on its third distinct surface in this milestone.
+- Implementing the stricter gate first, watching it mark a readable class UNKNOWN, and then
+  loosening it to *no row carries it* is the correct order — the loosening is evidenced rather
+  than assumed, and M13 pins it.

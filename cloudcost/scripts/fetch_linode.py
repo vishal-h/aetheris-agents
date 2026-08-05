@@ -475,6 +475,7 @@ def normalize_cost(
     period: str,
     balance: dict | None = None,
     warnings: list | None = None,
+    period_basis: str = "invoice-covered",
 ) -> dict:
     """Build the cost snapshot from an invoice's items, grouped to service granularity.
 
@@ -583,6 +584,15 @@ def normalize_cost(
                 f"adapter-asserted: Linode OpenAPI {SPEC_VERSION} (ETag {SPEC_ETAG}) declares "
                 f"no currency field anywhere, billing surface included"
             ),
+            # What backs the `period` label, symmetric with `currency_basis` — so a reader
+            # holding only this JSON can tell an invoice-backed month from any other kind.
+            # On a cost snapshot this necessarily reads `invoice-covered`: the other two bases
+            # arise only when no invoice could be read, and that run emits no cost snapshot at
+            # all. It is stated rather than left implicit because the *reader* cannot know
+            # that, and because the value that carries it is the one that would be wrong if
+            # the resolution ever gained a case that produced a snapshot on another basis.
+            # `invoice.period_covered` below is the underlying evidence.
+            "period_basis": period_basis,
         },
     }
 

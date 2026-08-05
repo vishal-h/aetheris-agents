@@ -5243,3 +5243,70 @@ streams.
 `Source: m3-cloudcost t3 §4, t3 review r0 F1 (2026-08-05).`
 
 ---
+
+### BL-101 — The report states tag coverage as a percentage and nothing else; surface the tags themselves (#TBD)
+**Size:** S–M · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/scripts/compose_report_data.py`, `cloudcost/templates/report.html.j2`)
+
+Filed 2026-08-05 from the m3-cloudcost close. The report's Tag coverage section renders one
+ratio (`40.00 % (0.4) tagged — 6 of 15 usable resources carry at least one tag; 9 carry none`)
+plus per-provider counts and top untagged spenders. It never names a single tag. An operator
+who wants to tag critical infrastructure so it is protected, and throwaway infrastructure so it
+is visible, cannot tell from the report which tags exist, what carries them, or what they cost.
+
+**A third of this is already built and dropped on the floor.** `detect_orphans.py` emits a
+`reported` block — the untagged-in-tagged-account governance rule, reported-only by §t2 design,
+each entry carrying its own `evidence[]` — and `compose_report_data.orphan_section` carries
+`candidates` only, so `report_data` has no key for it and the template cannot render it. The
+rule fires in the pipeline and is invisible in its output. m1 closed with exactly this as an
+open question ("decide whether the report carries the `reported` list — a scope question, not a
+done-when gap"); this row is the answer.
+
+**Scope — descriptive only.** No detection logic changes, no §Normalized extension: `tags` is
+already first-class on every inventory resource, and `reported` already exists in the orphan
+artifact. Three additions:
+- carry `reported` through compose into `report_data`, and render it as its own section;
+- a **tags-in-use** table: each distinct tag, the resources carrying it, and their summed
+  `monthly_cost_estimate`, ordered by cost. Apply the existing `top_k` convention and report
+  the cap applied — a long tail of one-off tags is the expected shape and a silent truncation
+  reads as "these are all the tags";
+- show each resource's `tags` on the rows the report already renders (top untagged spenders,
+  orphan candidates — candidates already carry `tags` in their identity fields, so this is a
+  template change alone).
+
+**Keep the orphan section and the tag section apart, deliberately.** m1 ruled that `keep=true`
+resources stay invisible because "those are resources the operator asked to keep, and
+suppressing them is the intent." That ruling is about the orphan *queue* and is preserved: an
+excluded resource is still not a candidate. Showing it in the **tag** section — as a resource
+carrying a keep tag, with its cost — is a different statement and does not reverse the ruling.
+Do not merge the two sections into one "governance" block; that reversal, if ever wanted, is
+its own decision.
+
+**Not in scope, and gated.** Grouping by tag *key* is not a cross-provider concept: AWS tags are
+key/value flattened to `k=v` by its adapter, DO and Linode tags are flat strings where `k=v` is
+a human convention nothing enforces. A key-grouped view would be honest on AWS and inferred
+elsewhere — the provider-vocabulary seam class **BL-074** exists for, and which already names
+`KEEP_TAG`'s spelling as an adapter convention masquerading as a shared constant. Tags *driving*
+detection (a `lifecycle=temp` tag raising confidence or creating candidates) is a change to the
+shared engine and a milestone of its own, gated on BL-074 landing first. This row is the
+descriptive layer that makes either worth building.
+
+**Sequence with BL-070.** Both edit `compose_report_data.py`, which has been byte-unchanged
+since m1 and whose stillness was the negative proof for two milestones. Doing them together is
+one review of that file instead of two — the BL-078 trigger shape (do it the next time someone
+is legitimately in the file).
+
+**Note on content.** Tags can carry owner emails, project codenames and ticket ids. The report
+is a local self-contained HTML file, so this is not a new exposure, but a tag table makes the
+strings prominent where the percentage did not. Worth a line in the runbook when this lands
+rather than a guard in the code.
+
+**Done when:** the report names the tags in use with their resource counts and summed
+estimates, applying and reporting a `top_k`; the `reported` governance list reaches
+`report_data` and renders with its evidence; each rendered resource row shows its tags; a
+`keep=true` resource appears in the tag section and still appears nowhere in the orphan section;
+and the tag figures reconcile with the existing coverage ratio, asserted in a test.
+
+`Source: m3-cloudcost close, 2026-08-05 (human request, from reading the live Linode report);
+resolves m1-cloudcost §Open items' `reported`-list question.`
+
+---

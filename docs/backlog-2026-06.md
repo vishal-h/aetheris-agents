@@ -5421,3 +5421,45 @@ deliberately — filing it inside would have re-staled the backlog row the bound
 pinned and reopened a WARN the boundary existed to close).`
 
 ---
+
+### BL-103 — The store may hold documents the manifest does not describe, and "remove all" is undefined against them (#TBD)
+**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`docs/`, export procedure)
+
+Filed 2026-08-05 from the m3-cloudcost export boundary's post-upload check: the manifest
+describes **25** documents; the store held **26**. The 26th predates the upload window, so it
+survived the remove — the first time anything has produced evidence about the upload half at
+all. Every prior boundary's upload was covered by discipline alone, and this is the first
+boundary that could have caught the discrepancy, not the first at which it could have existed.
+
+**Both branches of that finding are open, and they need opposite fixes.** If a non-manifest
+document may legitimately live in the store, then the manifest is silent about a class of
+document it shares a store with, and BL-002 Step 5's "REMOVE the old knowledge files" is
+**destructive against a document this repo does not own** — the procedure says remove-all and
+scopes it to nothing. If it may not, the store under-describes itself and the export record is
+wrong. Note the asymmetry: under the benign branch the standing procedure is the hazard, and it
+has been running unscoped at every boundary to date.
+
+**Identified, not established.** The document is `claude/aetheris-agents--inbox-brief.md`,
+created 2026-08-05 11:01 UTC, roughly an hour before the 11:57 upload window. The `claude/`
+prefix is where agent-written project docs land by default, so the likely owner is another
+Claude surface writing to this project. **Likely is not established, and that gap is the row's
+point** — a document whose owner is assumed is a document whose removal is assumed safe. What
+remains is confirming the writer and whether it is expected to persist across boundaries, which
+is a fact to be found, not a preference to be settled.
+
+**Scope — the manifest header and the prompt, not tooling.** Check 8 cannot see the store in
+either direction; nothing here becomes automatable, and a checker over a store this repo cannot
+read would be a green light with no referent. What lands is a sentence in the manifest saying
+whether non-manifest documents may coexist and are out of scope, and a Step 5 that names what
+"all" means so the next uploader is not choosing.
+
+**Done when:** `claude/aetheris-agents--inbox-brief.md`'s writer is established rather than
+inferred, and whether it is expected to persist; the manifest states whether non-manifest
+documents may coexist and are out of scope; BL-002 Step 5's remove-all names its scope; and the
+post-upload verification's check 3 says what an older timestamp means *given* that policy,
+rather than leaving the reader the fork it leaves today.
+
+`Source: m3-cloudcost export boundary, 2026-08-05 — post-upload verification, 26 documents
+against a 25-row manifest; document identified by the human at filing.`
+
+---

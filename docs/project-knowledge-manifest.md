@@ -32,11 +32,11 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `7a7b7ec` | 2026-08-02 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `0fc9396` | 2026-08-03 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `13fc8c4` | 2026-08-05 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `b7cb6ca` | 2026-08-02 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `9b5da48` | 2026-08-04 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `710ecd2` | 2026-08-03 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `4d98ec2` | 2026-08-05 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `de71e2b` | 2026-08-05 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `1743e75` | 2026-08-05 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
@@ -233,3 +233,92 @@ the manifest-staleness class cleared, which is what an export boundary is suppos
 repo was not written this batch, so its 12 rows carry their prior hashes unchanged.
 
 Previous export: 2026-08-03 (m2-cloudcost close).
+
+---
+
+**Export boundary — 2026-08-05, m3-cloudcost close (Linode as provider three).** Four rows
+advanced, and only four: `aetheris-agents--CLAUDE.md` (`0fc9396`→`13fc8c4`) and
+`aetheris--CLAUDE.md` (`710ecd2`→`1743e75`), the milestone's §7 promotions — two doc-sync rules
+in agents, five m3 learnings in the harness; `capability-matrix.md` (`b7cb6ca`→`4d98ec2`),
+BL-090's regen; and `backlog-2026-06.md` (`9b5da48`→`de71e2b`), BL-098..BL-101, the BL-069
+went-green-and-reverted append, and the two DONE sections described below. 25 rows: **25
+carried, none added, none dropped.** The other 21 data rows are unchanged since the previous
+boundary.
+
+> **Mirror-pair check run first, per the BL-002 convention** — and it is what establishes
+> whether the harness repo takes a write at all this boundary. `triad-loop.md` canonical
+> (`aetheris/docs/methodology/`) and its `aetheris-agents/docs/` mirror are **byte-identical**
+> (188 lines each, `diff -q` clean), so no canonical sync was needed and the harness took no
+> tracked write. `drift_check` cannot see that class — it compares the manifest against git
+> history and has no byte-identity check between mirrors, so the `diff -q` is the only thing
+> that catches it. It is not a formality: at the 2026-08-03 boundary the same check found
+> canonical 26 lines short of its mirror, and the export would otherwise have shipped without
+> a rule claude-ui operates under.
+
+> **`cloudcost/m3-milestone.md` gets no row — ratified by the human at the m3 close.** m1's
+> `cloudcost/milestone.md` is exported because its §Normalized *is* the frozen contract every
+> adapter is written to, which is the milestone-*specification* test that also admits
+> `rig--protocol.md` and `rig--bl-007-milestone.md`. m3 does not meet it: it holds derived
+> reasoning *about* a contract that lives in m1's file — its §Milestone summary reports that
+> no §Normalized extension was needed and that the four shared scripts are byte-identical at
+> close, i.e. the contract m3 reasons against is m1's, unchanged. m2's milestone doc set the
+> precedent by staying out on the same reading.
+
+> **Working artifacts stay out as always — eight this milestone:**
+> `cloudcost/docs/m3-linode-scout.md`, the three
+> `cloudcost/docs/m3-t{1,2,3}-implementation-notes.md`, the three
+> `docs/reviews/m3-cloudcost-t{1,2,3}-review.md`, and
+> `docs/handoffs/handoff-linode-provider-three-kickoff-2026-08-04.md` (handoffs have never
+> carried a row). `cloudcost/runbook.md` changed this milestone — the Linode posture
+> subsection — and stays out on the standing precedent this manifest already records: no
+> use-case runbook has ever carried a row; the two exported runbooks are the Rig and harness
+> *system* runbooks. As at every prior boundary, this milestone's specifications are the
+> BL-0xx rows, already carried inside `backlog-2026-06.md`.
+
+> **Why the backlog row pins at `de71e2b` rather than the milestone's last content commit
+> (`b0030e7`).** m3's done-when 5 reads "BL-090 both cells reconciled, BL-092 landed over every
+> manifest ✓", and both had landed — the matrix regen at `4d98ec2` (t3), the `tools.rs` serde
+> guard at `f28b817` (t2) — but neither row carried a DONE section, so an export pinned at
+> `b0030e7` would have shipped project knowledge reading two closed rows as open. Written in
+> `de71e2b`, *before* the table was regenerated, so the row pins the corrected file. This is
+> the same mid-flight correction the 2026-08-04 boundary made for BL-073/BL-095, and it is now
+> covered by a standing rule rather than by noticing twice: `CLAUDE.md` §Definition of done —
+> doc sync, *"`drift_check` verifies a pin is current, never that it is complete — read the
+> pinned content against what it should say, do not trust the green."* Four movers matching the
+> four predicted is a hash result; it says nothing about whether the pinned content is
+> finished. The correction was **enumerated, not patched**: m3's §Done-when and §Milestone
+> summary were swept for every row they claim complete, which confirmed BL-096 already carries
+> its DONE (2026-08-04, `32933d8`) and that BL-069 must *not* be marked — its Linode leg went
+> green on 2026-08-05 and reverted when the plant was deleted, so it stays armed. Two rows
+> found by observation are not a census.
+
+**All 25 rows verified against their owning repos at regen** — every pinned commit equals
+`git log -1 --format=%h -- <path>` run in the owning repo (`../aetheris` for the 12 harness
+rows), and all 25 files exist on disk. The re-verification was run again after `de71e2b`
+landed, so the four re-pins are read from the tree the manifest is committed against.
+
+**Upload is remove-all then upload-all against the full 25-row set** — not a diff of the four
+re-pinned rows. Twenty-one data rows are unchanged and would look like "nothing to re-upload"
+to any hash-driven shortcut; do not optimise the upload down. `drift_check` compares
+manifest-vs-git, so it catches the repo running ahead of an export (the staleness WARN that
+clears at this boundary) but is blind to the reverse — a partial or under-described upload
+leaves project knowledge silently wrong while drift still reports green. The procedure is the
+only thing covering that direction, which is why it is now a standing rule in `CLAUDE.md`
+§Definition of done — doc sync rather than a paragraph re-derived each boundary.
+
+**Ordering invariant held.** `docs/backlog-2026-06.md` was written first and committed alone
+(`de71e2b`); the manifest is the boundary's **last** tracked write and commits alone. Nothing
+manifest-tracked was edited after the table was regenerated, so no row is born stale — BL-034's
+hazard, which is also why the post-commit `drift_check --strict` below is the meaningful one:
+check 8 reads committed history, so run before the commit it would have compared against
+pre-edit hashes and passed vacuously.
+
+**Repo push state.** Both repos were level with `origin/main` at the exported content commits
+(`a596697` / `5e7935f`) when this export began, so every pinned hash — including the harness's
+`1743e75` — is already public and reproducible. The harness took no tracked write this
+boundary, so its 12 rows carry hashes from its own pushed history. This boundary's two agents
+commits are **held for review, not pushed**. (Deliberately no self-hash: a line naming the
+manifest's own commit is stale the moment it is committed.)
+
+Previous export: 2026-08-04 (cloudcost-in-Rig batch close — two rows advanced, re-pinned once
+within the boundary).

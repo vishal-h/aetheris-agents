@@ -1,7 +1,8 @@
 # m3-cloudcost — Linode as provider three (report-only)
 
 **Status:** **RATIFIED 2026-08-04** — approved by the human and committed per
-`milestone-methodology.md` §4 (rev 4). Not started; t1 next.
+`milestone-methodology.md` §4 (rev 5). t1 DONE — `fetch_linode.py`, fixtures and offline suite;
+reviewed over three rounds (`docs/reviews/m3-cloudcost-t1-review.md`), merged at `cb3ca63`. t2 next.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved
@@ -22,6 +23,12 @@ number. No scope, ticket or done-when change.
 is a zero-backend NodeBalancer, not an unattached volume, because every other reachable rule
 carries an age threshold a same-day plant cannot satisfy. §t3's done-check and prompt follow.
 Found at t1 kickoff; the rev-1 text would have produced an expected-red ≥1-orphan assertion.
+
+**Rev 5 (2026-08-05):** from the t1 r0/r1 reviews — §t1's done-check no longer constructs the
+artifact filename from the clock; D-L9 records that the live API contradicts the spec and how
+the determinability gate is shaped; §Seam analysis gains seam 7 (no preview invoice → the
+snapshot is a month behind); §t2's done-check gains the report-filename verification and the
+partial-run runbook line. No scope or ticket-set change.
 
 ---
 
@@ -200,6 +207,17 @@ from one live read whether an extra/unassigned address is distinguishable from t
 address every Linode has. If it is not, the rule is **recorded as not-reachable-on-Linode** — never
 approximated by treating every unattached address as an orphan, which would flag primaries.
 
+**Resolved at t1, and the spec was incomplete rather than merely stale.** The live API returns
+three fields OpenAPI 4.215.0 does not declare — `reserved`, `assigned_entity` and `tags` — so
+the rule **is** reachable: only `reserved: true` addresses are emitted. Two consequences the
+spec could not have given. First, `linode_id` alone is not the attachment signal: addresses
+serving a NodeBalancer carry `linode_id: null` with `assigned_entity` naming the balancer, and
+a spec-faithful adapter would have reported them as orphans. Second, the field set is **not
+uniform across address types** — IPv4 rows carry `reserved`, IPv6 rows carry neither it nor
+`assigned_entity` — so the determinability gate gates on *no row carrying the field*, not on
+every row carrying it, and unassessable rows are counted as `undetermined` rather than folded
+into the zero. Absence of the field is "cannot assess", never "none found".
+
 **D-L10 — populate `line_items[].region`.** `invoice-item.region` is non-null for hourly items.
 Nothing downstream reads it today (verified: `service_totals` reads only `service` and `amount`;
 no template expression touches it), but §Normalized's rule is emit-with-a-real-value-or-`null`,
@@ -232,6 +250,7 @@ result: it is evidence for the bet, and the t3 packet should say so explicitly.
 | 4 | `attached_to` | Volume→`linode_id` (nullable, clean). NodeBalancer backends are **not on the object**: `nodes_status.{up,down}` lives on each config, so zero-backends ⇔ Σ(up+down)==0 across configs, including zero configs. **1 + N requests.** No tag-targeting concept exists, so DO's `"tag:<name>"` carve-out has no Linode analogue | Adapter-owned; record the absent tag-targeting as *checked and absent*, not unmentioned |
 | 5 | Granularity | No resource identifier on invoice items | §D-L3 — service-level, forced |
 | 6 | **Tax / what `totals.amount` means** — new, surfaced by Linode | `subtotal` / `tax` / `tax_summary[]` / `total` are four explicit fields | §D-L1 — post-tax with a synthetic `Tax` line, matching AWS's observed shape |
+| 7 | **What "the current period" means** — new, surfaced by Linode | No preview invoice: the in-flight month exists only as `balance_uninvoiced`, and the newest settled invoice covers the previous month | `period` is the **covered** period on every provider (m1's semantics); a Linode snapshot is structurally one month behind, and the basis is recorded on the artifact, not inferred |
 
 **Adjacent seams checked, not carried:** `KEEP_TAG` — Linode tags are flat strings like DO's, so
 `"keep=true"` is writable by hand and the constant needs no change (it remains the adapter
@@ -251,7 +270,7 @@ anything", and the ≥1-orphan done-when depends on the difference.
 | `rule_idle_load_balancer` | **Yes** | `nodes_status.{up,down}` per config; live price from `/nodebalancers/types` |
 | `rule_stopped_compute_with_attached_storage` | **Yes**, gated on §D-L4 | Linode bills powered-off instances, so `own` is non-zero (DO-shaped) |
 | `rule_aged_snapshot` (Images) | **Partly** | `created` + `status` present; **no pricing endpoint for images**, so the saving is unknown — emit `0.0` plus a named `warnings[]` entry, the `fetch_aws.py:474-482` precedent. Never an invented figure |
-| `rule_unassociated_static_ip` | **Unestablished** | §D-L9 — settled by live read at t1, or recorded as not-reachable |
+| `rule_unassociated_static_ip` | **Yes**, reserved addresses only | §D-L9 resolved at t1: the live API returns an undeclared `reserved` flag, so a reserved unassigned address is the orphan shape and an automatically-assigned primary is never emitted. No age threshold (`:187-199`) |
 | `rule_stopped_database_with_storage` | **No** | §D-L7 — class excluded |
 
 **Consequence for the plant (BL-069) — the age thresholds decide this, not the confidence
@@ -260,15 +279,28 @@ age **> 14 days** and `rule_stopped_compute_with_attached_storage` **> 30 days**
 (`detect_orphans.py:165-184`, `:248-303`), so a resource planted the same day produces no
 candidate. `rule_aged_snapshot`'s threshold is overridable via `--snapshot-age-days`, but
 lowering a threshold to make an orphan appear games the assertion rather than satisfying it.
-**`rule_idle_load_balancer` is the only reachable rule with no age requirement** (`:227-245`
-keys on type and `attached_to is None` alone), so the plant is a **zero-backend
-NodeBalancer**, at 0.85 confidence — which additionally exercises the 1+N configs read that
-is Linode's most distinctive inventory path.
+**Two reachable rules carry no age requirement** — `rule_idle_load_balancer` (`:227-245`,
+keying on type and `attached_to is None` alone) and `rule_unassociated_static_ip`
+(`:187-199`), the latter reachable only because t1 found the undeclared `reserved` flag
+(§D-L9). Either is plantable the same day. **The plant is a `common` NodeBalancer**, for a
+reason that is about the evidence rather than the rule: it is the option that yields a real
+dollar figure. Linode publishes no per-address price endpoint, so a reserved IPv4 prices at
+`0.0` plus a named warning (`fetch_linode.py:865`) — satisfying the ≥1-orphan assertion with no saving,
+which is a weak proof for a cost report, and the same trap as a `premium` NodeBalancer.
+It also exercises the 1+N configs read, which is Linode's most distinctive inventory path.
 
-*Why m1's recipe does not transfer:* DO's planted orphan was an unassociated reserved IP, and
-`rule_unassociated_static_ip` is the other rule with no age threshold (`:187-199`) — which on
-Linode is precisely the rule that may not be expressible (§D-L9). A same-day plant needs a
-no-threshold rule, and Linode has exactly one.
+*The static-IP saving is structurally zero today, not incidentally so.* `fetch_linode.py:865`
+emits `monthly_cost_estimate: 0.0` for every `static_ip` unconditionally, with the warning at
+`:1266-1267` stating that Linode publishes no pricing endpoint for addresses, so the saving is
+**unknown, not zero**. A reserved unassigned address is therefore a valid orphan with no dollar
+figure, which is why it is not the plant. This changes only if an address rate becomes
+derivable with provenance — the DO precedent is `RESERVED_IP_UNASSIGNED_MONTHLY = 4.38`
+(`fetch_do.py:67`), confirmed against a real invoice line — and no such line can exist on this
+account until it bills an address. Revisit then, not before.
+
+*What m1's recipe would have cost:* DO's planted orphan was an unassociated reserved IP, and
+that rule transfers to Linode only because of an undocumented field. Had the spec been
+complete, a same-day plant would have had exactly one option.
 
 ---
 
@@ -307,9 +339,15 @@ LKE, Firewall or VPC read.
 ```bash
 python3 -m pytest cloudcost/tests/test_fetch_linode.py -v          # offline, no token
 CLOUDCOST_LINODE_TOKEN=… python3 cloudcost/scripts/fetch_linode.py --output-dir /tmp/cc-linode
-python3 -c "import json;d=json.load(open('/tmp/cc-linode/linode_costs_$(date -u +%Y-%m).json'));\
+python3 -c "import json;d=json.load(open('/tmp/cc-linode/linode_costs_<covered period>.json'));\
 print(round(sum(i['amount'] for i in d['line_items']),2), d['totals']['amount'])"   # must match
 ```
+**The filename is the covered period, not today's month.** Linode publishes no preview
+invoice, so a run reads the newest settled invoice and its snapshot is structurally one month
+behind (§Seam 7). Read the filename from the adapter's summary rather than constructing it
+from the clock — the rev-1 text constructed it, which is what pushed the first implementation
+to label `period` with the issue month.
+
 Plus: the token appears in neither stdout nor stderr on success **or** on an auth failure; both
 files are schema-valid per §Normalized; every canonical `type`/`state` value is imported from
 `_normalized`, not spelled locally (assert with a source guard, the
@@ -381,7 +419,16 @@ sourced bare leaves the variables shell-local, so the operator's shell reports t
 while the child preflight reports them unset, with no error in between (`runbook.md:51-61`
 records the AWS instance of exactly this, and both the sprint and the orchestrator run as
 children) — the token expiry date, the `LINODE_CLI_TOKEN` shadowing note and the
-`LINODE_CLI_API_*` endpoint-redirection hazard; the BL-096 confirmation is **recorded** —
+`LINODE_CLI_API_*` endpoint-redirection hazard.
+Verify how the cloudcost sprint case locates the report file: a Linode run's artifacts are
+named for the **covered** month, so a check that builds `cloudcost_report_$(date +%Y-%m).html`
+passes for AWS and DO and fails for Linode on a reason unrelated to the report. Locate it by
+glob or from STEP 1's reported period. Record in the `### Linode` runbook subsection that a
+class going `not_inventoried` now makes the run partial and exit 1 — a transient failure on one
+resource class stops the pipeline rather than producing a report with a silent hole
+(methodology §6: changed observable semantics belong in the runbook of the ticket that changes
+them).
+The BL-096 confirmation is **recorded** —
 `fetch_linode`'s measured duration against the shared `fetch_timeout_ms = 300_000`, per
 `runbook.md:420-428` — and the number changes only if the margin is inadequate.
 

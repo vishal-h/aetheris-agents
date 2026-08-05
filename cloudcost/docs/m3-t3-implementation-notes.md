@@ -127,9 +127,13 @@ rather than checked.
 
 `cloudcost/m3-milestone.md` **is** in t3's Touches, but scoped to "the milestone summary at close".
 The Status line read `t3 next.` — which the same commit makes false, since it lands a summary
-written at t3 close. Updated to `t3 DONE … Merge pending the click-through gate`, on the same
-leaving-it-self-contradictory reasoning as the runbook edit. Declared because it is outside the
-Touches entry's stated scope and outside the arbiter's rev-7 instruction, which named two sites.
+written at t3 close. Updated to `t3 DONE …`, on the same leaving-it-self-contradictory reasoning as
+the runbook edit. Declared because it is outside the Touches entry's stated scope and outside the
+arbiter's rev-7 instruction, which named two sites.
+
+The first version of that edit ended `Merge pending the click-through gate` — which review F2
+correctly read as contradicting the summary's own done-when 4 ✓ in the same commit. Now that the
+gate has passed, the line records it as passed (§7b).
 
 ### 3.5 BL-069 is discharged for the Linode leg only, and only while the plant lives
 
@@ -201,3 +205,58 @@ to become a presence is not evidence.
   outside every m3 ticket's Touches; still not fixed.
 - **`project_knowledge` manifest staleness** for `docs/capability-matrix.md` — expected, exempt, and
   cleared at the export boundary, which follows the merge and is not t3's.
+
+---
+
+## 7. Round-0 disposition
+
+Review at `docs/reviews/m3-cloudcost-t3-review.md`. One blocking finding, a filing action;
+click-through gate passed on both surfaces.
+
+| Finding | Disposition |
+|---|---|
+| **F1** — two defects recorded only in a notes file, which does not travel | **fixed**, §7a. `BL-099` (the AWS-only D2 grep) and `BL-100` (`run.json` unparseable) filed; `BL-069` gains the went-green-once record. |
+| **F2** — done-when 4 ✓ landed one commit ahead of the gate that makes it true | **fixed forward**, §7b. The ✓ stays; the Status line now records the gate as passed and what was observed. |
+
+### 7a. F1 — the two rows, and a third edit inside the same file
+
+**Declared deviation: `docs/backlog-2026-06.md` is outside §t3's Touches.** Filed anyway, on the
+precedent the review names — BL-098 was filed from inside t1 for the same reason, and the standing
+rule is that a deferred finding gets a row *the day it is found* because prose in a notes file has
+no executor. The m1 lesson is the sharper form: implementation notes do not travel to the next
+ticket's session, so a defect recorded only in §3.3 and §4 above is a defect nobody will act on.
+
+- **BL-099** — the AWS-only D2 grep. Records that a provider whose credential is never grepped has
+  a D2 posture *asserted rather than checked*; that the fix is the same shape as t2's
+  `CC_HERMETIC` strip (select the variable from `$CC_PROVIDER`, don't hand-type a list); that the
+  file-has-content-and-a-`run_id` gate must be preserved; and that the anti-vacuity control t3 ran
+  by hand should land *with* the generalisation rather than after it, because without it a
+  credential whose encoding differs from what `grep -qF` sees reports clean forever.
+- **BL-100** — `run.json`'s `2>&1`. Records that nothing is mis-asserted (the assertion is the exit
+  status, not the `jq`), that the cost is a signal trained into noise, and that the two candidate
+  fixes are not interchangeable: splitting the streams changes what the D2 grep searches, so it
+  cannot be done without re-reading BL-099. A credential-leak grep that stops covering stderr is a
+  worse trade than a wrong status word.
+- **BL-069** — appended the went-green-once record, per the review: run
+  `cloudcost-orch-linode-h5lltQ`, `idle_load_balancer`, $10.00, and the revert on plant deletion.
+  Also recorded there that the Done-when's *mutation posture* is now demonstrated on one provider —
+  t3's first read found zero and the sprint was not run; the second found one and the assertion
+  passed — so what remains is a durable fixture, not a proof. Without that line the row reads as
+  never-green and the next person re-derives it.
+
+Both new rows follow the filing shape BL-096–BL-098 used: a detail section appended at the end,
+no sequencing-table row, since the recent filings in this file do not add one.
+
+### 7b. F2 — forward, not backward
+
+The ✓ on done-when 4 is left standing and the Status line is corrected, because the gate has since
+passed: `m3-t3-run@14489aa`, both surfaces, "View report" opening the Linode HTML with the planted
+NodeBalancer's evidence and $10.00 saving, and the capability-matrix view showing the regenerated
+section. Rewriting the ✓ to un-claim something now true would trade a stale claim for a stale
+retraction.
+
+The class the review names is worth stating plainly, since this is its third instance in the
+milestone: **a claim that lands in the same commit as the thing that would make it true is
+self-falsifying at the moment it is written**, whatever it says an hour later. The
+gate-before-action rule already covers it — no action past a gate until that gate has run *and its
+result is on the record* — and writing `✓` is an action past the gate.

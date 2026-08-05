@@ -5,7 +5,10 @@
 three review rounds, merged at `cb3ca63`. t2 DONE — orchestrator literal and credential raise,
 manifest, sprint case, runbook, BL-092. t3 DONE — the live run
 (`cloudcost-orch-linode-h5lltQ`, 18 `[OK]` / 0 `[FAIL]`), the negative proof, BL-090, the PAT
-expiry; see §Milestone summary. Merge pending the click-through gate.
+expiry; see §Milestone summary. **Click-through gate PASSED 2026-08-05** at `m3-t3-run@14489aa`,
+observed by the human on both surfaces: "View report" opened the Linode HTML showing the planted
+NodeBalancer with its evidence and a $10.00 saving, and the capability-matrix view showed the
+regenerated cloudcost section.
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved

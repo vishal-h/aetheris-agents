@@ -212,9 +212,10 @@ Load-bearing checks were watched failing in the state they guard, then restored.
 | M4 | one report named for a **non-current** month (the Linode shape) | discovery passes and derives `2026-07`; the superseded `date -u +%Y-%m` construction would have looked for `2026-08` |
 | M5 | `CLOUDCOST_LINODE_TOKEN` unset, provider `linode` | orchestrator raise, exit 1 |
 | M6 | `fetch_linode.py` undeclared in the manifest | `test_no_undeclared_scripts[cloudcost]` (observed red at `main` before the fix) |
+| M7 | period empty (from M2 and M3) with the r0-F2 guard in place | one `[WARN]`, and `report_data_.json` is never constructed — the guard branches **both** ways across the three cases, so it is not vacuous |
 
-M2–M4 were run against the block **extracted verbatim from `sprint.sh` by line range**, so the
-text exercised is the text that ships rather than a paraphrase of it. The harness is at
+M2–M4 and M7 were run against blocks **extracted verbatim from `sprint.sh` by line range**, so
+the text exercised is the text that ships rather than a paraphrase of it. The harness is at
 `scratchpad/mutate_report_discovery.sh`; its full output is in the packet.
 
 ---
@@ -257,3 +258,35 @@ text exercised is the text that ships rather than a paraphrase of it. The harnes
   orchestrator run. Both are §t3's done-check, both cost an LLM call and a live API read, and
   §t2's done-check does not include them. The sprint changes are covered by `bash -n`, the
   extracted-block mutation harness, and the `env` probe.
+
+---
+
+## 7. Round-0 disposition
+
+Review at `docs/reviews/m3-cloudcost-t2-review.md`. Zero blocking findings; approved for merge.
+
+| Finding | Disposition |
+|---|---|
+| **F1** — `main` red for a suite t1 never ran | **no change.** Correctly diagnosed as t1's gap, not t2's; the rule goes to the m3-close promotion set. Nothing in t2 to alter. |
+| **F2** — empty `CLOUDCOST_PERIOD` cascades into `report_data_.json` | **fixed**, §7a. |
+| **F3** — two stale strings in `fetch_linode.py` | **no change, already recorded.** Both are in §6 above, and the arbiter is folding them into the milestone's §Open items at rev 6 with the BL-078 trigger shape. `fetch_linode.py` is outside §t2's Touches and editing it to close a documentation nit would be the deviation, not the fix. |
+| **F4** — the PAT expiry | **human-owned, unchanged.** The runbook states it as a required fill; it stays the one open item, now with a deadline (before t3's live run). |
+
+### 7a. F2 — the guard, and the one thing it deliberately does not cover
+
+The three period-dependent assertions (`report_data.providers`, the orphan count, and AWS's
+`region_coverage` pair) now sit inside `if [[ -z "$CLOUDCOST_PERIOD" ]]; then warn … else …`,
+and `CLOUDCOST_DATA` is assigned **inside** the `else` — so the misleading path is not merely
+unused, it is never constructed. No `exit`: the block reports every failure rather than
+stopping at the first, per the review.
+
+**The D2 credential grep was deliberately moved *outside* the guard** rather than swept in with
+its AWS siblings. It reads `run.json`, not the report, so it is meaningful on exactly the runs
+where the report is missing — and a run that failed to produce a report is not a run where you
+want the credential check silently skipped. This required splitting the single
+`if [[ "$CC_PROVIDER" == "aws" ]]` block into two; that split is the whole of the change's blast
+radius, and it is the reason the AWS leg loses nothing.
+
+Mutation M7 pins it, and pins that the guard is not vacuous: across the three constructed
+states the same guard text branches **both** ways — `RUN` on the working case, `WARN` on both
+broken ones. A guard that always skipped, or never did, would show only one of those lines.

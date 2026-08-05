@@ -2,6 +2,7 @@
 #
 # m1-cloudcost t5 — the report pipeline orchestrator.
 # m2-cloudcost t3 — generalized over CLOUDCOST_PROVIDER.
+# m3-cloudcost t2 — Linode wired in as provider three.
 #
 # Linear, four stages, ONE provider per run (decision H): the provider is chosen at eval
 # time and the run fetches, detects, composes and renders for that provider alone. Two
@@ -12,9 +13,9 @@
 #
 # Record-and-deliver: `run_command` is a :contained effect, so there is no verify
 # support here (D1). No spawn_agent/wait_for_all — a single provider needs no fan-out.
-# No write op, no scheduling. Credentials are env-only (D2): CLOUDCOST_DO_TOKEN and
-# CLOUDCOST_AWS_* are read by the adapter from the environment and never appear in a
-# prompt, an argument, or the trajectory.
+# No write op, no scheduling. Credentials are env-only (D2): CLOUDCOST_DO_TOKEN,
+# CLOUDCOST_AWS_* and CLOUDCOST_LINODE_TOKEN are read by the adapter from the environment
+# and never appear in a prompt, an argument, or the trajectory.
 #
 #   cd ~/sandbox/elixirws/aetheris
 #   # DigitalOcean (the default — unchanged from m1):
@@ -26,6 +27,15 @@
 #       mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
 #   # AWS + the exploratory optimization spike (m2 t4) — add CLOUDCOST_OPTIMIZATION=1 to the
 #   # line above. Unset, the pipeline and the report are exactly the four-stage ones.
+#   # Linode (m3 t2) — the shadow names are Linode's own, not boto3's:
+#   CLOUDCOST_PROVIDER=linode \
+#   env -u LINODE_CLI_TOKEN -u LINODE_TOKEN \
+#       mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+#
+# A Linode run's artifacts are named for the month the invoice COVERS, not the current
+# one: Linode publishes no preview invoice, so a run reads the newest settled invoice and
+# its snapshot is structurally one month behind (m3 §Seam 7). Nothing here constructs a
+# filename — STEP 1 reports the period and every later stage is handed the path it wrote.
 
 agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 
@@ -45,7 +55,10 @@ provider = System.get_env("CLOUDCOST_PROVIDER") || "digitalocean"
   case provider do
     "digitalocean" -> {"DigitalOcean", "DO", "digitalocean", "scripts/fetch_do.py"}
     "aws" -> {"AWS", "AWS", "aws", "scripts/fetch_aws.py"}
-    other -> raise ~s(CLOUDCOST_PROVIDER must be "digitalocean" or "aws", got: #{inspect(other)})
+    "linode" -> {"Linode", "Linode", "linode", "scripts/fetch_linode.py"}
+    other ->
+      raise ~s(CLOUDCOST_PROVIDER must be "digitalocean", "aws" or "linode", ) <>
+              "got: #{inspect(other)}"
   end
 
 # Fail fast on the selected sink's credential (repo rule: explicit sink selection with
@@ -59,6 +72,10 @@ provider = System.get_env("CLOUDCOST_PROVIDER") || "digitalocean"
 # There is deliberately no symmetric DO raise: DO is the *default* sink rather than a
 # selected one, and §t3's offline done-check (`Code.eval_file/1`) has to keep evaluating
 # clean on a machine that carries no DO token. sprint.sh preflights CLOUDCOST_DO_TOKEN.
+#
+# Linode (m3 t2) falls on the AWS side of that line, not the DO side: it is never the
+# default and can only be reached by naming it, so the "must stay clean on a machine with
+# no credential" argument that exempts DO does not apply. Its raise is below.
 if provider == "aws" do
   missing =
     for name <- ["CLOUDCOST_AWS_ACCESS_KEY_ID", "CLOUDCOST_AWS_SECRET_ACCESS_KEY"],
@@ -70,6 +87,20 @@ if provider == "aws" do
             "cloudcost authenticates with the CLOUDCOST_AWS_* read-only key only and never " <>
             "falls back to boto3's default credential chain."
   end
+end
+
+# Same posture for Linode (m3 t2), and the reason it is worth an eval-time raise rather
+# than letting STEP 1 discover it: without this the run still fails, but ~4 s in, as a tool
+# error the model then has to interpret and report. The raise keeps "does this pipeline
+# complete" a harness property instead of a model behaviour — the same argument BL-096
+# makes for declaring STEP 1's timeout below.
+#
+# Empty string is treated as absent, matching the AWS check above; a variable exported as
+# "" is the shape a mis-sourced credential file produces, and it authenticates nothing.
+if provider == "linode" and System.get_env("CLOUDCOST_LINODE_TOKEN") in [nil, ""] do
+  raise "CLOUDCOST_PROVIDER=linode requires CLOUDCOST_LINODE_TOKEN to be set. " <>
+          "cloudcost authenticates with that read-only Linode PAT only and never reads " <>
+          "LINODE_CLI_TOKEN or LINODE_TOKEN."
 end
 
 # Per-provider output and history trees (decision H: one provider, one report, one run).

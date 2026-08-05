@@ -1,6 +1,7 @@
 # cloudcost — runbook
 
-Per-provider cost-report + orphan-detection agent, currently **DigitalOcean** and **AWS**.
+Per-provider cost-report + orphan-detection agent, currently **DigitalOcean**, **AWS** and
+**Linode**.
 **Read-only, report-only:** it fetches the live bill and resource inventory, detects
 wasteful/orphaned resources, and renders a local HTML report. It never writes to the cloud
 account, mails, or uploads anything.
@@ -9,8 +10,9 @@ account, mails, or uploads anything.
 produces its own report in its own directory. There is no cross-provider run and no combined
 report — two providers means two runs.
 
-Design detail and rationale live in `milestone.md` (§Normalized schemas, D1–D6) and
-`m2-milestone.md` (decisions A–H); this file is how to run it.
+Design detail and rationale live in `milestone.md` (§Normalized schemas, D1–D6),
+`m2-milestone.md` (decisions A–H) and `m3-milestone.md` (D-L1–D-L11, Linode); this file is how
+to run it.
 
 ## Prerequisites
 
@@ -60,6 +62,78 @@ Then the selected provider's read-only credential — and only that one:
   between. `set -a`/`set +a` exports everything the file sets. The `env -u` prefix below is
   unaffected and still strips your personal `AWS_*` for the child.
 
+### Linode
+
+- **`CLOUDCOST_LINODE_TOKEN`** — a read-only Linode Personal Access Token. Scope it **Read
+  Only** on exactly six surfaces and **No Access** on everything else:
+
+  | Read Only | Why |
+  |---|---|
+  | Account | the billing surface — there is no separate Billing scope |
+  | Linodes | instances |
+  | Volumes | block storage |
+  | IPs | addresses (the `reserved` flag is what makes the static-IP rule reachable) |
+  | NodeBalancers | load balancers, plus the per-balancer configs read |
+  | Images | snapshots |
+
+  **No Access includes Databases and Events**, deliberately: Managed Databases are excluded
+  (`m3-milestone.md` §D-L7) and `/account/events` answers "when was this last *changed*", not
+  "last *used*", so `last_activity_at` stays `null` (§D-L8). Granting either would be granting
+  read on data nothing reads.
+
+  `fetch_linode.py` authenticates with this variable and **only** this one. It never falls back
+  to a default-pickup arm, and there is no Linode analogue of boto3's credential chain.
+
+- **Token expiry: not recorded.** This is a required fill, not an optional one — record the
+  PAT's expiry date here when it is issued. An unrecorded expiry becomes a failed run months
+  from now with no obvious cause, and the failure will not look like an expiry.
+
+- **The credential file and the `set -a` load requirement.** The token lives in
+  `~/.secrets/linode-cloudcost.env`. Load it **exported**:
+  ```
+  set -a; source ~/.secrets/linode-cloudcost.env; set +a
+  ```
+  This is the same trap the AWS section records above, and it bites the same way: the sprint,
+  the orchestrator and the agent eval all run as **child processes**, so a bare `source` of a
+  `KEY=value` file leaves the variable shell-local — your own shell reports it present, the
+  child preflight reports it unset, and nothing errors in between.
+
+- **Shadowing.** `linode-cli` reads **`LINODE_CLI_TOKEN`**; **`LINODE_TOKEN`** is the spelling
+  users conventionally export and is read by no library at all. The adapter reads neither and
+  warns when either is set. The sprint's hermetic prefix strips both
+  (`../aetheris/scripts/sprint.sh`, the `CC_HERMETIC` array), so a sprint leg cannot
+  accidentally exercise an ambient token.
+
+- **Endpoint redirection — a hazard neither predecessor has.** `LINODE_CLI_API_HOST`,
+  `LINODE_CLI_API_VERSION` and `LINODE_CLI_API_SCHEME` are read by `linode-cli` and redirect
+  *where a credential is sent*. The adapter constructs its own base URL and never reads them as
+  configuration — it **warns** when they are set. They are deliberately **not** stripped by the
+  hermetic prefix: stripping them would silence the only signal that hazard has.
+
+- **A partial run now stops the pipeline, and that is a change from what you may expect.** If a
+  resource class cannot be read, that class is recorded as `not_inventoried` — never degraded to
+  an empty list (§D-L6) — and a non-empty `not_inventoried` makes the whole run `status:
+  partial` with **exit 1**, even when no request returned an error. So a transient failure on one
+  class stops the run rather than producing a report with a quiet hole in it. That is the
+  intended trade: a report silently missing a class reads exactly like a clean account. Re-run;
+  if the class keeps failing, check the PAT's scope set against the table above before assuming
+  the account is empty.
+
+- **Artifacts are named for the month they COVER, which is not the current month.** Linode
+  publishes no preview invoice, so a run reads the newest *settled* invoice: a run on 2026-08-05
+  writes `linode_costs_2026-07.json` and `cloudcost_report_2026-07.html`, while an AWS run the
+  same day writes `…2026-08…`. The in-flight month exists only as `balance_uninvoiced`, which the
+  report's balance block already carries. Never construct one of these filenames from the wall
+  clock — read the period from the run's own output. (The sprint case does exactly that; it used
+  to build the name from `date -u +%Y-%m`, which was right for two providers and wrong for this
+  one.)
+
+- **Fetch-step timeout — confirmed, unchanged.** `fetch_linode` measured **4441 ms** and
+  **4097 ms** wall clock on two live runs (m3 t1), against the shared
+  `fetch_timeout_ms = 300_000` declared at `agents/cloudcost_orchestrator.exs:147` — roughly a
+  **73×** margin. Per [Adding a provider](#adding-a-provider) the measurement is *recorded*, and
+  the declared value changes only if the margin is inadequate. It is not.
+
 The credentials gate only the *live* steps; the offline test suite needs none of them.
 
 ## Run it
@@ -83,6 +157,18 @@ lookup at nothing, **for that process only**. `CLOUDCOST_AWS_*` are deliberately
 `-u` list, so they survive the strip — that is the credential the adapter authenticates with.
 Keep the prefix even though the adapter's explicit-session construction already ignores the
 default chain: belt and suspenders, and the belt is the part that is visible in the command.
+
+**Linode** — same shape, but the shadow names are Linode's own rather than boto3's:
+```
+cd ~/sandbox/elixirws/aetheris
+set -a; source ~/.secrets/linode-cloudcost.env; set +a
+CLOUDCOST_PROVIDER=linode \
+env -u LINODE_CLI_TOKEN -u LINODE_TOKEN \
+    mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+```
+Selecting Linode without `CLOUDCOST_LINODE_TOKEN` raises at agent-eval time, before any LLM
+call — same posture as AWS, and for the same reason. There is no credentials-file arm to point
+at `/dev/null`: Linode's shadowing surface is the two variables above and nothing else.
 
 **AWS with the exploratory optimization spike** (m2 t4) — the same invocation with one more
 variable:
@@ -196,13 +282,14 @@ calendar. Run it on the 2nd or later.
 
 ## Exercising the ≥1-orphan path
 
-Detection only surfaces what the account actually carries, and **neither live account currently
+Detection only surfaces what the account actually carries, and **no live account currently
 carries an orphan-shaped resource** — the DO reserved IP that used to arm this was deleted
-2026-07-30 (BL-069), and the AWS Elastic IP is `m2-milestone.md` §Prereqs 3, still pending. Both
-sprint legs therefore report 0 orphans and the `≥1` assertion is expected-red until one is
+2026-07-30 (BL-069), the AWS Elastic IP is `m2-milestone.md` §Prereqs 3 and still pending, and
+the Linode account reports 0 candidates / 0 skipped over a full live inventory (m3 t1). All
+three sprint legs therefore report 0 orphans and the `≥1` assertion is expected-red until one is
 planted. Do not relax the assertion to make it green; plant the resource.
 
-Both providers trip the **same** rule — t2 unified the vocabulary, so it is
+DO and AWS trip the **same** rule — m2 t2 unified the vocabulary, so it is
 `unassociated_static_ip` (0.95, HIGH band) whether the resource is a DO reserved IP or an AWS
 Elastic IP, and the rule has no age threshold: an unassociated static IP bills from the moment
 it is unassociated.
@@ -217,6 +304,29 @@ release it after the run. Optional extras that exercise more of the catalog: a s
 instance with an attached EBS volume, or a stopped RDS instance (both hit
 `rule_stopped_compute_with_attached_storage` / `rule_stopped_database_with_storage`).
 
+**Linode — a zero-backend NodeBalancer, and *not* the reserved-IP recipe the other two use.**
+Console → **NodeBalancers → Create**, type **`common`**, with **no backend nodes** on any
+configuration. It trips `rule_idle_load_balancer`, which keys on type and `attached_to is None`
+alone and carries **no age threshold**, so it fires the same day. **Delete it after the run.**
+
+Two things make this the only sound same-day plant on Linode, and both are worth knowing before
+substituting something cheaper:
+
+- **Every other reachable rule carries an age threshold a same-day resource cannot satisfy** —
+  `rule_unattached_volume` needs >14 days, `rule_stopped_compute_with_attached_storage` >30.
+  Lowering `--snapshot-age-days` to make an orphan appear games the assertion rather than
+  satisfying it.
+- **The static-IP rule *is* reachable on Linode** (a reserved, unassigned address; the `reserved`
+  flag the live API returns and the OpenAPI spec does not declare) — but Linode publishes no
+  pricing endpoint for addresses, so such a candidate prices at `0.0` plus a named warning. It
+  would satisfy `≥1` with **no dollar figure**, which is a weak proof for a cost report. A
+  `premium` NodeBalancer is the same trap: that type is deliberately unmapped, since this account
+  holds none and there is no evidence for which price row it bills at. Use `common`, which prices
+  from a real invoice line.
+
+A zero-backend `common` NodeBalancer also exercises the 1 + N configs read — Linode's most
+distinctive inventory path, and the one nothing else covers.
+
 Check without running the whole agent (AWS shown; use the DO equivalents for DO):
 ```
 P=$(date -u +%Y-%m)
@@ -226,16 +336,27 @@ python3 scripts/detect_orphans.py /tmp/live/aws_inventory_$P.json --output-dir /
 jq '.account, .totals.candidates' /tmp/live/aws_orphan_candidates_$P.json
 ```
 
+**On Linode, `$(date -u +%Y-%m)` is the wrong period** — read the filename the adapter reports
+instead of constructing one (see the `### Linode` prerequisites above):
+```
+env -u LINODE_CLI_TOKEN -u LINODE_TOKEN \
+    python3 scripts/fetch_linode.py --output-dir /tmp/live | jq -r '.period, .files.inventory'
+python3 scripts/detect_orphans.py /tmp/live/linode_inventory_<period>.json --output-dir /tmp/live
+jq '.account, .totals.candidates' /tmp/live/linode_orphan_candidates_<period>.json
+```
+
 ## Offline tests
 
 ```
-python3 -m pytest cloudcost/tests/ -v      # no credentials; recorded DO + AWS fixtures
+python3 -m pytest cloudcost/tests/ -v      # no credentials; recorded DO + AWS + Linode fixtures
 ```
 
 ## Rig
 
 Runs appear in Harness → Runs automatically, one per provider — the run id carries the provider
-(`cloudcost-orch-aws-…`, `cloudcost-orch-digitalocean-…`). The use case shows in the
+(`cloudcost-orch-aws-…`, `cloudcost-orch-digitalocean-…`, `cloudcost-orch-linode-…`), and so does
+the label (`Cloudcost · AWS`, `Cloudcost · DigitalOcean`, `Cloudcost · Linode`), which is what
+`classifyRun` groups on. The use case shows in the
 capability-matrix view (Rig reads the regenerated `docs/capability-matrix.md` via
 `rig/src-tauri/src/commands/capability_matrix.rs`). There is no dedicated cloudcost panel, and
 the report is not yet surfaced against its run — that's BL-073.
@@ -248,7 +369,7 @@ turn your request into a plan of agent files. For a four-stage deterministic pip
 detour, and it is deliberate interim scope — the direct door is **BL-094**. The CLI recipe under
 [Run it](#run-it) stays the deterministic path and is what sprint uses.
 
-**1 — Credentials, once.** Settings → Agent Config → **CLOUDCOST**. The six rows come from
+**1 — Credentials, once.** Settings → Agent Config → **CLOUDCOST**. The seven rows come from
 `cloudcost/tools.json` alone; no `agentConfigDefs.ts` entry exists or is needed (BL-085 confirmed
 the manifest path renders the group header and the masking by itself). Set:
 
@@ -260,6 +381,7 @@ the manifest path renders the group header and the masking by itself). Set:
 | `CLOUDCOST_AWS_REGION` | AWS, optional (default `us-east-1`) | no |
 | `CLOUDCOST_AWS_REGIONS` | AWS, optional sweep override | no |
 | `CLOUDCOST_DO_TOKEN` | DigitalOcean | yes |
+| `CLOUDCOST_LINODE_TOKEN` | Linode | yes |
 
 Set the `CLOUDCOST_`-prefixed rows and **never** the bare `AWS_ACCESS_KEY_ID` /
 `AWS_SECRET_ACCESS_KEY` rows. Those belong to `api/tools.json` (group `aws`,
@@ -269,17 +391,18 @@ Set the `CLOUDCOST_`-prefixed rows and **never** the bare `AWS_ACCESS_KEY_ID` /
 above the Run button) → add a row:
 
 ```
-CLOUDCOST_PROVIDER = aws          # or: digitalocean
+CLOUDCOST_PROVIDER = aws          # or: digitalocean, linode
 ```
 
 Exact literals, lowercase. Unset ⇒ `digitalocean`. Anything else raises *before* the run starts,
-at `cloudcost/agents/cloudcost_orchestrator.exs:42-49`. These values are ephemeral: they are never
+at `cloudcost/agents/cloudcost_orchestrator.exs:53-62`. Selecting `aws` or `linode` without that
+provider's credential row set raises there too, for the same reason. These values are ephemeral: they are never
 written to `agent-config.json`, they override a stored key of the same name for that launch only
 (`rig/src-tauri/src/commands/orchestrate.rs:57-66`), and the rows clear themselves once the run
 reaches a terminal phase (`OrchestratorView.tsx:139-141`).
 
 Optionally add `CLOUDCOST_OPTIMIZATION = 1` — **AWS only**; it raises against any other provider
-(`cloudcost_orchestrator.exs:115-120`).
+(`cloudcost_orchestrator.exs:176-181`).
 
 **3 — Request text.** Write it so the planner names cloudcost, e.g. *"Run the cloudcost report
 pipeline"*. The planner picks agent files out of `docs/capability-matrix.md`, where cloudcost is
@@ -396,15 +519,16 @@ guard that names the variable it honoured is evidence, not leakage. A run in whi
 *absent* while bare `AWS_*` was set would be the finding — it would mean the warning path never
 executed.
 
-> **Step 1 shows a timeout, and the run still completes.** `fetch_aws.py` takes 63–67 s against the
-> real bill; `run_command`'s default timeout is 60 000 ms
-> (`../aetheris/native/aetheris_exec_server/src/main.rs:472`), and the orchestrator declares no
-> `timeout_ms`. So STEP 1 times out, the agent retries the same command at `timeout_ms: 300000`, and
-> the pipeline finishes normally. Chronic across every AWS run on record — including m2's own cited
-> evidence run — and tracked as **BL-096**.
+> **Step 1 no longer times out — BL-096 landed 2026-08-04 (`32933d8`).** `fetch_aws.py` takes
+> 63–67 s against the real bill and `run_command`'s default timeout is 60 000 ms
+> (`../aetheris/native/aetheris_exec_server/src/main.rs:472`), so STEP 1 used to time out and
+> complete only because the model chose to retry at a larger `timeout_ms` — a recovery nothing
+> instructed. The orchestrator now declares `fetch_timeout_ms = 300_000` on STEP 1, and the
+> acceptance run went from two `fetch_aws` calls with one timeout event to **one call, zero
+> timeouts**. A timeout on STEP 1 today is a finding, not the expected noise it was.
 >
-> This is an **exec-server default**, not a limitation of the Orchestrator door: the run reaches
-> `done` and produces its report either way. Expect to see it until BL-096 lands.
+> The exec-server default is deliberately untouched: a low global default is a fail-fast property
+> for every other script in every other use case.
 
 **Interim.** Everything above describes the LLM-planner door, which is what Rig offers today. The
 direct, non-LLM launch door is tracked by **BL-094** — it is blocked on a correctness defect
@@ -417,21 +541,40 @@ A new provider is a new adapter emitting the two frozen normalized schemas (`mil
 §Normalized schemas) using the canonical `type`/`state` vocabulary from `scripts/_normalized.py`,
 plus recorded fixtures, plus a clause in the orchestrator's provider `case`.
 
+**The wiring is five places, and they are enumerated here because m3 t2 found them one at a
+time:** the provider `case` and the credential raise in `agents/cloudcost_orchestrator.exs`; a
+`scripts[]` entry with its `env` rows in `cloudcost/tools.json` (undeclared means an amber badge
+in Rig and no config row); the discovery count in `tests/test_tools_manifests.py`; the credential
+preflight `case`, the `CC_HERMETIC` strip list and its poison-control arms in
+`../aetheris/scripts/sprint.sh`; and a `### <Provider>` posture subsection in this file. Miss the
+sprint `case` and the run dies at its `*)` arm on a reason unrelated to the provider; miss the
+`CC_HERMETIC` entry and the hermetic proof passes while covering a provider it never tested.
+
 **Declare the fetch step's `timeout_ms` explicitly** (BL-096 convention). STEP 1 is the only step
 that calls a live cloud API and the only one whose runtime approaches `run_command`'s 60 000 ms
 default. AWS exceeded that default on every run ever recorded and the pipeline survived only
 because the model chose to retry — a recovery nothing instructs. STEP 1 is shared across
 providers, so the existing `fetch_timeout_ms` declaration already covers a third adapter; the
 thing to carry forward is the *habit* of measuring the new adapter's real duration and confirming
-the declared value still has margin, rather than inheriting a number and assuming it fits. Do not
+the declared value still has margin, rather than inheriting a number and assuming it fits. Linode
+is the worked example: measured 4441 ms / 4097 ms, ~73× margin, **recorded and the number left
+alone** (m3 t2). Do not
 raise the exec-server default to solve this — a low global default is a fail-fast property for
 every other script. `detect_orphans.py`,
 `compose_report_data.py` and `render_report.py` are provider-agnostic and do not change — m2
 tested that claim on AWS and it held, with one deliberate enumerated exception (the named
 `region_coverage` field, A4).
 
-The `STOPPED_STATES` and `type`-vocabulary seams m1 flagged are closed (m2 t2). Before provider
-three, read **BL-074** — the seam sweep for any remaining value, threshold or spelling a
+**Do not assume the artifact period is the current month.** DO and AWS default to the current UTC
+month; Linode does not, because it publishes no preview invoice. Any check that locates an
+artifact by building `…_$(date -u +%Y-%m).…` is provider-specific even when it looks generic —
+read the period the adapter reports, or glob for what the run wrote.
+
+The `STOPPED_STATES` and `type`-vocabulary seams m1 flagged are closed (m2 t2). Linode was
+provider three (m3) and needed **no §Normalized extension** — every in-scope class mapped onto an
+existing canonical type. Before provider four,
+read **BL-074** — the seam sweep for any remaining value, threshold or spelling a
 provider could differ on (rule-catalog age thresholds and the `keep=true` tag spelling are the
-named next candidates) — and **BL-070**, which retires the now-unreachable cross-provider merge
+named next candidates; Linode confirmed the `keep=true` finding, its tags being flat strings like
+DO's) — and **BL-070**, which retires the now-unreachable cross-provider merge
 code in `compose_report_data.py`.

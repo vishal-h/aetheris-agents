@@ -736,3 +736,160 @@ pub fn tools_list_mcp(
         }
     }).collect())
 }
+
+// ── Tests (BL-092) ────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The `aetheris-agents` root — the same directory `tools_list_inventory` walks when
+    /// `AETHERIS_AGENTS_PATH` points at this checkout. `CARGO_MANIFEST_DIR` is
+    /// `<root>/rig/src-tauri`.
+    fn agents_root() -> std::path::PathBuf {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+    }
+
+    /// Every committed `<use_case>/tools.json`, as `(use_case, raw)`, discovered rather
+    /// than listed — a manifest added later is covered without editing this file.
+    /// Mirrors the walker's own exclusions (`tools_list_inventory`, the `use_case_name`
+    /// filter).
+    fn committed_manifests() -> Vec<(String, String)> {
+        let mut found: Vec<(String, String)> = std::fs::read_dir(agents_root())
+            .expect("agents root is readable")
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().is_dir())
+            .filter_map(|e| {
+                let name = e.file_name().to_string_lossy().to_string();
+                if name.starts_with('.')
+                    || name == "rig"
+                    || name == "docs"
+                    || name == "agents"
+                {
+                    return None;
+                }
+                let manifest = e.path().join("tools.json");
+                let raw = std::fs::read_to_string(&manifest).ok()?;
+                Some((name, raw))
+            })
+            .collect();
+        found.sort_by(|a, b| a.0.cmp(&b.0));
+        found
+    }
+
+    /// Anti-vacuity for every test below: a discovery that silently returns nothing would
+    /// pass a round-trip assertion over zero manifests. Assert the set, not a count, so
+    /// adding a use case fails here — where the expectation lives — rather than silently
+    /// widening coverage.
+    #[test]
+    fn discovery_finds_every_committed_manifest() {
+        let names: Vec<String> = committed_manifests().into_iter().map(|(n, _)| n).collect();
+        assert_eq!(
+            names,
+            vec!["api", "cloudcost", "drive", "eduloka", "email", "payslip"],
+            "the manifest sweep changed — update this list deliberately, not to make it pass"
+        );
+    }
+
+    /// The property BL-092 exists for. `tools_list_inventory` does
+    /// `serde_json::from_str(&raw).ok()`: a manifest that violates the schema is not an
+    /// error, it is a `None`, and the use case silently falls back to all-undeclared with
+    /// every script amber and nothing saying why. The pytest suite at
+    /// `tests/test_tools_manifests.py` transcribes these structs; only this test runs serde.
+    #[test]
+    fn every_committed_manifest_round_trips_into_tools_manifest() {
+        for (use_case, raw) in committed_manifests() {
+            let parsed: ToolsManifest = serde_json::from_str(&raw)
+                .unwrap_or_else(|e| panic!("{use_case}/tools.json failed to deserialize: {e}"));
+            assert_eq!(parsed.use_case, use_case);
+            assert_eq!(parsed.manifest_version, "1");
+            assert!(
+                !parsed.scripts.is_empty(),
+                "{use_case}/tools.json declares no scripts"
+            );
+
+            // Re-serialize and re-parse: catches a field that deserializes only because
+            // serde defaulted it away.
+            let round: ToolsManifest =
+                serde_json::from_str(&serde_json::to_string(&parsed).unwrap())
+                    .unwrap_or_else(|e| panic!("{use_case}/tools.json failed re-parse: {e}"));
+            assert_eq!(round.scripts.len(), parsed.scripts.len());
+        }
+    }
+
+    /// The negative control. Without it the test above has only ever been seen passing, so
+    /// it is not yet a check. `EnvDep` carries no `#[serde(default)]` on any field, so one
+    /// missing key drops the whole manifest — that is the exact defect shape being guarded.
+    #[test]
+    fn a_manifest_missing_an_env_dep_field_is_rejected() {
+        let (_, raw) = committed_manifests()
+            .into_iter()
+            .find(|(n, _)| n == "cloudcost")
+            .expect("cloudcost manifest present");
+
+        assert!(
+            serde_json::from_str::<ToolsManifest>(&raw).is_ok(),
+            "control: the unmutated manifest must parse"
+        );
+
+        // Drop `"masked"` from the first EnvDep. `masked` is a bool, so removing it is a
+        // schema violation rather than a type coercion.
+        let mutated = raw.replacen("          \"masked\":      true,\n", "", 1);
+        assert_ne!(mutated, raw, "the mutation did not apply — the fixture moved");
+        assert!(
+            serde_json::from_str::<ToolsManifest>(&mutated).is_err(),
+            "an EnvDep missing `masked` must fail to deserialize — if it does not, the \
+             round-trip test above proves nothing"
+        );
+    }
+
+    /// The `env_deps` dedup walk `tools_list_inventory` performs: first occurrence of each
+    /// key wins, later ones are dropped. Anchored on a key that genuinely repeats —
+    /// `CLOUDCOST_AWS_ACCESS_KEY_ID` is declared by both `fetch_aws` and
+    /// `detect_optimization_signals` — so the dedup is doing work rather than passing over
+    /// an already-unique list.
+    #[test]
+    fn env_deps_dedup_walk_keeps_the_first_occurrence_only() {
+        let (_, raw) = committed_manifests()
+            .into_iter()
+            .find(|(n, _)| n == "cloudcost")
+            .expect("cloudcost manifest present");
+        let manifest: ToolsManifest = serde_json::from_str(&raw).unwrap();
+
+        let declared: Vec<&str> = manifest
+            .scripts
+            .iter()
+            .flat_map(|s| s.env.iter())
+            .map(|d| d.key.as_str())
+            .collect();
+        assert!(
+            declared.iter().filter(|k| **k == "CLOUDCOST_AWS_ACCESS_KEY_ID").count() > 1,
+            "the dedup anchor no longer repeats — this test would pass vacuously"
+        );
+
+        let mut env_deps: Vec<EnvDep> = vec![];
+        let mut seen_keys: HashSet<String> = HashSet::new();
+        for script in &manifest.scripts {
+            for dep in &script.env {
+                if seen_keys.insert(dep.key.clone()) {
+                    env_deps.push(dep.clone());
+                }
+            }
+        }
+
+        let keys: Vec<&str> = env_deps.iter().map(|d| d.key.as_str()).collect();
+        let unique: HashSet<&str> = keys.iter().copied().collect();
+        assert_eq!(keys.len(), unique.len(), "dedup left a duplicate key");
+        assert!(keys.contains(&"CLOUDCOST_LINODE_TOKEN"), "keys: {keys:?}");
+        assert!(
+            env_deps
+                .iter()
+                .find(|d| d.key == "CLOUDCOST_LINODE_TOKEN")
+                .expect("linode token declared")
+                .masked,
+            "CLOUDCOST_LINODE_TOKEN must be masked in the Rig config surface"
+        );
+    }
+}

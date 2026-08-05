@@ -2196,7 +2196,21 @@ assertion is re-pointed to a recorded fixture rather than the live account — a
 confirms the assertion passes for the right reason (mutation posture: it must fail when no
 orphan is present).
 
-`Source: m2-cloudcost ratification, 2026-08-01; m1 loose end (reserved IP) closed 2026-07-30.`
+**The Linode leg went green once, 2026-08-05 — and reverted.** m3 t3 planted a zero-backend
+`common` NodeBalancer (`aetheris-m3-bl069-plant`, `2405879`, us-southeast) and the assertion
+passed for the right reason: run `cloudcost-orch-linode-h5lltQ`, 1 candidate, rule
+`idle_load_balancer`, confidence 0.85, **$10.00/month**, priced from `/nodebalancers/types` and
+independently corroborated by July's `NodeBalancer` invoice line at $20.00 for the two
+pre-existing balancers. The plant is deleted after the run (`cloudcost/runbook.md:307-310`), so
+the Linode leg **reverts to red** and this row stays armed. Recorded so the row does not read as
+never-green: the mutation posture the Done-when asks for is already demonstrated on one provider —
+t3's first live read found zero zero-backend balancers and the sprint was not run, then the same
+read found one and the assertion passed. What remains is a *durable* fixture, on any leg.
+**DO and AWS are untouched by this** — the DO reserved IP is still deleted and the AWS Elastic IP
+is still `m2-milestone.md` §Prereqs 3, pending.
+
+`Source: m2-cloudcost ratification, 2026-08-01; m1 loose end (reserved IP) closed 2026-07-30;
+m3-cloudcost t3 live run 2026-08-05 (Linode leg green once, reverted on plant deletion).`
 
 ---
 
@@ -5144,5 +5158,88 @@ the report surfaces "this class could not be assessed" distinctly from "this cla
 `fetch_aws.py` anyway — this touches both.
 
 `Source: m3-cloudcost t1 review r0 F3, r1 F5 (2026-08-05).`
+
+---
+
+### BL-099 — The sprint's D2 credential grep is AWS-only, so two providers' D2 posture is asserted rather than checked (#TBD)
+**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-05, from m3-cloudcost t3 review r0 F1. The cloudcost sprint case greps the run
+output for the live credential — the D2 trajectory half — inside
+`if [[ "$CC_PROVIDER" == "aws" ]]` (`../aetheris/scripts/sprint.sh:2670`). So on the **Linode**
+and **DigitalOcean** legs no assertion covers m3 §Done-when 7 (`CLOUDCOST_LINODE_TOKEN` appears in
+neither stdout, stderr nor the trajectory), and the DO equivalent has never had one at all.
+
+**A provider whose credential is never grepped has a D2 posture that is asserted rather than
+checked.** A green Linode or DO sprint says nothing about credential leakage; it says the run
+finished. That is the gap, and it is invisible because the leg is green either way.
+
+**The fix is the same shape as the strip t2 already landed.** t2 extended `CC_HERMETIC` to Linode
+by taking the strip list from `fetch_linode.SHADOWING_ENV` rather than hand-typing it, so the
+prefix and the adapter cannot drift. The D2 grep wants the same treatment: select the credential
+variable from `$CC_PROVIDER` and grep for *that*, keeping the existing gate on the searched file
+demonstrably having content and a `run_id` — a grep over an empty file is the classic vacuous
+pass, which is why the AWS arm already carries that guard.
+
+**Add the control the AWS arm lacks.** t3 ran the Linode arm by hand with an explicit anti-vacuity
+check — the same `grep -qF` against a file constructed to contain the token **does** find it — so
+a clean result is the grep working rather than the grep being incapable of matching. Without it,
+a credential whose shell-quoting or encoding differs from what `grep -qF` sees would report clean
+forever. Land that control with the generalisation, not after it.
+
+**Why it was not fixed in m3 t3.** `sprint.sh` is in §t2's Touches, not §t3's; t3 found it while
+satisfying done-when 7 and could not edit the file. This is the second Linode-shaped defect in
+that file found by a ticket that could not fix it — t1 found the wall-clock report filename and
+t2 fixed it.
+
+**Done when:** the credential grep runs on every provider leg against that provider's own
+credential variable; the file-has-content-and-a-run_id gate is preserved; an anti-vacuity control
+proves the grep can match; and the mutation posture is recorded (a run output seeded with the
+credential must fail the assertion).
+
+`Source: m3-cloudcost t3 §3.3, t3 review r0 F1 (2026-08-05).`
+
+---
+
+### BL-100 — `run.json` is unparseable by `jq`: the sprint's orchestrator status line has read `no-json` on every cloudcost run ever recorded (#TBD)
+**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-05, from m3-cloudcost t3 review r0 F1. The cloudcost case's inline run redirects
+`2>&1` into `run.json` (`../aetheris/scripts/sprint.sh:2571-2572`), so the harness's boot warnings
+and the two `[sandbox]` lines are prepended to the `--json` document. `jq -r '.status // "unknown"'`
+cannot parse the result and falls through its `||` to the literal `no-json`, which is what the
+`[OK]` line prints:
+
+```
+[OK]    uc-cloudcost orchestrator → no-json (695 bytes)
+```
+
+The JSON payload is intact on the last line
+(`{"label":"Cloudcost · Linode","status":"done","run_id":"cloudcost-orch-linode-h5lltQ"}`), and the
+**assertion** is the surrounding `if` on exit status rather than the `jq`, so nothing is
+mis-asserted and no check is vacuous. This is a display defect only.
+
+**Its cost is a signal nobody will read when it finally matters.** A status field that reads
+`no-json` on every run trains every reader to skip it, so the one run where the status is genuinely
+interesting — `partial`, `error`, a status the exit code does not distinguish — reports it into a
+line already classified as noise. That is the same reflex the standing gate rule names for a
+known-red note that never changes.
+
+**Provider-independent and pre-existing.** The redirect is not in any provider branch, so DO, AWS
+and Linode are all affected, and have been since the case was written (m1 t5). m3 t3 surfaced it
+rather than introducing it.
+
+**Two candidate fixes, and the choice is the whole ticket.** Either split the streams (`2>` to a
+sibling `run.err`, leaving `run.json` parseable) — which changes what the D2 credential grep
+searches, so BL-099's generalisation must then cover both files; or keep the merge and extract the
+payload (`tail -1`, or the last line that parses), which is a one-line change that leaves every
+existing consumer's file untouched. Do **not** do the first without re-reading BL-099: a
+credential-leak grep that stops covering stderr is a strictly worse trade than a wrong status word.
+
+**Done when:** the sprint's orchestrator line prints the run's real status, and whichever fix is
+chosen, the D2 credential grep demonstrably still searches everything the run wrote to both
+streams.
+
+`Source: m3-cloudcost t3 §4, t3 review r0 F1 (2026-08-05).`
 
 ---

@@ -84,9 +84,11 @@ Then the selected provider's read-only credential — and only that one:
   `fetch_linode.py` authenticates with this variable and **only** this one. It never falls back
   to a default-pickup arm, and there is no Linode analogue of boto3's credential chain.
 
-- **Token expiry: not recorded.** This is a required fill, not an optional one — record the
-  PAT's expiry date here when it is issued. An unrecorded expiry becomes a failed run months
-  from now with no obvious cause, and the failure will not look like an expiry.
+- **Token expiry: 2027-02-04.** PAT label `aetheris-cloudcost`, created 2026-08-04 15:34,
+  expires 2027-02-04 00:00 — the value the Linode console displays, not one derived from
+  "6 months" or "180 days", which give 2027-02-04 and 2027-01-31 respectively. When it
+  expires the symptom will be a fatal auth error from `fetch_linode.py`, not something that
+  reads like an expiry; re-issue with the same Read Only scope set in the table above.
 
 - **The credential file and the `set -a` load requirement.** The token lives in
   `~/.secrets/linode-cloudcost.env`. Load it **exported**:

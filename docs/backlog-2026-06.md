@@ -5122,6 +5122,19 @@ partial`, exit 1), so a class going UNKNOWN now stops the pipeline rather than p
 with a quiet hole. That is louder than a JSON field no consumer currently reads, and it is why this
 row is medium rather than high.
 
+**The sharpest concrete instance — the artifact least able to justify itself is the one that most
+needs to.** `provider_extra.period_basis` records what backs a Linode snapshot's `period` label,
+but it lives on the *cost* document, where its value is necessarily `invoice-covered`. The two
+values that mean "this label is NOT invoice-confirmed" — `requested` and `fallback-current-month`
+— arise only on runs that emit **inventory alone**, and the inventory envelope has no
+`provider_extra` to carry them. So the artifact whose `period` is least trustworthy is precisely
+the one that cannot record why.
+
+Not reachable by any consumer today: such a run is `partial` with exit 1, and the pipeline stops
+before a report exists. That behavioural guard is what holds this at medium — and it is the first
+thing to revisit if a future change ever lets a partial run continue, because the gap becomes live
+the moment it does.
+
 **Done when:** the §Normalized inventory envelope carries a sanctioned extras key, ratified
 doc-first per m3 §D-C (section-scoped edit applied against HEAD and diffed by the arbiter, before
 any adapter emits it); all three adapters emit it; `compose_report_data.py` carries it through; and

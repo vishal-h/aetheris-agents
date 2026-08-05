@@ -155,3 +155,35 @@ Merge on a one-line answer to Q1.
 - Implementing the stricter gate first, watching it mark a readable class UNKNOWN, and then
   loosening it to *no row carries it* is the correct order — the loosening is evidenced rather
   than assumed, and M13 pins it.
+
+---
+
+# Review — m3-cloudcost t1 — round 2
+
+Reviewed at `4a085af`. Q1 fixed and pinned by M19; F4 answered; F5 filed as BL-098; F2 and F3
+confirmed and carried to t2 with their fixes named. The one WARN is the expected manifest-
+staleness class, correctly named rather than chased.
+
+**Zero blocking findings. Zero open questions. t1 is approved for merge.**
+
+## Findings
+
+1. **[non-blocking] One line to add to BL-098 — the concrete instance is sharper than the
+   general one.** The row currently records that `surveyed` / `undetermined` /
+   `not_inventoried` die at stdout. Add the case Q1's answer surfaced: `period_basis` can be
+   `requested` or `fallback-current-month` **only on runs that emit inventory alone**, and the
+   inventory envelope has no `provider_extra` — so the artifact whose `period` label is least
+   trustworthy is precisely the one that cannot record why. Note alongside it that this is not
+   currently reachable by any consumer, because such a run is `partial` with exit 1 and the
+   pipeline stops before a report exists; the behavioural guard is what makes this medium
+   rather than high, and it is what would have to be revisited first if a future change let a
+   partial run continue.
+
+## Cross-ticket notes
+
+- Your Observation is the right conclusion and worth promoting in exactly that form at m3
+  close: the heterogeneity was not reasoned out, it was **run into**. The stricter gate had to
+  be built and watched marking a readable class UNKNOWN. A uniformity assumption over a
+  response's rows is not refutable by reading — only by executing against real data. That is
+  the executable half of the "the one X is an observation" rule, and this milestone has now
+  produced three instances of the family: the seam count, the environment carriers, and this.

@@ -676,9 +676,11 @@ class LinodeStub(DOStub):
         return f"{self.base_url}/v4"
 
 
-#: The invoice the recorded items belong to (`linode_invoices.json`, newest of three).
+#: The invoice the recorded items belong to (`linode_invoices.json`, newest of three). It is
+#: dated 2026-08-01 and bills 2026-07-01 -> 2026-08-01, so the period it COVERS is 2026-07 —
+#: which is the period the adapter labels the run with (r0 F1).
 LINODE_INVOICE_ID = 32251471
-LINODE_PERIOD = "2026-08"
+LINODE_PERIOD = "2026-07"
 
 #: Every endpoint the sweep touches, wired to its recorded fixture. NodeBalancer configs are
 #: per-parent: the two ids are the ones in `linode_nodebalancers.json`.

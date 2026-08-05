@@ -474,6 +474,7 @@ def normalize_cost(
     account: str,
     period: str,
     balance: dict | None = None,
+    warnings: list | None = None,
 ) -> dict:
     """Build the cost snapshot from an invoice's items, grouped to service granularity.
 
@@ -530,6 +531,20 @@ def normalize_cost(
             }
         )
 
+    total = money(invoice.get("total"))
+    # Runtime reconciliation, not only a fixture assertion. `money` (imported from
+    # `_normalized`) coerces an uncoercible value to 0.0 rather than raising as `fetch_do`'s
+    # private copy does, and Linode states `unit_price` as a *string* — so a malformed amount
+    # would drop out of the sum silently and under-report. The invariant is cheap and known to
+    # hold, so it is checked on every real run and not just against fixtures.
+    line_total = money(sum(line["amount"] for line in line_items))
+    if warnings is not None and line_total != total:
+        warnings.append(
+            f"billing: line items sum to {line_total} but invoice total is {total} — the "
+            f"difference is unexplained and at least one amount failed to parse; the figures "
+            f"are reported as received and are NOT reconciled"
+        )
+
     return {
         "provider": "linode",
         "account": account,
@@ -537,7 +552,7 @@ def normalize_cost(
         "currency": CURRENCY,
         "source_granularity": "service",
         "line_items": line_items,
-        "totals": {"amount": money(invoice.get("total"))},
+        "totals": {"amount": total},
         "balance": normalize_balance(balance),
         "generated_at": iso_now(),
         # Provider-specific payload. Everything above is the frozen cross-provider contract;
@@ -547,6 +562,9 @@ def normalize_cost(
             "invoice": {
                 "invoice_id": invoice.get("id"),
                 "label": invoice.get("label"),
+                # `period` is the month these figures COVER; `issued` is when the invoice was
+                # cut. On Linode the two differ by a month, which is why both are stated.
+                "issued": invoice.get("date"),
                 "date": invoice.get("date"),
                 "billing_source": invoice.get("billing_source"),
                 "subtotal": money(invoice.get("subtotal")),
@@ -803,11 +821,22 @@ def normalize_static_ip(raw: dict) -> dict:
     `is_reservable_address` for why, and for the spec-versus-live divergence behind it.
     """
     entity = raw.get("assigned_entity") or None
-    attached_to = None
     if isinstance(entity, dict) and entity.get("id") is not None:
         attached_to = f"{entity.get('type') or 'entity'}:{entity['id']}"
     elif raw.get("linode_id") is not None:
         attached_to = str(raw["linode_id"])
+    elif "assigned_entity" not in raw:
+        # Neither signal is present. `assigned_entity` is undeclared by the spec, so its
+        # absence is a live possibility rather than a hypothetical — and `linode_id: null` on
+        # its own does NOT mean unattached: two recorded addresses carry a null `linode_id`
+        # while serving a NodeBalancer. With the entity field gone, attachment is UNDETERMINED,
+        # and undetermined must not render as the orphan signal. A false orphan is the costlier
+        # error: it invites a human to delete an address that is in service.
+        attached_to = f"unknown:attachment-undetermined:{raw.get('address')}"
+    else:
+        # `assigned_entity` is present and null, and there is no `linode_id` — the provider
+        # has actively said this address is assigned to nothing. That is the orphan shape.
+        attached_to = None
     return {
         "resource_id": str(raw.get("address")),
         "type": TYPE_STATIC_IP,
@@ -858,8 +887,36 @@ def is_reservable_address(raw: dict) -> bool:
     This is the `CLAUDE.md` resolved-versus-advertised rule in a new carrier: a specification
     states what the API is *declared* to return, the wire states what it *does* return, and
     the two diverge exactly where the declaration is stale.
+
+    **And an undeclared field is not contractual.** Because the spec does not declare
+    `reserved`, nothing obliges Linode to keep returning it — and if it vanished, a truthiness
+    test would read false for every address and the class would report a confident zero. That
+    is precisely the shape §D-L6 forbids. So reservability is decided on *presence* by
+    `reservability_determinable` below, and this predicate is only ever consulted once presence
+    is established.
     """
     return raw.get("reserved") is True
+
+
+def reservability_determinable(addresses: list) -> bool:
+    """Whether the live response can answer the reservability question at all.
+
+    Presence, not truthiness. If **no** address carries a `reserved` key, the field has gone
+    from the API and the class is UNKNOWN — recorded as `not_inventoried`, never emitted as an
+    empty list. An empty list would be indistinguishable from "this account holds no reserved
+    address", which is the silent-wrong-answer §D-L6 exists to prevent.
+
+    The threshold is *no* address rather than *every* address, because the field is not
+    uniform and that is an observation, not a concession: in the recorded read all 15 IPv4 rows
+    carry `reserved` and all 11 IPv6 rows carry neither `reserved` nor `assigned_entity`.
+    Requiring it on every row would therefore mark a perfectly readable class as unknown on
+    every real run. Rows that lack it are counted separately as `undetermined` in `surveyed`,
+    so a partial gap stays visible instead of being averaged away.
+
+    An empty address list is determinable: the account holds no addresses, and there is no
+    missing field to worry about.
+    """
+    return not addresses or any("reserved" in raw for raw in addresses)
 
 
 def _backend_marker(raw: dict, backends: int | None) -> str:
@@ -931,36 +988,105 @@ def fetch_account(client: LinodeClient) -> tuple:
     return account, body
 
 
-def select_invoice(client: LinodeClient, period: str) -> dict:
-    """Find the invoice **issued** in `period`.
+def month_of(timestamp) -> str | None:
+    """The `YYYY-MM` an ISO timestamp falls in, or None if it states nothing."""
+    return timestamp[:7] if isinstance(timestamp, str) and len(timestamp) >= 7 else None
 
-    An invoice object carries a `date` and no period field of the DO kind, and the live read
-    shows the two are a month apart: invoice 32251471 is dated `2026-08-01T04:36:37` and every
-    one of its items runs `from 2026-07-01T04:00:00` `to 2026-08-01T03:59:59`. So the invoice
-    issued in month M bills month M-1.
 
-    Selection is by issue month, which is what makes `linode_costs_{current month}.json` exist
-    on a run in an in-flight month: Linode publishes no live invoice preview (DO's
-    `invoice_preview` has no analogue), so selecting by *covered* period would find nothing
-    for the current month and every live run would degrade to partial. The covered range is
-    not left implicit — `provider_extra.invoice.period_covered` carries the items' own
-    `from`/`to`, so a reader can never mistake which month the figures are for.
+def next_month(period: str) -> str:
+    """The `YYYY-MM` after `period`."""
+    year, month = int(period[:4]), int(period[5:7])
+    return f"{year + month // 12:04d}-{month % 12 + 1:02d}"
 
-    The divergence from DO — whose `period` is the covered period — is real and is recorded in
-    the implementation notes as a cross-provider comparability item rather than silently
-    picked; it shifts the label, not the month-over-month delta.
+
+def resolve_billing(client: LinodeClient, requested: str | None) -> tuple:
+    """Select the invoice **covering** `requested`, and return `(period, invoice, items)`.
+
+    `period` is the **covered** period on every provider — the m1 §Normalized meaning, whose
+    own example pairs `"period": "2026-07"` with a July fetch. Getting this wrong is a
+    silent-wrong-answer of the quietest kind: a per-provider history tree stays internally
+    consistent under a constant offset, so nothing ever errors and the report simply states a
+    month it is not about.
+
+    Linode makes the distinction visible where DO and AWS hide it. An invoice carries a `date`
+    and no period field, and the live read shows the two are a month apart: invoice 32251471 is
+    dated `2026-08-01T04:36:37` while every one of its items runs `from 2026-07-01T04:00:00`
+    `to 2026-08-01T03:59:59`. So the invoice issued in month M bills month M-1 — and on DO the
+    same relation is invisible because its live *preview* invoice makes covered ≡ current.
+
+    The coverage is read off the items rather than assumed from that offset: the offset is one
+    account's observed billing behaviour, not a documented rule, and an adapter that hard-coded
+    "issue month minus one" would be asserting a rule the provider never stated. Candidate
+    invoices are shortlisted by issue date (an invoice covering month P is issued in P or
+    shortly after), and each candidate's items are what confirm it.
+
+    **A Linode cost snapshot is structurally one month behind**, because no preview invoice
+    exists. With no `--period`, the newest *settled* invoice is selected rather than the
+    current month, so a bare run produces a correctly-labelled report instead of degrading to
+    partial every day of every month. The in-flight month survives only as
+    `balance_uninvoiced`, which the `balance` block already carries — and which the provider
+    documents as excluding transfer charges.
     """
-    for invoice in client.paginate("/account/invoices"):
-        date = invoice.get("date") or ""
-        if isinstance(date, str) and date.startswith(period):
-            return invoice
-    raise LinodeAPIError(f"no Linode invoice issued in period {period}")
+    invoices = client.paginate("/account/invoices")
+    dated = sorted(
+        (row for row in invoices if month_of(row.get("date"))),
+        key=lambda row: row["date"],
+        reverse=True,
+    )
+    if not dated:
+        raise LinodeAPIError("the Linode account has no dated invoices")
+
+    if requested is None:
+        candidates = dated[:1]
+    else:
+        # Ordering only — the confirmation always comes from the items, so no offset rule is
+        # asserted here. An invoice covering P was observed to be issued in P+1, so that is
+        # tried first; P and P+2 follow, which bounds the item fetches at three whatever the
+        # provider's billing day turns out to be.
+        likely = [next_month(requested), requested, next_month(next_month(requested))]
+        candidates = sorted(
+            (row for row in dated if month_of(row["date"]) in likely),
+            key=lambda row: likely.index(month_of(row["date"])),
+        )
+
+    first_failure = None
+    for invoice in candidates:
+        try:
+            items = client.paginate(f"/account/invoices/{invoice.get('id')}/items")
+        except (LinodeAPIError, requests.RequestException) as exc:
+            # A candidate that cannot be read is not evidence against the others; keep the
+            # first failure so a run where *nothing* could be read reports the real cause
+            # rather than a misleading "no invoice covers this period".
+            first_failure = first_failure or exc
+            continue
+        covered = month_of(period_covered(items)["from"])
+        if covered is None:
+            continue
+        if requested is None or covered == requested:
+            return covered, invoice, items
+
+    if first_failure is not None:
+        raise first_failure
+    raise LinodeAPIError(
+        f"no Linode invoice covers period {requested} — Linode issues no preview invoice, so "
+        f"the current month has none until it is cut; the uninvoiced position is carried in "
+        f"`balance.month_to_date_usage`"
+    )
 
 
-def fetch_costs(client: LinodeClient, account: str, period: str, account_body: dict) -> dict:
-    invoice = select_invoice(client, period)
-    items = client.paginate(f"/account/invoices/{invoice.get('id')}/items")
-    return normalize_cost(invoice, items, account, period, balance=account_body)
+def fetch_costs(
+    client: LinodeClient,
+    account: str,
+    requested: str | None,
+    account_body: dict,
+    warnings: list,
+) -> tuple:
+    """Returns `(period, cost_snapshot)` — the adapter is the authority on which period it
+    produced, and the orchestrator reads it back from the run summary (STEP 1)."""
+    period, invoice, items = resolve_billing(client, requested)
+    return period, normalize_cost(
+        invoice, items, account, period, balance=account_body, warnings=warnings
+    )
 
 
 def fetch_prices(client: LinodeClient, warnings: list) -> Prices:
@@ -1058,32 +1184,71 @@ def fetch_inventory(
         return rows
 
     guard("/nodebalancers", nodebalancers)
-    guard(
-        "/images",
-        lambda: [
-            normalize_image(raw, warnings)
-            for raw in client.paginate("/images")
-            # `is_public` marks distribution images that are not the account's own; billing
-            # and orphan semantics apply only to images the account created.
-            if not raw.get("is_public")
-        ],
-    )
+    def images():
+        rows = client.paginate("/images")
+        # `is_public` marks distribution images that are not the account's own; billing and
+        # orphan semantics apply only to images the account created.
+        owned = [raw for raw in rows if not raw.get("is_public")]
+        surveyed["images"] = {
+            "read": len(rows),
+            "retained": len(owned),
+            "emitted": len(owned),
+            "note": (
+                "public Linode distribution images are filtered out — they are not the "
+                "account's property and cannot be its orphans; `retained` is the count of "
+                "images the account owns"
+            ),
+        }
+        return [normalize_image(raw, warnings) for raw in owned]
+
+    guard("/images", images)
 
     def static_ips():
         addresses = client.paginate("/networking/ips")
+
+        # Presence, not truthiness. `reserved` is undeclared by the spec; if it ever stops
+        # being returned, a truthiness test would report a confident zero for a question it
+        # could no longer answer.
+        if not reservability_determinable(addresses):
+            surveyed["networking_ips"] = {
+                "read": len(addresses),
+                "retained": None,
+                "emitted": 0,
+                "note": "reservability not determinable — see not_inventoried",
+            }
+            not_inventoried.append(
+                {
+                    "class": "/networking/ips",
+                    "reason": (
+                        "reservability not determinable — the `reserved` field is absent from "
+                        "the live response (it is undeclared by OpenAPI 4.215.0 and was "
+                        "observed live at t1). Without it a reserved address cannot be told "
+                        "from the free primary every Linode has, so the class is UNKNOWN, "
+                        "not empty"
+                    ),
+                }
+            )
+            return []
+
         reserved = [raw for raw in addresses if is_reservable_address(raw)]
+        undetermined = [raw for raw in addresses if "reserved" not in raw]
         # The survey is why a zero here is readable. An empty `static_ip` class can mean the
         # account holds no reserved address (a fact) or that nothing was looked at (an
         # unknown), and the two are indistinguishable from the resource list alone — so the
         # counts that produced the zero are stated rather than left to be inferred.
         surveyed["networking_ips"] = {
-            "addresses_read": len(addresses),
-            "reserved": len(reserved),
-            "emitted_as_static_ip": len(reserved),
+            "read": len(addresses),
+            "retained": len(reserved),
+            "emitted": len(reserved),
+            # Addresses the reservability question could not be asked of at all — observed to
+            # be the IPv6 rows, which carry neither `reserved` nor `assigned_entity`. Counted
+            # rather than folded into `read`, so a partial gap is visible.
+            "undetermined": len(undetermined),
             "note": (
                 "only addresses with reserved=true carry orphan semantics; an "
                 "automatically-assigned primary is inseparable from its instance and is "
-                "never emitted (§D-L9)"
+                "never emitted (§D-L9). `undetermined` counts rows carrying no `reserved` "
+                "field, which cannot be assessed either way"
             ),
         }
         if reserved:
@@ -1123,7 +1288,6 @@ def parse_args(argv=None):
 
 def main(argv=None) -> int:
     args = parse_args(argv)
-    period = args.period or current_period()
     output_dir = Path(args.output_dir)
     errors: list = []
     warnings: list = []
@@ -1149,13 +1313,30 @@ def main(argv=None) -> int:
 
     prices = fetch_prices(client, warnings)
 
+    # The billing path resolves the period, because `period` is the month the figures COVER
+    # and only the invoice's items know which month that is.
     costs = None
+    period = args.period
+    period_basis = "requested" if args.period else None
     try:
-        costs = fetch_costs(client, account, period, account_body)
+        period, costs = fetch_costs(client, account, args.period, account_body, warnings)
+        period_basis = "invoice-covered"
     except LinodeAuthError as exc:
         return fail(str(exc))
     except (LinodeAPIError, requests.RequestException) as exc:
         errors.append({"source": "billing", "error": str(exc)})
+
+    if period is None:
+        # Billing failed and no period was requested, so nothing authoritative names the month.
+        # The inventory still needs a label; it gets the current month and says so, rather than
+        # borrowing a month no invoice confirmed.
+        period = current_period()
+        period_basis = "fallback-current-month"
+        warnings.append(
+            "period: no invoice could be read, so the period label is the current UTC month "
+            "and is NOT invoice-confirmed; a Linode cost snapshot normally covers the previous "
+            "month, because Linode issues no preview invoice"
+        )
 
     try:
         inventory, inventory_errors, not_inventoried, surveyed = fetch_inventory(
@@ -1172,9 +1353,19 @@ def main(argv=None) -> int:
         write_json(output_dir / f"linode_inventory_{period}.json", inventory)
     )
 
+    # A class that could not be assessed makes the run partial even when no request failed.
+    # `not_inventoried` can be populated without an `errors[]` entry — the presence gate on an
+    # undeclared field is one such path — and a run that reports `ok` while a whole class is
+    # UNKNOWN is the same silent success §D-L6 exists to prevent, one level up.
+    complete = not errors and not not_inventoried
+
     summary = {
-        "status": "ok" if not errors else "partial",
+        "status": "ok" if complete else "partial",
+        # The period these figures COVER, and how it was arrived at. STEP 1 of the
+        # orchestrator reads this back and passes it to every downstream stage, so the adapter
+        # is the authority — it is not told which month it is reporting on.
         "period": period,
+        "period_basis": period_basis,
         "files": written,
         "counts": {
             "line_items": len(costs["line_items"]) if costs else 0,
@@ -1197,7 +1388,7 @@ def main(argv=None) -> int:
         "errors": errors,
     }
     print(json.dumps(summary, indent=2))
-    return 0 if not errors else 1
+    return 0 if complete else 1
 
 
 if __name__ == "__main__":

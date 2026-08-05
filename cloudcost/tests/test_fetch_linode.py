@@ -240,6 +240,34 @@ def test_tax_is_its_own_line_and_the_total_stays_post_tax():
     assert out["provider_extra"]["invoice"]["tax_summary"] == [{"name": "IN GST", "tax": 18.0}]
 
 
+def test_reconciliation_is_checked_at_RUNTIME_not_only_against_fixtures():
+    """r0 F4 — `money` is imported from `_normalized`, which coerces an uncoercible value to
+    0.0 rather than raising as `fetch_do`'s private copy does. Linode states `unit_price` as a
+    string, so a malformed amount drops out of the sum silently and under-reports. The
+    invariant is cheap and known to hold, so it is asserted on every real run."""
+    invoice = rows("linode_invoices")[-1]
+    items = [dict(row) for row in rows("linode_invoice_items")]
+    items[0]["amount"] = "not-a-number"  # what a malformed provider amount looks like
+
+    warnings = []
+    out = fetch_linode.normalize_cost(invoice, items, "acct", PERIOD, warnings=warnings)
+
+    assert len(warnings) == 1
+    assert "line items sum to" in warnings[0] and "NOT reconciled" in warnings[0]
+    # The figures are still reported as received — the run degrades, it does not invent.
+    assert out["totals"]["amount"] == 422.0
+    assert round(sum(line["amount"] for line in out["line_items"]), 2) == 374.0
+
+
+def test_a_clean_invoice_raises_no_reconciliation_warning():
+    warnings = []
+    fetch_linode.normalize_cost(
+        rows("linode_invoices")[-1], rows("linode_invoice_items"), "acct", PERIOD,
+        warnings=warnings,
+    )
+    assert warnings == []
+
+
 def test_a_zero_rated_invoice_gets_no_tax_line():
     """The recorded invoice's tax is 0.00, and a $0.00 `Tax` row would be a line item for
     something that was never charged."""
@@ -263,17 +291,68 @@ def test_region_is_kept_for_a_single_region_service_and_null_when_it_spans_regio
     assert by_service["Linode 4GB"]["amount"] == 85.0
 
 
-def test_the_covered_period_is_recorded_because_it_is_not_the_period_field():
-    """An invoice issued in month M bills month M-1, so the covered range is stated rather
-    than left to be inferred from `period`."""
-    out = fetch_linode.normalize_cost(
-        rows("linode_invoices")[-1], rows("linode_invoice_items"), "acct", PERIOD
+def test_period_is_the_covered_month_not_the_issue_month(
+    full_linode_stub, tmp_path, monkeypatch, capsys
+):
+    """r0 F1 — `period` is the month the figures COVER, on every provider (m1 §Normalized).
+
+    The recorded invoice is dated 2026-08-01 and bills 2026-07-01 → 2026-08-01, so the snapshot
+    is `2026-07`. Labelling it `2026-08` would leave a per-provider history tree internally
+    consistent under a constant offset — nothing would error, and the report would simply state
+    a month it is not about.
+    """
+    monkeypatch.setenv("CLOUDCOST_LINODE_TOKEN", READONLY_TOKEN)
+    exit_code = fetch_linode.main(
+        ["--output-dir", str(tmp_path), "--api-base", full_linode_stub.api_base,
+         "--retry-base-delay", "0", "--max-retries", "0"]
     )
-    assert out["period"] == "2026-08"
-    assert out["provider_extra"]["invoice"]["period_covered"] == {
+    summary = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert summary["period"] == "2026-07"
+    assert summary["period_basis"] == "invoice-covered"
+    # The filename follows the covered period, not the issue month or the wall clock.
+    assert (tmp_path / "linode_costs_2026-07.json").exists()
+    assert (tmp_path / "linode_inventory_2026-07.json").exists()
+    assert not (tmp_path / "linode_costs_2026-08.json").exists()
+
+    costs = json.loads((tmp_path / "linode_costs_2026-07.json").read_text())
+    assert costs["period"] == "2026-07"
+    # Both facts are stated: what it covers, and when it was cut.
+    assert costs["provider_extra"]["invoice"]["issued"] == "2026-08-01T04:36:37"
+    assert costs["provider_extra"]["invoice"]["period_covered"] == {
         "from": "2026-07-01T04:00:00",
         "to": "2026-08-01T03:59:59",
     }
+
+
+def test_an_explicit_period_selects_the_invoice_covering_it(full_linode_stub, tmp_path):
+    """Coverage is read off the items, never derived from a hard-coded issue-month offset —
+    that offset is one account's observed behaviour, not a documented rule."""
+    client = fetch_linode.LinodeClient(
+        READONLY_TOKEN, api_base=full_linode_stub.api_base, max_retries=0, retry_base_delay=0
+    )
+    period, invoice, items = fetch_linode.resolve_billing(client, "2026-07")
+    assert period == "2026-07"
+    assert invoice["id"] == 32251471
+    assert fetch_linode.month_of(invoice["date"]) == "2026-08"
+    assert len(items) == 19
+
+
+def test_a_period_no_invoice_covers_is_reported_not_invented(
+    full_linode_stub, tmp_path, monkeypatch, capsys
+):
+    """The in-flight month has no invoice, because Linode issues no preview. That degrades to
+    partial with the reason stated; it never fabricates a snapshot."""
+    monkeypatch.setenv("CLOUDCOST_LINODE_TOKEN", READONLY_TOKEN)
+    exit_code = run_main(full_linode_stub, tmp_path, period="2026-08")
+    summary = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert summary["status"] == "partial"
+    assert "no Linode invoice covers period 2026-08" in summary["errors"][0]["error"]
+    assert "balance.month_to_date_usage" in summary["errors"][0]["error"]
+    assert not (tmp_path / "linode_costs_2026-08.json").exists()
 
 
 def test_period_covered_is_null_when_no_item_states_a_bound():
@@ -468,6 +547,21 @@ def test_public_distribution_images_are_not_inventoried(
     assert not [r for r in inventory["resources"] if r["type"] == "snapshot"]
 
 
+def test_the_images_survey_states_the_counts_behind_the_empty_class(
+    full_linode_stub, tmp_path, monkeypatch, capsys
+):
+    """r0 F5 — the exclusion must be visible in the output, not only in a test name. A reader
+    cannot otherwise tell "no private images" from "images not examined"."""
+    monkeypatch.setenv("CLOUDCOST_LINODE_TOKEN", READONLY_TOKEN)
+    run_main(full_linode_stub, tmp_path)
+    survey = json.loads(capsys.readouterr().out)["surveyed"]["images"]
+
+    assert survey["read"] == len(rows("linode_images"))
+    assert survey["retained"] == 0
+    assert survey["emitted"] == 0
+    assert "distribution images are filtered out" in survey["note"]
+
+
 # --------------------------------------------------------------------------------- §D-L9
 
 
@@ -512,10 +606,55 @@ def test_an_empty_static_ip_class_states_the_counts_behind_the_zero(
     summary = json.loads(capsys.readouterr().out)
 
     survey = summary["surveyed"]["networking_ips"]
-    assert survey["addresses_read"] == len(rows("linode_ips"))
-    assert survey["reserved"] == 0
-    assert survey["emitted_as_static_ip"] == 0
+    assert survey["read"] == len(rows("linode_ips"))
+    assert survey["retained"] == 0
+    assert survey["emitted"] == 0
+    # The IPv6 rows carry no `reserved` field at all, so they were not assessable either way —
+    # counted, not folded into the zero.
+    assert survey["undetermined"] == len([r for r in rows("linode_ips") if "reserved" not in r])
     assert summary["not_inventoried"] == []
+
+
+def test_a_vanished_reserved_field_makes_the_class_unknown_not_empty(
+    full_linode_stub, tmp_path, monkeypatch, capsys
+):
+    """r0 F2 — `reserved` is undeclared by the spec, so nothing obliges Linode to keep
+    returning it. Branch on **presence**: with the field gone from every row, an empty
+    `static_ip` list would be indistinguishable from "this account holds no reserved address",
+    which is exactly the shape §D-L6 forbids."""
+    monkeypatch.setenv("CLOUDCOST_LINODE_TOKEN", READONLY_TOKEN)
+    full_linode_stub.route("/v4/networking/ips", load_fixture("linode_ips_no_reserved_field"))
+
+    exit_code = run_main(full_linode_stub, tmp_path)
+    summary = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert summary["status"] == "partial"
+    reasons = {n["class"]: n["reason"] for n in summary["not_inventoried"]}
+    assert "/networking/ips" in reasons
+    assert "reservability not determinable" in reasons["/networking/ips"]
+    inventory = json.loads((tmp_path / f"linode_inventory_{PERIOD}.json").read_text())
+    assert not [r for r in inventory["resources"] if r["type"] == "static_ip"]
+
+
+def test_attachment_is_undetermined_not_unattached_when_the_entity_field_is_absent():
+    """r0 F2, second half. `linode_id: null` alone does NOT mean unattached — two recorded
+    addresses carry a null `linode_id` while serving a NodeBalancer. With `assigned_entity`
+    absent too, attachment is undetermined, and undetermined must never render as the orphan
+    signal: a false orphan invites a human to delete an address that is in service."""
+    unattached_looking = rows("linode_ips_no_reserved_field")[1]
+    assert unattached_looking["linode_id"] is None
+    assert "assigned_entity" not in unattached_looking
+
+    out = fetch_linode.normalize_static_ip(unattached_looking)
+    assert out["attached_to"] is not None
+    assert "undetermined" in out["attached_to"]
+
+    # Where the provider actively says the address is assigned to nothing, that IS the orphan
+    # shape — the two cases must not collapse into each other.
+    genuinely_unassigned = rows("linode_ips_reserved")[0]
+    assert genuinely_unassigned["assigned_entity"] is None
+    assert fetch_linode.normalize_static_ip(genuinely_unassigned)["attached_to"] is None
 
 
 # ---------------------------------------------------------------------- §D-L6 degradation
@@ -566,7 +705,7 @@ def test_a_missing_invoice_is_reported_not_invented(
 
     assert exit_code == 1
     assert summary["status"] == "partial"
-    assert "no Linode invoice issued in period 2019-01" in summary["errors"][0]["error"]
+    assert "no Linode invoice covers period 2019-01" in summary["errors"][0]["error"]
     # The inventory still lands: one failing source does not abort the sweep.
     assert (tmp_path / "linode_inventory_2019-01.json").exists()
 
@@ -789,6 +928,62 @@ def test_the_normalized_inventory_is_readable_by_the_shared_rule_engine(
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["counts"]["skipped"] == 0
+
+
+def test_the_shared_rule_engine_FIRES_on_linode_shaped_input(tmp_path):
+    """r0 F6 — the positive control. Parsing cleanly is a real result but a negative one: the
+    live account yields 0 candidates because it genuinely has none, so nothing yet shows an
+    **unchanged** `detect_orphans.py` producing a candidate from Linode-shaped input.
+
+    This builds an inventory from the orphan-shaped fixtures and runs the engine byte-unchanged
+    over it, proving the milestone's bet mechanically and offline — without waiting on t3's
+    account plant.
+    """
+    prices = prices_from_fixtures()
+    idle_nb, config_less_nb = rows("linode_nodebalancers_idle")
+    inventory = {
+        "provider": "linode",
+        "account": "acct",
+        "period": PERIOD,
+        "resources": [
+            # Unattached volume, created 2025-01 — well past the 14-day threshold.
+            fetch_linode.normalize_volume(rows("linode_volumes_orphan")[0], prices, []),
+            # NodeBalancers with zero backends: one with configs, one with none at all.
+            fetch_linode.normalize_nodebalancer(idle_nb, 0, prices, []),
+            fetch_linode.normalize_nodebalancer(config_less_nb, 0, prices, []),
+            # A reserved address assigned to nothing.
+            fetch_linode.normalize_static_ip(rows("linode_ips_reserved")[0]),
+            # An aged private image (2024-03), past the 30-day snapshot threshold.
+            fetch_linode.normalize_image(rows("linode_images_private")[0], []),
+        ],
+        "generated_at": "2026-08-05T00:00:00Z",
+    }
+    source = tmp_path / f"linode_inventory_{PERIOD}.json"
+    source.write_text(json.dumps(inventory))
+
+    result = subprocess.run(
+        [sys.executable, str(USE_CASE_ROOT / "scripts" / "detect_orphans.py"), str(source),
+         "--output-dir", str(tmp_path), "--reference-date", "2026-08-05"],
+        capture_output=True, text=True, cwd=USE_CASE_ROOT,
+    )
+    assert result.returncode == 0, result.stderr
+    summary = json.loads(result.stdout)
+    assert summary["counts"]["skipped"] == 0
+
+    candidates = json.loads(
+        (tmp_path / f"linode_orphan_candidates_{PERIOD}.json").read_text()
+    )["candidates"]
+    fired = {c["rule"] for c in candidates}
+    assert "unattached_volume" in fired
+    assert "idle_load_balancer" in fired
+    assert "unassociated_static_ip" in fired
+    assert "aged_snapshot" in fired
+    # Every candidate carries the evidence that makes the report reviewable without the
+    # Linode console — the milestone's actual deliverable.
+    assert all(c["evidence"] for c in candidates)
+    # And the unattached volume carries a real dollar figure, from the live per-GB rate.
+    volume = next(c for c in candidates if c["rule"] == "unattached_volume")
+    assert volume["monthly_saving_estimate"] == 2.0
 
 
 # --------------------------------------------------------------------- fixture hygiene

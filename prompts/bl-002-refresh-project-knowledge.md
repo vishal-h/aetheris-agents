@@ -102,3 +102,33 @@ nothing tracked was written after it, zero WARN is reachable. (Under
 --strict the binding invariant is zero *unexplained* WARN —
 project_knowledge staleness is strict-exempt — but a freshly regenerated
 manifest at an export boundary should carry no staleness WARN at all.)
+
+---
+
+## Post-upload verification (the boundary's last step, and it is not the uploader's)
+
+The upload half has no detector. `drift_check` check 8 compares the manifest against git
+history, so it catches the repo running ahead of an export and is structurally blind to a
+partial, misnamed or under-described upload — project knowledge can be silently wrong while
+drift reports green. Nothing in this repo can see the store; the verification is run by a
+surface that can read project knowledge (claude-ui's Projects tool, or the human in the UI) and
+handed back.
+
+Three checks, and the third is the one that catches an incremental upload:
+
+1. **Count and names.** The store's document set equals the manifest's export-name column
+   exactly — set comparison in both directions, not a count. A name in one and not the other is
+   the finding.
+2. **Content, on the movers only.** For each row re-pinned this boundary, read the uploaded doc
+   and confirm it carries the new content rather than trusting the name. A stale file uploaded
+   under a current name passes every other check here.
+3. **No document predates the upload window.** A genuine remove-all-upload-all leaves every
+   manifest doc created inside one narrow window. A doc with an older timestamp survived the
+   remove — either it is a deliberate non-manifest document (agent-written docs land under
+   `claude/`), in which case the manifest should say such documents may coexist and are out of
+   scope, or the upload was incremental and the store now under-describes itself.
+   Same-window-among-themselves is not sufficient: a partial upload of four files shares a
+   window too. The discriminator is that *nothing is older*.
+
+`Source: m3-cloudcost export boundary, 2026-08-05 — the store-side check that found the
+manifest describing 25 documents while the store held 26.`

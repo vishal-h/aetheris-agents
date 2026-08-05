@@ -1,0 +1,24 @@
+{
+  "_comment": "SYNTHETIC \u2014 not a recording. The account's only volume is attached, so no recording exercises the unattached path. 20 GB in ap-west: at the live per-GB rate (0.1) the estimate must be 2.00.",
+  "data": [
+    {
+      "id": 9100001,
+      "status": "active",
+      "label": "detached-data-vol",
+      "created": "2025-01-05T02:02:42",
+      "updated": "2026-01-05T02:02:42",
+      "size": 20,
+      "linode_id": null,
+      "linode_label": null,
+      "io_ready": false,
+      "region": "ap-west",
+      "tags": [],
+      "hardware_type": "nvme",
+      "encryption": "disabled",
+      "filesystem_path": "/dev/disk/by-id/scsi-0Linode_Volume_detached-data-vol"
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 1
+}

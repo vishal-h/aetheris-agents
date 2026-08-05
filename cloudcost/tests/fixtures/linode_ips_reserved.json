@@ -1,0 +1,45 @@
+{
+  "_comment": "SYNTHETIC \u2014 not a recording. The account holds no reserved address (`reserved: false` on all 26), so no recording exercises the emission path \u00a7D-L9 opened. First row is reserved and unassigned \u2014 the orphan shape; second is reserved and assigned, and must NOT read as unassociated.",
+  "data": [
+    {
+      "address": "192.0.2.200",
+      "gateway": "192.0.2.1",
+      "subnet_mask": "255.255.255.0",
+      "prefix": 24,
+      "type": "ipv4",
+      "public": true,
+      "rdns": null,
+      "linode_id": null,
+      "assigned_entity": null,
+      "region": "ap-west",
+      "reserved": true,
+      "tags": [],
+      "interface_id": null,
+      "vpc_nat_1_1": null
+    },
+    {
+      "address": "192.0.2.201",
+      "gateway": "192.0.2.1",
+      "subnet_mask": "255.255.255.0",
+      "prefix": 24,
+      "type": "ipv4",
+      "public": true,
+      "rdns": null,
+      "linode_id": 19294655,
+      "assigned_entity": {
+        "id": 19294655,
+        "type": "linode",
+        "label": "zz-ct-ravendb",
+        "url": "/v4/linode/instances/19294655"
+      },
+      "region": "ap-west",
+      "reserved": true,
+      "tags": [],
+      "interface_id": null,
+      "vpc_nat_1_1": null
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 2
+}

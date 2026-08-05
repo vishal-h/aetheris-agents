@@ -1,0 +1,57 @@
+{
+  "_comment": "Recorded 2026-08-05. The account returned 39 images and every one is a Linode distribution image (`is_public: true`); it owns no private image. Two are kept. The adapter emits none of these \u2014 see linode_images_private.json for the shape it does.",
+  "data": [
+    {
+      "id": "linode/almalinux10",
+      "label": "AlmaLinux 10",
+      "deprecated": false,
+      "size": 3500,
+      "created": "2025-10-01T04:00:00",
+      "updated": "2026-07-03T15:29:28",
+      "description": "",
+      "created_by": "linode",
+      "type": "manual",
+      "tags": [],
+      "is_public": true,
+      "is_shared": false,
+      "vendor": "AlmaLinux",
+      "expiry": null,
+      "eol": "2035-05-31T04:00:00",
+      "regions": null,
+      "status": "available",
+      "capabilities": [
+        "cloud-init"
+      ],
+      "image_sharing": null,
+      "is_product_image": false
+    },
+    {
+      "id": "linode/almalinux8",
+      "label": "AlmaLinux 8",
+      "deprecated": false,
+      "size": 4000,
+      "created": "2021-05-18T14:28:38",
+      "updated": "2026-07-13T15:05:51",
+      "description": "",
+      "created_by": "linode",
+      "type": "manual",
+      "tags": [],
+      "is_public": true,
+      "is_shared": false,
+      "vendor": "AlmaLinux",
+      "expiry": null,
+      "eol": "2029-01-01T05:00:00",
+      "regions": null,
+      "status": "available",
+      "capabilities": [
+        "cloud-init",
+        "distributed-sites"
+      ],
+      "image_sharing": null,
+      "is_product_image": false
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 2
+}

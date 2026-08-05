@@ -1,0 +1,68 @@
+{
+  "_comment": "SYNTHETIC \u2014 not a recording. The account owns no private image (all 39 are Linode distributions). The first row is single-region, so `region` must resolve to ap-west; the second is stored in two, so `region` must be null \u2014 the schema's own answer there is 'many'.",
+  "data": [
+    {
+      "id": "private/12345",
+      "label": "old-app-image",
+      "deprecated": false,
+      "size": 2500,
+      "created": "2024-03-01T04:00:00",
+      "updated": "2024-03-01T04:00:00",
+      "description": "",
+      "created_by": "someone",
+      "type": "manual",
+      "tags": [
+        "retired"
+      ],
+      "is_public": false,
+      "is_shared": false,
+      "vendor": null,
+      "expiry": null,
+      "eol": null,
+      "regions": [
+        {
+          "region": "ap-west",
+          "status": "available"
+        }
+      ],
+      "status": "available",
+      "capabilities": [],
+      "image_sharing": null,
+      "is_product_image": false
+    },
+    {
+      "id": "private/12346",
+      "label": "multi-region-image",
+      "deprecated": false,
+      "size": 900,
+      "created": "2026-08-01T04:00:00",
+      "updated": "2026-08-01T04:00:00",
+      "description": "",
+      "created_by": "someone",
+      "type": "manual",
+      "tags": [],
+      "is_public": false,
+      "is_shared": false,
+      "vendor": null,
+      "expiry": null,
+      "eol": null,
+      "regions": [
+        {
+          "region": "ap-west",
+          "status": "available"
+        },
+        {
+          "region": "in-maa",
+          "status": "available"
+        }
+      ],
+      "status": "available",
+      "capabilities": [],
+      "image_sharing": null,
+      "is_product_image": false
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 2
+}

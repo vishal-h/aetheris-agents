@@ -1,0 +1,23 @@
+{
+  "_comment": "SYNTHETIC \u2014 not a recording. The live account is zero-rated (`tax: 0.0` on all 140 invoices), so no recording can exercise \u00a7D-L1. Figures chosen so the three fields are mutually checkable: subtotal 100.00 + tax 18.00 == total 118.00, and \u03a3 line_items must equal 118.00 only once the synthetic Tax row is added.",
+  "data": [
+    {
+      "id": 99000001,
+      "label": "Invoice #99000001",
+      "date": "2026-08-01T04:00:00",
+      "subtotal": 100.0,
+      "tax": 18.0,
+      "tax_summary": [
+        {
+          "name": "IN GST",
+          "tax": 18.0
+        }
+      ],
+      "total": 118.0,
+      "billing_source": "linode"
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 1
+}

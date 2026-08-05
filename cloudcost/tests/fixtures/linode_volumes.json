@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "id": 9022878,
+      "status": "active",
+      "label": "pvc-0a8dce06b486430a",
+      "created": "2025-04-09T02:02:42",
+      "updated": "2026-06-18T13:05:19",
+      "filesystem_path": "/dev/disk/by-id/scsi-0Linode_Volume_pvc-0a8dce06b486430a",
+      "size": 10,
+      "linode_id": 99356691,
+      "linode_label": "lke381165-586854-6328deb70000",
+      "io_ready": true,
+      "region": "ap-west",
+      "tags": [],
+      "hardware_type": "nvme",
+      "encryption": "disabled"
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 1
+}

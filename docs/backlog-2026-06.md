@@ -5374,3 +5374,50 @@ and the tag figures reconcile with the existing coverage ratio, asserted in a te
 resolves m1-cloudcost §Open items' `reported`-list question.`
 
 ---
+
+### BL-102 — The complete-but-unmarked sweep runs at milestone closes only, so batch closes leave rows silently open (#TBD)
+**Size:** XS–S · **Priority:** low-medium · **Section:** aetheris-agents (`docs/`, export procedure)
+
+Filed 2026-08-05 from the m3-cloudcost export boundary. `CLAUDE.md` §Definition of done — doc
+sync now carries *"`drift_check` verifies a pin is current, never that it is complete — read the
+pinned content against what it should say."* At the m3 boundary that rule was discharged by
+sweeping the **milestone doc's** §Done-when and §Milestone summary against the backlog, which
+found BL-090 and BL-092 marked ✓ in done-when 5 and carrying no DONE section — pinned as-is, the
+export would have shipped two closed rows reading as open. Same correction the 2026-08-04
+boundary made mid-flight for BL-073/BL-095.
+
+**The gap: a batch has no milestone doc, so it has nothing to sweep.** The cloudcost-in-Rig
+batch closed against BL-0xx rows plus a handoff, not a `§Done-when` table. Its standing
+instance is visible now: **BL-084 and BL-085** carry implementation notes on disk
+(`cloudcost/docs/bl-08{4,5}-implementation-notes.md`) and no DONE section, and were outside the
+m3 census by construction — no m3 document claims them. Whether they are actually complete is
+the first thing this row has to establish; the notes-on-disk signal is evidence, not a verdict,
+and closing a row that is not done is the worse error of the two.
+
+**Two findings in two consecutive boundaries is the argument.** The class does not depend on
+which artifact a cycle happens to produce, but the sweep as written does — it is keyed to a
+document type only milestones have. A batch's closed rows are exactly as exportable and exactly
+as invisible.
+
+**Scope — procedure, not tooling.** Do not build a checker. The signal a script would key on
+(notes file exists, row lacks DONE) is unreliable in both directions: notes are written for
+tickets that later get deferred, and some closed rows never had notes. A green check over that
+heuristic would be a **silent-wrong-answer** generator, which is the class the pin-currency rule
+exists to prevent — the point is to *read*, and automating the read reintroduces the trust the
+rule withdrew. What lands is a sentence in the export procedure naming what to sweep when there
+is no milestone doc: the batch's closed BL-0xx rows and the handoff's own claims.
+
+**Sequence.** Do it at the next batch close, when there is a live instance to sweep rather than
+a retrospective one — the BL-078 trigger shape. Filing it now only because prose in a packet
+files nothing.
+
+**Done when:** the export procedure states what the complete-but-unmarked sweep reads at a batch
+close; BL-084 and BL-085 are each adjudicated done-or-open, with a DONE section written for any
+that is done; and the rule's wording in `CLAUDE.md` §Definition of done — doc sync no longer
+reads as milestone-only if it currently does.
+
+`Source: m3-cloudcost export boundary, 2026-08-05 (packet §3.6, deferred past the boundary
+deliberately — filing it inside would have re-staled the backlog row the boundary had just
+pinned and reopened a WARN the boundary existed to close).`
+
+---

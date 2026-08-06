@@ -6337,6 +6337,13 @@ recorded for the **silent** cases specifically — a missed knob, a missed optio
 credential mis-categorised as a knob — not only for the mandatory-credential case that already
 fails loudly.
 
+*Original done-when, superseded, kept as the record:* an adapter constant naming a credential
+cannot be added without either the sprint selecting it or a test failing; and the mutation posture
+is recorded — add a new credential constant to one adapter, watch the guard fire, remove it.
+*(Superseded because "watch the guard fire" names the mandatory-credential case, which is the one
+that already fails loudly; the posture it asked for would have been recorded against the half of
+the surface that needs no fix.)*
+
 `Source: m4 t3, 2026-08-06 — recorded as a residual of that ticket's own bridge. Re-characterised
 at t3 review r1 the same day, after the reviewer's trace was checked against the code rather than
 taken; the mutations behind the table were run at agents aabf546 / harness 7c248c0.`

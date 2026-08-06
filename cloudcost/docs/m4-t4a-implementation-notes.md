@@ -38,13 +38,28 @@ exactly the population the seven known leads already occupy. Of the 54 items cen
 **19 are anchored on a module-level assignment and 35 are not**. A name-keyed sweep would have
 returned at best the 19 and read as complete.
 
-> **Counts corrected at review round 1.** The first draft said *"50 items … 21 named constants and
-> 29 are not"*. All three figures were wrong — hand-counted, never derived. The census has always
-> held 54 items; `grep -cE '^#### (X|N|D|F|P|R)[0-9]+'` returns 54, and the named/not split is
-> derived from which items are anchored on an extraction-class-A node. The reviewer caught the same
-> defect one section down (§6 said "Four" and listed eight); this is its sibling in the headline
-> claim, and it is the one figure a reader would have taken on trust. Every count in this document
-> is now derived by a command rather than counted by hand.
+> **Counts corrected at review rounds 1 and 2.** The first draft said *"50 items … 21 named
+> constants and 29 are not"*. All three figures were wrong — hand-counted, never derived.
+>
+> The sizes, established by counting item headings in each committed tree rather than asserted:
+> **r0 (`53e3c9b`) held 53 items while its text said 50**; r1 added **X5** and holds **54**. A
+> round-1 note claimed the census *"has always held 54"*, which was wrong in the round that added
+> an item — caught at round 2, and it is the same defect one more time: a count claim inside the
+> correction of count claims. Derivation, for both trees:
+>
+> ```
+> $ git show 53e3c9b:cloudcost/docs/m4-t4a-implementation-notes.md \
+>     | grep -cE '^#### (X|N|D|F|P|R)[0-9]+'      # -> 53
+> $ git show cc34c67:… | grep -cE '^#### (X|N|D|F|P|R)[0-9]+'   # -> 54
+> $ diff <(…53e3c9b… headings) <(…cc34c67… headings)            # -> only "> X5"
+> ```
+>
+> The named/not split is derived from which items are anchored on an extraction-class-A node, and
+> note which way the correction moved it: **19 / 35, not 21 / 29** — so the falsification of the
+> name-keyed method is *stronger* than the first draft claimed, not weaker. The reviewer caught
+> the first instance one section down (§6 said "Four" and listed eight); the headline census size
+> was its sibling and the one figure a reader would have taken on trust. **Every count in this
+> document is now derived by a command, and the command is shown beside the figure.**
 
 ### 2.2 The extraction — over-broad by construction
 

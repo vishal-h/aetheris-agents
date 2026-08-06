@@ -184,7 +184,19 @@ Two constraints, recorded at t2's close because both are known now and expensive
 
 ## Sequence
 
-t1b → t2 → t3 → t4 → t5 → **harness consolidation round** → **provider four**.
+t1b → t2 → t3 → **t4a → t4b** → t5 → **harness consolidation round** → **provider four**.
+
+> **Updated 2026-08-06 (t4a review r2), on the reviewer's ruling.** t4a's `Touches` named two
+> changes to this document and closed *"Nothing else."*, so t4a left this line reading `t4` and
+> flagged the mismatch rather than editing it. The ruling: §Sequence and §Ticket set are two
+> sections of one document disagreeing about what happens next, and **§Sequence is the one a reader
+> consults to find out** — so the fix is owed in the round that creates the mismatch, not a ticket
+> later. This is the same Touches-omission-by-design that §What t3, t4 and t5 inherit item 2 already
+> records about this document.
+>
+> **t4b is gated on the rulings**, which is why the arrow is not a plain continuation: t4a
+> enumerated, the arbiter rules, t4b implements. A t4b started before the ruling table exists has
+> nothing to implement.
 
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you

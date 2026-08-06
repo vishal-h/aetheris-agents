@@ -153,6 +153,23 @@ One item, recorded here rather than left to be found mid-ticket:
 
 ---
 
+### What t3, t4 and t5 inherit
+
+Two constraints, recorded at t2's close because both are known now and expensive to hit mid-ticket.
+
+1. **Implementation notes take an `m4-` prefix, for every remaining ticket.** m1 wrote its notes
+   unprefixed, so `cloudcost/docs/` already holds `t1-`, `t2-`, `t3-`, `t4-` and
+   `t5-implementation-notes.md`. **t3, t4 and t5 each collide**; t1a, t1a-p and t1b escaped only
+   because m1 had no ticket by those names, which is why the collision surfaced at t2 rather than
+   earlier. Write `m4-t3-implementation-notes.md` and so on — the `m2-t1-` / `m3-t1-` series
+   convention, already used by both preceding cycles. Decision 4 is untouched: the *ticket* is
+   still `t3`. Do not rename m1's files to make room.
+2. **This document belongs in every remaining ticket's `Touches` list.** t1b and t2 both edited it
+   outside `Touches` and both declared the same deviation for the same reason — its §Ticket set row
+   and §What this cycle established are duties no other document performs, and leaving a row
+   reading "not started" after the work lands is false in its own commit. A deviation that recurs
+   by design is a `Touches` omission, not a deviation.
+
 ## Sequence
 
 t1b → t2 → t3 → t4 → t5 → **harness consolidation round** → **provider four**.
@@ -348,6 +365,25 @@ must **perform**.
    rather than by a gate or a round. A gate that becomes standard is an admission that authorship
    alone has not been sufficient; a run of tickets where authors catch their own would be the
    evidence for not making it standing.
+
+2. **Whether *match structured data by field, not by substring* is worth promoting.** Carried to
+   the close rather than acted on, per the t2 review.
+
+   *The evidence.* Twice in this cycle a defect was caught by **implausibility rather than by a
+   check**, and both would have passed had the wrong answer been plausible. At t1a-p a verification
+   step running with a persisting `cd` compared one repo's `CLAUDE.md` against itself and reported
+   every phrase present in both files — caught only because a phrase cannot be in two files at
+   once. At t2 a `grep -qF` over `docs/project-knowledge-manifest.md` reported
+   `cloudcost/runbook.md` and `cloudcost/m3-milestone.md` as manifest-tracked; it was matching the
+   `docs/rig/runbook.md` and `docs/aetheris/runbook.md` rows, and it was caught only because check
+   8 staying silent about a file just edited was implausible. Had the manifest happened to track
+   the runbook, the same broken grep would have returned the right answer and taught nothing.
+
+   *Why it may not need its own rule.* This is the same family as the **command-binding** carrier
+   already promoted under Silent-wrong-answer (*a check that reads the wrong thing reports a clean
+   result, not an error*) — the manifest case is that rule with a table column in place of a repo
+   path. The close decides whether the substring-vs-field form is a distinct enough carrier to name,
+   or whether naming it dilutes the rule it belongs to.
 
 ---
 

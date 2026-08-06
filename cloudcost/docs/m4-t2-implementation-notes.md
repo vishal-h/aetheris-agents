@@ -163,7 +163,7 @@ reserved-IP hit at all — the harness repo's only carrier is `sprint.sh` itself
 | `cloudcost/runbook.md` §"Exercising the ≥1-orphan path" — the canonical how-to, with the DO, AWS and Linode recipes | **Corrected in place**, retitled §"What a zero-orphan account means, and what the sprint asserts instead". The recipes are gone; the section now states that a zero is the desired state, that the practice is retired, and what replaced it. The offline check snippets that followed are kept — they are not plant material. | decision 8 |
 | `docs/backlog-2026-06.md` BL-069 Done-when | **Step 0, before any implementation** — dated `[corrected 2026-08-06]`, superseded text kept beneath, per the row-editing pattern established on BL-100. Then a DONE section recording closure **by retirement**. | §Close criteria item 4, prospectively |
 | `../aetheris/scripts/sprint.sh` — the assertion and its KNOWN-RED block | Replaced; see §2. | the ticket |
-| `CLAUDE.md` (agents) §Definition of done — the gate rule's closing exemplar | **Corrected in place, minimal.** The rule is preserved verbatim in force (carry red, name it, never quietly relax or re-point it); only the closure claim is fixed, with the superseded sentence quoted in the correction marker. | decision 8 — **arbiter-ruled** |
+| `CLAUDE.md` (agents) §Definition of done — the gate rule's closing exemplar | **Corrected in place, minimal.** The rule is preserved verbatim in force (carry red, name it, never quietly relax or re-point it); only the closure claim is fixed, with the superseded sentence quoted in the correction marker. See §4a — the claim was **wrong when written**, not falsified by t2, and the first marker got that wrong. | decision 8 — **arbiter-ruled** |
 | `docs/handoffs/handoff-cloudcost-rig-batch-2026-08-03.md` §Live tripwire; `…-close-2026-08-04.md` and `handoff-linode-provider-three-kickoff-2026-08-04.md` §Live tripwires | **Dated superseded note, original text intact**, one per file. | **decision 7** — see the routing note below |
 | `cloudcost/milestone.md` §Prerequisites 2; `cloudcost/m2-milestone.md` status line, §Prerequisites 3 (**`Status: PENDING`**) and the rows-filed summary; `cloudcost/m3-milestone.md` §Prerequisites 3, §Rule reachability and both §t3 imperatives | **One dated note per document**, scoped to the document and enumerating its carriers; original text not rewritten. | decision 10, then decision 7 |
 
@@ -174,6 +174,34 @@ reserved-IP hit at all — the harness repo's only carrier is `sprint.sh` itself
 > record and **decision 7** applies directly. Reaching for the undecidable default where a rule
 > decides cleanly is how the default becomes the path of least resistance and the rules stop
 > discriminating.
+
+### §4a — the `CLAUDE.md` exemplar was wrong when written, not falsified by t2
+
+Established at review round 1, because the first correction marker asserted the wrong reason and a
+correction inherits the authority of the claim it replaces.
+
+The sentence was authored **2026-08-03 07:51 at `0fc9396`** (the m2-cloudcost §7 promotion). In
+that same tree:
+
+- BL-069's row was **open** — heading *"is armed"*, Done-when unmet, no DONE section;
+- `cloudcost/m2-milestone.md`'s own status line already read *"a planted unassociated Elastic IP,
+  **since released, so BL-069 is re-armed for AWS**: re-plant before any future run that must
+  assert ≥1"*.
+
+So the row had not closed, and the author's repo said so one document over. It then stayed open
+through m3's close, t1a, t1a-p and t1b, still `[FAIL]`ing on 2026-08-05.
+
+**What "it" pointed at is the defect.** Read as *m2's ≥1-orphan done-when*, the clause is true —
+that done-when did close by planting, at sprint `20260803_062310`, run `cloudcost-orch-aws-oFbapA`.
+Read as *the row*, it was false at the moment of writing. Both antecedents are available one
+sentence apart, and a rules file takes the second: a reader meeting *"BL-069's ≥1-orphan
+assertion … closed by planting"* in `CLAUDE.md` reads it as how that row was discharged, which is
+what made it an endorsement of the practice. An exemplar written from the milestone's arc was
+carried for three days as a claim about a row.
+
+This is the same distinction t1b drew for the m09→m10 step-count claim — *wrong when written, not
+superseded since* — and it teaches the opposite lesson from "the rules file aged": authorship, not
+staleness, is where this one entered.
 
 **What each note carries**, uniformly: what replaced the practice and where the live description
 now lives; **no claim about what the new assertion reports** on any leg — it has not run on all

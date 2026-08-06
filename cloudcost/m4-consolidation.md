@@ -5,6 +5,10 @@
 > working apparatus rather than on top of it. Created after two tickets had already closed,
 > because the cycle opened without one — see §Why this exists.
 
+> This is the m4 entry in the cloudcost series (`milestone.md`, `m2-milestone.md`,
+> `m3-milestone.md`), named for what it is rather than to the series pattern. A sweep looking for
+> `m4-milestone.md` will not find it.
+
 **Status:** open. **Opened:** 2026-08-05 (first move ratified). **Document created:** 2026-08-06.
 **Repos:** `aetheris-agents` and `aetheris` (harness). **Preceding cycle:** m3-cloudcost, closed
 2026-08-05.
@@ -126,6 +130,18 @@ expensive to rediscover:
    obligation live, and recorded here because a closed ticket's implementation notes have no
    executor.
 
+### What t2 inherits
+
+One item, recorded here rather than left to be found mid-ticket:
+
+1. **BL-069's Done-when and decision 12 disagree, and the row does not know it.** The row
+   (`docs/backlog-2026-06.md:2182`) offers two ways to close — *"either a fresh DO orphan is
+   planted, or the assertion is re-pointed to a recorded fixture rather than the live account"*.
+   Decision 12 rules out the first outright and reframes the second as a rule-legibility assertion.
+   **The row is edited at t2's opening, before any implementation**, so the ticket is not written
+   against a Done-when the cycle has already superseded. This is §Close criteria item 4 discharged
+   prospectively, which is cheaper than catching it at the close.
+
 ---
 
 ## Sequence
@@ -161,7 +177,9 @@ here.
   payload, so merging the streams is irrelevant to parseability. The claim had propagated into
   **six documents across both repos** as standing guidance (**seven sites**), with a further
   **thirteen** historical mentions left intact as dated records, and was refutable from the Rig
-  source ten days before it was filed.
+  source for the ten days before it was filed: `rig/src-tauri/src/commands/fork.rs:137` has read
+  *"`mix` compile and log noise shares stdout and does not parse as JSON"* since `b5e8eee`
+  (2026-07-26, BL-030), and BL-100's row was filed at `cdc8f08` (2026-08-05).
 - **A gate in the chaos case has never evaluated its subject.** Its operand is a fallback token that
   the equality test cannot match.
 - **`--json` emits no JSON on a non-success run**, so a programmatic consumer receives nothing on

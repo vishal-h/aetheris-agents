@@ -5265,7 +5265,7 @@ credential must fail the assertion).
 
 ---
 
-### BL-100 — the sprint's `--json` reads succeed or fail on ambient run-store state; the status line prints a fallback token when they fail (#TBD)
+### BL-100 — the sprint's `--json` reads fail unpredictably; the status line prints a fallback token when they do (#TBD)
 **Size:** S–M · **Priority:** low-medium · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
 
 > **Rescoped and corrected 2026-08-06 (t1a).** Three changes, each recorded rather than silently
@@ -5278,7 +5278,9 @@ credential must fail the assertion).
 > output on stdout, which is every capture in this repo from 2026-07 onward. Whether it sufficed
 > earlier depends on `[sandbox]` routing, which is unestablished — *not* a claim that it could
 > never have worked. **(3) The subject is not "broken reads" but reads whose success depends on
-> ambient run-store state.** Identical expressions succeed or fail by environment: news captures
+> ambient run-store state.** Identical expressions succeed or fail by environment — by store
+> state, by harness version, and by whether a worker ran; see `claude-notes.md` for which line
+> does which. News captures
 > parse in 4 of 4, payslip fails in 8 of 8, cloudcost fails in 10 of 10 — same helper, same
 > redirect. Non-determinism is the defect, and it is why fixing this makes the reads
 > *deterministic* rather than "makes every read work". Size raised XS → S–M to match. The
@@ -5649,7 +5651,7 @@ are complementary, not alternative.** Logger is on stdout; worker output is on s
 | | `run.json` contains | parseable? |
 |---|---|---|
 | Split streams only | stdout, still carrying Logger output | no |
-| This row only (Logger off stdout), streams merged | worker stderr via `2>&1` | no |
+| This row only (Logger off stdout), streams merged | worker stderr via `2>&1` | **not reliably** — unparseable whenever the worker emits, not unconditionally |
 | **Both** | the payload alone | **yes, no scan needed** |
 
 Row 2 is what refutes "at a stroke"; row 1 is why the arbiter's payload-extraction choice was
@@ -5658,6 +5660,13 @@ credential grep must then cover across two files** — BL-099's row records that
 grep which stops covering stderr is a strictly worse trade than a wrong status word. So anything
 that pairs this row with a split must land BL-099's generalisation with it, not after. The
 backward scan remains correct under all three worlds, so t1b's design is unaffected either way.
+
+**Constructibility note on the mutation posture below.** It asks for a run whose store emits boot
+output and one whose store does not. `config :aetheris, :sweep_on_start` defaults to **true**
+(`../aetheris/config/config.exs`), so the orphan-sweep line is emitted regardless of store
+contents — the second run cannot be produced by arranging the store alone and requires toggling
+that config (or the equivalent of `config/test.exs`, which sets it false). Whoever picks this up
+should plan for that rather than discover it mid-ticket.
 
 **Done when:** the `--json` payload is separable from log output by a consumer that does not have
 to know what the noise looks like — either the payload moves to a stream the Logger does not share,

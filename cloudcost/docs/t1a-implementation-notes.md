@@ -45,8 +45,7 @@ The harness's **Logger output shares stdout with the payload**. The merge is irr
 
 ## 2. The sharper finding the census exposed
 
-**The reads are non-deterministic, not uniformly broken.** The contaminating Logger lines are
-emitted only when the run store has something to report, so identical expressions succeed or fail
+**The reads are non-deterministic, not uniformly broken.** Identical expressions succeed or fail
 by environment:
 
 | Capture set | `jq` parses? |
@@ -55,10 +54,28 @@ by environment:
 | `../aetheris/sprint/*/payslip/run.json` | 0 of 8 |
 | `../aetheris/sprint/*/cloudcost/run.json` | 0 of 10 |
 
-Same helper (`run_agent`), same `> file 2>&1` redirect. What settles it as store-state and not
-code-age: the clean 2026-05-21 07:57 capture was written **after** the resume-failure Logger line
-already existed in the code (`../aetheris/lib/aetheris/application.ex`, added 2026-05-20). The code
-was present and emitted nothing because the store held no unresumable runs.
+Same helper (`run_agent`), same `> file 2>&1` redirect.
+
+**Corrected after round-1 review, finding 2 — the mechanism was over-claimed.** An earlier draft of
+this section, and of the `claude-notes.md` replacement, said the contaminating Logger lines "are
+emitted only when there is state to report". That is true of one line and false of the other:
+
+- **Resume-failure lines** (`[Aetheris.Application] failed to resume run …`) *are* store-state
+  dependent. The clean 2026-05-21 07:57 capture was written **after** that code existed
+  (`../aetheris/lib/aetheris/application.ex`, 2026-05-20) and carries none — so for this line,
+  presence tracks store state, not code age.
+- **The orphan-sweep line is NOT state-conditional.** It logs with every counter at zero —
+  `orphan sweep: %{errors: 0, running_before: 0, orphaned: 0, reconciled: 0, skipped_live: 0,
+  skipped_paused: 0, skipped_recent: 0}` — and is gated on `config :aetheris, :sweep_on_start`
+  (`../aetheris/config/config.exs`), not on there being anything to sweep. It also **did not exist
+  until 2026-07-15** (`0188a90`, BL-003), so its absence from the May captures is a version
+  boundary, not an environment one.
+- **`[sandbox]` lines** head the May payslip captures ahead of any Logger line, and their stream
+  routing is **not established**.
+
+So the *variation* (4/4, 0/8, 0/10) is evidenced; a single mechanism covering all of it is not.
+Attributing a given file's failure to one cause without checking which lines it carries is the
+error this ticket exists to retire, and it had reproduced inside the correction itself.
 
 This is why the fix makes the reads **deterministic** rather than "makes every read work" — some
 already work, which is the defect.
@@ -81,11 +98,19 @@ extensions, which is the only reason `handoff-m09-m10.md.md` (double extension) 
 reader would act on. **Historical** — a dated record of what was believed then; correcting it would
 falsify the record, so it is left intact.
 
-**Convergence.** The census was derived three times at these shas and returned an identical set
-each time, including in this run. No novel standing site appeared, so the ticket's
+**Convergence.** The census was derived three times at these shas with the term set above and
+returned an identical set each time. No novel standing site appeared, so the ticket's
 undecidable-default clause was not exercised.
 
-### Standing — corrected (6 sites, 6 documents)
+**Why an earlier round's hit list differs (round-1 review, finding 10).** A v4-era record lists
+`cloudcost/docs/m3-t3-implementation-notes.md` at `:160`, `:199`, `:235`; this census lists `:159`
+and `:167`. Both are correct — they are **different term sets**, not an unstable census. The
+narrow `2>&1` search matches :160/:199/:235; the substance search (`no-json`, `orb_id=n/a`, …)
+matches :159/:167. The file carries hits of both kinds and every one is historical, so no
+treatment turns on it. Recorded because the census's stability is this ticket's central claim and
+two records that disagree without explanation would undermine it.
+
+### Standing — corrected (7 sites, 6 documents)
 
 | Site | Class | Treatment |
 |---|---|---|
@@ -215,16 +240,42 @@ it is not this ticket's scope.
 
 BL-100 was **not** closed — the fix has not landed.
 
-## 7. Deviations from the ticket
+## 7. Scope confirmation (not a deviation)
 
-One, and it is a widening rather than a narrowing. The ticket said BL-100's original text would be
-left intact and a correction added. Because BL-100 is an **open row** — text someone will act on —
-leaving the "two candidate fixes" paragraph and the original Done-when unqualified would have left
-the dead stream-splitting branch reading as live. Those two paragraphs plus the
-signal-recovery justification are therefore corrected inline, each marked
-`[corrected 2026-08-06]`, with the superseded wording kept beneath under
-*"Original …, superseded, kept as the record"*. The correction block at the head of the row now
-says so explicitly rather than claiming the body is untouched.
+*Reframed after round-1 review, finding 4.* This section previously called the BL-100 handling a
+deviation. It is not. The ratified treatment table read `agents docs/backlog-2026-06.md BL-100
+body — corrected in place (open row)`, and the Touches entry instructed correcting the causal
+claim, rescoping the subject and updating the Size field. Correcting the candidate-fixes
+paragraph, the Done-when and the signal-recovery justification is **inside** that instruction, not
+outside it.
+
+What was done: because BL-100 is an open row — text someone will act on — leaving those paragraphs
+unqualified would have left the dead stream-splitting branch reading as live guidance. Each is
+marked `[corrected 2026-08-06]`, with the superseded wording kept beneath under *"Original …,
+superseded, kept as the record"*. **No deviation from the ticket was taken.**
+
+## 7b. Carries into t1b and into the promotion set (round-1 review, findings 6 and 7)
+
+Recorded here rather than filed as rows, per the reviewer's disposition — each has exactly two
+named consumers, and prose in a packet files nothing.
+
+**1. Assert-versus-retract classification (finding 6).** This ticket's own superseded notes quote
+the claim they retract, so the ratified substance-search now returns roughly a dozen hits across
+the six edited documents that are **corrections, not carriers**. The method as ratified classifies
+by term match alone and would mis-flag every one. Carries to:
+- **t1b's census method** — as an explicit assert-versus-retract step before classification.
+- **The promotion candidate** *"search the claim's substance, not a token"* — so the rule ships
+  with its own hazard attached rather than acquiring it later.
+
+**2. The multiple-payload question (finding 7).** The backward scan takes the *last* line that
+parses as a JSON object. If a file carried more than one, "the last" may be the wrong one. Across
+the 50 `run.json` captures in `../aetheris/sprint/`, **zero** carry more than one parsing JSON
+object — so the case has never been observed here, and nothing in the CLI's contract excludes it.
+The guidance in `claude-notes.md` is now qualified accordingly. Carries to:
+- **t1b**, which ports this scan from documentation into a `sprint.sh` assertion. There, being
+  wrong is a false pass rather than a misleading read, so the question is owed an answer before
+  the mechanism lands — either a contract statement that at most one payload is emitted, or a
+  scan that detects and reports multiplicity instead of silently taking the last.
 
 ## 8. Not established
 
@@ -238,3 +289,19 @@ Carried forward rather than resolved or papered over:
   captured, so "it has always warned" is inference, and every edit says so.
 - Whether `EDUX_DATABASE_URL` is set in the sprint's ambient environment (decides BL-108).
 - Which `milestone-reference.md` survives (BL-109).
+- Whether a `--json` invocation can ever emit **more than one** parsing JSON object on one stream.
+  Zero of 50 captures do; the contract does not exclude it. Blocks nothing here, blocks t1b's
+  assertion (§7b).
+- Whether `[sandbox]` lines are what break the May-era payslip captures specifically. Those files
+  carry both `[sandbox]` and Logger lines, with `[sandbox]` first, so the Logger finding explains
+  the 2026-07+ failures but is not established as the cause of the May ones.
+
+## 9. Process note (round-1 review, finding 5)
+
+An earlier draft of this file and of the review packet reported that writing the packet after the
+commits violated "the loop's own rule that the packet precedes the commit". **No such rule
+exists** — methodology §5 defines the packet as diff + implementation notes + done-check output,
+and a diff cannot precede the commit that produces it. The gate is the **push**, which was held
+throughout and is still held. What actually happened: commits made locally, packet assembled from
+`git show`, nothing pushed. Recorded because an invented rule in a durable document is the same
+defect class this ticket exists to close, and this one was self-inflicted.

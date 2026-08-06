@@ -69,11 +69,16 @@ The four retained instances were each pinned to a line before the entry was writ
 | A documented search term set that was not the one executed | `cloudcost/docs/t1a-implementation-notes.md:§3`; `docs/reviews/t1a-review.md:15` |
 | *"stream splitting could never have worked"* | `cloudcost/docs/t1a-implementation-notes.md:36–38` |
 
-**Citation-provenance note, edit C.** Edit C's `Source:` attributes *"three channel failures in one
-ticket"* to `docs/reviews/t1a-review.md`, which names the class as a promotion candidate (`:50–51`)
-but does not enumerate the three forms. The enumeration is in t1a's session packet, which is not a
-repo artifact. The claim is supported; its cited resolver carries the class, not the count.
-Recorded rather than silently kept.
+**Edit C's `Source:` — the same defect, fixed at round 1 rather than recorded.** The committed
+first draft attributed *"three channel failures in one ticket"* to `docs/reviews/t1a-review.md`,
+which names the class as a promotion candidate (`:50–51`) and does not enumerate the three forms.
+The round-1 review found two further problems the original note did not reach: the three are
+**channels**, not three failures inside t1a — the first is the historical m1/BL-007 instance
+already cited separately — and at least one of the newer two occurred in a scout round before t1a
+existed, so *"in one ticket"* over-attributes. Recording an unresolvable count is the disposition
+refused for edit A's fifth clause (§3 above); the same reasoning applies. The `Source:` now claims
+only what the cited lines support and quotes them; the body already enumerates the channels, so
+the citation does not need to count them.
 
 ## 4. Edit-C format adaptation
 
@@ -111,9 +116,26 @@ completed promotion:
 - `cloudcost/docs/t1a-implementation-notes.md:290` — *"The promotion candidate"*, naming the
   substance-search rule as a carry.
 
-Terms run (recorded because a method record must describe what executed): case-insensitive
-`promot` across both files, absolute paths. No cycle document exists for this cycle, so there is no
-handoff or close note of the kind §7's census clause was written against.
+No cycle document exists for this cycle, so there is no handoff or close note of the kind §7's
+census clause was written against.
+
+**Terms run — first pass, and why it was not enough.** The first pass was case-insensitive
+`promot` across both files, absolute paths. Recording the terms is half the rule; the round-1
+review pointed out that running the *substance* is the other half, and that a `promot` key misses
+"learnings", "standing instruction", "distilled into", and a bare `CLAUDE.md` reference — in the
+ticket that promotes searching by substance rather than by token.
+
+**Second pass, by substance.** Same two files, absolute paths, case-insensitive:
+
+```
+promot|learning|standing (instruction|rule)|distill|CLAUDE\.md|§7|ritual|
+into the (rules|standing)|rule (now )?(lands|landed|ships|shipped)|milestone-end
+```
+
+**Outcome: unchanged.** Two hits beyond the first pass, both classified as non-claims —
+`t1a-implementation-notes.md:198`, which is t1a's own G3 list of contract documents checked for
+the false `2>&1` claim, and `:327`, a `§7b` self-reference inside that file. Nothing in either
+file asserts that a learning was promoted.
 
 ## 7. Not established
 

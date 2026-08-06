@@ -234,6 +234,34 @@ Carried forward rather than resolved. Each is a question this cycle opened and d
 
 ---
 
+## Open for the close
+
+Decisions the close must **take**, as distinct from §Close criteria below, which lists reads it
+must **perform**.
+
+1. **Whether the step-1 gate becomes standard practice rather than per-ticket.** Decision 3
+   admitted it once as an exception and retained it for this cycle's tickets; nothing makes it
+   standing, and every ticket since has restated it in its own text.
+
+   *The evidence for asking.* Claims that reach past what their author could check recurred
+   throughout this cycle, most often in the documents written to correct them, and on both sides
+   of the loop rather than only the implementer's. Instances that resolve in committed artifacts:
+   `docs/reviews/t1a-review.md` §"The reviewer's closing observation" (`:56–63`) records four
+   inside t1a alone; `cloudcost/docs/t1a-p-implementation-notes.md` §3 records one in t1a-p's own
+   promotion `Source:` line, caught before commit, and one in edit C's citation, corrected at
+   round 1. **Further instances are observed rather than recorded** — several occurred in review
+   packets, which are session artifacts and not in either repo — so the full set has never been
+   enumerated, and no count of it appears here. Enumerating it is work for the close if the close
+   wants a number; the pattern does not depend on one.
+
+   *What would settle it either way.* The reviewer records catching one such claim in their own
+   draft before it landed — the first time in this cycle the defect was stopped by its author
+   rather than by a gate or a round. A gate that becomes standard is an admission that authorship
+   alone has not been sufficient; a run of tickets where authors catch their own would be the
+   evidence for not making it standing.
+
+---
+
 ## Close criteria
 
 This cycle is done when t1b through t5 have closed with zero blocking findings, the drift checker

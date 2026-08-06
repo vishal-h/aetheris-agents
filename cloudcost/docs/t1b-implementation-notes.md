@@ -49,11 +49,39 @@ four rounds of a token-keyed search missing sites.
 `*.exs`) returns **`scripts/sprint.sh` only**. No other script in either repo consumes harness
 `--json`. (Rig's Rust consumer is out of scope by the ticket's Do-not-generate list.)
 
-### Asserting — 19 sites, all assigned to the helper
+### Asserting — 29 reads, all assigned to the helper
+
+> **Corrected at review round 1.** The first version of this table listed **10** Group A sites and
+> a total of **19**, both wrong. Three Group A sites — `:686` (payslip), `:754` (drive), `:826`
+> (email) — were **converted and verified but omitted from the census table**; they appear in the
+> done-check's SITE CLASS 2 throughout. The "19 distinct sites" figure was worse than a
+> miscount: it was derived by "pairing" `:69`/`:70` and `:79`/`:81`, which is not a real
+> operation — `:69` and `:70` are two separate reads, and `:81` is in Group D, so pairing it
+> against a Group A line cannot reduce a Group A+B+C total. **No site's treatment changed**; the
+> defect was in the record. It matters because carry 2 exists precisely because censuses in this
+> territory are compared against each other, and this one is the baseline for the next.
 
 Line numbers are pre-edit, at harness `f6fbd82`.
 
-**Group A — `jq` over a `--json` output file (10).**
+**Derivation of the total, not an assertion of it.** The count is read off the two artifacts that
+can contradict each other, and they agree:
+
+```
+# every read of a --json document, pre-edit
+git -C /home/it/sandbox/elixirws/aetheris show HEAD~1:scripts/sprint.sh \
+  | grep -nE "jq -r '\.|jq '\[|tail -1 \"|grep -o '\"run_id|--json (inspect|trajectory)"
+# → 13 (A) + 5 (B) + 7 (C) + 4 (D) = 29, plus :1113/:1197 which are excluded (trajectory --export)
+
+# every conversion, post-edit — the call sites of the helper
+grep -nE '(^|[^_a-z])json_read(_cmd)? ' scripts/sprint.sh   # minus :120, json_read_cmd's own body
+# → 29 call sites
+```
+
+**29 reads censused, 29 converted.** The two numbers are derived independently and match; a
+mismatch either way would mean a site converted without being censused, or censused without being
+converted.
+
+**Group A — `jq` over a `--json` output file (13).**
 
 | Line | Read | Kind |
 |---|---|---|
@@ -66,6 +94,9 @@ Line numbers are pre-edit, at harness `f6fbd82`.
 | `:463` | `.run_id`, news day 1 | feeds a branch |
 | `:563` | `.run_id`, news day 3 | feeds a branch |
 | `:605` | `.run_id`, `schedule_trigger.txt` | feeds a branch |
+| `:686` | `.run_id`, payslip | feeds a branch |
+| `:754` | `.run_id`, drive | feeds a branch |
+| `:826` | `.run_id`, email | feeds a branch |
 | `:2573` | `.status`, cloudcost inline `ok` line | display |
 
 **Group B — `tail -1 | jq` (5).** Works today on single-payload files; wrong on the three captures
@@ -81,7 +112,9 @@ exactly as it does a file. Confirmed live — `mix aetheris --json inspect <id>`
 warnings on stdout ahead of the payload, so the bare `| jq` fails identically. `:81`, `:1022`,
 `:1036` (`--json inspect` → `.step_count`), `:615-616` (`--json trajectory` → `.event_types`).
 
-> Groups A+B+C span 22 lines across 19 distinct sites (`:69`/`:70` and `:79`/`:81` are paired).
+**Total: 13 + 5 + 7 + 4 = 29 reads.** Some occupy two source lines pre-edit (the Group B
+`tail -1 … \ | jq …` continuations, and Group D's `:615-616`, `:1022-1023`, `:1036-1037`), so a
+line count is larger than a read count and is not the figure quoted anywhere here.
 
 ### Excluded — 13 sites, each with a reason
 
@@ -177,7 +210,12 @@ after the payload.
   be handed a file that was never written.
 - **`json_read_cmd <filter> <absent> <cmd…>`** for the four Group D pipe sites: captures the
   command's stdout to a `mktemp` file so the same scan applies, then removes it. No new sprint
-  output state.
+  output state. **The path is `mktemp`-derived, never fixed** — two of these run for different run
+  ids inside the t3 case, and a fixed path would collide. **Cleanup is unconditional**, hardened at
+  review r1: the result is captured into a variable with `|| true` so a non-zero return cannot skip
+  the `rm` under `set -euo pipefail`, and a failed `mktemp` yields the absent value rather than
+  writing to a stray path. Verified with a successful command, a failing command (`false`) and a
+  non-existent one — `/tmp` entry count unchanged across all three, values `9` / `n/a` / `n/a`.
 - **The absent token is caller-supplied, and it must be.** Sites feeding `[[ -n "$RUN_ID" ]]` take
   **empty** on absence; a token there would push a garbage id into `mix aetheris inspect` and turn
   a skipped branch into a wrong one. Display and gate sites pass `no-payload`.
@@ -190,6 +228,68 @@ after the payload.
 **Not changed, deliberately:** stream topology (every redirect byte-identical), the D2 credential
 grep, `CC_HERMETIC`, the poison-control arms, the orphan-count assertion, `fail()`'s effect on exit
 status, any `lib/` or `src-tauri/` code, the eduloka site, and any output line's field set.
+
+### 4.1 Deviations from the declared Touches — two, declared
+
+The Touches list names `sprint.sh`, the two docbuilder documents, the backlog, *"any runbook
+section describing these lines"*, and `cloudcost/docs/`. Two files were edited outside it. Both are
+recorded here rather than disclosed in passing, so the calls are auditable.
+
+**(a) `../aetheris/docs/aetheris/claude-notes.md`** — live guidance, not a runbook, so outside the
+list. Two of its paragraphs were falsified by the fix, and both were standing guidance a reader
+would act on:
+
+1. §"One case it does not resolve" said the multiple-payload question was unverified and that
+   *"anything that ports this scan into an assertion (rather than a human read) owes that question
+   an answer first."* This ticket **is** that port, and G3 is that answer. Leaving the paragraph
+   would have left the repo's own guidance saying the thing t1b had just done was not yet
+   permissible.
+2. §"Sprint script `no-json` display" told the reader these reads do not parse and to read the
+   payload by hand. That is now false at every site.
+
+Leaving either standing is the defect class t1a closed — a document asserting a cause the repo has
+since refuted — so correcting them in place (decision 8: live operational guidance is corrected in
+place) was judged to be within the ticket's intent even though outside its letter.
+
+**(b) `../aetheris/docs/aetheris/milestones/handoff-m09-m10.md.md:145`** — a dated record, so it
+takes a **note, not a rewrite** (decision 7). Found while verifying this ticket's own Group D
+conversion, and edited under the standing rule that *a correction chases the corrected claim into
+every doc that adopted it, in the same round*. It is the only document carrying the claim.
+
+The claim: step counts show `n/a` *"because the script reads step count from `--json` run output
+but it's not in that payload. Fix: read from `mix aetheris inspect <run_id>`."* **It is wrong, and
+unusually for this cycle the ordering is recoverable rather than same-day-ambiguous:**
+`extract_step_count` already read from `mix aetheris inspect` at `fafa17f` (2026-05-16 12:40
++0530); the claim text was written at `2a5dc59` (2026-05-17 09:58 +0530), **21 hours later**. It
+prescribed a fix already in place, so it was wrong when written rather than superseded since.
+
+The real cause is BL-100's: both of the function's reads were contaminated — `.run_id` from the
+merged run file, and `.step_count` from a `--json inspect` **pipe**, which carries Logger output
+exactly as a file does. Group A `:79` and Group D `:81` fix both. Verified live:
+`extract_step_count → 2 steps` against the post-edit chaos capture, whose run had `max_steps: 2`.
+
+This closes a §Not established item in `cloudcost/m4-consolidation.md` — *"whether the step-count
+diagnosis in an m09→m10 handoff is correct"* — which is why the finding is recorded there too.
+
+### 4.2 How each absent-value is consumed — no site treats a default as a value
+
+Checked rather than assumed, because `json_read` makes a previously-dead branch reachable: with
+the old `jq … || echo`, a `jq` failure fired the `||` arm outright, so `.status // "unknown"`
+**never evaluated its default**. Now a payload that parses but lacks the field yields `unknown` —
+a third state between a real value and `no-payload`.
+
+| Default | Sites | Consumed as |
+|---|---|---|
+| `unknown` (`.status`) | `:53`, `:70`, `:2573` | interpolated into an `ok` line — display only |
+| `unknown` (`.status`) | **`:297`, the gate** | operand of `[[ "$status" == "done" ]]` → fails → `warn`. Treated as absence, correctly |
+| `no-payload` (`.status`) | same four | same as above |
+| empty (`.run_id`) | 13 sites | every one guarded by `[[ -n "$RUN_ID" ]]` |
+| empty (`.orb_id`) | `:69` | `${orb_id:-n/a}` — display only |
+| `n/a` (`.step_count`) | `:81`, `:1022`, `:1036` | `info` lines only (`:1104`, `:1118`, `:1120`); never compared |
+| empty (`.event_types`) | `:615` | `echo "$EVENTS" \| grep -q "context_summarised"` → fails on empty → `warn` |
+
+**No site treats any default as a value**, and the gate's new `unknown` state fails its comparison
+exactly as `no-payload` does.
 
 ---
 

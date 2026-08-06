@@ -33,7 +33,16 @@ repos; the decisions were not.
 ## Scope
 
 **In scope.** The cloudcost sprint case in `../aetheris/scripts/sprint.sh`; the four shared scripts
-under `cloudcost/scripts/`; the documents that describe either; the backlog rows covering them.
+under `cloudcost/scripts/` — **`detect_orphans.py`, `_normalized.py`, `compose_report_data.py`,
+`render_report.py`**; the documents that describe either; the backlog rows covering them.
+
+> **Enumerated 2026-08-06 (t1b review r1).** "The four shared scripts" was an unenumerated count
+> in a directory holding **eight** `.py` files, which is the *"the one X"* tell — in the document
+> that holds this cycle's decisions. It names the **provider-agnostic** subset, and BL-074's
+> Scope paragraph is the authority: it sweeps exactly these four and calls them *"shared
+> machinery"*. The other four — `fetch_aws.py`, `fetch_do.py`, `fetch_linode.py` (adapters) and
+> `detect_optimization_signals.py` — are not shared machinery and were never what "the four"
+> meant. t1b pinned all eight by blob hash rather than guess, and all eight are byte-unchanged.
 
 **Not in scope, and deliberately so.**
 
@@ -191,11 +200,14 @@ here.
 
 ### What t1b established
 
-- **The class had four mechanisms, not one, and 19 members.** Derived fresh at t1b (no prior list
-  inherited): 10 × `jq` over the output file, 5 × `tail -1 | jq`, 7 × `grep -o '"run_id":…' |
+- **The class had four mechanisms, not one, and 29 members.** Derived fresh at t1b (no prior list
+  inherited): 13 × `jq` over the output file, 5 × `tail -1 | jq`, 7 × `grep -o '"run_id":…' |
   tail -1 | cut`, 4 × `jq` over a `--json` *pipe*. All now call one helper. 13 further sites were
   classified out with reasons. Breadth check, recorded as a negative: `sprint.sh` is the **only**
-  consumer of harness `--json` in either repo's scripts.
+  consumer of harness `--json` in either repo's scripts. *(First stated as 19; corrected at review
+  round 1 — three converted sites were missing from the census table and the total rested on a
+  bogus pairing step. Now derived two independent ways — censused reads and helper call sites —
+  which agree at 29.)*
 - **The chaos gate evaluates, and it passes.** `WARN status=no-json` → `OK … → :done (expected)`,
   both quoted from live runs on the pre- and post-edit trees. The gate line's comparison and both
   message texts are unchanged; only the operand became real. BL-107 closed without exercising its
@@ -246,7 +258,20 @@ Carried forward rather than resolved. Each is a question this cycle opened and d
 - `[sandbox]` line stream routing. The available test command spawns no worker.
 - Which document first carried the false causal claim — three harness documents acquired it on one
   day and same-day ordering is not recoverable.
-- Whether the step-count diagnosis in an m09→m10 handoff is correct.
+- ~~Whether the step-count diagnosis in an m09→m10 handoff is correct.~~ **Resolved 2026-08-06
+  (t1b review r1): it is wrong, and the ordering is recoverable.**
+  `../aetheris/docs/aetheris/milestones/handoff-m09-m10.md.md:145` says step counts show `n/a`
+  *"because the script reads step count from `--json` run output but it's not in that payload.
+  Fix: read from `mix aetheris inspect <run_id>`."* `extract_step_count` **already read from
+  `mix aetheris inspect`** — that line landed at `fafa17f` (2026-05-16 12:40 +0530) and the claim
+  text was written at `2a5dc59` (2026-05-17 09:58 +0530), **21 hours later**. So this is not a
+  diagnosis later superseded; it prescribed a fix that was already in place. Unlike the false
+  causal claim, same-day ordering did not have to be guessed here.
+  **The actual cause was the same one this cycle has been chasing**: both of the function's reads
+  were contaminated — `.run_id` from the merged run file, and `.step_count` from a
+  `mix aetheris --json inspect` *pipe*, which carries Logger output exactly as a file does. t1b
+  converted both (Group A `:79`, Group D `:81`). Verified live against the post-edit chaos capture:
+  `extract_step_count → 2 steps`, against a `max_steps: 2` run.
 - Whether the chaos gate has ever run in a clean-store environment. No chaos output had ever been
   captured, so "it has always warned" was inference. **Partly resolved 2026-08-06 (t1b):** the
   first chaos capture in this repo (`../aetheris/sprint/20260806_172144/chaos/maxsteps.json`)

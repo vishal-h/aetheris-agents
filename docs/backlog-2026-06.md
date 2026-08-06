@@ -5367,14 +5367,18 @@ assertion:
 
 - **One mechanism, every site.** `json_read <file> <jq-filter> [absent]` in
   `../aetheris/scripts/sprint.sh` scans the file's lines in reverse and takes the first that
-  parses as a JSON object. **19 sites converted** across four previously-distinct mechanisms:
-  10 × `jq` over the file (incl. `run_agent`, `run_orb`, the chaos gate, the cloudcost inline
-  line), 5 × `tail -1 | jq`, 7 × `grep -o '"run_id":"[^"]*"' | tail -1 | cut`, 4 × `jq` over a
-  `--json` pipe (via the `json_read_cmd` wrapper, which captures the pipe to a temp file so the
-  same scan applies). The workarounds that *worked* were folded in too — two mechanisms for one
+  parses as a JSON object. **29 reads converted** across four previously-distinct mechanisms:
+  **13** × `jq` over the file (incl. `run_agent`, `run_orb`, the chaos gate, the cloudcost inline
+  line), **5** × `tail -1 | jq`, **7** × `grep -o '"run_id":"[^"]*"' | tail -1 | cut`, **4** × `jq`
+  over a `--json` pipe (via the `json_read_cmd` wrapper, which captures the pipe to a temp file so
+  the same scan applies). The workarounds that *worked* were folded in too — two mechanisms for one
   job is how the class regenerates. **13 sites excluded with reasons** (trajectory `--export`
   files, curl HTTP bodies, use-case script stdout, the eduloka sink gate → BL-108, the D2
   credential grep, `head -1` over `ls`).
+  *(Count corrected at t1b review round 1 from a stated 19: three Group A sites — payslip, drive,
+  email `.run_id` — were converted and verified but omitted from the census table, and the "19"
+  itself rested on a bogus pairing step. 29 censused = 29 helper call sites, derived independently
+  and matching; see the implementation notes.)*
 - **Deterministic, on clean and noisy alike.** Per converted site, verified against the four
   capture shapes in `../aetheris/sprint/`: clean single line, noise *before* the payload, worker
   output *after* it, and no payload at all. **23 checks, 23 pass.** Expected values are pinned

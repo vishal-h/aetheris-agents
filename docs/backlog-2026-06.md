@@ -6285,36 +6285,60 @@ inverted prefix's payload bytes against the archived captures. Verified at harne
 
 ---
 
-### BL-113 — the sprint's adapter env bridge selects by constant name, so a new credential constant is missed silently (#TBD)
+### BL-113 — a missed *knob* or *optional* credential constant disappears from the sprint's adapter env bridge silently (#TBD)
 **Size:** XS · **Priority:** low · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
 
-Filed 2026-08-06 from m4 t3. The cloudcost case builds its hermetic allowlist, its
-credential-survival arm and its D2 credential grep from names read out of the selected provider's
-adapter module, in three categories — `cred` from `TOKEN_ENV`/`ACCESS_KEY_ENV`/`SECRET_KEY_ENV`/
-`SESSION_TOKEN_ENV`, `knob` from `REGION_ENV`/`REGIONS_ENV`, `hazard` from `SHADOWING_ENV`/
-`ENDPOINT_REDIRECT_ENV`.
+Filed 2026-08-06 from m4 t3. **Re-characterised at t3 review r1, before the row was ever acted on
+— the first filing was aimed at the half of the surface that fails loudly.** The original heading
+read *"selects by constant name, so a new credential constant is missed silently"*; the trace below
+establishes that a missed **mandatory credential** is the one case that does *not* go quiet.
+Corrected rather than left standing, because this is an open row and the corrected text is what
+someone will act on.
 
-That is deliberately one level better than hand-typing the environment variables: an adapter
-renaming `CLOUDCOST_LINODE_TOKEN` is followed automatically, and the shell holds no copy to drift.
-**But the list of *constant names* is still hand-typed in the sprint**, so an adapter that adds a
-new credential under a new constant — say a `CLOUDCOST_*_API_KEY` behind `API_KEY_ENV` — is picked
-up by nothing. The allowlist would strip it (the leg fails loudly, which is fine) but the **D2
-grep would never search for it**, and that failure is silent: the leg goes green while a credential
-it does not know about could be sitting in the run output.
+The cloudcost case builds its hermetic allowlist, its credential-survival arm and its D2 credential
+grep from names read out of the selected provider's adapter module, in three categories — `cred`
+from `TOKEN_ENV`/`ACCESS_KEY_ENV`/`SECRET_KEY_ENV`/`SESSION_TOKEN_ENV`, `knob` from
+`REGION_ENV`/`REGIONS_ENV`, `hazard` from `SHADOWING_ENV`/`ENDPOINT_REDIRECT_ENV`. That is one
+level better than hand-typing the environment variables — an adapter renaming
+`CLOUDCOST_LINODE_TOKEN` is followed automatically — but **the list of constant *names* is still
+hand-typed in the sprint**, so an adapter that adds a constant the sprint has never heard of is
+picked up by nothing.
+
+**What happens then depends on the category, and only some of it is loud.** Established at t3
+review r1 by mutating the bridge's constant tuples and reading which array the grep iterates,
+rather than by reasoning:
+
+| Missed constant | Behaviour | Loud? |
+|---|---|---|
+| `cred`, on a provider whose *whole* cred list it was | the bridge yields nothing and the case `fail`s at preflight — `could not read digitalocean's credential env names from its adapter`, exit 1, before any run | **loud** |
+| `cred`, on a provider carrying others (AWS) | the empty-list guard does **not** fire. The name is stripped; if the credential is mandatory the adapter fails at fetch — loud, but later and with a worse message | loud-ish |
+| `cred` that is **optional** (an AWS session token is not always in use) | stripped; nothing fails and nothing reports it, until the day a temporary credential is the one in use | **silent** |
+| `knob` | the documented override is stripped and the child reads `None` — the leg sweeps the default region set while the operator believes it swept theirs. Demonstrated: dropped from the final list, `CLOUDCOST_AWS_REGIONS -> None`, no error anywhere | **silent** |
+| `hazard` | stripped anyway under default-deny, so the *run* is safe — but the operator-facing warning that their shell carries a redirect never fires | **silent, low severity** |
+| a credential **mis-categorised as a `knob`** | the severe one. Knob names are appended to `CC_ALLOW` but never to `CC_CRED_NAMES`, and the D2 grep iterates `CC_CRED_NAMES` — so the credential **reaches the child and is never grepped for** | **silent** |
+
+**So the row's subject is the quiet half**, and the loud half is evidence the design works rather
+than a gap. The last line is the one that would actually cost something: a D2 hole that every leg
+reports green.
 
 **This is the same seam BL-074 sweeps**, one level up: not a provider's vocabulary reaching shared
-machinery, but a provider's *env surface* reaching the apparatus that polices it. It is filed
-rather than fixed because the fix has a real design choice in it — a naming convention the sprint
-can enumerate (`*_ENV` with a category prefix), a declared mapping the adapters export
-(`D2_ENV = {...}`), or a completeness test in `cloudcost/tests/` asserting every `*_ENV` constant
-is classified — and the third is probably right, because it fails at test time in the repo that
-owns the adapters rather than at sprint time in the one that does not.
+machinery, but a provider's *env surface* reaching the apparatus that polices it.
 
-**Done when:** an adapter constant naming a credential cannot be added without either the sprint
-selecting it or a test failing; and the mutation posture is recorded — add a new credential
-constant to one adapter, watch the guard fire, remove it.
+**Fix direction, and the choice is the row.** A naming convention the sprint can enumerate (`*_ENV`
+with a category prefix), a declared mapping the adapters export (`D2_ENV = {...}`), or a
+completeness test in `cloudcost/tests/` asserting every `*_ENV` constant is classified. The third
+is probably right — it fails at test time in the repo that owns the adapters rather than at sprint
+time in the one that does not, and it is the only one that catches a **mis-categorisation**, which
+no amount of enumeration in the sprint will.
 
-`Source: m4 t3, 2026-08-06 — recorded as a residual of that ticket's own bridge, in the notes
-(§8) and here. Verified at agents 04449db / harness f8bbac8.`
+**Done when:** an adapter constant naming a credential cannot be added, renamed, or mis-categorised
+without either the sprint selecting it correctly or a test failing; and the mutation posture is
+recorded for the **silent** cases specifically — a missed knob, a missed optional credential, and a
+credential mis-categorised as a knob — not only for the mandatory-credential case that already
+fails loudly.
+
+`Source: m4 t3, 2026-08-06 — recorded as a residual of that ticket's own bridge. Re-characterised
+at t3 review r1 the same day, after the reviewer's trace was checked against the code rather than
+taken; the mutations behind the table were run at agents aabf546 / harness 7c248c0.`
 
 ---

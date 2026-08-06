@@ -308,7 +308,27 @@ here.
 - **Legs, stated as a limit.** Only DigitalOcean was runnable; AWS and Linode credentials are not
   present in this environment and none was minted or probed. Their adapter env surface, guard
   raises and knob behaviour were verified without a run; the AWS region-sweep consequence is the
-  one claim in the ticket resting on a read rather than a run, and is labelled as such.
+  one claim in the ticket resting on a read rather than a run, and is labelled as such. **The
+  passthrough list carries the same limit**: demonstrated end to end on digitalocean,
+  category-derived for the other two, and said so beside the list rather than only in the notes.
+- **A sufficient list is not a minimal one, and the difference is a removal test (review r1).**
+  Additive derivation proves an entry fixed the failure in front of it *at the time*; it does not
+  prove the entry is still load-bearing once the list has grown, and an over-large allowlist is
+  the denylist defect with the sign flipped. Every entry was re-observed with itself removed from
+  the **final** list, and all six hold. The specification gap was the ticket's, not the
+  implementation's — the subtractive constraint was ratified in answer to the derivation question
+  and never reached the ticket text.
+- **A row filed against the half of its surface that fails loudly is filed against the safe half
+  (review r1).** BL-113 first said a missed *credential* constant is missed silently. Mutating the
+  bridge established the opposite: a missed mandatory credential is the one case that fails loudly
+  (empty-list guard at preflight, or the adapter at fetch). The silent cases are a missed knob, a
+  missed *optional* credential, a missed hazard, and — the costly one — a credential
+  **mis-categorised as a knob**, which is allowlisted but never grepped, so it is a D2 hole every
+  leg reports green. Corrected before the row was ever acted on.
+- **Hermetic against names is not deterministic in values.** `LANG` passes through, so two
+  operators can get different bytes out of the same sprint, one silently corrupted. The prefix
+  guarantees no *unlisted name* reaches the run; it guarantees nothing about the *values* of the
+  listed ones. Recorded so "hermetic" is not read as "reproducible"; BL-112 is the fix.
 
 ### Rows filed this cycle
 

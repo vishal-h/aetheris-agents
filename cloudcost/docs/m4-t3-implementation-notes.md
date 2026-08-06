@@ -31,6 +31,19 @@ is in `Touches` and is edited here.
 Built from **nothing**, adding only on a demonstrated failure, staged by hop so the derivation
 did not burn a live agent run per candidate. Every failure below was observed, not predicted.
 
+**Two properties, and the second was added at review r1.** Additive derivation proves an entry
+fixed *the failure in front of it at the time*; it does not prove the entry is still load-bearing
+once the list has grown. A list larger than necessary is the denylist defect with the sign
+flipped. So each entry is now labelled with **which list its transcript was taken against**, and
+every one that was partial has been re-run as a removal at the final list — §2b.
+
+**And the derivation ran on one leg.** Only DigitalOcean's credential is present on this machine.
+The six DO-leg entries are demonstrated end to end; **aws's and linode's `cred` names, and aws's
+two `knob` names, are on the list by category selection rather than by an observed failure on
+their own legs.** The selection is verified for all three providers and the knob mechanism is
+demonstrated, but "every entry has a demonstrated failure behind it" means *on the leg that could
+run*. Stated here, in `sprint.sh` beside `CC_ALLOW` where the list actually lives, and in §6.
+
 ### Passthroughs
 
 | # | Name | The failure that put it there |
@@ -88,12 +101,55 @@ the default region set while the operator believes it swept theirs — is read f
 `fetch_aws.py:1085` (`regions = enumerate_regions(clients, os.environ.get(REGIONS_ENV))`) and is
 **not observed end to end, because the AWS leg is not runnable on this machine** (§6).
 
+### 2b. Minimality — every entry removed from the *final* list (review r1)
+
+The table above records where each failure was **first** observed; the column below records the
+list the transcript was taken against, and the removal result at the final DO list
+(`PATH HOME LANG ANTHROPIC_API_KEY CLOUDCOST_OPTIMIZATION CLOUDCOST_DO_TOKEN`).
+
+| Entry | First observed against | Removal at the final list |
+|---|---|---|
+| `PATH` | empty list (partial) | `exit=127` |
+| `HOME` | `PATH` only (partial) | `exit=1 could not find the user home` |
+| `LANG` | near-final, minus LANG (partial) | `native_name_encoding = :latin1` |
+| `ANTHROPIC_API_KEY` | `PATH HOME` + cred (partial) | run `failed`, `[step:0 seq:2] error … "could not fetch environment variable \"ANTHROPIC_API_KEY\""` |
+| `CLOUDCOST_OPTIMIZATION` | `PATH HOME LANG` (partial) | `eval exit=0` — the orchestrator's guard did not fire |
+| `cred` (`CLOUDCOST_DO_TOKEN`) | **final list** — mutation 2, in the real sprint | `credential = stripped` |
+
+**All six are load-bearing at the final list. The list is minimal, not merely sufficient.**
+
+The AWS `knob` entries, at the final **AWS** list — mechanism only, the leg is not runnable:
+
+```
+full list                        REGION='us-east-1' REGIONS='eu-west-1,ap-south-1'
+− CLOUDCOST_AWS_REGION           REGION=None        REGIONS='eu-west-1,ap-south-1'
+− CLOUDCOST_AWS_REGIONS          REGION='us-east-1' REGIONS=None
+```
+
+**One false negative in my own matrix, recorded because it is the same class this ticket is
+about.** The first run of it reported `− ANTHROPIC_API_KEY → still succeeded`. That was the
+harness contaminating itself: I had exported `CLOUDCOST_OPTIMIZATION=1` so entry 5's row would
+have something to detect, and on a DO leg that makes the orchestrator raise at *eval* time, so
+the run never reached the LLM call and my grep for the run-failure line found nothing. A check
+whose fixture silently changes what a sibling row tests. Re-run isolated, with the trajectory
+event quoted rather than an exit code inferred.
+
 ### Assignments, not passthroughs — a reason each, not a failure
 
 | Name | Why |
 |---|---|
 | `AWS_SHARED_CREDENTIALS_FILE=/dev/null` | **the trap that shaped the design.** Under the denylist this was assigned `/dev/null`. `env -i` would instead leave it **absent**, and absent is *not* `/dev/null` — absent restores boto3's default `~/.aws/credentials` lookup, and `HOME` is on the allowlist, so the file is reachable. Inverting naively would have re-opened the exact arm the denylist closed. |
 | `CLOUDCOST_PROVIDER` | the selector, as before; it rides through the prefix rather than being exported, so the sprint never mutates its own environment |
+
+### Hermetic against *names*, not deterministic in *values* (review r1)
+
+Worth one sentence so nobody reads "hermetic" as "reproducible": **this ticket closed the name
+surface, not the value surface.** `LANG` passes through, so the child inherits whatever locale the
+operator has — which is the right call for BL-104's *legs pass unchanged in behaviour*, and which
+means two operators can get different bytes out of the same sprint, one of them silently
+corrupted. The prefix guarantees that no *unlisted* name reaches the run; it guarantees nothing
+about the *values* of the listed ones. **BL-112** is the fix for the one case where that
+difference is currently harmful, and is deliberately scoped away from here.
 
 ### What is *not* on the list, and is not meant to be
 
@@ -292,8 +348,13 @@ Mutation 3 exits **0**: `fail()` only prints (BL-077, tracked, deliberately unch
 | aws | `CLOUDCOST_AWS_ACCESS_KEY_ID` + `_SECRET_ACCESS_KEY` | **not runnable — not set in this environment** |
 | linode | `CLOUDCOST_LINODE_TOKEN` | **not runnable — not set in this environment** |
 
-No credential was minted or probed to make a leg runnable. What the two non-runnable legs *did*
-get: their adapter env surface is resolved and verified (§3), guard 2's Linode raise is exercised
+No credential was minted or probed to make a leg runnable. **This is also the limit on §2's
+derivation**: the passthrough list is demonstrated end to end on digitalocean and
+category-derived for aws and linode. What would settle those two is a run on each with its
+credential present — the removal matrix re-run at that leg's final list, which is one command
+(§2b) once a credential exists.
+
+What the two non-runnable legs *did* get: their adapter env surface is resolved and verified (§3), guard 2's Linode raise is exercised
 with a synthetic token (§4), guard 1's AWS raise runs on every sprint, and the AWS `knob` failure
 is demonstrated at the mechanism level (§2). What they did not get is an end-to-end run, and the
 region-sweep consequence in §2 is the one claim resting on a read rather than a run.
@@ -366,12 +427,23 @@ acceptable; revert it if the reviewer reads the fence more strictly than I have.
 **Deviation — `cloudcost/m4-consolidation.md` edited.** Per the carry, this is a `Touches`
 omission by design, not a deviation.
 
-**Residual → BL-113.** The bridge hand-types the *constant* names (`TOKEN_ENV`, `REGION_ENV`,
-`SHADOWING_ENV`, …), one level up from the env-var names, and it also carries the provider→module
-`MODULES` map. That is strictly better than hand-typing the variables — an adapter renaming
-`CLOUDCOST_LINODE_TOKEN` is followed automatically — but an adapter that adds a *new* credential
-constant under a new name is missed silently, on exactly the seam this check watches. (The
-`MODULES` map itself fails loudly, so it is not part of the silent surface.)
+**Residual → BL-113, re-characterised at review r1.** The bridge hand-types the *constant* names
+(`TOKEN_ENV`, `REGION_ENV`, `SHADOWING_ENV`, …), one level up from the env-var names, and carries
+the provider→module `MODULES` map. That is strictly better than hand-typing the variables — an
+adapter renaming `CLOUDCOST_LINODE_TOKEN` is followed automatically.
+
+**My first filing of this row named the wrong half.** It said a missed *credential* constant is
+missed silently. Established by mutating the bridge's tuples rather than reasoning: a missed
+**mandatory** credential is the one case that fails **loudly** — on a single-cred provider the
+empty-list guard fires at preflight (`could not read digitalocean's credential env names from its
+adapter`, exit 1, before any run), and on a multi-cred provider the stripped name fails the
+adapter at fetch. The genuinely silent cases are a missed **knob** (the override vanishes — §2's
+entry 7 is that demonstration), a missed **optional** credential, a missed **hazard** (only the
+operator warning is lost), and — the one that would actually cost something — a credential
+**mis-categorised as a knob**, which is allowlisted into `CC_ALLOW` but never into
+`CC_CRED_NAMES`, and the D2 grep iterates `CC_CRED_NAMES`. That is a D2 hole every leg reports
+green. The row is rewritten against those; its Done-when now demands the mutation posture for the
+silent cases specifically. The `MODULES` map fails loudly and is not part of the silent surface.
 
 **Residual → BL-112.** The latin1 corruption is pre-existing and provider-independent: any harness
 consumer, on any workstation with no `LANG`, silently gets malformed UTF-8 in `--json` payloads.

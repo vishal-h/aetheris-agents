@@ -290,8 +290,15 @@ not tracked carry. It is also left **red**: never quietly relaxed, re-pointed at
 passes, or downgraded to a warning to get a clean run. A quiet downgrade is how a real
 regression later goes unnoticed, and it destroys the one thing the carry was preserving — that
 the gate still means what it said. BL-069's ≥1-orphan assertion was carried red and named on
-every leg of m2 rather than relaxed, and it closed by planting the resource the assertion was
-always about.
+every leg of m2 and m3 rather than relaxed. **It closed at m4 t2 by retirement, openly** — the
+assertion could only ever be satisfied by keeping a billable resource on a live account, so the
+ticket replaced it with one asserting the property it stood in for, closed the row on that basis,
+and swept every document that still told an operator to plant. That is not the quiet downgrade
+this rule forbids, and the difference is not the outcome but the route: the change *was* the
+ticket, with its own review and its own record, rather than an edit made to get past one.
+`[corrected 2026-08-06 (m4 t2) — this sentence previously read "and it closed by planting the
+resource the assertion was always about", which the retirement makes false and which read as an
+endorsement of the practice.]`
 
 **Before making a soft failure hard, enumerate what else that gate holds.** If flipping it turns
 *every* tracked known-red blocking at once, then the enforcement and the exempt/expected-fail

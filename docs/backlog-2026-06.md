@@ -2182,6 +2182,15 @@ playground_api` — the Bandit-served path — green end to end.
 ### BL-069 — DO ≥1-orphan assertion is armed: its planted reserved IP is deleted (#TBD)
 **Size:** S · **Priority:** now (live failure mode) · **Section:** aetheris-agents (cloudcost)
 
+> **Done-when superseded 2026-08-06 (m4 t2, step 0).** The row offers two ways to close and the
+> cycle has ruled out both as written. **Decision 12** (`cloudcost/m4-consolidation.md`
+> §Ratified decisions → Technical) retires planted cloud resources on every provider, and reframes
+> re-pointing as a **rule-legibility assertion** rather than a recorded orphan fixture. So this row
+> closes by **retirement** — a third branch its own Done-when does not contemplate. The Done-when
+> is marked `[corrected 2026-08-06]` below with the superseded text kept beneath it. Everything
+> else in this row is record — what was planted, when it was deleted, the one run the Linode leg
+> went green — and is left intact.
+
 The DO cloudcost pipeline's `≥1 orphan` end-to-end assertion is a **known-positive
 pipeline self-test**, not a business alert — it proves detection *fires* against the real
 bill, using a planted orphan as the fixture. Reserved IP **168.144.13.150** (NYC1),
@@ -2191,10 +2200,19 @@ greens **vacuously** off a prior run's gitignored output (Silent-wrong-answer, h
 `CLAUDE.md`). Independent of the AWS work; m2 is per-provider (decision H), so AWS carries
 its own planted Elastic IP and does not depend on this.
 
-**Done when:** before the next DO run, either a fresh DO orphan is planted, or the
-assertion is re-pointed to a recorded fixture rather than the live account — and a DO run
-confirms the assertion passes for the right reason (mutation posture: it must fail when no
-orphan is present).
+**`[corrected 2026-08-06]` Done when:** the practice is retired rather than re-fixtured. The
+cloudcost sprint case no longer asserts a planted orphan; in its place it asserts the property
+that tripwire stood in for — that the adapter's inventory **reached the rule catalog in a shape
+the catalog could read**: every emitted `type` drawn from `_normalized.CANONICAL_TYPES`, imported
+rather than restated, and an empty illegible-skip set. A zero-resource inventory reaches a stated
+not-applicable arm and never a pass. Mutation posture is owed on **every** arm, not only the
+failing one. And every live instruction anywhere in either repo directing an operator to create a
+billable cloud resource is removed; records of what was planted stay intact.
+
+> *Superseded 2026-08-01 text, kept:* "**Done when:** before the next DO run, either a fresh DO
+> orphan is planted, or the assertion is re-pointed to a recorded fixture rather than the live
+> account — and a DO run confirms the assertion passes for the right reason (mutation posture: it
+> must fail when no orphan is present)."
 
 **The Linode leg went green once, 2026-08-05 — and reverted.** m3 t3 planted a zero-backend
 `common` NodeBalancer (`aetheris-m3-bl069-plant`, `2405879`, us-southeast) and the assertion
@@ -2211,6 +2229,77 @@ is still `m2-milestone.md` §Prereqs 3, pending.
 
 `Source: m2-cloudcost ratification, 2026-08-01; m1 loose end (reserved IP) closed 2026-07-30;
 m3-cloudcost t3 live run 2026-08-05 (Linode leg green once, reverted on plant deletion).`
+
+---
+
+### BL-069 — DONE 2026-08-06 (m4 t2) — closed by **retirement**, neither branch its Done-when offered
+
+The row offered two closures: plant a fresh orphan, or re-point the assertion at a recorded
+fixture. Decision 12 ruled out the first and reframed the second, so the row closes a third way —
+**the assertion and the practice behind it are retired outright**. The Done-when was corrected at
+t2's opening, before any implementation, with the superseded text kept beneath it.
+
+**What was removed.** `../aetheris/scripts/sprint.sh` no longer asserts `orphan candidates ≥ 1`;
+the assertion and its KNOWN-RED comment block are gone, replaced in place by a comment recording
+why and warning the next reader off reinstating a count-based orphan check. An assertion whose
+only satisfying state is *money being wasted on a live account* is not a check on the pipeline.
+
+**What replaced it — rule legibility, three arms.** Outside the `CLOUDCOST_PERIOD` guard (it reads
+the provider output directory, not the report, so it stays meaningful on exactly the runs where
+the report is missing — the D2 credential grep's precedent). It reads the run's own two artifacts,
+both found by pattern rather than by period, and imports the canonical vocabulary from
+`cloudcost/scripts/_normalized.py` (`CANONICAL_TYPES`) rather than restating it in shell:
+
+| Arm | Condition | Output |
+|---|---|---|
+| legible | resources evaluated, every emitted `type` canonical, nothing skipped, catalog count agrees with the inventory | `[OK]` |
+| illegible | a `type` outside the closed set, a non-empty skip set, or a count disagreement | `[FAIL]` |
+| not applicable | zero resources | `[WARN]`, stated as an unknown — never a pass |
+| vacuity guard | either artifact missing, or not exactly one | `[FAIL]` |
+
+No new sprint output state; `fail()`'s effect on exit status untouched; nothing under
+`cloudcost/scripts/` edited (all eight blob hashes unchanged).
+
+**Why the third arm reports an unknown rather than a clean not-applicable.** Whether the adapter's
+*coverage* was complete is recorded in no artifact the sprint can read — the inventory envelope is
+five keys and carries no `not_inventoried` (**BL-098**), and the adapter's summary, which does
+carry it, dies at its own stdout (verified: 0 occurrences across 13 archived
+`sprint/*/cloudcost/run.json` captures). The orchestrator-exit assertion cannot discharge it
+either, because `mix aetheris` discards every command's exit code (**BL-044**, verified at harness
+`871a720`). **BL-098 is what would discharge it**, and it is out of scope for this cycle. So a zero
+is reported as *nothing was evaluated, and why is not established here*.
+
+**Mutation posture, all arms** — each state constructed, the arm observed, then restored. The two
+`[FAIL]` fixtures are real artifacts rather than invented ones: `cloudcost/output/do_inventory_2026-07.json`,
+a surviving pre-m2 inventory carrying `droplet` / `reserved_ip`, drove the out-of-vocabulary arm;
+an entry with `type` removed drove the skip arm; a real zero-resource AWS inventory drove the
+not-applicable arm; the live DO run drove the pass.
+
+**Live outcome, before and after**, same leg, same day:
+
+```
+[FAIL]  orphan candidates: 0 (expected ≥1 — BL-069 armed: …)                    (18:25, pre-edit)
+[OK]    rule legibility: 18 resources evaluated, 0 skipped; types
+        [compute_instance, load_balancer, volume] all drawn from the canonical set  (18:29, post-edit)
+```
+
+**The retirement sweep.** Censused by substance across both repos, not by the token "plant". Live
+instructions were treated under the cycle's document rules: `cloudcost/runbook.md` corrected in
+place (decision 8); `CLAUDE.md`'s gate-rule exemplar corrected in place, since it read as an
+endorsement of planting; `cloudcost/milestone.md`, `m2-milestone.md` (including the
+`Status: PENDING` prerequisite, which was an instruction awaiting execution rather than a record)
+and `m3-milestone.md`, plus three handoffs, each given one dated superseded note with its original
+text intact (decision 7). Records were left alone. The full census — terms run, every hit, its
+classification and its treatment — is in `cloudcost/docs/m4-t2-implementation-notes.md`.
+
+**Not verified against a live account:** the m3 Linode plant `aetheris-m3-bl069-plant`
+(`2405879`) is recorded as deleted in two places — this row above, and
+`docs/project-knowledge-manifest.md` — and this session holds no Linode credential, so that
+remains a record rather than an observation.
+
+`Source: m4-consolidation decision 12; m4 t2, 2026-08-06. Live runs sprint/20260806_182514
+(pre-edit, run cloudcost-orch-digitalocean-XApoxQ) and sprint/20260806_182911 (post-edit, run
+cloudcost-orch-digitalocean-OK48Sw).`
 
 ---
 
@@ -2447,8 +2536,24 @@ recorded, so this is an enumeration and not another observation.
 **§7 promotion candidate at m2 close** — Adjacent-case / enumerate-the-class, in its
 "a uniqueness claim produced by observation" form.
 
+**Coupling added 2026-08-06 (m4 t2): the sprint case is now a consumer of the vocabulary
+surface this row sweeps.** The cloudcost sprint case's rule-legibility assertion imports
+`CANONICAL_TYPES` from `cloudcost/scripts/_normalized.py` — deliberately, so the vocabulary is
+never restated in shell. If this sweep relocates or renames it, `../aetheris/scripts/sprint.sh`
+breaks, and it breaks *loudly* (the probe fails and the arm reads `[FAIL]`), which is the intended
+posture. Two observations for the sweep, both found while wiring it:
+
+- **`CANONICAL_TYPES` has no public accessor.** Adapters import the seven `TYPE_*` constants
+  individually and never the set; nothing outside tests referenced the set before t2. If the sweep
+  wants a stable surface, this is the moment to decide whether one exists.
+- **`usable_resources()` checks that `type` is *present*, never that it is *canonical*.** An
+  out-of-vocabulary `type` passes through as usable and simply matches no rule — silently. That
+  gap is precisely why the sprint assertion had to check membership itself, and it is a candidate
+  for this sweep's ruling: schema-level validation in `_normalized`, or left to the callers.
+
 `Source: m2-cloudcost t1 review r0/r1 (docs/reviews/m2-cloudcost-t1-review.md), ratified
-2026-08-01. Line citations verified at aetheris-agents 3bc970b.`
+2026-08-01. Line citations verified at aetheris-agents 3bc970b. Coupling appended m4 t2,
+2026-08-06.`
 
 ---
 
@@ -4338,7 +4443,18 @@ change rather than as a side effect.
 **Done when:** `mix aetheris` propagates the exit code (or documents why it cannot), and
 `sprint.sh` is audited for commands that would newly abort it.
 
-`Source: BL-025 execution, 2026-07-23.`
+**A concrete audit input, found 2026-08-06 (m4 t2) — one site where the discarded code makes an
+existing assertion vacuous.** The cloudcost case wraps its real run in an exit-status test
+(`../aetheris/scripts/sprint.sh`, the `if "${CC_HERMETIC[@]}" mix aetheris --json run …` block) and
+`fail`s on "non-zero exit". Because the Mix task discards the code, that branch is reachable only
+when the task *raises*; a run that ends `:failed` exits 0 and the case prints `[OK]`. So the
+assertion passes identically whether or not the run succeeded — the **Silent-wrong-answer** shape,
+in the apparatus. Verified at harness `871a720`: `lib/mix/tasks/aetheris.ex` is still
+`_ = Aetheris.CLI.run(argv); :ok`, and `CLI.run/1`'s `System.halt(exit_code)` is still commented
+out. Named here rather than fixed at t2, which does not open that file; it is the kind of site
+this row's audit exists to enumerate, and there is no reason to think it is the only one.
+
+`Source: BL-025 execution, 2026-07-23; audit input appended m4 t2, 2026-08-06.`
 
 ---
 

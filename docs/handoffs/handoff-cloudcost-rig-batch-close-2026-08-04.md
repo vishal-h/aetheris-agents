@@ -103,6 +103,17 @@ chapter, not this list.
 
 ## Live tripwires (carried, unchanged)
 
+> **Superseded 2026-08-06 (m4 t2), BL-069 only.** The instruction below — plant a resource before
+> any run that must assert ≥1 orphan — is retired. **Decision 12**
+> (`cloudcost/m4-consolidation.md` §Ratified decisions → Technical) rules out planted cloud
+> resources on every provider, and **BL-069 closed by retiring the practice** rather than by
+> re-fixturing it. The ≥1-orphan assertion no longer exists; the cloudcost sprint case asserts
+> **rule legibility** in its place — that the adapter's inventory reached the rule catalog in a
+> shape the catalog could read, with the canonical `type` vocabulary imported from
+> `cloudcost/scripts/_normalized.py`. The live description is `cloudcost/runbook.md` §"What a
+> zero-orphan account means, and what the sprint asserts instead". What is superseded is the
+> **instruction**, not the record that a tripwire was armed. The BL-077 line below is unaffected.
+
 BL-069 armed — plant a resource before any run that must assert ≥1 orphan.
 BL-077 — sprint `fail` sets no exit status; read `[OK]`/`[FAIL]`, not `$?`.
 

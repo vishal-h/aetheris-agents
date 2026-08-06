@@ -9,6 +9,27 @@ expiry; see §Milestone summary. **Click-through gate PASSED 2026-08-05** at `m3
 observed by the human on both surfaces: "View report" opened the Linode HTML showing the planted
 NodeBalancer with its evidence and a $10.00 saving, and the capability-matrix view showed the
 regenerated cloudcost section.
+> **Superseded 2026-08-06 (m4 t2) — the plant instructions only.** Every instruction in this
+> document to create a cloud resource so the `≥1`-orphan assertion fires is retired: **§Prerequisites
+> 3** (*"A zero-backend NodeBalancer, for t3's BL-069 plant. Create it before the run…"*),
+> **§Rule reachability** (the engineering case for *which* resource to plant), and the two
+> imperatives inside **§t3** — its Done-check shell comment and its claude-code prompt. **Decision
+> 12** (`m4-consolidation.md` §Ratified decisions → Technical) rules out planted cloud resources on
+> every provider, and **BL-069 closed by retiring the practice** rather than by swapping in another
+> fixture. §Rule reachability's *findings* about which rules carry age thresholds remain true and
+> useful; what is withdrawn is the conclusion that one should therefore create a NodeBalancer.
+>
+> In its place the cloudcost sprint case asserts **rule legibility** — that the adapter's inventory
+> reached the rule catalog in a shape the catalog could read, with the canonical `type` vocabulary
+> imported from `scripts/_normalized.py` rather than restated. The live description is
+> `runbook.md` §"What a zero-orphan account means, and what the sprint asserts instead"; the
+> `runbook.md:283` and `:307-310` citations elsewhere in this document point at the retired
+> section and are historical.
+>
+> What is superseded is the **instruction**. The record — that `aetheris-m3-bl069-plant`
+> (`2405879`) was created, that it carried t3's live proof at `cloudcost-orch-linode-h5lltQ`, and
+> that it was deleted afterwards — is history and stands as written below, unedited.
+
 **Drafted:** 2026-08-04 by claude-ui, against aetheris-agents `main@dc8c077`, harness `265d336`.
 **Scout basis:** `cloudcost/docs/m3-linode-scout.md` — Linode OpenAPI `4.215.0`,
 ETag `290888161afda3d3566f755d664856fb937fbafbf817838587bb2be6e77ef6cd`, retrieved

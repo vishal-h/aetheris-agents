@@ -106,7 +106,7 @@ ticket; the count states how many commits that is.
 | **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
 | **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria | you are reading it |
 | **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
-| **t2** | Retire the plant practice; rule-legibility assertion | BL-069 | not started |
+| **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104, BL-099 | not started |
 | **t4** | The seam sweep; gates provider four | BL-074 | not started |
 | **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
@@ -221,6 +221,34 @@ here.
   ambient-state defect class as BL-100, pre-existing, left red per the tracked-carry clause.
 - **BL-069 remains armed and red**, named rather than re-triaged: the live cloudcost leg reported
   `[FAIL] orphan candidates: 0 (expected ≥1 …)`. t2 owns it.
+
+### What t2 established
+
+- **BL-069 closed by retirement — the third branch.** Its Done-when offered plant-or-re-point;
+  decision 12 ruled out both as written. The ≥1-orphan assertion is gone, replaced by a three-arm
+  rule-legibility check that imports `CANONICAL_TYPES` rather than restating it, sited **outside**
+  the period guard on the D2 grep's precedent. Live, same leg, same day: `[FAIL] orphan candidates:
+  0` at 18:25 → `[OK] rule legibility: 18 resources evaluated, 0 skipped` at 18:29. All arms
+  mutation-checked, the two failing ones against real artifacts rather than invented fixtures.
+- **The run's coverage is not knowable from any artifact the sprint can read, and the check that
+  looks like it establishes it does not.** The inventory envelope is five keys and carries no
+  `not_inventoried` (BL-098); the adapter's summary, which does carry it, appears in **0 of 13**
+  archived `sprint/*/cloudcost/run.json` captures. And the orchestrator-exit assertion cannot
+  discharge it either: `mix aetheris` discards every command's exit code (BL-044, verified at
+  harness `871a720`), so that assertion is reachable only when the Mix task *raises* — a run that
+  ends `:failed` prints `[OK]`. Appended to BL-044 as audit input. This is why the not-applicable
+  arm reports an **unknown** rather than a clean zero, a declared deviation from the ticket's
+  wording.
+- **The retirement census found the claim in one repo only, and mostly in prose that never says
+  "plant".** `../aetheris` carries exactly one carrier (the assertion itself); `../aetheris/CLAUDE.md`
+  carries none. On the agents side the live carriers were the runbook's recipe section, three
+  handoff "Live tripwires" blocks, three closed milestone documents — one of them reading
+  `Status: PENDING`, an instruction awaiting execution rather than a record — and **`CLAUDE.md`'s
+  own gate rule**, which offered planting as the exemplar of correct known-red discipline. That
+  last one is the site a token-keyed census would have found and a reader would have trusted most.
+- **The BL-077 placement residual did not arise.** Recorded as a negative: the assertion sites
+  outside the period guard, so the skipped-assertion-indistinguishable-from-passing finding gains
+  no second instance from it.
 
 ### Rows filed this cycle
 

@@ -13,6 +13,21 @@ Step-2 block in the LLM). First milestone of the cloudcost use case; DO-only ver
 **Repo:** `aetheris-agents/cloudcost/` (new use case). Runs in its own session, parallel
 to the harness backlog.
 
+> **Superseded 2026-08-06 (m4 t2) — the plant instruction only.** §Prerequisites 2 (*"Confirm one
+> exists, or plant one, before t5's end-to-end run"*) is retired, along with every other
+> instruction in this document to create a cloud resource so the `≥1`-orphan assertion fires.
+> **Decision 12** (`m4-consolidation.md` §Ratified decisions → Technical) rules out planted cloud
+> resources on every provider, and **BL-069 closed by retiring the practice** rather than by
+> swapping in another fixture. In its place the cloudcost sprint case asserts **rule legibility** —
+> that the adapter's inventory reached the rule catalog in a shape the catalog could read, with the
+> canonical `type` vocabulary imported from `scripts/_normalized.py` rather than restated. The live
+> description is `runbook.md` §"What a zero-orphan account means, and what the sprint asserts
+> instead"; that section, not this one, is where an operator should now look.
+>
+> What is superseded is the **instruction**. This milestone's record — that a reserved IP was
+> planted, that it carried the end-to-end proof, and that it was deleted afterwards — is history
+> and stands as written below, unedited.
+
 ---
 
 ## Goal

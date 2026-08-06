@@ -7,6 +7,25 @@ for AWS**: re-plant before any future run that must assert ≥1). Close-out reco
 `docs/reviews/m2-cloudcost-closeout.md`; §7 promotion packet:
 `docs/reviews/m2-cloudcost-section7-promotion.md`.
 
+> **Superseded 2026-08-06 (m4 t2) — the plant instructions only.** Three sites in this document
+> instruct an operator to create a cloud resource so the `≥1`-orphan assertion fires, and all three
+> are retired: the *"re-plant before any future run that must assert ≥1"* clause in the status line
+> immediately above; **§Prerequisites 3**, whose **`Status: PENDING`** made it an instruction still
+> awaiting execution rather than a record; and the *"Re-plant or re-point to a fixture before the
+> next DO run"* line in the backlog-rows-filed summary. **Decision 12**
+> (`m4-consolidation.md` §Ratified decisions → Technical) rules out planted cloud resources on
+> every provider, and **BL-069 closed by retiring the practice** rather than by swapping in another
+> fixture — so Prerequisite 3 is not pending; it is withdrawn.
+>
+> In its place the cloudcost sprint case asserts **rule legibility** — that the adapter's inventory
+> reached the rule catalog in a shape the catalog could read, with the canonical `type` vocabulary
+> imported from `scripts/_normalized.py` rather than restated. The live description is
+> `runbook.md` §"What a zero-orphan account means, and what the sprint asserts instead".
+>
+> What is superseded is the **instruction**. The record — that an Elastic IP was planted, that it
+> carried the core done-when at `cloudcost-orch-aws-oFbapA`, and that it was released afterwards —
+> is history and stands as written below, unedited.
+
 Ratified 2026-08-01 (rev 4); final revision **5.2**, 2026-08-02 (`fb4dfe3`).
 Phase 1 closed. **t1 MERGED** (aetheris-agents
 `3bc970b`, review `docs/reviews/m2-cloudcost-t1-review.md`). **t2 MERGED** (doc-only rev 5.1

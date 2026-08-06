@@ -103,6 +103,18 @@ BL-073's discovery convention (scrape vs recorded-artifact-path) before provider
 since a third provider also produces reports.
 
 ## Live tripwire
+
+> **Superseded 2026-08-06 (m4 t2), BL-069 only.** The instruction below — plant a resource before
+> any run that must assert ≥1 orphan — is retired. **Decision 12**
+> (`cloudcost/m4-consolidation.md` §Ratified decisions → Technical) rules out planted cloud
+> resources on every provider, and **BL-069 closed by retiring the practice** rather than by
+> re-fixturing it. The ≥1-orphan assertion no longer exists; the cloudcost sprint case asserts
+> **rule legibility** in its place — that the adapter's inventory reached the rule catalog in a
+> shape the catalog could read, with the canonical `type` vocabulary imported from
+> `cloudcost/scripts/_normalized.py`. The live description is `cloudcost/runbook.md` §"What a
+> zero-orphan account means, and what the sprint asserts instead". What is superseded is the
+> **instruction**, not the record that a tripwire was armed. The BL-077 note below is unaffected.
+
 **BL-069 armed** — the planted AWS Elastic IP was released after m2 close; the DO reserved IP was
 deleted 2026-07-30. Any run that must assert ≥1 orphan needs a resource planted first; otherwise
 `sprint.sh cloudcost`'s ≥1-orphan assertion is expected-red (named, tracked, not re-triaged).

@@ -282,52 +282,42 @@ Neither is a defect; it is the degrade-don't-crash path working. But a report ge
 1st has no cost section to review, which reads as a failure of the report rather than of the
 calendar. Run it on the 2nd or later.
 
-## Exercising the ≥1-orphan path
+## What a zero-orphan account means, and what the sprint asserts instead
 
-Detection only surfaces what the account actually carries, and **no live account currently
-carries an orphan-shaped resource** — the DO reserved IP that used to arm this was deleted
-2026-07-30 (BL-069), the AWS Elastic IP is `m2-milestone.md` §Prereqs 3 and still pending, and
-the Linode account reports 0 candidates / 0 skipped over a full live inventory (m3 t1). All
-three sprint legs therefore report 0 orphans and the `≥1` assertion is expected-red until one is
-planted. Do not relax the assertion to make it green; plant the resource.
+**A zero is the desired state, not a gap.** Detection only surfaces what the account actually
+carries, and none of the three live accounts currently carries an orphan-shaped resource. That is
+what a well-kept account looks like.
 
-DO and AWS trip the **same** rule — m2 t2 unified the vocabulary, so it is
-`unassociated_static_ip` (0.95, HIGH band) whether the resource is a DO reserved IP or an AWS
-Elastic IP, and the rule has no age threshold: an unassociated static IP bills from the moment
-it is unassociated.
+**Do not create a resource to make a check fire.** Until 2026-08-06 the sprint asserted
+`orphan candidates ≥ 1`, and this section was a recipe for planting the billable resource that
+would satisfy it — a DO reserved IP, an AWS Elastic IP, a zero-backend Linode NodeBalancer,
+created by hand before the run and deleted after. **The practice is retired on every provider**
+(`m4-consolidation.md` §Ratified decisions → Technical, decision 12; BL-069 closed by retirement
+at m4 t2). An assertion that can only be satisfied by spending money is not a check on the
+pipeline; it is a standing instruction to keep waste on the account.
 
-**DigitalOcean** — console → **Networking → Reserved IPs → Reserve in Datacenter Region**, left
-**unassigned**. ~$4.38/mo while it sits. **Delete it after the run** (a write, done by a human
-in the console — the agent stays read-only). A *freshly created* unattached volume will not fire
-for 14 days (the `>14d` threshold), so the reserved IP is the move.
+**What replaced it: a rule-legibility assertion**, in the same sprint case
+(`../aetheris/scripts/sprint.sh`, the cloudcost block). It asserts the property the ≥1 tripwire
+was standing in for — that the adapter's inventory **reached the rule catalog in a shape the
+catalog could read**:
 
-**AWS** — console → **EC2 → Elastic IPs → Allocate**, left **unassociated**. Same posture —
-release it after the run. Optional extras that exercise more of the catalog: a stopped EC2
-instance with an attached EBS volume, or a stopped RDS instance (both hit
-`rule_stopped_compute_with_attached_storage` / `rule_stopped_database_with_storage`).
+- every `type` the adapter emitted is drawn from the canonical closed set, imported from
+  `scripts/_normalized.py` (`CANONICAL_TYPES`) rather than restated in the sprint — this is the
+  provider-vocabulary-reaching-shared-machinery seam (BL-074), which is where this use case's
+  defects have actually come from;
+- the catalog skipped nothing as illegible, and its own resource count agrees with the inventory
+  it read.
 
-**Linode — a zero-backend NodeBalancer, and *not* the reserved-IP recipe the other two use.**
-Console → **NodeBalancers → Create**, type **`common`**, with **no backend nodes** on any
-configuration. It trips `rule_idle_load_balancer`, which keys on type and `attached_to is None`
-alone and carries **no age threshold**, so it fires the same day. **Delete it after the run.**
+It needs no live resource, so it runs on every leg for free. **A zero-resource inventory reaches a
+stated not-applicable arm, never a pass** — one provider's account legitimately inventories
+nothing, and that is neither a legibility pass nor a legibility failure.
 
-Two things make this the only sound same-day plant on Linode, and both are worth knowing before
-substituting something cheaper:
-
-- **Every other reachable rule carries an age threshold a same-day resource cannot satisfy** —
-  `rule_unattached_volume` needs >14 days, `rule_stopped_compute_with_attached_storage` >30.
-  Lowering `--snapshot-age-days` to make an orphan appear games the assertion rather than
-  satisfying it.
-- **The static-IP rule *is* reachable on Linode** (a reserved, unassigned address; the `reserved`
-  flag the live API returns and the OpenAPI spec does not declare) — but Linode publishes no
-  pricing endpoint for addresses, so such a candidate prices at `0.0` plus a named warning. It
-  would satisfy `≥1` with **no dollar figure**, which is a weak proof for a cost report. A
-  `premium` NodeBalancer is the same trap: that type is deliberately unmapped, since this account
-  holds none and there is no evidence for which price row it bills at. Use `common`, which prices
-  from a real invoice line.
-
-A zero-backend `common` NodeBalancer also exercises the 1 + N configs read — Linode's most
-distinctive inventory path, and the one nothing else covers.
+> **The not-applicable arm reports an unknown, and says so.** Whether the adapter's *coverage* was
+> complete is recorded in no artifact the sprint can read: the inventory envelope is five keys and
+> carries no `not_inventoried` (BL-098), and the adapter's summary — which does carry it — dies at
+> its own stdout. So a zero cannot be read as "the account is clean"; it is read as "nothing was
+> evaluated, and why is not established here". Re-run the adapter directly (below) and read its
+> `status` and `not_inventoried` if you need that answer today.
 
 Check without running the whole agent (AWS shown; use the DO equivalents for DO):
 ```

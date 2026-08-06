@@ -4454,7 +4454,19 @@ in the apparatus. Verified at harness `871a720`: `lib/mix/tasks/aetheris.ex` is 
 out. Named here rather than fixed at t2, which does not open that file; it is the kind of site
 this row's audit exists to enumerate, and there is no reason to think it is the only one.
 
-`Source: BL-025 execution, 2026-07-23; audit input appended m4 t2, 2026-08-06.`
+**A second audit input, found 2026-08-06 (m4 t3) — three sites that are NOT affected, recorded as
+a negative so the audit does not re-derive them.** The cloudcost case's three no-silent-fallback
+guards (`CLOUDCOST_PROVIDER=aws` with no key, `linode` with no token, unknown provider) run
+`mix run --eval`, not `mix aetheris`, and `mix run` does **not** swallow the code. Verified both
+directions at harness `f8bbac8`: each guard exits 1 with its own `RuntimeError` message, and the
+same command with nothing to raise about exits 0. So these three need no change when this row is
+fixed. **The guards do have a defect, but it is not this one**: each asserts only *that* an eval
+raised, never *which* raise fired, so any raise passes — including one caused by an environment
+change. m4 t3 fixed that for the one guard whose environment it moved (the Linode guard now matches
+the raise message) and left the other two, whose failure direction is safe.
+
+`Source: BL-025 execution, 2026-07-23; audit input appended m4 t2, 2026-08-06; second audit input
+appended m4 t3, 2026-08-06.`
 
 ---
 
@@ -5379,6 +5391,34 @@ credential must fail the assertion).
 
 `Source: m3-cloudcost t3 §3.3, t3 review r0 F1 (2026-08-05).`
 
+**DONE 2026-08-06 (m4 t3).** Every Done-when clause discharged.
+
+- **The grep runs on every provider leg against that provider's own credential variable.** It sits
+  outside any provider gate now. The names are **selected from the adapter that reads them** —
+  `TOKEN_ENV` / `ACCESS_KEY_ENV` / `SECRET_KEY_ENV` / `SESSION_TOKEN_ENV`, the same treatment t2
+  gave `CANONICAL_TYPES` — so a hand-typed copy cannot drift, and the grep, the survival arm and
+  the poison control need no per-provider edit. (The bridge's provider→module map and the
+  credential preflight `case` do still take an entry per provider; both fail loudly if missed.)
+  Region constants are deliberately not selected: they are not secrets and their values
+  legitimately appear in the report, so grepping for them would fire falsely.
+- **The file-has-content-and-a-run_id gate is preserved**, per file.
+- **An anti-vacuity control proves the grep can match.** The same matcher runs first against a
+  file constructed to contain the credential and must find it, else `fail`. The file is
+  `mktemp`-derived, mode `600`, and removed unconditionally by trap.
+- **The mutation posture is recorded**: a run output seeded with the live credential produced
+  `[FAIL] CLOUDCOST_DO_TOKEN appears in run.json — D2 violated`; a bait file built without the
+  credential produced `[FAIL] D2 anti-vacuity FAILED …`. The seeded capture was located by content
+  and deleted, and every other capture swept clean.
+- **Decision 15 honoured:** the searched-file set is the array `CC_D2_FILES`, not an inline path,
+  so covering `run.err` if the harness round splits the streams is one entry rather than a rewrite.
+
+**Observed on the leg this row was filed about:** the DigitalOcean leg now prints
+`[OK] no CLOUDCOST_DO_TOKEN in run.json (searched a file with content and a run_id)`. Before this
+ticket that leg had no D2 assertion at all and was green either way — which is exactly the
+asserted-rather-than-checked posture the row names.
+
+`Source: m4 t3, 2026-08-06 — landed with BL-104 in one pass; the two interact.`
+
 ---
 
 ### BL-100 — the sprint's `--json` reads fail unpredictably; the status line prints a fallback token when they do (#TBD)
@@ -5756,6 +5796,47 @@ under a name no denylist carried.`
 parentheticals against that commit, so a later insert makes them checkable rather than
 silently wrong — the fix the m3 promotion prescribes, applied to a row that had already
 drifted three times before it was filed.`
+
+**DONE 2026-08-06 (m4 t3).** Every Done-when clause discharged.
+
+- **`CC_HERMETIC` passes an explicit allowlist rather than unsetting names.** It is no longer an
+  `env` array at all: `env -i NAME=value` would have put the credential in **argv**, readable from
+  `/proc`, which breaks D2 in the ticket that hardens D2. It is now a `cc_hermetic` function that
+  unsets every exported name not on the list inside a subshell and `exec`s — no value is re-typed,
+  copied, or placed in an argv.
+- **The poison control proves a non-allowlisted variable does not reach the child without naming
+  it.** Arm (i) asserts the child's *entire* key set is a subset of the list — it names no hazard,
+  so it covers `LINODE_BILLING`, `AWS_REGION` and DO's shadow names (none of which the denylist
+  carried) by construction. The permitted shell-injected extras (`LC_CTYPE`/`PWD`/`SHLVL`/`_`) are
+  derived from `env -i`, **not** from the mechanism under test — deriving them from `cc_hermetic`
+  would let a leaking prefix excuse its own leak.
+- **Each passthrough entry is recorded with the reason it is there**, and every reason is an
+  observed failure: `PATH` (exit 127), `HOME` (`could not find the user home`), `LANG` (silent
+  latin1 corruption of the payload — `c2 b7` becomes a bare `b7`), `ANTHROPIC_API_KEY` (run
+  `failed` at step 0), `CLOUDCOST_OPTIMIZATION` (another component's fail-fast guard silently
+  stops firing), plus the adapter-selected credential and knob names. Full transcripts in
+  `cloudcost/docs/m4-t3-implementation-notes.md` §2.
+- **The mutation posture is shown** — probe allowlisted → arm (ii) fails as a declared tautology;
+  credential not allowlisted → survival arm fails. Both constructed, observed, reverted.
+- **The per-provider arms collapsed as this row predicted.** Six arms across two blocks became
+  three; adding provider four touches none of it.
+- **Legs:** digitalocean run in full (16 `[OK]`, 0 `[FAIL]`). AWS and Linode **not runnable — the
+  credentials are not present in this environment, and none was minted or probed to make them so.**
+  Their adapter env surface, guard raises and knob behaviour were verified without a run; this row
+  is closed on that basis and the limit is stated rather than papered over.
+
+**Two things this row did not anticipate, both found by doing it:**
+
+1. **`env -i` removes `AWS_SHARED_CREDENTIALS_FILE`, and absent is not `/dev/null`.** Absent
+   restores boto3's default `~/.aws/credentials` lookup, and `HOME` is on the allowlist, so the
+   file is reachable. A naive inversion would have re-opened the exact arm the denylist closed.
+   It is kept as an explicit assignment.
+2. **Default-deny strips the Linode endpoint-redirect names, which the denylist deliberately let
+   through** so the adapter could *warn* about them. The hazard is now neutralised instead of
+   reported. The signal is restored as a parent-side `warn` before the strip, using the adapter's
+   own `ENDPOINT_REDIRECT_ENV`/`SHADOWING_ENV` constants — names only, no values read.
+
+`Source: m4 t3, 2026-08-06 — landed with BL-099 in one pass, per this row's own sequencing note.`
 
 ---
 
@@ -6156,5 +6237,84 @@ where a session *does* read it and no repo owns it.
 `Source: m4 t2 close, 2026-08-06 — t2 review r1 §5 (observation) → r2 item 2 (filed). Surface
 characterised at t2's close against the live directory; scope counts and the no-other-scope result
 are reads of this machine on that date, not claims about the tool in general.`
+
+---
+
+### BL-112 — the BEAM's latin1 fallback silently corrupts non-ASCII in `--json` payloads (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/cli/`)
+
+Filed 2026-08-06 from m4 t3. When the BEAM starts with no UTF-8 locale in its environment, it runs
+with `:file.native_name_encoding() == :latin1` and Elixir emits a startup warning saying so. In
+that state the `--json` payload's non-ASCII characters are written as **bare high bytes rather
+than UTF-8 sequences**. Measured on the cloudcost run label, which contains `·` (U+00B7):
+
+```
+LANG present (and every archived capture):
+  6f 73 74 20 c2 b7 20 44  69 67 69 74 61 6c 4f 63   |ost .. DigitalOc|   valid UTF-8
+LANG absent:
+  6f 73 74 20 b7 20 44 69  67 69 74 61 6c 4f 63 65   |ost . DigitalOce|   invalid UTF-8
+```
+
+**The failure is silent, which is the whole reason this is a row.** The line still parses as JSON,
+so nothing downstream errors: `sprint.sh`'s `json_read` opens the file with
+`errors='replace'`, and a consumer reading the label gets a replacement character where a `·`
+should be. The warning that *would* have told you appears on stderr at VM start, thousands of
+lines from the payload, and every reader has been trained to skip it. This is the
+**Silent-wrong-answer** shape in the harness's own output contract.
+
+**Not caused by m4 t3, and not fixed by it.** t3's hermetic inversion *would* have introduced it
+(a default-deny prefix drops `LANG` unless it is passed), which is how it was found; `LANG` is on
+that prefix's allowlist precisely so the sprint reproduces the ambient behaviour. But the
+underlying fallback is provider-independent, harness-wide, and predates the ticket: **any**
+consumer on **any** workstation with no `LANG`/`LC_ALL` gets malformed UTF-8, and nothing anywhere
+reports it. Rig's fork path (`rig/src-tauri/src/commands/fork.rs`) scans this same stdout.
+
+**Two candidate fixes, and they are not equivalent.** Either the CLI sets its own output encoding
+explicitly so the payload is UTF-8 regardless of locale, or the harness refuses to emit `--json`
+under a latin1 name encoding and says why. The first is silent-correct; the second is loud. The
+choice belongs with BL-105/BL-106, which are already reopening the `--json` output contract — this
+row is scoped with them rather than alone.
+
+**Done when:** a `--json` payload containing non-ASCII is byte-identical with and without a UTF-8
+locale in the environment, or the harness refuses to emit one and names the reason; the mutation
+posture is recorded against a run with no `LANG` and one with it; and Rig's fork consumer is
+verified unbroken either way.
+
+`Source: m4 t3, 2026-08-06 — found while deriving the hermetic allowlist, by comparing the
+inverted prefix's payload bytes against the archived captures. Verified at harness f8bbac8.`
+
+---
+
+### BL-113 — the sprint's adapter env bridge selects by constant name, so a new credential constant is missed silently (#TBD)
+**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-06 from m4 t3. The cloudcost case builds its hermetic allowlist, its
+credential-survival arm and its D2 credential grep from names read out of the selected provider's
+adapter module, in three categories — `cred` from `TOKEN_ENV`/`ACCESS_KEY_ENV`/`SECRET_KEY_ENV`/
+`SESSION_TOKEN_ENV`, `knob` from `REGION_ENV`/`REGIONS_ENV`, `hazard` from `SHADOWING_ENV`/
+`ENDPOINT_REDIRECT_ENV`.
+
+That is deliberately one level better than hand-typing the environment variables: an adapter
+renaming `CLOUDCOST_LINODE_TOKEN` is followed automatically, and the shell holds no copy to drift.
+**But the list of *constant names* is still hand-typed in the sprint**, so an adapter that adds a
+new credential under a new constant — say a `CLOUDCOST_*_API_KEY` behind `API_KEY_ENV` — is picked
+up by nothing. The allowlist would strip it (the leg fails loudly, which is fine) but the **D2
+grep would never search for it**, and that failure is silent: the leg goes green while a credential
+it does not know about could be sitting in the run output.
+
+**This is the same seam BL-074 sweeps**, one level up: not a provider's vocabulary reaching shared
+machinery, but a provider's *env surface* reaching the apparatus that polices it. It is filed
+rather than fixed because the fix has a real design choice in it — a naming convention the sprint
+can enumerate (`*_ENV` with a category prefix), a declared mapping the adapters export
+(`D2_ENV = {...}`), or a completeness test in `cloudcost/tests/` asserting every `*_ENV` constant
+is classified — and the third is probably right, because it fails at test time in the repo that
+owns the adapters rather than at sprint time in the one that does not.
+
+**Done when:** an adapter constant naming a credential cannot be added without either the sprint
+selecting it or a test failing; and the mutation posture is recorded — add a new credential
+constant to one adapter, watch the guard fire, remove it.
+
+`Source: m4 t3, 2026-08-06 — recorded as a residual of that ticket's own bridge, in the notes
+(§8) and here. Verified at agents 04449db / harness f8bbac8.`
 
 ---

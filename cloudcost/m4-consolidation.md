@@ -107,7 +107,7 @@ ticket; the count states how many commits that is.
 | **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria | you are reading it |
 | **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
-| **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104, BL-099 | not started |
+| **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
 | **t4** | The seam sweep; gates provider four | BL-074 | not started |
 | **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
 
@@ -267,6 +267,49 @@ here.
   outside the period guard, so the skipped-assertion-indistinguishable-from-passing finding gains
   no second instance from it.
 
+### What t3 established
+
+- **Default-deny cannot be spelled `env -i NAME=value` without breaking D2.** That form puts the
+  credential in **argv**, readable from `/proc` by any user on the box, and D2 is *"env-only —
+  never an argument"*. The prefix is therefore a function that unsets everything unlisted inside a
+  subshell and `exec`s; no value is re-typed, copied, or placed in an argv. The obvious spelling
+  of the fix was the one that had to be rejected.
+- **`env -i` removes `AWS_SHARED_CREDENTIALS_FILE`, and absent is not `/dev/null`.** Absent
+  restores boto3's default `~/.aws/credentials` lookup, and `HOME` has to be on the allowlist, so
+  the file is reachable. Inverting naively would have re-opened the exact arm the denylist closed
+  — a load-bearing coincidence in the old spelling, visible only by reading what the *assignment*
+  did as distinct from what the *unsets* did.
+- **Default-deny silences a warning the denylist deliberately preserved.** The Linode
+  endpoint-redirect names were knowingly left unstripped so the adapter would *warn* when they were
+  set; stripped, the hazard is neutralised for the run and never reported to the operator. The
+  signal was restored parent-side, before the strip, from the adapter's own constants. Adjacent-case
+  in its exact form: the fix's blast radius was one case wider than the case it was written against.
+- **The passthrough list is seven entries and two of them were invisible until the run was
+  measured.** `LANG` — without it the BEAM falls back to latin1 and the `--json` payload's `·` is
+  written as a bare `0xB7` instead of `0xC2 0xB7`, and **the line still parses**, so nothing
+  downstream would ever have noticed (filed as **BL-112**, harness-wide and pre-existing).
+  `CLOUDCOST_OPTIMIZATION` — without it the orchestrator's own fail-fast guard silently stops
+  firing, `exit 0` where it should raise. A prefix that disables another component's guard is the
+  ticket's own defect class, one layer down.
+- **The credential grep now runs on the leg it was filed about.** Before this ticket the
+  DigitalOcean leg had no D2 assertion at all and was green either way; it now prints
+  `[OK] no CLOUDCOST_DO_TOKEN in run.json`. The anti-vacuity control the AWS arm lacked is in
+  place: the same matcher, against a file built to contain the credential, must find it.
+- **The three no-silent-fallback guards are not BL-044-shaped — but they have a different
+  defect.** `mix run --eval` propagates a raise (verified both directions; `mix aetheris` does
+  not, which is BL-044). What all three actually lack is any assertion about *which* raise fired,
+  so any raise passes — the chaos-gate shape. Guard 2, the only one whose environment this ticket
+  moved, now matches the raise message; the other two were **considered and kept**, recorded as a
+  negative, because their failure direction is safe (a missed name makes the eval *succeed*, so
+  they fail loudly).
+- **Guard 2's change was forced, and proven so rather than asserted.** With a token present in
+  the parent, the old outer `env -u` spelling exits 0 — the raise does not fire — because the
+  prefix re-exports every allowlisted name. Demonstrated with a synthetic token.
+- **Legs, stated as a limit.** Only DigitalOcean was runnable; AWS and Linode credentials are not
+  present in this environment and none was minted or probed. Their adapter env surface, guard
+  raises and knob behaviour were verified without a run; the AWS region-sweep consequence is the
+  one claim in the ticket resting on a read rather than a run, and is labelled as such.
+
 ### Rows filed this cycle
 
 Read from `docs/backlog-2026-06.md` at agents `009f666`:
@@ -278,6 +321,8 @@ Read from `docs/backlog-2026-06.md` at agents `009f666`:
 | **BL-107** | the chaos-case gate has never evaluated its subject |
 | **BL-108** | the eduloka sink gate parses a merged stream: same shape, different root cause |
 | **BL-109** | two `milestone-reference.md` files, canonical by different measures |
+| **BL-112** | the BEAM's latin1 fallback silently corrupts non-ASCII in `--json` payloads |
+| **BL-113** | the sprint's adapter env bridge selects by constant name, so a new credential constant is missed silently |
 
 **BL-100 rescoped, not closed.** Heading, cause, scope, fix and Done-when revised under a dated
 *"Rescoped and corrected 2026-08-06 (t1a)"* note, each change marked `[corrected 2026-08-06]` with

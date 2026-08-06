@@ -103,14 +103,29 @@ Then the selected provider's read-only credential — and only that one:
 - **Shadowing.** `linode-cli` reads **`LINODE_CLI_TOKEN`**; **`LINODE_TOKEN`** is the spelling
   users conventionally export and is read by no library at all. The adapter reads neither and
   warns when either is set. The sprint's hermetic prefix strips both
-  (`../aetheris/scripts/sprint.sh`, the `CC_HERMETIC` array), so a sprint leg cannot
+  (`../aetheris/scripts/sprint.sh`, the `cc_hermetic` function), so a sprint leg cannot
   accidentally exercise an ambient token.
 
 - **Endpoint redirection — a hazard neither predecessor has.** `LINODE_CLI_API_HOST`,
   `LINODE_CLI_API_VERSION` and `LINODE_CLI_API_SCHEME` are read by `linode-cli` and redirect
   *where a credential is sent*. The adapter constructs its own base URL and never reads them as
-  configuration — it **warns** when they are set. They are deliberately **not** stripped by the
-  hermetic prefix: stripping them would silence the only signal that hazard has.
+  configuration — it **warns** when they are set.
+
+  **Changed 2026-08-06 (m4 t3).** These used to be deliberately *left unstripped* by the sprint's
+  hermetic prefix, so that the adapter would see them and warn. Since the prefix became
+  default-deny they **are** stripped, like everything else not on its allowlist — so a sprint leg
+  cannot have its credential redirected, and the adapter never sees them and never warns. The
+  signal is not lost: **the sprint now checks your ambient environment and warns before the
+  strip**, naming any shadow or redirect variable it finds (names only, never values):
+
+  ```
+  [WARN]  ambient credential-shadow/redirect names set: LINODE_CLI_API_HOST — the prefix
+          strips them so this run is unaffected, but your shell still carries them
+  ```
+
+  If you see that line, the run was safe and your **workstation** is the thing to clean up. Note
+  that a **standalone** adapter invocation (below) does not go through the prefix, so there the
+  adapter's own warning still applies and the redirect is live.
 
 - **A partial run now stops the pipeline, and that is a change from what you may expect.** If a
   resource class cannot be read, that class is recorded as `not_inventoried` — never degraded to
@@ -209,6 +224,28 @@ cd ~/sandbox/elixirws/aetheris
 ./scripts/sprint.sh cloudcost                          # DigitalOcean
 CLOUDCOST_PROVIDER=aws ./scripts/sprint.sh cloudcost   # AWS (applies the prefix itself)
 ```
+
+**What the sprint passes to the run — an allowlist, since m4 t3.** The prefix used to *unset named
+hazards* and pass everything else. It is now **default-deny**: the run starts from nothing and
+receives only these, and anything else you have exported does **not** reach it.
+
+| Passed through | Why |
+|---|---|
+| `PATH`, `HOME` | nothing runs without them |
+| `LANG` | without a UTF-8 locale the BEAM writes non-ASCII in the `--json` payload as invalid UTF-8, silently (BL-112) |
+| `ANTHROPIC_API_KEY` | the run's LLM call |
+| `CLOUDCOST_OPTIMIZATION` | its fail-fast guard silently stops firing otherwise |
+| the selected provider's credential | read from the adapter itself, so this table cannot drift from it |
+| `CLOUDCOST_AWS_REGION`, `CLOUDCOST_AWS_REGIONS` | your documented region overrides, which would otherwise be stripped and ignored **without any error** |
+
+Plus two values the prefix *sets*: `CLOUDCOST_PROVIDER`, and `AWS_SHARED_CREDENTIALS_FILE=/dev/null`
+— the latter explicitly, because merely *removing* it would restore boto3's default
+`~/.aws/credentials` lookup rather than disabling it.
+
+**The practical consequence for you:** if you add a new `CLOUDCOST_*` knob and the sprint appears
+to ignore it, it is not being ignored — it is not reaching the run. Add it to `CC_ALLOW` in
+`../aetheris/scripts/sprint.sh`. Standalone invocations (below) are unaffected; they inherit your
+shell as they always did.
 
 The four stages standalone (from `cloudcost/`, for debugging — the orchestrator just chains
 these). Substitute `fetch_aws.py` / `aws` for the AWS pipeline:
@@ -537,10 +574,25 @@ plus recorded fixtures, plus a clause in the orchestrator's provider `case`.
 time:** the provider `case` and the credential raise in `agents/cloudcost_orchestrator.exs`; a
 `scripts[]` entry with its `env` rows in `cloudcost/tools.json` (undeclared means an amber badge
 in Rig and no config row); the discovery count in `tests/test_tools_manifests.py`; the credential
-preflight `case`, the `CC_HERMETIC` strip list and its poison-control arms in
+preflight `case` **and the `MODULES` map in the adapter env bridge** in
 `../aetheris/scripts/sprint.sh`; and a `### <Provider>` posture subsection in this file. Miss the
-sprint `case` and the run dies at its `*)` arm on a reason unrelated to the provider; miss the
-`CC_HERMETIC` entry and the hermetic proof passes while covering a provider it never tested.
+sprint `case` and the run dies at its `*)` arm on a reason unrelated to the provider.
+
+> **Changed 2026-08-06 (m4 t3).** This used to read *"the `CC_HERMETIC` strip list and its
+> poison-control arms"*, and warned that missing an entry there would leave the hermetic proof
+> *"passing while covering a provider it never tested"*. **That entry no longer exists.** The
+> prefix is default-deny, so there is nothing provider-specific to unset; the poison control
+> proves a structural property that covers every provider at once; and the credential names come
+> from the adapter module rather than from a list in the sprint. Six per-provider arms became
+> three provider-agnostic ones.
+>
+> **What replaced it is smaller but not nothing**, and is named above so it is not rediscovered:
+> the bridge maps a provider to its adapter module (`digitalocean → fetch_do`, and the DO case is
+> why that map cannot be derived from the provider name). A provider missing from it fails
+> **loudly** at the `could not read … credential env names from its adapter` preflight, before any
+> run — unlike the old strip list, whose omission was silent. Filed as **BL-113**: the map is
+> keyed on constant *names*, so an adapter adding a credential under a new constant is still
+> missed silently.
 
 **Declare the fetch step's `timeout_ms` explicitly** (BL-096 convention). STEP 1 is the only step
 that calls a live cloud API and the only one whose runtime approaches `run_command`'s 60 000 ms

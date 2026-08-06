@@ -366,6 +366,16 @@ must **perform**.
    alone has not been sufficient; a run of tickets where authors catch their own would be the
    evidence for not making it standing.
 
+   *A second face of the same question: **the last change of a ticket is never reviewed.*** The
+   loop's closing instruction has been *apply and close, then push*, so every round's dispositions
+   land unreviewed by construction — including the ones that correct a review finding. The trade
+   has been made deliberately several times this cycle and judged right each time; the alternative
+   is a round-trip per one-line fix. But it is a trade, and it is the same shape as the gate
+   question: **where the discipline sits — before the edit, or after it.** At t2 it had teeth
+   twice. The r1 marker was itself wrong and was caught only because r2 read it; and had r2 not
+   run, the r1 dispositions — a `CLAUDE.md` edit among them — would have shipped unread. Recorded
+   here so the close weighs it rather than meeting it as a surprise.
+
 2. **Whether *match structured data by field, not by substring* is worth promoting.** Carried to
    the close rather than acted on, per the t2 review.
 
@@ -384,6 +394,25 @@ must **perform**.
    result, not an error*) — the manifest case is that rule with a table column in place of a repo
    path. The close decides whether the substring-vs-field form is a distinct enough carrier to name,
    or whether naming it dilutes the rule it belongs to.
+
+3. **What governs durable instruction surfaces outside git.** The cycle has no standing answer, and
+   **BL-111** is the row that will need one.
+
+   *The evidence for asking.* t2's retirement census was correct and complete over both repos and
+   still missed the stalest carrier of the practice it was retiring, because that carrier —
+   this project's session memory — is in no repo. It is per-project-directory, unversioned, partly
+   loaded into every session by instruction, and **13 of its 22 files are typed `feedback`**, which
+   its own schema defines as guidance on how to work. So it is normative, durable, and reachable by
+   no census, review, gate or drift check. Every other travel-failure this cycle has closed —
+   BL-007's packet channels, the handoff-is-not-a-promotion finding — concerned content that at
+   least *existed in a repo*.
+
+   *What the close has to decide, and what it must not decide first.* Whether such a surface is a
+   private scratchpad whose staleness is nobody's problem, or an untracked normative document that a
+   retirement, a promotion or a correction owes an update. Only after that ruling does a mechanism
+   make sense — "export it into the repo", "grep it in the census", "keep normative content out of
+   it" answer three different rulings, and choosing one early creates a second surface to keep in
+   sync. BL-111 is written to characterise, not to fix, for exactly this reason.
 
 ---
 

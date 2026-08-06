@@ -6096,3 +6096,65 @@ verdict must not depend on whether a gitignored file is present.
 aetheris@f6fbd82 / aetheris-agents@c5b63ae.`
 
 ---
+
+### BL-111 — session memory is a durable instruction surface outside git, and no census, review or gate can reach it (#TBD)
+**Size:** S to characterise · **Priority:** medium · **Section:** process (no repo owns it)
+
+Filed 2026-08-06 from m4 t2. **Characterisation first — the fix is deliberately not designed
+here**, because what this surface *is* decides whether the row is housekeeping or an untracked
+normative document.
+
+**What happened.** t2 retired the planted-orphan practice and censused both repos by substance for
+every live instruction to create a billable cloud resource. The census was correct and complete for
+its scope. It could not reach the stalest carrier: this project's **session memory** said
+*"BL-069 re-ARMED"* and pointed at the runbook for *"how to plant an orphan to exercise the ≥1
+path"*, across **five sites in two files**. `git grep` over both repos is *structurally* incapable
+of finding it — the files are not in either repo, and not in any repo. Corrected at t2's close, so
+the instance is discharged; the gap is not.
+
+**What the surface is, established at t2 rather than assumed:**
+
+- **Location and scope.** `~/.claude/projects/<cwd-slug>/memory/*.md`, where the slug is the
+  session's working directory with separators replaced by `-`. So it is **per-project-directory**,
+  not per-repo and not per-user.
+- **Not under version control at all.** `git rev-parse` inside it returns *"not a git repository"*.
+  No history, no diff, no blame, no review.
+- **Seven scopes exist on this machine; four hold files** — `aetheris-agents` **22**, `aetheris`
+  (the harness) **10**, `ctelixir` 2, `rig` 2.
+- **Part of it is loaded into every session unconditionally.** `MEMORY.md` (~4.5 KB here) is an
+  index read at session start by instruction; the individual files (~79 KB here) are recalled
+  selectively.
+- **Its content is explicitly normative, by its own schema.** Files carry a frontmatter `type:`,
+  and in this scope **13 of 22 are `type: feedback`** — defined as *guidance the assistant has been
+  given on how to work*. That is instruction, not notes.
+- **It decays exactly like a document quoting repo state, with no invalidation channel.** **20 of
+  22** files cite a repo artifact — a path, a script name, a `BL-` row. Nothing re-checks any of
+  them, and `drift_check` does not know the directory exists.
+- **A cross-repo cycle has two of them.** A session rooted in `../aetheris/` reads the harness
+  scope's 10 files, which this cycle never opened. Checked at t2: nothing there was invalidated by
+  the retirement, and the retired claim appears in **no scope but this one**. That is a fact about
+  this instance, not coverage.
+
+**Why it is worse than the channels this cycle has been closing.** BL-007's packet rule and the
+handoff-is-not-a-promotion finding both concern content that exists *somewhere in a repo* and fails
+to travel. This is content that instructs future sessions and is **outside version control, outside
+every census, outside review, and outside every done-check** — the only channel found so far with
+none of the four. Nothing would have caught it, and nothing will catch the next one.
+
+**Done when:** the surface is characterised to a ruling — is it a private scratchpad whose staleness
+is nobody's problem, or an untracked normative document that a retirement, a promotion or a
+correction owes an update? — and, if the latter, what a census owes it is written down somewhere a
+session will read. **Do not skip to a mechanism.** "Export it into the repo", "grep it in the
+census", "stop putting normative content in it" are three different answers to three different
+rulings, and picking one before the ruling is how this becomes a second surface to keep in sync.
+
+**Related, not duplicated.** BL-007's *the packet is the artifact that travels* (agents `CLAUDE.md`
+§Learning — BL-007) and *a learning exists only where a session will read it* (harness `CLAUDE.md`)
+are the two rules this abuts. Both assume the destination is a tracked file. This row is the case
+where a session *does* read it and no repo owns it.
+
+`Source: m4 t2 close, 2026-08-06 — t2 review r1 §5 (observation) → r2 item 2 (filed). Surface
+characterised at t2's close against the live directory; scope counts and the no-other-scope result
+are reads of this machine on that date, not claims about the tool in general.`
+
+---

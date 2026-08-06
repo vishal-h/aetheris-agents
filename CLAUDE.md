@@ -297,16 +297,9 @@ and swept every document that still told an operator to plant. That is not the q
 this rule forbids, and the difference is not the outcome but the route: the change *was* the
 ticket, with its own review and its own record, rather than an edit made to get past one.
 `[corrected 2026-08-06 (m4 t2). The sentence previously read "and it closed by planting the
-resource the assertion was always about" — and the marker first said the retirement had made that
-false, which was itself wrong. It was wrong when written. Authored 2026-08-03 07:51 at 0fc9396
-(the m2 §7 promotion); in that same tree BL-069's row was open — heading "is armed", Done-when
-unmet, no DONE section — and m2-milestone.md's own status line said the planted Elastic IP was
-"since released, so BL-069 is re-armed for AWS". The row then stayed open through m3's close,
-t1a, t1a-p and t1b, still [FAIL]ing on 2026-08-05. What "it" pointed at is the defect: read as m2's
-≥1-orphan done-when, the clause is true — that done-when did close by planting, at sprint
-20260803_062310. Read as the row, it was false at the moment of writing. A rules file takes the
-second reading, so an exemplar written from the milestone's arc was carried for three days as a
-claim about a row the author's own repo contradicted one document over.]`
+resource the assertion was always about" — **wrong when written, not superseded since**, and
+carried for three days as an endorsement of the practice. Established at
+cloudcost/docs/m4-t2-implementation-notes.md §4a.]`
 
 **Before making a soft failure hard, enumerate what else that gate holds.** If flipping it turns
 *every* tracked known-red blocking at once, then the enforcement and the exempt/expected-fail

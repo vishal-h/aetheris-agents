@@ -375,6 +375,25 @@ suite does not cover — so this is the boundary run the gate rule asks for, not
   anticipated did not arise, because the assertion sites outside the period guard.
 - **BL-098** — named as the thing that would let the third arm claim a clean not-applicable. No
   change to the row; it already says what it needs to.
+- **BL-111 — filed at r2.** Session memory is a durable instruction surface outside git: it carried
+  the retired practice in five sites across two files, and `git grep` over both repos could not
+  reach it. Characterisation only, fix deliberately not designed. Companion entry under
+  `m4-consolidation.md` §Open for the close, item 3.
+
+## 7a. Round-2 dispositions
+
+- **The correction marker was trimmed.** It had grown to eleven lines reproducing §4a almost
+  sentence for sentence — a second source of truth for one finding, in the file every session reads
+  in full. It now states the finding (*wrong when written, not superseded since*) and points at
+  §4a, which is the document for the archaeology.
+- **BL-111 filed** (above), with the surface characterised against the live directory: seven
+  project scopes on this machine, four holding files (agents 22, harness 10, ctelixir 2, rig 2);
+  no version control; `MEMORY.md` loaded every session; 13 of 22 files typed `feedback`; 20 of 22
+  citing a repo artifact with no invalidation channel. Established rather than assumed, and the
+  retired claim was confirmed present in **no scope but this one**.
+- **Two entries added to §Open for the close** — the durable-instruction-surface policy question,
+  and the *apply-and-close-then-push* trade as a second face of the step-1-gate question, since the
+  last change of every ticket ships unreviewed by construction.
 
 ## 8. Deviations from the ticket
 

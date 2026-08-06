@@ -5265,8 +5265,26 @@ credential must fail the assertion).
 
 ---
 
-### BL-100 — `run.json` is unparseable by `jq`: the sprint's orchestrator status line has read `no-json` on every cloudcost run ever recorded (#TBD)
-**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
+### BL-100 — the sprint's `--json` reads succeed or fail on ambient run-store state; the status line prints a fallback token when they fail (#TBD)
+**Size:** S–M · **Priority:** low-medium · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
+
+> **Rescoped and corrected 2026-08-06 (t1a).** Three changes, each recorded rather than silently
+> applied. **(1) The causal claim below is false.** `2>&1` is not why the reads fail: the
+> harness's **Logger output shares stdout with the payload**
+> (`mix aetheris --json list --limit 1 2>/dev/null` emits both; `… 2>&1 >/dev/null` emits
+> nothing), so the merge is irrelevant to parseability. Whether `[sandbox]` lines go to stdout or
+> stderr is **not established** — that command spawns no worker. **(2) Stream splitting is not
+> sufficient**: it cannot restore parseability in any environment where the harness emits Logger
+> output on stdout, which is every capture in this repo from 2026-07 onward. Whether it sufficed
+> earlier depends on `[sandbox]` routing, which is unestablished — *not* a claim that it could
+> never have worked. **(3) The subject is not "broken reads" but reads whose success depends on
+> ambient run-store state.** The contaminating Logger lines are emitted only when the store has
+> something to report, so identical expressions succeed or fail by environment: news captures
+> parse in 4 of 4, payslip fails in 8 of 8, cloudcost fails in 10 of 10 — same helper, same
+> redirect. Non-determinism is the defect, and it is why fixing this makes the reads
+> *deterministic* rather than "makes every read work". Size raised XS → S–M to match. The
+> original text below is left intact **except where marked `[corrected 2026-08-06]`** — this is an
+> open row, so the paragraphs someone would act on are corrected rather than merely annotated.
 
 Filed 2026-08-05, from m3-cloudcost t3 review r0 F1. The cloudcost case's inline run redirects
 `2>&1` into `run.json` (`../aetheris/scripts/sprint.sh:2571-2572`), so the harness's boot warnings
@@ -5289,20 +5307,59 @@ interesting — `partial`, `error`, a status the exit code does not distinguish 
 line already classified as noise. That is the same reflex the standing gate rule names for a
 known-red note that never changes.
 
+**`[corrected 2026-08-06]` That justification is not achievable by this row alone.** The payload's
+`status` can only ever read `done`: `handle_run_status/5`
+(`../aetheris/lib/aetheris/cli/commands/run_helpers.ex`) returns `{:ok, %{… status: :done}}` for
+`"done"` and `{:error, …}` for `"failed"`/`"cancelled"`, and the formatter's error branch
+(`../aetheris/lib/aetheris/cli/output/formatter.ex`, `def print({:error, reason}, _mode)`) ignores
+the output mode and emits no JSON at all. So `partial`/`error` never reach the line. Fixing this
+row stops the display asserting something false and makes the read deterministic; recovering the
+*signal* requires the sibling harness row on the `--json` failure contract.
+
 **Provider-independent and pre-existing.** The redirect is not in any provider branch, so DO, AWS
 and Linode are all affected, and have been since the case was written (m1 t5). m3 t3 surfaced it
 rather than introducing it.
 
-**Two candidate fixes, and the choice is the whole ticket.** Either split the streams (`2>` to a
-sibling `run.err`, leaving `run.json` parseable) — which changes what the D2 credential grep
-searches, so BL-099's generalisation must then cover both files; or keep the merge and extract the
-payload (`tail -1`, or the last line that parses), which is a one-line change that leaves every
-existing consumer's file untouched. Do **not** do the first without re-reading BL-099: a
-credential-leak grep that stops covering stderr is a strictly worse trade than a wrong status word.
+**`[corrected 2026-08-06]` Scope — the class, not the one line.** This row was filed against the
+cloudcost case's status line. The same expression appears at four sites in `sprint.sh` —
+`run_agent` (`:53`), `run_orb` (`:70`), the chaos case (`:297`) and the cloudcost inline copy
+(`:2573`) — and the same root cause reaches eight further reads (`.run_id` ×6, `.orb_id`,
+`extract_step_count`). **The chaos site is a gate, not a display line**: its operand feeds
+`[[ "$status" == "done" ]]`, so when the read fails the assertion cannot match. Two sites already
+carry ad-hoc `grep` workarounds (docbuilder, cloudcost) while their siblings do not. Enumerate the
+class before fixing the first instance.
 
-**Done when:** the sprint's orchestrator line prints the run's real status, and whichever fix is
-chosen, the D2 credential grep demonstrably still searches everything the run wrote to both
-streams.
+**`[corrected 2026-08-06]` The fix: payload extraction, and splitting is not an alternative.** The
+original two-candidate framing below is superseded. Splitting the streams cannot restore
+parseability while Logger output is on stdout, so it is not a viable branch — see the correction
+block above. What works is a **backward scan for the last line that parses as a JSON object**,
+which holds whatever is on either stream, whatever the store contains, and whether noise lands
+before *or after* the payload. `tail -1` is **not** sufficient: three captured files carry worker
+output after the payload (`sprint/2026052{1_202137,2_090058,2_095912}/payslip/run.json`). When no
+line parses, print an explicit unknown — never a fabricated status; four captures have no payload
+at all. A working implementation is in `../aetheris/docs/aetheris/claude-notes.md` §Claude Code —
+sprint output parsing, verified against all four capture shapes.
+
+*Original two-candidate text, superseded, kept as the record:* **Two candidate fixes, and the
+choice is the whole ticket.** Either split the streams (`2>` to a sibling `run.err`, leaving
+`run.json` parseable) — which changes what the D2 credential grep searches, so BL-099's
+generalisation must then cover both files; or keep the merge and extract the payload (`tail -1`,
+or the last line that parses), which is a one-line change that leaves every existing consumer's
+file untouched. Do **not** do the first without re-reading BL-099: a credential-leak grep that
+stops covering stderr is a strictly worse trade than a wrong status word.
+
+**`[corrected 2026-08-06]` Done when:** the sprint's `--json` reads are **deterministic** — they
+parse the payload regardless of ambient run-store state — at every site of the class, not only the
+cloudcost status line; the chaos gate's operand is a real status rather than the fallback token;
+a file with no payload prints an explicit unknown rather than a fabricated status; the streams stay
+merged so the D2 credential grep continues to search everything the run wrote to both; and the
+mutation posture is recorded against states that can actually occur (noise after the payload; no
+payload at all) rather than against a non-success status, which the harness never writes into the
+payload — see the sibling harness rows.
+
+*Original done-when, superseded, kept as the record:* the sprint's orchestrator line prints the
+run's real status, and whichever fix is chosen, the D2 credential grep demonstrably still searches
+everything the run wrote to both streams.
 
 `Source: m3-cloudcost t3 §4, t3 review r0 F1 (2026-08-05).`
 
@@ -5527,5 +5584,228 @@ under a name no denylist carried.`
 parentheticals against that commit, so a later insert makes them checkable rather than
 silently wrong — the fix the m3 promotion prescribes, applied to a row that had already
 drifted three times before it was filed.`
+
+---
+
+### BL-105 — `--json` mode's payload shares stdout with the harness's Logger output (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/cli/`)
+
+Filed 2026-08-06 from t1a. `mix aetheris --json <cmd>` writes its payload to stdout via
+`IO.puts(Jason.encode!(data))` (`../aetheris/lib/aetheris/cli/output/formatter.ex:47`), and the
+application's Logger writes to the **same stream** — the console backend is unconfigured for a
+device (`../aetheris/config/runtime.exs:3` sets only `level: :info`). Demonstrated rather than
+inferred:
+
+```
+$ mix aetheris --json list --limit 1 2>/dev/null        # stdout only
+07:51:25.434 [warning] [Aetheris.Application] failed to resume run bl031-paused-demo-2658: …
+07:51:25.436 [info]    [Aetheris.Scheduler] started run run_5S_eBQ for schedule 'news-sprint-…'
+07:51:25.460 [info]    [Aetheris.Application] orphan sweep: %{errors: 0, …}
+{"entries":[{"id":"run_5S_eBQ","label":"","status":"running","type":"run","started_at":"…"}]}
+
+$ mix aetheris --json list --limit 1 2>&1 >/dev/null    # stderr only
+(nothing)
+```
+
+**Claim scope, deliberately narrow:** the *Logger* output shares stdout. Whether `[sandbox]` lines
+go to stdout or stderr is **not established** — the command above spawns no worker, and this row
+does not need it.
+
+**The consequence is non-determinism, not universal breakage.** The contaminating lines are emitted
+only when the store has something to report, so identical expressions succeed or fail by
+environment. Across the captures in `../aetheris/sprint/`: news parses in 4 of 4, payslip fails in
+8 of 8, cloudcost fails in 10 of 10 — same helper, same redirect. A clean single-line capture
+exists from 2026-05-21, written *after* the resume-failure Logger line already existed in the code
+(`application.ex`, added 2026-05-20), which is what establishes the dependence on store state
+rather than on code age. So fixing this makes the sprint's reads **deterministic**; it does not
+"make every read work", because some already do — that is the defect.
+
+**A shipped product surface parses this output.** Rig's fork command builds `--json` argv and scans
+stdout line by line for a parsing JSON object
+(`rig/src-tauri/src/commands/fork.rs`, `fork_argv/3` at `:117`, `run_id_from_line/1` at `:140`,
+`read_first_run_id/1` at `:155`). Its own comment already records the correct diagnosis — *"`mix`
+compile and log noise shares stdout and does not parse as JSON"* — written 2026-07-26, ten days
+before BL-100 was filed with the wrong one. Any fix must keep that consumer working.
+
+**Fixing this would make every `jq`-over-`--json` read in `sprint.sh` deterministic at a stroke**,
+which is twelve-plus reads across four `.status` sites and eight sibling reads. See BL-100.
+
+**Done when:** the `--json` payload is separable from log output by a consumer that does not have
+to know what the noise looks like — either the payload moves to a stream the Logger does not share,
+or the contract states that consumers must scan for the last parsing JSON object and every in-repo
+consumer does so; Rig's fork path is verified unbroken either way; and the mutation posture is
+recorded against a run whose store emits boot output and one whose store does not.
+
+`Source: t1a, 2026-08-06 — established by the stdout/stderr split above; BL-100's `2>&1` diagnosis
+corrected in the same round. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
+
+---
+
+### BL-106 — `--json` emits no JSON document on a non-success run (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/cli/`)
+
+Filed 2026-08-06 from t1a. **Sibling of BL-105 — one contract, two mechanisms.** BL-105 is why the
+sprint's reads are unreliable; this row is why a programmatic consumer gets nothing on exactly the
+runs it most needs to read.
+
+The formatter's error branch ignores the output mode entirely
+(`../aetheris/lib/aetheris/cli/output/formatter.ex:56`):
+
+```elixir
+  def print({:error, reason}, _mode) do
+    IO.puts(:stderr, "Error: #{reason}")
+    1
+  end
+```
+
+`_mode` is unused, so `--json` and `--human` behave identically on the error path. And every
+non-success terminal state routes there: `handle_run_status/5`
+(`../aetheris/lib/aetheris/cli/commands/run_helpers.ex:112`) returns `{:ok, %{… status: :done}}`
+for `"done"` but `{:error, …}` for `"failed"` and `"cancelled"`; `await_run/2`'s declared success
+shape is `status: :done` and nothing else; `await_orb/1`
+(`../aetheris/lib/aetheris/cli/commands/run.ex:121`) turns `%{status: :failed}` into `{:error, …}`
+at `:126`. Confirmed in the record: all ten captured cloudcost payloads read `status: "done"`, and
+a failed payslip run emitted `Error: run payslip-orch-cAdfJQ failed` with no JSON line at all
+(`../aetheris/sprint/20260521_191506/payslip/run.json`).
+
+**Product-facing, but not an outage — the known consumer compensates.** Rig does not look for JSON
+on the failure path; it collects stderr on a separate thread and renders that prose
+(`rig/src-tauri/src/commands/fork.rs`, `stderr_collector` at `:88`/`:108`, `start_failure_error/1`).
+That works, and it means a UI error string is derived from human-readable wording rather than from
+a machine contract — brittle to rewording, not broken today.
+
+**This is the row BL-100's justification was actually describing.** BL-100 argued the fix would
+restore a signal for *"`partial`, `error`, a status the exit code does not distinguish"*. Those
+statuses never reach the payload, so BL-100 cannot deliver them; this row is where that becomes
+achievable.
+
+**Done when:** `--json` emits a JSON document on every terminal outcome, success or not, carrying
+the run id and a real status; the human path is unchanged; Rig's fork error path is migrated or
+verified still correct; and the mutation posture is recorded — a genuinely failing run must produce
+parseable output naming the failure.
+
+`Source: t1a, 2026-08-06. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
+
+---
+
+### BL-107 — the chaos-case gate has never evaluated its subject (#TBD)
+**Size:** XS–S · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-06 from t1a, per the gate rule — *a red gate gets a tracked ticket the day it's
+found*. This is that ticket; the gate is being repaired by the BL-100 work rather than carried.
+
+`../aetheris/scripts/sprint.sh:296-299`:
+
+```bash
+  run_aetheris --json run /tmp/aetheris_chaos_maxsteps.exs > "$OUT_DIR/chaos/maxsteps.json" 2>&1 || true
+  status=$(jq -r '.status // "unknown"' "$OUT_DIR/chaos/maxsteps.json" 2>/dev/null || echo "no-json")
+  [[ "$status" == "done" ]] && ok "Chaos 1: agent exhausted max_steps → :done (expected)" \
+                             || warn "Chaos 1: status=$status (investigate)"
+```
+
+Unlike the other three `.status` sites (`:53`, `:70`, `:2573`), which interpolate into an `ok`
+line, **this one is a gate** — the extracted value is the operand of an equality test. When the
+read fails, `status` is the literal `no-json`, the test cannot match, and the case emits
+`warn "Chaos 1: status=no-json (investigate)"`.
+
+**Both claims below are qualified, because neither is a bare observation.** The operand is the
+fallback token **in every environment emitting harness boot output** — not unconditionally, since
+BL-105 establishes that some environments produce a clean, parseable file. And the frequency claim
+is **inference, not observation**: no chaos output has ever been captured in this repo
+(`find ../aetheris/sprint -path '*chaos*'` returns nothing), so "it has always warned" is derived
+from the extraction's behaviour rather than seen. The premise — that every chaos run to date ran in
+a noisy-store environment — is unexamined.
+
+**Chaos runs only under specific sprint targets** (`sprint.sh:277`, `TARGET == "chaos" || "all"`),
+not on every sprint invocation.
+
+Nothing other than the warn line consumes the result: `grep -n '\$status'` over the file returns
+exactly four reads — `:54` and `:71` (both inside helpers where `status` is `local`) and
+`:298`/`:299` — and `maxsteps.json` is read only at `:297`. The chaos `status` is a global but is
+never read after `:299`. `warn` sets no exit status (BL-077), so no exit path changes.
+
+**Done when:** the gate's operand is a real status rather than a fallback token; the assertion's
+outcome is recorded before and after, so the change from `warn` to whatever it becomes is visible
+and adjudicated rather than silent; and if it then reports a genuine failure, that gets its own row
+rather than being absorbed. **No claim is made here about what it will report after repair** — it
+has never evaluated, so that is unknown.
+
+`Source: t1a, 2026-08-06. Citations verified at aetheris@aaf0f9a.`
+
+---
+
+### BL-108 — the eduloka sink gate parses a merged stream: same shape, different root cause (#TBD)
+**Size:** XS · **Priority:** low · **Section:** harness (`../aetheris/scripts/sprint.sh`), eduloka
+
+Filed 2026-08-06 from t1a's census. `../aetheris/scripts/sprint.sh:1657-1663` captures a script's
+stdout **and stderr** together and parses the result whole as JSON, then gates on it:
+
+```bash
+  DIRECT_STDOUT=$(python3 "$EDULOKA_DIR/scripts/upsert_institute.py" \
+    --in "$GOLD_TMP" 2>&1 || true)
+  DIRECT_STATUS=$(echo "$DIRECT_STDOUT" | \
+    python3 -c "import json,sys; print(json.load(sys.stdin)['status'])" 2>/dev/null || echo "unknown")
+  [[ "$DIRECT_STATUS" == "error" ]] \
+    && ok "direct sink without EDUX_DATABASE_URL → error (no silent fallback)" \
+    || warn "direct sink error path unexpected — got status: $DIRECT_STATUS"
+```
+
+Structurally this is the same defect class as BL-100 — a merged stream parsed whole, with a
+fallback token on failure, feeding a gate rather than a display. **The root cause is different**:
+the contaminant would be the script's own stderr, not harness Logger output, so BL-105 does not
+reach it.
+
+**The evidence indicates this gate passes today.** The exercised path is
+`eduloka/scripts/upsert_institute.py:111`, which prints clean JSON to stdout and exits before any
+database work; the module's imports are stdlib plus one local module, and `import edux_record`
+writes nothing to stderr (checked). The documented contract is stdout-only (`:20`). So
+`DIRECT_STDOUT` should be one clean JSON line and the assertion should match.
+
+**The single remaining check** — which decides it either way, and does not require running the
+sprint: whether `EDUX_DATABASE_URL` is set in the ambient environment at that point. The script is
+invoked without `env -u`, so if the variable *is* set the run takes the `_run()` path instead,
+where `psycopg` is imported and a connection attempted, and both can write to stderr and break the
+parse. **Not established** — the operator's environment was not inspected.
+
+**Done when:** the gate's parse is robust to anything on stderr (or the capture stops merging it);
+the ambient-variable question is settled and recorded; and the anti-vacuity posture is shown — a
+constructed stderr-contaminated run must still yield the right verdict or fail loudly.
+
+`Source: t1a census, 2026-08-06. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
+
+---
+
+### BL-109 — two `milestone-reference.md` files, canonical by different measures (#TBD)
+**Size:** XS · **Priority:** low · **Section:** harness (`../aetheris/docs/aetheris/`)
+
+Exposed by t1a's census, 2026-08-06, and **not in that ticket's scope to resolve** — recorded so
+the duplication is not rediscovered. Two documents carry this name:
+
+| Path | Size | Carries the sprint `no-json` claim? |
+|---|---|---|
+| `../aetheris/docs/aetheris/milestone-reference.md` | 12 lines | no |
+| `../aetheris/docs/aetheris/milestones/milestone-reference.md` | the substantive index | yes (annotated by t1a) |
+
+**Canonical by reference graph and canonical by content are different files.** Every cross-reference
+in the repo points at the *short* one — `docs/aetheris/claude-notes.md`, and the "Add to
+`docs/aetheris/milestone-reference.md`" instructions in `milestones/m11-eval-framework.md`,
+`m12-hierarchical-delegation.md` (twice), `m13-persistent-agents.md`, `ollama-xml-milestone.md`,
+`handoff-m12-m13.md` and `remove-nif.md`. The substantive milestone table, with the Status column,
+is in the *other* one.
+
+Neither covers anything past m13, and both were last touched 2026-05-27 — so neither is maintained,
+while the project is several milestone-eras beyond them. That is what made t1a's liveness
+classification undecidable; it applied the non-destructive default (a note, not an in-place
+rewrite) and annotated only the file that carries the claim.
+
+**The question is which survives, not which gets edited.** Resolving it means deciding whether the
+index is still wanted at all — an unmaintained index that documents point to is a
+`document-that-quotes-repo-state` hazard with a reference graph attached.
+
+**Done when:** one file is canonical or both are retired; every cross-reference points at whatever
+survives; and if an index is kept, it either covers current work or says plainly what era it stops
+at.
+
+`Source: t1a census, 2026-08-06. Citations verified at aetheris@aaf0f9a.`
 
 ---

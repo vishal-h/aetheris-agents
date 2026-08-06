@@ -600,6 +600,21 @@ verified with a control ✓ · 8 six excluded classes each recorded as an exclus
   status line reads `no-json` on every provider (t3 §4). Display only; the assertion is the exit
   status.
 
+  > **Superseded 2026-08-06 (t1a) — original text intact as the record. Wrong in two ways.**
+  > **(1) The cause.** `2>&1` is not why the parse fails: the harness's Logger output shares
+  > **stdout** with the payload, so the merge is irrelevant to parseability (`[sandbox]` routing is
+  > **not established**). It follows that **stream splitting is not sufficient**: it cannot restore
+  > parseability in any environment where the harness emits Logger output on stdout, which is every
+  > capture in this repo from 2026-07 onward. Whether it sufficed earlier depends on `[sandbox]`
+  > routing, which is unestablished. **(2) "Display only" is false for the class.** The same
+  > expression appears at four sites in `sprint.sh`, and one of them — the chaos case
+  > (`../aetheris/scripts/sprint.sh:297`) — is a **gate**: the extracted value is the operand of
+  > `[[ "$status" == "done" ]]`, so a failed read makes the assertion unable to match. It is
+  > display-only at the three cloudcost/`run_agent`/`run_orb` sites, not everywhere. Also, the
+  > reads are **non-deterministic** rather than uniformly broken — they succeed or fail on ambient
+  > run-store state (news captures parse 4/4, payslip 0/8, cloudcost 0/10). Tracked in BL-100
+  > (rescoped) and BL-105/BL-107.
+
 ### Surprises
 
 - **The spec was wrong in the direction that mattered.** §D-L9's rule was written as probably

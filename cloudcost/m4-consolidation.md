@@ -108,8 +108,20 @@ ticket; the count states how many commits that is.
 | **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
-| **t4** | The seam sweep; gates provider four | BL-074 | not started |
+| **t4a** | The seam census: enumerate every provider-differing value in shared machinery, and record the sweep's method | BL-074 — **enumerated, not discharged**; no DONE section | **Closed** — the census is `cloudcost/docs/m4-t4a-implementation-notes.md`: 406 nodes extracted structurally, 50 censused, seven leads confirmed and none refuted |
+| **t4b** | Implement the rulings the census produces | BL-074 closes here; m1's "the one seam" text corrected here | not started — **blocked on the rulings** |
 | **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
+
+**Why t4 became t4a and t4b (2026-08-06).** BL-074's output is a set of **rulings** — for each
+provider-differing value, schema-level or adapter-owned — and a ruling is an adjudication, not an
+implementation. A single ticket would have had its implementer both enumerate and rule, which is
+the shape decision 1 exists to prevent: the party that produces a finding is not the party that
+decides what it means. So **t4a enumerates and reports; the arbiter and reviewer rule; t4b
+implements**. t4a edits none of the four shared scripts and closes no row — its `Do not generate`
+list names the ruling itself, and its step-1 gate pins all eight `cloudcost/scripts/` blob hashes
+so the read-only claim is proven rather than asserted. BL-074 is **not** discharged by the census;
+its Done-when also requires the rulings landed and m1's "one seam" text corrected, and both are
+t4b's.
 
 ### What t1b inherits
 
@@ -478,6 +490,32 @@ must **perform**.
    make sense — "export it into the repo", "grep it in the census", "keep normative content out of
    it" answer three different rulings, and choosing one early creates a second surface to keep in
    sync. BL-111 is written to characterise, not to fix, for exactly this reason.
+
+---
+
+## Promotion candidates
+
+Instances noticed mid-cycle that the §7 promotion at the close should weigh. **This is a list, not
+a set of rules** — nothing here is normative, and an entry earns promotion only if the close rules
+it does. The section exists so §7 reads a list rather than a memory: the cycle has already
+established that content living only in a session or a packet does not travel (§Rules promoted,
+the packet rule), and a promotion candidate carried in someone's head is the same failure with a
+shorter fuse.
+
+Recorded here **without** their supporting evidence duplicated — each cites where the evidence
+lives, and the close reads it there.
+
+| # | Candidate | Instance | Where the evidence is |
+|---|---|---|---|
+| 1 | **Widen Silent-wrong-answer's stale-state carrier to cover *sibling* state** — a check whose own setup injects state that changes what an *adjacent* check can observe, so the sibling reports a clean result about a condition it never actually tested | t3's allowlist matrix: `CLOUDCOST_OPTIMIZATION=1` was exported so entry 5's row would have something to detect; on a DO leg that makes the orchestrator raise at *eval* time, so the `− ANTHROPIC_API_KEY` row never reached the LLM call and reported "still succeeded" — a **false negative in the verification's own matrix**, found only because the result was implausible | `cloudcost/docs/m4-t3-implementation-notes.md:132–136` |
+
+**Why this is a widening and not a new rule.** Silent-wrong-answer already covers a check that
+reads the wrong thing and reports clean rather than erroring (the command-binding carrier, promoted
+at t1a-p). The t3 instance is that shape with the carrier being **state a sibling row injected**
+rather than a mis-bound command — the check reads the right thing, in an environment a neighbour
+silently changed. The close decides whether that is a distinct enough carrier to name, or whether
+naming it dilutes the rule it belongs to — the same question already open for the
+substring-vs-field form under §Open for the close item 2, and the two are best decided together.
 
 ---
 

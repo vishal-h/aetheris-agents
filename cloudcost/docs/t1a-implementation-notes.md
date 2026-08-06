@@ -102,13 +102,36 @@ falsify the record, so it is left intact.
 returned an identical set each time. No novel standing site appeared, so the ticket's
 undecidable-default clause was not exercised.
 
-**Why an earlier round's hit list differs (round-1 review, finding 10).** A v4-era record lists
-`cloudcost/docs/m3-t3-implementation-notes.md` at `:160`, `:199`, `:235`; this census lists `:159`
-and `:167`. Both are correct — they are **different term sets**, not an unstable census. The
-narrow `2>&1` search matches :160/:199/:235; the substance search (`no-json`, `orb_id=n/a`, …)
-matches :159/:167. The file carries hits of both kinds and every one is historical, so no
-treatment turns on it. Recorded because the census's stability is this ticket's central claim and
-two records that disagree without explanation would undermine it.
+**Why an earlier round's hit list differs — corrected at round 3, and the first explanation was
+wrong.** A v4-era record lists `cloudcost/docs/m3-t3-implementation-notes.md` at `:160`, `:199`,
+`:235`; the classification census lists `:159` and `:167`. Round 2 explained this as "different
+term sets, both correct". **That explanation cannot be true as stated** — `2>&1` is in the
+ratified minimum quoted above, and a superset cannot return fewer hits than one of its own terms.
+The reviewer was right to reject it.
+
+**The actual reconciliation: the documented term set is not the executed one.** The census ran in
+two passes, and only the second is what the classification rests on:
+
+- **Pass 1 — the ratified minimum**, exactly as quoted above. It returned ~31 KB of hits,
+  overwhelmingly unrelated uses of `stdout`/`stderr` (script conventions, tool-result payload
+  shapes, unparseable *dates*).
+- **Pass 2 — a tightened claim-bearing filter**, which is what produced the classification:
+  `no-json|orb_id=n/a|Run ID: n/a|log line prefix|log noise before|mixes stderr|stderr \(sandbox|`
+  `sandbox stderr|Sandbox log lines|boot output|boot warnings`. It **excludes** `2>&1`,
+  `unparseable` and `mixed output`.
+
+So `:160/:199/:235` match `2>&1`, a term pass 2 does not use; `:159/:167` match `no-json`, which
+both use. **The `:160`→`:159` "shift" is not a shift** — they are different lines matched by
+different patterns, adjacent in the same paragraph.
+
+**Did tightening lose a site?** Checked rather than assumed: of every document matched by pass 1
+but not pass 2 across both repos, exactly one is claim-shaped —
+`cloudcost/docs/m3-linode-scout.md`, which this census already records as **out of scope** (it
+quotes the command line and asserts no cause). No standing site was lost.
+
+**The defect this exposes is in the method record, not the census.** §3 documented the ratified
+minimum as though it were what ran. The method is a deliverable; a deliverable that misdescribes
+what executed is the same class this ticket exists to close. Both passes are now recorded.
 
 ### Standing — corrected (7 sites, 6 documents)
 

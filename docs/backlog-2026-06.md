@@ -5643,6 +5643,22 @@ regardless of what this row changes. So a `tail -1`-style read stays wrong after
 the sprint still needs its own backward-scan fix. That is why BL-100 and this row are separate,
 and why neither obviates the other. See BL-100.
 
+**With both streams now established, the solution space is fully determined — and the two fixes
+are complementary, not alternative.** Logger is on stdout; worker output is on stderr:
+
+| | `run.json` contains | parseable? |
+|---|---|---|
+| Split streams only | stdout, still carrying Logger output | no |
+| This row only (Logger off stdout), streams merged | worker stderr via `2>&1` | no |
+| **Both** | the payload alone | **yes, no scan needed** |
+
+Row 2 is what refutes "at a stroke"; row 1 is why the arbiter's payload-extraction choice was
+right. **The combination has a cost this repo already knows: splitting is exactly what BL-099's D2
+credential grep must then cover across two files** — BL-099's row records that a credential-leak
+grep which stops covering stderr is a strictly worse trade than a wrong status word. So anything
+that pairs this row with a split must land BL-099's generalisation with it, not after. The
+backward scan remains correct under all three worlds, so t1b's design is unaffected either way.
+
 **Done when:** the `--json` payload is separable from log output by a consumer that does not have
 to know what the noise looks like — either the payload moves to a stream the Logger does not share,
 or the contract states that consumers must scan for the last parsing JSON object and every in-repo

@@ -96,7 +96,7 @@ ticket; the count states how many commits that is.
 | **t1a** | Correct the false `2>&1` causal claim in every standing carrier | BL-100 rescoped, not closed; filed BL-105–BL-109 | **Closed** — agents `6a2c012^..13eac9f` (5 commits), harness `9c676ef^..e6687f1` (2) |
 | **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
 | **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria | you are reading it |
-| **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100, BL-107 | not started |
+| **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What t1b established |
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 | not started |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104, BL-099 | not started |
 | **t4** | The seam sweep; gates provider four | BL-074 | not started |
@@ -189,6 +189,27 @@ here.
   the harness fix and stream-splitting complementary rather than alternative, and is why decision 15
   exists.
 
+### What t1b established
+
+- **The class had four mechanisms, not one, and 19 members.** Derived fresh at t1b (no prior list
+  inherited): 10 × `jq` over the output file, 5 × `tail -1 | jq`, 7 × `grep -o '"run_id":…' |
+  tail -1 | cut`, 4 × `jq` over a `--json` *pipe*. All now call one helper. 13 further sites were
+  classified out with reasons. Breadth check, recorded as a negative: `sprint.sh` is the **only**
+  consumer of harness `--json` in either repo's scripts.
+- **The chaos gate evaluates, and it passes.** `WARN status=no-json` → `OK … → :done (expected)`,
+  both quoted from live runs on the pre- and post-edit trees. The gate line's comparison and both
+  message texts are unchanged; only the operand became real. BL-107 closed without exercising its
+  carried-red branch.
+- **The first chaos output ever captured in this repo now exists.** It carries two resume warnings,
+  an orphan-sweep line and two `[sandbox]` lines ahead of an intact payload — the noisy-store shape
+  BL-107's premise assumed, confirmed rather than presumed.
+- **A red gate was found off-territory and filed the same day** — BL-110, the payslip case's
+  `BTL_999` assertion, which names a reference employee the run cannot produce because the
+  orchestrator reads `payroll.csv` while `BTL/999` exists only in `sample_payroll.csv`. Same
+  ambient-state defect class as BL-100, pre-existing, left red per the tracked-carry clause.
+- **BL-069 remains armed and red**, named rather than re-triaged: the live cloudcost leg reported
+  `[FAIL] orphan candidates: 0 (expected ≥1 …)`. t2 owns it.
+
 ### Rows filed this cycle
 
 Read from `docs/backlog-2026-06.md` at agents `009f666`:
@@ -226,11 +247,26 @@ Carried forward rather than resolved. Each is a question this cycle opened and d
 - Which document first carried the false causal claim — three harness documents acquired it on one
   day and same-day ordering is not recoverable.
 - Whether the step-count diagnosis in an m09→m10 handoff is correct.
-- Whether the chaos gate has ever run in a clean-store environment. No chaos output has ever been
-  captured, so "it has always warned" is inference.
+- Whether the chaos gate has ever run in a clean-store environment. No chaos output had ever been
+  captured, so "it has always warned" was inference. **Partly resolved 2026-08-06 (t1b):** the
+  first chaos capture in this repo (`../aetheris/sprint/20260806_172144/chaos/maxsteps.json`)
+  exists and *did* warn, in a noisy-store environment — so the behaviour is now observed rather
+  than inferred for that case. **The clean-store question itself is still open**: no chaos run has
+  been made in a clean store, and nothing in t1b established what one would have done.
 - Whether `EDUX_DATABASE_URL` is set in the sprint's ambient environment — decides BL-108.
 - Which `milestone-reference.md` survives — BL-109.
-- Whether one `--json` invocation can emit more than one parsing JSON object — t1b's carry 3.
+- ~~Whether one `--json` invocation can emit more than one parsing JSON object — t1b's carry 3.~~
+  **Resolved 2026-08-06 (t1b), both from source and from the record.** Yes, but for exactly one
+  command: `fork`. `Formatter.print/2` is called once per invocation
+  (`../aetheris/lib/aetheris/cli/main.ex:46`) and is one of only two `IO.puts(Jason.encode!(…))`
+  sites in `lib/`; the other is `Fork.emit_fork_started/2`
+  (`../aetheris/lib/aetheris/cli/commands/fork.ex:71`), whose own comment names it as the only
+  command writing to stdout before dispatch returns. It writes the early document **first** and
+  the result **last**, so "the last that parses" remains the correct selector, and `sprint.sh`
+  never invokes `fork`. Empirically: of **319** files under `../aetheris/sprint/`, **zero** carry
+  more than one parsing JSON object (219 exactly one, 100 none). Recorded in
+  `../aetheris/docs/aetheris/claude-notes.md`, which previously carried this as the scan's one
+  unresolved case.
 
 ---
 

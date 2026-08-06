@@ -86,3 +86,21 @@ The pipeline file listing (`ls -lh output/proposal.{fmt}`) was missing from pack
 - `generate_json.py` drops row `type` field — m2 consumers may want `header`/`data`/`aggregate` metadata
 - `--input` file handles should use `with` block (F1 from t7 review) — harmless for m1 short-lived scripts, revisit if scripts become longer-lived
 - Sprint case `run_id` extraction now fixed but the underlying `no-json` label in sprint output is cosmetic noise — trace to the log line prefix in run.json format
+
+  > **Corrected and discharged 2026-08-06 (t1b).** Two things, and the item is wrong about the
+  > first. **The `cosmetic` characterisation is false for the class.** `no-json` was a display
+  > token at most sites, but one member of the same class was a **gate** —
+  > `../aetheris/scripts/sprint.sh:297`, whose extracted `status` was the operand of
+  > `[[ "$status" == "done" ]]`. That operand was the fallback token, so the assertion could
+  > never match and the gate had never once evaluated its subject (BL-107). A gate reading a
+  > fabricated value is not cosmetic noise.
+  >
+  > **The open TODO is discharged by the fix, not by this edit.** t1b routed every
+  > `--json` read in `sprint.sh` through one extraction mechanism — a backward scan for the
+  > last line that parses as a JSON object — so the reads no longer depend on ambient
+  > run-store state. The `run_id` extraction this item calls "now fixed" was a
+  > `grep -o '"run_id":"[^"]*"' | tail -1 | cut` workaround; it is now the same
+  > `json_read` call as every other site. The stated cause ("the log line prefix in run.json
+  > format") was also wrong: the harness's Logger output *shares stdout with the payload*, so
+  > the payload had to be found, not un-prefixed. Current guidance:
+  > `../aetheris/docs/aetheris/claude-notes.md` §Claude Code — sprint output parsing.

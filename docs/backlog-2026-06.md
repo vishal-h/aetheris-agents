@@ -5362,10 +5362,58 @@ payload — see the sibling harness rows.
 run's real status, and whichever fix is chosen, the D2 credential grep demonstrably still searches
 everything the run wrote to both streams.
 
+**DONE 2026-08-06 (t1b).** Every Done-when clause discharged, each against evidence rather than
+assertion:
+
+- **One mechanism, every site.** `json_read <file> <jq-filter> [absent]` in
+  `../aetheris/scripts/sprint.sh` scans the file's lines in reverse and takes the first that
+  parses as a JSON object. **19 sites converted** across four previously-distinct mechanisms:
+  10 × `jq` over the file (incl. `run_agent`, `run_orb`, the chaos gate, the cloudcost inline
+  line), 5 × `tail -1 | jq`, 7 × `grep -o '"run_id":"[^"]*"' | tail -1 | cut`, 4 × `jq` over a
+  `--json` pipe (via the `json_read_cmd` wrapper, which captures the pipe to a temp file so the
+  same scan applies). The workarounds that *worked* were folded in too — two mechanisms for one
+  job is how the class regenerates. **13 sites excluded with reasons** (trajectory `--export`
+  files, curl HTTP bodies, use-case script stdout, the eduloka sink gate → BL-108, the D2
+  credential grep, `head -1` over `ls`).
+- **Deterministic, on clean and noisy alike.** Per converted site, verified against the four
+  capture shapes in `../aetheris/sprint/`: clean single line, noise *before* the payload, worker
+  output *after* it, and no payload at all. **23 checks, 23 pass.** Expected values are pinned
+  literals obtained independently of `json_read`, so the check cannot satisfy itself.
+- **The chaos gate's operand is a real status.** Before: `[WARN] Chaos 1: status=no-json
+  (investigate)`. After: `[OK] Chaos 1: agent exhausted max_steps → :done (expected)`. Both
+  quoted from live runs — and the "before" is **the first chaos output ever captured in this
+  repo**, so BL-107's "it has always warned" is now observation for at least one environment
+  rather than inference. See BL-107.
+- **A file with no payload prints an explicit unknown.** The token is `no-payload`, naming *the
+  read* rather than the run. It cannot collide with a run status now (`handle_run_status/5` admits
+  only `done`) nor with the statuses BL-106 would add. Sites feeding a `[[ -n … ]]` guard yield
+  **empty** instead — a token there would push a garbage id into `mix aetheris inspect`.
+- **The streams stay merged.** No change to any redirect, and none to the D2 credential grep,
+  `CC_HERMETIC`, the poison-control arms or the orphan-count assertion. Live cloudcost leg
+  confirms both D2 arms still run.
+- **Mutation postures against states that occur in the record** — construct, observe, restore:
+  non-JSON output *after* the payload (gate holds `OK`; the old `tail -1 | jq` yields `no-json` on
+  the same file); no parseable payload at all (gate → `WARN status=no-payload`); and an
+  anti-vacuity posture flipping the payload's `status` to `failed` (gate → `WARN status=failed`),
+  which proves the repaired gate can still report red.
+
+**The multiple-payload question, which this row's fix rested on, is settled — see BL-105's
+sibling note and `../aetheris/docs/aetheris/claude-notes.md`.** One invocation *can* emit two
+parsing JSON objects, for exactly one command (`fork`, per its own source comment at
+`../aetheris/lib/aetheris/cli/commands/fork.ex:71`); it writes the early document first and the
+result last, so recency still selects correctly, and `sprint.sh` never invokes `fork`. Of 319
+captured files, zero carry more than one.
+
+**Live evidence:** `./scripts/sprint.sh cloudcost` → `uc-cloudcost orchestrator → done (707 bytes)`
+— the line that read `no-json` on every cloudcost run ever recorded. `./scripts/sprint.sh payslip`
+→ `uc-payslip orchestrator → done (687 bytes)` (payslip parsed in 0 of 8 prior captures).
+
 `Source: m3-cloudcost t3 §4, t3 review r0 F1 (2026-08-05).`
 `Source (2026-08-06 corrections + rescope): t1a — census and evidence in
 cloudcost/docs/t1a-implementation-notes.md; causal claim refuted by the stdout/stderr split
 recorded there. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
+`Source (2026-08-06 close): t1b — census, per-site checks and postures in
+cloudcost/docs/t1b-implementation-notes.md.`
 
 ---
 
@@ -5774,7 +5822,35 @@ and adjudicated rather than silent; and if it then reports a genuine failure, th
 rather than being absorbed. **No claim is made here about what it will report after repair** — it
 has never evaluated, so that is unknown.
 
+**DONE 2026-08-06 (t1b). The gate now evaluates, and it passes.** Repair landed with BL-100's
+single extraction mechanism, as this row anticipated, so the carried-red branch was not exercised.
+
+| | Assertion outcome, quoted from the run |
+|---|---|
+| **Before** (`sprint/20260806_172144`, pre-edit tree at agents `c5b63ae` / harness `f6fbd82`) | `[WARN]  Chaos 1: status=no-json (investigate)` |
+| **After** (`sprint/20260806_172825`, post-edit) | `[OK]    Chaos 1: agent exhausted max_steps → :done (expected)` |
+
+The gate line itself is byte-unchanged apart from the extraction: the comparison
+`[[ "$status" == "done" ]]`, the `ok` text and the `warn` text are all as they were. **Nothing was
+relaxed, re-pointed or downgraded** — the operand changed from a fallback token to the payload's
+real `status`, and that is the whole edit.
+
+**Two claims this row qualified are now resolved by observation rather than inference.** The row
+noted that "it has always warned" was derived from the extraction's behaviour, because
+`find ../aetheris/sprint -path '*chaos*'` returned nothing. The before-run above **is** the first
+chaos capture in this repo, and it warned — so the claim is now observed for at least this
+environment. Its file (`sprint/20260806_172144/chaos/maxsteps.json`, 9 lines) carries two
+`failed to resume run` warnings, an orphan-sweep line and two `[sandbox]` lines ahead of an intact
+payload: the noisy-store shape the row's premise assumed, confirmed rather than presumed. Whether a
+chaos run in a *clean*-store environment would have parsed remains open — that premise is still
+unexamined, and is left in `cloudcost/m4-consolidation.md` §Not established.
+
+**No new row is owed by this gate.** It reported no genuine failure. (A separate, unrelated red
+*was* found off-territory during t1b's live runs and is filed as **BL-110**.)
+
 `Source: t1a, 2026-08-06. Citations verified at aetheris@aaf0f9a.`
+`Source (2026-08-06 close): t1b — before/after runs and the mutation postures in
+cloudcost/docs/t1b-implementation-notes.md.`
 
 ---
 
@@ -5851,5 +5927,52 @@ survives; and if an index is kept, it either covers current work or says plainly
 at.
 
 `Source: t1a census, 2026-08-06. Citations verified at aetheris@aaf0f9a.`
+
+---
+
+### BL-110 — the payslip case asserts a reference employee the run cannot produce (#TBD)
+**Size:** XS · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`), payslip
+
+Filed 2026-08-06 from t1b, per the gate rule — *every existing gate runs at ticket boundaries, even
+off-territory; a red gate gets a tracked ticket the day it's found.* Found by running
+`./scripts/sprint.sh payslip` as t1b's shared-helper live leg. **Pre-existing and unrelated to
+t1b's change** — the assertion block is byte-identical at `c5b63ae`/`f6fbd82` and is not gated on
+`RUN_ID`, so the extraction repair cannot have lit it:
+
+```
+[FAIL]  BTL_999 output directory not found: ../aetheris-agents/payslip/output/BTL_999
+```
+
+`../aetheris/scripts/sprint.sh:769-778` asserts `payslip/output/BTL_999` exists after the
+orchestrator run. **Nothing in the run can create it.** The orchestrator invokes
+`generate_employee_payslips.py --csv data/payroll.csv`
+(`payslip/agents/payslip_orchestrator.exs:23`). The `BTL_999` directory's only possible source is
+the `BTL/999` employee id, which appears **twice in `data/sample_payroll.csv` and zero times in
+`data/payroll.csv`** — the sprint's own preflight names both files (`:742`, `:750`).
+
+**It is another ambient-state assertion, which is why t1b noticed it.** `payslip/data/payroll.csv`
+is gitignored (`payslip/.gitignore:2`) and the sprint copies the sample into place *only if it is
+absent* (`:749-753`). So on a fresh clone the copy happens, `BTL/999` is present, and the assertion
+passes; on any machine that has ever put real payroll data there — which is the intended
+production shape — the copy is skipped and the assertion fails forever. Same defect class as
+BL-100: an assertion whose verdict is decided by ambient state rather than by the run. That the
+sprint has been reporting `[FAIL]` here indefinitely without anyone acting is the alarm-fatigue
+outcome the gate rule exists to prevent.
+
+**`fail()` only prints (BL-077)**, so the sprint still exits 0 and no CI signal changed. That is
+why it has been invisible.
+
+**Left red and carried, not relaxed.** t1b did not re-point it at an employee that happens to
+exist, nor downgrade it to a `warn` — either would destroy the one thing the assertion still
+preserves, that the payslip pipeline produced output for a *known* employee.
+
+**Done when:** the reference employee the assertion names is one the run can actually produce —
+either by keying the check to an id read out of the CSV the orchestrator was given, or by running
+the assertion leg against `sample_payroll.csv` explicitly rather than depending on whether
+`payroll.csv` exists. Decide which; do not simply delete the check. Whichever is chosen, the
+verdict must not depend on whether a gitignored file is present.
+
+`Source: t1b, 2026-08-06 — off-territory gate run. Citations verified at
+aetheris@f6fbd82 / aetheris-agents@c5b63ae.`
 
 ---

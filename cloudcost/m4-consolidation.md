@@ -105,7 +105,7 @@ ticket; the count states how many commits that is.
 | **t1a** | Correct the false `2>&1` causal claim in every standing carrier | BL-100 rescoped, not closed; filed BL-105–BL-109 | **Closed** — agents `6a2c012^..13eac9f` (5 commits), harness `9c676ef^..e6687f1` (2) |
 | **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
 | **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria | you are reading it |
-| **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What t1b established |
+| **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 | not started |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104, BL-099 | not started |
 | **t4** | The seam sweep; gates provider four | BL-074 | not started |

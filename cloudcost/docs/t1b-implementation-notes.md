@@ -116,6 +116,40 @@ warnings on stdout ahead of the payload, so the bare `| jq` fails identically. `
 `tail -1 … \ | jq …` continuations, and Group D's `:615-616`, `:1022-1023`, `:1036-1037`), so a
 line count is larger than a read count and is not the figure quoted anywhere here.
 
+### The inverse census — completeness, checked from the other end
+
+Added at review round 2. Both counts above enumerate **reads by known mechanism**, which is the
+same shape as the search that missed three sites at round 0. That miss was a transcription error
+rather than a search error, but the shape makes the question fair: *could a read exist by a
+mechanism nobody enumerated?* Starting from the **invocations** rather than the reads is what
+answers it.
+
+**Method.** List every `--json` invocation in `sprint.sh`; for each, resolve its output sink and
+enumerate every subsequent mention of that sink in the file. A read by an unenumerated mechanism
+would appear as a mention that is neither a helper call nor a declared exclusion.
+
+**11 invocations**, resolving to **36 distinct sinks** (30 path expressions passed to
+`run_agent`/`run_orb`, plus `maxsteps.json`, `badpath.json`, `concurrent_${i}.json`,
+`schedule_trigger.txt`, cloudcost's `run.json`, and the three `--json inspect`/`trajectory` pipes).
+Every one resolves:
+
+| Disposition | Count | Notes |
+|---|---|---|
+| Read directly through the helper | 12 sinks | the `.run_id`/`.orb_id`/`agent_run_ids` sites |
+| Read through the helper **indirectly** | 4 sinks | uc1 `:232`, uc2 `:253`, uc3 `:294`, uc_auto `:356` bind the path to `$f`, then `extract_step_count "$f"` — which is Group A `:79` + Group D `:81` |
+| Read via `json_read_cmd` at the invocation | 3 pipes | `--json inspect` ×2, `--json trajectory` |
+| Payload reaching only `run_agent`/`run_orb`'s own `status`/`orb_id` lines | 16 sinks | capability_matrix ×9, the two docbuilder `builder.json`, `news/day2.json`, `uc4/orb_run_${i}.json`, uc_api t1 / t2-steady / t2-greenfield orbs. **Each has exactly one mention in the file — the call that writes it.** Their payloads still pass through the helper, at `:141`/`:157`-`:158`; they simply have no additional per-case read |
+| Declared exclusions, unchanged | 2 | `chaos/badpath.json` and `chaos/concurrent_${i}.json` are written and named in an `ok` line for a human to open — never parsed. The cloudcost D2 credential grep (`:2762-2763`) reads `run.json` by design |
+
+**Negative result, recorded as a result: no read by an unenumerated mechanism exists.** The inverse
+enumeration returns nothing the forward census missed, which is the confirmation the forward census
+alone could not give.
+
+**One clarification it did surface**, not an error but worth stating: `extract_step_count`'s two
+reads are counted **once each** (`:79`, `:81`) because they live in the function, not at its call
+sites. The function is called from four cases, so the *coverage* of those two reads is wider than
+the count suggests.
+
 ### Excluded — 13 sites, each with a reason
 
 | Site(s) | Reason |

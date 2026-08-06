@@ -1,0 +1,238 @@
+# m4-consolidation — the cycle document
+
+> Not a feature milestone. This cycle clears accumulated infrastructure debt in the cloudcost
+> sprint case and the shared scripts, so that the decision about a fourth provider is made against
+> working apparatus rather than on top of it. Created after two tickets had already closed,
+> because the cycle opened without one — see §Why this exists.
+
+**Status:** open. **Opened:** 2026-08-05 (first move ratified). **Document created:** 2026-08-06.
+**Repos:** `aetheris-agents` and `aetheris` (harness). **Preceding cycle:** m3-cloudcost, closed
+2026-08-05.
+
+---
+
+## Why this exists
+
+The cycle's first move was explicitly *not* a milestone doc. That was right at the time — the work
+was a backlog batch, not a feature milestone — but it meant the ticket set, the ratified decisions
+and the sequence lived only in conversation. Two tickets closed that way.
+
+**BL-102 is the standing row for this exact gap**: the complete-but-unmarked sweep at a close reads
+a milestone doc's done-when table, and a batch has none. This document is that artifact for this
+cycle, and §Close criteria states what a sweep of it reads.
+
+The decision log below is the part with no other source. Everything else is recoverable from the
+repos; the decisions were not.
+
+---
+
+## Scope
+
+**In scope.** The cloudcost sprint case in `../aetheris/scripts/sprint.sh`; the four shared scripts
+under `cloudcost/scripts/`; the documents that describe either; the backlog rows covering them.
+
+**Not in scope, and deliberately so.**
+
+- **The harness `--json` contract** — BL-105 and BL-106. Found during this cycle and the most
+  consequential thing in it, filed rather than pulled in. Scheduled as its own round; see §Sequence.
+- **Provider four.** Gated on this cycle's seam sweep and on the harness round.
+- **Any §Normalized extension.** BL-098 remains filed; extending the contract belongs with the
+  provider that needs it, not before.
+
+---
+
+## Ratified decisions
+
+Every entry is a decision taken in this cycle that no other document records. Dated; the arbiter
+ratified all of them unless marked otherwise.
+
+### How the cycle is run
+
+| # | Decision | Date |
+|---|---|---|
+| 1 | **The reviewer asserts no checkable specifics in specs it authors.** Anchors only; where a value is needed the ticket says *verify and record*. | 2026-08-05 |
+| 2 | **A claude-code verification pass runs over any reviewer-authored doc before ratification**, not after. | 2026-08-05 |
+| 3 | **A step-1 gate inside the ticket.** Verification conditions the implementer checks before writing; any failure stops without an edit. Allowed once as an exception, retained as practice after it stopped a ticket whose census had not converged. | 2026-08-06 |
+| 4 | **Ticket names are historical and are not tidied.** `t1a`, `t1a-p`, `t1b` are cited in committed documents in both repos. | 2026-08-06 |
+| 5 | **The §7 promotion runs mid-cycle when the rules bind the cycle's own remaining tickets**, rather than waiting for the close. | 2026-08-06 |
+| 6 | **Pushes are held for review; a cross-citing repo pair lands together**, harness first so the agents citations resolve on the remote. | standing, reaffirmed |
+
+### Document handling
+
+| # | Decision | Date |
+|---|---|---|
+| 7 | **A closed record gets a dated superseded note; its original text is not rewritten.** | 2026-08-06 |
+| 8 | **Live operational guidance is corrected in place.** A superseded note on a how-to leaves wrong instructions standing as the primary text. | 2026-08-06 |
+| 9 | **Where liveness is genuinely undecidable, take the note.** Asymmetric: a note on a live document still delivers the correction; an in-place rewrite of a record falsifies it irreversibly. | 2026-08-06 |
+| 10 | **A milestone-named document is a closed record if a current equivalent exists** — established, never inferred from the filename. | 2026-08-06 |
+| 11 | **Content is authored by the reviewer; formatting belongs to the destination file.** | 2026-08-06 |
+
+### Technical
+
+| # | Decision | Date |
+|---|---|---|
+| 12 | **No planted cloud resources, on any provider.** BL-069 closes by retiring the practice, not by swapping fixtures. The live check becomes a rule-legibility assertion — that the adapter's inventory reached the catalog in a shape it could read — which is free and covers the seam that has historically produced defects. | 2026-08-06 |
+| 13 | **Payload extraction, not stream splitting**, for the sprint's `--json` reads. Later re-grounded: splitting is not sufficient wherever the harness emits Logger output on stdout, which is every capture from 2026-07 onward; whether it sufficed in an earlier era depends on `[sandbox]` routing, which is unestablished. | 2026-08-06 |
+| 14 | **The class is every `jq`-over-`--json` read**, not the `.status` reads alone. One shared extraction mechanism; leaving a sibling field broken on the adjacent line of the same helper is how the class regenerates. | 2026-08-06 |
+| 15 | **BL-099's credential grep is written so that covering a second file is configuration, not a rewrite** — because a later harness round may split the streams, and the grep is the only thing blocking that. | 2026-08-06 |
+| 16 | **The eduloka status extraction is out of scope** — same shape, different root cause, possibly working today. Filed as BL-108. | 2026-08-06 |
+
+---
+
+## Ticket set
+
+Full §6 anatomy is authored per ticket at the time it starts, not here. This section records what
+each ticket is for, its state, and what it carries.
+
+Commit ranges are `first-commit^..head`, so each pastes into `git log` and returns the whole
+ticket; the count states how many commits that is.
+
+| Ticket | Subject | Rows | State |
+|---|---|---|---|
+| **t1a** | Correct the false `2>&1` causal claim in every standing carrier | BL-100 rescoped, not closed; filed BL-105–BL-109 | **Closed** — agents `6a2c012^..13eac9f` (5 commits), harness `9c676ef^..e6687f1` (2) |
+| **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
+| **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria | you are reading it |
+| **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100, BL-107 | not started |
+| **t2** | Retire the plant practice; rule-legibility assertion | BL-069 | not started |
+| **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104, BL-099 | not started |
+| **t4** | The seam sweep; gates provider four | BL-074 | not started |
+| **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
+
+### What t1b inherits
+
+Five items. The first four are method rather than scope; the fifth is an obligation t1a deferred
+into t1b and is the reason this list is canonical rather than convenient — all cheap to state and
+expensive to rediscover:
+
+1. **Its behaviour-neutrality premise is refuted.** A converted site's *current* output depends on
+   ambient run-store state, so "reproduce it exactly" is undefined. The check is that the helper
+   yields the correct value on both clean and noisy captures.
+2. **Census classification must distinguish assert from retract.** t1a seeded its own territory
+   with retractions that quote the claim they retract; a term-match census now returns them as
+   hits.
+3. **The multiple-payload question is unsettled** — whether one invocation can emit more than one
+   parsing JSON object, which decides whether "the last that parses" is the right selector.
+4. **G1 states both forms** — level-with-origin before implementation, ahead-by-N-unpushed after.
+   As first written it would have failed a correct tree.
+5. **Two docbuilder documents are owed a note, deferred to t1b by t1a and due when the fix lands.**
+   `docbuilder/milestone.md:88` and `docbuilder/docs/m1-milestone.md:680` carry byte-identical
+   text — *"the underlying `no-json` label in sprint output is cosmetic noise — trace to the log
+   line prefix in run.json format"*. Neither carries the `2>&1` claim, which is why t1a's census
+   did not correct them, and an earlier draft that asserted they did would have written a false
+   correction into a ticket about a false claim. The note must state both things: the **cosmetic**
+   characterisation is false for the class, because one affected site is a gate; and the open TODO
+   is discharged by the **fix**, not by a document edit. t1a deferred it rather than writing
+   "discharged" in the same commit as the thing that would make it true — which leaves the
+   obligation live, and recorded here because a closed ticket's implementation notes have no
+   executor.
+
+---
+
+## Sequence
+
+t1b → t2 → t3 → t4 → t5 → **harness consolidation round** → **provider four**.
+
+**The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
+tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you
+whether the apparatus a new provider lands on works. Every new provider adds a leg to the sprint
+case, and a leg added to non-deterministic reads inherits the flakiness — m3 already paid that cost
+three times.
+
+**The harness round's shape:** BL-105 and BL-106 are one contract with two mechanisms and are
+scoped together; **BL-077** folds in, because by then the chaos gate will have been repaired and its
+real state — the input BL-077's known-red declaration needs and does not have today — will be known.
+
+**Provider-four design work is not blocked by any of this.** The GitHub issue-doc is design-only and
+touches no code. What the harness round buys is that *implementing* provider four lands on
+apparatus that works.
+
+---
+
+## What this cycle established
+
+Stated as findings, not as rules — the rules are in the two `CLAUDE.md` files and are not restated
+here.
+
+- **The sprint's `--json` reads are non-deterministic, not broken.** Identical expressions succeed
+  or fail on ambient state. Across the captures in `../aetheris/sprint/`, the news set parses in
+  **4 of 4**, payslip in **0 of 8**, cloudcost in **0 of 10** — same helper (`run_agent`), same
+  `> file 2>&1` redirect.
+- **The cause everyone had recorded was wrong.** The harness's Logger output shares stdout with the
+  payload, so merging the streams is irrelevant to parseability. The claim had propagated into
+  **six documents across both repos** as standing guidance (**seven sites**), with a further
+  **thirteen** historical mentions left intact as dated records, and was refutable from the Rig
+  source ten days before it was filed.
+- **A gate in the chaos case has never evaluated its subject.** Its operand is a fallback token that
+  the equality test cannot match.
+- **`--json` emits no JSON on a non-success run**, so a programmatic consumer receives nothing on
+  exactly the runs it most needs.
+- **Two stream routings are now established:** Logger on stdout, worker output on stderr — a third,
+  `[sandbox]` line routing, remains open below. This makes
+  the harness fix and stream-splitting complementary rather than alternative, and is why decision 15
+  exists.
+
+### Rows filed this cycle
+
+Read from `docs/backlog-2026-06.md` at agents `009f666`:
+
+| Row | Subject, as the row heading states it |
+|---|---|
+| **BL-105** | `--json` mode's payload shares stdout with the harness's Logger output |
+| **BL-106** | `--json` emits no JSON document on a non-success run |
+| **BL-107** | the chaos-case gate has never evaluated its subject |
+| **BL-108** | the eduloka sink gate parses a merged stream: same shape, different root cause |
+| **BL-109** | two `milestone-reference.md` files, canonical by different measures |
+
+**BL-100 rescoped, not closed.** Heading, cause, scope, fix and Done-when revised under a dated
+*"Rescoped and corrected 2026-08-06 (t1a)"* note, each change marked `[corrected 2026-08-06]` with
+the superseded text kept beneath, and **Size raised XS → S–M**. The fix has not landed; t1b carries
+it.
+
+### Rules promoted this cycle
+
+Three, at t1a-p. **Named here, not restated** — they are normative in the files below and a copy
+here would be a second source of truth.
+
+- `../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns — the truth-maker rule, with its
+  two operational forms.
+- `../aetheris/CLAUDE.md` §Continuous learning → Silent-wrong-answer — the command-binding carrier.
+- `CLAUDE.md` (agents) §Learning — BL-007 — the packet rule, superseding its earlier wording.
+
+---
+
+## Not established
+
+Carried forward rather than resolved. Each is a question this cycle opened and did not close.
+
+- `[sandbox]` line stream routing. The available test command spawns no worker.
+- Which document first carried the false causal claim — three harness documents acquired it on one
+  day and same-day ordering is not recoverable.
+- Whether the step-count diagnosis in an m09→m10 handoff is correct.
+- Whether the chaos gate has ever run in a clean-store environment. No chaos output has ever been
+  captured, so "it has always warned" is inference.
+- Whether `EDUX_DATABASE_URL` is set in the sprint's ambient environment — decides BL-108.
+- Which `milestone-reference.md` survives — BL-109.
+- Whether one `--json` invocation can emit more than one parsing JSON object — t1b's carry 3.
+
+---
+
+## Close criteria
+
+This cycle is done when t1b through t5 have closed with zero blocking findings, the drift checker
+reports zero FAIL and no unexplained WARN, and the milestone-end ritual has run.
+
+**What a close sweep of this document reads** — the answer BL-102 asks for, for a batch that has no
+done-when table:
+
+1. Every ticket in §Ticket set, checked against the backlog rows it closes. A row closed in the
+   repo and open here, or the reverse, is the defect the sweep exists to catch.
+2. Every row in §Rows filed, checked for a DONE section if it closed.
+3. §Not established, item by item: resolved, still open, or superseded — and if resolved, where.
+4. The decision log, for any decision the implementation diverged from. A divergence is closed by
+   changing the code or the decision, never left silent.
+5. §Rules promoted, read out of the two `CLAUDE.md` files rather than trusted — a promotion is
+   complete only when the entry can be read where it lives.
+
+`Source: this cycle, 2026-08-05 to date. Decision log authored by claude-ui from the cycle's own
+ratifications; repo-state sections composed by claude-code at aetheris-agents 009f666 /
+aetheris f6fbd82.`

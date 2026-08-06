@@ -34,20 +34,36 @@ hardcoded key name read off adapter-supplied data, a unit assumption, a currency
 rule predicate's structure — and, in four cases found here, as a predicate that is **absent**.
 
 **A method that can only find named constants is a stop condition**, because named constants are
-exactly the population the seven known leads already occupy. Of the 50 items censused below,
-**21 are named constants and 29 are not**. A name-keyed sweep would have returned at best the
-21 and read as complete.
+exactly the population the seven known leads already occupy. Of the 54 items censused below,
+**19 are anchored on a module-level assignment and 35 are not**. A name-keyed sweep would have
+returned at best the 19 and read as complete.
+
+> **Counts corrected at review round 1.** The first draft said *"50 items … 21 named constants and
+> 29 are not"*. All three figures were wrong — hand-counted, never derived. The census has always
+> held 54 items; `grep -cE '^#### (X|N|D|F|P|R)[0-9]+'` returns 54, and the named/not split is
+> derived from which items are anchored on an extraction-class-A node. The reviewer caught the same
+> defect one section down (§6 said "Four" and listed eight); this is its sibling in the headline
+> claim, and it is the one figure a reader would have taken on trust. Every count in this document
+> is now derived by a command rather than counted by hand.
 
 ### 2.2 The extraction — over-broad by construction
 
-One AST pass over the four files, emitting six classes. It is recorded here verbatim and is
+One AST pass over the four files, emitting eight classes. It is recorded here verbatim and is
 re-runnable; the node counts it prints are the falsifiable part of the completeness claim.
+
+> **Extended at review round 1.** Classes **G** (function-signature defaults) and **H** (literals
+> in any call argument or keyword) were added after the reviewer observed that the completeness
+> argument did not cover them: a literal default is not an `Assign`, `Compare`, `Call`, `Subscript`
+> or `BinOp`, and class D reached only the two calls it names by function name. The extension added
+> **112 nodes (406 → 518)** and **one census item** (**X5**). The rest classified out; the
+> exclusion rows are in §2.5. Recorded as an extension rather than folded in silently, because
+> which classes the pass covers *when* is the audit trail for the completeness claim.
 
 ```python
 #!/usr/bin/env python3
 """t4a seam census — structural extraction over the four shared scripts.
 
-Emits every AST node of six classes. Deliberately over-broad: classification is done by
+Emits every AST node of eight classes. Deliberately over-broad: classification is done by
 reading, afterwards, and every node is accounted for either as censused or as classified
 out with a reason. Nothing here selects by identifier, substring, or prior mention.
 
@@ -65,7 +81,7 @@ FILES = ("_normalized.py", "detect_orphans.py", "compose_report_data.py", "rende
 
 def classify_nodes(tree):
     """Return {class_letter: [(lineno, source), ...]} for one module."""
-    out = {k: [] for k in "ABCDE"}
+    out = {k: [] for k in "ABCDEGH"}
 
     # A — every module-level assignment (named constants, whatever they are called)
     for n in tree.body:
@@ -109,6 +125,35 @@ def classify_nodes(tree):
         if isinstance(n, ast.Constant) and isinstance(n.value, str):
             if "%" in n.value and any(c in n.value for c in "YmdHMS"):
                 out["D"].append((n.lineno, repr(n.value)))
+
+        # G — literal defaults in a function signature (positional and keyword-only).
+        # Not an Assign, Compare, Call, Subscript or BinOp, so classes A-E miss them.
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            sig = n.args
+            for d in list(sig.defaults) + [x for x in sig.kw_defaults if x is not None]:
+                if isinstance(d, ast.Constant):
+                    out["G"].append((n.lineno, f"def {n.name}(… = {ast.unparse(d)})"))
+
+        # H — a literal in ANY call argument or keyword. Class D reaches only the two
+        # calls it names by function name (.get(k, default), round(x, n)); every other
+        # call's literals — argparse defaults, re.compile patterns, encoding= kwargs,
+        # a helper invoked with a literal — sit in no other class.
+        if isinstance(n, ast.Call):
+            fname = (
+                n.func.attr if isinstance(n.func, ast.Attribute)
+                else n.func.id if isinstance(n.func, ast.Name)
+                else ""
+            )
+            for arg in n.args:
+                if isinstance(arg, ast.Constant) and not isinstance(arg.value, bool):
+                    if fname == "get" and arg is n.args[0]:
+                        continue  # already class C
+                    if fname == "round" and len(n.args) > 1 and arg is n.args[1]:
+                        continue  # already class D
+                    out["H"].append((n.lineno, f"{fname}(… {ast.unparse(arg)} …)"))
+            for kw in n.keywords:
+                if isinstance(kw.value, ast.Constant) and not isinstance(kw.value.value, bool):
+                    out["H"].append((n.lineno, f"{fname}({kw.arg}={ast.unparse(kw.value)})"))
     return out
 
 
@@ -138,7 +183,7 @@ def main(argv):
         found = classify_nodes(tree)
         counts = {k: len(v) for k, v in found.items()}
         grand.update(counts)
-        print(f"{name:26} " + "  ".join(f"{k}={counts[k]:>3}" for k in "ABCDE")
+        print(f"{name:26} " + "  ".join(f"{k}={counts[k]:>3}" for k in "ABCDEGH")
               + f"   total={sum(counts.values()):>3}")
         if want:
             for lineno, src in sorted(found[want]):
@@ -149,7 +194,7 @@ def main(argv):
                 for pl, p in preds:
                     print(f"        :{pl:<4} {p}")
     print("-" * 72)
-    print("TOTAL".ljust(26) + "  ".join(f"{k}={grand[k]:>3}" for k in "ABCDE")
+    print("TOTAL".ljust(26) + "  ".join(f"{k}={grand[k]:>3}" for k in "ABCDEGH")
           + f"   total={sum(grand.values()):>3}")
     return 0
 
@@ -166,19 +211,21 @@ if __name__ == "__main__":
 | **D** | `BinOp` with a constant; `.get(k, default)`; `round(x, n)`; every format spec; every strftime literal | `/ 86400.0`, `round(…, 2)`, `{:,.2f}`, `{:.0%}` |
 | **E** | `Compare` with `In` / `NotIn` | `state not in STOPPED_STATES`, `type not in SNAPSHOT_TYPES` |
 | **F** | *(not emittable — see 2.3)* | predicates that are **absent** |
+| **G** | literal default in a `FunctionDef` signature | `format_nz(empty="—")` — not an `Assign`, `Compare`, `Call`, `Subscript` or `BinOp`, so A–E miss it entirely |
+| **H** | `Constant` in **any** call arg or keyword | `read_text(encoding="utf-8")`, `re.compile(…)`, every argparse `default=`/`action=`/`help=` — class D reached only `.get(k, d)` and `round(x, n)`, by name |
 
 **Node counts, as printed:**
 
 ```
-_normalized.py             A=  9  B=  1  C=  4  D=  5  E=  0   total= 19
-detect_orphans.py          A= 19  B= 23  C= 81  D= 16  E=  4   total=143
-compose_report_data.py     A=  7  B= 18  C=127  D= 29  E=  3   total=184
-render_report.py           A=  6  B=  5  C= 36  D= 12  E=  1   total= 60
+_normalized.py             A=  9  B=  1  C=  4  D=  5  E=  0  G=  0  H=  5   total= 24
+detect_orphans.py          A= 19  B= 23  C= 81  D= 16  E=  4  G=  4  H= 29   total=176
+compose_report_data.py     A=  7  B= 18  C=127  D= 29  E=  3  G=  5  H= 40   total=229
+render_report.py           A=  6  B=  5  C= 36  D= 12  E=  1  G=  6  H= 23   total= 89
 ------------------------------------------------------------------------
-TOTAL                     A= 41  B= 47  C=248  D= 62  E=  8   total=406
+TOTAL                     A= 41  B= 47  C=248  D= 62  E=  8  G= 15  H= 97   total=518
 ```
 
-**406 nodes extracted; 50 censused.** Most of the extraction is noise — `is None` sentinels,
+**518 nodes extracted; 54 censused.** Most of the extraction is noise — `is None` sentinels,
 `__name__ == "__main__"`, `indent=2`, `.tmp` suffixes, `str | None` annotations. That is the
 design. Over-breadth moves the place a value can be lost out of the extraction (where a loss is
 invisible) and into the classification (where it is recorded).
@@ -252,15 +299,29 @@ are the §Normalized schemas contract itself; the other 14 are intra-pipeline do
 | Type annotation parsed as a `BinOp` | 6 (class D) | `str \| None`, `dict \| None` |
 | Module entry point | 4 (class B) | `__name__ == "__main__"` |
 | Subprocess / argparse mechanics | ~5 | `result.returncode != 0`, `len(set(given.values())) > 1` |
+| **G** — optional-parameter sentinel | 14 of 15 | `parse_args(argv=None)`, `fired(saving=None)`, `compose(period=None)`. A Python calling-convention fact. The fifteenth, `format_nz(empty="—")`, is **already censused** as part of R2 |
+| **H** — already censused under another class | ~14 of 97 | `strftime("%Y-%m-%d")` → N4; `re.sub("[^a-z0-9]+")` → N6/P10; `re.compile("^(tmp-|ci-|test-)")` → D5; `fullmatch(r"\d{4}-\d{2}")` → P4; `max(0.0)`/`min(1.0)` → D9; `.get(k, 0.0)` ×4 → P6 |
+| **H** — CLI surface (flag names, `help=`, `action=`, `description=`) | ~55 of 97 | `add_argument("--output-dir", default="output")`. The orchestrator contract, identical for every provider. `--snapshot-age-days` being the *only* threshold flag is censused separately as D3 |
+| **H** — error/evidence message text | ~10 of 97 | `ValueError("inventory root is not a JSON object")`, `age_phrase("stopped instance age")`, the six `fired("rule_name")` identifiers (write-side) |
+| **H** — serialization and glob mechanics | ~8 of 97 | `json.dumps(indent=2)`, `glob("*.json")`, `with_suffix(".pdf")` — a file-extension convention identical for every provider |
 
 Exclusion reasons are recorded rather than counted away because a value lost to a *wrong exclusion
 reason* is recoverable by a reader who disagrees with the reason; a value never extracted is not.
 
 ### 2.6 The completeness argument
 
-1. The extraction is over the **AST**, so its coverage claim is *"every node of these five classes
-   in these four files"*. A reader falsifies it by re-running the pass and diffing the node counts
-   against the ones printed in §2.2. It is not a claim about my attention.
+1. The extraction is over the **AST**, so its coverage claim is *"every node of these seven
+   emittable classes in these four files"*. A reader falsifies it by re-running the pass and
+   diffing the node counts against the ones printed in §2.2. It is not a claim about my attention.
+
+   **The claim is bounded by which classes exist, and that bound is where round 1 found it.**
+   Classes A–E covered assignments, comparisons, key reads, arithmetic and membership; two
+   populations sat in none of them, and the argument as first written did not say so. Adding G and
+   H returned 112 nodes and one item (X5) — so the gap was **not** empty, and the honest reading is
+   that the original completeness claim was true of the classes it named and silent about the ones
+   it did not. The lesson is recorded rather than smoothed over: an AST-class census is complete
+   *relative to its class list*, and the class list is the part that needs adversarial reading.
+   Whether an eighth population remains is not something this method can answer from inside itself.
 2. **Nothing is selected by identifier, substring, or prior mention.** The seven leads were checked
    *against* the census output afterwards (§4), never used to seed it. This is the load-bearing
    property: the census is downstream of the file's structure, not of what anyone already knew was
@@ -285,7 +346,7 @@ is what makes the absence of a fifty-first item checkable.
 - **"I grepped `^[A-Z_]{4,} = `."** Name-keyed. It finds 41 module assignments and misses the 29
   censused items that are not named constants — including every class F item and the two strongest
   findings (X1, X2).
-- **A count with no exclusion reasons.** "406 nodes, 50 censused" is not checkable; the other 356
+- **A count with no exclusion reasons.** "518 nodes, 54 censused" is not checkable; the other 464
   have to say why.
 - **Treating the adapters as the census's evidence base.** They are the evidence for *current*
   divergence only. A sweep driven from what the three adapters happen to do would find no seam
@@ -295,7 +356,7 @@ is what makes the absence of a fifty-first item checkable.
 
 ## 3. The census
 
-50 items. Per-item fields are BL-074's adjudication inputs; **If schema-level** and
+54 items. Per-item fields are BL-074's adjudication inputs; **If schema-level** and
 **If adapter-owned** are the two the ruling turns on and neither is omitted anywhere.
 
 *Grouping declared:* six `CONFIDENCE_*` constants are censused as one item (**D8**) and the ~12
@@ -392,6 +453,37 @@ than infers a miss; per-constant lines are inside the item.
   `tests/test_detect_orphans.py:419` which exercises the modifier from a synthetic fixture.
 - **Consumers** — `detect_orphans.modifier_recent_activity` (`:371`), `timestamp_warnings`
   (`:431`), `identity`-adjacent evidence; `tests/test_detect_orphans.py:419`.
+
+#### X5 · File-read/write encoding — specified in `render_report.py`, **absent** in the other two I/O sites — `detect_orphans.py:583, 613`; `compose_report_data.py:667, 678, 708`; cf. `render_report.py:334, 352, 381, 404`
+*(Found at review round 1 by class H — the only item the class-G/H extension added.)*
+- **Meets** — every adapter-supplied document, at the point it is decoded: the inventory JSON, the
+  cost snapshot, the orphan-candidates file and every persisted history snapshot.
+- **Diverges today** — **no**, and it is currently invisible for that reason: every value the three
+  adapters emit is ASCII, so the platform default decodes them identically to UTF-8. The
+  **asymmetry** is established, not reasoned: `render_report.py` passes `encoding="utf-8"` at all
+  four of its I/O sites; `detect_orphans.py` (2 sites) and `compose_report_data.py` (3 sites) pass
+  none and take `locale.getpreferredencoding()`.
+- **Could diverge** — a provider whose resource `name`, `tags` or `region` carry non-ASCII (a
+  customer-supplied CJK instance label, an accented region display name). Under a non-UTF-8 locale
+  the read either raises `UnicodeDecodeError` — breaking the stdout contract with a traceback,
+  which the stage-CLI rule forbids — or mis-decodes silently, and the mis-decoded name is then
+  written into the candidate's `identity`, into the evidence text and into the rendered report.
+  **This is BL-112 one layer down**: that row is the BEAM's latin1 fallback silently corrupting
+  non-ASCII in `--json` payloads; this is the same failure in the Python stages, reached by the
+  same locale, and neither is guarded by the other. It is also why the asymmetry matters rather
+  than the absence alone — the one script that would *display* the corruption is the one that
+  already specifies the encoding, so the corruption enters upstream of the only correct site.
+- **If ruled schema-level** — the normalized schemas specify UTF-8 as the on-disk encoding, and all
+  five unspecified sites pass `encoding="utf-8"` explicitly. Breaks: nothing — the two-line change
+  is byte-neutral on every current artifact, which is exactly why it has stayed unnoticed.
+- **If ruled adapter-owned** — not available in any useful form: the encoding governs how *shared
+  machinery* decodes a file an adapter already wrote, and the adapters' own writers are outside
+  BL-074's four-file scope. Recorded as a closed arm. (The adapters' write-side encoding is a
+  separate question this census did not sweep — see §6.)
+- **Consumers** — `detect_orphans.main` (`:613`) and `write_json` (`:583`);
+  `compose_report_data.write_json` (`:667`), `read_document` (`:678`), `discover_bundles` (`:708`);
+  transitively the history tree, since `persist_history` writes through `write_json`. No test pins
+  an encoding; the sprint does not check one.
 
 ### 3b. `_normalized.py` — the schema module
 
@@ -1261,13 +1353,18 @@ not have, one (lead 3) is weakened, and one (lead 7) is wider than filed.
 
 ### 4b. Census → leads (what the leads do not name)
 
-**50 censused items; the leads name 7.** The 43 the leads do not name, by why they were missed:
+**54 censused items. The seven leads name 8 of them** — lead 1 names three (D1, D2, D3), leads
+2–4 name one each (D6, D5, D7), lead 5 and lead 7 both name N1, and lead 6 names N8. **The leads do
+not name the other 46**, partitioned below by why they were missed. The partition is derived, not
+counted: `LEAD` and `NAMED` are stated as item lists and the two rows are their set differences, so
+a reader who disputes a membership can recompute the row.
 
 | Why the leads missed it | Items |
 |---|---|
-| **Not a named constant** — invisible to any name-keyed sweep | X1, X2, X3, X4, D12, D13, D14, D15, D16, D17, D18, D19, D20, D21, F1, F2, F3, F4, N3, N7, N8, P4, P6, P8, P9, P11, R2, R3 (28) |
-| **A named constant, but in a file the leads did not reach** — every lead but 5–7 names `detect_orphans.py` | N1, N2, N4, N5, N6, N9, P1, P2, P3, P5, P7, P10, R1, R4 (14) |
-| **A named constant in `detect_orphans.py` the leads simply did not list** | D8, D9, D10, D11 (4) — the confidences, the modifier deltas, and the two closed seams |
+| **Not anchored on a named constant** — invisible to any name-keyed sweep, whatever file it is in | X1, X2, X3, X4, X5, N3, N4, N5, N6, N7, N9, D12, D13, D14, D15, D16, D17, D18, D19, D20, D21, F1, F2, F3, F4, P4, P5, P6, P8, P9, P10, P11, R2, R3 **(34)** |
+| **A named constant the leads did not list** — **seven** are in a file no lead reaches (every lead but 5–7 names `detect_orphans.py`): N2, P1, P2, P3, P7, R1, R4. The other **five** sit in `detect_orphans.py` itself and were simply not enumerated: D4, D8, D9, D10, D11 | N2, D4, D8, D9, D10, D11, P1, P2, P3, P7, R1, R4 **(12)** |
+
+34 + 12 = 46. ✓ (7 + 5 = 12 within the second row.)
 
 Two items are the strongest findings and both are in the first row: **X1** (`state` is canonical
 for one value only; ~15 provider-vocabulary values flow through shared machinery into the rendered
@@ -1323,15 +1420,40 @@ no ruling implied.
 - **R4 (`PDF_BINARY`) cannot be ruled by BL-074's dichotomy** — it is an environment dependency,
   not a provider one. It is reported as unrulable rather than forced into an arm, because a reader
   checking the census against class A would otherwise read its absence as a miss.
-- **Four items have one genuinely closed arm** (N4, N9, P2, P9, R2, R3, D12, D20 — the adapter-owned
-  arm is unavailable because the value is computed by shared machinery over normalized data, and no
-  adapter can own it). Each says so in the field rather than leaving it blank.
+- **Nine items have one genuinely closed arm** — N4, N9, P2, P9, R2, R3, D12, D20 and X5. For the
+  first eight the adapter-owned arm is unavailable because the value is computed by shared machinery
+  over normalized data and no adapter can own it; for X5 it is unavailable because the encoding
+  governs how shared machinery *decodes* a file an adapter already wrote. Each says so in the field
+  rather than leaving it blank. *(Read `Four` and listed eight before review round 1 — a wrong count
+  in the section a reader uses to check the census's own honesty. Corrected, and the correction left
+  visible rather than silently absorbed.)*
 - **Current divergence is established from the three adapters at agents `9962454`**, by reading
   their emission sites — not from running them. AWS and Linode credentials are not present in this
   environment (m4 t3's recorded limit still applies) and none was minted or probed. Every
   *"diverges today"* claim above cites adapter source lines, which is a read, and is labelled as
   such rather than presented as a run.
-- **The census covers the four scripts BL-074 names.** `detect_optimization_signals.py` is the
-  fourth non-adapter script in the directory and is **not** shared machinery by BL-074's Scope
-  paragraph (m4-consolidation §Scope, enumerated at t1b r1); it was not swept, and that is a scope
-  statement, not an omission.
+- **The census covers the four scripts BL-074 names, and the fifth candidate's exclusion is now
+  established rather than inherited** *(review round 1)*. As first written this said only that
+  `detect_optimization_signals.py` is not named by BL-074's Scope paragraph — which is true, and is
+  a different claim from *"established not shared machinery"*. BL-074 exists because a bounded list
+  was mistaken for a census, so "not in the list" is precisely the reasoning the row distrusts. The
+  file was read. **It is AWS-specific at every level**: `PROVIDER = "aws"` hardcoded (`:93`); it
+  imports fifteen names directly from `fetch_aws.py` (`:72`) including `AWSClients`,
+  `load_credentials` and `enumerate_regions`; every one of its six signals is an AWS service concept
+  (S3 lifecycle, incomplete multipart, ECR image accumulation, Secrets Manager staleness); it
+  carries an AWS list-price rate table keyed by AWS region (`:146`); and it calls botocore directly.
+  Its own docstring calls it *"a second lane, not an extension of the first"*, and decision G keeps
+  the core pipeline from reading it. **So it is adapter-side, not shared machinery, and BL-074's
+  four-file scope is confirmed complete** — the exclusion is a fact, not a boundary respected.
+
+  **One thing the check surfaced, recorded as a negative.** Shared machinery *does* read this
+  AWS-only script's artifact: `render_report.py --optimization-file` (`:300`, `:319–339`). It reads
+  it as an opaque dict and hands it to the template, and the template learns nothing AWS-shaped from
+  it — `grep -icE "s3|ecr|secret|aws|bucket" templates/report.html.j2` returns **1**, and that one
+  hit is the substring `ecr` inside the word *"decrease"* (`:247`). Zero real matches. That is R1's
+  positive control holding on the one path where it would have been easiest to break.
+
+- **The adapters' own write-side encoding was not swept.** X5 censuses how shared machinery
+  *decodes*; whether `fetch_aws.py`, `fetch_do.py` and `fetch_linode.py` specify an encoding when
+  they *write* is outside BL-074's four-file scope and was not checked. Stated as a limit rather
+  than left for the arbiter to assume either way.

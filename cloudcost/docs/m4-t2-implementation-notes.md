@@ -301,9 +301,38 @@ d14d8e3132aca3178509a1b68c37463c8d2a4601  render_report.py
 All eight, including the four shared scripts the cycle's scope names. `detect_orphans.py` was
 *run* during the mutation work, writing only into a scratch directory.
 
-### Other gates
+### `drift_check.py --strict`, post-commit
 
-`drift_check.py --strict` post-commit and `mix test` off-territory — see the review packet.
+Run after the commit, not before — check 8 reads committed history, so a pre-commit run cannot see
+the staleness the edit introduces. **8 PASS, 0 FAIL, 5 WARN, 7 INFO, exit 0.** All five WARNs are
+`project_knowledge` manifest staleness, the one class the strict-mode exemption covers. Named:
+
+| WARN | This ticket? |
+|---|---|
+| `cloudcost/milestone.md` manifest=`7a7b7ec` current=`9bb09b4` | **yes** — the dated note |
+| `CLAUDE.md` (agents) manifest=`13fc8c4` current=`9bb09b4` | **yes** — the gate-rule correction |
+| `docs/backlog-2026-06.md` manifest=`de71e2b` current=`9bb09b4` | **yes** — BL-069, BL-074, BL-044 |
+| `CLAUDE.md` (harness) manifest=`1743e75` current=`f6fbd82` | no — carried from t1a-p |
+| `docs/methodology/milestone-methodology.md` manifest=`0a0439f` current=`aaf0f9a` | no — carried |
+
+**Three, and exactly three, are attributable to this ticket** — which is the count of
+manifest-tracked files it touched. Established rather than inferred: the manifest's path column
+was matched exactly, after a substring grep had wrongly reported `cloudcost/runbook.md` and
+`cloudcost/m3-milestone.md` as tracked (it was matching the `docs/rig/runbook.md` and
+`docs/aetheris/runbook.md` rows). Both are untracked, as are `m2-milestone.md`,
+`m4-consolidation.md`, the three handoffs and these notes. The mismatch was noticed only because
+check 8 not warning about a file I had just edited was implausible — the same shape as a gate
+pointed at the wrong target returning a clean result.
+
+### `mix test`, off-territory
+
+```
+Finished in 90.2 seconds (2.5s async, 87.7s sync)
+969 tests, 0 failures, 133 excluded
+```
+
+Green. No harness code was touched — the only harness change is `scripts/sprint.sh`, which the
+suite does not cover — so this is the boundary run the gate rule asks for, not a regression check.
 
 ---
 

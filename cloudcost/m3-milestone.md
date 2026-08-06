@@ -607,8 +607,8 @@ verified with a control ✓ · 8 six excluded classes each recorded as an exclus
   > parseability in any environment where the harness emits Logger output on stdout, which is every
   > capture in this repo from 2026-07 onward. Whether it sufficed earlier depends on `[sandbox]`
   > routing, which is unestablished. **(2) "Display only" is false for the class.** The same
-  > expression appears at four sites in `sprint.sh`, and one of them — the chaos case
-  > (`../aetheris/scripts/sprint.sh:297`) — is a **gate**: the extracted value is the operand of
+  > expression appears at four sites in `sprint.sh`, and one of them — the chaos case's
+  > gate extraction in `../aetheris/scripts/sprint.sh` (`:297`) — is a **gate**: the extracted value is the operand of
   > `[[ "$status" == "done" ]]`, so a failed read makes the assertion unable to match. It is
   > display-only at the three cloudcost/`run_agent`/`run_orb` sites, not everywhere. Also, the
   > reads are **non-deterministic** rather than uniformly broken — they succeed or fail on ambient

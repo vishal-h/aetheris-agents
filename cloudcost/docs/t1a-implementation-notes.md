@@ -277,6 +277,16 @@ The guidance in `claude-notes.md` is now qualified accordingly. Carries to:
   the mechanism lands — either a contract statement that at most one payload is emitted, or a
   scan that detects and reports multiplicity instead of silently taking the last.
 
+**3. Cwd-independent commands (round-2 finding N1).** Three times in this ticket a bare `cd` in a
+compound command persisted into a later stage and pointed a check at the wrong repo: the v5 G4
+attribution check (caught, self-evidently wrong), the review packet's §2b diff (not caught — it
+became a blocking review finding), and the round-1 commit itself (failed loudly, nothing
+miscommitted). A cwd defect that redirects a grep is indistinguishable from a clean negative
+result — Silent-wrong-answer applied to the verification apparatus. Carries to **t1b's method**:
+every repo-scoped command in a gate or census uses `git -C` or an absolute path, and the report
+says which. All G0–G5 checks were re-run under that rule at the round-2 disposition; no ruling
+moved (see the packet's N1 section).
+
 ## 8. Not established
 
 Carried forward rather than resolved or papered over:

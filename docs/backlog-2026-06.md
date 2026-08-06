@@ -5278,8 +5278,7 @@ credential must fail the assertion).
 > output on stdout, which is every capture in this repo from 2026-07 onward. Whether it sufficed
 > earlier depends on `[sandbox]` routing, which is unestablished — *not* a claim that it could
 > never have worked. **(3) The subject is not "broken reads" but reads whose success depends on
-> ambient run-store state.** The contaminating Logger lines are emitted only when the store has
-> something to report, so identical expressions succeed or fail by environment: news captures
+> ambient run-store state.** Identical expressions succeed or fail by environment: news captures
 > parse in 4 of 4, payslip fails in 8 of 8, cloudcost fails in 10 of 10 — same helper, same
 > redirect. Non-determinism is the defect, and it is why fixing this makes the reads
 > *deterministic* rather than "makes every read work". Size raised XS → S–M to match. The
@@ -5321,9 +5320,9 @@ and Linode are all affected, and have been since the case was written (m1 t5). m
 rather than introducing it.
 
 **`[corrected 2026-08-06]` Scope — the class, not the one line.** This row was filed against the
-cloudcost case's status line. The same expression appears at four sites in `sprint.sh` —
-`run_agent` (`:53`), `run_orb` (`:70`), the chaos case (`:297`) and the cloudcost inline copy
-(`:2573`) — and the same root cause reaches eight further reads (`.run_id` ×6, `.orb_id`,
+cloudcost case's status line. The same expression appears at four sites in `sprint.sh` — the `ok`-line reads inside
+`run_agent()` (`:53`) and `run_orb()` (`:70`), the chaos case's gate extraction (`:297`), and the
+cloudcost case's inline orchestrator line (`:2573`) — and the same root cause reaches eight further reads (`.run_id` ×6, `.orb_id`,
 `extract_step_count`). **The chaos site is a gate, not a display line**: its operand feeds
 `[[ "$status" == "done" ]]`, so when the read fails the assertion cannot match. Two sites already
 carry ad-hoc `grep` workarounds (docbuilder, cloudcost) while their siblings do not. Enumerate the
@@ -5362,6 +5361,9 @@ run's real status, and whichever fix is chosen, the D2 credential grep demonstra
 everything the run wrote to both streams.
 
 `Source: m3-cloudcost t3 §4, t3 review r0 F1 (2026-08-05).`
+`Source (2026-08-06 corrections + rescope): t1a — census and evidence in
+cloudcost/docs/t1a-implementation-notes.md; causal claim refuted by the stdout/stderr split
+recorded there. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
 
 ---
 
@@ -5611,9 +5613,13 @@ $ mix aetheris --json list --limit 1 2>&1 >/dev/null    # stderr only
 go to stdout or stderr is **not established** — the command above spawns no worker, and this row
 does not need it.
 
-**The consequence is non-determinism, not universal breakage.** The contaminating lines are emitted
-only when the store has something to report, so identical expressions succeed or fail by
-environment. Across the captures in `../aetheris/sprint/`: news parses in 4 of 4, payslip fails in
+**The consequence is non-determinism, not universal breakage.** Identical expressions succeed or
+fail by environment. **The mechanism is not single, and only part of it is established:** the
+resume-failure lines *are* store-state dependent, but the orphan-sweep line is not — it logs with
+every counter at zero and is gated on `config :aetheris, :sweep_on_start`
+(`../aetheris/config/config.exs`), and it did not exist before 2026-07-15 (`0188a90`, BL-003), so
+its absence from the May captures is a version boundary. Do not attribute a file's failure to one
+cause without checking which lines it carries. Across the captures in `../aetheris/sprint/`: news parses in 4 of 4, payslip fails in
 8 of 8, cloudcost fails in 10 of 10 — same helper, same redirect. A clean single-line capture
 exists from 2026-05-21, written *after* the resume-failure Logger line already existed in the code
 (`application.ex`, added 2026-05-20), which is what establishes the dependence on store state
@@ -5627,8 +5633,15 @@ stdout line by line for a parsing JSON object
 compile and log noise shares stdout and does not parse as JSON"* — written 2026-07-26, ten days
 before BL-100 was filed with the wrong one. Any fix must keep that consumer working.
 
-**Fixing this would make every `jq`-over-`--json` read in `sprint.sh` deterministic at a stroke**,
-which is twelve-plus reads across four `.status` sites and eight sibling reads. See BL-100.
+**Reach, stated precisely — this does NOT on its own fix every sprint read.** Fixing the Logger
+contaminant addresses the reads that fail *because of it*, which is the 2026-07-onward captures.
+It does **not** cover a second contaminant: three captures carry
+`aetheris_worker fatal: Broken pipe (os error 32)` lines *after* the payload, emitted by
+`eprintln!` in the worker's entry point (`../aetheris/native/aetheris_worker/src/main.rs`, the
+fatal-exit arm) — i.e. on **stderr**, which the sprint's `2>&1` merge carries into the file
+regardless of what this row changes. So a `tail -1`-style read stays wrong after this lands, and
+the sprint still needs its own backward-scan fix. That is why BL-100 and this row are separate,
+and why neither obviates the other. See BL-100.
 
 **Done when:** the `--json` payload is separable from log output by a consumer that does not have
 to know what the noise looks like — either the payload moves to a stream the Logger does not share,
@@ -5692,7 +5705,10 @@ parseable output naming the failure.
 **Size:** XS–S · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`)
 
 Filed 2026-08-06 from t1a, per the gate rule — *a red gate gets a tracked ticket the day it's
-found*. This is that ticket; the gate is being repaired by the BL-100 work rather than carried.
+found*. This is that ticket. **Repair is scheduled, not started:** it is expected to fall out of
+BL-100's sprint work (t1b), which has not run. **If that sequence changes, this gate is carried
+red with this row named**, per the tracked-carry clause — never relaxed, re-pointed or downgraded
+to get a clean run.
 
 `../aetheris/scripts/sprint.sh:296-299`:
 
@@ -5703,8 +5719,9 @@ found*. This is that ticket; the gate is being repaired by the BL-100 work rathe
                              || warn "Chaos 1: status=$status (investigate)"
 ```
 
-Unlike the other three `.status` sites (`:53`, `:70`, `:2573`), which interpolate into an `ok`
-line, **this one is a gate** — the extracted value is the operand of an equality test. When the
+Unlike the other three `.status` sites — `run_agent()` (`:53`), `run_orb()` (`:70`) and the
+cloudcost case's inline `ok` line (`:2573`) — which interpolate into an `ok` line, **this one is a
+gate** — the extracted value is the operand of an equality test. When the
 read fails, `status` is the literal `no-json`, the test cannot match, and the case emits
 `warn "Chaos 1: status=no-json (investigate)"`.
 
@@ -5716,13 +5733,15 @@ is **inference, not observation**: no chaos output has ever been captured in thi
 from the extraction's behaviour rather than seen. The premise — that every chaos run to date ran in
 a noisy-store environment — is unexamined.
 
-**Chaos runs only under specific sprint targets** (`sprint.sh:277`, `TARGET == "chaos" || "all"`),
-not on every sprint invocation.
+**Chaos runs only under specific sprint targets** — the chaos case's opening
+`if [[ "$TARGET" == "chaos" || "$TARGET" == "all" ]]` guard (`:277`) — not on every sprint
+invocation.
 
 Nothing other than the warn line consumes the result: `grep -n '\$status'` over the file returns
-exactly four reads — `:54` and `:71` (both inside helpers where `status` is `local`) and
-`:298`/`:299` — and `maxsteps.json` is read only at `:297`. The chaos `status` is a global but is
-never read after `:299`. `warn` sets no exit status (BL-077), so no exit path changes.
+exactly four reads — the `ok` lines inside `run_agent()` (`:54`) and `run_orb()` (`:71`), both
+where `status` is `local`, and the chaos gate's own test and warn (`:298`, `:299`) — and
+`maxsteps.json` is read only by the chaos gate's own extraction (`:297`). The chaos `status` is a
+global but is never read after its warn line. `warn` sets no exit status (BL-077), so no exit path changes.
 
 **Done when:** the gate's operand is a real status rather than a fallback token; the assertion's
 outcome is recorded before and after, so the change from `warn` to whatever it becomes is visible

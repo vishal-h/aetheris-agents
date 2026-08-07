@@ -537,9 +537,10 @@ with.
 snapshot older than **N days** … stopped droplet with attached storage >30d"* — the snapshot rule
 alone was written with a symbolic threshold and the other two with literals, and the implementation
 rendered that faithfully as one CLI flag and two constants. **The rationale is not established**: a
-search of `cloudcost/` and `docs/` for `snapshot.age.days|snapshot_age_days|older than N|why N|
-symbolic` returns the value, the flag and this ticket's own restatements, and no reason. The origin
-is a fact; the reason is a gap, recorded as unexplained rather than filled by inference.
+search of `cloudcost/` and `docs/` for
+`snapshot.age.days|snapshot_age_days|older than N|why N|symbolic` returns the value, the flag and
+this ticket's own restatements, and no reason. The origin is a fact; the reason is a gap, recorded
+as unexplained rather than filled by inference.
 
 **The scoring model is additive-then-clamped** (D9): a base confidence, plus modifier deltas,
 clamped to `[0,1]`. **The clamp silently absorbs overshoot**, so a modifier set that is too strong
@@ -1100,7 +1101,7 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   adapter-owned, 2 neither**, and all 54 are now stated as contracts in **§Contracts (C1–C15)**,
   each cited there by census item id.*
   *Two things this correction does **not** claim. It does not say all 54 are seams: the census
-  swept for provider divergence and censused some values it then reported as **not** seams — **at
+  swept for provider divergence and censused some values it then found **not** to be seams — **at
   least four** (D8, D21, F1, R4), and R4 is recorded explicitly as unrulable by this row's own
   schema-level-or-adapter-owned dichotomy. **That four is a floor, not a count**: it comes from a
   match on the census's own **Meets** field, so it finds items whose Meets field *says* it meets

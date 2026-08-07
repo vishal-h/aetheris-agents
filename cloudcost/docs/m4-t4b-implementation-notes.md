@@ -476,9 +476,16 @@ committed sentence said *"four … at all"*. The hedge was load-bearing and it w
 cannot see it. The committed text now cites N4 by name.
 
 **Edit B's thirteenth hit is the claim itself.** The r1 command returns **13**; the enumeration
-named 12. The thirteenth is `docs/backlog-2026-06.md:2549` — **the sentence asserting the count**,
-which the search matches because it contains the phrase. Counting an assertion as evidence for
-itself. It is **not** the harness hit the review guessed: every genuine citation is agents-side, so
+named 12. The thirteenth is **the sentence asserting the count itself**, in this row in
+`docs/backlog-2026-06.md`, which the search matches because it contains the phrase. Counting an
+assertion as evidence for itself.
+
+> *No line number, deliberately, and the reason is this ticket's own* (corrected r3). The notes
+> first cited it as `docs/backlog-2026-06.md:2549`. That was the line the grep **actually matched**
+> in the r1 tree — correct at the moment the search ran — and the same commit's rewrite of the
+> paragraph moved it to `:2552`, so the citation was false in the commit it landed in. A citation
+> that decays inside one commit, over a sentence in a file this ticket keeps editing, is exactly
+> the class the census recorded; the fix is to name the sentence rather than a line. It is **not** the harness hit the review guessed: every genuine citation is agents-side, so
 the qualifier *"in this repo"* was doing no work and has been dropped. Reconciled explicitly in the
 row rather than silently excluded.
 
@@ -553,6 +560,75 @@ row this ticket wrote.
 `you are reading it`. Rather than invent a review-state vocabulary, the row is **written truthfully
 for the commit it lands in** — `In review (r2)`. t1a-c is the precedent: a state that is true when
 read, not a state predicted to become true. It becomes `Closed` in the commit that closes it.
+
+---
+
+## 4c. r3 — the closing round
+
+Four edits. No ruling, census item, contract substance or C1–C15 mapping changed.
+
+### Edit 1 — Edit D's second half: the after-state existed; the packet's range missed it
+
+**Nothing was lost, and nothing needed restoring.** The origin-versus-reason distinction is present
+in the committed text at `d90b1f9` and was present from r2:
+
+> *The origin is a fact; the reason is a gap, recorded as unexplained rather than filled by
+> inference.*
+
+**Why the r2 packet showed only removals.** The extracting range was
+`sed -n '/The rationale is unrecorded/,/filled by inference/p'` over the diff. Both the `-` line and
+the `+` line end in *"filled by inference"*, so the range **closed on the removal** and never
+reached the addition. A packet-construction defect, not a document defect — but it presented a
+correct passage as a deleted one, which is the more dangerous direction: the reviewer had to ask
+whether the sentence they had singled out as right had gone.
+
+One fidelity fix taken in the same passage, declared: the quoted search string had wrapped mid-regex
+across two lines (`…|why N|` / `symbolic`), so it did not read as the command actually run. Rewrapped
+so the quoted pattern is the pattern. No wording changed.
+
+### Edit 2 — where the two errors lived
+
+| Error | In the notes? | Disposition |
+|---|---|---|
+| **(a)** *"Hit 1 is the claim. Hits 2–13 are the twelve"* — in the listing, hit 1 is a handoff and the claim is **hit 3** | **No** — packet-only; the notes never carried a hit index | Corrected in the r3 packet. The twelve and the nine files were right; only the index was wrong, in the paragraph whose whole job was reconciling a count against a listing |
+| **(b)** the self-match cited at `:2549` while the listing showed `:2553` | **Yes** — the notes carried `:2549` | Corrected: the line number is **removed**, not adjusted |
+
+**On (b), the interesting half.** `:2549` was not a typo. It is the line the grep **actually
+matched** in the r1 tree — correct at the moment the search ran. The same commit that recorded it
+also rewrote that paragraph, moving the sentence to `:2552`, so **the citation was false in the
+commit it landed in**. A citation that decays inside a single commit, pointing at a sentence in a
+file this ticket keeps editing, is precisely the class t4a recorded (*a verified citation decays the
+moment the file moves*). The fix is therefore not a better number: it is to **name the sentence
+rather than a line**, which is what the backlog's own text already did (*"the thirteenth is **this
+paragraph**"*).
+
+### Edit 3 — the row, the invented form, and the regress
+
+**The claim was the only thing wrong.** `In review (r2)` is not `Closed`, not `not started`, and not
+t1a-c's `you are reading it` — it is a **fourth form**, and the r2 packet said *"I did not invent a
+review-state vocabulary."* Inventing one was right; saying I had not was not. A self-description
+that contradicts the row beside it is this ticket's own defect class one layer up, and it is
+recorded in the cycle doc rather than quietly dropped.
+
+**The regress, and its break.** A row that reads `Closed` only in the commit that closes it can
+never be written, because that commit is under review when it is written. Breaking it requires an
+authority outside the loop. The reviewer supplied one at r3:
+
+> *If r3 contains only edits 1–4 and its done-check is clean, t4b is closed on that commit.*
+
+**That authorisation is the row's truth-maker**, and the §Sequence note cites it. The row reads
+`Closed` because an authority outside the loop said so in advance — not because the commit predicted
+its own review.
+
+### Edit 4 — taken, one word
+
+*"censused some values it then **reported** as not seams"* → *"censused some values it then
+**found** not to be seams."*
+
+Only **R4** was *reported* as a non-seam by the census; D8, D21 and F1 are valid inferences from a
+Meets field, not reports. *Found* covers both without weakening either. One word, in the same commit,
+per the instruction — and the sentence is otherwise untouched, this being its fifth consecutive
+round.
 
 ---
 

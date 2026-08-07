@@ -109,7 +109,7 @@ ticket; the count states how many commits that is.
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
 | **t4a** | The seam census: enumerate every provider-differing value in shared machinery, and record the sweep's method | BL-074 — **enumerated, not discharged**; no DONE section | **Closed** — the census is `cloudcost/docs/m4-t4a-implementation-notes.md`: 518 nodes extracted structurally, 54 censused, seven leads confirmed and none refuted |
-| **t4b** | Write the rulings as contracts: **§Contracts (C1–C15)** in `cloudcost/milestone.md` | BL-074 **not closed** — its Done-when clause 2 amended here, before assessment, to name §Contracts; m1's "one seam" text corrected here | **In review (r2)** — 54 items ruled 48 schema-level / 4 adapter-owned / 2 neither, each cited by census item id in exactly one contract |
+| **t4b** | Write the rulings as contracts: **§Contracts (C1–C15)** in `cloudcost/milestone.md` | BL-074 **not closed** — its Done-when clause 2 amended here, before assessment, to name §Contracts; m1's "one seam" text corrected here | **Closed** — 54 items ruled 48 schema-level / 4 adapter-owned / 2 neither, each cited by census item id in exactly one contract; see the closure note under §Sequence |
 | **t4c** | File the defect rows the rulings created | BL-074 **closes here**; 11 rows filed, 3 exclusions recorded | not started — **held until t4b is closed and pushed** |
 | **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
 
@@ -213,13 +213,23 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → t5 → **harness consolidation
 > **t4c added 2026-08-07** and gated the same way — held until t4b is closed **and pushed**. It
 > files the rows for the census items a ruling cannot fix; see §Ticket set.
 
-> **On the t4b row's state, 2026-08-07 (r2).** It read `Closed` in a commit that was itself under
-> review, so it was false from the moment r1 landed until r2 passed — the same class as the
-> observation this ticket raised at r0, applied to the row this ticket wrote. **The file has no
-> mid-review state form** (§Ticket set uses `Closed`, `not started`, and t1a-c's `you are reading
-> it`), so rather than invent a review-state vocabulary the row is **written truthfully for the
-> commit it lands in**. t1a-c is the precedent: a state that is true when read, not a state
-> predicted to become true. It becomes `Closed` in the commit that closes it.
+> **On the t4b row's state — the regress, and how it was broken (r2/r3, 2026-08-07).** At r1 the row
+> read `Closed` in a commit that was itself under review, so it was false from the moment r1 landed
+> until r2 passed — the same class as the observation this ticket raised at r0, applied to the row
+> this ticket wrote.
+>
+> **r2 introduced `In review (r2)` as an interim state, and that was a fourth form.** §Ticket set had
+> exactly three — `Closed`, `not started`, and t1a-c's `you are reading it` — so the r2 packet's
+> claim *"I did not invent a review-state vocabulary"* was false; inventing one was the right call
+> and the claim not to have done it was the only thing wrong. Recorded rather than quietly dropped,
+> because a self-description that contradicts the row beside it is the same defect one layer up.
+>
+> **The regress itself.** A row that reads `Closed` only in the commit that closes it can never be
+> written, because that commit is under review when it is written. Breaking it needs an authority
+> outside the loop. **The reviewer supplied one at r3, authorising closure in advance**: *if r3
+> contains only its four named edits and its done-check is clean, t4b is closed on that commit.*
+> That authorisation is this row's truth-maker, and the row reads `Closed` because of it — not
+> because the commit predicted its own review.
 
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you

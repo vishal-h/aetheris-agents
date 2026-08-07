@@ -433,6 +433,15 @@ non-USD provider blanks the report's headline number for every provider**, becau
 becomes null and renders as an em dash. That is the honest output; it is also a surprise, and this
 sentence is the deliverable.
 
+> **Pointer added m4 t5b, 2026-08-07 — read this paragraph with BL-131 beside it.** The policy
+> above and its blast radius both describe **cross-provider** behaviour, and the cross-provider
+> compose path is reachable only through a CLI flag the orchestrator never passes. The paragraph is
+> **not false** — it describes the source accurately — but it states as current a behaviour nothing
+> in the live pipeline produces, so **no amendment is owed and no authority should be taken from it
+> until BL-131 rules.** m4 t5b's ruling to delete these paths was withdrawn on exactly that reading.
+> **BL-132** is the row for whether other contracts share the property; two instances are not a
+> census.
+
 **Presentation reads the exponent from the payload** (R2). **Closed arm**: R2's adapter-owned arm is
 closed because the renderer must not learn provider identity — asserted by
 `tests/test_render_report.py::test_the_region_block_names_no_provider_and_no_provider_payload_key`
@@ -670,7 +679,13 @@ second such read, which today only a comment prevents. **[code consequence]**
 across all providers**, so one provider can be absent from the table entirely while another fills
 every row — and nothing reports it. The same file argues against silent caps elsewhere, for the
 region list, on the same reasoning. The payload should record how many were dropped. Owed a row by
-t4c. **Closed arm**: P2's adapter-owned arm is **closed** because the ranking is cross-provider by
+t4c.
+
+> **Pointer added m4 t5b, 2026-08-07 — same caveat as C4, and the fix has landed regardless.** The
+> dropped count is now in the payload (`untagged_not_shown`, `tags_not_shown`) and renders in both
+> states, so the cap reports its truncation at any N. But *"across all providers … one provider can
+> be absent from the table entirely"* describes the **cross-provider** path BL-131 decides the
+> support of. **Not false, not yet amendable** — see C4's pointer and **BL-132**. **Closed arm**: P2's adapter-owned arm is **closed** because the ranking is cross-provider by
 construction — no single adapter can own a cap applied across all of them.
 
 ### C12 — Encoding  *(X5)*

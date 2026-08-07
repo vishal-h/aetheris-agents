@@ -107,9 +107,38 @@ def provider_slug(value) -> str:
     return cleaned or "unknown"
 
 
-def tags_of(resource: dict) -> list:
+def tags_of(resource: dict, skipped: list = None) -> list:
+    """The resource's string tags. A non-`str` element is dropped — and *counted* when a
+    sink is given (§Contracts C6; BL-127).
+
+    **The sink is opt-in per caller, and that is load-bearing rather than stylistic.**
+    `detect_orphans` deliberately passes none: its own `skipped` list is read by the
+    sprint's rule-legibility arm (`../aetheris/scripts/sprint.sh`), whose `illegible`
+    branch fires on *any* entry and whose `evaluated + skipped == resources` arm assumes
+    every entry is a whole resource. A tag-element skip is neither, so routing one there
+    would fail the sprint from another repo. `compose_report_data` passes its own
+    report-data sink, which nothing in the sprint reads.
+
+    With no sink the behaviour is byte-identical to the pre-BL-127 filter.
+    """
     tags = resource.get("tags")
-    return [t for t in tags if isinstance(t, str)] if isinstance(tags, list) else []
+    if not isinstance(tags, list):
+        return []
+    if skipped is None:
+        return [t for t in tags if isinstance(t, str)]
+    kept = []
+    for index, tag in enumerate(tags):
+        if isinstance(tag, str):
+            kept.append(tag)
+        else:
+            skipped.append(
+                {
+                    "resource_id": resource.get("resource_id"),
+                    "index": index,
+                    "reason": f"tag element is {type(tag).__name__}, not a string",
+                }
+            )
+    return kept
 
 
 def usable_resources(inventory: dict) -> tuple:

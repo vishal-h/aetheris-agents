@@ -2325,10 +2325,41 @@ would have `compose` silently find no orphans file and under-report — a well-f
 with a section missing, not an error. Converge on the shared helper here, where `compose` is
 already being edited.
 
-**Done when:** the unreachable cross-provider merge / caveat / currency paths are removed;
-`compose` uses `_normalized.provider_slug()` and its private `slug()` is gone; the retained
+**Done when:** the unreachable cross-provider merge / caveat / currency paths are removed
+`[deferred 2026-08-07 — see the amendment note]`;
+`compose` uses `_normalized.provider_slug()` and its private `slug()` is gone
+`[DONE 2026-08-07, m4 t5b]`; the retained
 single-provider compose has a test asserting its behaviour is unchanged; and the four m1 open
 items those paths carried are marked resolved-by-deletion.
+
+**Done-when amended 2026-08-07 (m4 t5b), before any deletion was made** — the same move t2 made
+on BL-069 and t4b made on BL-074 clause 2: a row implemented against a premise the work has
+already undermined is implemented against nothing.
+
+*What changed.* **The cross-provider deletions are deferred, not cancelled**, pending **BL-131**.
+The **slug convergence is discharged here**, independently of them, on §Contracts C9's explicit
+assignment (*"BL-070 owns the convergence, to be taken when that file is next legitimately
+edited"*) and on its own argument, which is divergence-prevention rather than reachability.
+
+*What the deferral covers.* **Every target whose premise is decision-H-unreachability** — the
+N-merge, the `providers_without_prior_snapshot` caveat, all four cross-currency aggregation sites,
+and the multi-currency "No combined total" path — **not only the two that turned out to be
+contract-covered.** m4 t5b's gate found C4 and C11 describing cross-provider behaviour as current,
+but the premise is shared by targets no contract mentions, and a premise under question does not
+become sound where nobody happened to write it down.
+
+*Why the premise is under question — three states, not two.* This row calls the paths
+**unreachable**; `cloudcost/milestone.md` §Open items calls them **"latent while m1 is DO-only
+single-currency; live at the first fan-out"**; and m4 t5b's gate established a third reading: the
+`--input-dir` route that reaches them is **declared in `cloudcost/tools.json` with a worked
+example**, so it is an advertised interface that the orchestrator simply never invokes. Dead,
+source-only, and live are three different things and this row assumed the first. BL-131 decides
+which it is.
+
+*One consequence recorded here rather than left to be rediscovered.* The multi-currency path is
+reachable **only** through the N-merge, so retaining one while deleting the other would retain code
+no input can reach — which is what this row exists to remove. The two cannot be taken separately in
+either direction.
 
 `Source: m2-cloudcost decision H, ratified 2026-08-01; slug convergence added from the t2
 review's N1 (docs/reviews/m2-cloudcost-t2-review.md), 2026-08-02.`
@@ -5720,6 +5751,27 @@ and the tag figures reconcile with the existing coverage ratio, asserted in a te
 `Source: m3-cloudcost close, 2026-08-05 (human request, from reading the live Linode report);
 resolves m1-cloudcost §Open items' `reported`-list question.`
 
+
+**DONE 2026-08-07 (m4 t5b).** Every Done-when clause satisfied; assessed per clause.
+
+| Clause | Satisfied by |
+|---|---|
+| *the report names the tags in use with their resource counts and summed estimates, applying and reporting a `top_k`* | `coverage_section` emits `tags_in_use` / `tags_in_use_total` / `tags_not_shown`; the template renders a **Tags in use** table and states its cap in **both** states. `test_the_tag_table_reports_its_own_cap_in_both_states`, `test_the_tags_in_use_table_renders_with_its_tags` |
+| *the `reported` governance list reaches `report_data` and renders with its evidence* | `orphan_section` carries `reported` through with `evidence[]` intact; the template renders it as its own sub-section. `test_the_governance_reported_block_reaches_report_data_with_its_evidence` |
+| *each rendered resource row shows its tags* | spender rows carry `tags` (key always present, `[]` when none) and render chips or an explicit em dash. `test_untagged_spender_rows_carry_their_tags_and_the_key_is_always_present`, `test_untagged_spender_rows_render_their_tags_or_an_explicit_dash` |
+| *a `keep=true` resource appears in the tag section and still appears nowhere in the orphan section* | `test_a_reported_resource_never_appears_in_the_orphan_section`; the m1 ruling is preserved, not reversed, and `test_a_reported_entry_is_never_banded_as_a_candidate` pins that a reported entry carries no `confidence` and no `monthly_saving_estimate` |
+| *the tag figures reconcile with the existing coverage ratio, asserted in a test* | `test_tags_in_use_reconciles_with_the_coverage_ratio`, with `test_the_reconciliation_check_fails_against_a_deliberately_broken_fixture` as its anti-vacuity control |
+
+**One finding worth carrying.** The governance rule **has never fired on any committed fixture** —
+`inventory_rules_positive` is at 16.67 % coverage and `inventory_soc_2026-07` at 25 %, both below
+the 50 % threshold, so `account_uses_tags` is False on every fixture in the repo. Asserting the
+fired state required constructing an inventory over the threshold. The unfired state is what the
+live DO report renders, and it now says **"Not evaluated … the rule did not run. This is not a
+finding of 'no untagged resources'."** — which is the rider's shape, arrived at because this row
+could not be implemented honestly without it.
+
+`Source: m3-cloudcost close, 2026-08-05; implemented m4 t5b, 2026-08-07.`
+
 ---
 
 ### BL-102 — The complete-but-unmarked sweep runs at milestone closes only, so batch closes leave rows silently open (#TBD)
@@ -6563,6 +6615,18 @@ before the catalog ever sees it, so:
 sprint's third arm means without touching the sprint — and leaves an assertion that reads green
 because its subject can no longer occur.
 
+**Annotated 2026-08-07 (m4 t5b): the reconciliation target moved.** m4 t5b restructured
+`coverage_section` — it now takes a tag-skip sink, builds the tags-in-use table and reports its
+cap — so this row's skip-semantics change lands against a **changed** consumer, not the one the
+census read. The cross-repo sprint coupling is unchanged and still dominates the sequencing.
+
+**One constraint m4 t5b established that this row inherits:** the sprint's rule-legibility arm
+reads `orphans["skipped"]` and fires `illegible` on **any** entry, and separately asserts
+`evaluated + len(skipped) == len(resources)`. Any new skip category routed into that list fails the
+sprint from another repo. m4 t5b's tag-skip sink was deliberately routed into compose's own
+`skipped` for that reason; this row's canonicality skip **cannot** be, being a whole-resource skip —
+which is precisely why it must land with the sprint change.
+
 `Source: m4 t4a census item N8; ruled schema-level at m4 t4b under C1. Observed at m4 t2 while
 wiring the rule-legibility assertion; sprint arms read at harness e75f838.`
 
@@ -6642,6 +6706,11 @@ snapshots carry no such key and would need a compatibility read.
 globbing) — all three edit `compose_report_data.py`, and BL-070 asks to be a dedicated cleanup.
 Sequence them.
 
+**Annotated 2026-08-07 (m4 t5b).** **Both steps stay filed**, including step 1, which m4 t5b's
+first scoping had put in tier 1. Its subject is `discover_bundles` — the `--input-dir` route —
+which is **the surface BL-131 decides the support of**. Deferring a decision about a surface and
+then investing in it is incoherent, so step 1 waits on BL-131 with step 2.
+
 `Source: m4 t4a census item P8; ruled schema-level at m4 t4b under C10. Read at agents 611feba.`
 
 ---
@@ -6703,7 +6772,27 @@ having nothing to report.
 **Collides with:** BL-101, which redesigns the tag section (adds a tags-in-use table and carries the
 `reported` block through). Same section, same file — take together or sequence.
 
+**Annotated 2026-08-07 (m4 t5b).** **The cap-truncation gap is fixed** — `untagged_not_shown` and
+`tags_not_shown` now travel in the payload and render in both states, and the fix does **not**
+depend on BL-131. **The row's stated consequence does.** *"A provider can be absent from the table
+entirely"* requires the N>1 compose path, whose support BL-131 decides; at N=1 the same cap drops
+rows without dropping a provider. **Not re-characterised here** — doing so now would pre-empt
+BL-131's ruling.
+
 `Source: m4 t4a census item P2; ruled schema-level at m4 t4b under C11. Read at agents 611feba.`
+
+
+**DONE 2026-08-07 (m4 t5b).** `untagged_not_shown` travels in the payload and the template states
+the truncation in both states — *"N further untagged resource(s) are not shown"* and *"Every
+untagged resource is shown; the cap of N dropped none."* Zero is emitted explicitly rather than
+omitted, so *nothing dropped* and *nobody counted* are different renderings (absent-is-unknown).
+The same treatment was given to the new tag table, which BL-101's own text required.
+`test_the_cap_reports_what_it_dropped_in_both_states`,
+`test_the_spenders_cap_states_what_it_dropped_in_both_states`.
+
+**The row's stated consequence is not closed by this** — see the annotation above: *"a provider can
+be absent from the table entirely"* needs the N>1 path, which BL-131 decides. The cap-truncation
+gap itself was real at any N and is fixed.
 
 ---
 
@@ -6879,6 +6968,21 @@ touching both callers (`has_keep_tag`, `tag_coverage`) and `coverage_section` in
 (not inherited) at agents 1779368: `_normalized.py:112`, `return [t for t in tags if isinstance(t,
 str)] if isinstance(tags, list) else []`.`
 
+
+**DONE 2026-08-07 (m4 t5b).** `tags_of` takes an optional skip sink; a non-`str` element is
+recorded with its `resource_id`, index and type rather than silently filtered.
+`test_a_non_string_tag_element_is_counted_not_silently_dropped` asserts both states — a clean
+inventory records no tag skip, a broken one records exactly two with their reasons.
+
+**The sink is opt-in per caller, and that is the row's real content.** The sprint's rule-legibility
+arm reads `orphans["skipped"]`, fires `illegible` on **any** entry, and separately asserts
+`evaluated + len(skipped) == len(resources)`. A tag-element skip is neither a whole resource nor an
+unreadable one, so routing it there would have failed the sprint **from another repo**.
+`detect_orphans` therefore passes no sink and is byte-identical to its pre-BL-127 behaviour;
+`compose_report_data` passes its own report-data sink, which nothing in the sprint reads.
+`test_the_tag_skip_sink_never_reaches_the_orphan_artifacts_skipped_list` pins the constraint so it
+cannot regress silently.
+
 ---
 
 ### BL-128 — C6: the keep marker becomes a first-class field, not a tag spelling (#TBD)
@@ -6908,6 +7012,12 @@ the schema moves once.
 (not inherited) at agents 1779368: `detect_orphans.py:84` (`KEEP_TAG = "keep=true"`), `:112`
 (`tag.strip().lower() == KEEP_TAG`), `fetch_aws.py:438` (`out.append(f"{name}={value}" if value
 else str(name))`).`
+
+**Annotated 2026-08-07 (m4 t5b): sequence this AFTER m4 t5b, not merely apart from it.** BL-101's
+Done-when required an acceptance test on a `keep=true` resource, and that test now exists
+(`tests/test_render_report.py::test_a_reported_resource_never_appears_in_the_orphan_section`).
+This row **replaces the spelling that test is written against**, so taking it will rewrite a test
+written days earlier — expected, and cheaper to know now than to meet as a surprise regression.
 
 ---
 
@@ -6974,5 +7084,105 @@ ruled at m4 t4c G3. Code claims **read** (not inherited) at agents 1779368:
 `compose_report_data.py:516` (`SWEPT_REGIONS_KEY`), `:539-540` (the guarded lift),
 `fetch_aws.py:765` (the only emitter), and `render_report.py:219` — `value = data.get(key)` inside
 the `OPTIONAL_FIELDS` loop, confirming it reads the **report payload**, not the provider block.`
+
+---
+
+### BL-131 — decide whether the N>1 compose path is a supported surface (#TBD)
+**Kind:** decision · **Census items:** n/a (surfaced by the m4 t5b gate) · **Contract:** C4, C11
+**Size:** S to decide, M–L to implement either way · **Priority:** medium
+**Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`, `cloudcost/milestone.md`)
+
+Filed 2026-08-07 from m4 t5b's G2 gate-stop. **This row exists because three documents describe
+the same code three different ways and no decision record settles it.**
+
+**The three states, and each is asserted somewhere.**
+
+| State | Asserted by | Reading |
+|---|---|---|
+| **dead** | **BL-070** — *"decision H … makes the N-merge … unreachable"* | delete it |
+| **live at the first fan-out** | `cloudcost/milestone.md` §Open items — *"latent while m1 is DO-only single-currency; **live at the first fan-out**"* | fix it before provider four |
+| **advertised but uninvoked** | established at m4 t5b (below) | decide whether to support it |
+
+**The reachability derivation** (m4 t5b G7, at agents `6832159`): the N>1 path is reachable only
+through `--input-dir` → `discover_bundles`. The orchestrator
+(`cloudcost/agents/cloudcost_orchestrator.exs:258, 263`) passes **exactly one**
+`--cost`/`--inventory`/`--orphans` triple, and `--input-dir` appears in neither the orchestrator,
+`../aetheris/scripts/sprint.sh`, nor `cloudcost/runbook.md`. **But it is declared in
+`cloudcost/tools.json` (`args[3]`) with a worked example** — *"`--input-dir output/aws
+--output-dir output/aws --history-dir history/aws`"* — so it is a documented tool interface, not a
+stray flag. Note the example points at **one** provider's directory: even the advertised use is
+N=1. **So N>1 is an emergent capability of a supported interface that nothing advertises, tests or
+invokes** — and those are two separable questions this row must not conflate.
+
+**Resolving this requires amending §Contracts either way.** C4's currency paragraph ratifies the
+one-currency-scalar policy as *"correct, and m1's stated position"* and states its blast radius as
+*"blanks the report's headline number for **every provider**"*; C11's P2 paragraph describes the
+spenders cap as applied *"after a global sort **across all providers**"*. **Both describe
+cross-provider behaviour that only exists because the N-merge exists.** Whichever way this goes,
+those two paragraphs change — kept and justified, or rewritten as superseded by decision H.
+
+**The knock-ons resolve with it, not before it:**
+
+- **BL-121**'s stated consequence (*"a provider can be absent from the table entirely"*) is
+  reachable only on this surface. The cap-truncation gap itself is real at any N and was fixed at
+  m4 t5b; only the framing waits.
+- **BL-119**'s subject is `discover_bundles`, which is this surface.
+- **BL-070**'s remaining deletion targets are all premised on this being dead.
+
+**Owes:** a ruling — supported, or removed — and the §Contracts amendment that follows it.
+**Costs:** the decision is cheap; either implementation is M–L, because "supported" means tests and
+a sprint leg for N>1 and "removed" means deleting a declared tool interface and its manifest entry.
+**Collides with:** BL-070, BL-119, BL-121's framing, C4, C11.
+
+**It blocks nothing in m4 and it blocks provider four.** Sequence: **after the harness
+consolidation round, before provider four** — the first fan-out is exactly when the wrong answer
+starts costing.
+
+`Source: m4 t5b G2 gate-stop and G7, 2026-08-07. Reachability derived at agents 6832159; the
+orchestrator, sprint, runbook and tools.json all read at that commit.`
+
+---
+
+### BL-132 — establish, per contract, whether the behaviour it states is reachable from the live pipeline (#TBD)
+**Kind:** method · **Census items:** n/a (surfaced by the m4 t5b gate) · **Contract:** all of C1–C15
+**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
+
+Filed 2026-08-07 from m4 t5b's G2 gate-stop. **The method finding, which is the row:**
+
+> **The m4 t4a census swept *code*. §Contracts at t4b stated that code as *contract*. Neither step
+> established *reachability*.**
+
+So §Contracts can state — accurately, as a description of the source — behaviour that no live
+invocation can produce. **C4 and C11 are the two known instances**: both describe cross-provider
+behaviour, and the cross-provider path is reachable only through a CLI flag the orchestrator never
+passes (BL-131). Neither contract is *false*; each describes the source correctly. The gap is that
+a reader — including the reviewer who wrote the ruling that m4 t5b's gate stopped — can cite a
+contract as authority without knowing whether it describes a path anything takes.
+
+**Two is not a census.** That is this row's whole point, and it is the same lesson BL-074 was filed
+for: *"the one seam"* was an observation. Two contract instances found by accident, through a
+collision map, are an observation too.
+
+**The method, which is cheap and bounded — and the row states it so the work is not mis-scoped:**
+
+- **The entry point is `cloudcost/agents/cloudcost_orchestrator.exs`.** Everything the pipeline
+  runs, it runs from there. Anything reachable only through a CLI flag the orchestrator never
+  passes is **source-only**.
+- For each contract C1–C15, ask one question: *is the behaviour this states produced by any
+  invocation the orchestrator makes?* Answer **reachable**, **source-only**, or **untested** —
+  and where source-only, say whether the contract should be kept, qualified, or superseded.
+
+**This is a reachability check, not decision-record archaeology.** It does not ask what any
+milestone decided or when; it asks what the current entry point can produce. Scoped as archaeology
+it becomes a multi-day read of five milestone documents, which is not what it is for and not what
+it costs.
+
+**Owes:** the per-contract table, and a qualifying sentence in each contract found source-only.
+**Costs:** S. Fifteen contracts, one question each, one entry point.
+**Collides with:** BL-131, which decides the two known instances. **Take BL-131 first** — otherwise
+this row re-derives its answer and then has to change it.
+
+`Source: m4 t5b G2 gate-stop, 2026-08-07 — the finding that C4 ratified an m1 position decision H
+had already superseded, and that no step between the census and the contract checked reachability.`
 
 ---

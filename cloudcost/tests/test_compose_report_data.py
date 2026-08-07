@@ -321,6 +321,10 @@ def test_each_untagged_spender_carries_the_identity_fields_the_report_renders():
         "size": "lb-small",
         "monthly_cost_estimate": 12.0,
         "raw_ref": "do://load_balancers/lb-idle-1",
+        # BL-101: the rows the report already renders now carry their tags. This row is an
+        # untagged spender, so the list is empty — and empty is the point: the key is
+        # always present, so "no tags" and "tags not carried" are different shapes.
+        "tags": [],
     }
 
 
@@ -922,3 +926,188 @@ def test_the_aws_adapters_swept_set_reaches_report_data(full_aws_stub, tmp_path,
     assert report["region_coverage"] == [
         {"provider": "aws", "swept": emitted, "count": len(emitted)}
     ]
+
+
+# ------------------------------------------------------- m4 t5b — the report value pass
+#
+# BL-101 (tags surfaced), BL-121 (the cap reports its truncation), BL-127 (a non-`str` tag
+# element is a counted skip), BL-070 (slug convergence). Each new *distinction* is asserted
+# in both of its states, per the mutation posture: a rendering that has only ever been seen
+# in one state has not been shown to distinguish anything.
+
+
+def test_tags_in_use_reconciles_with_the_coverage_ratio():
+    """BL-101's Done-when clause, as a check rather than a claim.
+
+    The tag table and the coverage ratio are computed from the same resource set, so the
+    count of resources carrying at least one tag must equal `tagged` — and the tag table's
+    per-tag resource counts must sum to at least that, since a resource may carry several.
+    """
+    coverage = compose([do_bundle(), soc_bundle()])["tag_coverage"]
+    inventories = [do_bundle()["inventory"], soc_bundle()["inventory"]]
+    resources = [r for inv in inventories for r in compose_report_data.usable_resources(inv)[0]]
+
+    carrying = [r for r in resources if compose_report_data.tags_of(r)]
+    assert coverage["tagged"] == len(carrying)
+    assert coverage["resources"] == len(resources)
+    assert coverage["untagged"] == len(resources) - len(carrying)
+    # The ratio the report prints is the same ratio, not a second computation of it.
+    assert coverage["coverage"] == compose_report_data.tag_coverage(resources)
+    # Every tag row's resource count is real, and the rows account for every carrier.
+    assert sum(row["resources"] for row in coverage["tags_in_use"]) >= len(carrying)
+    assert coverage["tags_in_use_total"] == len({t for r in resources for t in compose_report_data.tags_of(r)})
+
+
+def test_the_reconciliation_check_fails_against_a_deliberately_broken_fixture():
+    """The anti-vacuity control for the test above: break the input and it must go red."""
+    bundle = do_bundle()
+    # Strip every tag from the inventory but leave the orphan artifact's figures alone.
+    for resource in bundle["inventory"]["resources"]:
+        resource["tags"] = []
+    coverage = compose([bundle])["tag_coverage"]
+    assert coverage["tagged"] == 0
+    assert coverage["tags_in_use"] == []
+    # The pre-break report has carriers, so the two disagree — which is what makes the
+    # assertion above load-bearing rather than tautological.
+    assert compose([do_bundle()])["tag_coverage"]["tagged"] > 0
+
+
+def _tagged_account_inventory():
+    """An inventory over the coverage threshold, so the governance rule actually fires.
+
+    **No committed fixture does this.** Both `inventory_rules_positive` (16.67 %) and
+    `inventory_soc_2026-07` (25 %) sit below the 50 % threshold, so on every fixture in the
+    repo `account_uses_tags` is False and the rule reports nothing. Constructing the firing
+    case is the only way to assert the state the report renders when it does fire.
+    """
+    inventory = load_fixture("inventory_rules_positive")
+    resources = inventory["resources"]
+    for resource in resources[: (len(resources) * 2) // 3]:
+        resource["tags"] = ["env=prod"]
+    for resource in resources[(len(resources) * 2) // 3 :]:
+        resource["tags"] = []
+    return inventory
+
+
+def test_the_governance_rule_does_not_fire_below_the_threshold_and_says_so():
+    """The state every committed fixture actually produces — and it is *not evaluated*,
+    not *nothing found*. C6 records the distortion; this pins the payload that carries it."""
+    block = compose()["orphans"]["reported"][0]
+    assert block["account_uses_tags"] is False
+    assert block["resources"] == []
+    # The threshold and the coverage both travel, so the report can say WHY it did not run.
+    assert block["tag_coverage"] == 0.1667
+    assert block["coverage_threshold"] == 0.5
+
+
+def test_the_governance_reported_block_reaches_report_data_with_its_evidence():
+    """BL-101: t2's rule fired in the pipeline and had no key in report_data since m1."""
+    inventory = _tagged_account_inventory()
+    orphans = detect_orphans.detect(inventory, REF)
+    assert orphans["reported"]["untagged_in_tagged_account"]["resources"], (
+        "constructed fixture no longer exercises the governance rule"
+    )
+    bundle = {"cost": load_fixture("cost_do_2026-07"), "inventory": inventory, "orphans": orphans}
+    reported = compose([bundle])["orphans"]["reported"]
+    assert len(reported) == 1
+    block = reported[0]
+    assert block["provider"] == "digitalocean"
+    assert block["rule"] == "untagged_in_tagged_account"
+    assert block["account_uses_tags"] is True
+    assert block["tag_coverage"] == orphans["reported"]["untagged_in_tagged_account"]["tag_coverage"]
+    assert [r["resource_id"] for r in block["resources"]] == [
+        r["resource_id"] for r in orphans["reported"]["untagged_in_tagged_account"]["resources"]
+    ]
+    # Carried intact — the evidence is the point, and it is what the report renders.
+    assert all(r["evidence"] for r in block["resources"])
+
+
+def test_a_reported_entry_is_never_banded_as_a_candidate():
+    """§t2's structural rule survives the passthrough: reported-only is not queueable."""
+    report = compose()
+    banded = {c["resource_id"] for band in report["orphans"]["by_band"] for c in band["candidates"]}
+    for block in report["orphans"]["reported"]:
+        for row in block["resources"]:
+            assert "confidence" not in row
+            assert "monthly_saving_estimate" not in row
+    # And the totals count candidates only.
+    assert report["orphans"]["totals"]["candidates"] == len(banded)
+
+
+def test_untagged_spender_rows_carry_their_tags_and_the_key_is_always_present():
+    """BL-101: absent-is-unknown applied to a list — `[]` and 'no key' are different."""
+    top = compose([do_bundle(), soc_bundle()])["tag_coverage"]["top_untagged_spenders"]
+    assert top, "fixture no longer produces untagged spenders"
+    for row in top:
+        assert "tags" in row
+        assert row["tags"] == []  # by construction: these are the untagged
+
+
+def test_the_cap_reports_what_it_dropped_in_both_states():
+    """BL-121, mutation posture: the distinction is asserted in both directions."""
+    full = compose([do_bundle(), soc_bundle()])
+    assert full["tag_coverage"]["untagged_not_shown"] == 0  # 8 untagged, default cap 10
+
+    capped = compose([do_bundle(), soc_bundle()], top_untagged=3)
+    assert len(capped["tag_coverage"]["top_untagged_spenders"]) == 3
+    assert capped["tag_coverage"]["untagged"] == 8
+    assert capped["tag_coverage"]["untagged_not_shown"] == 5
+    # The dropped count is emitted as 0 rather than omitted, so "nothing dropped" and
+    # "nobody counted" are distinguishable in the payload.
+    assert "untagged_not_shown" in full["tag_coverage"]
+
+
+def test_the_tag_table_reports_its_own_cap_in_both_states():
+    """BL-121's sibling on the tag table, which BL-101's own text requires."""
+    full = compose([do_bundle(), soc_bundle()])["tag_coverage"]
+    assert full["tags_not_shown"] == 0
+    assert len(full["tags_in_use"]) == full["tags_in_use_total"]
+
+    capped = compose([do_bundle(), soc_bundle()], top_untagged=1)["tag_coverage"]
+    assert len(capped["tags_in_use"]) == 1
+    assert capped["tags_not_shown"] == capped["tags_in_use_total"] - 1
+    assert capped["tags_not_shown"] > 0, "fixture no longer has enough distinct tags to cap"
+
+
+def test_a_non_string_tag_element_is_counted_not_silently_dropped():
+    """BL-127 / C6. Both states asserted: a clean inventory records no tag skip."""
+    clean = compose([do_bundle()])
+    assert not [s for s in clean["skipped"] if s.get("source") == "tags"]
+
+    bundle = do_bundle()
+    bundle["inventory"]["resources"][0]["tags"] = ["keep=true", 42, {"k": "v"}]
+    broken = compose([bundle])
+    tag_skips = [s for s in broken["skipped"] if s.get("source") == "tags"]
+    assert len(tag_skips) == 2
+    assert {s["reason"] for s in tag_skips} == {
+        "tag element is int, not a string",
+        "tag element is dict, not a string",
+    }
+    # The string tag survives; only the malformed elements are skipped.
+    assert tag_skips[0]["resource_id"] == bundle["inventory"]["resources"][0]["resource_id"]
+
+
+def test_the_tag_skip_sink_never_reaches_the_orphan_artifacts_skipped_list():
+    """The cross-repo constraint, asserted here so it cannot regress silently.
+
+    `../aetheris/scripts/sprint.sh`'s rule-legibility arm reads `orphans["skipped"]` and
+    fires `illegible` on ANY entry, and separately asserts
+    `evaluated + len(skipped) == len(resources)`. A tag-element skip is neither a whole
+    resource nor unreadable, so routing one there would fail the sprint from another repo.
+    """
+    inventory = load_fixture("inventory_rules_positive")
+    inventory["resources"][0]["tags"] = ["keep=true", 42]
+    result = detect_orphans.detect(inventory, REF)
+    assert result["skipped"] == []
+    assert result["totals"]["resources"] + len(result["skipped"]) == len(inventory["resources"])
+
+
+def test_compose_uses_the_shared_slug_and_carries_no_private_one():
+    """BL-070's slug convergence — the only BL-070 target in m4 t5b's scope."""
+    assert not hasattr(compose_report_data, "slug")
+    assert compose_report_data.provider_slug is detect_orphans.provider_slug
+    source = inspect.getsource(compose_report_data.persist_history)
+    assert "provider_slug(bundle" in source
+    # Not `"slug(bundle" not in source` — that substring is inside `provider_slug(bundle`,
+    # which would make the assertion unfalsifiable. Match the whole call instead.
+    assert "{slug(bundle" not in source

@@ -354,7 +354,7 @@
   <table>
     <thead>
       <tr><th>Provider</th><th>Name</th><th>Type</th><th>Region</th><th>Size</th>
-      <th class="num">Monthly cost estimate</th><th>Reference</th></tr>
+      <th>Tags</th><th class="num">Monthly cost estimate</th><th>Reference</th></tr>
     </thead>
     <tbody>
       {%- for row in tag_coverage.top_untagged_spenders %}
@@ -364,6 +364,7 @@
         <td>{{ row.type | nz }}</td>
         <td>{{ row.region | nz }}</td>
         <td>{{ row.size | nz }}</td>
+        <td>{% if row.tags %}{% for tag in row.tags %}<span class="chip">{{ tag }}</span>{% endfor %}{% else %}&mdash;{% endif %}</td>
         <td class="num">{{ row.monthly_cost_estimate | amount }} {{ currency_of.get(row.provider) | nz("") }}</td>
         <td><span class="chip">{{ row.raw_ref | nz }}</span></td>
       </tr>
@@ -372,15 +373,83 @@
     {%- if tag_coverage.untagged_monthly_cost_estimate is not none %}
     <tfoot>
       <tr>
-        <td colspan="5">All untagged resources ({{ tag_coverage.untagged | nz }})</td>
+        <td colspan="6">All untagged resources ({{ tag_coverage.untagged | nz }})</td>
         <td class="num">{{ tag_coverage.untagged_monthly_cost_estimate | amount }}</td>
         <td></td>
       </tr>
     </tfoot>
     {%- endif %}
   </table>
+  {%- if tag_coverage.untagged_not_shown is not none %}
+  <p class="note">{% if tag_coverage.untagged_not_shown %}{{ tag_coverage.untagged_not_shown }} further untagged
+    resource(s) are not shown &mdash; this table is capped at {{ tag_coverage.top_k | nz }}.{% else %}Every untagged
+    resource is shown; the cap of {{ tag_coverage.top_k | nz }} dropped none.{% endif %}</p>
+  {%- endif %}
   {%- else %}
   <p class="empty">No untagged resources to rank.</p>
+  {%- endif %}
+
+  <h3>Tags in use{% if tag_coverage.top_k is not none %} (top {{ tag_coverage.top_k }} by cost){% endif %}</h3>
+  {%- if tag_coverage.tags_in_use %}
+  <table>
+    <thead><tr><th>Tag</th><th class="num">Resources</th><th class="num">Monthly cost estimate</th></tr></thead>
+    <tbody>
+      {%- for row in tag_coverage.tags_in_use %}
+      <tr>
+        <td><span class="chip">{{ row.tag }}</span></td>
+        <td class="num">{{ row.resources | nz }}</td>
+        <td class="num">{{ row.monthly_cost_estimate | amount }}</td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- if tag_coverage.tags_not_shown is not none %}
+  <p class="note">{% if tag_coverage.tags_not_shown %}{{ tag_coverage.tags_not_shown }} further tag(s) of
+    {{ tag_coverage.tags_in_use_total | nz }} are not shown &mdash; this table is capped at
+    {{ tag_coverage.top_k | nz }}.{% else %}All {{ tag_coverage.tags_in_use_total | nz }} tag(s) in use are shown;
+    the cap dropped none.{% endif %}</p>
+  {%- endif %}
+  {%- else %}
+  <p class="empty">No tags are in use on any resource in this inventory.</p>
+  {%- endif %}
+
+  <h3>Untagged in a tagged account</h3>
+  {%- if orphans.reported %}
+  <p class="note">Reported only, never queued: these are governance flags, not orphan candidates,
+    and they carry no confidence and no saving estimate by design.</p>
+  {%- for block in orphans.reported %}
+  <h4>{{ block.provider | nz }}
+    &mdash; coverage {{ block.tag_coverage | ratio_pct }}, threshold {{ block.coverage_threshold | ratio_pct }}</h4>
+  {%- if block.account_uses_tags %}
+  {%- if block.resources %}
+  <table>
+    <thead><tr><th>Name</th><th>Type</th><th>Region</th><th class="num">Monthly cost estimate</th>
+    <th>Why</th><th>Reference</th></tr></thead>
+    <tbody>
+      {%- for row in block.resources %}
+      <tr>
+        <td>{{ row.name | nz }}</td>
+        <td>{{ row.type | nz }}</td>
+        <td>{{ row.region | nz }}</td>
+        <td class="num">{{ row.monthly_cost_estimate | amount }} {{ currency_of.get(block.provider) | nz("") }}</td>
+        <td><ul class="evidence">{% for line in row.evidence %}<li>{{ line }}</li>{% endfor %}</ul></td>
+        <td><span class="chip">{{ row.raw_ref | nz }}</span></td>
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+  {%- else %}
+  <p class="empty">This account is using tags and every resource carries at least one.</p>
+  {%- endif %}
+  {%- else %}
+  <p class="empty">Not evaluated for {{ block.provider | nz }} &mdash; coverage
+    {{ block.tag_coverage | ratio_pct }} is at or below the {{ block.coverage_threshold | ratio_pct }}
+    threshold, so this account does not count as using tags and the rule did not run.
+    This is not a finding of "no untagged resources".</p>
+  {%- endif %}
+  {%- endfor %}
+  {%- else %}
+  <p class="empty">The governance rule reported nothing for this run.</p>
   {%- endif %}
 
   {%- if tag_coverage.estimate_note %}
@@ -459,6 +528,7 @@
         <span class="chip">{{ candidate.resource_id | nz }}</span>
         <span class="chip">{{ candidate.region | nz }}</span>
         <span class="chip">{{ candidate.raw_ref | nz }}</span>
+        {%- if candidate.tags %}{% for tag in candidate.tags %}<span class="chip tag-chip">{{ tag }}</span>{% endfor %}{% endif %}
       </p>
       <p class="note">
         rule <strong>{{ candidate.rule | nz }}</strong> &middot;

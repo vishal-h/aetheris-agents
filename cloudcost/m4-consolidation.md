@@ -111,7 +111,9 @@ ticket; the count states how many commits that is.
 | **t4a** | The seam census: enumerate every provider-differing value in shared machinery, and record the sweep's method | BL-074 — **enumerated, not discharged**; no DONE section | **Closed** — the census is `cloudcost/docs/m4-t4a-implementation-notes.md`: 518 nodes extracted structurally, 54 censused, seven leads confirmed and none refuted |
 | **t4b** | Write the rulings as contracts: **§Contracts (C1–C15)** in `cloudcost/milestone.md` | BL-074 **not closed** — its Done-when clause 2 amended here, before assessment, to name §Contracts; m1's "one seam" text corrected here | **Closed** — 54 items ruled 48 schema-level / 4 adapter-owned / 2 neither, each cited by census item id in exactly one contract; see the closure note under §Sequence |
 | **t4c** | File the rows the rulings created, and close BL-074 | **BL-074 CLOSED**; **17 rows filed** (BL-114–BL-130): 10 defect + 7 contract consequence; 3 exclusions confirmed already recorded, not re-filed; 1 candidate dropped on a failed precondition | **Closed** — see the closure note under §Sequence; the count correction is below |
-| **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
+| **t5a** | Scope the report value pass — read-only, no commit | none | **Closed** — the scoping report; it produced no repo artifact by design |
+| **t5b** | The report value pass: BL-101 in full, BL-070's slug convergence, BL-121, BL-127 | **BL-101 closed**, **BL-121 closed**, **BL-127 closed**; BL-070 **partly** (slug only, Done-when amended); filed **BL-131**, **BL-132** | **Closed** — see the deferral note under §Sequence |
+| **t5c** | The rider: the report distinguishes *not found* from *not looked at* | the six rows t5a's sweep identified (X4, N8, P2, P11, F3, X5) — surfacing only, none implemented | not started — **the rider is defined, not implemented** |
 
 **Why t4 became t4a and t4b (2026-08-06).** BL-074's output is a set of **rulings** — for each
 provider-differing value, schema-level or adapter-owned — and a ruling is an adjudication, not an
@@ -206,7 +208,8 @@ Two constraints, recorded at t2's close because both are known now and expensive
 
 ## Sequence
 
-t1b → t2 → t3 → **t4a → t4b → t4c** → t5 → **harness consolidation round** → **provider four**.
+t1b → t2 → t3 → **t4a → t4b → t4c** → **t5a → t5b → t5c** → **harness consolidation round** →
+**BL-131** → **provider four**.
 
 > **Updated 2026-08-06 (t4a review r2), on the reviewer's ruling.** t4a's `Touches` named two
 > changes to this document and closed *"Nothing else."*, so t4a left this line reading `t4` and
@@ -222,6 +225,32 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → t5 → **harness consolidation
 >
 > **t4c added 2026-08-07** and gated the same way — held until t4b is closed **and pushed**. It
 > files the rows for the census items a ruling cannot fix; see §Ticket set.
+
+> **t5 became t5a, t5b and t5c — and the N>1 deferral, 2026-08-07.** t5a scoped the pass read-only,
+> because t4c's seventeen rows had changed the ground under the cycle document's t5 row. t5b
+> implemented; t5c takes the rider, for the reason t5a's own sweep established — five of the six
+> rows that fit the rider's shape surface in the two functions t5b restructures, so they are
+> **cheaper after it, not concurrent with it**.
+>
+> **The rider was defined, not recovered.** *"The evaluated-versus-not-evaluated rider"* occurs
+> exactly once in either repo — in the t5 row that used it, introduced by the commit that created
+> this document. t5b's predecessor established that nothing defines it; **the reviewer, who wrote
+> it, could not recover what they meant and decided it afresh rather than reconstructing it**:
+> *the report must distinguish not found from not looked at.* It is the report-side case of
+> **absent-is-unknown** (`../aetheris/CLAUDE.md:587`), not a new rule.
+>
+> **The N>1 deferral, and why it is a deferral rather than a ruling.** t5b's step-1 gate stopped the
+> ticket: BL-070 proposed deleting the cross-provider merge as *unreachable*, and **§Contracts C4
+> ratifies the currency policy that path implements** — a policy m2's decision H had already
+> superseded, cited four tickets later as authority by a chain in which **no step checked the
+> decision record**. The multi-currency path is reachable only through the N-merge, so the two
+> cannot be taken separately. **The human ruled: defer.** N>1 is neither confirmed nor deleted in
+> m4; **BL-131** decides it after the harness round, before provider four, where it bites.
+>
+> **BL-132** is the general form: the census swept code, §Contracts stated code as contract, and
+> neither established reachability. C4 and C11 are the two known instances, and two is not a census.
+
+
 
 > **On the t4b row's state — the regress, and how it was broken (r2/r3, 2026-08-07).** At r1 the row
 > read `Closed` in a commit that was itself under review, so it was false from the moment r1 landed
@@ -626,7 +655,7 @@ substring-vs-field form under §Open for the close item 2, and the two are best 
 
 ## Close criteria
 
-This cycle is done when t1b through t5 have closed with zero blocking findings, the drift checker
+This cycle is done when t1b through t5c have closed with zero blocking findings, the drift checker
 reports zero FAIL and no unexplained WARN, and the milestone-end ritual has run.
 
 **What a close sweep of this document reads** — the answer BL-102 asks for, for a batch that has no

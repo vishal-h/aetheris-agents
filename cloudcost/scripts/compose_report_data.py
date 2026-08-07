@@ -45,7 +45,15 @@ import re
 import sys
 from pathlib import Path
 
-from _normalized import iso, money, parse_timestamp, tag_coverage, tags_of, usable_resources
+from _normalized import (
+    iso,
+    money,
+    parse_timestamp,
+    provider_slug,
+    tag_coverage,
+    tags_of,
+    usable_resources,
+)
 
 # ------------------------------------------------------------------------- constants
 
@@ -91,13 +99,6 @@ RECONCILE_TOLERANCE = 0.01
 
 
 # --------------------------------------------------------------------------- helpers
-
-
-def slug(value: str) -> str:
-    """Filesystem-safe provider slug for the history filename. Slugs are computed here,
-    never by an LLM (repo rule)."""
-    cleaned = re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
-    return cleaned or "unknown"
 
 
 def prior_period(period: str):
@@ -372,6 +373,13 @@ def coverage_section(bundles: list, top_untagged: int, skipped: list) -> dict:
         for entry in unusable:
             skipped.append({"provider": provider, "source": "inventory", **entry})
         everything.extend(resources)
+        # BL-127 / C6: a non-`str` tag element is a counted skip, not a silent drop. The
+        # sink is this stage's own `skipped`, never `detect_orphans`' — see `tags_of`.
+        for resource in resources:
+            tag_skips: list = []
+            tags_of(resource, tag_skips)
+            for entry in tag_skips:
+                skipped.append({"provider": provider, "source": "tags", **entry})
         provider_untagged = [r for r in resources if not tags_of(r)]
         untagged.extend((provider, resource) for resource in provider_untagged)
         per_provider.append(
@@ -403,9 +411,26 @@ def coverage_section(bundles: list, top_untagged: int, skipped: list) -> dict:
             "size": resource.get("size"),
             "monthly_cost_estimate": money(resource.get("monthly_cost_estimate")),
             "raw_ref": resource.get("raw_ref"),
+            # BL-101: the rows the report already renders now show their tags.
+            "tags": tags_of(resource),
         }
         for provider, resource in untagged[:top_untagged]
     ]
+
+    # BL-101: every distinct tag in use, what carries it, and what that costs. Ranked by
+    # cost like the spenders table, and capped by the same `top_k` — a long tail of
+    # one-off tags is the expected shape.
+    by_tag: dict = {}
+    for resource in everything:
+        for tag in tags_of(resource):
+            row = by_tag.setdefault(tag, {"tag": tag, "resources": 0, "monthly_cost_estimate": 0.0})
+            row["resources"] += 1
+            row["monthly_cost_estimate"] += money(resource.get("monthly_cost_estimate"))
+    tags_in_use = sorted(
+        ({**row, "monthly_cost_estimate": round(row["monthly_cost_estimate"], 2)}
+         for row in by_tag.values()),
+        key=lambda row: (-row["monthly_cost_estimate"], row["tag"]),
+    )
 
     tagged = len(everything) - len(untagged)
     return {
@@ -416,6 +441,14 @@ def coverage_section(bundles: list, top_untagged: int, skipped: list) -> dict:
         "by_provider": per_provider,
         "top_untagged_spenders": top,
         "top_k": top_untagged,
+        # BL-121 / C11: caps report their truncation. `top_k` alone says what was asked
+        # for, never what was withheld — and a table that silently ends reads as the whole
+        # set. Zero is emitted explicitly rather than omitted, so "nothing was dropped" and
+        # "nobody counted" are different renderings (absent-is-unknown).
+        "untagged_not_shown": max(0, len(untagged) - len(top)),
+        "tags_in_use": tags_in_use[:top_untagged],
+        "tags_in_use_total": len(tags_in_use),
+        "tags_not_shown": max(0, len(tags_in_use) - len(tags_in_use[:top_untagged])),
         "untagged_monthly_cost_estimate": round(
             sum(money(resource.get("monthly_cost_estimate")) for _, resource in untagged), 2
         ),
@@ -444,7 +477,8 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
     band it lands in is shared across providers.
     """
     grouped: dict = {band["band"]: [] for band in BANDS}
-    evaluated = []
+    evaluated: list = []
+    reported: list = []
     total = 0
 
     for bundle in bundles:
@@ -452,6 +486,21 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
         provider = bundle["provider"]
         if not isinstance(orphans, dict):
             continue
+        block = orphans.get("reported")
+        governance = block.get("untagged_in_tagged_account") if isinstance(block, dict) else None
+        if isinstance(governance, dict):
+            reported.append(
+                {
+                    "provider": provider,
+                    "rule": "untagged_in_tagged_account",
+                    "account_uses_tags": governance.get("account_uses_tags"),
+                    "tag_coverage": governance.get("tag_coverage"),
+                    "coverage_threshold": governance.get("coverage_threshold"),
+                    "resources": [
+                        r for r in (governance.get("resources") or []) if isinstance(r, dict)
+                    ],
+                }
+            )
         evaluated.append(
             {
                 "provider": provider,
@@ -495,6 +544,12 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
         "bands": list(BANDS),
         "by_band": by_band,
         "evaluated_as_of": sorted(evaluated, key=lambda row: row["provider"]),
+        # BL-101: t2's governance rule fires in the pipeline and has been invisible in the
+        # report since m1 — `orphan_section` carried `candidates` only, so `report_data`
+        # had no key for it and the template could not render it. Carried through intact,
+        # evidence included, and kept OUT of `by_band`: a reported-only entry has no
+        # confidence and no saving estimate, and must never be bandable (§t2).
+        "reported": reported,
         "totals": {
             "candidates": total,
             "monthly_saving_estimate": round(
@@ -746,7 +801,7 @@ def persist_history(bundles: list, history_dir: Path, period: str) -> list:
         cost = bundle.get("cost")
         if not isinstance(cost, dict):
             continue
-        path = history_dir / period / f"{slug(bundle['provider'])}_costs_{period}.json"
+        path = history_dir / period / f"{provider_slug(bundle['provider'])}_costs_{period}.json"
         written.append(str(write_json(path, cost)))
     return sorted(written)
 

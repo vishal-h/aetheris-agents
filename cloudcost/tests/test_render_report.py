@@ -989,3 +989,137 @@ def test_the_exploratory_section_is_not_confidence_scored_like_the_orphan_sectio
     )
     assert orphan_articles
     assert any("confidence" in text_of(article).lower() for article in orphan_articles)
+
+
+# ------------------------------------------------------- m4 t5b — the report value pass
+#
+# Every new distinction is asserted in BOTH states. A rendering seen in one state only has
+# not been shown to distinguish anything — which is the whole subject of this ticket.
+
+
+def test_the_tags_in_use_table_renders_with_its_tags(report):
+    body = text_of(section(render(report), "tag-coverage"))
+    assert "Tags in use" in body
+    for row in report["tag_coverage"]["tags_in_use"]:
+        assert row["tag"] in body
+
+
+def test_an_inventory_with_no_tags_says_so_rather_than_rendering_an_empty_table(report):
+    data = json.loads(json.dumps(report))
+    data["tag_coverage"]["tags_in_use"] = []
+    data["tag_coverage"]["tags_in_use_total"] = 0
+    data["tag_coverage"]["tags_not_shown"] = 0
+    body = text_of(section(render(data), "tag-coverage"))
+    assert "No tags are in use on any resource in this inventory." in body
+
+
+def test_the_spenders_cap_states_what_it_dropped_in_both_states(report):
+    data = json.loads(json.dumps(report))
+
+    data["tag_coverage"]["untagged_not_shown"] = 0
+    kept = text_of(section(render(data), "tag-coverage"))
+    assert "dropped none" in kept
+
+    data["tag_coverage"]["untagged_not_shown"] = 5
+    dropped = text_of(section(render(data), "tag-coverage"))
+    assert "5 further untagged" in dropped
+    assert "not shown" in dropped
+    # The two states render differently — the point of the row.
+    assert kept != dropped
+
+
+def test_the_tag_table_cap_states_what_it_dropped_in_both_states(report):
+    data = json.loads(json.dumps(report))
+
+    data["tag_coverage"]["tags_not_shown"] = 0
+    kept = text_of(section(render(data), "tag-coverage"))
+    assert "the cap dropped none" in kept
+
+    data["tag_coverage"]["tags_not_shown"] = 3
+    data["tag_coverage"]["tags_in_use_total"] = 9
+    dropped = text_of(section(render(data), "tag-coverage"))
+    assert "3 further tag(s) of" in dropped
+    assert kept != dropped
+
+
+def test_untagged_spender_rows_render_their_tags_or_an_explicit_dash(report):
+    data = json.loads(json.dumps(report))
+    rows = data["tag_coverage"]["top_untagged_spenders"]
+    assert rows, "fixture no longer produces untagged spenders"
+
+    plain = section(render(data), "tag-coverage")
+    assert "<th>Tags</th>" in plain
+
+    rows[0]["tags"] = ["env=prod", "owner=team-a"]
+    tagged = text_of(section(render(data), "tag-coverage"))
+    assert "env=prod" in tagged and "owner=team-a" in tagged
+
+
+def test_the_governance_block_distinguishes_not_evaluated_from_nothing_found(report):
+    """The rider's shape, on the one section where this ticket already had to face it.
+
+    Below the coverage threshold the rule does not run, and the report must not render
+    that as "no untagged resources" — it must say the rule did not evaluate.
+    """
+    data = json.loads(json.dumps(report))
+
+    data["orphans"]["reported"] = [
+        {
+            "provider": "digitalocean",
+            "rule": "untagged_in_tagged_account",
+            "account_uses_tags": False,
+            "tag_coverage": 0.1667,
+            "coverage_threshold": 0.5,
+            "resources": [],
+        }
+    ]
+    not_evaluated = text_of(section(render(data), "tag-coverage"))
+    assert "Not evaluated" in not_evaluated
+    assert 'This is not a finding of "no untagged resources".' in not_evaluated
+
+    data["orphans"]["reported"][0]["account_uses_tags"] = True
+    data["orphans"]["reported"][0]["tag_coverage"] = 0.8
+    data["orphans"]["reported"][0]["resources"] = [
+        {
+            "resource_id": "vol-1",
+            "type": "volume",
+            "name": "untagged-vol",
+            "region": "blr1",
+            "raw_ref": "do://volumes/vol-1",
+            "monthly_cost_estimate": 10.0,
+            "evidence": ["tags is empty", "account tag coverage is 80% of 5 resources"],
+        }
+    ]
+    fired = text_of(section(render(data), "tag-coverage"))
+    assert "untagged-vol" in fired
+    assert "tags is empty" in fired          # the evidence renders, per BL-101
+    assert "Not evaluated" not in fired
+    assert fired != not_evaluated
+
+
+def test_a_reported_resource_never_appears_in_the_orphan_section(report):
+    """BL-101's Done-when: the m1 ruling on `keep=true` is preserved, not reversed."""
+    data = json.loads(json.dumps(report))
+    data["orphans"]["reported"] = [
+        {
+            "provider": "digitalocean",
+            "rule": "untagged_in_tagged_account",
+            "account_uses_tags": True,
+            "tag_coverage": 0.8,
+            "coverage_threshold": 0.5,
+            "resources": [
+                {
+                    "resource_id": "kept-1",
+                    "type": "volume",
+                    "name": "kept-resource",
+                    "region": "blr1",
+                    "raw_ref": "do://volumes/kept-1",
+                    "monthly_cost_estimate": 9.0,
+                    "evidence": ["tags is empty"],
+                }
+            ],
+        }
+    ]
+    page = render(data)
+    assert "kept-resource" in text_of(section(page, "tag-coverage"))
+    assert "kept-resource" not in text_of(section(page, "orphan-candidates"))

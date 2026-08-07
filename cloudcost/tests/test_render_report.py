@@ -1123,3 +1123,21 @@ def test_a_reported_resource_never_appears_in_the_orphan_section(report):
     page = render(data)
     assert "kept-resource" in text_of(section(page, "tag-coverage"))
     assert "kept-resource" not in text_of(section(page, "orphan-candidates"))
+
+
+def test_the_overlap_note_renders_beside_the_tag_table(report):
+    """B2: the sentence that says what the columns measure."""
+    body = text_of(section(render(report), "tag-coverage"))
+    assert "counted under each, so these columns overlap" in body
+    assert "the cost column is not a total" in body
+
+
+def test_an_absent_governance_block_is_not_rendered_as_a_clean_zero(report):
+    """C1: the outer empty state. No provider carried a `reported` block at all — that is
+    *absent*, not *nothing found*, and this section's whole subject is the difference."""
+    data = json.loads(json.dumps(report))
+    data["orphans"]["reported"] = []
+    body = text_of(section(render(data), "tag-coverage"))
+    assert "did not reach this report" in body
+    assert "whether it ran, and what it found, is unknown here" in body
+    assert "reported nothing for this run" not in body

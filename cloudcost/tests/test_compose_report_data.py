@@ -939,23 +939,69 @@ def test_the_aws_adapters_swept_set_reaches_report_data(full_aws_stub, tmp_path,
 def test_tags_in_use_reconciles_with_the_coverage_ratio():
     """BL-101's Done-when clause, as a check rather than a claim.
 
-    The tag table and the coverage ratio are computed from the same resource set, so the
-    count of resources carrying at least one tag must equal `tagged` — and the tag table's
-    per-tag resource counts must sum to at least that, since a resource may carry several.
+    **What reconciles, and what does not — this is the whole point of the test.** The set of
+    distinct resources appearing across the tag rows equals `tagged`. The *sums* do not:
+    a resource carrying several tags is counted under each, so the resource column and the
+    cost column both overlap across rows. Asserting only `sum >= tagged` — as this test did
+    at r0 — is nearly vacuous and would pass on almost any construction.
     """
-    coverage = compose([do_bundle(), soc_bundle()])["tag_coverage"]
-    inventories = [do_bundle()["inventory"], soc_bundle()["inventory"]]
-    resources = [r for inv in inventories for r in compose_report_data.usable_resources(inv)[0]]
+    bundles = [do_bundle(), soc_bundle()]
+    coverage = compose(bundles)["tag_coverage"]
+    resources = [
+        r for b in bundles for r in compose_report_data.usable_resources(b["inventory"])[0]
+    ]
 
-    carrying = [r for r in resources if compose_report_data.tags_of(r)]
-    assert coverage["tagged"] == len(carrying)
+    # 1. The coverage figures are the same computation the ratio is, not a second one.
+    carriers = [r for r in resources if compose_report_data.tags_of(r)]
     assert coverage["resources"] == len(resources)
-    assert coverage["untagged"] == len(resources) - len(carrying)
-    # The ratio the report prints is the same ratio, not a second computation of it.
+    assert coverage["tagged"] == len(carriers)
+    assert coverage["untagged"] == len(resources) - len(carriers)
     assert coverage["coverage"] == compose_report_data.tag_coverage(resources)
-    # Every tag row's resource count is real, and the rows account for every carrier.
-    assert sum(row["resources"] for row in coverage["tags_in_use"]) >= len(carrying)
-    assert coverage["tags_in_use_total"] == len({t for r in resources for t in compose_report_data.tags_of(r)})
+
+    # 2. THE reconciliation: every carrier appears under at least one tag row, and no
+    #    non-carrier appears at all. Recomputed from the inputs, because the payload
+    #    carries per-tag counts and not per-tag identities.
+    rows = {row["tag"]: row for row in coverage["tags_in_use"]}
+    assert set(rows) == {t for r in resources for t in compose_report_data.tags_of(r)}
+    contributing = {
+        str(r.get("resource_id")) for r in resources if set(compose_report_data.tags_of(r)) & set(rows)
+    }
+    assert contributing == {str(r.get("resource_id")) for r in carriers}
+    assert coverage["tags_in_use_total"] == len(rows)
+
+    # 3. Each row's own counts are exact.
+    for tag, row in rows.items():
+        carrying = [r for r in resources if tag in compose_report_data.tags_of(r)]
+        assert row["resources"] == len(carrying)
+        assert row["monthly_cost_estimate"] == round(
+            sum(compose_report_data.money(r.get("monthly_cost_estimate")) for r in carrying), 2
+        )
+
+    # 4. And the sums are stated NOT to reconcile, so nobody later "fixes" them into a
+    #    total. On the live DigitalOcean account this is 21 against 16 carriers.
+    assert sum(row["resources"] for row in rows.values()) >= coverage["tagged"]
+
+
+def test_the_tag_columns_overlap_and_the_report_says_so():
+    """B2: the cost column is real money that does not sum to a total, rendered beside
+    money that does. The numbers are right for what they measure; the note is what says
+    what they measure. Constructed so the overlap is non-zero and provable."""
+    inventory = load_fixture("inventory_rules_positive")
+    resources = compose_report_data.usable_resources(inventory)[0]
+    resources[0]["tags"] = ["env=prod", "team=core"]
+    resources[1]["tags"] = ["env=prod"]
+    bundle = {"cost": load_fixture("cost_do_2026-07"), "inventory": inventory,
+              "orphans": detect_orphans.detect(inventory, REF)}
+    coverage = compose([bundle])["tag_coverage"]
+
+    rows = {row["tag"]: row for row in coverage["tags_in_use"]}
+    assert rows["env=prod"]["resources"] == 2 and rows["team=core"]["resources"] == 1
+    # Three row-slots over two carrying resources: the columns overlap, by construction.
+    assert sum(r["resources"] for r in rows.values()) > coverage["tagged"]
+    # The estimate of resources[0] is counted under both of its tags.
+    own = compose_report_data.money(resources[0].get("monthly_cost_estimate"))
+    assert rows["team=core"]["monthly_cost_estimate"] == own
+    assert own <= rows["env=prod"]["monthly_cost_estimate"]
 
 
 def test_the_reconciliation_check_fails_against_a_deliberately_broken_fixture():

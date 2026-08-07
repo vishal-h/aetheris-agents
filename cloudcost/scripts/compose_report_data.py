@@ -486,6 +486,15 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
         provider = bundle["provider"]
         if not isinstance(orphans, dict):
             continue
+        # `reported` is a dict keyed by RULE NAME, and this consumer handles exactly one:
+        # `untagged_in_tagged_account`, the only reported-only rule the catalog has today.
+        # **One rule today is an observation, not a census** (BL-074's own lesson). A second
+        # reported-only rule would be emitted by `detect_orphans`, ignored here, and absent
+        # from the report — silently, which is precisely the defect BL-101 exists to fix,
+        # reproduced one rule along. Recorded rather than filed: by m4 t4c's membership rule
+        # a defect latent on a hypothetical and exhibited by nothing gets a note, not a row
+        # (the same test that excluded D15, D17 and P4). Iterating the block generically is a
+        # design change; if a second reported-only rule is ever added, it belongs with it.
         block = orphans.get("reported")
         governance = block.get("untagged_in_tagged_account") if isinstance(block, dict) else None
         if isinstance(governance, dict):

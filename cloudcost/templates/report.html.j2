@@ -403,6 +403,9 @@
       {%- endfor %}
     </tbody>
   </table>
+  <p class="note">A resource carrying several tags is counted under each, so these columns overlap:
+    they do not sum to the account, and the cost column is not a total. The account&rsquo;s own
+    figures are the coverage ratio above and the untagged estimate below.</p>
   {%- if tag_coverage.tags_not_shown is not none %}
   <p class="note">{% if tag_coverage.tags_not_shown %}{{ tag_coverage.tags_not_shown }} further tag(s) of
     {{ tag_coverage.tags_in_use_total | nz }} are not shown &mdash; this table is capped at
@@ -449,7 +452,9 @@
   {%- endif %}
   {%- endfor %}
   {%- else %}
-  <p class="empty">The governance rule reported nothing for this run.</p>
+  <p class="empty">No provider&rsquo;s orphan artifact carried a governance block, so the rule&rsquo;s
+    output did not reach this report. That is not the same as the rule reporting nothing &mdash;
+    whether it ran, and what it found, is unknown here.</p>
   {%- endif %}
 
   {%- if tag_coverage.estimate_note %}

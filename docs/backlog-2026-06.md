@@ -2529,9 +2529,29 @@ Also **correct m1's "the one seam" text where it appears** (`cloudcost/milestone
 items) so the next reader does not re-derive the wrong count.
 
 **Done when:** every provider-differing value in shared machinery is enumerated with a
-schema-level-or-adapter-owned ruling; the ones ruled schema-level are in §Normalized schemas;
+schema-level-or-adapter-owned ruling; the ones ruled schema-level are in
+`[amended 2026-08-07]` **§Contracts** ~~§Normalized schemas~~;
 m1's "one seam" text is corrected; the sweep's *method* (how completeness was established) is
 recorded, so this is an enumeration and not another observation.
+
+**Done-when clause 2 amended 2026-08-06/07 (m4 t4b, reviewer's ruling), before the row was
+assessed against it** — the same move t2 made on BL-069, and for the same reason: a row assessed
+against a clause the work has already superseded is assessed against nothing.
+
+*What changed.* The schema-level rulings live in **`cloudcost/milestone.md` §Contracts (C1–C15)**,
+a new sibling section immediately after §Normalized schemas, not inside it. As written the clause
+was **unsatisfiable**, so the row could not have closed cleanly against it.
+
+*Why.* The two sections make different kinds of statement. **§Normalized schemas states shapes**;
+**§Contracts states value semantics and adapter obligations.** Interleaving 48 of the second into
+the first would make the shapes harder to read for every future reader — an argument that holds
+regardless of anything else. Secondarily, and now derived rather than asserted: **12 citations
+across 9 files** in this repo refer to §Normalized schemas as *frozen* — `cloudcost/m2-milestone.md`
+(×3), `cloudcost/m3-milestone.md`, `cloudcost/runbook.md`, `cloudcost/docs/t1-implementation-notes.md`
+(×2), `cloudcost/docs/t3-implementation-notes.md`, `cloudcost/docs/m3-linode-scout.md`,
+`docs/reviews/m2-cloudcost-closeout.md` and two handoffs — so rewriting it would have falsified a
+standing claim in nine other documents in the same commit. `cloudcost/runbook.md` is live
+operational guidance, which is the one that would have cost most.
 
 **§7 promotion candidate at m2 close** — Adjacent-case / enumerate-the-class, in its
 "a uniqueness claim produced by observation" form.

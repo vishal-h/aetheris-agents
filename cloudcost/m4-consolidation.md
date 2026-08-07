@@ -109,7 +109,8 @@ ticket; the count states how many commits that is.
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
 | **t4a** | The seam census: enumerate every provider-differing value in shared machinery, and record the sweep's method | BL-074 — **enumerated, not discharged**; no DONE section | **Closed** — the census is `cloudcost/docs/m4-t4a-implementation-notes.md`: 518 nodes extracted structurally, 54 censused, seven leads confirmed and none refuted |
-| **t4b** | Implement the rulings the census produces | BL-074 closes here; m1's "the one seam" text corrected here | not started — **blocked on the rulings** |
+| **t4b** | Write the rulings as contracts: **§Contracts (C1–C15)** in `cloudcost/milestone.md` | BL-074 **not closed** — its Done-when clause 2 amended here, before assessment, to name §Contracts; m1's "one seam" text corrected here | **Closed** — 54 items ruled 48 schema-level / 4 adapter-owned / 2 neither, each cited by census item id in exactly one contract |
+| **t4c** | File the defect rows the rulings created | BL-074 **closes here**; 11 rows filed, 3 exclusions recorded | not started — **held until t4b is closed and pushed** |
 | **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
 
 **Why t4 became t4a and t4b (2026-08-06).** BL-074's output is a set of **rulings** — for each
@@ -122,6 +123,17 @@ list names the ruling itself, and its step-1 gate pins all eight `cloudcost/scri
 so the read-only claim is proven rather than asserted. BL-074 is **not** discharged by the census;
 its Done-when also requires the rulings landed and m1's "one seam" text corrected, and both are
 t4b's.
+
+> **And t4b became t4b and t4c (2026-08-07).** The split ran once more, for the same reason and one
+> level down. t4b's rulings are **contracts**, and the census's own output separated into two kinds
+> of item: values whose ruling is a sentence about which side of the seam they live on, and values
+> that **stay broken whichever arm they land in** — a scoring modifier that has never fired, a
+> billing case neither stopped rule covers, a validation the sprint's own gate presumes absent.
+> Ruling the second kind does not fix it. So **t4b writes the contracts and t4c files the defect
+> rows**, and BL-074 closes at t4c rather than t4b — the row's Done-when is discharged by the
+> rulings *and* by the rows those rulings created having somewhere to live. **The lopsided result
+> is the finding**: 48 of 54 are schema-level, because these four scripts *are* the shared
+> machinery, so the deliverable was a contract section rather than a migration.
 
 ### What t1b inherits
 
@@ -184,7 +196,7 @@ Two constraints, recorded at t2's close because both are known now and expensive
 
 ## Sequence
 
-t1b → t2 → t3 → **t4a → t4b** → t5 → **harness consolidation round** → **provider four**.
+t1b → t2 → t3 → **t4a → t4b → t4c** → t5 → **harness consolidation round** → **provider four**.
 
 > **Updated 2026-08-06 (t4a review r2), on the reviewer's ruling.** t4a's `Touches` named two
 > changes to this document and closed *"Nothing else."*, so t4a left this line reading `t4` and
@@ -197,6 +209,9 @@ t1b → t2 → t3 → **t4a → t4b** → t5 → **harness consolidation round**
 > **t4b is gated on the rulings**, which is why the arrow is not a plain continuation: t4a
 > enumerated, the arbiter rules, t4b implements. A t4b started before the ruling table exists has
 > nothing to implement.
+>
+> **t4c added 2026-08-07** and gated the same way — held until t4b is closed **and pushed**. It
+> files the rows for the census items a ruling cannot fix; see §Ticket set.
 
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you

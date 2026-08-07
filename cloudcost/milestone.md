@@ -1063,27 +1063,36 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
   the first ticket that makes either path reachable owes it the same two-minute look.
   `Source: t4 review r0, human browser check.`
-- **`STOPPED_STATES` normalisation — ~~the one seam~~ ~~*one of three seams*~~ *one of 54 censused
-  values* where a provider's own vocabulary or cost model reaches shared machinery.
-  RESOLVED at m2 t2 a.**
+- **`STOPPED_STATES` normalisation — a place where a provider's own vocabulary reached shared
+  machinery, and ~~the one seam~~ ~~*one of three seams*~~ *one of 54 values censused for provider
+  divergence at m4 t4a*. RESOLVED at m2 t2 a.**
   `detect_orphans.py:71` was `STOPPED_STATES = {"off"}  # DO vocabulary`, read by
   `rule_stopped_droplet_with_attached_storage` and pinned by three tests precisely so a
   second provider could not widen it silently. m2 t2 shrank it to the schema-level
   `{STATE_STOPPED}` and moved the mapping into each adapter.
   *Correction (m2 t1/t2, BL-074): "the one seam" was observation, not enumeration — the
-  **Adjacent-case** rule's failure mode. Three were known by m2: (1) this one; (2) the
+  **Adjacent-case** rule's failure mode. There were at least three: (1) this one; (2) the
   `type` vocabulary, un-enumerated by m1 so DO's `droplet`/`reserved_ip` sat inside the rules
   (resolved at t2 a′ — see §Normalized schemas); (3) the assumption that a provider bills a
   resource regardless of state, which made the stopped-with-storage saving under-report
-  (resolved at t2 c).*
-  *Corrected again (m4 t4a/t4b, BL-074, 2026-08-07) — and "at least three" was itself an
-  observation, for the same reason "the one seam" was: nobody had enumerated. **The census found
-  54**, of which the four candidates BL-074 named and the three later observations account for
-  only **8**. The adjudication ruled **48 schema-level, 4 adapter-owned, 2 neither**; all 54 are
-  now stated as contracts in **§Contracts (C1–C15)**, each cited there by census item id. The
-  substantive finding is that this was never a handful of seams to close but a large, mostly
-  undocumented contract — so the deliverable was a contract section, not a migration. The census's
-  method, and the argument for why it is an enumeration rather than a fourth observation, is
+  (resolved at t2 c). BL-074 sweeps for the rest; the rule-catalog age thresholds and the
+  `keep=true` tag spelling are the named next candidates.*
+  *Corrected again (m4 t4a/t4b, BL-074, 2026-08-07). **"At least three" was itself an observation**,
+  for the same reason "the one seam" was: nobody had enumerated. The m2 correction fixed the count
+  and left the method — which is why it needed correcting a second time. m4 t4a swept the four
+  scripts structurally and **censused 54 values**; the adjudication ruled **48 schema-level, 4
+  adapter-owned, 2 neither**, and all 54 are now stated as contracts in **§Contracts (C1–C15)**,
+  each cited there by census item id.*
+  *Two things this correction does **not** claim. It does not say all 54 are seams: the census
+  swept for provider divergence and censused some values it then reported as **not** seams — four
+  meet nothing adapter-supplied at all (D8, D21, F1, R4), and R4 is recorded explicitly as
+  unrulable by this row's own schema-level-or-adapter-owned dichotomy. **A seam count, as distinct
+  from a censused count, is not established by t4a and is not asserted here.** Nor does it restate
+  what m2's candidates would have amounted to in census terms; mapping that prose onto a definite
+  number of census ids is inference, not reading. The substantive finding is that this was never a
+  handful of seams to close but a large, mostly undocumented contract — so the deliverable was a
+  contract section, not a migration. The census's method, and the argument for why it is an
+  enumeration rather than a fourth observation, is
   `cloudcost/docs/m4-t4a-implementation-notes.md` §2.* Raised in
   `docs/t2-implementation-notes.md:170`; promoted here at m1 close because it gates the
   fan-out and an implementation-notes file does not travel to the next ticket's session.

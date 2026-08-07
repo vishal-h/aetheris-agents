@@ -290,6 +290,468 @@ authoritative catalog for m1 (no external doc).
 
 ---
 
+## Contracts (C1–C15 — what shared machinery guarantees, and what an adapter must guarantee)
+
+> **Established at m4 t4b, 2026-08-07, from the t4a seam census**
+> (`cloudcost/docs/m4-t4a-implementation-notes.md`, 54 items in groups X/N/D/F/P/R). §Normalized
+> schemas above states the *shapes*; this section states the *contract over their values* — the
+> thing BL-074 found was large, real and almost entirely undocumented.
+>
+> **Every one of the census's 54 items is cited below by id, in exactly one contract.** An item id
+> is the stable reference; line numbers are not, and are omitted deliberately.
+>
+> **The ruling test**, applied to each item's Consumers field: *a value is schema-level if shared
+> machinery may key a decision on it; adapter-owned if shared machinery may only carry it.* To
+> **key** is to test in a predicate, select in a branch, match in a join, derive a filename or
+> persisted path from, or make a section appear or not appear. To **carry** is to copy into the
+> payload, interpolate into evidence text, or render — with nothing branching.
+>
+> The result is lopsided — **48 schema-level, 4 adapter-owned, 2 neither** — and that is the
+> finding, not a failure of the test. These four scripts *are* the shared machinery; almost nothing
+> in them should move to an adapter.
+>
+> **A schema-level ruling is not a promise to change code.** Most of what follows is a statement of
+> what was already true and undocumented. Where a code change genuinely follows, it is marked
+> **[code consequence]** and is owed a backlog row by m4 t4c — it is not taken here.
+
+### C1 — Resource type vocabulary  *(N1, N8, D11)*
+
+**Shared machinery guarantees** that `type` is drawn from a closed set, enumerated once in
+`_normalized.py` as `CANONICAL_TYPES` and in §Normalized schemas in prose. An out-of-vocabulary
+`type` is a **contract violation, not a pass-through**.
+
+**An adapter must guarantee** that every resource it emits carries a `type` from that set, and must
+import the value rather than spell it locally. An adapter that declares its own vocabulary re-opens
+seam #1; an adapter importing from a *sibling adapter* is the cross-import anti-pattern.
+
+**The set has a declared public surface.** Today adapters import the seven `TYPE_*` constants
+individually and never the set, so `CANONICAL_TYPES` is used without being declared as API (N1).
+**A cross-repo consumer imports it by name**: `../aetheris/scripts/sprint.sh` reads
+`CANONICAL_TYPES` from this module in its rule-legibility assertion, deliberately, so the vocabulary
+is never restated in shell. Relocating or renaming it breaks the sprint — loudly, which is the
+intended posture — and any change to this contract is therefore a **cross-repo** change.
+
+**Today the guarantee is unenforced.** `usable_resources()` validates that `type` is *present*,
+never that it is *canonical* (N8), so an out-of-vocabulary type is counted in `totals.resources`
+and in the tag-coverage denominator and is evaluated by nothing. **[code consequence]** — and it
+**collides with the sprint's rule-legibility arm**, whose `illegible` branch exists precisely
+because this validation is absent. The row must be sequenced with a sprint change; taken alone it
+changes what the sprint's third arm means without touching the sprint.
+
+**Positive example, recorded as the shape to copy**: Linode maps its images onto `TYPE_SNAPSHOT` in
+its own adapter, not in the rule engine (D11). That is a mapping decision made in the right place.
+
+### C2 — Resource state vocabulary  *(X1, N2, D10)*
+
+**Shared machinery guarantees** exactly one canonical state value today — `STATE_STOPPED` — and
+keys exactly one decision on it, via `STOPPED_STATES` in the two stopped rules.
+
+**An adapter must guarantee** that a stopped compute or database resource maps onto that value.
+All three do: DigitalOcean's `off`, AWS's `stopped`, Linode's `offline` via its own
+`POWERED_OFF_STATUS`. That is seam #1, closed at m2 t2 a, and it is **confirmed here, not
+re-opened** (N2).
+
+**Every other state value is provider vocabulary, and it reaches the rendered report verbatim**
+(X1). The schema defines no canonical value for running, available, attached, associated or
+in-use; the adapters pass roughly fifteen raw strings straight through, and `detect_orphans`
+interpolates the value into evidence text which the renderer then displays. This is the largest
+undocumented surface the census found.
+
+**No rule may key on a non-stopped state until the set is enumerated.** Enumerating it is a schema
+extension and belongs with the provider that needs it (BL-098 remains filed); until then, a rule
+written against `state == "available"` would be keying on one provider's spelling inside shared
+machinery, which is the defect this whole contract exists to prevent.
+
+**A caution for anyone editing this**: a test asserts the **source text** of the predicate
+`resource.get("state") not in STOPPED_STATES`, so renaming that constant breaks a test that reads
+source rather than behaviour (D10). The test is doing its job; the surprise is only that the
+breakage will not look like a behaviour change.
+
+### C3 — Timestamps and age  *(N3, N4, D12, D17, D20)*
+
+**Shared machinery guarantees** that age is computed as **float days** (`/ 86400.0`) and compared
+**strictly greater** — a rule fires on age *greater than* its threshold, so a resource at exactly
+the threshold does not fire (D12). It guarantees that emitted timestamps use a
+**second-precision UTC** grammar, `%Y-%m-%dT%H:%M:%SZ` for instants and `%Y-%m-%d` for days (N4);
+sub-second precision is truncated, not rounded.
+
+**An adapter must guarantee** ISO-8601 **with offset** for `created_at`, `last_activity_at` and
+`generated_at`. A **naive timestamp is rejected**, not assumed UTC — the current code silently
+assumes UTC for a naive stamp (N3), which on a provider emitting local time produces age errors of
+up to a day in the direction that *suppresses* rule firings: a silent wrong answer, not a parse
+failure. **[code consequence]**
+
+**`generated_at` is required.** `resolve_reference_date` falls back to the wall clock when it is
+absent (D17), which is the one place an otherwise-deterministic module is not: `detect()` documents
+itself as producing byte-identical output for the same inputs, and that claim holds for the
+*arguments* but not for the *file* if this branch is reached. It is unreachable on all three
+current adapters, so the defect is **recorded here, not filed**. **[code consequence]** when taken.
+
+**The timestamp field set is named once.** `timestamp_warnings` hardcodes the pair
+`("created_at", "last_activity_at")` (D20) — a hand-maintained restatement of what the schema's
+timestamp fields are. A third timestamp added to the schema is unchecked unless someone remembers
+that line. The field set belongs in `_normalized.py`, read by both the function and this contract.
+**[code consequence]**
+
+**Closed arms.** N4's and D20's adapter-owned arms are **closed**: the emitted grammar and the
+timestamp field set are properties of the schema and of shared machinery's own output, so no adapter
+can own them. D12's is closed for the same reason — age arithmetic is over already-normalized
+timestamps and belongs to no adapter; only the *thresholds* it compares against are open, and those
+are C8.
+
+### C4 — Money and currency  *(N5, P3, P5, R2)*
+
+**Shared machinery guarantees** that every amount is coerced through one function and rounded to
+**two decimal places** (N5), and that a cost total is built only from service-level
+`line_items[].amount` — never from a resource's `monthly_cost_estimate`, which is an estimate used
+for ranking and for an orphan's saving and is never summed into a cost total.
+
+**An adapter must guarantee** a `currency` on its cost snapshot. All three declare `USD` today, and
+the 2dp rounding is correct *only because they agree*: two decimals is wrong for a zero-decimal
+currency and wrong for sub-cent unit pricing, of which Linode's own price surface already carries an
+instance. **The minor-unit exponent belongs in the cost snapshot beside `currency`**, and `money()`
+should take it. **[code consequence]**
+
+**The reconcile tolerance is currency-relative, or stated per currency** alongside that exponent
+(P3). It is an absolute one-hundredth today, which is one cent only in a two-decimal currency.
+Record also that Linode carries a `Tax` service line: where a declared total includes tax the line
+items do not, the difference is **structural rather than arithmetic**, and no tolerance is the right
+answer to it.
+
+**The one-currency-scalar policy is stated with its blast radius** (P5). When bundles disagree on
+currency, the grand total is withheld and per-currency figures are reported instead — correct, and
+m1's stated position. The consequence that is recorded nowhere an operator sees: **adding a single
+non-USD provider blanks the report's headline number for every provider**, because the scalar total
+becomes null and renders as an em dash. That is the honest output; it is also a surprise, and this
+sentence is the deliverable.
+
+**Presentation reads the exponent from the payload** (R2). **Closed arm**: R2's adapter-owned arm is
+closed because the renderer must not learn provider identity — a test asserts as much. It can read a
+currency descriptor, which is this contract's schema arm; it cannot read a provider name.
+
+### C5 — Percentages and ratios  *(N9, P9, R3)*
+
+**Shared machinery guarantees** that the tag-coverage ratio is **per-resource, unweighted, to four
+decimal places**, with an empty list yielding `0.0` (N9); and that a percent change is computed
+against the prior figure, rounded to two decimals, with a **zero base yielding null** rather than a
+number (P9) — there is no meaningful ratio against zero, so a service appearing for the first time
+reports no percentage while one disappearing reports −100. That asymmetry is correct arithmetic and
+is documented here so it is not read as an inconsistency.
+
+**An adapter must guarantee** nothing here; both figures are computed by shared machinery over
+already-normalized data.
+
+**A naming discipline, so the renderer's filter choice is derivable rather than remembered** (R3):
+the payload carries percentages in **two different units** — a *fraction* (coverage) and an
+*already-percent* value (delta). Two filters exist for that reason, and applying the wrong one
+produces a well-formed, plausible, wrong number that nothing can detect, because both inputs are
+floats. **A field whose name ends `_pct` is already a percentage; a field named `coverage` or
+ending `_ratio` is a fraction.** Then the correct filter follows from the name.
+
+**Closed arms.** N9's, P9's and R3's adapter-owned arms are all **closed**, and for one reason:
+these are computations over normalized data, not properties any provider supplies. N9's is closed
+more strongly still — the whole reason `tag_coverage` lives in the shared module is that t2's and
+t3's coverage figures are *required to be equal*, so a per-adapter definition would break the
+equality the module exists to enforce.
+
+### C6 — Tags  *(X3, N7, D6, D7)*
+
+**Shared machinery guarantees** that `tags` is a **flat list of strings**, and keys two decisions on
+it: the keep-tag exclusion and the coverage ratio.
+
+**An adapter must guarantee** that list, and — where its own tag surface is key/value — must flatten
+to the **`k=v` grammar**, with a bare key where the value is empty (X3). AWS constructs that
+grammar; DigitalOcean and Linode pass native flat strings through and **cannot express a key/value
+pair natively at all**. The grammar is therefore part of the contract, not an implementation detail
+of one adapter — which is the census's adapter-arm text reached here as a schema statement.
+
+**A non-`str` element is a counted skip, not a silent drop** (N7). Today it vanishes with no warning
+and no `skipped` entry; an adapter emitting the wrong element type would take coverage to zero and
+switch off the governance rule, reporting a clean-looking zero. It should surface the way
+`usable_resources` surfaces a malformed resource. **[code consequence]**
+
+**The keep marker is a first-class normalized field, not a tag spelling** (D6). It is
+`keep=true` today, matched case-folded against the flat list — and BL-074's own phrase is the
+argument: *an adapter convention masquerading as a shared constant*. The `k=v` spelling is native
+only on AWS; on the other two it must be typed literally as a tag name. Each adapter should decide
+how its own tag surface expresses the exclusion, and shared machinery should read a boolean.
+**[code consequence]**
+
+**The coverage threshold's distortion is recorded** (D7). The governance rule fires only above a
+coverage cliff, and coverage is depressed structurally on a provider whose resource classes cannot
+carry tags at all — Linode's IP addresses, backups and managed databases carry none — so on such a
+provider the rule can **never** fire. **The denominator change is not taken here.** Restricting the
+denominator to taggable resources would move `tag_coverage` itself, which C5 records as
+contractually shared between two stages, so it is not a local edit. The open question — whether the
+denominator should be taggable-resources-only — is stated and left to the ticket that can move both
+stages together.
+
+### C7 — Attachment  *(D15, D16)*
+
+**Shared machinery guarantees** that `attached_to` is a **single opaque string**, that a null value
+is the universal idle signal keyed by four rules, and that the volume-to-instance join matches
+`attached_to` against another entry's `resource_id`.
+
+**An adapter must guarantee** one attachment only, and **must declare its reduction rule** — first,
+or most significant — where the provider permits several (D15). The adapters differ today in how
+they reduce; the reduction is currently an accident of each implementation rather than a stated
+obligation. A provider with genuine many-to-many attachment cannot be expressed, and the join would
+under-report attached storage, which silently *lowers* the stopped-compute saving. No current
+provider exhibits it, so that is **recorded, not filed**.
+
+**The tag-targeting grammar is part of the field's definition** (D16). A load balancer that targets
+backends by tag carries `attached_to == "tag:<name>"`, and `rule_idle_load_balancer` is correct
+**only** because such a load balancer therefore never reaches it. That convention originates in one
+adapter's normalizer, is emitted by no other adapter, is enforced by nothing and asserted by no
+test. Stating it here makes it an obligation a new adapter meets rather than a premise it silently
+breaks — and breaking it makes every tag-targeted load balancer a HIGH-band false positive.
+
+### C8 — Thresholds and the scoring model  *(D1, D2, D3, D4, D8, D9, D21, F1, F2, F3, F4, P1, X4)*
+
+**Shared machinery guarantees** a single global rule catalog: six age and confidence thresholds, two
+additive modifiers, a clamp, and three confidence bands. **An adapter must guarantee** nothing here
+— it supplies facts, not policy. These are **cross-provider priors**, and that is the ruling.
+
+**The age thresholds are global** — unattached volume at 14 days, stopped compute and stopped
+database sharing one at 30, snapshot at 30 (D1, D2, D3). The compute/database sharing is deliberate
+and its rationale already exists in a code comment: a per-type fork would be *a provider assumption
+wearing a type's clothes* (D2). **That comment is promoted here**, because a rationale in a comment
+does not travel to the next adapter's author. The rationale for 14-versus-7-or-30 is **not recorded
+anywhere**, and is named as a gap rather than reconstructed: the next provider that wants to argue
+against it has nothing to argue with.
+
+**The CLI-override asymmetry, from the record.** Only the snapshot threshold is overridable. The
+**origin is established**: m1's §t2 Scope specifies the catalog as *"unattached volume >14d …
+snapshot older than **N days** … stopped droplet with attached storage >30d"* — the snapshot rule
+alone was written with a symbolic threshold and the other two with literals, and the implementation
+rendered that faithfully as one CLI flag and two constants. **The rationale is unrecorded.** No
+document says why m1 wrote `N` there. The origin is a fact; the reason is a gap, and it is recorded
+as unexplained rather than filled by inference.
+
+**The scoring model is additive-then-clamped** (D9): a base confidence, plus modifier deltas,
+clamped to `[0,1]`. **The clamp silently absorbs overshoot**, so a modifier set that is too strong
+is invisible rather than erroneous — nothing reports that a value was clipped.
+
+**The bands are calibrated against the base confidences, and the coincidence is intentional** (P1,
+D8). The HIGH and MEDIUM cutoffs sit **exactly** on two of the six base confidences, so those two
+rules land in their bands by equality rather than by margin, and any per-provider confidence
+adjustment of even one hundredth would move a whole rule's output down a band. Stated here as
+deliberate calibration so it is not rediscovered as a coincidence — and so that anyone changing
+either number knows they are changing both.
+
+**The re-open trigger for the confidences is named** (D8): a provider that does **not** charge for
+the thing a rule assumes is waste. An unassociated static IP is near-certain waste where
+unassociated IPs bill, and means nothing where they do not.
+
+**Two rules carry no age gate, and only one of them says why** (F1, F4). The static-IP rule's
+absence is deliberate and documented — an unassociated static IP bills from the moment it is
+unassociated — and **that billing assumption is moved out of the rule's docstring and into this
+contract**, so a new adapter meets it as an obligation rather than discovering it (F4, the positive
+control). The idle-load-balancer rule's absence is **supported by the record** — the census
+establishes that both DigitalOcean and AWS bill a load balancer from creation, from those adapters'
+own price constants — but was never documented. It is documented here. **The deliverable for F1 is
+the documentation, not a threshold.**
+
+**Two asymmetries in the catalog are recorded as defects rather than resolved** (F2, F3). A
+non-zero-cost predicate gates the stopped-database rule and not the stopped-compute rule, which
+leaves uncovered the case that costs the most money on a provider billing stopped compute in full
+(F2). And the aged-snapshot rule's docstring describes *age plus a source that is gone* while its
+code requires only age, so a snapshot of a live volume fires at the same confidence as one whose
+source is deleted (F3). Both are owed backlog rows by m4 t4c; neither is decided here.
+
+**The activity window is recorded together with its universal-null status** (D4, X4).
+`last_activity_at` is `None` at every emission site on all three adapters, so
+`modifier_recent_activity` and its fourteen-day window **have never fired against any real
+inventory on any provider**. The field stays — a provider exposing last-access would make it live —
+but the constant must not be read as tuned, and the modifier must not be read as exercised
+behaviour. Owed a row by t4c: whether a permanently-dead scoring path stays.
+
+**The declared parameter block covers the age thresholds and the coverage threshold, and nothing
+else** (D21). The six confidences, the two modifier deltas, the keep-tag spelling, the ephemeral
+pattern and the band cutoffs are **not** echoed, so a report cannot state the full parameterization
+it was produced under. **The block is also write-only** — no consumer reads it: not the compose
+stage, not the renderer, not the sprint. Both facts are recorded, and the gap is left open rather
+than closed.
+
+### C9 — Identity, slugs and filenames  *(N6, D18, P10)*
+
+**Shared machinery guarantees** that a provider's output filename is derived from a filesystem-safe
+slug of its `provider` value and its `period`, so two providers writing into one output directory do
+not collide.
+
+**An adapter must guarantee** a `provider` value that is **slug-safe and unique** among the
+providers in a run (N6). The slug function lowercases and collapses everything outside `[a-z0-9]`,
+so a name that is entirely non-ASCII collapses to a constant fallback and two such providers slug
+identically. Constraining the value makes the function a validator rather than a rescuer.
+
+**The collision routes, both of them** (D18). A slug collision in the sprint fails **loudly**: the
+sprint's artifact discovery requires *exactly one* match and its guard arm fires otherwise. The
+residual quiet case is `period` — a document carrying none writes to an `unknown` filename, and a
+second such document overwrites the first with nothing reported.
+
+**One duplicate is a held position, not an oversight** (P10). The compose stage carries its own
+private slug function, byte-identical in behaviour to the shared one. It was frozen deliberately so
+that an earlier milestone's *"compose ran unchanged"* result stayed a clean negative proof, and
+**BL-070 owns the convergence**, to be taken when that file is next legitimately edited. Recorded
+here so it is not re-flagged as a finding by the next reader.
+
+### C10 — Document shape and discovery  *(P4, P6, P8, P11)*
+
+**Shared machinery guarantees** that it discovers normalized artifacts by **shape**, groups them
+per provider, and derives the prior period from the period itself rather than from a clock.
+
+**An adapter must guarantee** a `period` that is a **calendar month**, `YYYY-MM` (P4). A
+non-conforming value should warn. Today it is silent, and the silence is compound: no
+month-on-month section, no persisted history, forever, with nothing reported — so a provider on a
+non-calendar billing cycle would produce a permanently degraded report that never says so. No
+current provider exhibits it, so this is **recorded, not filed**.
+
+**Service identity needs a stable identifier beside the display name** (P6). Service names are raw
+provider strings, grouped by exact string match and keyed by the month-on-month delta as
+`(provider, service)`. So **any** change in a provider's service naming between two months reports
+the old name as removed and the new one as new, a full swing in both directions with nothing
+indicating they are the same service. This is expensive to fix — prior snapshots already on disk
+carry the old names — and is stated with that cost. **[code consequence]**
+
+**Documents carry an explicit type** (P8). Classification is by presence of a list-valued key, in a
+fixed order, and two modules in this repo **disagree about what a valid cost document is**: a
+snapshot carrying a declared total and no line items is legitimate to the totals function and
+unclassifiable to the classifier, so it is silently dropped from discovery — the run composes a
+report missing that provider's costs entirely and exits clean. Owed a row by t4c; the minimum owed
+is a warning and a skip entry, ahead of the explicit-type change. **[code consequence]**
+
+**`source_granularity` is enumerated and actually checked** (P11). It exists to make the
+cost-granularity honesty claim checkable, is copied into the payload, and is **compared or validated
+nowhere**. A provider emitting account-level costs would have them grouped by service exactly as if
+they were service-level, with the only trace a string in the report. The totals function should warn
+on a granularity coarser than service. Owed a row by t4c. **[code consequence]**
+
+### C11 — Optionality and presentation  *(R1, P2, P7)*
+
+**Shared machinery guarantees** a **required/optional split** over the report payload's top-level
+sections: a required section absent costs a rendering note and a non-zero exit; an optional field
+absent costs nothing at all.
+
+**An adapter must guarantee** the required sections' inputs, and may supply optional ones.
+
+**This is the positive control for the whole census** (R1). A provider-differing section — region
+coverage, which only one adapter produces — is handled by putting it in the **right tuple**, not by
+teaching the renderer about providers; and a test asserts the renderer stays ignorant of where a
+field came from. Putting that field in the required tuple instead would have made every run by a
+provider without the concept exit non-zero, forever. **This is the shape every other item in this
+census is ruled toward**: the difference between a provider-differing value handled structurally and
+one handled by a special case.
+
+**The sanctioned provider-extra read is promoted to a first-class optional field** (P7). One named
+key is lifted out of the otherwise-opaque provider payload block, and the region-coverage section
+**keys on its presence** — the section appears or does not appear because of it — so the ruling test
+puts it in the schema rather than leaving it as a sanctioned exception. Promoting it to a
+first-class optional envelope field makes the exception unnecessary and removes the precedent for a
+second such read, which today only a comment prevents. **[code consequence]**
+
+**Caps report their truncation** (P2). The untagged-spenders table is capped **after a global sort
+across all providers**, so one provider can be absent from the table entirely while another fills
+every row — and nothing reports it. The same file argues against silent caps elsewhere, for the
+region list, on the same reasoning. The payload should record how many were dropped. Owed a row by
+t4c. **Closed arm**: P2's adapter-owned arm is **closed** because the ranking is cross-provider by
+construction — no single adapter can own a cap applied across all of them.
+
+### C12 — Encoding  *(X5)*
+
+**Shared machinery guarantees** **UTF-8** at every file read and write across all four scripts.
+
+**An adapter must guarantee** UTF-8 on the artifacts it writes.
+
+Today the guarantee does not hold: one script specifies the encoding at all four of its I/O sites,
+and two others specify none at five sites and take the platform default. No current artifact
+differs, because every value the three adapters emit is ASCII — which is exactly why it has gone
+unnoticed. Under a non-UTF-8 locale a non-ASCII resource name would either raise through the stdout
+contract that the stage-CLI rule exists to protect, or mis-decode silently into the candidate
+identity, the evidence text and the rendered report.
+
+**The asymmetry is worse than a plain absence**: the one stage that would *display* the corruption
+is the one that already specifies the encoding, so corruption enters upstream of the only correct
+site. **Adjacent to BL-112 — the same locale, one layer up, and neither row guards the other.**
+Owed a row by t4c; the row's real cost is a non-ASCII fixture, without which the change is
+unverifiable.
+
+**Closed arm.** X5's adapter-owned arm is **closed**, and for a reason particular to it: the
+encoding here governs how shared machinery *decodes* a file an adapter has **already written**, so
+there is no adapter-side lever that could own it. (Whether the adapters specify an encoding when
+they *write* is a separate question, outside BL-074's four-file scope and not swept by the census —
+stated as a limit rather than assumed either way.)
+
+### C13 — Carry-only fields (adapter-owned)  *(X2, D19)*
+
+**Shared machinery may carry these and must never key on them.** Sorting, comparing, summing,
+branching and joining on them are **foreclosed**.
+
+**An adapter owns them entirely**, and must reduce its own richer structure into the single value
+the schema carries.
+
+**`size` is a free-form human label** (X2). The same physical quantity is spelled three ways today —
+`GiB` on two providers, `GB` and `MB` on the third — and both of its consumers are display-only: one
+interpolates it into an evidence sentence, the other copies it into the spenders table. The
+divergence is therefore harmless *and permanently so*, provided nothing ever keys on it.
+
+**The five identity fields are carried, not keyed** (D19). None of `resource_id`, `type`, `name`,
+`region` or `raw_ref` is tested by a rule in its identity role. **`region` is a single opaque
+display string**: a provider with a region/zone hierarchy must flatten it, and that flattening is
+the adapter's obligation. `raw_ref` is a provider-console URL and is provider-shaped by
+construction, correctly built in each adapter.
+
+> `type` is carried *here*, in the identity block, and keyed elsewhere under C1. The distinction is
+> per-role, not per-field name — noted so the two contracts are not read as contradicting.
+
+### C14 — Adapter cost-model obligations (adapter-owned)  *(D13, D14)*
+
+**Shared machinery guarantees** that it performs no provider-specific cost reasoning: it sums what
+the adapters priced.
+
+**Each adapter must guarantee its own cost model, and must assert it in its own tests.**
+
+**The stopped-compute saving is the model the rest of this census is ruled against** (D13). It sums
+an instance's own estimate and its separately-inventoried volumes', and that single sum is correct
+for a provider billing a stopped instance in full *and* for one billing no compute for it — because
+each adapter already encoded its own answer in `monthly_cost_estimate`. That is seam #3, closed at
+m2 t2 c, and it is the worked example of a provider difference resolved in the right place.
+
+**The surviving assumption becomes a stated obligation**: *only separately-inventoried storage is
+summed.* A provider that inventories storage separately **and** folds its cost into the instance's
+estimate would be double-counted, and nothing detects it. All three satisfy the assumption today, so
+this is an obligation to be met rather than a defect to be fixed — but it must be met explicitly,
+and asserted per adapter.
+
+**The stopped-database inference is likewise an obligation** (D14): *a stopped database's estimate is
+exactly its still-billing storage.* The rule infers "storage still bills" from a non-zero estimate on
+a stopped resource, which holds for the one provider that emits the type. Recorded plainly:
+**this makes one adapter's cost model load-bearing for a shared rule's correctness.**
+
+### C15 — Neither arm  *(D5, R4)*
+
+Two items are recorded with their reason rather than forced into an arm. Both were reached by the
+ruling test returning *neither*, and that outcome is reported rather than resolved by picking.
+
+**The ephemeral-name pattern is operator configuration** (D5). It matches resource names beginning
+`tmp-`, `ci-` or `test-` and raises confidence. Naming conventions are an **account** property, not
+a provider property and not the schema's — a tenant chooses them, and two accounts on the *same*
+provider may differ. This is the only item in the census where a **third home is established rather
+than asserted**, and it is the reason C15 exists at all.
+
+A residual is carried, not decided: this matcher is **case-sensitive** while the keep-tag matcher
+**case-folds**, two adjacent string matches in one module with opposite policies and no stated
+reason for either. m4 t4c carries it as a **candidate row with a precondition** — verification of
+whether the difference has an observable effect on any current provider — and if that verification
+comes back negative the inconsistency is recorded here as a note instead.
+
+**The PDF binary is an environment dependency** (R4). It is a named external tool on the optional
+output path, and it differs by *machine*, not by provider. **It cannot be ruled by BL-074's
+dichotomy at all.** It is censused and reported as unrulable rather than forced into an arm — an
+item recorded as outside the question is a better answer than an item filed under the wrong half of
+it.
+
+---
+
 ## Contract refs (read, do not restate)
 
 - `agent-creation-guide.md` (authoritative build reference + pre-flight checklist) and its
@@ -601,19 +1063,28 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
   the first ticket that makes either path reachable owes it the same two-minute look.
   `Source: t4 review r0, human browser check.`
-- **`STOPPED_STATES` normalisation — ~~the one seam~~ *one of three seams* where a provider's
-  own vocabulary or cost model reaches shared machinery. RESOLVED at m2 t2 a.**
+- **`STOPPED_STATES` normalisation — ~~the one seam~~ ~~*one of three seams*~~ *one of 54 censused
+  values* where a provider's own vocabulary or cost model reaches shared machinery.
+  RESOLVED at m2 t2 a.**
   `detect_orphans.py:71` was `STOPPED_STATES = {"off"}  # DO vocabulary`, read by
   `rule_stopped_droplet_with_attached_storage` and pinned by three tests precisely so a
   second provider could not widen it silently. m2 t2 shrank it to the schema-level
   `{STATE_STOPPED}` and moved the mapping into each adapter.
   *Correction (m2 t1/t2, BL-074): "the one seam" was observation, not enumeration — the
-  **Adjacent-case** rule's failure mode. There were at least three: (1) this one; (2) the
+  **Adjacent-case** rule's failure mode. Three were known by m2: (1) this one; (2) the
   `type` vocabulary, un-enumerated by m1 so DO's `droplet`/`reserved_ip` sat inside the rules
   (resolved at t2 a′ — see §Normalized schemas); (3) the assumption that a provider bills a
   resource regardless of state, which made the stopped-with-storage saving under-report
-  (resolved at t2 c). BL-074 sweeps for the rest; the rule-catalog age thresholds and the
-  `keep=true` tag spelling are the named next candidates.* Raised in
+  (resolved at t2 c).*
+  *Corrected again (m4 t4a/t4b, BL-074, 2026-08-07) — and "at least three" was itself an
+  observation, for the same reason "the one seam" was: nobody had enumerated. **The census found
+  54**, of which the four candidates BL-074 named and the three later observations account for
+  only **8**. The adjudication ruled **48 schema-level, 4 adapter-owned, 2 neither**; all 54 are
+  now stated as contracts in **§Contracts (C1–C15)**, each cited there by census item id. The
+  substantive finding is that this was never a handful of seams to close but a large, mostly
+  undocumented contract — so the deliverable was a contract section, not a migration. The census's
+  method, and the argument for why it is an enumeration rather than a fourth observation, is
+  `cloudcost/docs/m4-t4a-implementation-notes.md` §2.* Raised in
   `docs/t2-implementation-notes.md:170`; promoted here at m1 close because it gates the
   fan-out and an implementation-notes file does not travel to the next ticket's session.
 - **Cross-currency aggregation is handled in one place and unhandled in four —

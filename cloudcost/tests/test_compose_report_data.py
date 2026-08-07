@@ -1266,3 +1266,54 @@ def test_compose_uses_the_shared_slug_and_carries_no_private_one():
     # Not `"slug(bundle" not in source` — that substring is inside `provider_slug(bundle`,
     # which would make the assertion unfalsifiable. Match the whole call instead.
     assert "{slug(bundle" not in source
+
+
+def test_evaluation_coverage_counts_uncatalogued_types_without_validating_them():
+    """m4 t5c / N8: counting for display is not validation — nothing is skipped that was
+    not skipped before, so BL-117 still owes the validation and the sprint's
+    rule-legibility arm is untouched."""
+    soc = load_fixture("inventory_soc_2026-07")
+    bundle = {
+        "cost": load_fixture("cost_soc_2026-07"),
+        "inventory": soc,
+        "orphans": load_fixture("orphans_soc_2026-07"),
+    }
+    report = compose([bundle])
+    ec = report["orphans"]["evaluation_coverage"]
+
+    usable, skipped = compose_report_data.usable_resources(soc)
+    assert ec["inventoried"] == len(usable)
+    assert ec["uncatalogued_count"] == 1
+    assert [r["type"] for r in ec["uncatalogued"]] == ["object_store"]
+    # The uncatalogued resource is still USABLE and still counted — that is the defect the
+    # statement reports, and t5c does not change it.
+    assert "object_store" in {r.get("type") for r in usable}
+    assert not [s for s in skipped if s.get("reason", "").startswith("resource entry has no type")]
+    assert report["tag_coverage"]["resources"] == len(usable)
+
+
+def test_evaluation_coverage_reports_a_clean_zero_explicitly():
+    """The zero is emitted, never omitted — an omitted zero and an uncounted quantity look
+    identical, which is the whole rule."""
+    ec = compose()["orphans"]["evaluation_coverage"]
+    assert ec["uncatalogued_count"] == 0
+    assert ec["uncatalogued"] == []
+    assert "uncatalogued_count" in ec
+
+
+def test_the_recent_activity_verdict_follows_the_inventory_in_both_states():
+    """X4: derived from `last_activity_at`, which is the only field the modifier keys on."""
+    ec = compose()["orphans"]["evaluation_coverage"]
+    assert ec["activity_bearing_resources"] == 0
+    assert ec["recent_activity_modifier"] == "cannot_fire_no_last_activity_at"
+
+    inventory = load_fixture("inventory_rules_positive")
+    inventory["resources"][0]["last_activity_at"] = "2026-07-20T00:00:00Z"
+    bundle = {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": detect_orphans.detect(inventory, REF),
+    }
+    ec = compose([bundle])["orphans"]["evaluation_coverage"]
+    assert ec["activity_bearing_resources"] == 1
+    assert ec["recent_activity_modifier"] == "applicable"

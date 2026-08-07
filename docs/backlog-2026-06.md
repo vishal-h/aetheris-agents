@@ -6510,6 +6510,22 @@ consumer reads: not compose, not the renderer, not the sprint. That write-only s
 item **D21**, recorded in **§Contracts C8**, and it correctly has no row of its own, being neither
 a defect nor a marked consequence.
 
+**Annotated 2026-08-07 (m4 t5c): the rider statement is surfaced; the row is NOT closed.**
+`orphans.evaluation_coverage.recent_activity_modifier` now travels and the report states, in both
+states, whether the modifier *could fire at all* — *"No resource carries `last_activity_at`, so the
+recent-activity modifier could not fire on this inventory … its absence from every candidate below
+means it was inapplicable, not that it was applied and found nothing. The window in the parameters
+block is therefore not a tuned setting here."*
+
+**The discharge question, assessed rather than assumed.** This row records three defensible
+outcomes and notes it *"could close on that basis alone"* if the status were documented. It is now
+documented in two places — §Contracts C8 and the rendered report. **It still does not close**, and
+the reason is that the row's Done-when is *"a decision on whether a permanently-dead scoring path
+stays"*. Documenting a thing is not deciding it. t5c made the situation legible; the choice between
+*keep it documented*, *gate it behind an adapter capability declaration*, and *remove it* is
+untaken, and closing the row would record a decision nobody made. **Closing it now would also be
+closing it because it became convenient**, which the ticket that surfaced it was told not to do.
+
 `Source: m4 t4a census item X4; ruled schema-level at m4 t4b under C8. Emission sites read at
 agents 611feba.`
 
@@ -6620,6 +6636,14 @@ because its subject can no longer occur.
 cap — so this row's skip-semantics change lands against a **changed** consumer, not the one the
 census read. The cross-repo sprint coupling is unchanged and still dominates the sequencing.
 
+**Annotated 2026-08-07 (m4 t5c): the rider statement is surfaced; the validation is not.** The
+report now names, in both states, how many usable resources carry a type the rule catalog does not
+evaluate — with the resources listed, the candidate total re-stated over the set actually evaluated,
+and the tag-coverage denominator's share of it cross-referenced. **Nothing is validated and nothing
+is skipped**: `usable_resources` is untouched, the uncatalogued resource is still usable and still
+counted, and a test pins that. **The sprint's rule-legibility arm is therefore untouched**, which is
+what let the statement land without this row's cross-repo landing.
+
 **One constraint m4 t5b established that this row inherits:** the sprint's rule-legibility arm
 reads `orphans["skipped"]` and fires `illegible` on **any** entry, and separately asserts
 `evaluated + len(skipped) == len(resources)`. Any new skip category routed into that list fails the
@@ -6665,6 +6689,14 @@ either — which is the argument for two rows rather than one, and for each citi
 
 **Owes:** five `encoding="utf-8"` kwargs — byte-neutral on every current artifact — **and a
 non-ASCII fixture**, without which the change is unverifiable and the row's own premise untested.
+**Annotated 2026-08-07 (m4 t5c): the rider aspect is BLOCKED on this row, not deferred.** t5c's
+gate ruled X5 *needs its row*: **the report cannot mark a mis-decode it never detects.** A
+mis-decoded name decodes to *something* and nothing downstream knows it is wrong, so there is no
+payload fact for a rider statement to read; and `compose` is contractually pure of the environment
+(*"no clock, no filesystem, no environment"*), so it cannot report the locale either. The fix
+here **prevents** rather than detects, which is why it has no report-side surface. Ruled out with a
+reason rather than given a statement that gestures at a risk the report cannot observe.
+
 **Costs: the fixture is the row's real cost.** The kwargs are minutes. A fixture carrying a
 non-ASCII resource name, threaded through detect → compose → render with an assertion on the
 rendered bytes, is the work.
@@ -6820,6 +6852,14 @@ granularity coarser than service.
 `source_granularity: "resource"`. That is a **finer** granularity, which this guard must not reject —
 whoever takes either row should read the other first, because a guard written as *"must equal
 service"* would block BL-071 outright.
+
+**Annotated 2026-08-07 (m4 t5c): the rider statement is surfaced; the guard is not.** The report
+now says the granularity column states what each provider *declared* and that nothing verifies it —
+*"a snapshot declaring a coarser granularity than service would be grouped by service exactly as if
+it were service-level, and this report would not say so. Declared, not checked."* **Template-only**:
+`service_totals` is byte-unchanged, so the N>1 deferral is untouched and this row's enumeration and
+comparison are entirely still owed. The BL-071 caution stands — a guard spelled *"must equal
+service"* would block resource-level cost.
 
 `Source: m4 t4a census item P11; ruled schema-level at m4 t4b under C10. Read at agents 611feba.`
 

@@ -46,6 +46,7 @@ import sys
 from pathlib import Path
 
 from _normalized import (
+    CANONICAL_TYPES,
     iso,
     money,
     parse_timestamp,
@@ -549,9 +550,51 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
             }
         )
 
+    # ------------------------------------------------------------------ m4 t5c, the rider
+    #
+    # What the catalog did NOT cover, stated so the totals above cannot be read as a
+    # complete evaluation. Derived from the inventories the bundles already carry — no
+    # stage detects or validates anything new here, and nothing is skipped that was not
+    # skipped before. Counting for display is not validation (BL-117 still owes that).
+    inventoried, uncatalogued, activity_bearing = 0, [], 0
+    for bundle in bundles:
+        inventory = bundle.get("inventory")
+        if not isinstance(inventory, dict):
+            continue
+        resources, _ = usable_resources(inventory)
+        inventoried += len(resources)
+        for resource in resources:
+            if resource.get("type") not in CANONICAL_TYPES:
+                uncatalogued.append(
+                    {
+                        "provider": bundle["provider"],
+                        "resource_id": resource.get("resource_id"),
+                        "type": resource.get("type"),
+                        "name": resource.get("name"),
+                    }
+                )
+            if resource.get("last_activity_at") is not None:
+                activity_bearing += 1
+    uncatalogued.sort(key=lambda row: (row["provider"], str(row["resource_id"])))
+
     return {
         "bands": list(BANDS),
         "by_band": by_band,
+        # N8 (BL-117): a resource whose `type` is outside the canonical set is counted in
+        # every total and matched by no rule. Zero is emitted explicitly — an omitted zero
+        # and an uncounted quantity look identical.
+        "evaluation_coverage": {
+            "inventoried": inventoried,
+            "uncatalogued_count": len(uncatalogued),
+            "uncatalogued": uncatalogued,
+            # X4 (BL-114): `modifier_recent_activity` keys on `last_activity_at` and nothing
+            # else, so with no resource carrying one it cannot fire — which is a different
+            # statement from "it was applied and did not match".
+            "activity_bearing_resources": activity_bearing,
+            "recent_activity_modifier": (
+                "applicable" if activity_bearing else "cannot_fire_no_last_activity_at"
+            ),
+        },
         "evaluated_as_of": sorted(evaluated, key=lambda row: row["provider"]),
         # BL-101: t2's governance rule fires in the pipeline and has been invisible in the
         # report since m1 — `orphan_section` carried `candidates` only, so `report_data`

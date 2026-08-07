@@ -197,6 +197,10 @@
   <p class="empty">No service-level cost lines in this report.</p>
   {%- endif %}
 
+  <p class="note">The granularity column states what each provider <em>declared</em>. Nothing verifies it:
+    a snapshot declaring a coarser granularity than service would be grouped by service exactly as if it
+    were service-level, and this report would not say so. Declared, not checked.</p>
+
   {%- if cost_summary.granularity_note %}
   <p class="note">{{ cost_summary.granularity_note }}</p>
   {%- endif %}
@@ -389,6 +393,15 @@
   <p class="empty">No untagged resources to rank.</p>
   {%- endif %}
 
+  {%- if orphans.evaluation_coverage %}
+  <p class="note">{% if orphans.evaluation_coverage.uncatalogued_count %}The
+    {{ tag_coverage.resources | nz }} resource(s) above include
+    {{ orphans.evaluation_coverage.uncatalogued_count }} carrying a type the rule catalog does not evaluate.
+    They count toward this coverage ratio and are evaluated by no rule &mdash; see Orphan
+    candidates.{% else %}Every resource in this denominator carries a type the rule catalog evaluates; none is
+    counted here and evaluated nowhere.{% endif %}</p>
+  {%- endif %}
+
   <h3>Tags in use{% if tag_coverage.top_k is not none %} (top {{ tag_coverage.top_k }} by cost){% endif %}</h3>
   {%- if tag_coverage.tags_in_use %}
   <table>
@@ -497,6 +510,25 @@
       {%- endfor %}
     </tbody>
   </table>
+  {%- endif %}
+
+  {%- if orphans.evaluation_coverage %}
+  {%- set ec = orphans.evaluation_coverage %}
+  <p class="note">Of {{ ec.inventoried | nz }} usable resource(s),
+    {% if ec.uncatalogued_count %}<strong>{{ ec.uncatalogued_count }} carr{{ "ies" if ec.uncatalogued_count == 1
+    else "y" }} a type the rule catalog does not evaluate</strong> &mdash; counted in the totals above and in
+    the tag-coverage denominator, matched by no rule:
+    {% for row in ec.uncatalogued %}<span class="chip">{{ row.name | nz }} ({{ row.type | nz }})</span>{% endfor %}
+    A candidate count of {{ orphans.totals.candidates | nz }} is therefore a result over
+    {{ ec.inventoried - ec.uncatalogued_count }} resource(s), not {{ ec.inventoried | nz }}.{% else %}every type
+    is one the rule catalog evaluates &mdash; 0 carried a type outside it, so the totals above cover the whole
+    inventory.{% endif %}</p>
+  <p class="note">{% if ec.recent_activity_modifier == "applicable" %}{{ ec.activity_bearing_resources | nz }}
+    resource(s) carry <code>last_activity_at</code>, so the recent-activity modifier was applied; where it does
+    not appear on a candidate it did not match.{% else %}<strong>No resource carries
+    <code>last_activity_at</code></strong>, so the recent-activity modifier <strong>could not fire</strong> on
+    this inventory &mdash; its absence from every candidate below means it was inapplicable, not that it was
+    applied and found nothing. The window in the parameters block is therefore not a tuned setting here.{% endif %}</p>
   {%- endif %}
 
   {%- if orphans.evaluated_as_of %}

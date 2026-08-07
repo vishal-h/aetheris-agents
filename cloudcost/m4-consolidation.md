@@ -113,7 +113,7 @@ ticket; the count states how many commits that is.
 | **t4c** | File the rows the rulings created, and close BL-074 | **BL-074 CLOSED**; **17 rows filed** (BL-114–BL-130): 10 defect + 7 contract consequence; 3 exclusions confirmed already recorded, not re-filed; 1 candidate dropped on a failed precondition | **Closed** — see the closure note under §Sequence; the count correction is below |
 | **t5a** | Scope the report value pass — read-only, no commit | none | **Closed** — the scoping report; it produced no repo artifact by design |
 | **t5b** | The report value pass: BL-101 in full, BL-070's slug convergence, BL-121, BL-127 | **BL-101 closed**, **BL-121 closed**, **BL-127 closed**; BL-070 **partly** (slug only, Done-when amended); filed **BL-131**, **BL-132** | **Closed** — see the deferral note under §Sequence |
-| **t5c** | The rider: the report distinguishes *not found* from *not looked at* | **four** of the six t5a's sweep identified — X4, N8, P11, X5. **P2 discharged at t5b** (both caps state their truncation, both states rendered); **F3 blocked**, not deferred — its rider aspect waits on BL-116's catalog decision | not started — **the rider is defined, not implemented** |
+| **t5c** | The rider: the report distinguishes *not found* from *not looked at* | **three surfaced** — X4, N8, P11 (rows annotated, none closed); **X5 ruled *needs its row*** — the report cannot mark a mis-decode it never detects. P2 was discharged at t5b, F3 is blocked on BL-116 | **Closed** — the four rows annotated, BL-114's discharge question assessed and declined |
 
 **Why t4 became t4a and t4b (2026-08-06).** BL-074's output is a set of **rulings** — for each
 provider-differing value, schema-level or adapter-owned — and a ruling is an adjudication, not an
@@ -249,6 +249,20 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → **t5a → t5b → t5c** → **
 >
 > **BL-132** is the general form: the census swept code, §Contracts stated code as contract, and
 > neither established reachability. C4 and C11 are the two known instances, and two is not a census.
+
+> **t5c closed the cycle's implementation work, 2026-08-07.** Three of the four remaining rider
+> items were surfaceable from data the report already had or that `compose` could derive without
+> changing what any stage detects or validates — **X4** (whether the recent-activity modifier could
+> fire at all), **N8** (resources counted in every total and evaluated by no rule) and **P11** (the
+> granularity column is declared, not checked). **X5 was ruled *needs its row*** and is the useful
+> negative: **the report cannot mark a mis-decode it never detects**, and `compose` is contractually
+> pure of the environment, so there is no payload fact for a statement to read. An item ruled out
+> with a reason beats a statement gesturing at a risk the report cannot observe.
+>
+> **No row was closed by surfacing.** BL-114's own text offers *keep it with the status documented*
+> as a closing basis, and the status is now documented in both §Contracts C8 and the report — **and
+> it was still not closed**, because the row's Done-when asks for a *decision* on whether a
+> permanently-dead scoring path stays, and documenting a thing is not deciding it.
 
 > **On the t4b row's state — the regress, and how it was broken (r2/r3, 2026-08-07).** At r1 the row
 > read `Closed` in a commit that was itself under review, so it was false from the moment r1 landed

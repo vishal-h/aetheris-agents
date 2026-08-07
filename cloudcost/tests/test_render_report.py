@@ -1141,3 +1141,89 @@ def test_an_absent_governance_block_is_not_rendered_as_a_clean_zero(report):
     assert "did not reach this report" in body
     assert "whether it ran, and what it found, is unknown here" in body
     assert "reported nothing for this run" not in body
+
+
+# --------------------------------------------------------------- m4 t5c — the rider
+#
+# "The report must distinguish *not found* from *not looked at*." Every statement below
+# is asserted in BOTH states, because a rider statement demonstrated in one state has
+# demonstrated nothing — which is the defect the rider is about.
+
+
+def _with_coverage(report, **overrides):
+    data = json.loads(json.dumps(report))
+    data["orphans"].setdefault("evaluation_coverage", {})
+    data["orphans"]["evaluation_coverage"].update(overrides)
+    return data
+
+
+def test_an_uncatalogued_type_is_named_in_both_states(report):
+    """N8: resources counted in every total and evaluated by no rule."""
+    zero = _with_coverage(report, inventoried=6, uncatalogued_count=0, uncatalogued=[])
+    body = text_of(section(render(zero), "orphan-candidates"))
+    assert "every type is one the rule catalog evaluates" in body
+    assert "0 carried a type outside it" in body          # the zero is explicit, not omitted
+
+    nonzero = _with_coverage(
+        report,
+        inventoried=4,
+        uncatalogued_count=1,
+        uncatalogued=[{"provider": "soc", "resource_id": "b-1", "type": "object_store", "name": "archive"}],
+    )
+    body = text_of(section(render(nonzero), "orphan-candidates"))
+    assert "a type the rule catalog does not evaluate" in body
+    assert "archive" in body and "object_store" in body
+    # The totals are re-stated over the set actually evaluated.
+    assert "not 4" in body
+
+
+def test_the_denominator_effect_is_named_in_the_tag_section_in_both_states(report):
+    zero = _with_coverage(report, uncatalogued_count=0)
+    assert "none is counted here and evaluated nowhere" in text_of(
+        section(render(zero), "tag-coverage")
+    )
+    nonzero = _with_coverage(report, uncatalogued_count=2)
+    body = text_of(section(render(nonzero), "tag-coverage"))
+    assert "include 2 carrying a type the rule catalog does not evaluate" in body
+    assert "evaluated by no rule" in body
+
+
+def test_the_recent_activity_modifier_states_whether_it_could_fire_at_all(report):
+    """X4: *applied and did not match* and *could not fire* are different sentences."""
+    cannot = _with_coverage(
+        report, activity_bearing_resources=0, recent_activity_modifier="cannot_fire_no_last_activity_at"
+    )
+    body = text_of(section(render(cannot), "orphan-candidates"))
+    assert "could not fire" in body
+    assert "inapplicable, not that it was applied and found nothing" in body
+    assert "not a tuned setting here" in body
+
+    can = _with_coverage(
+        report, activity_bearing_resources=3, recent_activity_modifier="applicable"
+    )
+    body = text_of(section(render(can), "orphan-candidates"))
+    assert "3 resource(s) carry" in body
+    assert "was applied; where it does not appear on a candidate it did not match" in body
+    assert "could not fire" not in body
+
+
+def test_the_granularity_column_says_it_is_declared_not_checked(report):
+    """P11. **One state by design**, and that is the finding rather than an omission:
+    nothing ever checks the declaration, so there is no *checked* counterpart to render.
+    The statement is the standing caveat — 'not looked at' with no 'found' beside it."""
+    body = text_of(section(render(report), "cost-summary"))
+    assert "states what each provider" in body and "declared" in body
+    assert "Nothing verifies it" in body
+    assert "Declared, not checked." in body
+
+
+def test_an_absent_evaluation_coverage_block_renders_no_claim_at_all(report):
+    """The rule this ticket cannot afford to break: no new empty state that collapses
+    absent into zero. With the block absent the report says nothing, rather than
+    asserting a clean evaluation."""
+    data = json.loads(json.dumps(report))
+    data["orphans"].pop("evaluation_coverage", None)
+    body = text_of(section(render(data), "orphan-candidates"))
+    assert "carried a type outside it" not in body
+    assert "could not fire" not in body
+    assert "every type is one the rule catalog evaluates" not in body

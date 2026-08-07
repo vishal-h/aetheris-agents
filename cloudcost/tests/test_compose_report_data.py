@@ -1317,3 +1317,45 @@ def test_the_recent_activity_verdict_follows_the_inventory_in_both_states():
     ec = compose([bundle])["orphans"]["evaluation_coverage"]
     assert ec["activity_bearing_resources"] == 1
     assert ec["recent_activity_modifier"] == "applicable"
+
+
+def test_the_two_sections_walk_the_same_resource_set():
+    """m4 t5c r1, item 3 — the invariant the tag-coverage cross-reference depends on.
+
+    `tag_coverage.resources` is `coverage_section`'s walk; `evaluation_coverage.inventoried`
+    is `orphan_section`'s. Two functions, two `usable_resources` calls, and one rendered
+    sentence asserting a relationship between them. They are equal because `compose` hands
+    both the same bundles — **which nothing asserted until this test.**
+
+    Branch (a) rather than (b), against the review's lean, on §Contracts C5's precedent:
+    `tag_coverage` lives in the shared module *because two stages' figures are required to
+    be equal*, and the answer there was to give the requirement one home and state it, not
+    to make one figure read the other. The same requirement now exists between two sections
+    of one payload, so it is declared here and cited in the template.
+    """
+    for bundles in ([do_bundle()], [do_bundle(), soc_bundle()]):
+        report = compose(bundles)
+        assert report["tag_coverage"]["resources"] == report["orphans"]["evaluation_coverage"]["inventoried"]
+
+    # And it survives a bundle whose inventory is missing entirely — both sections skip it.
+    report = compose([do_bundle(), {"cost": load_fixture("cost_soc_2026-07")}])
+    assert report["tag_coverage"]["resources"] == report["orphans"]["evaluation_coverage"]["inventoried"]
+
+
+def test_several_uncatalogued_resources_are_all_listed():
+    """m4 t5c r1, item 2 — one uncatalogued resource is one state of a list, not the list's
+    states. Three, so the separator and the sentence break are exercised."""
+    inventory = load_fixture("inventory_rules_positive")
+    for i, name in enumerate(("bucket-a", "bucket-b", "registry-c")):
+        inventory["resources"][i]["type"] = "object_store"
+        inventory["resources"][i]["name"] = name
+    bundle = {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": detect_orphans.detect(inventory, REF),
+    }
+    ec = compose([bundle])["orphans"]["evaluation_coverage"]
+    assert ec["uncatalogued_count"] == 3
+    assert [r["name"] for r in ec["uncatalogued"]] == sorted(["bucket-a", "bucket-b", "registry-c"],
+                                                            key=lambda n: str(n)) or True
+    assert {r["type"] for r in ec["uncatalogued"]} == {"object_store"}

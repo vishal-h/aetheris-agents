@@ -175,6 +175,9 @@
       {%- endfor %}
     </tbody>
   </table>
+  <p class="note">The granularity column above states what each provider <em>declared</em>. Nothing verifies
+    it: a snapshot declaring a coarser granularity than service would be grouped by service exactly as if it
+    were service-level, and this report would not say so. Declared, not checked.</p>
   {%- endif %}
 
   {%- if service_groups %}
@@ -196,10 +199,6 @@
   {%- else %}
   <p class="empty">No service-level cost lines in this report.</p>
   {%- endif %}
-
-  <p class="note">The granularity column states what each provider <em>declared</em>. Nothing verifies it:
-    a snapshot declaring a coarser granularity than service would be grouped by service exactly as if it
-    were service-level, and this report would not say so. Declared, not checked.</p>
 
   {%- if cost_summary.granularity_note %}
   <p class="note">{{ cost_summary.granularity_note }}</p>
@@ -394,6 +393,12 @@
   {%- endif %}
 
   {%- if orphans.evaluation_coverage %}
+  {#- The two figures below come from different sections — `tag_coverage.resources` from
+      `coverage_section`, `uncatalogued_count` from `orphan_section` — and each walks the bundles
+      with its own `usable_resources` call. They are equal by construction, and the equality is
+      DECLARED rather than assumed: `test_the_two_sections_walk_the_same_resource_set` asserts it.
+      This is C5's shape (a figure shared across stages needs one home or one assertion), one
+      payload down. #}
   <p class="note">{% if orphans.evaluation_coverage.uncatalogued_count %}The
     {{ tag_coverage.resources | nz }} resource(s) above include
     {{ orphans.evaluation_coverage.uncatalogued_count }} carrying a type the rule catalog does not evaluate.
@@ -517,8 +522,9 @@
   <p class="note">Of {{ ec.inventoried | nz }} usable resource(s),
     {% if ec.uncatalogued_count %}<strong>{{ ec.uncatalogued_count }} carr{{ "ies" if ec.uncatalogued_count == 1
     else "y" }} a type the rule catalog does not evaluate</strong> &mdash; counted in the totals above and in
-    the tag-coverage denominator, matched by no rule:
-    {% for row in ec.uncatalogued %}<span class="chip">{{ row.name | nz }} ({{ row.type | nz }})</span>{% endfor %}
+    the tag-coverage denominator, matched by no rule &mdash;
+    {% for row in ec.uncatalogued %}<span class="chip">{{ row.name | nz }} ({{ row.type | nz }})</span>{% if not
+    loop.last %}, {% endif %}{% endfor %}.
     A candidate count of {{ orphans.totals.candidates | nz }} is therefore a result over
     {{ ec.inventoried - ec.uncatalogued_count }} resource(s), not {{ ec.inventoried | nz }}.{% else %}every type
     is one the rule catalog evaluates &mdash; 0 carried a type outside it, so the totals above cover the whole

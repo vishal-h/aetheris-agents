@@ -1227,3 +1227,46 @@ def test_an_absent_evaluation_coverage_block_renders_no_claim_at_all(report):
     assert "carried a type outside it" not in body
     assert "could not fire" not in body
     assert "every type is one the rule catalog evaluates" not in body
+
+
+def test_the_granularity_note_renders_only_where_its_column_does(report):
+    """m4 t5c r1, item 1. A statement about a column, in the state where the column is not
+    on the page, is a claim about something that was not there to look at."""
+    with_table = text_of(section(render(report), "cost-summary"))
+    assert "Declared, not checked." in with_table
+
+    data = json.loads(json.dumps(report))
+    data["cost_summary"]["by_provider"] = []
+    data["cost_summary"]["by_service"] = []
+    without = text_of(section(render(data), "cost-summary"))
+    assert "No service-level cost lines in this report." in without
+    assert "Declared, not checked." not in without
+    assert "granularity column" not in without
+
+
+def test_several_uncatalogued_resources_render_as_a_punctuated_list(report):
+    """m4 t5c r1, item 2 — the multi-resource state of the list."""
+    data = json.loads(json.dumps(report))
+    data["orphans"]["evaluation_coverage"] = {
+        "inventoried": 9,
+        "uncatalogued_count": 3,
+        "uncatalogued": [
+            {"provider": "soc", "resource_id": "b-1", "type": "object_store", "name": "bucket-a"},
+            {"provider": "soc", "resource_id": "b-2", "type": "object_store", "name": "bucket-b"},
+            {"provider": "soc", "resource_id": "r-1", "type": "registry", "name": "registry-c"},
+        ],
+        "activity_bearing_resources": 0,
+        "recent_activity_modifier": "cannot_fire_no_last_activity_at",
+    }
+    page = section(render(data), "orphan-candidates")
+    body = text_of(page)
+    for name in ("bucket-a", "bucket-b", "registry-c"):
+        assert name in body
+
+    # The separator is asserted in the MARKUP, because `text_of` turns every tag into a
+    # space and would mask a missing one. Two commas between three chips, and the list
+    # closes with a full stop before the next sentence begins.
+    assert page.count("</span>, <span") == 2
+    assert "(registry)</span>.\n" in page or "(registry)</span>." in page
+    # And in the rendered text the sentence break survives tag-stripping.
+    assert re.search(r"\(registry\)\s*\.\s*A candidate count", body)

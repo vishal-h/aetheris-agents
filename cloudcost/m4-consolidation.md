@@ -654,6 +654,18 @@ lives, and the close reads it there.
 | # | Candidate | Instance | Where the evidence is |
 |---|---|---|---|
 | 1 | **Widen Silent-wrong-answer's stale-state carrier to cover *sibling* state** — a check whose own setup injects state that changes what an *adjacent* check can observe, so the sibling reports a clean result about a condition it never actually tested | t3's allowlist matrix: `CLOUDCOST_OPTIMIZATION=1` was exported so entry 5's row would have something to detect; on a DO leg that makes the orchestrator raise at *eval* time, so the `− ANTHROPIC_API_KEY` row never reached the LLM call and reported "still succeeded" — a **false negative in the verification's own matrix**, found only because the result was implausible | `cloudcost/docs/m4-t3-implementation-notes.md:132–136` |
+| 2 | **A count taken from a truncated capture, reported as the whole run's.** Two instances, two tickets — the §7 threshold. **(i)** BL-075: a `mix test` result piped through `tail -12`, so *"1 failure"* was recorded with no name and the run was gone (`docs/backlog-2026-06.md:2669`, the row's own *"What is not known — and why"*). **(ii)** m4 t5b r0: a sprint captured with `\| tail -60`, so the packet's *"21 OK, 0 FAIL, 0 WARN"* was a tally over a fragment reported as the run's own — established at m4 t5c's addendum by diffing that capture against `sprint/20260807_213810`. **What unites them:** the count is arithmetically correct *over what was captured*, and nothing in either packet showed the capture was partial. A truncated capture that happened to hide a `[FAIL]` would read identically. | `docs/backlog-2026-06.md:2669` (BL-075); m4 t5c addendum §A |
+| 3 | **A packet's sprint section shows the run's full output, or states what it elided and why.** Every sprint report in this cycle quoted only the `[OK]` lines; the log at `sprint/20260807_213810` shows the run also emits a containment probe, two harness warnings, an orphan-sweep line and an artifact listing that no packet has ever carried. **The arms are the assertions; the output is the evidence.** Candidate 2 is this one's argument in a single instance — the number that was wrong was wrong because the capture was partial, and no reader could have told from the packet. | m4 t5c addendum §C; first applied at m4 t5c r0 packet §7 |
+
+> **Where candidates 2 and 3 land is itself an open question at this close, and they join it rather
+> than assume its answer.** G5b (m4 t5b) established that **absent-is-unknown** was directed to
+> `aetheris-agents/CLAUDE.md` by its promotion draft and landed in `../aetheris/CLAUDE.md` — a
+> deliberate re-homing, recorded in the closeout's *"Home as landed"* column, but one that leaves an
+> agents-side session reading only its own file without the rule. Candidate 3 is a rule about what a
+> **packet** must carry, which suggests the agents `CLAUDE.md` beside the packet rule; candidate 2 is
+> a Complete-output refinement, which suggests the harness file where that rule already lives.
+> **The ritual decides both, and decides them together with where promoted rules land at all.**
+
 
 **Why this is a widening and not a new rule.** Silent-wrong-answer already covers a check that
 reads the wrong thing and reports clean rather than erroring (the command-binding carrier, promoted

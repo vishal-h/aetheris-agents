@@ -757,9 +757,40 @@ than asserted**, and it is the reason C15 exists at all.
 
 A residual is carried, not decided: this matcher is **case-sensitive** while the keep-tag matcher
 **case-folds**, two adjacent string matches in one module with opposite policies and no stated
-reason for either. m4 t4c carries it as a **candidate row with a precondition** — verification of
-whether the difference has an observable effect on any current provider — and if that verification
-comes back negative the inconsistency is recorded here as a note instead.
+reason for either.
+
+> **Precondition run at m4 t4c, 2026-08-07. It failed, so no row was filed — the residual is
+> recorded here as the note the ruling called for.** Two checks:
+>
+> **1. Does it bite? No, on every name in the record.** Across **118** distinct resource-name
+> strings in all committed fixtures, data and output, **zero** match the ephemeral pattern
+> case-insensitively but not case-sensitively. Five match as written and the modifier fires
+> correctly (`ci-runner-cache`, `test-fixture-vol`, `tmp-egress-ip`, `tmp-orphan-disk`,
+> `tmp-scratch-vol`). Eleven strings are capitalised and **all eleven are cost line-item service
+> labels** — `Droplets`, `Taxes`, `Product usage charges` — not resource names, and none begins
+> with an ephemeral prefix in any casing. The AWS `Name`-tag path that motivated the concern
+> (`fetch_aws.py:442`) yields eight recorded values, **all lowercase**.
+>
+> **2. Does it cross a band? Yes, and exactly.** Verified from the constants rather than reasoned:
+> both stopped rules carry base confidence `0.6`; `MODIFIER_EPHEMERAL_NAME` is `+0.1`;
+> `BAND_MEDIUM_MIN` is `0.7`. So for those two rules the ephemeral modifier is **precisely** the
+> LOW→MEDIUM boundary — `0.6` bands LOW, `0.7` bands MEDIUM. A missed match is a band change, not
+> a rounding difference.
+>
+> **Why that combination is a note and not a row.** Check 1 is the trigger and check 2 is the
+> severity. The severity is real and the trigger is unobserved on every provider in the record —
+> which is the same shape as the three items this cycle excluded (D15, D17, P4): *latent on a
+> hypothetical provider, exhibited by none of the three.* Filing it would put an unreproducible
+> row beside ten reproducible ones.
+>
+> **What a later reader needs.** If the case policies are ever reconciled, reconcile them
+> **toward case-folding**, matching the keep-tag predicate — and know that doing so can only move
+> candidates **up** a band, never down. If a provider is added whose resource names arrive
+> capitalised, check 1 must be re-run before that provider's first report is trusted.
+>
+> *(The ticket's two branch instructions conflict for this outcome — "if check 1 negative, file no
+> row" and "if either is positive, file the row". Ruled here on trigger-versus-severity, and the
+> conflict is reported rather than resolved silently.)*
 
 **The PDF binary is an environment dependency** (R4). It is a named external tool on the optional
 output path, and it differs by *machine*, not by provider. **It cannot be ruled by BL-074's

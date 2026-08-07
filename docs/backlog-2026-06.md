@@ -2602,6 +2602,33 @@ posture. Two observations for the sweep, both found while wiring it:
   gap is precisely why the sprint assertion had to check membership itself, and it is a candidate
   for this sweep's ruling: schema-level validation in `_normalized`, or left to the callers.
 
+**DONE 2026-08-07 (m4 t4a / t4b / t4c).** All five Done-when clauses satisfied; assessed per
+clause below.
+
+| # | Clause | Satisfied by |
+|---|---|---|
+| 1 | *every provider-differing value … enumerated with a schema-level-or-adapter-owned ruling* | `cloudcost/docs/m4-t4a-implementation-notes.md` — **54 items** from a structural AST extraction over **518 nodes**, with a recorded completeness argument. Ruled at t4b: **48 schema-level, 4 adapter-owned, 2 neither**. **Qualification, stated not glossed**: the clause offers two arms and **two items fit neither** (D5, operator configuration; R4, an environment dependency), recorded with their reason under C15 rather than forced. |
+| 2 | *the ones ruled schema-level are in §Contracts* `[amended]` | `cloudcost/milestone.md` **§Contracts (C1–C15)**. Every one of the 54 is cited by item id in **exactly one** contract — an exact bijection, derived not asserted. Clause amended 2026-08-07 before assessment (note above). |
+| 3 | *m1's "one seam" text is corrected* | `cloudcost/milestone.md` §Open items, corrected in place. m2 had corrected *"the one seam"* → *"at least three"*; **that was itself an observation**, produced by the failure mode the sentence describes. The entry now states the censused count, asserts **no seam count** (t4a establishes a censused count, not a seam count), and carries its correction history by strikethrough. |
+| 4 | *the sweep's method is recorded, so this is an enumeration and not another observation* | `cloudcost/docs/m4-t4a-implementation-notes.md` §2 — the extraction inlined verbatim and re-runnable, per-class node counts a reader can diff, the classification criterion, the exclusion record with reasons, and §2.7 *"what would not have counted"*, which names *"I searched for the known candidates and found them"* as the failure mode. §2.6 bounds the claim: an AST-class census is complete **relative to its class list**, and the method cannot answer from inside itself whether a further population remains. |
+| 5 | *and the rows the rulings created are filed* `[added]` | **17 rows: BL-114–BL-130.** Ten defect rows (X4, F2, F3, N8, X5, P8, D16, P2, P11, D12) and seven contract-consequence rows (N3, D20, N5, N7, D6, P6, P7). Three exclusions confirmed already recorded in §Contracts with their reasons and deliberately not filed — D15 (C7), D17 (C3), P4 (C10). One candidate row **not** filed: D5's precondition was run at t4c and failed, and the residual is a note under C15. |
+
+**What this row established, beyond its own fix.** m1 called `STOPPED_STATES` *"the one seam"*; m2
+found three; the census found **54**, of which the seven candidates BL-074 and its later couplings
+named account for eight items. **The substantive finding is that this was never a handful of seams
+to close but a large, mostly undocumented contract** — which is why the deliverable was a contract
+section rather than a migration, and why 48 of 54 ruled schema-level: these four scripts *are* the
+shared machinery, so almost nothing in them should move to an adapter.
+
+**The §7 promotion candidate this row carried** — *Adjacent-case / enumerate-the-class, in its "a
+uniqueness claim produced by observation" form* — is now evidenced three times over in one lineage:
+*"the one seam"*, then *"at least three"*, then a t4b correction that asserted a seam predicate over
+all 54 which the census denies. Each was a count replaced without re-checking the claim it hung on.
+Carried to the m4 close.
+
+`Source: m4 t4a (census, agents 904a568), m4 t4b (§Contracts, agents 611feba), m4 t4c (rows,
+this commit). Closed 2026-08-07.`
+
 `Source: m2-cloudcost t1 review r0/r1 (docs/reviews/m2-cloudcost-t1-review.md), ratified
 2026-08-01. Line citations verified at aetheris-agents 3bc970b. Coupling appended m4 t2,
 2026-08-06.`
@@ -6398,5 +6425,530 @@ the surface that needs no fix.)*
 `Source: m4 t3, 2026-08-06 — recorded as a residual of that ticket's own bridge. Re-characterised
 at t3 review r1 the same day, after the reviewer's trace was checked against the code rather than
 taken; the mutations behind the table were run at agents aabf546 / harness 7c248c0.`
+
+---
+
+### BL-114 — the recent-activity modifier has never fired against any real inventory, on any provider (#TBD)
+**Kind:** defect · **Census item:** X4 · **Contract:** C8
+**Size:** XS–S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
+
+Filed 2026-08-07 from m4 t4c, from the t4a census. **Established from the code**, not observed on a
+run: `last_activity_at` is emitted as `None` at **every** emission site on **all three** adapters —
+`fetch_do.py:347, 368, 387, 408, 442`; `fetch_aws.py:502, 530, 559, 602, 623, 651, 681`;
+`fetch_linode.py:660, 692, 819, 861, 979`. `modifier_recent_activity` keys on that field and
+nothing else, so it and `RECENT_ACTIVITY_WINDOW_DAYS` have never fired against a real inventory
+from any provider. The only exercise they get is a synthetic fixture
+(`tests/test_detect_orphans.py:419`).
+
+The module comment records this **for DigitalOcean** (`detect_orphans.py:75–77`, *"A no-op for
+DigitalOcean, which exposes no such field"*). The census established it is true fleet-wide, which
+the comment does not say.
+
+**Not a wrong output.** A modifier that never fires produces no incorrect candidate; it produces a
+scoring path that is carried, documented, echoed into the `parameters` block and never exercised.
+The risk is that its presence reads as tuned behaviour — C8 now records the universal-null status
+beside the constant for exactly that reason.
+
+**Owes:** a decision on whether a permanently-dead scoring path stays. Three defensible outcomes:
+keep it with the status documented (done at C8, so this row could close on that basis alone);
+gate it behind an adapter capability declaration; or remove it and the constant.
+**Costs:** XS to decide, S to remove (the modifier, the constant, the `parameters` key, one test).
+**Collides with:** nothing. Removing it would change the emitted `parameters` block, which no
+consumer reads (see BL-124).
+
+`Source: m4 t4a census item X4; ruled schema-level at m4 t4b under C8. Emission sites read at
+agents 611feba.`
+
+---
+
+### BL-115 — a stopped instance with no attached storage and a non-zero own estimate yields no candidate (#TBD)
+**Kind:** defect · **Census item:** F2 · **Contract:** C8
+**Size:** S–M · **Priority:** **high** · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
+
+Filed 2026-08-07 from m4 t4c. Found by the t4a census's **per-rule predicate diff** — an asymmetry
+between two same-shaped rules, which no grep and no constants sweep reaches.
+
+**The gap.** `rule_stopped_compute_with_attached_storage` requires attached storage
+(`detect_orphans.py:271`, `if not attached: return None`). `rule_stopped_database_with_storage`
+instead requires a non-zero own estimate (`:326`, `if own <= 0: return None`). So a **stopped
+compute instance with no separately-inventoried volume and a non-zero `monthly_cost_estimate`
+matches neither rule** and produces nothing.
+
+**Observed shape on DigitalOcean**, which is what makes this the costly one: DO bills a stopped
+droplet **in full**, so its own estimate is the whole droplet price — and a stopped droplet with no
+attached volume is exactly the case the catalog misses. On AWS the same shape is harmless, because
+a stopped instance's own estimate is `0.0` and the EBS volume carries the charge, so the
+attached-storage requirement is the right gate there. **The rule was written against one provider's
+billing model and the gap only opens on the other's.**
+
+**Owes:** one of — a third rule (stopped compute, no storage, non-zero own estimate); a widened
+predicate on the existing rule (`not attached and own <= 0`); or a recorded blind spot with the
+DO consequence stated. Not decided here.
+**Costs:** S–M. A firing-set change, so it moves candidate counts, the sprint's rule-legibility
+arm's evaluated count, and `tests/test_detect_orphans.py:173`.
+**Collides with:** nothing structural. Any fix changes live candidate output on DO.
+
+`Source: m4 t4a census item F2 (class F, structural absence); ruled schema-level at m4 t4b under
+C8. Predicates read at agents 611feba.`
+
+---
+
+### BL-116 — the aged-snapshot rule's docstring requires a gate its code does not apply (#TBD)
+**Kind:** defect · **Census item:** F3 · **Contract:** C8
+**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.**
+
+`rule_aged_snapshot`'s docstring describes the heuristic as *"age plus a source that is gone"*
+(`detect_orphans.py:205–207`). The code requires **only age** (`:213`). The source-is-gone half is
+appended as an evidence sentence when `attached_to is None` (`:220–223`) and **silently omitted when
+it is not** — so a snapshot of a live volume and a snapshot whose source was deleted fire at the
+same `0.7`, and are distinguishable in the report only by whether one evidence line is present.
+
+**Every other rule in the catalog treats `attached_to` as a gate** (`:167`, `:190`, `:235`, `:323`).
+This one alone treats it as decoration. That is the asymmetry, and it is why the census flagged it.
+
+**Provider-differing consequence:** on a provider where snapshots of live volumes are routine backup
+hygiene, this is a systematic false-positive source at a MEDIUM-band confidence; on one where they
+are not, it is harmless. No adapter distinguishes the two today.
+
+**Owes:** either the gate (making the code match the docstring), or a corrected docstring **and** a
+reconsidered confidence — because `0.7` was chosen for the two-fact heuristic the docstring
+describes, not for the one-fact heuristic the code implements. **Do not fix only the docstring**:
+that leaves a confidence calibrated for evidence the rule does not require.
+**Costs:** S. Adding the gate shrinks the firing set and moves
+`tests/test_detect_orphans.py:114, 268, 380`.
+**Collides with:** nothing.
+
+`Source: m4 t4a census item F3 (class F); ruled schema-level at m4 t4b under C8. Read at agents
+611feba.`
+
+---
+
+### BL-117 — an out-of-vocabulary `type` is counted everywhere and evaluated by nothing (#TBD)
+**Kind:** defect · **Census item:** N8 · **Contract:** C1
+**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`) — **cross-repo**
+**Cross-repo:** `../aetheris/scripts/sprint.sh`
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.** First observed at m4 t2 and appended to
+BL-074 as a sweep input; this is its own row now that the sweep has ruled.
+
+`usable_resources()` validates that a resource entry has a `type` (`_normalized.py:129`,
+`elif not resource.get("type")`) and **never that the type is canonical**. So a resource whose
+`type` is outside `CANONICAL_TYPES` is classified **usable**: it is counted in `totals.resources`,
+counted in the tag-coverage denominator, carried into the report — and matched by no rule, because
+every rule keys on a canonical type. It contributes to every figure and to no finding, silently.
+
+C1 now states the guarantee (*an out-of-vocabulary `type` is a contract violation, not a
+pass-through*). This row is the enforcement.
+
+**Owes:** the membership validation in `usable_resources`, skipping with a reason the way a
+malformed entry is skipped.
+**Costs:** S in `_normalized.py`. **The cost is not there.**
+
+**Collides with — and this is why the row cannot be taken alone.** `../aetheris/scripts/sprint.sh`'s
+cloudcost **rule-legibility assertion** has three arms, and its `illegible` arm exists *precisely
+because this validation is absent* (`sprint.sh:3048`, `outside = sorted(t for t in emitted if t not
+in CANONICAL_TYPES)`). Adding the validation upstream means an out-of-vocabulary type is skipped
+before the catalog ever sees it, so:
+
+- the `illegible` arm can no longer fire on that condition — it becomes unreachable, which is the
+  chaos-gate shape (BL-107) arriving by a different route;
+- the `evaluated + skipped == resources` arm (`sprint.sh:3060`) changes meaning, because the skip
+  set now includes a category it never held.
+
+**The row must be sequenced with a sprint change, in one landing.** Taking it alone changes what the
+sprint's third arm means without touching the sprint — and leaves an assertion that reads green
+because its subject can no longer occur.
+
+`Source: m4 t4a census item N8; ruled schema-level at m4 t4b under C1. Observed at m4 t2 while
+wiring the rule-legibility assertion; sprint arms read at harness e75f838.`
+
+---
+
+### BL-118 — five I/O sites decode adapter JSON under the platform default encoding (#TBD)
+**Kind:** defect · **Census item:** X5 · **Contract:** C12
+**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/`)
+**Sibling:** BL-112 — same root cause, different layer; **neither guards the other**
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.** Found by the t4a census's class-H
+extraction (literals in any call argument), which is the only class that reaches a missing `encoding=`
+kwarg.
+
+`render_report.py` passes `encoding="utf-8"` at **all four** of its I/O sites (`:334`, `:352`,
+`:381`, `:404`). `detect_orphans.py` (`:583`, `:613`) and `compose_report_data.py` (`:667`, `:678`,
+`:708`) pass **none** at five, so those reads and writes take `locale.getpreferredencoding()`.
+
+**No current artifact differs**, because every value the three adapters emit is ASCII — which is
+exactly why this has gone unnoticed. Under a non-UTF-8 locale a non-ASCII resource `name`, `tags`
+entry or `region` either raises `UnicodeDecodeError` — breaking the stdout contract the stage-CLI
+rule exists to protect — or mis-decodes silently into the candidate identity, the evidence text and
+the rendered report.
+
+**The asymmetry is worse than the absence.** The one stage that would *display* the corruption is
+the one that already specifies the encoding, so corruption enters **upstream of the only correct
+site**.
+
+**Relationship to BL-112, ruled at m4 t4c G3 — two rows, not one.** They share a root cause (an
+absent UTF-8 locale) and nothing else: BL-112 is the **harness**, Elixir, the BEAM's
+`native_name_encoding` fallback corrupting the `--json` payload's run label;
+this is **aetheris-agents**, Python, `locale.getpreferredencoding()` on file I/O in the cloudcost
+stages. Different repos, languages, mechanisms and artifacts. **Neither fix addresses the other's
+failure**, and a single environment change (exporting `LANG`) would mask both without repairing
+either — which is the argument for two rows rather than one, and for each citing the other.
+
+**Owes:** five `encoding="utf-8"` kwargs — byte-neutral on every current artifact — **and a
+non-ASCII fixture**, without which the change is unverifiable and the row's own premise untested.
+**Costs: the fixture is the row's real cost.** The kwargs are minutes. A fixture carrying a
+non-ASCII resource name, threaded through detect → compose → render with an assertion on the
+rendered bytes, is the work.
+**Collides with:** nothing. BL-112 may be taken independently in either order.
+
+`Source: m4 t4a census item X5, added at t4a review r1 by the class-G/H extraction extension; ruled
+schema-level at m4 t4b under C12. BL-112 relationship ruled at m4 t4c G3. Read at agents 611feba.`
+
+---
+
+### BL-119 — a cost snapshot with a declared total and no line items is silently dropped from discovery (#TBD)
+**Kind:** defect · **Census item:** P8 · **Contract:** C10
+**Size:** S (the warning) / M (the document-type change) · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
+
+Filed 2026-08-07 from m4 t4c. **Established from the code — and the sharp form is that two functions
+in one module disagree about what a valid cost document is.**
+
+`service_totals` explicitly supports a snapshot that declares a total without line items
+(`compose_report_data.py:193`, `amount = money(declared.get("amount")) if "amount" in declared else
+line_items_sum`). `classify` recognises a cost document **only** by the presence of a list-valued
+`line_items` key (`:690–700`). So such a snapshot is **legitimate to one and unclassifiable to the
+other**.
+
+**The consequence is a silent omission, not an error.** In `--input-dir` mode `discover_bundles`
+drops any document `classify` returns `None` for (`:715–716`) with **no warning and no `skipped`
+entry**, so the run composes a report missing that provider's costs entirely and exits `ok`. The
+same discriminator gates history: `load_prior_snapshots` accepts a document only if
+`classify(document) == "cost"` (`:768`), so the month-on-month baseline silently loses it too.
+
+**Owes, in two steps, and the first is worth taking alone:**
+1. **A warning and a `skipped` entry** for any document `classify` cannot type. Cheap, and it
+   converts a silent omission into a reported one — the property that matters.
+2. The C10 change proper: documents carry an explicit `document_type`.
+
+**Costs:** step 1 is S. Step 2 is **expensive and the row should say so**: it touches all three
+adapters, `detect_orphans`'s output, every fixture, and the history tree **already on disk**, whose
+snapshots carry no such key and would need a compatibility read.
+**Collides with:** BL-070 (retires dormant merge code in the same module) and BL-076 (`load_prior_snapshots`
+globbing) — all three edit `compose_report_data.py`, and BL-070 asks to be a dedicated cleanup.
+Sequence them.
+
+`Source: m4 t4a census item P8; ruled schema-level at m4 t4b under C10. Read at agents 611feba.`
+
+---
+
+### BL-120 — the idle-load-balancer rule rests on a `tag:` convention nothing enforces (#TBD)
+**Kind:** defect · **Census item:** D16 · **Contract:** C7
+**Size:** XS to check · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.**
+
+`rule_idle_load_balancer` fires on `type == load_balancer` and `attached_to is None`, at `0.85` —
+HIGH band. Its correctness rests entirely on a premise stated in its own docstring
+(`detect_orphans.py:230–232`): a **tag-targeted** load balancer carries
+`attached_to == "tag:<name>"` and therefore never reaches the rule.
+
+That convention **originates in one adapter's normalizer, is emitted by no other adapter, is
+enforced by nothing, and is asserted by no test.** C7 now makes it part of `attached_to`'s
+definition, which is the contract half. This row is the check.
+
+**This row owes a check, not a fix.** The question is prior to any change:
+
+> On DigitalOcean and Linode, can a load balancer **in active use** present with `attached_to is
+> None`?
+
+If yes, that adapter is already producing HIGH-band false positives and the row becomes a defect
+with a known blast radius. If no, the convention holds by accident on those adapters and the row
+becomes a test plus the C7 obligation. **Verify and record the answer before proposing anything** —
+the fix differs completely between the two outcomes, and proposing one now would be the guess this
+row exists to prevent.
+
+**Costs:** XS to answer (read the two adapters' load-balancer normalizers and their fixtures). The
+fix is unscoped until the check runs.
+**Collides with:** nothing until the answer is known.
+
+`Source: m4 t4a census item D16; ruled schema-level at m4 t4b under C7. Read at agents 611feba.`
+
+---
+
+### BL-121 — the untagged-spenders cap truncates across all providers and reports nothing (#TBD)
+**Kind:** defect · **Census item:** P2 · **Contract:** C11
+**Size:** XS · **Priority:** low–medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.**
+
+`coverage_section` sorts untagged resources by estimate **across all providers combined** and then
+truncates to `top_untagged` (`compose_report_data.py:388–408`). At N>1 a provider whose resources
+are individually cheap can be **absent from the table entirely** while another fills every row —
+and nothing in the payload records that anything was dropped.
+
+**The same file argues against exactly this, one section away.** `region_coverage_section`'s
+rationale (`:521–534`) invokes decision D's no-silent-caps clause: *"a sweep narrowed by an override
+or by a failed region enumeration is visible rather than quietly shrinking the inventory behind an
+unchanged-looking report."* The spenders cap is that shape, unguarded.
+
+**Owes:** the dropped count in the payload — how many untagged resources exist beyond `top_k`, and
+ideally the per-provider breakdown, so an absent provider is visible as absent rather than as
+having nothing to report.
+**Costs:** XS. Additive to the payload; the template may render it or not.
+**Collides with:** BL-101, which redesigns the tag section (adds a tags-in-use table and carries the
+`reported` block through). Same section, same file — take together or sequence.
+
+`Source: m4 t4a census item P2; ruled schema-level at m4 t4b under C11. Read at agents 611feba.`
+
+---
+
+### BL-122 — `source_granularity` is carried into the report and validated nowhere (#TBD)
+**Kind:** defect · **Census item:** P11 · **Contract:** C10
+**Size:** XS–S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.**
+
+`source_granularity` exists to make decision D4's honesty claim checkable — that cost totals are
+service-level and per-resource dollars are estimates. `service_totals` copies it into the payload
+(`compose_report_data.py:210`) and **compares it against nothing**. All three adapters declare
+`"service"` (`fetch_aws.py:747`, `fetch_do.py:304`, `fetch_linode.py:554`), so the field has never
+been anything else and the absence of a check has never cost anything.
+
+**This row is an absent guard, not a wrong output — and it should be triaged as one.** Nothing is
+incorrect today. What is missing is the mechanism that would notice if it became incorrect: a
+provider emitting account-level costs would have them grouped by service exactly as if they were
+service-level, and the only trace would be a string in the report that nothing reads.
+
+**Owes:** the enumeration (what values are valid) and the comparison — `service_totals` warns on a
+granularity coarser than service.
+**Costs:** XS–S. A warning in the existing warnings list; no payload shape change.
+**Collides with:** BL-071, which proposes resource-level AWS cost carrying
+`source_granularity: "resource"`. That is a **finer** granularity, which this guard must not reject —
+whoever takes either row should read the other first, because a guard written as *"must equal
+service"* would block BL-071 outright.
+
+`Source: m4 t4a census item P11; ruled schema-level at m4 t4b under C10. Read at agents 611feba.`
+
+---
+
+### BL-123 — `age_phrase` truncates, so the evidence sentence contradicts its own threshold (#TBD)
+**Kind:** defect · **Census item:** D12 (display half) · **Contract:** C3
+**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
+
+Filed 2026-08-07 from m4 t4c. **Established from the code.**
+
+Age is a **float** of days (`detect_orphans.py:135`, `/ 86400.0`) and a rule fires on age *strictly
+greater* than its threshold (`:170`, `:213`, `:268`, `:329`). `age_phrase` renders it with
+`int(age)` (`:141`), which **truncates**.
+
+So a resource of age 14.9 days fires against a 14-day threshold and renders as:
+
+```
+unattached for 14d (created …, ref …); threshold >14d
+```
+
+**The number is right and the sentence contradicts itself** — it reports an age that, as printed,
+would not have fired. The candidate is correct; its evidence is not readable as a justification,
+which is what evidence is for.
+
+**Owes:** either rounding, or a stated display convention (e.g. one decimal place, or *"14d+"*).
+A decision, not a design.
+**Costs:** XS, confined to `age_phrase`. It changes evidence strings, so any test asserting evidence
+text moves.
+**Collides with:** nothing.
+
+`Source: m4 t4a census item D12, display half; the comparison half is stated as contract at m4 t4b
+under C3. Read at agents 611feba.`
+
+---
+
+### BL-124 — C3: reject a naive timestamp rather than assuming UTC (#TBD)
+**Kind:** contract consequence · **Census item:** N3 · **Contract:** C3
+**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today** — this is a stated contract the code has
+not yet met.
+
+**C3 requires:** ISO-8601 **with offset** for `created_at`, `last_activity_at` and `generated_at`; a
+naive timestamp is **rejected**, not assumed UTC.
+
+**The code today:** `parse_timestamp` accepts a naive timestamp and stamps it UTC
+(`_normalized.py:76–77`, `if parsed.tzinfo is None: parsed = parsed.replace(tzinfo=timezone.utc)`).
+
+**Why the contract says reject.** On a provider emitting local time the assumption produces age
+errors of up to a day, in the direction that **suppresses** rule firings — a silent wrong answer
+rather than a parse failure. Rejecting surfaces it through `timestamp_warnings`, which already
+exists for exactly this.
+
+**Costs:** S — but the sequencing matters and the contract does not state it: a naive stamp
+currently parses, so flipping to rejection could turn existing fixtures' timestamps into warnings.
+**Sweep all three adapters' fixtures for naive timestamps before flipping**, or the change lands as
+a fixture regression rather than a contract fix.
+**Collides with:** BL-125 (same module, same contract).
+
+`Source: §Contracts C3 at m4 t4b, marked [code consequence]; census item N3.`
+
+---
+
+### BL-125 — C3: name the timestamp field set once instead of hardcoding the pair (#TBD)
+**Kind:** contract consequence · **Census item:** D20 · **Contract:** C3
+**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`, `cloudcost/scripts/_normalized.py`)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today.**
+
+**C3 requires:** the schema's timestamp field set is **named once**, and read by both the function
+and the contract.
+
+**The code today:** `timestamp_warnings` hardcodes the pair `("created_at", "last_activity_at")`
+(`detect_orphans.py:431`) — a hand-maintained restatement of what the schema's timestamp fields are.
+A third timestamp added to the schema is unchecked unless someone remembers that line. It is the
+hand-typed-vocabulary class, one level below the one BL-074 swept.
+
+**Costs:** XS. Additive extraction into `_normalized.py`; no behaviour change while the set stays
+two.
+**Collides with:** BL-124 (same contract). Cheap enough to ride along with it.
+
+`Source: §Contracts C3 at m4 t4b, marked [code consequence]; census item D20.`
+
+---
+
+### BL-126 — C4: carry the currency's minor-unit exponent and round to it (#TBD)
+**Kind:** contract consequence · **Census item:** N5 · **Contract:** C4
+**Size:** M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`, all three adapters)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today** — all three adapters declare `USD`
+(`fetch_aws.py:71`, `fetch_do.py:56`, `fetch_linode.py:89`), and the 2dp rounding is correct *only
+because they agree*.
+
+**C4 requires:** the minor-unit exponent belongs in the cost snapshot beside `currency`, and
+`money()` takes it.
+
+**The code today:** `money()` rounds to a hardcoded two decimal places (`_normalized.py:92`). Two
+decimals is wrong for a zero-decimal currency (JPY, KRW) and wrong for sub-cent unit pricing — of
+which Linode's own price surface already carries an instance (`fetch_linode.py:728`, a recorded
+`unit_price 0.0015`).
+
+**Costs: M, and this is the expensive one in this group.** It changes `money()`'s **signature** and
+therefore **every call site** — 14 across the four shared scripts, plus the adapters. It also
+interacts with the deliberate arithmetic order in `service_totals` (`:191` sums the *rounded* rows
+*"so the column adds up on paper"*), which would need restating rather than merely re-rounding.
+**Collides with:** BL-127 (C4's sibling, the reconcile tolerance) — same contract, same currency
+model; they should be scoped together or the tolerance will be re-derived twice.
+
+`Source: §Contracts C4 at m4 t4b, marked [code consequence]; census item N5.`
+
+---
+
+### BL-127 — C6: a non-`str` tag element is a counted skip, not a silent drop (#TBD)
+**Kind:** contract consequence · **Census item:** N7 · **Contract:** C6
+**Size:** S · **Priority:** low–medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today** — all three adapters emit `list[str]` by
+construction.
+
+**C6 requires:** a non-`str` tag element is a **counted skip**, surfaced the way `usable_resources`
+surfaces a malformed resource.
+
+**The code today:** `tags_of` filters non-`str` elements out silently (`_normalized.py:112`,
+`[t for t in tags if isinstance(t, str)]`) — no warning, no `skipped` entry. An adapter emitting the
+wrong element type would have every tag vanish, taking `tag_coverage` to `0.0` and switching off the
+untagged-in-tagged-account governance rule. **A clean-looking zero**, which is the failure shape this
+contract set exists to name.
+
+**Costs:** S. `tags_of` currently returns a list and has no skip sink, so it needs one — which means
+touching both callers (`has_keep_tag`, `tag_coverage`) and `coverage_section` in compose.
+**Collides with:** BL-121 and BL-101 both edit the tag-coverage path.
+
+`Source: §Contracts C6 at m4 t4b, marked [code consequence]; census item N7.`
+
+---
+
+### BL-128 — C6: the keep marker becomes a first-class field, not a tag spelling (#TBD)
+**Kind:** contract consequence · **Census item:** D6 · **Contract:** C6
+**Size:** M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/`, all three adapters)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today**, but the current spelling is reachable
+unevenly across providers, which is the substance of BL-074's own phrase for it:
+*an adapter convention masquerading as a shared constant.*
+
+**C6 requires:** the exclusion marker is a **first-class normalized field**; each adapter decides how
+its own tag surface expresses it; shared machinery reads a boolean.
+
+**The code today:** `KEEP_TAG = "keep=true"` (`detect_orphans.py:84`), matched case-folded against
+the flat tag list (`:112`). The `k=v` spelling is **native only on AWS**, whose adapter constructs it
+(`fetch_aws.py:438`); on DigitalOcean and Linode a tag is a flat string, so `keep=true` must be typed
+literally as a tag name — established for Linode at `cloudcost/docs/m3-linode-scout.md:925–928`
+(*"writable by hand but is not a native key/value construct"*).
+
+**Costs:** M. §Normalized extension (a new resource field), all three adapters, every fixture
+carrying a keep tag, `has_keep_tag`, and the `excluded[].reason` string that prints the constant.
+**Collides with:** BL-098 — both are §Normalized extensions, and BL-098 records that the
+emit-with-a-real-value-or-`null` rule obliges *every* adapter to emit any new key. Sequence them so
+the schema moves once.
+
+`Source: §Contracts C6 at m4 t4b, marked [code consequence]; census item D6.`
+
+---
+
+### BL-129 — C10: service identity needs a stable identifier beside the display name (#TBD)
+**Kind:** contract consequence · **Census item:** P6 · **Contract:** C10
+**Size:** M–L · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`, all three adapters)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today**, and the failure it prevents is invisible
+until it happens.
+
+**C10 requires:** a stable service identifier beside the display name.
+
+**The code today:** service names are raw provider strings, grouped by exact string match
+(`compose_report_data.py:176–177`) and keyed by the month-on-month delta as `(provider, service)`
+(`:279–280`). So **any** change in a provider's service naming between two months reports the old
+name as `removed` and the new one as `new` — a full swing in both directions, with nothing
+indicating they are the same service. Linode additionally emits a literal `Tax` service line
+(`fetch_linode.py:116`), so the vocabulary is not even uniform in kind.
+
+**Costs: M–L, and the contract already names why.** *"Expensive — prior snapshots on disk carry the
+old names."* The history tree is the persisted month-on-month baseline; introducing an id means
+either backfilling it or reading both shapes for a transition period. That, not the adapter change,
+is the work.
+**Collides with:** BL-076 (`load_prior_snapshots`, same MoM path) and BL-070 (same module, dedicated
+cleanup). Sequence.
+
+`Source: §Contracts C10 at m4 t4b, marked [code consequence]; census item P6.`
+
+---
+
+### BL-130 — C11: promote `swept_regions` to a first-class optional envelope field (#TBD)
+**Kind:** contract consequence · **Census item:** P7 · **Contract:** C11
+**Size:** S–M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`, `cloudcost/scripts/fetch_aws.py`)
+
+Filed 2026-08-07 from m4 t4c. **Nothing is broken today.** The current read is deliberate, sanctioned
+and works.
+
+**C11 requires:** the sanctioned provider-extra read is promoted out of the opaque provider payload
+block into a **first-class optional envelope field**, at which point the m2 A4 exception disappears
+entirely.
+
+**The code today:** `SWEPT_REGIONS_KEY = "swept_regions"` is lifted from `cost["provider_extra"]`
+(`compose_report_data.py:516, 539–540`) as **one named constant**, precisely so the block is never
+iterated generically. The census's ruling test puts it in the schema because
+`region_coverage_section` **keys on its presence** — the section appears or does not appear because
+of it — which is keying, not carrying.
+
+**Why promote it rather than leave a working exception.** Today only a **comment** prevents a second
+such read (`:511–515`). A first-class field removes the precedent instead of documenting it.
+
+**Costs:** S–M. `fetch_aws.py:765` moves the key up a level; `region_coverage_section` reads the
+envelope; `render_report.OPTIONAL_FIELDS` is unchanged (it already reads the report payload, not the
+provider block); `tests/test_render_report.py:404, 791` guard the tuple choice and should stay green.
+DigitalOcean and Linode emit no such key, and their reports must stay byte-identical.
+**Collides with:** BL-098 — the **inventory** envelope has no extras key at all, and this is the
+**cost** envelope's equivalent question. Ruled at m4 t4c G3 as **adjacent, not duplicate**; they are
+two halves of one §Normalized decision and should be sequenced together.
+
+`Source: §Contracts C11 at m4 t4b, marked [code consequence]; census item P7. BL-098 relationship
+ruled at m4 t4c G3.`
 
 ---

@@ -110,7 +110,7 @@ ticket; the count states how many commits that is.
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
 | **t4a** | The seam census: enumerate every provider-differing value in shared machinery, and record the sweep's method | BL-074 — **enumerated, not discharged**; no DONE section | **Closed** — the census is `cloudcost/docs/m4-t4a-implementation-notes.md`: 518 nodes extracted structurally, 54 censused, seven leads confirmed and none refuted |
 | **t4b** | Write the rulings as contracts: **§Contracts (C1–C15)** in `cloudcost/milestone.md` | BL-074 **not closed** — its Done-when clause 2 amended here, before assessment, to name §Contracts; m1's "one seam" text corrected here | **Closed** — 54 items ruled 48 schema-level / 4 adapter-owned / 2 neither, each cited by census item id in exactly one contract; see the closure note under §Sequence |
-| **t4c** | File the defect rows the rulings created | BL-074 **closes here**; 11 rows filed, 3 exclusions recorded | not started — **held until t4b is closed and pushed** |
+| **t4c** | File the rows the rulings created, and close BL-074 | **BL-074 CLOSED**; **17 rows filed** (BL-114–BL-130): 10 defect + 7 contract consequence; 3 exclusions confirmed already recorded, not re-filed; 1 candidate dropped on a failed precondition | **Closed** — see the closure note under §Sequence; the count correction is below |
 | **t5** | The report value pass, with the evaluated-versus-not-evaluated rider | BL-101, BL-070 | not started |
 
 **Why t4 became t4a and t4b (2026-08-06).** BL-074's output is a set of **rulings** — for each
@@ -131,7 +131,17 @@ t4b's.
 > billing case neither stopped rule covers, a validation the sprint's own gate presumes absent.
 > Ruling the second kind does not fix it. So **t4b writes the contracts and t4c files the defect
 > rows**, and BL-074 closes at t4c rather than t4b — the row's Done-when is discharged by the
-> rulings *and* by the rows those rulings created having somewhere to live. **The lopsided result
+> rulings *and* by the rows those rulings created having somewhere to live.
+>
+> **Count corrected 2026-08-07 at t4c.** This row and t4c's stub both said *"11 rows filed"*. That
+> counted the defect list only. §Contracts' own preamble commits more broadly — *"where a code
+> change genuinely follows, it is marked `[code consequence]` and is owed a backlog row by m4
+> t4c"* — and a derivation of those markers returns **11**, of which 3 are already on the defect
+> list and 1 (D17) is an exclusion, leaving **7** that the defect list does not reach. **A
+> specification gap in the t4b ticket**, resolved at t4c by filing both sets with a `Kind` field
+> distinguishing them: a **defect** row states what is broken today; a **contract consequence**
+> row states what §Contracts now requires that the code does not yet do. **17 rows**, and the
+> defect list ships **10**, not 11 — D5's candidate row was dropped when its precondition failed. **The lopsided result
 > is the finding**: 48 of 54 are schema-level, because these four scripts *are* the shared
 > machinery, so the deliverable was a contract section rather than a migration.
 
@@ -230,6 +240,11 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → t5 → **harness consolidation
 > contains only its four named edits and its done-check is clean, t4b is closed on that commit.*
 > That authorisation is this row's truth-maker, and the row reads `Closed` because of it — not
 > because the commit predicted its own review.
+
+> **The same applies to t4c's row, 2026-08-07.** It reads `Closed` under the same
+> pre-authorisation, granted in the t4c ticket in the same form: *if this ticket contains only
+> Parts 1–5 and its done-check is clean, t4c is closed on that commit.* The regress and its break
+> are unchanged from t4b; only the ticket differs.
 
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you
@@ -405,6 +420,37 @@ Read from `docs/backlog-2026-06.md` at agents `009f666`:
 *"Rescoped and corrected 2026-08-06 (t1a)"* note, each change marked `[corrected 2026-08-06]` with
 the superseded text kept beneath, and **Size raised XS → S–M**. The fix has not landed; t1b carries
 it.
+
+**Rows filed at t4c, 2026-08-07** — read from `docs/backlog-2026-06.md` at this commit. Seventeen,
+in two kinds. A **defect** row states what is broken or missing today, established from the record;
+a **contract consequence** row states what §Contracts now requires that the code does not yet do.
+
+| Row | Kind | Item | Subject |
+|---|---|---|---|
+| **BL-114** | defect | X4 | the recent-activity modifier has never fired against any real inventory, on any provider |
+| **BL-115** | defect | F2 | a stopped instance with no attached storage and a non-zero own estimate yields no candidate |
+| **BL-116** | defect | F3 | the aged-snapshot rule's docstring requires a gate its code does not apply |
+| **BL-117** | defect | N8 | an out-of-vocabulary `type` is counted everywhere and evaluated by nothing |
+| **BL-118** | defect | X5 | five I/O sites decode adapter JSON under the platform default encoding |
+| **BL-119** | defect | P8 | a cost snapshot with a declared total and no line items is silently dropped from discovery |
+| **BL-120** | defect | D16 | the idle-load-balancer rule rests on a `tag:` convention nothing enforces |
+| **BL-121** | defect | P2 | the untagged-spenders cap truncates across all providers and reports nothing |
+| **BL-122** | defect | P11 | `source_granularity` is carried into the report and validated nowhere |
+| **BL-123** | defect | D12 | `age_phrase` truncates, so the evidence sentence contradicts its own threshold |
+| **BL-124** | contract consequence | N3 | C3: reject a naive timestamp rather than assuming UTC |
+| **BL-125** | contract consequence | D20 | C3: name the timestamp field set once instead of hardcoding the pair |
+| **BL-126** | contract consequence | N5 | C4: carry the currency's minor-unit exponent and round to it |
+| **BL-127** | contract consequence | N7 | C6: a non-`str` tag element is a counted skip, not a silent drop |
+| **BL-128** | contract consequence | D6 | C6: the keep marker becomes a first-class field, not a tag spelling |
+| **BL-129** | contract consequence | P6 | C10: service identity needs a stable identifier beside the display name |
+| **BL-130** | contract consequence | P7 | C11: promote `swept_regions` to a first-class optional envelope field |
+
+**Three exclusions confirmed, not filed** — D15 (C7), D17 (C3), P4 (C10), each already recorded in
+§Contracts with its reason, each latent on a hypothetical provider and exhibited by none of the
+three. **One candidate dropped**: D5's case-policy row, whose precondition was run at t4c and
+failed — zero of 118 recorded resource names bite — with the residual recorded as a note under C15.
+
+**BL-074 closed at t4c**, all five Done-when clauses assessed per clause in the row's DONE section.
 
 ### Rules promoted this cycle
 

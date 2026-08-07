@@ -685,7 +685,9 @@ t4c.
 > dropped count is now in the payload (`untagged_not_shown`, `tags_not_shown`) and renders in both
 > states, so the cap reports its truncation at any N. But *"across all providers … one provider can
 > be absent from the table entirely"* describes the **cross-provider** path BL-131 decides the
-> support of. **Not false, not yet amendable** — see C4's pointer and **BL-132**. **Closed arm**: P2's adapter-owned arm is **closed** because the ranking is cross-provider by
+> support of. **Not false, not yet amendable** — see C4's pointer and **BL-132**.
+
+**Closed arm**: P2's adapter-owned arm is **closed** because the ranking is cross-provider by
 construction — no single adapter can own a cap applied across all of them.
 
 ### C12 — Encoding  *(X5)*

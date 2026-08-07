@@ -8,6 +8,8 @@ from the fixtures in the test or is a constant the milestone names.
 
 import inspect
 import json
+
+import pytest
 import subprocess
 import sys
 from pathlib import Path
@@ -936,86 +938,194 @@ def test_the_aws_adapters_swept_set_reaches_report_data(full_aws_stub, tmp_path,
 # in one state has not been shown to distinguish anything.
 
 
-def test_tags_in_use_reconciles_with_the_coverage_ratio():
-    """BL-101's Done-when clause, as a check rather than a claim.
+def _tags_of_all(inventory_list):
+    """Every distinct tag across the inventories, recomputed from the inputs."""
+    return {
+        tag
+        for inv in inventory_list
+        for r in compose_report_data.usable_resources(inv)[0]
+        for tag in compose_report_data.tags_of(r)
+    }
 
-    **What reconciles, and what does not — this is the whole point of the test.** The set of
-    distinct resources appearing across the tag rows equals `tagged`. The *sums* do not:
-    a resource carrying several tags is counted under each, so the resource column and the
-    cost column both overlap across rows. Asserting only `sum >= tagged` — as this test did
-    at r0 — is nearly vacuous and would pass on almost any construction.
+
+def _carriers(inventory_list):
+    """Every resource carrying at least one tag, recomputed from the inputs."""
+    return {
+        str(r.get("resource_id"))
+        for inv in inventory_list
+        for r in compose_report_data.usable_resources(inv)[0]
+        if compose_report_data.tags_of(r)
+    }
+
+
+def _multi_tag_bundle():
+    """A DO bundle whose tag set is large enough for a cap to bite, with a known overlap.
+
+    Mutates `inventory["resources"]` **directly**. `usable_resources` happens to return
+    references into that list, but a test that depends on it would silently stop measuring
+    anything if it ever copied — the same failure class as an assertion that cannot fail.
     """
-    bundles = [do_bundle(), soc_bundle()]
-    coverage = compose(bundles)["tag_coverage"]
-    resources = [
-        r for b in bundles for r in compose_report_data.usable_resources(b["inventory"])[0]
-    ]
+    inventory = load_fixture("inventory_rules_positive")
+    inventory["resources"][0]["tags"] = ["env=prod", "team=core"]
+    inventory["resources"][1]["tags"] = ["env=prod"]
+    inventory["resources"][2]["tags"] = ["terraform"]
+    inventory["resources"][3]["tags"] = ["env=staging"]
+    # Established, not assumed: the mutation is visible on the object compose will read.
+    assert compose_report_data.usable_resources(inventory)[0][0]["tags"] == ["env=prod", "team=core"]
+    return {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": detect_orphans.detect(inventory, REF),
+    }
 
-    # 1. The coverage figures are the same computation the ratio is, not a second one.
-    carriers = [r for r in resources if compose_report_data.tags_of(r)]
+
+def _assert_aggregation_reconciles(coverage, inventories):
+    """BL-101's Done-when, as the aggregation invariant alone.
+
+    **Computed from the FULL tag set, never from `tags_in_use`** — that payload key is the
+    capped prefix, so reading the invariant off it would assert something the design does
+    not have and would go red on correct behaviour the moment a cap bit.
+    """
+    resources = [r for inv in inventories for r in compose_report_data.usable_resources(inv)[0]]
+    carriers = _carriers(inventories)
+
+    # (1) the coverage figures are the ratio's own computation, not a second one
     assert coverage["resources"] == len(resources)
     assert coverage["tagged"] == len(carriers)
     assert coverage["untagged"] == len(resources) - len(carriers)
     assert coverage["coverage"] == compose_report_data.tag_coverage(resources)
 
-    # 2. THE reconciliation: every carrier appears under at least one tag row, and no
-    #    non-carrier appears at all. Recomputed from the inputs, because the payload
-    #    carries per-tag counts and not per-tag identities.
-    rows = {row["tag"]: row for row in coverage["tags_in_use"]}
-    assert set(rows) == {t for r in resources for t in compose_report_data.tags_of(r)}
-    contributing = {
-        str(r.get("resource_id")) for r in resources if set(compose_report_data.tags_of(r)) & set(rows)
-    }
-    assert contributing == {str(r.get("resource_id")) for r in carriers}
-    assert coverage["tags_in_use_total"] == len(rows)
+    # (2) THE reconciliation: the full tag set's carriers are exactly `tagged`
+    assert coverage["tags_in_use_total"] == len(_tags_of_all(inventories))
+    assert len(carriers) == coverage["tagged"]
 
-    # 3. Each row's own counts are exact.
-    for tag, row in rows.items():
-        carrying = [r for r in resources if tag in compose_report_data.tags_of(r)]
+    # (3) every row the payload does carry is exact against the inputs
+    for row in coverage["tags_in_use"]:
+        carrying = [r for r in resources if row["tag"] in compose_report_data.tags_of(r)]
         assert row["resources"] == len(carrying)
         assert row["monthly_cost_estimate"] == round(
             sum(compose_report_data.money(r.get("monthly_cost_estimate")) for r in carrying), 2
         )
 
-    # 4. And the sums are stated NOT to reconcile, so nobody later "fixes" them into a
-    #    total. On the live DigitalOcean account this is 21 against 16 carriers.
-    assert sum(row["resources"] for row in rows.values()) >= coverage["tagged"]
+    # (4) the sums are asserted NOT to reconcile, so nobody later "fixes" them into a total
+    assert sum(row["resources"] for row in coverage["tags_in_use"]) >= len(coverage["tags_in_use"])
+
+
+def test_tags_in_use_reconciles_with_the_coverage_ratio():
+    """BL-101's Done-when clause, uncapped."""
+    bundles = [do_bundle(), soc_bundle()]
+    _assert_aggregation_reconciles(
+        compose(bundles)["tag_coverage"], [b["inventory"] for b in bundles]
+    )
+
+
+def test_the_aggregation_still_reconciles_when_the_cap_bites():
+    """The same invariant with `top_untagged` below the tag count.
+
+    r1's version read the carrier set off `tags_in_use` — the *capped* list — so a resource
+    whose only tag fell below the cap dropped out of the derived set while staying a carrier,
+    and the assertion would have gone red on correct behaviour. It passed only because the
+    fixture had fewer tags than `top_k`. This is the case that would have caught it.
+    """
+    bundle = _multi_tag_bundle()
+    coverage = compose([bundle], top_untagged=2)["tag_coverage"]
+    assert coverage["tags_in_use_total"] == 4
+    assert len(coverage["tags_in_use"]) == 2
+    assert coverage["tags_not_shown"] == 2, "the cap must actually bite for this test to mean anything"
+    _assert_aggregation_reconciles(coverage, [bundle["inventory"]])
+
+
+def test_tags_in_use_is_a_cost_ordered_prefix_of_the_full_set():
+    """The payload-view invariant, kept separate from the aggregation one."""
+    bundle = _multi_tag_bundle()
+    full = compose([bundle], top_untagged=99)["tag_coverage"]
+    capped = compose([bundle], top_untagged=2)["tag_coverage"]
+
+    assert [r["tag"] for r in capped["tags_in_use"]] == [r["tag"] for r in full["tags_in_use"]][:2]
+    assert capped["tags_in_use_total"] == full["tags_in_use_total"]
+    assert capped["tags_not_shown"] == capped["tags_in_use_total"] - len(capped["tags_in_use"])
+    assert full["tags_not_shown"] == 0
+    # Cost-ordered, descending.
+    costs = [r["monthly_cost_estimate"] for r in full["tags_in_use"]]
+    assert costs == sorted(costs, reverse=True)
 
 
 def test_the_tag_columns_overlap_and_the_report_says_so():
-    """B2: the cost column is real money that does not sum to a total, rendered beside
-    money that does. The numbers are right for what they measure; the note is what says
-    what they measure. Constructed so the overlap is non-zero and provable."""
-    inventory = load_fixture("inventory_rules_positive")
-    resources = compose_report_data.usable_resources(inventory)[0]
-    resources[0]["tags"] = ["env=prod", "team=core"]
-    resources[1]["tags"] = ["env=prod"]
-    bundle = {"cost": load_fixture("cost_do_2026-07"), "inventory": inventory,
-              "orphans": detect_orphans.detect(inventory, REF)}
-    coverage = compose([bundle])["tag_coverage"]
-
+    """B2: the cost column is real money that does not sum to a total, rendered beside money
+    that does. The numbers are right for what they measure; the note says what they measure."""
+    bundle = _multi_tag_bundle()
+    inventory = bundle["inventory"]
+    coverage = compose([bundle], top_untagged=99)["tag_coverage"]
     rows = {row["tag"]: row for row in coverage["tags_in_use"]}
-    assert rows["env=prod"]["resources"] == 2 and rows["team=core"]["resources"] == 1
-    # Three row-slots over two carrying resources: the columns overlap, by construction.
-    assert sum(r["resources"] for r in rows.values()) > coverage["tagged"]
-    # The estimate of resources[0] is counted under both of its tags.
-    own = compose_report_data.money(resources[0].get("monthly_cost_estimate"))
+
+    assert rows["env=prod"]["resources"] == 2
+    assert rows["team=core"]["resources"] == 1
+    # The columns overlap by construction: resources[0] carries two tags, so the row-slots
+    # exceed the carriers. Derived from the data rather than hardcoded — the fixture also
+    # carries a pre-existing tag, and a hardcoded total would have been wrong about it.
+    slots = sum(r["resources"] for r in rows.values())
+    carriers = len(_carriers([inventory]))
+    assert coverage["tagged"] == carriers
+    assert slots == carriers + 1, f"expected exactly one doubly-tagged resource; slots={slots} carriers={carriers}"
+    assert slots > coverage["tagged"]
+
+    # The doubly-tagged resource's estimate is counted under BOTH of its tags.
+    own = compose_report_data.money(inventory["resources"][0].get("monthly_cost_estimate"))
     assert rows["team=core"]["monthly_cost_estimate"] == own
-    assert own <= rows["env=prod"]["monthly_cost_estimate"]
+    assert rows["env=prod"]["monthly_cost_estimate"] >= own
 
 
 def test_the_reconciliation_check_fails_against_a_deliberately_broken_fixture():
-    """The anti-vacuity control for the test above: break the input and it must go red."""
-    bundle = do_bundle()
-    # Strip every tag from the inventory but leave the orphan artifact's figures alone.
-    for resource in bundle["inventory"]["resources"]:
-        resource["tags"] = []
-    coverage = compose([bundle])["tag_coverage"]
-    assert coverage["tagged"] == 0
-    assert coverage["tags_in_use"] == []
-    # The pre-break report has carriers, so the two disagree — which is what makes the
-    # assertion above load-bearing rather than tautological.
-    assert compose([do_bundle()])["tag_coverage"]["tagged"] > 0
+    """The anti-vacuity control, rewritten at r2 — **and it is run, not described.**
+
+    r1's control was inherited from r0, where it guarded an assertion since called nearly
+    vacuous; a control written against a vacuous assertion is not evidence about the ones
+    that replaced it. Each break below is executed and the assertion it falsifies is named.
+
+    The breaks are **asymmetric on purpose**: they corrupt what `compose` produced while
+    the expectation side is recomputed from the true inputs. A symmetric break — stripping
+    every tag from the inventory — makes both sides empty and every assertion passes on
+    `{} == {}`, which is why it is not used as the control.
+    """
+    bundles = [do_bundle(), soc_bundle()]
+    inventories = [b["inventory"] for b in bundles]
+    good = compose(bundles)["tag_coverage"]
+    _assert_aggregation_reconciles(good, inventories)  # green before any break
+
+    def broken(**overrides):
+        payload = json.loads(json.dumps(good))
+        payload.update(overrides)
+        return payload
+
+    # Break 1 -> falsifies assertion (1): the coverage figures are no longer the ratio's own.
+    with pytest.raises(AssertionError):
+        _assert_aggregation_reconciles(broken(tagged=good["tagged"] + 1), inventories)
+    with pytest.raises(AssertionError):
+        _assert_aggregation_reconciles(broken(coverage=0.9999), inventories)
+
+    # Break 2 -> falsifies assertion (2): the full-set count no longer matches the inputs.
+    with pytest.raises(AssertionError):
+        _assert_aggregation_reconciles(
+            broken(tags_in_use_total=good["tags_in_use_total"] + 1), inventories
+        )
+
+    # Break 3 -> falsifies assertion (3): a row's own count/cost no longer matches its carriers.
+    bad_rows = json.loads(json.dumps(good["tags_in_use"]))
+    assert bad_rows, "fixture no longer produces tag rows"
+    bad_rows[0]["resources"] += 1
+    with pytest.raises(AssertionError):
+        _assert_aggregation_reconciles(broken(tags_in_use=bad_rows), inventories)
+
+    bad_cost = json.loads(json.dumps(good["tags_in_use"]))
+    bad_cost[0]["monthly_cost_estimate"] += 1.0
+    with pytest.raises(AssertionError):
+        _assert_aggregation_reconciles(broken(tags_in_use=bad_cost), inventories)
+
+    # Assertion (4) is deliberately NOT controlled by a break, and that is stated rather
+    # than papered over: it pins a NON-invariant (the sums do not reconcile), so there is
+    # no "correct" value for a break to depart from. It exists to stop a later reader
+    # turning the cost column into a total, and a test that fails when someone does that
+    # would have to know what they intended.
 
 
 def _tagged_account_inventory():
@@ -1041,7 +1151,6 @@ def test_the_governance_rule_does_not_fire_below_the_threshold_and_says_so():
     block = compose()["orphans"]["reported"][0]
     assert block["account_uses_tags"] is False
     assert block["resources"] == []
-    # The threshold and the coverage both travel, so the report can say WHY it did not run.
     assert block["tag_coverage"] == 0.1667
     assert block["coverage_threshold"] == 0.5
 

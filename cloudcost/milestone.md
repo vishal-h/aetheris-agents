@@ -406,6 +406,14 @@ are C8.
 `line_items[].amount` — never from a resource's `monthly_cost_estimate`, which is an estimate used
 for ranking and for an orphan's saving and is never summed into a cost total.
 
+> *Truth-maker for that second clause, which no census field establishes* (added m4 t4b r2): read
+> of `compose_report_data.py` at agents `a25f72f`. `service_totals` is the only function building a
+> cost total (`:150`) and reads exactly `line_items`, `amount` and `totals` — never
+> `monthly_cost_estimate`. The three reads of `monthly_cost_estimate` in that module are all in
+> `coverage_section` (`:390`, `:404`, `:419`), the untagged-spender ranking. **Precision that
+> matters**: `:419` *does* sum it, into `untagged_monthly_cost_estimate` — so "never summed" would
+> be false, and "never summed **into a cost total**" is what holds.
+
 **An adapter must guarantee** a `currency` on its cost snapshot. All three declare `USD` today, and
 the 2dp rounding is correct *only because they agree*: two decimals is wrong for a zero-decimal
 currency and wrong for sub-cent unit pricing, of which Linode's own price surface already carries an
@@ -426,8 +434,10 @@ becomes null and renders as an em dash. That is the honest output; it is also a 
 sentence is the deliverable.
 
 **Presentation reads the exponent from the payload** (R2). **Closed arm**: R2's adapter-owned arm is
-closed because the renderer must not learn provider identity — a test asserts as much. It can read a
-currency descriptor, which is this contract's schema arm; it cannot read a provider name.
+closed because the renderer must not learn provider identity — asserted by
+`tests/test_render_report.py::test_the_region_block_names_no_provider_and_no_provider_payload_key`
+(`:436`), read at `a25f72f`. It can read a currency descriptor, which is this contract's schema arm;
+it cannot read a provider name.
 
 ### C5 — Percentages and ratios  *(N9, P9, R3)*
 
@@ -508,7 +518,7 @@ breaks — and breaking it makes every tag-targeted load balancer a HIGH-band fa
 
 ### C8 — Thresholds and the scoring model  *(D1, D2, D3, D4, D8, D9, D21, F1, F2, F3, F4, P1, X4)*
 
-**Shared machinery guarantees** a single global rule catalog: six age and confidence thresholds, two
+**Shared machinery guarantees** a single global rule catalog: age thresholds, confidence priors, two
 additive modifiers, a clamp, and three confidence bands. **An adapter must guarantee** nothing here
 — it supplies facts, not policy. These are **cross-provider priors**, and that is the ruling.
 
@@ -516,17 +526,20 @@ additive modifiers, a clamp, and three confidence bands. **An adapter must guara
 database sharing one at 30, snapshot at 30 (D1, D2, D3). The compute/database sharing is deliberate
 and its rationale already exists in a code comment: a per-type fork would be *a provider assumption
 wearing a type's clothes* (D2). **That comment is promoted here**, because a rationale in a comment
-does not travel to the next adapter's author. The rationale for 14-versus-7-or-30 is **not recorded
-anywhere**, and is named as a gap rather than reconstructed: the next provider that wants to argue
-against it has nothing to argue with.
+does not travel to the next adapter's author. **The rationale for 14-versus-7-or-30 is not
+established**: a search of `cloudcost/` and `docs/` for `14 ?d(ays)?|fourteen` returns 27 hits, every
+one of which either restates the value or uses it, and none of which gives a reason. Named as a gap
+rather than reconstructed — the next provider that wants to argue against it has nothing to argue
+with.
 
 **The CLI-override asymmetry, from the record.** Only the snapshot threshold is overridable. The
 **origin is established**: m1's §t2 Scope specifies the catalog as *"unattached volume >14d …
 snapshot older than **N days** … stopped droplet with attached storage >30d"* — the snapshot rule
 alone was written with a symbolic threshold and the other two with literals, and the implementation
-rendered that faithfully as one CLI flag and two constants. **The rationale is unrecorded.** No
-document says why m1 wrote `N` there. The origin is a fact; the reason is a gap, and it is recorded
-as unexplained rather than filled by inference.
+rendered that faithfully as one CLI flag and two constants. **The rationale is not established**: a
+search of `cloudcost/` and `docs/` for `snapshot.age.days|snapshot_age_days|older than N|why N|
+symbolic` returns the value, the flag and this ticket's own restatements, and no reason. The origin
+is a fact; the reason is a gap, recorded as unexplained rather than filled by inference.
 
 **The scoring model is additive-then-clamped** (D9): a base confidence, plus modifier deltas,
 clamped to `[0,1]`. **The clamp silently absorbs overshoot**, so a modifier set that is too strong
@@ -636,8 +649,11 @@ absent costs nothing at all.
 
 **This is the positive control for the whole census** (R1). A provider-differing section — region
 coverage, which only one adapter produces — is handled by putting it in the **right tuple**, not by
-teaching the renderer about providers; and a test asserts the renderer stays ignorant of where a
-field came from. Putting that field in the required tuple instead would have made every run by a
+teaching the renderer about providers; and the renderer's ignorance of where a field came from is
+asserted by
+`tests/test_render_report.py::test_the_region_block_names_no_provider_and_no_provider_payload_key`
+(`:436`), read at `a25f72f` rather than taken from the code comment beside `OPTIONAL_FIELDS` that
+claims it. Putting that field in the required tuple instead would have made every run by a
 provider without the concept exit non-zero, forever. **This is the shape every other item in this
 census is ruled toward**: the difference between a provider-differing value handled structurally and
 one handled by a special case.
@@ -1084,9 +1100,14 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   adapter-owned, 2 neither**, and all 54 are now stated as contracts in **§Contracts (C1–C15)**,
   each cited there by census item id.*
   *Two things this correction does **not** claim. It does not say all 54 are seams: the census
-  swept for provider divergence and censused some values it then reported as **not** seams — four
-  meet nothing adapter-supplied at all (D8, D21, F1, R4), and R4 is recorded explicitly as
-  unrulable by this row's own schema-level-or-adapter-owned dichotomy. **A seam count, as distinct
+  swept for provider divergence and censused some values it then reported as **not** seams — **at
+  least four** (D8, D21, F1, R4), and R4 is recorded explicitly as unrulable by this row's own
+  schema-level-or-adapter-owned dichotomy. **That four is a floor, not a count**: it comes from a
+  match on the census's own **Meets** field, so it finds items whose Meets field *says* it meets
+  nothing and misses items that meet nothing in substance. **N4 is a known case it does not reach**
+  — its Meets field names a value, while its *Diverges today* field reads *"Output-side only; no
+  adapter reads them."* The sentence's claim is that **not all 54 are seams**, and that needs a
+  counterexample, not a census. **A seam count, as distinct
   from a censused count, is not established by t4a and is not asserted here.** Nor does it restate
   what m2's candidates would have amounted to in census terms; mapping that prose onto a definite
   number of census ids is inference, not reading. The substantive finding is that this was never a

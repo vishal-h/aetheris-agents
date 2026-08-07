@@ -2532,7 +2532,9 @@ items) so the next reader does not re-derive the wrong count.
 schema-level-or-adapter-owned ruling; the ones ruled schema-level are in
 `[amended 2026-08-07]` **§Contracts** ~~§Normalized schemas~~;
 m1's "one seam" text is corrected; the sweep's *method* (how completeness was established) is
-recorded, so this is an enumeration and not another observation.
+recorded, so this is an enumeration and not another observation;
+`[added 2026-08-07]` **and the rows the rulings created are filed** — see the second amendment
+note below.
 
 **Done-when clause 2 amended 2026-08-06/07 (m4 t4b, reviewer's ruling), before the row was
 assessed against it** — the same move t2 made on BL-069, and for the same reason: a row assessed
@@ -2545,13 +2547,42 @@ was **unsatisfiable**, so the row could not have closed cleanly against it.
 *Why.* The two sections make different kinds of statement. **§Normalized schemas states shapes**;
 **§Contracts states value semantics and adapter obligations.** Interleaving 48 of the second into
 the first would make the shapes harder to read for every future reader — an argument that holds
-regardless of anything else. Secondarily, and now derived rather than asserted: **12 citations
-across 9 files** in this repo refer to §Normalized schemas as *frozen* — `cloudcost/m2-milestone.md`
-(×3), `cloudcost/m3-milestone.md`, `cloudcost/runbook.md`, `cloudcost/docs/t1-implementation-notes.md`
-(×2), `cloudcost/docs/t3-implementation-notes.md`, `cloudcost/docs/m3-linode-scout.md`,
-`docs/reviews/m2-cloudcost-closeout.md` and two handoffs — so rewriting it would have falsified a
-standing claim in nine other documents in the same commit. `cloudcost/runbook.md` is live
-operational guidance, which is the one that would have cost most.
+regardless of anything else.
+
+Secondarily, and stated as a floor with its method named: **at least 12 citations across 9 files**
+call §Normalized schemas *frozen*, by a search of both repos for the literal word `frozen` within 40
+characters of the section name. `cloudcost/m2-milestone.md` (×3), `cloudcost/m3-milestone.md`,
+`cloudcost/runbook.md`, `cloudcost/docs/t1-implementation-notes.md` (×2),
+`cloudcost/docs/t3-implementation-notes.md`, `cloudcost/docs/m3-linode-scout.md`,
+`docs/reviews/m2-cloudcost-closeout.md` and two handoffs. So rewriting the section would have
+falsified a standing claim in nine other documents in the same commit, and `cloudcost/runbook.md` —
+live operational guidance — is the one that would have cost most.
+
+*Two things about that figure, both corrected at t4b r2.* The search returns **13**, not 12: the
+thirteenth is **this paragraph**, which the search matches because it contains the claim. Counting
+the assertion as evidence for itself is the error, and it is excluded here explicitly rather than
+silently. (It is **not** a harness hit — the search spans both repos and every genuine citation is
+agents-side, so *"in this repo"* was doing no work and has been dropped.) And the figure is a
+**floor**, not a census: the pattern requires the literal word *frozen*, so a document that says the
+section is fixed as of m1 and must not be edited, without using that word, is invisible to it. The
+argument needs a floor and never needed a count.
+
+**Done-when clause 5 added 2026-08-07 (m4 t4b r2, reviewer's ruling — branch (a)).** t4b assessed
+all four original clauses **satisfied** and still did not close this row. That reason lived only in
+the ticket's packet and in `cloudcost/m4-consolidation.md`, so a reader of *this file* saw a row
+whose stated Done-when was fully met, no DONE section, and no explanation in the row — the shape a
+done-check exists to prevent, arriving from the other side.
+
+*Why (a) rather than a hold note.* The assessment was **already applying a fifth clause**; it was
+simply unwritten. An unwritten clause is worse than an amended one, because it cannot be reviewed
+and it cannot be checked at the close. Writing it makes the row **honestly unmet** rather than
+mysteriously open.
+
+*What the fifth clause requires.* The rulings produced eleven items that stay broken whichever arm
+they land in — a scoring modifier that has never fired, a billing case neither stopped rule covers,
+a validation the sprint's own gate presumes absent — plus three exclusions to be recorded with their
+reasons. **m4 t4c files them; this row closes there.** A Done-when satisfied by documents whose
+consequences have nowhere to live is the complete-but-unmarked shape BL-102 exists for.
 
 **§7 promotion candidate at m2 close** — Adjacent-case / enumerate-the-class, in its
 "a uniqueness claim produced by observation" form.

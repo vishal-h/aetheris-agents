@@ -453,6 +453,109 @@ authorised it. **Flagged for the same ruling rather than taken unilaterally.**
 
 ---
 
+## 4b. r2 — the counts, the negatives, and the truth-maker sweep
+
+Seven edits (A–G). No ruling, no census item and no C1–C15 mapping changed.
+
+**The finding r2 names**: three committed numbers were produced by matching a phrase and written as
+definite counts, in a commit whose subject is a passage that acquired numbers nobody derived.
+**None of the three arguments needed a count — each needed a floor.**
+
+| | Was | Is | Method now named? |
+|---|---|---|---|
+| **A** | *"four meet nothing adapter-supplied at all"* | *"at least four"*, with **N4** cited as a known case the method misses | yes — a match on the census's **Meets** field, stated as a lower bound |
+| **B** | *"12 citations across 9 files"* | *"at least 12 across 9 files"* | yes — a search for the literal word `frozen` near the section name |
+| **C** | *"six age and confidence thresholds"* | no count — *"age thresholds, confidence priors, two additive modifiers, a clamp, and three confidence bands"* | n/a — the count is gone |
+
+**Edit A is the reviewer's specification gap before it is mine**, and they said so: the r1 ticket
+keyed the derivation on the **Meets** field, which is what produced a phrasing match. What is mine
+is that **the packet hedged and the file did not** — the packet said *"at least these four"* and the
+committed sentence said *"four … at all"*. The hedge was load-bearing and it was lost in transit.
+**N4** is the counterexample it was protecting: by substance it meets nothing adapter-supplied
+(*"Output-side only; no adapter reads them"*), but its Meets field names a value, so the match
+cannot see it. The committed text now cites N4 by name.
+
+**Edit B's thirteenth hit is the claim itself.** The r1 command returns **13**; the enumeration
+named 12. The thirteenth is `docs/backlog-2026-06.md:2549` — **the sentence asserting the count**,
+which the search matches because it contains the phrase. Counting an assertion as evidence for
+itself. It is **not** the harness hit the review guessed: every genuine citation is agents-side, so
+the qualifier *"in this repo"* was doing no work and has been dropped. Reconciled explicitly in the
+row rather than silently excluded.
+
+**Edit C removed the count** rather than reconciling three figures. C8's opening said six, C8's body
+enumerates three distinct age-threshold values across four rules and treats the confidences and the
+activity window as separate populations, and the census's D21 states five thresholds exist as
+constants. No derivation existed for any of them. The reviewer's suggested wording is adopted
+verbatim because it is sufficient and cannot be wrong.
+
+**Edit D scoped two unbounded negatives to their searches.** Both are in C8, both were absolute
+negatives over a corpus asserted from a search that was not named:
+
+- *"The rationale for 14-versus-7-or-30 is **not recorded anywhere**"* → **not established**, with
+  the search stated: `cloudcost/` and `docs/` for `14 ?d(ays)?|fourteen`, **27 hits**, every one
+  restating or using the value and none giving a reason.
+- *"**The rationale is unrecorded.** No document says why m1 wrote `N` there."* → **not
+  established**, with the search stated.
+
+The gap is real either way; the claim is now the size of the evidence. Noted against myself: the
+correct form was applied one paragraph earlier, separating the CLI asymmetry's established *origin*
+from its unrecorded *reason*, and then not applied to the sentence beside it.
+
+### Edit E — the truth-maker sweep, and its result
+
+**Scope**: all 15 contracts, read for sentences asserting a property of **current code** that is not
+traceable to a census item's fields. Sentences stating what a contract *requires* are out of scope.
+
+**Result: one untraceable sentence found. It is C4's, the one the review named.** Everything else
+that asserts a code property carries a census id whose fields establish it — C1's individual
+`TYPE_*` imports and the unenforced canonicality (N1, N8), C2's source-text test (D10), C6's `k=v`
+construction (X3), C7's unenforced `tag:` convention (D16), C8's write-only parameter block (D21),
+C9's slug behaviour (N6), C11's comment-only guard (P7), C12's five unspecified I/O sites (X5),
+C13's three `size` spellings (X2), C14's three-adapter satisfaction (D13). **Reported as a result:
+the sweep changed one contract and confirmed fourteen.**
+
+**C4's sentence was kept, not removed**, because it verified. Truth-maker added to the contract:
+
+> read of `compose_report_data.py` at agents `a25f72f`. `service_totals` is the only function
+> building a cost total (`:150`) and reads exactly `line_items`, `amount` and `totals` — never
+> `monthly_cost_estimate`. The three reads of `monthly_cost_estimate` in that module are all in
+> `coverage_section` (`:390`, `:404`, `:419`), the untagged-spender ranking.
+
+**And the check found a precision the sentence needed**: `:419` **does** sum `monthly_cost_estimate`,
+into `untagged_monthly_cost_estimate`. So *"never summed"* would be false and *"never summed **into
+a cost total**"* is what holds. The existing wording was already the correct one — but it was
+correct without anyone having checked, which is the condition the rule exists to end.
+
+**One sentence was upgraded although it was traceable.** *"A test asserts the renderer stays
+ignorant"* appears in C4's closed arm and in C11. It is traceable — R1's census entry carries it —
+but the census took it from a **code comment beside `OPTIONAL_FIELDS`** that claims a test exists.
+A comment asserting its own test coverage is not a truth-maker. Verified: the test is
+`tests/test_render_report.py::test_the_region_block_names_no_provider_and_no_provider_payload_key`
+(`:436`). Both contracts now cite the test, and C11 says explicitly that it is cited *rather than
+taken from the comment beside `OPTIONAL_FIELDS` that claims it*.
+
+### Edit F — branch (a): a fifth Done-when clause
+
+Taken, as the review leaned. The assessment was **already applying a fifth clause** and it was
+simply unwritten; an unwritten clause cannot be reviewed and cannot be checked at the close. The row
+now reads *"and the rows the rulings created are filed"*, with a dated note explaining that this
+makes the row **honestly unmet** rather than mysteriously open. The alternative — (b), a hold note —
+would have left the Done-when recording what BL-074 asked for while the assessment silently applied
+something else.
+
+### Edit G — the t4b row's state
+
+The row read `Closed` in a commit that was itself under review, so it was false from the moment r1
+landed until r2 passes — the same class as the observation this ticket raised at r0, applied to the
+row this ticket wrote.
+
+**The file has no mid-review state form**: §Ticket set uses `Closed`, `not started`, and t1a-c's
+`you are reading it`. Rather than invent a review-state vocabulary, the row is **written truthfully
+for the commit it lands in** — `In review (r2)`. t1a-c is the precedent: a state that is true when
+read, not a state predicted to become true. It becomes `Closed` in the commit that closes it.
+
+---
+
 ## 5. Gaps named rather than filled
 
 Where the record does not establish what a contract would have to say, the contract says so. Four:

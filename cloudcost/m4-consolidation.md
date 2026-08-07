@@ -246,6 +246,20 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → t5 → **harness consolidation
 > Parts 1–5 and its done-check is clean, t4c is closed on that commit.* The regress and its break
 > are unchanged from t4b; only the ticket differs.
 
+> **The device misfired at t4c, and the rule it needs — recorded 2026-08-07 (t4c r1), authored by
+> the reviewer.** Closure pre-authorisation worked at t4b r3 because the reviewer **had already
+> reviewed r2** and was naming a closing round of known scope: *"only these edits, done-check
+> clean"* was checkable against a set they had just fixed. At t4c it was issued in the **opening**
+> ticket, before any work existed to scope it against — and there its condition, *the done-check is
+> clean*, can only mean **the implementer's own checks passed**, which is not the same as the
+> reviewer finding nothing. So §Ticket set's t4c row read `Closed` from r0's landing and **was
+> false until r1**, which is the regress the device exists to break, reappearing one level up.
+>
+> **The rule: closure may be pre-authorised only *after* a round has been reviewed, naming that
+> round's scope. It cannot be issued in an opening ticket.** The t4b note above is correct as
+> written and is untouched; this is the boundary condition it did not state, learned by crossing
+> it.
+
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you
 whether the apparatus a new provider lands on works. Every new provider adds a leg to the sprint

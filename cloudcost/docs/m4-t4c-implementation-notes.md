@@ -252,6 +252,90 @@ t4b's — the regress is unchanged, only the ticket differs.
 
 ---
 
+## 7b. r1 — the closing round
+
+Four edits. No row's substance changed, none added or removed, BL-074 stays closed, the marker
+derivation and the duplicate check stand.
+
+### Edit 1 — the inter-row citation check
+
+**Two were wrong, and the reviewer's inference was right: the set had not been checked.** So the
+whole set was, mechanically — every `BL-1xx` occurring inside the seventeen filed rows, in
+`Collides with`, `Sibling`, body text and `Source:` lines alike, with each target's actual subject
+pulled from its own heading and compared against the description at the citation site.
+
+**27 citations · 25 verified · 2 corrected.** Only the two named were wrong — reported as a result.
+
+| Corrected | Was | Is |
+|---|---|---|
+| **BL-114 → BL-124** | *"the emitted `parameters` block, which no consumer reads (see BL-124)"* — BL-124 is the naive-timestamp row and has nothing to do with it | cites **§Contracts C8**, which carries the fact as census item **D21**, and says explicitly that D21 correctly has **no row** — neither a defect nor a marked consequence. No row was filed to make the citation true |
+| **BL-126 → BL-127** | *"BL-127 (C4's sibling, the reconcile tolerance)"* — wrong twice: BL-127 is the non-`str` tag row, and **no reconcile-tolerance row exists** | states what the citation was reaching for: **P3 rides along with BL-126 and has no row of its own**, by C4's own wording (*"stated per currency **alongside that exponent**"*), so it carries no marker and none was filed. A reader looking for a P3 row will not find one, **and should not** |
+
+The out-of-range targets were checked on the same basis and all verify: BL-070 (dormant merge code,
+cited by BL-119 and BL-129), BL-071 (resource-level AWS cost, by BL-122), BL-074 (the seam sweep, by
+BL-117/125/128), BL-076 (prior-snapshot summing, by BL-119/129), BL-098 (inventory extras key, by
+BL-128/130), BL-101 (tag section, by BL-121/127), BL-107 (chaos gate, by BL-117), BL-112 (BEAM
+latin1, by BL-118 ×5).
+
+### Edit 2 — the corpus behind the zero
+
+Check 1's *"zero bite across 118 names"* did not say **where the 118 came from**, and here that is
+load-bearing rather than pedantic: the property under test is whether one adapter's names are
+capitalised **in practice**, and **fixtures are authored — precisely where real-world
+capitalisation is under-represented.**
+
+The C15 note now scopes the claim to the **recorded corpus** (committed fixtures, `data/`,
+`output/`, plus adapter source, at agents `1779368`) and states that it is **not** evidence about
+production accounts. *Established from the record* remains the correct filing standard; what changed
+is what the note claims, and the re-run guidance already present is now visibly non-optional rather
+than a courtesy.
+
+### Edit 3 — read stamps on the seven consequence rows
+
+The ten defect rows each carried one; the seven consequence rows carried only their contract source
+while making specific line-numbered code claims. **All seven now carry a stamp, and all seven record
+a *read*, not an inherited citation** — every claim was re-verified against the source at
+`1779368` before the stamp was written, rather than the stamp being added to citations taken from
+§Contracts.
+
+| Row | Item | Verified |
+|---|---|---|
+| BL-124 | N3 | `_normalized.py:76-77` — the naive→UTC replacement |
+| BL-125 | D20 | `detect_orphans.py:431` — the hardcoded field pair |
+| BL-126 | N5 | `_normalized.py:92`; the sub-cent instance **re-cited** — see below |
+| BL-127 | N7 | `_normalized.py:112` — the `isinstance(t, str)` filter |
+| BL-128 | D6 | `detect_orphans.py:84`, `:112`, `fetch_aws.py:438` |
+| BL-129 | P6 | `compose_report_data.py:176-177`, `:279-280`, `fetch_linode.py:116` |
+| BL-130 | P7 | `compose_report_data.py:516`, `:539-540`, `fetch_aws.py:765`, **and `render_report.py:219`** |
+
+**Two things the verification changed rather than confirmed.**
+
+1. **BL-126's sub-cent citation was imprecise.** It cited `fetch_linode.py:728`, which is where the
+   `VOLUME_PRICE_BASIS_EVIDENCE` **assignment** begins; the `unit_price 0.0015` string is on
+   `:729`. Now cited as `:728-730` — the assignment — with the note that the line is the fragile
+   half. That is the same decay class this milestone recorded twice, caught before it decayed.
+2. **BL-130 asserted that `OPTIONAL_FIELDS` reads the report payload rather than the provider
+   block.** That is a claim about behaviour, not a line quote, so it was checked directly:
+   `render_report.py:219`, `value = data.get(key)` inside the `OPTIONAL_FIELDS` loop, where `data`
+   is the report payload. Confirmed, and the anchor is now in the stamp — the claim previously had
+   no citation at all.
+
+### Edit 4 — why the pre-authorisation misfired
+
+Recorded in `cloudcost/m4-consolidation.md` under §Sequence, beside the t4b regress note, which is
+left untouched.
+
+The device worked at t4b r3 because the reviewer **had already reviewed r2** and was scoping a
+closing round they had just fixed. At t4c it was issued in the **opening** ticket, where its
+condition — *the done-check is clean* — can only mean the implementer's own checks passed, which is
+not the reviewer finding nothing. **So §Ticket set's t4c row read `Closed` from r0's landing and was
+false until r1** — the regress reappearing one level up, in the mechanism built to break it.
+
+**The rule: closure may be pre-authorised only after a round has been reviewed, naming that round's
+scope. It cannot be issued in an opening ticket.**
+
+---
+
 ## 8. What t4c did not do
 
 - **No implementation.** Every row is filed, none taken. Eight `cloudcost/scripts/` blob hashes

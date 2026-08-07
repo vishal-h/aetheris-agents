@@ -6453,8 +6453,10 @@ beside the constant for exactly that reason.
 keep it with the status documented (done at C8, so this row could close on that basis alone);
 gate it behind an adapter capability declaration; or remove it and the constant.
 **Costs:** XS to decide, S to remove (the modifier, the constant, the `parameters` key, one test).
-**Collides with:** nothing. Removing it would change the emitted `parameters` block, which no
-consumer reads (see BL-124).
+**Collides with:** nothing. Removing it would change the emitted `parameters` block — which no
+consumer reads: not compose, not the renderer, not the sprint. That write-only status is census
+item **D21**, recorded in **§Contracts C8**, and it correctly has no row of its own, being neither
+a defect nor a marked consequence.
 
 `Source: m4 t4a census item X4; ruled schema-level at m4 t4b under C8. Emission sites read at
 agents 611feba.`
@@ -6789,7 +6791,9 @@ currently parses, so flipping to rejection could turn existing fixtures' timesta
 a fixture regression rather than a contract fix.
 **Collides with:** BL-125 (same module, same contract).
 
-`Source: §Contracts C3 at m4 t4b, marked [code consequence]; census item N3.`
+`Source: §Contracts C3 at m4 t4b, marked [code consequence]; census item N3. Code claim **read**
+(not inherited) at agents 1779368: `_normalized.py:76-77`, `if parsed.tzinfo is None: parsed =
+parsed.replace(tzinfo=timezone.utc)`.`
 
 ---
 
@@ -6811,7 +6815,9 @@ hand-typed-vocabulary class, one level below the one BL-074 swept.
 two.
 **Collides with:** BL-124 (same contract). Cheap enough to ride along with it.
 
-`Source: §Contracts C3 at m4 t4b, marked [code consequence]; census item D20.`
+`Source: §Contracts C3 at m4 t4b, marked [code consequence]; census item D20. Code claim **read**
+(not inherited) at agents 1779368: `detect_orphans.py:431`, `for field in ("created_at",
+"last_activity_at"):`.`
 
 ---
 
@@ -6835,10 +6841,17 @@ which Linode's own price surface already carries an instance (`fetch_linode.py:7
 therefore **every call site** — 14 across the four shared scripts, plus the adapters. It also
 interacts with the deliberate arithmetic order in `service_totals` (`:191` sums the *rounded* rows
 *"so the column adds up on paper"*), which would need restating rather than merely re-rounding.
-**Collides with:** BL-127 (C4's sibling, the reconcile tolerance) — same contract, same currency
-model; they should be scoped together or the tolerance will be re-derived twice.
+**Collides with:** nothing filed. **The reconcile tolerance (census item P3) rides along with this
+row and has no row of its own**, by C4's own wording — *"the reconcile tolerance is currently
+absolute … or stated per currency **alongside that exponent**"* — so P3 carries no
+`[code consequence]` marker and none was filed. Whoever takes this row takes the tolerance with it;
+a reader looking for a separate P3 row will not find one, and should not.
 
-`Source: §Contracts C4 at m4 t4b, marked [code consequence]; census item N5.`
+`Source: §Contracts C4 at m4 t4b, marked [code consequence]; census item N5. Code claims **read**
+(not inherited) at agents 1779368: `_normalized.py:92` (`return round(float(value), 2)`); the
+sub-cent instance is `VOLUME_PRICE_BASIS_EVIDENCE`, `fetch_linode.py:728-730`, whose string
+literal carries `unit_price 0.0015` on `:729` — cited as the assignment rather than the line,
+because the line is the fragile half.`
 
 ---
 
@@ -6862,7 +6875,9 @@ contract set exists to name.
 touching both callers (`has_keep_tag`, `tag_coverage`) and `coverage_section` in compose.
 **Collides with:** BL-121 and BL-101 both edit the tag-coverage path.
 
-`Source: §Contracts C6 at m4 t4b, marked [code consequence]; census item N7.`
+`Source: §Contracts C6 at m4 t4b, marked [code consequence]; census item N7. Code claim **read**
+(not inherited) at agents 1779368: `_normalized.py:112`, `return [t for t in tags if isinstance(t,
+str)] if isinstance(tags, list) else []`.`
 
 ---
 
@@ -6889,7 +6904,10 @@ carrying a keep tag, `has_keep_tag`, and the `excluded[].reason` string that pri
 emit-with-a-real-value-or-`null` rule obliges *every* adapter to emit any new key. Sequence them so
 the schema moves once.
 
-`Source: §Contracts C6 at m4 t4b, marked [code consequence]; census item D6.`
+`Source: §Contracts C6 at m4 t4b, marked [code consequence]; census item D6. Code claims **read**
+(not inherited) at agents 1779368: `detect_orphans.py:84` (`KEEP_TAG = "keep=true"`), `:112`
+(`tag.strip().lower() == KEEP_TAG`), `fetch_aws.py:438` (`out.append(f"{name}={value}" if value
+else str(name))`).`
 
 ---
 
@@ -6916,7 +6934,10 @@ is the work.
 **Collides with:** BL-076 (`load_prior_snapshots`, same MoM path) and BL-070 (same module, dedicated
 cleanup). Sequence.
 
-`Source: §Contracts C10 at m4 t4b, marked [code consequence]; census item P6.`
+`Source: §Contracts C10 at m4 t4b, marked [code consequence]; census item P6. Code claims **read**
+(not inherited) at agents 1779368: `compose_report_data.py:176-177` (grouping by exact service
+string), `:279-280` (the `(provider, service)` delta key), `fetch_linode.py:116` (`TAX_SERVICE =
+"Tax"`).`
 
 ---
 
@@ -6949,6 +6970,9 @@ DigitalOcean and Linode emit no such key, and their reports must stay byte-ident
 two halves of one §Normalized decision and should be sequenced together.
 
 `Source: §Contracts C11 at m4 t4b, marked [code consequence]; census item P7. BL-098 relationship
-ruled at m4 t4c G3.`
+ruled at m4 t4c G3. Code claims **read** (not inherited) at agents 1779368:
+`compose_report_data.py:516` (`SWEPT_REGIONS_KEY`), `:539-540` (the guarded lift),
+`fetch_aws.py:765` (the only emitter), and `render_report.py:219` — `value = data.get(key)` inside
+the `OPTIONAL_FIELDS` loop, confirming it reads the **report payload**, not the provider block.`
 
 ---

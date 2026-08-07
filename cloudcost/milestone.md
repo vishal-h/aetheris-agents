@@ -762,9 +762,17 @@ reason for either.
 > **Precondition run at m4 t4c, 2026-08-07. It failed, so no row was filed — the residual is
 > recorded here as the note the ruling called for.** Two checks:
 >
-> **1. Does it bite? No, on every name in the record.** Across **118** distinct resource-name
-> strings in all committed fixtures, data and output, **zero** match the ephemeral pattern
-> case-insensitively but not case-sensitively. Five match as written and the modifier fires
+> **1. Does it bite? No, on every name in the record — and *the record* is the scope of that
+> claim.** Across **118** distinct resource-name strings drawn from the **recorded corpus** —
+> committed fixtures, `data/` and `output/`, plus adapter source, at agents `1779368` — **zero**
+> match the ephemeral pattern case-insensitively but not case-sensitively.
+>
+> **This is not evidence about production accounts, and the distinction matters here more than it
+> usually would.** The concern being tested is that one adapter's names arrive from a `Name` tag
+> and are capitalised **in practice**; fixtures are *authored*, so they are precisely where
+> real-world capitalisation is under-represented. *Established from the record* is the correct
+> filing standard and the record is what was checked — but a later reader must not take the zero
+> as a statement about live inventories. **That is why the re-run guidance below is not optional.** Five match as written and the modifier fires
 > correctly (`ci-runner-cache`, `test-fixture-vol`, `tmp-egress-ip`, `tmp-orphan-disk`,
 > `tmp-scratch-vol`). Eleven strings are capitalised and **all eleven are cost line-item service
 > labels** — `Droplets`, `Taxes`, `Product usage charges` — not resource names, and none begins

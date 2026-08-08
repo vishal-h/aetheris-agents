@@ -636,6 +636,9 @@ repos rule was widened in the same commit so that it can be.
 
 **And one amendment, not a promotion:** `CLAUDE.md` (agents) §What this repo is — the **repos rule**
 now binds every session, not only cross-repo and packet-producing ones.
+`[Pointer added close-d, 2026-08-08 — the rule has two copies and this amended one of them;
+`../aetheris/CLAUDE.md` still carries the un-widened opening. Recorded, not fixed, at §Promotion
+candidates' disposition note, where the premise it bounds is stated.]`
 
 ---
 
@@ -869,6 +872,60 @@ substring-vs-field form under §Open for the close item 2, and the two are best 
 > Rows 1 and §Open item 2 were **decided together and identically**, which is what both texts asked
 > for: named as widenings of the rule they belong to, rather than as siblings that would dilute it.
 
+> **The widening landed in one of the repos rule's two copies — recorded 2026-08-08 (close-d),
+> recorded and not fixed.** This note sits here rather than only at §Rules promoted because the
+> sentence it qualifies is here: *"With the read universal, a rule living in one repo only is
+> reachable from either, so a promotion lands **beside its siblings** and nothing turns on the
+> choice."* That is the premise a future session will cite as authority for placing a rule in
+> either repo, and it is the premise this note bounds.
+>
+> **There are two copies and close-b widened one.** The agents copy (`CLAUDE.md`, §What this repo
+> is) now opens:
+>
+> > **Every session reads *both* repos' CLAUDE.md learning sections before its first
+> > edit**
+>
+> The harness copy, read out of `../aetheris/CLAUDE.md` at `288c8ef` — which is harness HEAD, and
+> the commit the project's `aetheris--CLAUDE.md` row is pinned at — still opens:
+>
+> > **Cross-repo sessions, and any session that will produce a review packet, read
+> > *both* repos' CLAUDE.md learning sections before the first edit**
+>
+> The two are **near-duplicates rather than a byte-identical mirror** — they also differ in their
+> closing sentences, the harness copy ending *"The sibling is `../aetheris-agents/`, which is where
+> milestone sessions run."* and the agents copy ending with its `[Widened 2026-08-08 …]` note. So
+> nothing syncs them, and the manifest's own observation applies: `drift_check` has no byte-identity
+> check between mirrors, and the diff is the only thing that covers that class.
+>
+> **So the premise holds agents-side and not harness-side.** A session that reads only
+> `../aetheris/CLAUDE.md` is told to read both *if* it is cross-repo or packet-producing, which is
+> the condition close-b widened away precisely because a session can talk itself out of it. The
+> uncovered direction is **harness→agents**, and the harness consolidation round is the next ticket
+> and runs harness-side.
+>
+> **This is a reviewer specification gap.** Ruling 1 said *"the repos rule"* in the singular and
+> never established whether there was one — the same shape as the cycle's other specification gaps:
+> an assumption held and never written down to be checked. **The reviewer records it as the sixth
+> of the cycle; the ordinal is theirs and is not re-derived here.** What the repos can cite is a
+> subset — the t4b→t4c kind-field gap (§Ticket set's count-correction note), t3's subtractive
+> constraint (§What t3 established), `cloudcost/docs/m4-t4c-implementation-notes.md:20`,
+> `cloudcost/docs/m4-t4b-implementation-notes.md:470` — beside close-a's and close-b's decision-1
+> divergences already recorded at §2. **The population is not enumerable from either repo**, because
+> reviewer ticket text arrives in conversation; that is §2's own *"What the census cannot reach"*,
+> one surface over. Asserting a total here would be the carrier this cycle promoted, committed
+> inside the note that records a gap in that promotion.
+>
+> **The deferral is boundary economy and not a judgement that the finding is minor.** Fixing it
+> writes `aetheris/CLAUDE.md`, which restales that file's manifest row (`aetheris--CLAUDE.md`,
+> `288c8ef`) and owes a second export boundary — a full regen and a 25-document re-upload — days
+> after the first. The harness round writes harness files anyway and closes with its own boundary,
+> so the fix is free there and costs a whole boundary here.
+>
+> **The interim risk is covered by the ticket, not by the file.** The harness round's ticket carries
+> the read-both instruction explicitly rather than relying on `aetheris/CLAUDE.md` to carry it —
+> which is the same reason this cycle records obligations in documents with executors rather than in
+> the notes of a closed ticket.
+
 ---
 
 ## Close criteria
@@ -908,7 +965,7 @@ No clause was amended, narrowed, or reported satisfied on a technicality. One is
 |---|---|
 | **head-1** — *t1b through t5c closed with zero blocking findings* | **First half satisfied, second half unassessable.** All eleven read `Closed`, each with a closure note or in-row artifact. *"Zero blocking findings"* is **not assessable from any durable record**: reviews are session artifacts, so nothing shows a round's findings were all dispositioned. **BL-133 is that finding, filed at close-b**, and is the route to making the clause assessable next time. Not amended here — relaxing a criterion at the close to let the close happen is the shape this whole cycle argues against |
 | **head-2** — *zero FAIL, no unexplained WARN* | **Satisfied, and now stronger than the clause asks.** 0 FAIL throughout; the five strict-exempt staleness WARNs were named all cycle and are **cleared** by the export boundary: `9 PASS 0 FAIL 0 WARN 7 INFO` |
-| **head-3** — *the milestone-end ritual has run* | **Satisfied.** §7 promotion at close-b (four entries, each read out of its file), export boundary at close-c, this statement |
+| **head-3** — *the milestone-end ritual has run* | **Satisfied.** §7 promotion at close-b (four entries, each read out of its file), export boundary at close-c, this statement. `[Pointer added close-d, 2026-08-08 — the boundary named here is its regen half; the upload half ran separately, after this verdict was written. **Not false, not yet amendable**, and no authority should be taken from it about the boundary having completed until §8(b) is read beside it]` |
 | **1** — *every ticket checked against the rows it closes* | **Run, and it found one.** BL-069 read *closed by retirement* in §Ticket set, in §What t2 established and in the harness gate rule, and the backlog row had **no DONE section** — closed in the document, open in the repo, which is the defect this clause exists to catch. The work closed at t2 (harness `f8bbac8`); only the record was missing. Written at close-c and assessed per clause. The reverse direction is clean: the eight rows carrying cycle-dated DONE sections are exactly the eight the document claims. **BL-070 is correctly recorded as *partly***, and t5b/t5c's absent implementation-notes files are assessed at §5 below |
 | **2** — *every row in §Rows filed checked for a DONE section if it closed* | **Satisfied — restated twice, and the population is now derived rather than recounted.** As first run it read **26**; r1 found §Rows filed omitting **BL-110** and **BL-111** and restated it as **28**; **r2 found two more, BL-131 and BL-132**, whose t5b block did not exist. The population is not counted by hand at all now — it is item 4's derivation, *every row filed this cycle, BL-105..BL-134* = **30**, in **four** blocks: nine from t1a–t3, seventeen from t4c, **two from t5b**, two from close-b. Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and **all three carry DONE sections**; the other 27 are open **by design**, not misses. **The verdict never changed, because all four omitted rows are open** — see the limit below, which is now the finding rather than the caveat |
 | **3** — *§Not established, item by item* | **Satisfied.** Seven items: two struck as resolved mid-cycle (the m09→m10 step-count diagnosis, the multiple-payload question), one partly resolved and correctly annotated as such (the chaos gate's clean-store case), four still open (`[sandbox]` routing, which document first carried the false causal claim, `EDUX_DATABASE_URL`, `milestone-reference.md`). **No unstruck item was found resolved-but-unstruck** — checked by re-reading each against the cycle's committed artifacts, not by trusting the strikethroughs |
@@ -1011,12 +1068,34 @@ what it did not cover.
 > defect that matters more than the arithmetic: the close handed forward §Open item 3's question
 > while omitting the row that consumes its answer.
 
-### 5. Three gaps recorded rather than fixed
+### 5. Four gaps recorded rather than fixed
 
 **§Close criteria does not name the export boundary among its five reads.** close-a found this and
 called it *"a task the ritual owes that its own criteria do not ask for"*. The boundary ran at
 close-c and cleared all five WARNs. **This is recorded as a stated gap in the criteria, not as a
 criteria amendment** — so the next milestone's close does not rediscover it.
+
+**`drift_check` never reads the project, so 0 WARN is not evidence the boundary completed.**
+`[recorded 2026-08-08 (close-d)]` The sentence above — *"cleared all five WARNs"* — is what this
+gap qualifies. The manifest's header states **one** blind direction, and states it well:
+
+> It cannot detect the reverse: a file uploaded without a regen leaves the manifest silently
+> under-describing project knowledge, and drift reports green while the record is wrong. The
+> tooling is blind in that direction; the discipline is what covers it.
+
+**The wider one is not stated anywhere.** Check 8 compares the **manifest against git** — a regex
+over the manifest's own table and `git log -1 --format=%h -- <path>` in the owning repo
+(`scripts/drift_check.py:577–600`) — both of them repo-side. It never looks at the project at all,
+so it cannot see divergence between the manifest and what the project actually holds **in either
+direction**; the header's stated blindness is one case of a check that was never pointed at the
+project to begin with. **`9 PASS 0 FAIL 0 WARN 7 INFO` at close-c said the manifest matched the
+repo. It said nothing about the project, which was still stale when that check ran** — pinned at
+the m3 boundary of 2026-08-05 through the whole m4 cycle, and still pinned there at the moment the
+0 WARN was reported; the upload landed later the same day. `[The interval is stated rather than a
+day-count: this ticket's text said *"four days stale"*, and 2026-08-05 → 2026-08-08 is three days
+elapsed or four inclusive, on a convention nothing here states. The dates are checkable and the
+number was not.]` Recorded as a stated gap, not a criteria amendment, on the same footing as the
+other three.
 
 **A row filed this cycle and never added to §Rows filed is invisible to *both* directions of this
 sweep, and nothing in §Close criteria closes that gap.** `[recorded 2026-08-08 (close-c r1);
@@ -1112,5 +1191,93 @@ BL-077 once the chaos gate's real state is known) → **BL-131** → **provider 
 Provider-four *design* work is not blocked by any of this. What the harness round buys is that
 *implementing* provider four lands on apparatus that works.
 
+### 8. The export boundary's second half — close-d, 2026-08-08
+
+The close ran the boundary's **regen** half and wrote §1's verdicts before the **upload** half
+existed. Two of this cycle's records depend on that upload, and they depend on **one** truth-maker,
+which is why they are here together rather than distributed: a truth-maker quoted twice is two
+things that can drift.
+
+**close-d is a post-close notes ticket.** It closes no row, takes no §Ticket set row, amends no
+clause and no criterion, and edits neither `CLAUDE.md`. It moves neither §The close's opening
+*"twelve tickets, three of them the close itself"* nor t1a-c's close at close-c (`b5af7d9`), both of
+which describe the cycle's ticket run and are unaffected by a note written after it. **The Status
+line stays CLOSED.** This section takes the next number; §7 is not renumbered, because the numbering
+records what was written when.
+
+#### (a) The upload — the reviewer's read, not an observation
+
+**claude-code has no access to the claude.ai project and cannot check whether any document there is
+current.** Asserting the upload from this ticket's say-so would be a claim with no checkable source,
+in a note about a boundary half that went unrecorded precisely because nothing checks it. **The
+reviewer read the project on 2026-08-08 and is the truth-maker for everything in this subsection.**
+What they established:
+
+- The project's `project-knowledge-manifest.md` carries **§Export boundary — 2026-08-08,
+  m4-cloudcost close**, and its five advanced rows read the post-m4 hashes:
+  `aetheris-agents--CLAUDE.md` `080ad24`, `aetheris--CLAUDE.md` `288c8ef`, `backlog-2026-06.md`
+  `384656c`, `cloudcost--milestone.md` `eae14d4`, `methodology--milestone-methodology.md`
+  `aaf0f9a`. **25 rows, none added, none dropped.**
+- Four content checks, each resolving to the expected document: the truth-maker rule's third
+  operational form in the harness `CLAUDE.md`; §Contracts C1–C15 in `cloudcost--milestone.md`;
+  BL-131, BL-132 and BL-121's DONE section in the backlog; BL-074's DONE section with its
+  five-clause table.
+- **27 docs**: the 25 export rows, all stamped in one upload pass, plus two `claude/` session briefs
+  left untouched at their original dates.
+
+#### (b) head-3 was satisfied on a half-run boundary
+
+§1 reports *"the milestone-end ritual has run"* as **Satisfied**, citing *"export boundary at
+close-c"*. The manifest's own header defines the boundary as both halves in one set:
+
+> **Uploads happen only as part of an export boundary — the manifest is regenerated and included in
+> the same set.**
+
+**The regen ran at close-c** (`0a93439`, the manifest committing alone as the boundary's last
+content operation). **The upload ran separately, on 2026-08-08**, and is attested at (a) above. So
+head-3's satisfaction was **contingent on a half nobody had performed at the time it was written**.
+
+**The verdict is not amended.** It is true now, and the close was right that the ritual's remaining
+step was the upload rather than something it had missed. What is recorded is the contingency —
+decision 7's shape, a dated note over a closed record whose original text stands — and §1's row
+carries a pointer to it so the table is not read as settled on its own.
+
+#### (c) `remove-all` is scoped to the 25 manifest rows, and it was done that way
+
+The standing rule, in both places it lives:
+
+> **Export is remove-all-upload-all against the full manifest set, never a hash-driven diff.**
+> — `CLAUDE.md` (agents), §Definition of done — doc sync
+
+> **Upload half is the human's**, unchanged: remove-all then upload-all against the full 25-row set,
+> never a diff of the five movers — check 8 cannot see a partial upload, and that blindness is what
+> the procedure covers.
+> — `docs/project-knowledge-manifest.md`, §Export boundary — 2026-08-08
+
+It was written when the project **was** the export set. It is not any more: the project holds **27**
+docs — the 25 rows plus two session-written briefs in the `claude/` namespace that no manifest row
+describes.
+
+**This is a record, not a warning.** The upload scoped it correctly: both session docs survive at
+their original dates, so `remove-all` was read against the export set and not against the project.
+Stated here so the next boundary inherits the scoping rather than rediscovering it, in whichever
+direction it would have guessed.
+
+**And the rule keeps its teeth regardless.** `remove-all` exists to defeat the incremental shortcut
+— uploading only the movers, which leaves the store and the manifest describing different sets —
+and to catch a dropped row, which a diff-driven upload never revisits. **Neither purpose requires
+deleting anything outside the export set.** Scoping it to the 25 rows costs the rule nothing.
+
+**Its home is the manifest's standing rule, not this document.** That is where the next boundary's
+operator reads `remove-all then upload-all`, and where the scoping sentence belongs. It is here only
+because writing the manifest owes an export boundary, and a four-note commit does not warrant one —
+**§8(c) is where it waits, not where it belongs.** It lands in the manifest at the next boundary,
+when the manifest is being written anyway. Same boundary-economy argument as the repos-rule deferral
+at §Promotion candidates, made explicitly rather than left for a reader to reconstruct.
+
 `Source: m4 close-c, 2026-08-08. Clause sweep run at agents 384656c / harness 288c8ef; export
 boundary at agents 0a93439. Verdict quoted from close-a Part 1.`
+`close-d, 2026-08-08, added §8, §5's fourth gap, §1's head-3 pointer, and the repos-rule note at
+§Promotion candidates with its §Rules promoted pointer. The upload verification at §8(a) is the
+reviewer's read of the claude.ai project on 2026-08-08, quoted and attributed; claude-code cannot
+check it and does not restate it as observed.`

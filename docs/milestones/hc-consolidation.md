@@ -364,15 +364,45 @@ disposition. Read the wording there.
 | 16 | The eduloka status extraction is out of scope | **lapsed** with m4's scope; R10 re-decides freshly |
 
 > **The count, derived rather than carried.** hc-b's ticket text says *"plus the ten carried m4
-> decisions by reference."* **The enumeration above yields fourteen in force** — thirteen
-> carrying unchanged (1–12 and 14) and one carrying as amended (15) — against one under review
-> (13) and one lapsed (16). Sixteen accounted for, none dropped.
+> decisions by reference."* **The enumeration above yields fourteen in force**, against one under
+> review (13) and one lapsed (16). Sixteen accounted for, none dropped.
+>
+> The split of the fourteen, with its members printed beside each figure so the two can disagree:
+>
+> ```
+> population        : m4 §Ratified decisions, decisions 1–16                        = 16
+> in force here     : 1 2 3 4 5 6 7 8 9 10 11 12 14 15                              = 14
+>   of which amended:                6              15                              =  2
+>   of which unchanged: 1 2 3 4 5   7 8 9 10 11 12 14                               = 12
+> not in force      : 13 (under review, R6) · 16 (lapsed, R10)                      =  2
+> ```
+>
+> **The two amendments are not the same kind and the enumeration should say which is which.**
+> Decision **6** was amended **before this round**, at m4 close-b — its date cell reads
+> *"standing, reaffirmed; amended 2026-08-08"* — and carries in its amended form; that amendment
+> is the bounded closure pre-authorisation this round operates under. Decision **15** is amended
+> **by this round**, by R11. Derived by reading the **date cell** of each of the sixteen rows,
+> which is the field that records an amendment: decision 6's is the only one of the sixteen that
+> carries one. Reading instead for the *word* "amended" anywhere in a row returns 6, 7, 8 and 9 —
+> the last three because *superseded* and *corrected in place* are their subject matter, not
+> markers on themselves. Match by field, not by substring.
 >
 > **Ten does not reproduce on any population this document can construct.** It is not a
 > subtraction from sixteen that lands on ten, and no subset here is naturally ten. The number is
-> not carried; the table is the record, and it is printed beside the count so the two can
-> disagree in public. This is the second instance of the class in one ticket's text, which is
-> why decision 1 is listed above as *firing*, not merely as carried.
+> not carried; the table above is the record.
+>
+> `[corrected 2026-08-08 (hc-b r1). This paragraph first read "thirteen carrying unchanged (1–12
+> and 14) and one carrying as amended (15)". **The total was right and the sub-clause's predicate
+> was false**: decision 6 is inside the enumerated range 1–12 and was amended at close-b, so
+> "unchanged" did not hold over its own members. Twelve and two, not thirteen and one. This is a
+> count printed beside an enumeration that contradicts it — the carrier promoted at the m4 close
+> — occurring inside the paragraph correcting a different instance of the same class, which is
+> why it is corrected in place with the superseded wording quoted rather than replaced silently.
+> Nothing else moves: the fourteen, the sixteen, and every disposition in the table stand.]`
+>
+> **This is the second instance of the class in one ticket's text**, which is why decision 1 is
+> listed above as *firing*, not merely as carried — and, with the correction above, the third in
+> this document's own lineage.
 > `Source: hc-b, 2026-08-08, against cloudcost/m4-consolidation.md §Ratified decisions at agents 8490362.`
 
 ---
@@ -575,7 +605,7 @@ rather than what was expected.
 | | Clause | m4 analogue |
 |---|---|---|
 | **1** | Every ticket in §Ticket set, checked against the backlog rows it closes. A row closed in the repo and open here, or the reverse, is the defect the clause exists to catch | **m4 clause 1.** Direct. hc-c closes BL-105 and BL-106; hc-d closes BL-077 and BL-133 (or its face 2, if the row is split) and conditionally BL-044 |
-| **2** | Every row in §Rows filed, checked for a closure record if it closed. **In this backlog closure is a separate sibling row** — `### BL-0NN — DONE <date> …` placed near the open row, which is left intact — not a section inside the row. Sixteen such sibling rows exist today; read for that shape, not for a heading inside a row | **m4 clause 2**, with the convention stated. m4's wording said *"a DONE section"*, which is how the record is spoken of and not how it is stored; a sweep looking for a heading inside a row would find nothing and report clean |
+| **2** | Every row in §Rows filed, checked for a closure record if it closed. **This backlog records closure in two shapes and a sweep must read both** — see the note below | **m4 clause 2**, carried with its population widened, **not with its wording faulted.** m4's *"a DONE section"* is accurate for the rows m4 itself closed; what it does not cover is the older shape. The widening is additive |
 | **3** | §Not established, item by item: resolved, still open, or superseded — and if resolved, where | **m4 clause 3.** hc-b's ticket text offered *"m4's clause 3 may have none here"* as a hypothesis; **it does not hold.** This round opens with four §Not established entries, one of which — `[sandbox]` routing — is the gate hc-c turns on. The clause has more to do here than it had at m4, not less. Recorded as a refutation |
 | **4** | The decision log, for any decision the implementation diverged from. A divergence is closed by changing the code or the decision, never left silent | **m4 clause 4**, and it has live work before the round starts: **R6 puts decision 13 under review.** The close either amends it with its own dated record (decision 7's shape) or records that the round did not overturn it. Silence is the one disposition unavailable |
 | **5** | Anything §7 does not itself verify about the promotions | **m4 clause 5, partly superseded.** m4's clause said *"§Rules promoted, read out of the two `CLAUDE.md` files rather than trusted"*. That is now **§7's own verification step**, and its prior-claims census besides. Carrying it as a full clause would put one obligation in two places, where they can drift. Kept only as a residual |
@@ -610,6 +640,53 @@ rather than what was expected.
 > `Source: hc-b, 2026-08-08 — the placement check, against docs/project-knowledge-manifest.md's
 > inclusion note and its 25 parsed rows.`
 
+**Clause 2's two shapes, and what is and is not a defect here.**
+
+`docs/backlog-2026-06.md` records a closure two ways, and neither replaced the other:
+
+| Shape | Form | Count today |
+|---|---|---|
+| **A — in-row paragraph** | `**DONE <date> (<ticket>).**` as a bold paragraph inside the open row, which is left intact | **9**, and **every one is m4-cycle-dated** (t1b, t2, t3, t4a/b/c, t5b) |
+| **B — sibling heading** | `### BL-0NN — DONE <date> …` as its own heading near the open row | **15 headings**, one of which — `### BL-050 + BL-055 + BL-056 — DONE 2026-07-25` — covers three rows, so 17 rows. Dated 2026-07-23 to 2026-08-05 |
+
+The shapes are **not exclusive**: BL-069 carries both, an in-row paragraph and a sibling heading,
+because its closure record was written at the m4 close rather than at t2 when the work landed.
+
+> **`[corrected 2026-08-08 (hc-b r1)]` This clause first read: *"In this backlog closure is a
+> separate sibling row … not a section inside the row. Sixteen such sibling rows exist today"*,
+> with the reason *"m4's wording said 'a DONE section', which is how the record is spoken of and
+> not how it is stored; a sweep looking for a heading inside a row would find nothing and report
+> clean."* **That was wrong, and wrong in the direction that faults m4.***
+>
+> **m4's wording is accurate for the rows m4 closed.** All three rows its clause 2 swept —
+> BL-107, BL-121, BL-127 — use shape **A**, an in-row `**DONE` paragraph, which is exactly what
+> *"a DONE section"* describes. So there was no wording defect to find and no vacuous
+> satisfaction available: the clause named the shape its own population uses.
+>
+> **And m4's execution was sound**, verified rather than assumed. Its clause 2 verdict reads
+> *"Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and all three carry DONE sections;
+> the other 27 are open by design"*, over a population it stopped hand-counting and derived —
+> `BL-105..BL-134` = 30, in four blocks. Its clause 1 reverse direction matched the rows carrying
+> cycle-dated DONE sections. Nothing in either run depended on ignoring the clause's wording.
+>
+> **What was actually true, and all that was:** the backlog holds a second, older shape that
+> m4's clause never had occasion to name, because no m4-cycle row uses it. Widening the clause to
+> read both is worth doing — a future round closing an old row would meet shape B — and it is a
+> **widening, not a correction of m4**.
+>
+> **The r0 error's own class.** It generalised *"closure is a sibling row"* from an enumeration of
+> shape-B rows without checking the shape the rows under discussion actually use — an observation
+> over one subset stated as a claim about the class. That is the carrier this round has now hit
+> three times, and this instance is the author's rather than the reviewer's.
+> `Source: hc-b r1, 2026-08-08 — both shapes enumerated against docs/backlog-2026-06.md at agents
+> e8cd5cd; m4's clause 2 and clause 1 verdicts read out of cloudcost/m4-consolidation.md §The
+> close §1.`
+
+**And `## Suggested order` is a second status surface that must agree.** Rows carry a `✔` /
+numeric-rank / `—` column there as well as their own state. **Whether it currently agrees with the
+row states was not checked by this round** — it is named as a surface a sweep must read, not
+reported as one found disagreeing.
+
 ---
 
 ## Rows filed
@@ -622,11 +699,16 @@ anything this round files begins at **BL-135**. hc-c and hc-d populate this sect
 it under clause 2.
 
 > **A note for whoever writes the first entry.** The backlog has no `## DONE` section and rows are
-> not moved on closure. A closed row acquires a **sibling row** headed
-> `### BL-0NN — DONE <date> …`, placed near the original, which is left intact. Rows BL-098
-> onward also sit *after* the `## Suggested order` heading with no section heading of their own,
-> and `## Suggested order` is a **second status surface** with its own `✔` / rank / `—` column.
-> A row is not fully closed until both surfaces agree.
+> not moved on closure. A closed row acquires a closure record **in one of two shapes** — an
+> in-row `**DONE <date> (<ticket>).**` paragraph, which is what every m4-cycle closure used and
+> what a row filed by this round should use, or an older sibling `### BL-0NN — DONE <date> …`
+> heading. §Close criteria clause 2 enumerates both; read it before sweeping. Rows BL-098 onward
+> also sit *after* the `## Suggested order` heading with no section heading of their own, and
+> `## Suggested order` is a **second status surface** with its own `✔` / rank / `—` column, which
+> a sweep must read alongside the row.
+>
+> `[corrected 2026-08-08 (hc-b r1) — this note first said closure is a sibling row and named only
+> that shape. See clause 2's correction block for what was wrong and why it mattered.]`
 
 ---
 

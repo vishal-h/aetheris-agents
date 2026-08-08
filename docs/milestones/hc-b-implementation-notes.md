@@ -102,10 +102,18 @@ direct `mix aetheris run` = **37**. No population this ticket could construct yi
 number is dropped; the argument does not need it.
 
 **"the ten carried m4 decisions"** (§Ratified decisions' carry instruction). The enumeration
-yields **fourteen in force** — thirteen unchanged (1–12, 14) plus one as amended (15) — against
-one under review (13, per R6) and one lapsed (16, per R10). Sixteen accounted for, none dropped.
-Ten is not a subtraction from sixteen that lands anywhere natural. The table is printed and the
-count is derived from it.
+yields **fourteen in force** — **twelve unchanged (1–5, 7–12, 14) and two amended (6, 15)** —
+against one under review (13, per R6) and one lapsed (16, per R10). Sixteen accounted for, none
+dropped. Ten is not a subtraction from sixteen that lands anywhere natural. The table is printed
+and the count is derived from it.
+
+`[corrected 2026-08-08 (hc-b r1). This read "thirteen unchanged (1–12, 14) plus one as amended
+(15)". The total was right; the sub-clause's predicate was false, because decision 6 sits inside
+the range 1–12 and was amended at close-b — the very amendment this round's closure
+pre-authorisation rests on. Derived by reading each row's **date cell**, the field that records
+an amendment; decision 6's is the only one of the sixteen that carries one. Grepping for the word
+"amended" instead returns 6, 7, 8 and 9, the last three because superseded-notes and
+correct-in-place are their subject matter. Match by field, not by substring.]`
 
 **A third, forwarded rather than acted on.** BL-077's Done-when says *"Audit all 31 cases"*;
 the population is 29 by both derivations above. Recorded under R7 and in hc-d's ticket text, to
@@ -130,11 +138,24 @@ refutation, not the hypothesis.
 **Two rulings gained a recorded consequence the ticket did not name.** R9's stale pointer:
 BL-077's §Suggested order entry still reads *"until BL-069 is re-armed"*, which decision 12
 makes impossible — only the second disjunct is live, and R9 forbids reading the first as
-licence. And §Rows filed gained a note on the backlog's actual closure convention: closure is a
-**sibling row**, not a section inside a row, and `## Suggested order` is a second status surface
-that must agree. §Close criteria clause 2 is written to that shape, because m4's wording —
-*"checked for a DONE section"* — describes how the record is spoken of rather than how it is
-stored, and a sweep looking for a heading inside a row would find nothing and report clean.
+licence. And §Rows filed gained a note on the backlog's closure convention, which turns out to be
+**two shapes**: an in-row `**DONE <date> (<ticket>).**` paragraph (**9**, every one m4-cycle-dated)
+and an older sibling `### BL-0NN — DONE <date> …` heading (**15 headings covering 17 rows**, dated
+2026-07-23 to 2026-08-05). Not exclusive — BL-069 carries both. §Close criteria clause 2 is
+**widened** to read both, and `## Suggested order` is named as a second status surface a sweep
+must read; whether it currently agrees was **not checked** by this round.
+
+`[corrected 2026-08-08 (hc-b r1). This paragraph read: "closure is a **sibling row**, not a
+section inside a row … because m4's wording — *'checked for a DONE section'* — describes how the
+record is spoken of rather than how it is stored, and a sweep looking for a heading inside a row
+would find nothing and report clean." **Wrong, and wrong in the direction that faults m4.** All
+three rows m4's clause 2 swept — BL-107, BL-121, BL-127 — use the **in-row** shape, which is
+exactly what *"a DONE section"* describes. There was no wording defect and no vacuous
+satisfaction available; m4's clause named the shape its own population uses, and its run was
+sound. What is true is only that a second, older shape exists that no m4-cycle row uses. The r0
+claim generalised from an enumeration of that older shape without checking the shape the rows
+under discussion actually use — an observation over one subset stated as a claim about the class,
+this time the author's rather than the reviewer's.]`
 
 ## 6. Anatomy authored ahead, per R12/R13
 

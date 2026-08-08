@@ -9,7 +9,8 @@
 > `m3-milestone.md`), named for what it is rather than to the series pattern. A sweep looking for
 > `m4-milestone.md` will not find it.
 
-**Status:** open. **Opened:** 2026-08-05 (first move ratified). **Document created:** 2026-08-06.
+**Status:** **CLOSED 2026-08-08** — see §The close. **Opened:** 2026-08-05 (first move ratified).
+**Document created:** 2026-08-06.
 **Repos:** `aetheris-agents` and `aetheris` (harness). **Preceding cycle:** m3-cloudcost, closed
 2026-08-05.
 
@@ -866,3 +867,136 @@ done-when table:
 `Source: this cycle, 2026-08-05 to date. Decision log authored by claude-ui from the cycle's own
 ratifications; repo-state sections composed by claude-code at aetheris-agents 009f666 /
 aetheris f6fbd82.`
+
+---
+
+## The close
+
+**Closed 2026-08-08 at close-c.** Agents `4b79d8f^..` this commit; harness `288c8ef`. The cycle
+ran 2026-08-05 to 2026-08-08: twelve tickets, three of them the close itself.
+
+### 1. Per clause — what was satisfied, what was not, and what is unassessable
+
+No clause was amended, narrowed, or reported satisfied on a technicality. One is closed on a
+**named gap**, which is a better record than a clause quietly rewritten to fit.
+
+| Clause | Verdict |
+|---|---|
+| **head-1** — *t1b through t5c closed with zero blocking findings* | **First half satisfied, second half unassessable.** All eleven read `Closed`, each with a closure note or in-row artifact. *"Zero blocking findings"* is **not assessable from any durable record**: reviews are session artifacts, so nothing shows a round's findings were all dispositioned. **BL-133 is that finding, filed at close-b**, and is the route to making the clause assessable next time. Not amended here — relaxing a criterion at the close to let the close happen is the shape this whole cycle argues against |
+| **head-2** — *zero FAIL, no unexplained WARN* | **Satisfied, and now stronger than the clause asks.** 0 FAIL throughout; the five strict-exempt staleness WARNs were named all cycle and are **cleared** by the export boundary: `9 PASS 0 FAIL 0 WARN 7 INFO` |
+| **head-3** — *the milestone-end ritual has run* | **Satisfied.** §7 promotion at close-b (four entries, each read out of its file), export boundary at close-c, this statement |
+| **1** — *every ticket checked against the rows it closes* | **Run, and it found one.** BL-069 read *closed by retirement* in §Ticket set, in §What t2 established and in the harness gate rule, and the backlog row had **no DONE section** — closed in the document, open in the repo, which is the defect this clause exists to catch. The work closed at t2 (harness `f8bbac8`); only the record was missing. Written at close-c and assessed per clause. The reverse direction is clean: the eight rows carrying cycle-dated DONE sections are exactly the eight the document claims. **BL-070 is correctly recorded as *partly***, and t5b/t5c's absent implementation-notes files are assessed at §5 below |
+| **2** — *every row in §Rows filed checked for a DONE section if it closed* | **Satisfied.** 26 rows across three blocks — seven from t1a–t3, seventeen from t4c, two from close-b. Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and **all three carry DONE sections**. The other 23 are open **by design**, not misses |
+| **3** — *§Not established, item by item* | **Satisfied.** Seven items: two struck as resolved mid-cycle (the m09→m10 step-count diagnosis, the multiple-payload question), one partly resolved and correctly annotated as such (the chaos gate's clean-store case), four still open (`[sandbox]` routing, which document first carried the false causal claim, `EDUX_DATABASE_URL`, `milestone-reference.md`). **No unstruck item was found resolved-but-unstruck** — checked by re-reading each against the cycle's committed artifacts, not by trusting the strikethroughs |
+| **4** — *the decision log, for divergence* | **Run as a census, not an observation, and it found a second.** See below |
+| **5** — *§Rules promoted, read out of the two `CLAUDE.md` files* | **Satisfied.** Three at t1a-p, four at close-b. Each of the four was read out of its file **after landing** and the read shown, per §7's own standard, rather than asserted |
+
+### 2. Clause 4's census — method, then result
+
+close-a found decision 6 and said so; **a finding of one is an observation, not a census**, which
+is this cycle's own promoted standard. So all sixteen were swept: each decision read against the
+cycle's committed artifacts for evidence of the implementation doing otherwise.
+
+**Result — two divergences, no others.**
+
+- **Decision 6** — *pushes are held for review* — superseded in practice by closure
+  pre-authorisation from t4b r3 onward. **Closed at close-b by amending the decision**, with its
+  bound, its cost and its origin recorded. Its origin was itself misattributed and corrected at
+  close-b r1.
+- **Decision 1** — *the reviewer asserts no checkable specifics in specs it authors; anchors only,
+  and where a value is needed the ticket says verify and record*. **Diverged in the close tickets
+  themselves.** close-b's ticket asserted *"all ten scripts and the template"* — a count, and wrong:
+  the directory holds eight. close-a's report asserted *"Instances, all in committed artifacts"*
+  over an enumeration whose fifth member is in neither repo. **Neither is amended, because the
+  decision is right and was violated rather than outgrown**; both were caught by the mechanism
+  decision 2 exists to provide, and both were declared rather than followed. Recorded here so the
+  divergence is not silent, which is all clause 4 asks.
+
+**What the census cannot reach, stated:** decisions 1 and 2 bind **reviewer-authored ticket text**,
+which arrives in conversation and is in neither repo. They are assessable only where a ticket's
+specific was quoted into a packet or a notes file. That is the same retention gap as BL-133, one
+surface over.
+
+### 3. What the cycle set out to do, and what it did
+
+It opened to clear accumulated infrastructure debt so the fourth-provider decision would be made
+against working apparatus rather than on top of it.
+
+**Fixed, with artifacts:** the sprint's non-deterministic `--json` reads (29 sites, four
+mechanisms, one helper — BL-100, BL-107); a chaos gate that had never evaluated its subject; the
+≥1-orphan tripwire, retired rather than re-fixtured (BL-069, decision 12); the sprint's env
+denylist inverted to a default-deny allowlist with the credential grep finally running on the leg
+it was filed about (BL-104, BL-099); `STOPPED_STATES` — *"the one seam"* — censused at **54 items**
+and ruled into **§Contracts C1–C15** (BL-074); the report's tag surface, its silent cap truncation
+and its silent non-`str` tag drop (BL-101, BL-121, BL-127); and the rider — the report now says
+what it did not cover.
+
+**The verdict is close-a's and is kept in its own words:**
+
+> *the apparatus is materially better and the decision is materially harder, and those are the same
+> fact — the cycle found out what the decision actually involves.*
+
+**Three things made provider four harder, not easier, and this is not smoothed:**
+
+1. **BL-131 did not exist when the cycle opened.** The cycle's own work created it: t5b's gate found
+   BL-070 proposing deletion of the cross-provider merge as *unreachable* while §Contracts C4
+   **ratifies** the currency policy that path implements — a policy m2's decision H had already
+   superseded. **The cycle added a gate to the thing it was clearing the way for.**
+2. **BL-132 — §Contracts may describe code no invocation reaches.** The census swept *code*,
+   §Contracts stated code as *contract*, and no step established **reachability**. C4 and C11 are
+   the two known instances, and two is not a census.
+3. **The seam was never three; it was 54.** The fourth adapter is *more* mechanical than m2
+   believed on the vocabulary axis — and the contract it must meet is now fifteen contracts long
+   where it was previously unwritten, with seventeen rows describing what that contract does not
+   yet enforce.
+
+### 4. What the close hands forward
+
+| | |
+|---|---|
+| **BL-131** | the N>1 compose surface — **gates provider four**, decided after the harness round |
+| **BL-132** | per-contract reachability; take BL-131 first or this re-derives its answer |
+| **BL-133** | the loop's evidence is not retained — the reason head-1 is unassessable |
+| **BL-134** | the census's seven comment anchors verified, its eight unclassifiable entries hand-classified |
+| **BL-075** | **its flake finally named** at close-b — `RunHelpersTimeoutTest`, a fixed 300 ms inactivity window; the BL-054 guess refuted; second arm blocked on BL-133 |
+| **BL-070** | *partly* — slug convergence discharged, the rest resolves with BL-131 |
+| **nineteen more** | filed this cycle and unimplemented: BL-105, BL-106, BL-108, BL-109, BL-110 (red, tracked), BL-112, BL-113, BL-114–BL-120, BL-122–BL-126, BL-128–BL-130 |
+
+### 5. Two gaps recorded rather than fixed
+
+**§Close criteria does not name the export boundary among its five reads.** close-a found this and
+called it *"a task the ritual owes that its own criteria do not ask for"*. The boundary ran at
+close-c and cleared all five WARNs. **This is recorded as a stated gap in the criteria, not as a
+criteria amendment** — so the next milestone's close does not rediscover it.
+
+**t5b and t5c produced no implementation-notes file.** `cloudcost/docs/` holds notes for m4-t2
+through m4-t4c and the three unprefixed t1 files, and nothing for t5b or t5c, while §What t3, t4
+and t5 inherit legislates the prefix those notes take — so this document presumes files that do not
+exist. It is why close-a had to reconstruct t5a's and t5b's instances from scratchpad reports,
+which is the channel failure this cycle promoted a rule about. **Assessed, not fixed**: writing
+them now would be reconstructing from memory the thing the packet rule says to regenerate, three
+days late and by someone who did not do the work.
+
+### 6. One observation about the promotion itself
+
+The carrier promoted at this close — *a count is a claim about a population*, together with
+Silent-wrong-answer's command-binding form — **fired seven times during the close's own packet
+construction**: two named at close-b r0's D4, three at r1's item 2, one in an `awk` over-run found
+while verifying r1's item 3, and one in r1's push step, where a persisting `cd` sent a push at the
+wrong repo while the shell reported success.
+
+**Every one is a session artifact and none is cited as evidence anywhere**, on this ticket's own
+rule. **The frequency is the record, not the instances.** That a rule's own promotion could not be
+written without repeatedly committing the thing it names is information about the rule's weight —
+and it is recordable without pretending uncitable instances are citable.
+
+### 7. The sequence from here, unchanged
+
+**harness consolidation round** (BL-105 + BL-106 as one contract with two mechanisms, folding
+BL-077 once the chaos gate's real state is known) → **BL-131** → **provider four**.
+
+Provider-four *design* work is not blocked by any of this. What the harness round buys is that
+*implementing* provider four lands on apparatus that works.
+
+`Source: m4 close-c, 2026-08-08. Clause sweep run at agents 384656c / harness 288c8ef; export
+boundary at agents 0a93439. Verdict quoted from close-a Part 1.`

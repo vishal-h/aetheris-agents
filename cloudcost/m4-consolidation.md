@@ -92,10 +92,20 @@ ratified all of them unless marked otherwise.
 > r1 marker was itself wrong and was caught only because r2 read it, and had r2 not run, the r1
 > dispositions (a `CLAUDE.md` edit among them) would have shipped unread.
 >
-> **Origin, named rather than smoothed over.** The device was introduced by claude-code without
-> asking, and was in use for four tickets before anyone recorded that decision 6 did not sanction
-> it. close-a found the divergence. The record should say that rather than present the practice as
-> having always been authorised.
+> **Origin, named rather than smoothed over.** The device was introduced by **the reviewer
+> (claude-ui)**, written into the t4b r3 ticket as an authority deliberately placed outside the
+> loop, and re-issued by the reviewer at t4c, t5b r2, t5c r1 and close-b. **claude-code never
+> proposed it.** It was in use for four tickets before anyone recorded that decision 6 did not
+> sanction it; close-a found the divergence. The record should say that rather than present the
+> practice as having always been authorised.
+>
+> `[corrected 2026-08-08 (close-b r1). The paragraph first read "introduced by claude-code without
+> asking" — **wrong when written**, and wrong in the one sentence whose whole purpose is to be
+> honest about origin. §Sequence's t4b r3 note, twenty lines above in this same document, already
+> read "**The reviewer supplied one at r3, authorising closure in advance**", and the t4c r1 note
+> beneath it is marked "authored by the reviewer". So the claim was refuted by the record it sits
+> beside — the count-beside-the-enumeration shape, one level up and about a party rather than a
+> number.]`
 
 ### Document handling
 

@@ -963,7 +963,7 @@ No clause was amended, narrowed, or reported satisfied on a technicality. One is
 
 | Clause | Verdict |
 |---|---|
-| **head-1** — *t1b through t5c closed with zero blocking findings* | **First half satisfied, second half unassessable.** All eleven read `Closed`, each with a closure note or in-row artifact. *"Zero blocking findings"* is **not assessable from any durable record**: reviews are session artifacts, so nothing shows a round's findings were all dispositioned. **BL-133 is that finding, filed at close-b**, and is the route to making the clause assessable next time. Not amended here — relaxing a criterion at the close to let the close happen is the shape this whole cycle argues against |
+| **head-1** — *t1b through t5c closed with zero blocking findings* | **First half satisfied, second half unassessable.** All **nine** rows the clause names read `Closed`, each with a closure note or in-row artifact `[count corrected close-d, 2026-08-08 — it read *"eleven"*; see the note below]`. *"Zero blocking findings"* is **not assessable from any durable record**: reviews are session artifacts, so nothing shows a round's findings were all dispositioned. **BL-133 is that finding, filed at close-b**, and is the route to making the clause assessable next time. Not amended here — relaxing a criterion at the close to let the close happen is the shape this whole cycle argues against |
 | **head-2** — *zero FAIL, no unexplained WARN* | **Satisfied, and now stronger than the clause asks.** 0 FAIL throughout; the five strict-exempt staleness WARNs were named all cycle and are **cleared** by the export boundary: `9 PASS 0 FAIL 0 WARN 7 INFO` |
 | **head-3** — *the milestone-end ritual has run* | **Satisfied.** §7 promotion at close-b (four entries, each read out of its file), export boundary at close-c, this statement. `[Pointer added close-d, 2026-08-08 — the boundary named here is its regen half; the upload half ran separately, after this verdict was written. **Not false, not yet amendable**, and no authority should be taken from it about the boundary having completed until §8(b) is read beside it]` |
 | **1** — *every ticket checked against the rows it closes* | **Run, and it found one.** BL-069 read *closed by retirement* in §Ticket set, in §What t2 established and in the harness gate rule, and the backlog row had **no DONE section** — closed in the document, open in the repo, which is the defect this clause exists to catch. The work closed at t2 (harness `f8bbac8`); only the record was missing. Written at close-c and assessed per clause. The reverse direction is clean: the eight rows carrying cycle-dated DONE sections are exactly the eight the document claims. **BL-070 is correctly recorded as *partly***, and t5b/t5c's absent implementation-notes files are assessed at §5 below |
@@ -971,6 +971,39 @@ No clause was amended, narrowed, or reported satisfied on a technicality. One is
 | **3** — *§Not established, item by item* | **Satisfied.** Seven items: two struck as resolved mid-cycle (the m09→m10 step-count diagnosis, the multiple-payload question), one partly resolved and correctly annotated as such (the chaos gate's clean-store case), four still open (`[sandbox]` routing, which document first carried the false causal claim, `EDUX_DATABASE_URL`, `milestone-reference.md`). **No unstruck item was found resolved-but-unstruck** — checked by re-reading each against the cycle's committed artifacts, not by trusting the strikethroughs |
 | **4** — *the decision log, for divergence* | **Run as a census, not an observation, and it found a second.** See below |
 | **5** — *§Rules promoted, read out of the two `CLAUDE.md` files* | **Satisfied.** Three at t1a-p, four at close-b. Each of the four was read out of its file **after landing** and the read shown, per §7's own standard, rather than asserted |
+
+> **head-1's count corrected 2026-08-08 (close-d) — and the eleven was not wrong, it was right
+> about something else.** The cell read *"All eleven read `Closed`"*. head-1's clause names **t1b
+> through t5c**, and that range is **nine** rows. The number is **derived from the clause's own
+> named range and printed beside the enumeration**, which is the rule's operational close:
+>
+> ```
+> population : §Ticket set, in order
+>              t1a, t1a-p, t1a-c, | t1b, t2, t3, t4a, t4b, t4c, t5a, t5b, t5c   = 12
+> clause     : "t1b through t5c"  -> t1b, t2, t3, t4a, t4b, t4c, t5a, t5b, t5c  = 9
+> of those, reading `Closed`                                                    = 9 of 9
+> ```
+>
+> **What the eleven was, grounded in this document rather than in a report.** §Ticket set held
+> twelve rows and exactly one did not read `Closed` when close-a swept: **t1a-c**, whose state was
+> `you are reading it` until close-b set it `Live` and close-c resolved it — recorded in the
+> t1a-c note under §Sequence. Twelve minus that one is **eleven**. So the number is **correct over
+> every §Ticket set row except t1a-c**, and merely not the population head-1's clause names. That
+> is carrier 2 in its purest form — **a count correct over one set, printed beside an enumeration
+> naming another** — rather than an arithmetic slip, which is why replacing the digit silently
+> would have lost the only instructive part.
+>
+> **The qualification was dropped in transit.** close-a's sweep carried the reconciling sentence,
+> *"t1a-c is outside the range"*, beside the same eleven; the close statement carried the number
+> and not the sentence. A count survives a move more easily than the population it was taken over.
+> `[close-a's report is a session artifact in neither repo — the same retention gap BL-133 names —
+> so it corroborates this paragraph and is not its evidence. The derivation above rests on §Ticket
+> set and its t1a-c note, both committed.]`
+>
+> **Separately, and with its own population named:** §Ticket set's **twelve** rows now *all* read
+> `Closed`, t1a-c included since close-c resolved it from `Live`. That is a fact about the table,
+> not about head-1's clause, and it is stated as its own sentence rather than attached to the
+> clause as a second number.
 
 ### 2. Clause 4's census — method, then result
 
@@ -992,6 +1025,13 @@ cycle's committed artifacts for evidence of the implementation doing otherwise.
   decision is right and was violated rather than outgrown**; both were caught by the mechanism
   decision 2 exists to provide, and both were declared rather than followed. Recorded here so the
   divergence is not silent, which is all clause 4 asks.
+
+> **Pointer added close-d, 2026-08-08 — decision 1 diverged twice more, and this bullet does not
+> reach them.** close-d's ticket asserted *"four days stale"* and *"the sixth of the cycle"*, both
+> checkable specifics and neither carried: the first is recorded as an interval in §5's fourth gap,
+> the second as an attributed ordinal at §Promotion candidates' disposition note. **The bullet above
+> is not false** — it reports what the close-c census found, and it is dated. **No total is restated
+> here**, deliberately: the population is not enumerable, for the reason the next paragraph gives.
 
 **What the census cannot reach, stated:** decisions 1 and 2 bind **reviewer-authored ticket text**,
 which arrives in conversation and is in neither repo. They are assessable only where a ticket's

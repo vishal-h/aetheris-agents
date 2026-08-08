@@ -336,6 +336,26 @@ oversight; a guess reads as a specification.** The second is the worse failure �
 `Done-check` written against an assumed runtime shape is the m7-docbuilder class, and a check
 that can pass without exercising the thing it checks is worse than no check.
 
+**A resolver names something that exists.** A pointer to an unauthored artifact is a guess wearing
+a citation's clothes, and R13 already forbids guesses — this is R13 read properly, not a new rule.
+Where the resolving artifact does not exist yet, the correct mark names **who authors it and
+when** (*"hc-d's own opening section-scoped edit, per R12"*), never the artifact as though it were
+already there.
+`Source: hc-b2, 2026-08-08 — hc-d's R3 paragraph resolved to "this ticket's step-1 gate", which
+existed in no document.`
+
+> **An observed property of R13's first application, recorded 2026-08-08 (hc-b2).** hc-c's anatomy
+> was reviewed before hc-c opened, and every defect found was in the **one slot hc-b completed
+> confidently** — the gate half of `Done-check`, called *"authorable now"* and written out in full.
+> Its named agent was a placeholder, its transcript could not distinguish its outcomes, and its
+> premise — *a stub-provider run with a worker* — was a configuration the harness does not permit
+> (`../aetheris/lib/aetheris/agent/supervisor.ex:62`). **Every R13-marked slot was sound.**
+>
+> So: **R13 flags known uncertainty, and known uncertainty is safe.** What needs review is the
+> opposite — the slot an author was sure enough about to complete. This generalises past this
+> round and past this document: a marked deferral advertises where to look, and a confident
+> completion advertises nothing. Review effort follows confidence, not deferral.
+
 ---
 
 ### The m4 decisions, by reference
@@ -507,30 +527,116 @@ the payload arrives on changes. §6 puts the entry in **this** ticket's `Touches
 not deferred. Identify the operator-facing surface that documents `--json` before writing, and
 if none exists, say so and create one.
 
-**Done-check.**
+**Done-check.** **`[R13: not authorable until the arm is chosen. Resolver: R5, step 2. It must
+include — BL-105's mutation posture against a run whose store emits boot output and one whose
+store does not (note that `config :aetheris, :sweep_on_start` defaults to true, so the second run
+needs the config toggled, not the store arranged); BL-106's mutation posture, a genuinely failing
+run producing parseable output naming the failure; and Rig's fork path exercised on both
+paths.]`**
 
-*The gate half, authorable now and owed regardless of arm:*
+**Claude-code prompt.**
+
+> Execute hc-c as specified in `docs/milestones/hc-consolidation.md` §Ticket set → hc-c.
+> Read that specification in full before anything else; it is the ticket.
+>
+> **The step-1 gate runs first and its failure stops the ticket without an edit** — including the
+> `inconclusive` verdict, which is a failure and not a licence to proceed on the likelier reading.
+>
+> **The arm is chosen from the gate's evidence and is not pre-selected.** Three candidates are
+> live: BL-105's two Done-when arms, and the third arm hc-a established — suppress boot logging on
+> the boot path, given the contaminant is per-command and gated on `ensure_started/0`. Which is
+> sufficient depends on what the gate finds. If the streams split, **decision 13 is amended by this
+> ticket with its own dated record** (R6), never silently superseded.
+>
+> **Carry R11's finding with its anchor.** `../aetheris/scripts/sprint.sh`, the D2 anti-vacuity
+> block's per-file loop at `:3125–3136` (at `288c8ef`): the guard is
+> `[[ -s "$cc_file" ]] && grep -q run_id "$cc_file"`, and `grep -q run_id` is payload-specific. A
+> stderr capture carries no `run_id`, so a stream split makes this `[FAIL]` on a clean run. **If
+> the arm splits the streams, that guard is in this ticket's Touches and lands with the split, not
+> after.**
+>
+> **The Runbook update rule bites.** `--json`'s observable semantics change; §6 puts the
+> operator-facing entry in this ticket's Touches and done-check. If no such surface exists, say so
+> and create one.
+>
+> Both mutation postures are Done-when clauses, not options.
+
+**Step-1 gate — decision 3, not a §6 field.**
+
+Placed here rather than inside `Done-check` because the two run at opposite ends: a `Done-check`
+runs **after** the work and reports; a gate runs **before** and stops **without an edit**. Its
+authority is m4 decision 3 (R8), which is a real authority and simply not §6's — and §6 governs
+what §6 owes, not what this document may contain.
+
+***(a) The run — one invocation, streams separated.***
+
 ```bash
-# Establish [sandbox] routing — a stub-provider run that spawns a worker.
-# stdout only, then stderr only, over the same run; report both.
 cd /home/it/sandbox/elixirws/aetheris
-mix aetheris --json run <stub-agent-with-a-tool-call> 2>/dev/null
-mix aetheris --json run <stub-agent-with-a-tool-call> 2>&1 >/dev/null
+mkdir -p /tmp/hc-c-gate
+mix aetheris --json run agents/ollama_smoke.exs \
+  > /tmp/hc-c-gate/stdout.txt 2> /tmp/hc-c-gate/stderr.txt
 ```
-The m4 demonstration of BL-105 used `list`, which spawns no worker — which is exactly why
-`[sandbox]` routing has been unestablished since t1a. **The gate is a run with a worker.** Report
-both captures in full; a step-1 gate failure stops the ticket without an edit.
 
-*The post-arm half:* **`[R13: not authorable until the arm is chosen. Resolver: R5, step 2. It
-must include — BL-105's mutation posture against a run whose store emits boot output and one
-whose store does not (note that `config :aetheris, :sweep_on_start` defaults to true, so the
-second run needs the config toggled, not the store arranged); BL-106's mutation posture, a
-genuinely failing run producing parseable output naming the failure; and Rig's fork path
-exercised on both paths.]`**
+**The agent is named and its worker-spawn is derived, not assumed.**
+`../aetheris/agents/ollama_smoke.exs` is `provider: "ollama"`, `tools: ["list_dir"]`,
+`model: "llama3.2:latest"`. `../aetheris/lib/aetheris/agent/supervisor.ex:62–63` decides the
+spawn with two negative clauses before the catch-all:
 
-**Claude-code prompt.** **`[R13: authored by the reviewer before this ticket opens, per R12.
-It must carry R11's finding with its anchor, and must state that the arm is chosen from the
-gate's evidence and not pre-selected.]`**
+```elixir
+defp worker_child_spec(%{provider: "stub", mcp_servers: []}), do: []
+defp worker_child_spec(%{tools: [], mcp_servers: []}), do: []
+```
+
+This config matches neither — provider is not `"stub"`, `tools` is not `[]` — so it falls to the
+catch-all and a `Worker.Supervisor` child is started.
+
+**Precondition, checked first.** A local Ollama must be serving `llama3.2:latest` at
+`localhost:11434`. If it is not, **the gate cannot run at all** — that is distinct from a gate
+verdict, and the ticket stops with the precondition named rather than recording a result.
+
+**One invocation, not two.** Two `mix aetheris run` invocations are two runs with two `run_id`s
+and store-dependent boot output (BL-105's own row), so a difference between them is not
+attributable to routing. The streams are separated by redirection within a single run.
+
+***(b) The positive control — run first, and separately from the question.***
+
+Both must hold before (c) is asked:
+
+1. **A worker started.** The trajectory meta's `"containment"` key is **non-nil**.
+   `../aetheris/lib/aetheris/agent/server.ex:962` is `defp worker_containment(nil), do: nil`, and
+   `:678` writes `"containment" => containment` into the meta — so nil means *no worker ran at
+   all*, which the code comment at `:960` states in those words. This is a durable trajectory
+   fact, not a log line.
+2. **At least one `[sandbox]` line was emitted somewhere.**
+   `cat /tmp/hc-c-gate/stdout.txt /tmp/hc-c-gate/stderr.txt | grep -c '\[sandbox\]'` ≥ 1.
+
+***(c) The question, asked only after (b) holds.*** Which stream carried the `[sandbox]` lines —
+`grep -c '\[sandbox\]'` over each capture separately.
+
+***(d) A verdict for every observation.***
+
+| Control | Observation | Verdict |
+|---|---|---|
+| `containment` **nil** | — | **Gate failure — no worker ran.** The config or the precondition is wrong. Stop without an edit; the question stays open and is recorded as still open |
+| `containment` non-nil | total `[sandbox]` count **0** | **`inconclusive` — gate failure.** Stop without an edit. This is the m4 outcome and it answers nothing: it is consistent with *routes to stderr and none fired*, and the routing question stays open in §Not established |
+| `containment` non-nil, total ≥ 1 | all in `stderr.txt`, none in `stdout.txt` | **Routes to stderr.** Decision 13 stands unamended on this evidence; the payload stream carries no `[sandbox]` contaminant |
+| `containment` non-nil, total ≥ 1 | any in `stdout.txt` | **Routes to stdout** — a second contaminant on the payload stream beside Logger's. BL-105's arm must cover it, and R11's guard is live |
+| `containment` non-nil, total ≥ 1 | present in **both** | **Two emitters.** Enumerate them before choosing an arm; an arm that moves one and not the other leaves the defect |
+
+***The anti-vacuity property, stated in the gate's own text.*** **The positive control is the only
+thing that makes *routes to stderr* distinguishable from *nothing was emitted*.** Without (b),
+an empty `stdout.txt` and an empty `stderr.txt` read exactly like a clean negative — which is
+precisely what the m4 demonstration produced and why this question has been open since t1a. The
+gate is required to be able to return `inconclusive`, and `inconclusive` is a failure.
+
+***What the source already says, and why the gate runs anyway.*** Every `[sandbox]` line is an
+`eprintln!` in the Rust worker (`../aetheris/native/aetheris_worker/src/sandbox.rs` and
+`main.rs`), and `Port.open` is called with
+`[:binary, :exit_status, {:packet, 4}, {:cd, …}]` — **no `:stderr_to_stdout`**
+(`../aetheris/lib/aetheris/worker/client.ex:133–140`) — so the worker's stderr is *inherited*
+rather than captured by the port, and should land on the CLI's fd 2. **That is a derivation from
+source, not an observation**, which is the distinction this round exists to hold. The gate can
+refute it, and a refutation is the more interesting result.
 
 ### hc-d — the sprint exit contract
 
@@ -550,8 +656,18 @@ a soft failure hard, enumerate what else that gate holds*.
 **The named question that gates the rest — R3.** *Does `expected_fail()`'s design need a real
 exit code from `run_agent` to key on?* If yes, **BL-044 is in this ticket** and
 `../aetheris/lib/mix/tasks/aetheris.ex` joins `Touches`. If no, BL-044 stays filed with the
-finding recorded. **Resolver: this ticket's step-1 gate.** Do not pre-decide it; BL-044's row
-already carries the audit inputs either answer needs.
+finding recorded. Do not pre-decide it; BL-044's row already carries the audit inputs either
+answer needs.
+
+**Step-1 gate — decision 3, not a §6 field.** **`[R13: not authorable. hc-d's design is not done,
+and a gate is written against a design. Resolver: hc-d's own opening section-scoped edit, per
+R12 — the gate is authored there, before the ticket opens, and it answers R3 above.]`**
+
+> `[corrected 2026-08-08 (hc-b2). The R3 paragraph previously ended "**Resolver: this ticket's
+> step-1 gate.**" — a resolver pointing at an artifact that existed nowhere in this document or
+> any other. R13 already forbids it: **a resolver names something that exists; a pointer to an
+> unauthored artifact is a guess wearing a citation's clothes.** The repair is to mark the gate,
+> not to author it — authoring it now would be the guess R13 forbids, one level up.]`
 
 **Everything else is `[R13: deferred to the section-scoped edit that opens this ticket, per
 R12.]`** Two constraints on that edit, recorded now so they are not rediscovered:

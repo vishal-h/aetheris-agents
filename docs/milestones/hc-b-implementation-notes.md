@@ -159,12 +159,33 @@ this time the author's rather than the reviewer's.]`
 
 ## 6. Anatomy authored ahead, per R12/R13
 
-hc-c has all seven §6 sections with **exactly two** slots marked under R13 — the arm-dependent
-half of `Touches`, and the post-arm half of `Done-check`. The gate half of hc-c's `Done-check`
-**is** authored, in full, because it is authorable now and is owed regardless of which arm
-lands: a stub-provider run **that spawns a worker**. The m4 demonstration of BL-105 used `list`,
-which spawns none — which is exactly why `[sandbox]` routing has been unestablished since t1a,
-and writing the gate against `list` again would reproduce the vacuity.
+hc-c has all seven §6 sections with **four R13 marks across three fields**, derived and printed
+beside the figures:
+
+```
+field  Touches            bullet 2 (config/runtime.exs | application.ex)   1 mark
+field  Touches            bullet 3 (sprint.sh)                            1 mark
+field  Done-check         (whole field, as of hc-b2)                      1 mark
+field  Claude-code prompt (authored at hc-b2 — mark removed)              0 marks
+                                            hc-b : marks = 4, fields = 3
+                                            hc-b2: marks = 3, fields = 2
+```
+
+`[corrected 2026-08-08 (hc-b2). This read "**exactly two** slots marked under R13 — the
+arm-dependent half of `Touches`, and the post-arm half of `Done-check`", followed by a paragraph
+asserting the gate half was authorable now: *"a stub-provider run **that spawns a worker**"*.
+**Two was wrong on both units** — four marks, three fields — and **the gate premise was
+impossible**, not merely underspecified: `../aetheris/lib/aetheris/agent/supervisor.ex:62` is
+`defp worker_child_spec(%{provider: "stub", mcp_servers: []}), do: []`, so a stub-provider run
+with no MCP servers never starts a worker whatever its `tools:` list. No agent file could have
+satisfied the authored gate.
+
+**The number's origin, named rather than absorbed.** *"with **exactly two** slots marked under
+R13"* is hc-b's **ticket text** — the reviewer's — written as a prediction about anatomy that had
+not yet been authored. These notes carried it instead of counting the marks that were actually
+written. Fourth instance of the count-beside-the-enumeration carrier in this lineage, and the
+first whose origin is a prediction rather than a miscount. The canonical document carries no count
+and needs none; the marks are the record.]`
 
 hc-c's `Runbook update rule` is written as engaged rather than as boilerplate: `--json`'s
 observable semantics change, so §6 puts the entry in that ticket's `Touches`, not deferred.

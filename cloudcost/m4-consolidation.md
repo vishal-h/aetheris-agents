@@ -68,7 +68,34 @@ ratified all of them unless marked otherwise.
 | 3 | **A step-1 gate inside the ticket.** Verification conditions the implementer checks before writing; any failure stops without an edit. Allowed once as an exception, retained as practice after it stopped a ticket whose census had not converged. | 2026-08-06 |
 | 4 | **Ticket names are historical and are not tidied.** `t1a`, `t1a-p`, `t1b` are cited in committed documents in both repos. | 2026-08-06 |
 | 5 | **The §7 promotion runs mid-cycle when the rules bind the cycle's own remaining tickets**, rather than waiting for the close. | 2026-08-06 |
-| 6 | **Pushes are held for review; a cross-citing repo pair lands together**, harness first so the agents citations resolve on the remote. | standing, reaffirmed |
+| 6 | **Pushes are held for review; a cross-citing repo pair lands together**, harness first so the agents citations resolve on the remote. `[amended 2026-08-08 — closure pre-authorisation is permitted, bounded; see the note below. Original text above is unchanged.]` | standing, reaffirmed; amended 2026-08-08 |
+
+> **Decision 6 amended 2026-08-08 (m4 close-b), on the human's ruling — closure
+> pre-authorisation is permitted, and it is bounded.** §Close criteria item 4 asks for any
+> decision the implementation diverged from, and this is one: from t4b r3 onward every closing
+> round was pre-authorised — *"if r_n contains only these edits and its done-check is clean, the
+> ticket is closed on that commit"* — which decision 6 as written did not contemplate. It is
+> closed by changing the decision, not by pretending the practice did not happen.
+>
+> **The permission.** Closure may be pre-authorised: the reviewer may name in advance the
+> conditions under which a closing round closes its ticket, and the row may read `Closed` on that
+> authority. That authorisation is the row's truth-maker; the commit is not predicting its own
+> review.
+>
+> **The bound, from t4c r1, learned by crossing it.** Closure may be pre-authorised **only after a
+> round has been reviewed, naming that round's scope. It cannot be issued in an opening ticket** —
+> there its condition, *the done-check is clean*, can only mean the implementer's own checks
+> passed, which is not the same as the reviewer finding nothing.
+>
+> **The cost, stated rather than glossed: the last change of a ticket stays unreviewed by design.**
+> That is what this amendment ratifies, not a tension it resolves. At t2 it had teeth twice — the
+> r1 marker was itself wrong and was caught only because r2 read it, and had r2 not run, the r1
+> dispositions (a `CLAUDE.md` edit among them) would have shipped unread.
+>
+> **Origin, named rather than smoothed over.** The device was introduced by claude-code without
+> asking, and was in use for four tickets before anyone recorded that decision 6 did not sanction
+> it. close-a found the divergence. The record should say that rather than present the practice as
+> having always been authorised.
 
 ### Document handling
 
@@ -104,7 +131,7 @@ ticket; the count states how many commits that is.
 |---|---|---|---|
 | **t1a** | Correct the false `2>&1` causal claim in every standing carrier | BL-100 rescoped, not closed; filed BL-105–BL-109 | **Closed** — agents `6a2c012^..13eac9f` (5 commits), harness `9c676ef^..e6687f1` (2) |
 | **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
-| **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria | you are reading it |
+| **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria; **no row closed** — BL-102 is *answered*, not closed | **Live** — created at `4b79d8f`, amended by every ticket since and by this close. It closes with the cycle at close-c, not before: the close's own edits land in it |
 | **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
@@ -299,7 +326,20 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → **t5a → t5b → t5c** → **
 > **The rule: closure may be pre-authorised only *after* a round has been reviewed, naming that
 > round's scope. It cannot be issued in an opening ticket.** The t4b note above is correct as
 > written and is untouched; this is the boundary condition it did not state, learned by crossing
-> it.
+> it. **Ratified into decision 6 at close-b, 2026-08-08** — see the note under §Ratified decisions,
+> which also records what the device costs and that it was introduced without being asked for.
+
+> **t1a-c's state, and a fifth form — 2026-08-08 (m4 close-b).** §Ticket set's t1a-c row read
+> `you are reading it`, which was true in the commit that wrote it and false in every commit since:
+> a reader consulting the table at this close is not reading t1a-c, and §Close criteria's clause 1
+> — *"every ticket in §Ticket set"* — had one of twelve with no assessable state. It now reads
+> **`Live`**, which is true in the commit it lands in: the document is still being amended, by this
+> close among others, and cannot read `Closed` while close-c is still to edit it.
+>
+> **`Live` is a fifth form and is declared as one**, not slipped in. The column held four —
+> `Closed`, `not started`, `you are reading it`, and `In review (r2)`. The t4b r2 note above
+> established the standard being followed here: inventing a state form was the right call, and the
+> only thing wrong was the claim not to have invented one.
 
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you
@@ -507,15 +547,53 @@ failed — zero of 118 recorded resource names bite — with the residual record
 
 **BL-074 closed at t4c**, all five Done-when clauses assessed per clause in the row's DONE section.
 
+**Rows filed at close-b, 2026-08-08** — both from close-a's read, both open by design.
+
+| Row | Kind | Subject |
+|---|---|---|
+| **BL-133** | method | the loop's evidence is not retained, so no past run's greenness is checkable after the fact |
+| **BL-134** | verification | the comment-as-truth-maker check over the t4a census — seven claims to verify, eight entries to hand-classify |
+
+**BL-075 annotated, not closed and not amended** at the same commit, and **its flake reproduced at
+close-b's own gate run**. An off-territory `mix test` — close-b edits four markdown files and no
+code — reproduced the 2026-08-02 shape exactly (1 failure, then 3 clean on the same tree), and
+**the failing test's identity was captured for the first time since the row was filed**:
+`Aetheris.CLI.Commands.RunHelpersTimeoutTest`, a fixed 300 ms inactivity window missed under load.
+The row's *"likely home"* guess is **refuted** — BL-054 is the `requires_worker` twelfth-slot flake
+and this is neither — though both are fixed-ms windows and share the polling rewrite BL-054's order
+entry already names. **Not closed and not folded**: the fold-or-file *is* the closing action, and
+this close closes no row. Its second arm stays blocked on BL-133, and the Done-when is left exactly
+as written — amending it before the retention question is decided would be writing a clause around
+a gap instead of naming it.
+
 ### Rules promoted this cycle
 
 Three, at t1a-p. **Named here, not restated** — they are normative in the files below and a copy
 here would be a second source of truth.
 
 - `../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns — the truth-maker rule, with its
-  two operational forms.
+  two operational forms. **A third form was added at close-b; see below.**
 - `../aetheris/CLAUDE.md` §Continuous learning → Silent-wrong-answer — the command-binding carrier.
 - `CLAUDE.md` (agents) §Learning — BL-007 — the packet rule, superseding its earlier wording.
+
+**Four more at close-b, 2026-08-08.** Same convention — named here, normative in the files. Where
+each landed and why is in §Promotion candidates' closing note; **placement is editorial**, and the
+repos rule was widened in the same commit so that it can be.
+
+- `../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns, inside the truth-maker rule —
+  its **third operational form**: *a count is a claim about a population*, carrying three named
+  carriers (a count replaced without re-checking the claim it hung on; a count printed beside an
+  enumeration that contradicts it; a count taken over a partial capture and reported as the whole).
+- `../aetheris/CLAUDE.md` §Continuous learning → Silent-wrong-answer — **match structured data by
+  field, not by substring**, a widening of the command-binding carrier.
+- `../aetheris/CLAUDE.md` §Continuous learning → Silent-wrong-answer — **sibling state**, a widening
+  whose entry states that it rests on one instance.
+- `CLAUDE.md` (agents) §Learning — BL-007 — **a packet's sprint section shows the run's full output,
+  or states what it elided and why**, whose entry states that it is a packet rule rather than a
+  recurrence-derived learning entry.
+
+**And one amendment, not a promotion:** `CLAUDE.md` (agents) §What this repo is — the **repos rule**
+now binds every session, not only cross-repo and packet-producing ones.
 
 ---
 
@@ -599,6 +677,20 @@ must **perform**.
    run, the r1 dispositions — a `CLAUDE.md` edit among them — would have shipped unread. Recorded
    here so the close weighs it rather than meeting it as a surprise.
 
+   > **Disposed 2026-08-08 (m4 close-b) — the *second face only*. The first face is untouched.**
+   > Nothing at this close rules on whether the step-1 gate becomes standard practice rather than
+   > per-ticket; that question stands exactly as written above, and decision 3 still admits the gate
+   > per-ticket. **What was ruled is the push-trade**, on the human's authority: decision 6 is
+   > amended to permit closure pre-authorisation, bounded by t4c r1 — *only after a round has been
+   > reviewed, naming that round's scope; never in an opening ticket*. See the note under §Ratified
+   > decisions.
+   >
+   > **The ruling ratifies the trade with a bound; it does not dissolve it.** *The last change of a
+   > ticket stays unreviewed by design* — that is now the recorded cost of a sanctioned device
+   > rather than an unrecorded consequence of a convention, and it is not a resolved tension. A
+   > reader who takes this note as closing the question would be reading it wrong in the direction
+   > that matters.
+
 2. **Whether *match structured data by field, not by substring* is worth promoting.** Carried to
    the close rather than acted on, per the t2 review.
 
@@ -617,6 +709,16 @@ must **perform**.
    result, not an error*) — the manifest case is that rule with a table column in place of a repo
    path. The close decides whether the substring-vs-field form is a distinct enough carrier to name,
    or whether naming it dilutes the rule it belongs to.
+
+   > **Disposed 2026-08-08 (m4 close-b) — promoted, in the *dilute* direction.** It landed as a
+   > **widening of Silent-wrong-answer**, immediately after the command-binding carrier this item
+   > itself names as its family, and **not** as a sibling rule: naming it separately would have
+   > diluted the rule it belongs to, which is the answer this item framed as the choice. Read it at
+   > `../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns, under Silent-wrong-answer.
+   >
+   > **Decided together with §Promotion candidates row 1, and decided the same way** — both are
+   > widenings, both name their parent, and row 1's entry states that it rests on a single instance.
+   > That pairing is what this item and row 1 both asked for.
 
 3. **What governs durable instruction surfaces outside git.** The cycle has no standing answer, and
    **BL-111** is the row that will need one.
@@ -637,6 +739,19 @@ must **perform**.
    it" answer three different rulings, and choosing one early creates a second surface to keep in
    sync. BL-111 is written to characterise, not to fix, for exactly this reason.
 
+   > **Noted 2026-08-08 (m4 close-b) — still open, and BL-111 consumes the answer.** This is not a
+   > §Close criteria change: the question is recorded here, where the close reads it, and the row
+   > that will need it is not named in §Close criteria's five reads. So the pointer goes on the
+   > question instead — **whoever decides this updates BL-111**, whose Done-when asks for exactly
+   > this ruling and explicitly forbids skipping to a mechanism.
+   >
+   > **What the repos-rule widening at this close did and did not do.** Ruling 1 amended the repos
+   > rule so every session reads both `CLAUDE.md` files before its first edit. That is a durable
+   > instruction surface **inside** git; this item's subject is surfaces **outside** it. The two are
+   > adjacent and the widening does not dispose of this question — if anything it sharpens it, since
+   > raising what the tracked surface is relied on to carry raises what it costs for an untracked
+   > one to diverge from it silently.
+
 ---
 
 ## Promotion candidates
@@ -651,11 +766,22 @@ shorter fuse.
 Recorded here **without** their supporting evidence duplicated — each cites where the evidence
 lives, and the close reads it there.
 
-| # | Candidate | Instance | Where the evidence is |
-|---|---|---|---|
-| 1 | **Widen Silent-wrong-answer's stale-state carrier to cover *sibling* state** — a check whose own setup injects state that changes what an *adjacent* check can observe, so the sibling reports a clean result about a condition it never actually tested | t3's allowlist matrix: `CLOUDCOST_OPTIMIZATION=1` was exported so entry 5's row would have something to detect; on a DO leg that makes the orchestrator raise at *eval* time, so the `− ANTHROPIC_API_KEY` row never reached the LLM call and reported "still succeeded" — a **false negative in the verification's own matrix**, found only because the result was implausible | `cloudcost/docs/m4-t3-implementation-notes.md:132–136` |
-| 2 | **A count taken from a truncated capture, reported as the whole run's.** Two instances, two tickets — the §7 threshold. **(i)** BL-075: a `mix test` result piped through `tail -12`, so *"1 failure"* was recorded with no name and the run was gone (`docs/backlog-2026-06.md:2669`, the row's own *"What is not known — and why"*). **(ii)** m4 t5b r0: a sprint captured with `\| tail -60`, so the packet's *"21 OK, 0 FAIL, 0 WARN"* was a tally over a fragment reported as the run's own — established at m4 t5c's addendum by diffing that capture against `sprint/20260807_213810`. **What unites them:** the count is arithmetically correct *over what was captured*, and nothing in either packet showed the capture was partial. A truncated capture that happened to hide a `[FAIL]` would read identically. | `docs/backlog-2026-06.md:2669` (BL-075); m4 t5c addendum §A |
-| 3 | **A packet's sprint section shows the run's full output, or states what it elided and why.** Every sprint report in this cycle quoted only the `[OK]` lines; the log at `sprint/20260807_213810` shows the run also emits a containment probe, two harness warnings, an orphan-sweep line and an artifact listing that no packet has ever carried. **The arms are the assertions; the output is the evidence.** Candidate 2 is this one's argument in a single instance — the number that was wrong was wrong because the capture was partial, and no reader could have told from the packet. | m4 t5c addendum §C; first applied at m4 t5c r0 packet §7 |
+> **The list's own limit, stated 2026-08-08 (m4 close-b) — it is a list of *noticed* recurrences,
+> not of all of them.** Every entry here exists because someone described a finding *as* recurring,
+> in a notes file or a packet. A finding that recurred and was never described that way is
+> invisible to any sweep of self-reports, including the one that produced rows 4 and 5 below. **No
+> exhaustive re-sweep has been attempted**, at this close or before it, so absence from this table
+> is not evidence that a class did not recur. The **Instances** column is added for the same
+> reason: candidate 1's *one* and candidate 2's *two, two tickets* are different claims, and the
+> table previously printed them as if they were the same kind of entry.
+
+| # | Candidate | Instances | Instance | Where the evidence is |
+|---|---|---|---|---|
+| 1 | **Widen Silent-wrong-answer's stale-state carrier to cover *sibling* state** — a check whose own setup injects state that changes what an *adjacent* check can observe, so the sibling reports a clean result about a condition it never actually tested | **one** — t3 only. Swept for a second at close-a and none found; **below §7's ≥2 bar as a new rule**, which is why it landed as a widening | t3's allowlist matrix: `CLOUDCOST_OPTIMIZATION=1` was exported so entry 5's row would have something to detect; on a DO leg that makes the orchestrator raise at *eval* time, so the `− ANTHROPIC_API_KEY` row never reached the LLM call and reported "still succeeded" — a **false negative in the verification's own matrix**, found only because the result was implausible | `cloudcost/docs/m4-t3-implementation-notes.md:132–136` |
+| 2 | **A count taken from a truncated capture, reported as the whole run's.** | **two, two tickets** — the §7 threshold | **(i)** BL-075: a `mix test` result piped through `tail -12`, so *"1 failure"* was recorded with no name and the run was gone (`docs/backlog-2026-06.md:2669`, the row's own *"What is not known — and why"*). **(ii)** m4 t5b r0: a sprint captured with `\| tail -60`, so the packet's *"21 OK, 0 FAIL, 0 WARN"* was a tally over a fragment reported as the run's own — established at m4 t5c's addendum by diffing that capture against `sprint/20260807_213810`. **What unites them:** the count is arithmetically correct *over what was captured*, and nothing in either packet showed the capture was partial. A truncated capture that happened to hide a `[FAIL]` would read identically. | `docs/backlog-2026-06.md:2669` (BL-075); m4 t5c addendum §A |
+| 3 | **A packet's sprint section shows the run's full output, or states what it elided and why.** | **n/a — not a recurrence claim.** It governs what a packet carries, so §7's ≥2 bar does not apply to it and it is the only entry here that is not a learning candidate | Every sprint report in this cycle quoted only the `[OK]` lines; the log at `sprint/20260807_213810` shows the run also emits a containment probe, two harness warnings, an orphan-sweep line and an artifact listing that no packet has ever carried. **The arms are the assertions; the output is the evidence.** Candidate 2 is this one's argument in a single instance — the number that was wrong was wrong because the capture was partial, and no reader could have told from the packet. | m4 t5c addendum §C; first applied at m4 t5c r0 packet §7 |
+| 4 | **A count replaced without re-checking the claim it hung on** — the *"uniqueness claim produced by observation"* form of Adjacent-case / enumerate-the-class. **Added 2026-08-08 (close-b); it was never entered here** | **three, one lineage** | *"the one seam"* (m1) → *"at least three"* (m2) → a t4b correction asserting a seam predicate over all 54 which the census denies. Each replaced the **number** and inherited the **sentence** it hung on. Carried on BL-074's own row from its filing and read by nothing else | `docs/backlog-2026-06.md` §BL-074, the DONE section's closing paragraph (`:2654–2658`) — its only home before this close |
+| 5 | **A count printed beside an enumeration that contradicts it.** **Added 2026-08-08 (close-b); it was never entered here** | **four, two tickets** | t4a §6 — *"Four"* over a list of eight; t4a §2.1 — *"50 items … 21 named / 29 not"*, all three hand-counted, actual 54 and 19/35; t4a §4b — *"the 43"* over rows summing 46, in a file holding 53 items against a stated 50; t4b r2 Edit B — *"12 citations"* where the command returns **13**, the thirteenth being the sentence asserting the count, matching itself. **A fifth instance exists in a t5a session report that is in neither repo and is therefore not evidence** | `cloudcost/docs/m4-t4a-implementation-notes.md:60` and `:41–44`, and §4b **as committed at `53e3c9b`** (corrected in place, so HEAD reads the fixed 46); `cloudcost/docs/m4-t4b-implementation-notes.md:478–481`; the class is named at `:354` |
 
 > **Where candidates 2 and 3 land is itself an open question at this close, and they join it rather
 > than assume its answer.** G5b (m4 t5b) established that **absent-is-unknown** was directed to
@@ -674,6 +800,32 @@ rather than a mis-bound command — the check reads the right thing, in an envir
 silently changed. The close decides whether that is a distinct enough carrier to name, or whether
 naming it dilutes the rule it belongs to — the same question already open for the
 substring-vs-field form under §Open for the close item 2, and the two are best decided together.
+
+> **The ritual decided, 2026-08-08 (m4 close-b). All five landed; where they landed, and why the
+> "where" stopped being a question.**
+>
+> The block above says *"The ritual decides both, and decides them together with where promoted
+> rules land at all."* It did, and the answer to the third part is that **placement is editorial**.
+> No document states a criterion for choosing a repo, and the two recorded divergences (P2 and P7,
+> both agents→harness) are what happens in its absence — a criterion inferred from them would be
+> inferred from exactly the two data points that went wrong. Instead the **repos rule was widened**
+> so that every session reads both files before its first edit (`CLAUDE.md`, §What this repo is).
+> With the read universal, a rule living in one repo only is reachable from either, so a promotion
+> lands **beside its siblings** and nothing turns on the choice. The promotion record's *landed*
+> column is authoritative; a draft's *directed* column is a proposal, and a recorded re-homing is a
+> filing choice rather than a defect.
+>
+> **Five candidates, four entries — the three carriers of rows 2, 4 and 5 are one rule, not three.**
+>
+> | | Landed | As |
+> |---|---|---|
+> | rows **2, 4, 5** | `../aetheris/CLAUDE.md` → `Every claim has a truth-maker` | **one third operational form** — *a count is a claim about a population* — carrying all three as named carriers. Three mechanisms, one family; five siblings were not promoted |
+> | **§Open item 2** (substring-versus-field) | `../aetheris/CLAUDE.md` → Silent-wrong-answer | a **widening**, immediately after the command-binding carrier the record itself says it belongs to |
+> | row **1** (sibling state) | `../aetheris/CLAUDE.md` → Silent-wrong-answer | a **widening**, stating in the entry that it rests on **one** instance |
+> | row **3** (packet full output) | `CLAUDE.md` (agents) → §Learning — BL-007 | a **packet rule**, beside the packet rule, stating in the entry that it is not a recurrence-derived learning entry |
+>
+> Rows 1 and §Open item 2 were **decided together and identically**, which is what both texts asked
+> for: named as widenings of the rule they belong to, rather than as siblings that would dilute it.
 
 ---
 

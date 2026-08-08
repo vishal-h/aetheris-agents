@@ -19,14 +19,26 @@ All sprint and agent commands are run from `~/sandbox/elixirws/aetheris/`, not f
 `../aetheris/`. Paths in tickets and docs are relative to `aetheris-agents/`
 unless prefixed with `../aetheris/`. Edits default to this repo; touching the
 harness is explicit and called out in the ticket's `Touches` list.
-**Cross-repo sessions, and any session that will produce a review packet, read
-*both* repos' CLAUDE.md learning sections before the first edit** — promoted rules
-live in one repo only and are not otherwise reachable from the other. This is a
-first-action step, not a background intention: BL-031 was a cross-repo ticket whose
-session never opened `../aetheris/CLAUDE.md`, so the entire review-discipline block
-was absent while three review packets were written against it, and Complete-output
-was re-broken (`tail -3`, BL-031 §1f) by a session that had never read it. If you
-have not read the sibling's learning sections, you have not started the ticket.
+**Every session reads *both* repos' CLAUDE.md learning sections before its first
+edit** — promoted rules live in one repo only and are not otherwise reachable from
+the other. This is a first-action step, not a background intention: BL-031 was a
+cross-repo ticket whose session never opened `../aetheris/CLAUDE.md`, so the entire
+review-discipline block was absent while three review packets were written against
+it, and Complete-output was re-broken (`tail -3`, BL-031 §1f) by a session that had
+never read it. If you have not read the sibling's learning sections, you have not
+started the ticket.
+
+`[Widened 2026-08-08 at the m4-cloudcost close. It previously bound "Cross-repo
+sessions, and any session that will produce a review packet" — a condition already
+nearly universal, since every ticket in the m4 cycle produced a packet, and a
+nearly-universal condition is one a session can talk itself out of. **The widening is
+what makes rule placement editorial:** with the read universal, a rule living in one
+repo only is reachable from either, so a promotion lands where it reads most coherently
+beside its siblings. No criterion for choosing a repo is stated here because none
+exists — two of the five repo-directed promotions in the one round that has both a
+draft and a landing record were re-homed, and a criterion inferred from those two would
+be inferred from exactly the data points that went wrong. See
+`cloudcost/m4-consolidation.md` §Promotion candidates.]`
 
 ---
 
@@ -459,6 +471,9 @@ Promoted per methodology §7 after the BL-007 milestone-end ritual. Adjudicated
 
 **The packet is the artifact that travels; content in any other channel does not exist.** This supersedes the earlier wording — *a packet section referenced is a packet section absent* — which named existence-in-repo as the failing channel and so did not cover the two that followed. Three channels have now failed: a section committed to the repo and cited rather than inlined; a section placed in the chat response beside the report file, when only the file is relayed; and a **disposition commit, which travels as a claim about its content rather than as content**. The operational split: mechanical closures — a label qualified, an anchor added, a count corrected — stay settleable by a grep count; anything that authored a *mechanism* or a *judgment* is quoted verbatim in the packet, with its before and after. Regenerate rather than reconstruct.
 `Source: m-docbuilder-m1 t4, t8; BL-007 t3; t1a, 2026-08-06 (docs/reviews/t1a-review.md:50–51 — the disposition-commit channel, filed there as a §7 promotion candidate: "Mechanical closures stay grep-settleable; anything that authored a mechanism gets quoted").`
+
+**A packet's sprint section shows the run's full output, or states what it elided and why.** The arms are the assertions; the output is the evidence, and a packet that quotes only the `[OK]` lines has published the assertions with the evidence removed. Every sprint report in the m4 cycle did exactly that, while the run also emitted a containment probe, two harness warnings, an orphan-sweep line and an artifact listing that no packet ever carried. This is **Complete-output** bound to the one artifact that travels: elision is allowed, silent elision is not — say what you cut and why, so a reader can tell a clean run from a clean excerpt.
+`Source: m4-cloudcost t5c addendum §C; first applied at m4 t5c r0's packet §7. **Promoted as a packet rule, not as a recurrence-derived learning entry** — it lands beside the packet rule above rather than in a §Learning source list, and it is the one m4 promotion candidate that was never a recurrence claim. Its argument in a single instance is the truncated-capture carrier of `Every claim has a truth-maker` (harness `CLAUDE.md`): at m4 t5b r0 a `| tail -60` produced a tally reported as the run's own, and no reader could have told from the packet.`
 
 **No action past a gate until that gate has run and its result is on the record** — covering doc-order gates, test gates, and publish/merge gates alike. Three instances in one milestone, same muscle, different artifact: a doc edited ahead of the gate that should have preceded it; a rider acted on before the milestone doc carried it; and both branches pushed on a "push both branches" instruction before the acceptance e2e was reported green, inverting the agreed reorder → gates → e2e → commit → push order. All three were recoverable only because the held-push discipline caught them — the rule is what makes the discipline unnecessary rather than load-bearing. A cross-repo change needs a cross-repo done-check — any gate that runs in one repo silently passes omissions in the sibling (repo-scoped `git add -A` + single-repo drift check let a one-repo edit push under a two-repo claim).
 `Source: BL-007 t2, t4 (×2); b1 post-push correction, 2026-07-21 (d831220)`

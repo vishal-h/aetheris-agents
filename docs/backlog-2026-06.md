@@ -2693,8 +2693,69 @@ with full output retained, e.g. `mix test --seed 0` plus repeated seeded runs) a
 BL-054 or filed on its own, or three further full-output runs come back clean and this row is
 closed as unreproducible with that stated. Whichever way it goes, capture the **whole** output.
 
+**Annotated 2026-08-08 (m4 close-b) — the flake reproduced, and this time it has a name.**
+`mix test` was run off-territory at this ticket's boundary (close-b edits four markdown files and
+no code, so the failure cannot be attributed to the change under test — the same reasoning this row
+recorded in 2026-08). It reproduced **the 2026-08-02 shape exactly**: one failure, then three
+consecutive clean runs on the same tree with the same command.
+
+```
+run 1:  969 tests, 1 failure,  133 excluded
+run 2:  969 tests, 0 failures, 133 excluded
+run 3:  969 tests, 0 failures, 133 excluded
+run 4:  969 tests, 0 failures, 133 excluded
+```
+
+**The identity, which is what this row was filed to obtain:**
+
+```
+1) test a status change alone counts as activity, with no events at all
+   (Aetheris.CLI.Commands.RunHelpersTimeoutTest)
+   test/aetheris/cli/commands/run_helpers_timeout_test.exs:84
+   code:  assert {:ok, %{run_id: ^run_id, status: :done}} =
+            await_bounded(run_id, await_inactivity_timeout_ms: 300)
+   right: {:error, "run await-status-activity-7139 stalled: no status or event
+           activity for 300ms (last status: running, last event seq: -1)"}
+   stacktrace: test/aetheris/cli/commands/run_helpers_timeout_test.exs:98
+```
+
+A **fixed 300 ms inactivity window** the machine missed under load.
+
+**The "likely home" hypothesis is refuted, not confirmed.** This row was careful to call the BL-054
+connection *plausible, not established*, and it was right to be: **BL-054 is the `requires_worker`
+twelfth-slot flake**, and this is a different test in a different file, not `requires_worker`-tagged
+(it ran — the 133 excluded are elsewhere). What the two do share is the **mechanism class** — a
+fixed-ms window rather than a poll — which is exactly the cure BL-054's §Suggested order entry
+already names: *"Fold into a polling-based rewrite of the fixed-ms windows when someone is in that
+file."* So the two rows converge on one fix while remaining two defects.
+
+**Deliberately not closed and not folded here.** The first Done-when arm asks for the flake
+reproduced with its name captured **and then** folded into BL-054 or filed on its own; the fold-or-file
+is the closing action, and close-b closes no row. The evidence is now on the row, in the repo, where
+the next ticket can act on it — **note that the runs themselves are not retained anywhere, only this
+transcription of them, which is BL-133's subject exactly.**
+
+**And the second arm still has nowhere to be satisfied.** *"Three further full-output runs come
+back clean"* requires that those runs' full output be **retained somewhere durable**, and **BL-133**
+establishes that no such place exists: `../aetheris/sprint/` archives `run.json` alone, and
+`mix test` output is archived nowhere at all. Three clean runs were observed here and their output
+lives in a session scratchpad — which is to say the arm was *performed* and cannot be *evidenced*,
+and a later tally assembled from packets would be a count over a capture nobody can check. That is
+the very defect this row's own *"What is not known — and why"* paragraph records, arriving a second
+time.
+
+**The Done-when is deliberately left as written.** Amending it now — narrowing it to "three runs
+observed in a session", say — would be writing a clause around the gap instead of naming it, and
+would quietly relax a row rather than fix what makes it unsatisfiable.
+
+**Where this row now stands:** arm 1's evidence is captured and durable (above); arm 1's *action*
+— fold into BL-054 or file on its own — is the next ticket's, and BL-054 is now known to be the
+wrong home. Arm 2 stays blocked on **BL-133**.
+
 `Source: m2-cloudcost t2 done-check, 2026-08-02 (aetheris-agents 7a7b7ec; aetheris fd9ac48,
-untouched).`
+untouched). Annotated at m4-cloudcost close-b, 2026-08-08 — close-a Part 5 for the retention
+finding; the reproduction and the failing test's identity are this close's own four runs, at agents
+2806305 / aetheris 288c8ef, neither of which touches harness code.`
 
 ---
 
@@ -7224,5 +7285,124 @@ this row re-derives its answer and then has to change it.
 
 `Source: m4 t5b G2 gate-stop, 2026-08-07 — the finding that C4 ratified an m1 position decision H
 had already superseded, and that no step between the census and the contract checked reachability.`
+
+---
+
+### BL-133 — the loop's evidence is not retained, so no past run's greenness is checkable after the fact (#TBD)
+**Kind:** method · **Census items:** n/a (surfaced by the m4 close) · **Contract:** n/a
+**Size:** S to rule, S–M to implement · **Priority:** medium
+**Section:** process / harness (`../aetheris/sprint/`, `docs/reviews/`)
+
+Filed 2026-08-08 from the m4-cloudcost close. **One row with two faces, and the consequence is the
+row.** Both faces were found independently at close-a — one by the ticket-closure gate, one by the
+attempt to tally BL-075 — and they are the same defect about two artifacts.
+
+**Face 1 — reviews are session artifacts.** A round's findings, and their dispositions, exist in
+the review packet and nowhere else. `docs/reviews/` holds a handful of committed review files, but
+no m4 ticket's rounds are among them. So *"the ticket closed with zero blocking findings"* is
+derivable only as *"the row says Closed and a closure note exists"* — closure is showable, the
+**absence of an open finding** is not.
+
+**Face 2 — `sprint/` archives the run payload and not the verdicts.** Verified at the close over
+this cycle's window:
+
+```
+$ ls -d sprint/2026080*/                          -> 26 run directories
+$ ls -d sprint/2026080*/cloudcost                 -> 23 have a cloudcost dir
+$ for d in sprint/2026080*/cloudcost; do ls $d; done | sort | uniq -c
+     18 run.json                                  # and nothing else, ever
+$ for d in sprint/2026080*/cloudcost; do [ -z "$(ls -A $d)" ] && echo $d; done | wc -l
+      5                                           # empty cloudcost dirs
+```
+
+So **8 of 26** runs archived no cloudcost payload at all, and the 18 that did archived `run.json`
+alone — **no arm count, no `[FAIL]`/`[WARN]` lines, no record of whether the capture was complete.**
+The console output, which is where every assertion's verdict lives, is retained nowhere.
+**`mix test` output is archived nowhere at all** — a `grep -rl "tests, .* failure" sprint/` returns
+nothing.
+
+**The consequence, which is what this row is for.** No past run's greenness is checkable after the
+fact. Any clause asking for *zero blocking findings*, *three clean runs*, or *the sprint was green
+at commit X* is **not assessable from the record** — only from a packet, and a packet is the thing
+that does not outlive the session. §Close criteria's own head-1 clause hit this at close-a and
+could be answered only partly, for exactly this reason.
+
+**Distinguish this from the packet rule promoted at the same close.** *A packet's sprint section
+shows the run's full output* (agents `CLAUDE.md` §Learning — BL-007) fixes **what the packet
+carries**. It does not fix **what outlives the packet**, and the archive is the only thing that
+does. Closing that rule does not close this row.
+
+**Do not skip to a mechanism.** "Archive the console output beside `run.json`", "commit review
+files per round", "have the sprint emit a machine-readable verdict summary" answer three different
+rulings about what the record is *for* — an audit trail, a debugging aid, or a gate input — and
+picking one before the ruling builds the wrong thing cheaply.
+
+**Owes:** a ruling on what a run's durable record must contain, and then the mechanism.
+**Costs:** S to rule. Implementation depends on the ruling; capturing the sprint's stdout into the
+existing run directory is the cheap end.
+**Collides with:** **BL-075**, which cannot be closed without it (annotated to say so);
+**BL-077**, whose `expected_fail()`/`KNOWN_RED` counter would produce exactly the verdict summary
+face 2 is missing, so the two should be looked at together.
+
+`Source: m4-cloudcost close-a, 2026-08-08 — G2's method limit (face 1) and Part 5 (face 2).
+Archive counts re-derived at the close against ../aetheris at e75f838, not inherited: close-a
+reported "three hold no cloudcost artifact at all", and the re-run found 3 with no cloudcost dir
+plus 5 more holding an empty one — 8 of 26.`
+
+---
+
+### BL-134 — verify the seven comment-anchored census claims, and hand-classify the eight the sweep could not reach (#TBD)
+**Kind:** verification · **Census items:** X3, D5, D9, D12, P3, P8, P10 (the seven); D13, D16, D21, F2, F3, R1, R2, R3 (the eight) · **Contract:** n/a
+**Size:** S · **Priority:** low–medium
+**Section:** cloudcost (`cloudcost/docs/m4-t4a-implementation-notes.md`)
+
+Filed 2026-08-08 from the m4-cloudcost close. **A bounded verification task, not a rule** — which
+is why it is a row: verifying seven claims and hand-classifying eight entries is work, and no
+standing instruction falls out of it.
+
+**Where it comes from.** The t4b defect was narrow and specific: *a comment that asserted its own
+test coverage, taken as evidence that the test existed.* A comment is not a truth-maker for its own
+claim. close-a sized how much of the t4a census could be exposed to that defect by resolving every
+anchor in all **54** entries against the source at agents `2806305` and classifying each single-line
+anchor by what that line actually is.
+
+| | |
+|---|---|
+| census entries | **54** |
+| classifiable (≥1 single-line anchor) | **46** |
+| **citing a comment or docstring line** | **7** — X3, D5, D9, D12, P3, P8, P10 |
+| citing only code lines | 39 |
+| **unclassifiable** | **8** — D13, D16, D21, F2, F3, R1, R2, R3 (range-only or no line anchor) |
+
+**What is and is not established.** A comment anchor is **not per se the defect** — the census's
+convention is to quote a rule's rationale from its comment and its behaviour from its code, and
+most of the seven cite both. **Whether any of the seven asserts its own test coverage is not
+established**, because the method finds anchor *kind* and never whether a comment's claim was
+independently checked. That check is this row.
+
+**The work, stated so it is not mis-scoped.**
+
+- For each of the **seven**, read the cited comment or docstring and ask one question: *does the
+  census rest on this line for a claim the line only asserts about itself?* Where it does, verify
+  the claim against the code or the test and correct the entry.
+- For each of the **eight**, resolve the anchors by hand and classify them, so the population that
+  the automated pass could not reach is closed rather than left at 15 %.
+
+**A method artefact that is not a finding, recorded so nobody re-files it.** close-a's sweep also
+reported eleven items whose anchor resolves outside its inherited file. That is almost certainly
+the group-inheritance heuristic mis-attributing cross-file citations in `Consumers` fields — **not
+eleven decayed citations.** Do not open this row expecting eleven; if the hand pass finds real
+decay, that is a new finding and gets its own record.
+
+**Owes:** a verdict per entry for the seven, a classification for the eight, and any corrections
+those produce in the census.
+**Costs:** S. Fifteen entries, one question each, all in one file.
+**Collides with:** nothing. The census is closed (BL-074) and this does not reopen it — it checks a
+property of the citations, not of the rulings.
+
+`Source: m4-cloudcost close-a Part 3, 2026-08-08 — anchors resolved against agents 2806305. The
+counts are the corrected pass's: close-a's first two passes reported 39 and then 37 unclassifiable,
+both of which were its parser's limits rather than the census's, and both were discarded. close-a
+itself read this as a row rather than a promotion candidate, and that read is adopted here.`
 
 ---

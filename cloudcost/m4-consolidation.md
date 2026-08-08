@@ -144,7 +144,7 @@ ticket; the count states how many commits that is.
 | **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
 | **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria; **no row closed** — BL-102 is *answered*, not closed | **Closed** — agents `4b79d8f^..` this commit. Created at `4b79d8f`, amended by every ticket since, and closed at close-c by the commit carrying §The close below. Its deliverable is this document and the document is complete |
 | **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
-| **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
+| **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended; **filed BL-111** `[added 2026-08-08 (close-c r1) — the row was filed at t2 and named in neither this column nor §Rows filed]` | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
 | **t4a** | The seam census: enumerate every provider-differing value in shared machinery, and record the sweep's method | BL-074 — **enumerated, not discharged**; no DONE section | **Closed** — the census is `cloudcost/docs/m4-t4a-implementation-notes.md`: 518 nodes extracted structurally, 54 censused, seven leads confirmed and none refuted |
 | **t4b** | Write the rulings as contracts: **§Contracts (C1–C15)** in `cloudcost/milestone.md` | BL-074 **not closed** — its Done-when clause 2 amended here, before assessment, to name §Contracts; m1's "one seam" text corrected here | **Closed** — 54 items ruled 48 schema-level / 4 adapter-owned / 2 neither, each cited by census item id in exactly one contract; see the closure note under §Sequence |
@@ -526,8 +526,23 @@ Read from `docs/backlog-2026-06.md` at agents `009f666`:
 | **BL-107** | the chaos-case gate has never evaluated its subject |
 | **BL-108** | the eduloka sink gate parses a merged stream: same shape, different root cause |
 | **BL-109** | two `milestone-reference.md` files, canonical by different measures |
+| **BL-110** | the payslip case asserts a reference employee the run cannot produce `[added 2026-08-08]` |
+| **BL-111** | session memory is a durable instruction surface outside git, and no census, review or gate can reach it `[added 2026-08-08]` |
 | **BL-112** | the BEAM's latin1 fallback silently corrupts non-ASCII in `--json` payloads |
 | **BL-113** | the sprint's adapter env bridge selects by constant name, so a new credential constant is missed silently |
+
+> **Two rows added 2026-08-08 (close-c r1), and the block was never seven.** It read *"the seven
+> from t1a–t3"* and omitted **BL-110** (filed at t1b) and **BL-111** (filed at t2) — **nine were
+> filed in that span**. Both are open, so neither affects clause 2's verdict, which is restated over
+> the corrected population in §The close item 1. **BL-111 was the more consequential omission**: it
+> was absent from §Rows filed *and* from §Ticket set's t2 row, so the only place in this document
+> that knew it existed was §Open for the close item 3 — which names it as the row that consumes
+> that item's answer. The t2 row is corrected in the same commit.
+>
+> **What found it was not the sweep.** Clause 2 reads *this list*, and clause 1's direction 2 reads
+> rows *carrying a DONE section*; an open row missing from the list has neither, so **both
+> directions are blind to it**. It surfaced only because a reviewer read the hands-forward
+> enumeration against the list. That gap is recorded in §The close item 5.
 
 **BL-100 rescoped, not closed.** Heading, cause, scope, fix and Done-when revised under a dated
 *"Rescoped and corrected 2026-08-06 (t1a)"* note, each change marked `[corrected 2026-08-06]` with
@@ -886,7 +901,7 @@ No clause was amended, narrowed, or reported satisfied on a technicality. One is
 | **head-2** — *zero FAIL, no unexplained WARN* | **Satisfied, and now stronger than the clause asks.** 0 FAIL throughout; the five strict-exempt staleness WARNs were named all cycle and are **cleared** by the export boundary: `9 PASS 0 FAIL 0 WARN 7 INFO` |
 | **head-3** — *the milestone-end ritual has run* | **Satisfied.** §7 promotion at close-b (four entries, each read out of its file), export boundary at close-c, this statement |
 | **1** — *every ticket checked against the rows it closes* | **Run, and it found one.** BL-069 read *closed by retirement* in §Ticket set, in §What t2 established and in the harness gate rule, and the backlog row had **no DONE section** — closed in the document, open in the repo, which is the defect this clause exists to catch. The work closed at t2 (harness `f8bbac8`); only the record was missing. Written at close-c and assessed per clause. The reverse direction is clean: the eight rows carrying cycle-dated DONE sections are exactly the eight the document claims. **BL-070 is correctly recorded as *partly***, and t5b/t5c's absent implementation-notes files are assessed at §5 below |
-| **2** — *every row in §Rows filed checked for a DONE section if it closed* | **Satisfied.** 26 rows across three blocks — seven from t1a–t3, seventeen from t4c, two from close-b. Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and **all three carry DONE sections**. The other 23 are open **by design**, not misses |
+| **2** — *every row in §Rows filed checked for a DONE section if it closed* | **Satisfied — restated 2026-08-08 (close-c r1) over a corrected population.** As first run it read 26 rows; §Rows filed omitted **BL-110** and **BL-111**, so the true population is **28** — nine from t1a–t3, seventeen from t4c, two from close-b. Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and **all three carry DONE sections**; the other 25 are open **by design**, not misses. **The verdict is unchanged because both omitted rows are open**, which is luck rather than coverage — see the limit below and §5's second gap |
 | **3** — *§Not established, item by item* | **Satisfied.** Seven items: two struck as resolved mid-cycle (the m09→m10 step-count diagnosis, the multiple-payload question), one partly resolved and correctly annotated as such (the chaos gate's clean-store case), four still open (`[sandbox]` routing, which document first carried the false causal claim, `EDUX_DATABASE_URL`, `milestone-reference.md`). **No unstruck item was found resolved-but-unstruck** — checked by re-reading each against the cycle's committed artifacts, not by trusting the strikethroughs |
 | **4** — *the decision log, for divergence* | **Run as a census, not an observation, and it found a second.** See below |
 | **5** — *§Rules promoted, read out of the two `CLAUDE.md` files* | **Satisfied.** Three at t1a-p, four at close-b. Each of the four was read out of its file **after landing** and the read shown, per §7's own standard, rather than asserted |
@@ -960,14 +975,51 @@ what it did not cover.
 | **BL-134** | the census's seven comment anchors verified, its eight unclassifiable entries hand-classified |
 | **BL-075** | **its flake finally named** at close-b — `RunHelpersTimeoutTest`, a fixed 300 ms inactivity window; the BL-054 guess refuted; second arm blocked on BL-133 |
 | **BL-070** | *partly* — slug convergence discharged, the rest resolves with BL-131 |
-| **nineteen more** | filed this cycle and unimplemented: BL-105, BL-106, BL-108, BL-109, BL-110 (red, tracked), BL-112, BL-113, BL-114–BL-120, BL-122–BL-126, BL-128–BL-130 |
+| **twenty-three more** | filed this cycle and unimplemented: BL-105, BL-106, BL-108, BL-109, BL-110 (red, tracked), **BL-111**, BL-112, BL-113, BL-114–BL-120, BL-122–BL-126, BL-128–BL-130 `[corrected 2026-08-08 (close-c r1) — see the note below]` |
 
-### 5. Two gaps recorded rather than fixed
+> **The hands-forward count corrected 2026-08-08 (close-c r1). It read `nineteen more` over an
+> enumeration of twenty-two, and the enumeration itself was short one row.**
+>
+> **This is carrier 2 of the operational form promoted at this very close** — *a count printed
+> beside an enumeration that contradicts it* — committed **in the close statement**, in the same
+> commit as item 6's observation that the carrier fired seven times during the close's own
+> construction. It is now eight, and this one is not a session artifact: it landed in a committed
+> document. Recorded here rather than quietly repaired.
+>
+> **The set is derived, not hand-corrected**, which is the rule's own operational close (*name the
+> population, derive the number rather than counting by hand, and print the enumeration beside it
+> so the two can disagree in public*):
+>
+> ```
+> population : every row filed this cycle          BL-105..BL-134   = 30
+> minus      : closed this cycle                   BL-107, BL-121, BL-127  = 3   -> 27 open
+> minus      : rows named separately in this table BL-131, BL-132, BL-133, BL-134 = 4
+> remainder  :                                                                     = 23
+> ```
+>
+> BL-075 and BL-070 are also named separately above and are **not** in the population — neither was
+> filed this cycle. **BL-111 was missing from both the count and the enumeration**, which is the
+> defect that matters more than the arithmetic: the close handed forward §Open item 3's question
+> while omitting the row that consumes its answer.
+
+### 5. Three gaps recorded rather than fixed
 
 **§Close criteria does not name the export boundary among its five reads.** close-a found this and
 called it *"a task the ritual owes that its own criteria do not ask for"*. The boundary ran at
 close-c and cleared all five WARNs. **This is recorded as a stated gap in the criteria, not as a
 criteria amendment** — so the next milestone's close does not rediscover it.
+
+**A row filed this cycle and never added to §Rows filed is invisible to *both* directions of this
+sweep, and nothing in §Close criteria closes that gap.** `[recorded 2026-08-08 (close-c r1)]`
+Clause 2 reads §Rows filed, so a row missing from that list is outside its population by
+construction. close-c's first run claimed clause 1's direction 2 covered the gap — **it does not**:
+direction 2 sweeps rows *carrying a DONE section*, and an open row missing from the list has none.
+**Neither direction sees it.** BL-110 and BL-111 were exactly that case, and what found them was a
+reviewer reading the hands-forward enumeration against the list — not the sweep. Both happened to
+be open, so clause 2's verdict survives; **a closed row in the same position would have been missed
+silently**, which is the defect clause 1 exists to catch arriving through the door clause 1 does
+not watch. **Recorded as a stated gap, not a criteria amendment**, on the same footing as the
+export-boundary gap above.
 
 **t5b and t5c produced no implementation-notes file.** `cloudcost/docs/` holds notes for m4-t2
 through m4-t4c and the three unprefixed t1 files, and nothing for t5b or t5c, while §What t3, t4
@@ -989,6 +1041,41 @@ wrong repo while the shell reported success.
 rule. **The frequency is the record, not the instances.** That a rule's own promotion could not be
 written without repeatedly committing the thing it names is information about the rule's weight —
 and it is recordable without pretending uncitable instances are citable.
+
+> **An eighth, 2026-08-08 (close-c r1), and it is not like the other seven.** The hands-forward
+> count in item 4 read *"nineteen more"* over an enumeration of twenty-two that was itself short one
+> row. **It landed in a committed document — this one — not in a packet**, so unlike the seven above
+> it is citable, and the paragraph above was itself a count that the very next reading moved.
+>
+> **The distinction is the point and it cuts against me.** The seven were construction defects in
+> artifacts that do not travel; this one shipped in the close statement of the milestone that
+> promoted the rule, in the same commit as the sentence observing how often the rule had been
+> broken. A rule whose promotion document violates it **in the promotion document** is not thereby
+> refuted — but the frequency stops being a curiosity about packet-writing and becomes evidence
+> about how hard the rule is to keep, which is what §7 promotes rules for.
+
+### 6a. A claim in close-c's packet, corrected — the document did not change, the extraction did
+
+`[recorded 2026-08-08 (close-c r1)]` close-c's packet asserted *"§Close criteria is byte-unchanged.
+**Proved rather than asserted**"* — and printed beneath it a diff reading `20a21 / >`, one line
+added. **A diff showing a change, captioned as proof of no change, unremarked.**
+
+**Established rather than assumed: the document did not change; the extraction boundary did.**
+§Close criteria was the last section of the file at `2806305`, so the `awk` range ran to
+end-of-file. At `b5af7d9` §The close follows it, so the same range now stops at the new `---` and
+captures the blank line before it. Bounded on the section's own closing `Source:` line instead, the
+two are **byte-identical**:
+
+```
+$ diff <(git show 2806305:… | awk '/^## Close criteria/{f=1} f{print} f&&/^aetheris f6fbd82\.`$/{exit}') \
+       <(git show b5af7d9:… | awk '/^## Close criteria/{f=1} f{print} f&&/^aetheris f6fbd82\.`$/{exit}')
+  (no output)
+```
+
+**The claim stands; its evidence did not.** Not one clause was amended, narrowed or reworded — that
+was and is true. What was wrong was offering a diff as its proof without reading the diff, which is
+the same family as the three boundary defects at close-b r1: **an extraction artifact presented as
+evidence.** The honest statement is *content-identical, with the section boundary named*.
 
 ### 7. The sequence from here, unchanged
 

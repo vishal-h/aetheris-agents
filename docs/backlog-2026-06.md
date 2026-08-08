@@ -2227,8 +2227,32 @@ read found one and the assertion passed. What remains is a *durable* fixture, on
 **DO and AWS are untouched by this** — the DO reserved IP is still deleted and the AWS Elastic IP
 is still `m2-milestone.md` §Prereqs 3, pending.
 
+**DONE 2026-08-06 (m4 t2) — by retirement. The DONE section itself is written 2026-08-08 at the
+m4 close, and that gap is this row's second finding.** The work closed at t2; the row was never
+marked, so §Ticket set and §What t2 established both read *closed by retirement* while the row
+read open. **§Close criteria clause 1 caught it** — *"a row closed in the repo and open here, or
+the reverse"* — which is the one thing that clause exists to do, on the one row where it had
+something to find. Assessed per clause of the amended Done-when, verified at harness `288c8ef`:
+
+| Clause | Satisfied by |
+|---|---|
+| *the practice is retired rather than re-fixtured* | the `≥1 orphan` assertion is gone from `../aetheris/scripts/sprint.sh`; `grep` for `orphan candidates` / `expected ≥1` returns nothing |
+| *in its place it asserts … every emitted `type` drawn from `_normalized.CANONICAL_TYPES`, imported rather than restated* | `sprint.sh:3025` — `from _normalized import CANONICAL_TYPES`; membership tested at `:3048`, not restated in shell |
+| *an empty illegible-skip set* | `:3048` computes `outside`, and `:3055` names both the offenders and the canonical set on failure |
+| *a zero-resource inventory reaches a stated not-applicable arm and never a pass* | three arms at `:3071–3075` — `ok` / `warn` (not-applicable, explicitly *"an unknown, not a clean empty account"*, citing BL-098) / `fail` |
+| *mutation posture is owed on **every** arm, not only the failing one* | all three arms mutation-checked at t2, the two failing ones against real artifacts rather than invented fixtures (§What t2 established) |
+| *every live instruction anywhere in either repo directing an operator to create a billable cloud resource is removed; records of what was planted stay intact* | t2's substance census over both repos; re-verified at this close — no live plant instruction in `cloudcost/runbook.md` or `sprint.sh`. The records above are **kept deliberately**: they are history, not instruction |
+
+**Two sentences above are superseded by this closure and are left standing as record**, per
+decision 7: *"the Linode leg **reverts to red** and this row stays armed"* and *"What remains is a
+*durable* fixture, on any leg."* Both were true when written and were made false by decision 12 —
+there is no durable fixture because there is no fixture; the assertion the row was armed on no
+longer exists. **No cloud resource was ever planted for this cycle**, and none is owed.
+
 `Source: m2-cloudcost ratification, 2026-08-01; m1 loose end (reserved IP) closed 2026-07-30;
-m3-cloudcost t3 live run 2026-08-05 (Linode leg green once, reverted on plant deletion).`
+m3-cloudcost t3 live run 2026-08-05 (Linode leg green once, reverted on plant deletion). Retired
+at m4 t2, 2026-08-06 (harness f8bbac8). DONE section written at m4 close-c, 2026-08-08, after
+§Close criteria clause 1 found the row unmarked.`
 
 ---
 

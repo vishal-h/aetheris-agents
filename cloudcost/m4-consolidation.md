@@ -141,7 +141,7 @@ ticket; the count states how many commits that is.
 |---|---|---|---|
 | **t1a** | Correct the false `2>&1` causal claim in every standing carrier | BL-100 rescoped, not closed; filed BL-105–BL-109 | **Closed** — agents `6a2c012^..13eac9f` (5 commits), harness `9c676ef^..e6687f1` (2) |
 | **t1a-p** | §7 promotion of the cycle's findings | none — the promotion is a `CLAUDE.md` edit, not a row | **Closed** — harness `e98448a^..f6fbd82` (2 commits), agents `0371d75^..009f666` (2) |
-| **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria; **no row closed** — BL-102 is *answered*, not closed | **Live** — created at `4b79d8f`, amended by every ticket since and by this close. It closes with the cycle at close-c, not before: the close's own edits land in it |
+| **t1a-c** | This document | BL-102, answered for this cycle by §Close criteria; **no row closed** — BL-102 is *answered*, not closed | **Closed** — agents `4b79d8f^..` this commit. Created at `4b79d8f`, amended by every ticket since, and closed at close-c by the commit carrying §The close below. Its deliverable is this document and the document is complete |
 | **t1b** | One extraction mechanism for `--json` output; repair the chaos gate | BL-100 **closed**, BL-107 **closed**; filed BL-110 | **Closed** — see §What this cycle established → *What t1b established* |
 | **t2** | Retire the plant practice; rule-legibility assertion | BL-069 **closed by retirement**; BL-074 and BL-044 appended | **Closed** — see §What this cycle established → *What t2 established* |
 | **t3** | Hermetic allowlist inversion; credential-grep generalisation | BL-104 **closed**, BL-099 **closed**; BL-044 appended; filed BL-112, BL-113 | **Closed** — see §What this cycle established → *What t3 established* |
@@ -350,6 +350,13 @@ t1b → t2 → t3 → **t4a → t4b → t4c** → **t5a → t5b → t5c** → **
 > `Closed`, `not started`, `you are reading it`, and `In review (r2)`. The t4b r2 note above
 > established the standard being followed here: inventing a state form was the right call, and the
 > only thing wrong was the claim not to have invented one.
+>
+> **`Live` resolved at close-c, 2026-08-08 — it was an interim form and is now spent**, the same
+> treatment `In review (r2)` got. close-b set it because the document was still being amended and
+> could not read `Closed` while close-c was still to edit it. **close-c is that edit**, so the row
+> now reads `Closed` with its commit range, and the column is back to the three durable forms plus
+> two retired interim ones. Neither `Live` nor `In review (r2)` should be read as vocabulary
+> available to a future cycle without the same declaration.
 
 **The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074
 tells you whether the next adapter is mechanical on the agents side; BL-105 and BL-106 tell you

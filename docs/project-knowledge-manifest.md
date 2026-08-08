@@ -31,12 +31,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `7a7b7ec` | 2026-08-02 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `13fc8c4` | 2026-08-05 |
+| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `eae14d4` | 2026-08-07 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `080ad24` | 2026-08-08 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `4d98ec2` | 2026-08-05 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `de71e2b` | 2026-08-05 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `1743e75` | 2026-08-05 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `384656c` | 2026-08-08 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `288c8ef` | 2026-08-08 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
@@ -46,9 +46,9 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `0a0439f` | 2026-07-20 |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `aaf0f9a` | 2026-08-05 |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `265d336` | 2026-08-03 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-07-30 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-08 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
@@ -322,3 +322,51 @@ manifest's own commit is stale the moment it is committed.)
 
 Previous export: 2026-08-04 (cloudcost-in-Rig batch close — two rows advanced, re-pinned once
 within the boundary).
+
+---
+
+**Export boundary — 2026-08-08, m4-cloudcost close (the consolidation cycle).** **Five rows
+advanced**, one more than m3's four, and the fifth is the interesting one:
+
+- `aetheris-agents--CLAUDE.md` (`13fc8c4`→`080ad24`) and `aetheris--CLAUDE.md`
+  (`1743e75`→`288c8ef`) — the cycle's §7 promotions, landed at close-b. Harness: a **third
+  operational form** of the truth-maker rule (*a count is a claim about a population*) plus two
+  widenings of Silent-wrong-answer. Agents: the packet rule's sprint-output sibling, and the
+  **repos rule widened to bind every session**, which is what made rule placement editorial.
+- `backlog-2026-06.md` (`de71e2b`→`384656c`) — BL-105..BL-113 and BL-114..BL-134 filed across the
+  cycle, eight DONE sections, and close-c's BL-069 correction.
+- `cloudcost--milestone.md` (`7a7b7ec`→`eae14d4`) — **§Contracts C1–C15**, written at t4b from the
+  t4a census. This row had not advanced since 2026-08-02 and carries the cycle's largest single
+  addition to a tracked document.
+- `methodology--milestone-methodology.md` (`0a0439f`→`aaf0f9a`) — §7's promotion-verification step
+  and the census-the-prior-claims clause, landed 2026-08-05. **This row was stale across the whole
+  m4 cycle and was not m4's edit**; it is carried here because an export boundary re-pins the
+  manifest against the tree, not against one milestone's diff.
+
+**25 rows: 25 carried, none added, none dropped.** The other 19 data rows are unchanged.
+
+**Mirror-pair check ran first**, per the m3 precedent: `docs/methodology/triad-loop.md` (canonical,
+harness) and `docs/triad-loop.md` (mirror, agents) are byte-identical — 188 lines each, `diff -q`
+clean — so no canonical sync was owed and the harness took no tracked write at this boundary.
+`drift_check` still has no byte-identity check between mirrors; the diff remains the only thing
+covering that class.
+
+**Ordering, which this cycle had a name for.** The boundary is the **last content operation**:
+`backlog-2026-06.md` and both `CLAUDE.md`s settled in earlier commits, and the manifest commits
+alone (BL-034). The close statement in `cloudcost/m4-consolidation.md` lands *after* this commit
+and cannot restale it, because that file is **not manifest-tracked** — re-derived at close-c's G3
+rather than inherited. This is the BL-034 ordering hazard in its milestone-close form, which is
+why check 8's meaningful run is the post-commit one.
+
+**On the manifest tracking itself (close-c G2).** Row 25 is `docs/project-knowledge-manifest.md`,
+so the manifest **is** in the export set — but its commit column is the literal `_(this export)_`,
+and `drift_check`'s check 8 requires a backticked hex hash to parse a row at all
+(`scripts/drift_check.py:580–584`, with the skip stated in a comment). So the self-row is exempt
+by construction and the regen cannot restale itself. The hazard was real to check; the mechanism
+that answers it already existed.
+
+**Upload half is the human's**, unchanged: remove-all then upload-all against the full 25-row set,
+never a diff of the five movers — check 8 cannot see a partial upload, and that blindness is what
+the procedure covers.
+
+Previous export: 2026-08-05 (m3-cloudcost close — four rows advanced).

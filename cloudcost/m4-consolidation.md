@@ -580,6 +580,15 @@ failed — zero of 118 recorded resource names bite — with the residual record
 
 **BL-074 closed at t4c**, all five Done-when clauses assessed per clause in the row's DONE section.
 
+**Rows filed at t5b, 2026-08-07** — both from t5b's step-1 gate stop, both open by design.
+`[block added 2026-08-08 (close-c r2) — §Ticket set's t5b row has recorded these since t5b; this
+section never carried them.]`
+
+| Row | Kind | Subject |
+|---|---|---|
+| **BL-131** | decision | decide whether the N>1 compose path is a supported surface |
+| **BL-132** | method | establish, per contract, whether the behaviour it states is reachable from the live pipeline |
+
 **Rows filed at close-b, 2026-08-08** — both from close-a's read, both open by design.
 
 | Row | Kind | Subject |
@@ -901,7 +910,7 @@ No clause was amended, narrowed, or reported satisfied on a technicality. One is
 | **head-2** — *zero FAIL, no unexplained WARN* | **Satisfied, and now stronger than the clause asks.** 0 FAIL throughout; the five strict-exempt staleness WARNs were named all cycle and are **cleared** by the export boundary: `9 PASS 0 FAIL 0 WARN 7 INFO` |
 | **head-3** — *the milestone-end ritual has run* | **Satisfied.** §7 promotion at close-b (four entries, each read out of its file), export boundary at close-c, this statement |
 | **1** — *every ticket checked against the rows it closes* | **Run, and it found one.** BL-069 read *closed by retirement* in §Ticket set, in §What t2 established and in the harness gate rule, and the backlog row had **no DONE section** — closed in the document, open in the repo, which is the defect this clause exists to catch. The work closed at t2 (harness `f8bbac8`); only the record was missing. Written at close-c and assessed per clause. The reverse direction is clean: the eight rows carrying cycle-dated DONE sections are exactly the eight the document claims. **BL-070 is correctly recorded as *partly***, and t5b/t5c's absent implementation-notes files are assessed at §5 below |
-| **2** — *every row in §Rows filed checked for a DONE section if it closed* | **Satisfied — restated 2026-08-08 (close-c r1) over a corrected population.** As first run it read 26 rows; §Rows filed omitted **BL-110** and **BL-111**, so the true population is **28** — nine from t1a–t3, seventeen from t4c, two from close-b. Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and **all three carry DONE sections**; the other 25 are open **by design**, not misses. **The verdict is unchanged because both omitted rows are open**, which is luck rather than coverage — see the limit below and §5's second gap |
+| **2** — *every row in §Rows filed checked for a DONE section if it closed* | **Satisfied — restated twice, and the population is now derived rather than recounted.** As first run it read **26**; r1 found §Rows filed omitting **BL-110** and **BL-111** and restated it as **28**; **r2 found two more, BL-131 and BL-132**, whose t5b block did not exist. The population is not counted by hand at all now — it is item 4's derivation, *every row filed this cycle, BL-105..BL-134* = **30**, in **four** blocks: nine from t1a–t3, seventeen from t4c, **two from t5b**, two from close-b. Three closed (BL-107 at t1b, BL-121 and BL-127 at t5b) and **all three carry DONE sections**; the other 27 are open **by design**, not misses. **The verdict never changed, because all four omitted rows are open** — see the limit below, which is now the finding rather than the caveat |
 | **3** — *§Not established, item by item* | **Satisfied.** Seven items: two struck as resolved mid-cycle (the m09→m10 step-count diagnosis, the multiple-payload question), one partly resolved and correctly annotated as such (the chaos gate's clean-store case), four still open (`[sandbox]` routing, which document first carried the false causal claim, `EDUX_DATABASE_URL`, `milestone-reference.md`). **No unstruck item was found resolved-but-unstruck** — checked by re-reading each against the cycle's committed artifacts, not by trusting the strikethroughs |
 | **4** — *the decision log, for divergence* | **Run as a census, not an observation, and it found a second.** See below |
 | **5** — *§Rules promoted, read out of the two `CLAUDE.md` files* | **Satisfied.** Three at t1a-p, four at close-b. Each of the four was read out of its file **after landing** and the read shown, per §7's own standard, rather than asserted |
@@ -1010,16 +1019,28 @@ close-c and cleared all five WARNs. **This is recorded as a stated gap in the cr
 criteria amendment** — so the next milestone's close does not rediscover it.
 
 **A row filed this cycle and never added to §Rows filed is invisible to *both* directions of this
-sweep, and nothing in §Close criteria closes that gap.** `[recorded 2026-08-08 (close-c r1)]`
-Clause 2 reads §Rows filed, so a row missing from that list is outside its population by
-construction. close-c's first run claimed clause 1's direction 2 covered the gap — **it does not**:
-direction 2 sweeps rows *carrying a DONE section*, and an open row missing from the list has none.
-**Neither direction sees it.** BL-110 and BL-111 were exactly that case, and what found them was a
-reviewer reading the hands-forward enumeration against the list — not the sweep. Both happened to
-be open, so clause 2's verdict survives; **a closed row in the same position would have been missed
-silently**, which is the defect clause 1 exists to catch arriving through the door clause 1 does
-not watch. **Recorded as a stated gap, not a criteria amendment**, on the same footing as the
-export-boundary gap above.
+sweep, and nothing in §Close criteria closes that gap.** `[recorded 2026-08-08 (close-c r1);
+strengthened at r2]` Clause 2 reads §Rows filed, so a row missing from that list is outside its
+population by construction. close-c's first run claimed clause 1's direction 2 covered the gap —
+**it does not**: direction 2 sweeps rows *carrying a DONE section*, and an open row missing from
+the list has none. **Neither direction sees it.**
+
+**Four rows were in exactly that position, not two, and all four were open.** BL-110 and BL-111
+(t1a–t3's block, short two) were found at r1; **BL-131 and BL-132 were found at r2, and their t5b
+block did not exist at all** — so §Rows filed had three blocks where the cycle had four. *Luck
+rather than coverage* was the right phrase when it was two; **at four it is the finding rather than
+the caveat**, because a single closed row in any of those positions would have been missed
+silently, which is the defect clause 1 exists to catch arriving through the door clause 1 does not
+watch.
+
+**And this gap's own first application demonstrated it.** The commit that recorded the gap missed
+two more rows while recording it. **Both times what found them was a reader comparing one section
+against another** — the hands-forward enumeration against the list at r1, and item 4's derived
+population against clause 2's stated one at r2 — **never either direction of the sweep**. The
+mechanism at r2 is worth naming because it differs from r1's: a population was *derived* in one
+section and *stated* in another, two sections apart in the same document, and nothing checked them
+against each other. **Recorded as a stated gap, not a criteria amendment**, on the same footing as
+the export-boundary gap above.
 
 **t5b and t5c produced no implementation-notes file.** `cloudcost/docs/` holds notes for m4-t2
 through m4-t4c and the three unprefixed t1 files, and nothing for t5b or t5c, while §What t3, t4
@@ -1053,6 +1074,12 @@ and it is recordable without pretending uncitable instances are citable.
 > broken. A rule whose promotion document violates it **in the promotion document** is not thereby
 > refuted — but the frequency stops being a curiosity about packet-writing and becomes evidence
 > about how hard the rule is to keep, which is what §7 promotes rules for.
+>
+> **And a ninth, in the correction to the eighth** (close-c r2): r1 restated clause 2's population
+> as **28** two sections after item 4 derived the cycle's filings as **30**, and nothing checked the
+> stated population against the derived one — the same carrier, in the commit written to correct
+> it. Its population is the third distinguished here: not a packet artifact and not a shipped count,
+> but **a document contradicting a figure it derives elsewhere in itself**.
 
 ### 6a. A claim in close-c's packet, corrected — the document did not change, the extraction did
 

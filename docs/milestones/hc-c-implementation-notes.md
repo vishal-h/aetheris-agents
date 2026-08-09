@@ -34,8 +34,16 @@ carried across a ticket boundary. The header line and hc-c's row are updated; hc
 rows are untouched.
 
 **The status line was written after the gates ran, not before.** *Closed* is a claim about the
-pre-authorisation's four conditions, one of which is the gates re-running clean — so writing it
-first would have been a claim landing in the same commit as the thing that makes it true.
+pre-authorisation's conditions, one of which is the gates re-running clean — so writing it first
+would have been a claim landing in the same commit as the thing that makes it true.
+
+**And r1's fix left the document contradicting itself (r2, F7).** The header said hc-b was closed
+while §Ticket set's `hc-b` row still said *In review* — F3 scoped the edit to the header and hc-c's
+row, and I applied that scope exactly, including its instruction not to touch neighbouring rows.
+The scope was wrong and the reviewer owns that; what this ticket owns is that **applying a scope
+faithfully is not the same as checking what it left behind**, and no census of the document's
+status surfaces was run until r2 asked for one. It found **two** stale surfaces, not one — hc-b's
+row, and **hc-c's own row asserting closure at r1**, which r2's opening denies. See §8b.
 
 ---
 
@@ -243,7 +251,130 @@ than allowed to read as completeness, and the change is announced in the operato
 
 ---
 
-## 8. For hc-d and hc-e
+## 8. Round 2 — what r1 introduced or left
+
+### 8a. The r1 done-check published a command that did not run (F6)
+
+The r1 packet's §1e printed
+`python3: can't open file '…/aetheris/scripts/drift_check.py': [Errno 2] No such file or directory`
+and, beneath it, `exit=0` and *"the same three WARNs"*. Three defects in one block:
+
+1. **Command binding.** The packet's build script had done `cd …/aetheris` for an earlier section,
+   and the `cd` persisted. `drift_check.py` lives **only** at
+   `aetheris-agents/scripts/drift_check.py` — located by `find`, not assumed. This is the
+   persisting-`cd` carrier of **Silent-wrong-answer** named in the harness `CLAUDE.md`, in the
+   packet-assembly step of the very ticket that quoted it.
+2. **The exit code belonged to nothing.** `exit=0` was a literal I echoed, not a captured status.
+   The real code is **2** — reproduced: `python3 <missing file>` exits 2. A packet that prints a
+   failure and a contradicting exit code asserts neither.
+3. **A count over a capture that was never made.** *"The same three"* quantified a comparison the
+   published command had not performed.
+
+**One correction to the finding, offered rather than pressed.** F6 says the result was *"carried
+from r0"*. It was not: a correctly-bound `drift_check --strict` **was** run post-commit at r1 and
+reported `current=3d5a8da` / `current=1b09b23`, hashes that do not appear in r0's output (`1f82118`
+/ `e8889c3`). But that invocation lived only in the session, and **the packet is the artifact that
+travels** — so as published the claim had no truth-maker, which is F6's substance and it stands.
+
+**F6(d): does not fire.** Re-run at r2, bound explicitly, exit code captured from the invocation
+itself: **0 FAIL, 3 WARN, exit 0**, and the WARN set is identical in count, membership and hashes
+to what r1 asserted. Recorded as *not firing* rather than left silent.
+
+### 8b. The status-surface census (F7(c))
+
+**Population: every place `hc-consolidation.md` states an `hc-*` ticket's state.** Derived by
+matching state vocabulary — `Status:`, `closed`/`Closed`, `In review`, `Not started`,
+`In progress` — over the whole file, then classifying each of the 26 hits by hand. **Seven are
+ticket-state surfaces; the other 19 are about m4, backlog rows, decisions, or generic prose.**
+
+| # | Surface | State at r2 |
+|---|---|---|
+| 1 | The header `**Status:**` line | updated at r1 (F3) |
+| 2 | §Ticket set, `hc-a` row | `**Closed.**` — unchanged, correct |
+| 3 | §Ticket set, `hc-b` row | **was `In review`** — the contradiction F7 found; now closed |
+| 4 | §Ticket set, `hc-c` row | **was `Closed … at r1`** — premature; now `at r2` |
+| 5 | §Ticket set, `hc-d` row | `Not started` — correct, untouched |
+| 6 | §Ticket set, `hc-e` row | `Not started` — correct, untouched |
+| 7 | §hc-a's opening prose, *"Closed. Read-only, no commit, by design."* | correct, untouched. **A second surface for hc-a** — the only ticket whose state is stated twice |
+
+**Two surfaces were stale, not one.** F7 named the `hc-b` row; the census also caught **hc-c's own
+row asserting closure at r1**, which the reviewer's round-2 opening explicitly denies. A census
+that had only checked the finding's own target would have left the document asserting a closure
+that did not happen.
+
+**One adjacent surface, in scope to name and not to change.** §Rows filed opens *"Empty at hc-b"*.
+That is a claim about the section, not a ticket's state, and it stays true: hc-c filed no backlog
+row (BL-105 and BL-106 were **closed**, and closure is recorded on the rows themselves, per §Close
+criteria clause 2). Named here so the next reader does not have to re-derive that it was checked.
+
+### 8c. The extended sweep (F8)
+
+**The first term list was incomplete, and its own sibling analysis proved it before any reviewer
+did.** r1's four terms were all spellings of `aetheris`, while r1's sprint.sh analysis argued —
+correctly, and generally — that `mix run --eval` boots the app and is therefore in scope. That
+term was never searched for in the other 38 files.
+
+**The extended list is derived from what boots the app**, not from the finding's suggestion:
+`route_logging_to_stderr/0` runs in `Aetheris.Application.start/2`, so anything that starts the
+`:aetheris` OTP application counts — `mix aetheris`, `mix run`, `mix test`, `mix eval`,
+`iex -S mix`, `./aetheris`, and the argv constructions `["mix", …]`, `System.cmd("mix", …)`,
+`Command::new("mix")`, `subprocess … "mix"`.
+
+```
+OLD population (r1, four terms) = 39
+NEW population (r2, extended)   = 48
+ADDED by the extension          =  9
+LOST by the extension           =  0   (the new list is a superset — checked, not assumed)
+```
+
+**The nine, per file:**
+
+| File | Kind |
+|---|---|
+| `../aetheris/test/aetheris/execution/fork_test.exs` | **prose** — a comment about `mix test --include requires_real_provider` |
+| `../aetheris/test/aetheris/integration/codebase_qa_test.exs` | **prose** — a docstring `mix test --include integration` |
+| `../aetheris/test/aetheris/integration/skill_extraction_test.exs` | **prose** — a docstring *"Plain `mix test` coverage…"* |
+| `../aetheris/test/aetheris/worker/client_internet_test.exs` | **prose** — a comment about `mix test --include requires_worker` |
+| `provenance/tests/test_search_agent.py` | **consumer** — `["mix", "run", "--eval", …]`, `capture_output=True` |
+| `provenance/tests/test_zip_archaeologist.py` | **consumer** — same |
+| `provenance/tests/test_zip_orchestrator.py` | **consumer** — same |
+| `provenance/tests/test_migration_agent.py` | **consumer** — same |
+| `provenance/tests/test_classification_orchestrator.py` | **consumer** — same |
+
+**None is broken, and the change helps them.** Bound to those five files by name, not by a glob:
+**4** stdout reads, every one `json.loads(result.stdout.strip())` — a **whole-stdout** parse that
+any boot line on stdout would have broken; and **3** stderr text assertions
+(`"1 files pending migration"`, `"22 files to classify"`, `"1 zips pending"`), substring tests that
+extra stderr content cannot falsify. **All 41 tests pass on the changed harness** (4 + 37 across
+the five files). The boot path was confirmed to be real rather than inferred from a fast runtime:
+running one test's exact command directly gives **stdout 0 bytes** and three
+`[Aetheris.Application]` lines on stderr, in 815 ms.
+
+> **A count error of my own, in this section, corrected rather than quietly fixed.** My first pass
+> counted stdout/stderr reads with `grep -c … test_*.py`, which globs **every** test file in
+> `provenance/tests/`, not the five under discussion — 21 and 18 against an enumeration showing 4
+> and 11. That is *a count printed beside an enumeration that contradicts it*, the promoted
+> carrier, produced while discharging a finding about population discipline. The counts above are
+> bound to the five files named explicitly.
+
+### 8d. The negative check now has a positive control (F9)
+
+r1 asserted hc-d's and hc-e's rows were untouched with a `grep -c … -> 0`. A zero from a malformed
+pattern is indistinguishable from a zero meaning absence — the shape the step-1 gate's own positive
+control exists to prevent, applied to a `grep` this time.
+
+```
+POSITIVE CONTROL — same pattern against hc-c (a row the diff is known to change):  2
+NEGATIVE          — the pattern against hc-d / hc-e:                               0
+```
+
+The control returns 2 (the `-` and `+` of hc-c's row, both printed), so the pattern matches when
+its target is present and the 0 reads as absence. **hc-d's and hc-e's rows are untouched**, now on
+evidence rather than on a bare zero.
+
+---
+
+## 9. For hc-d and hc-e
 
 - **`mix test` is green** — 972 tests, 0 failures. BL-075 is not red in this environment today.
   Recorded in both directions per the gate rule: a gate that silently heals trains the same reflex

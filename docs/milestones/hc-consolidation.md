@@ -466,11 +466,16 @@ disposition. Read the wording there.
 Five tickets. Per **R12**, anatomy is authored here before the ticket opens; per **R13**, a slot
 that cannot yet be authored is marked with its resolver rather than left blank or guessed.
 
+> **Five is the planned set, and it is not a census of what ran.** A sixth ticket, **hc-b2**,
+> opened and closed on 2026-08-08 to repair hc-c's specification, and it has no row and no
+> subsection here. That is a live R12 gap; it is recorded at **§Not established item 7** rather
+> than papered over by a row written after the fact. `[added 2026-08-09 (hc-c r2, F7(b)).]`
+
 | | Scope | State |
 |---|---|---|
 | **hc-a** | The scoping read | **Closed.** Produced no repo artifact by design |
-| **hc-b** | This document, and I0 — the harness copy of the repos rule | **In review** |
-| **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at r1. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents `1f82118`+, harness `e8889c3` |
+| **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
+| **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
 | **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | Not started |
 | **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | Not started |
 
@@ -944,9 +949,46 @@ Carried forward rather than resolved. Each is a question this round opens and ha
 
    **What the sweep cannot reach**, and therefore what stays open: an operator's own shell
    pipeline or ad-hoc command; any consumer outside these two repos; and any invocation whose
-   spelling none of the four search terms matched. **The sweep is clean, not exhaustive**, and
+   spelling none of the search terms matched. **The sweep is clean, not exhaustive**, and
    the distinction is recorded rather than allowed to read as completeness. The mitigation is
    that the change is announced in the operator-facing runbook rather than only in the backlog.
+
+   > **`[amended 2026-08-09 (hc-c r2, F8). The first term list was found incomplete — by this
+   > entry's own sibling analysis, before any reviewer read it.]`** The four terms above were all
+   > spellings of `aetheris`, while the sprint.sh analysis in the same sweep already argued that
+   > **`mix run --eval` boots the app and is therefore in scope** — a term the file-level sweep
+   > never searched for. So the residue sentence was written as a hypothetical about a gap the
+   > work had already demonstrated. **It is not left reading as though it anticipated it.**
+   >
+   > **The terms are now derived from what boots the app**, which is the property that matters
+   > (`route_logging_to_stderr/0` runs in `Aetheris.Application.start/2`): `mix aetheris`,
+   > `mix run`, `mix test`, `mix eval`, `iex -S mix`, `./aetheris`, and the argv constructions
+   > `["mix", …]`, `System.cmd("mix", …)`, `Command::new("mix")`, `subprocess … "mix"`.
+   >
+   > **Population 39 → 48; nine files the first list missed**, enumerated with the old beside the
+   > new in `docs/milestones/hc-c-implementation-notes.md` §8c. **Four are prose** (harness `.exs`
+   > tests whose comments mention `mix test`). **Five are real consumers** — the provenance
+   > pytest suites, which spawn `["mix", "run", "--eval", …]` with `capture_output=True`. **None
+   > is broken; the change helps them**: their four stdout reads are
+   > `json.loads(result.stdout.strip())`, whole-stdout parses that boot output on stdout would
+   > have broken, and their three stderr assertions are substring tests that more stderr content
+   > cannot falsify. All 41 tests pass on the changed harness.
+   >
+   > **The residue is unchanged in kind and smaller in size**: an operator's own pipeline, and
+   > anything outside these two repos. Still clean, still not exhaustive.
+
+7. **hc-b2's §6 anatomy was never written into this document — an R12 gap, recorded rather than
+   back-filled.** R12 requires a ticket's anatomy here **before that ticket opens**. hc-b2 opened
+   and closed on 2026-08-08 (agents `6c61393`) and appears in this document only as six source
+   citations; §Ticket set has **no `hc-b2` row and no `### hc-b2` subsection** — established by
+   search, not assumed.
+
+   **Why it is recorded and not fixed here.** Authoring the anatomy now would place it *after* the
+   ticket closed, which is the one thing R12 exists to prevent, and would make the document assert
+   a sequence that did not happen. Anatomy is also the reviewer's to author (decision 11, R12), not
+   claude-code's. **So the gap is named, and the choice of remedy — a row authored by the reviewer,
+   or a ruling that a mid-round repair ticket needs none — is left to whoever takes it up.**
+   Whichever way it goes, `Five tickets.` above needs revisiting with it.
 
 ---
 

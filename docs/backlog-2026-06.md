@@ -6138,6 +6138,35 @@ or the contract states that consumers must scan for the last parsing JSON object
 consumer does so; Rig's fork path is verified unbroken either way; and the mutation posture is
 recorded against a run whose store emits boot output and one whose store does not.
 
+**DONE 2026-08-09 (hc-c).** Closed with BL-106 as one contract. The arm taken is the first of
+the Done-when's two — *the payload moves to a stream the Logger does not share* — implemented by
+moving **Logger**, not the payload: stdout is the payload stream, stderr the diagnostic stream.
+Moving the payload instead would have broken Rig, which reads stdout.
+
+Applied on the boot path (`Aetheris.Application.route_logging_to_stderr/0`), not in
+`config/runtime.exs`, because config does not reach the entry points that matter: `mix aetheris`
+never runs `app.start`, so the *running* handler keeps writing to stdout however the file is set,
+and an escript never evaluates `runtime.exs`. Found by capture — the handler's config and its
+actual destination disagreed under `mix aetheris`, which is why the fix is not a config line.
+`:logger.update_handler_config/3` cannot do it either (`:illegal_config_change` on a live
+`logger_std_h`); the handler is removed and re-installed, and only when it is still the stock
+stdout one, so a file handler or an operator's own destination is never overwritten.
+
+**Mutation posture, both store conditions the row names.** Noisy store (default env,
+`sweep_on_start: true`, two resumable checkpoints): stdout = **1** line, parses; stderr = 3 lines.
+Quiet store (`MIX_ENV=test` — `sweep_on_start: false`, `:memory:` db, the toggle this row's
+constructibility note anticipated): stdout = **1** line, parses; stderr = **0** lines. The broken
+state was observed on this same tree before the fix: the row's own demonstration command emitted
+**4** non-blank stdout lines, 3 of which did not parse.
+
+**The third arm hc-a proposed — suppress boot logging on the boot path — was considered and not
+taken.** It removes only the boot lines; any log line emitted during a run still lands on the
+payload stream, so it does not deliver *"separable by a consumer that does not have to know what
+the noise looks like"*, and it costs observability to boot.
+
+**Reach, unchanged and restated honestly:** `mix` compile noise is a different emitter and still
+goes to stdout on a run that recompiles. The Done-when is about Logger, and Logger is what moved.
+
 `Source: t1a, 2026-08-06 — established by the stdout/stderr split above; BL-100's `2>&1` diagnosis
 corrected in the same round. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
 
@@ -6185,6 +6214,41 @@ achievable.
 the run id and a real status; the human path is unchanged; Rig's fork error path is migrated or
 verified still correct; and the mutation posture is recorded — a genuinely failing run must produce
 parseable output naming the failure.
+
+**DONE 2026-08-09 (hc-c).** Closed with BL-105 as one contract. `Formatter.print({:error, …}, :json)`
+now emits a document on stdout beside the unchanged prose on stderr, and the terminal run outcomes
+carry a structured detail so the document can name the run: `handle_run_status/5`'s `failed` and
+`cancelled` branches and `Run.await_orb/1`'s failed branch return
+`%{run_id | orb_id, status, error}` instead of a bare string. A failure that is *not* a run outcome
+stays a string and renders `{"status":"error","error":"…"}` with **no `run_id`** — there is no run
+to name, and that absence is load-bearing (see the Rig note below). The human path, the stderr
+prose and the exit code are unchanged.
+
+**Mutation posture: a genuinely failing run, observed.** `mix aetheris --json run
+agents/ollama_smoke.exs` against an Ollama that cannot load the model emitted
+`{"error":"run ollama-9EuU5w failed","status":"failed","run_id":"ollama-9EuU5w"}` on stdout. The
+broken state was observed on the same tree minutes earlier: the same failing run emitted **no JSON
+at all**. Three unit tests were added and mutation-checked — with the `:json` error clause removed,
+the two payload-asserting tests fail and the human-path test correctly stays green.
+
+**Rig's fork error path is verified still correct, not migrated** — the option this row's Done-when
+allows. `read_first_run_id` returns the *first* stdout line with a string `run_id`, and the
+fork-start line is written before `await_fork/1` is called (`fork.ex`, `run_with_step/4`), so an
+error document carrying the same `run_id` can only follow it. A fork that never starts yields a
+bare-string error, hence no `run_id` key, hence `None` and the stderr path — exercised live
+(`--step` with no matching `step_complete` → `{"error":"failed to build fork config:
+:step_not_found","status":"error"}` on stdout, prose on stderr). Rig's own 7 tests pass unchanged,
+including `read_first_run_id_none_on_eof_without_a_run_id`, which already pinned `{"status":"error"}`
+as a no-`run_id` line. The starts-then-fails case is covered by the harness's own
+`fork_test.exs` test of that name.
+
+**Not taken here: BL-112.** Its row says the UTF-8 choice "belongs with BL-105/BL-106". It is a
+different defect (latin1 fallback corrupting payload bytes) and outside hc-c's scope, which is
+these two rows' Done-whens and no `--json` schema beyond them. Left filed.
+
+**The exit code is still 0 on a failed `mix aetheris` run** — `Mix.Tasks.Aetheris.run/1` discards
+`Aetheris.CLI.run/1`'s code. That is **BL-044**, R3's question for hc-d, and is deliberately not
+touched here. It is also why a real status word in the payload is worth having.
 
 `Source: t1a, 2026-08-06. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`
 

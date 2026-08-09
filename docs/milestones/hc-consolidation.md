@@ -387,7 +387,7 @@ disposition. Read the wording there.
 | 10 | A milestone-named document is a closed record **if a current equivalent exists** — established, never inferred from the filename | **carries** |
 | 11 | Content is authored by the reviewer; formatting belongs to the destination file | **carries** — R12 names it |
 | 12 | No planted cloud resources, on any provider | **carries, as a negative constraint** (R9) |
-| 13 | Payload extraction, not stream splitting | **under review** (R6); resolver is R5 |
+| 13 | Payload extraction, not stream splitting | **carries, not overturned** — resolved at hc-c, 2026-08-09; see the note below the table |
 | 14 | The class is every `jq`-over-`--json` read, not the `.status` reads alone; one shared extraction mechanism | **carries** — hc-c's contract is this |
 | 15 | BL-099's credential grep is written so covering a second file is configuration, not a rewrite | **carries as amended** — refuted narrowly by R11: the array is configuration, the guard is not |
 | 16 | The eduloka status extraction is out of scope | **lapsed** with m4's scope; R10 re-decides freshly |
@@ -433,6 +433,31 @@ disposition. Read the wording there.
 > listed above as *firing*, not merely as carried — and, with the correction above, the third in
 > this document's own lineage.
 > `Source: hc-b, 2026-08-08, against cloudcost/m4-consolidation.md §Ratified decisions at agents 8490362.`
+
+> **Decision 13's disposition, recorded 2026-08-09 (hc-c). R6 asked for one of two outcomes and
+> this is the second: the round did not overturn it.**
+>
+> Decision 13 reads *"payload extraction, not stream splitting, **for the sprint's `--json`
+> reads**"* (`cloudcost/m4-consolidation.md` §Ratified decisions, row 13). Its subject is what the
+> sprint does when it reads, and **hc-c changed nothing there**: `sprint.sh` captures with `2>&1`
+> and reads through BL-100/t1b's backward-scanning `json_read` helper, both untouched by this
+> ticket.
+>
+> What hc-c changed is where the *harness emits*: log output moved off stdout, so stdout carries
+> the payload alone. That is not the "stream splitting" decision 13 was contrasted with — that
+> phrase named a **capture-side** choice (stop merging with `2>&1` and read stdout alone), which
+> BL-105's own table scores as insufficient by itself. Payload extraction remains the contract
+> the sprint reads by; the harness merely stopped contaminating the stream it reads from.
+>
+> **And decision 13's own unestablished clause is now established.** It ended *"whether it sufficed
+> in an earlier era depends on `[sandbox]` routing, which is unestablished"* — §Not established
+> item 1, resolved above: they route to stderr.
+>
+> **R11's guard was therefore evaluated, not ignored.** Its condition is a stream split at the
+> capture; none happened, so the finding does not fire. Checked rather than argued: the guard's own
+> predicate, `[[ -s "$cc_file" ]] && grep -q run_id "$cc_file"`, was run verbatim against a real
+> merged `2>&1` capture taken from the changed harness and **passes** — the payload, and its
+> `run_id`, are still in the merged file. `sprint.sh` is consequently **not** in hc-c's Touches.
 
 ---
 
@@ -846,6 +871,18 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    whether `[sandbox]` lines go to stdout or stderr has never been observed. **R5 makes hc-c's
    step-1 gate its resolver**, and every downstream choice in this round — the arm, BL-106's
    `run_id` item, decision 13's fate, R11's guard — has been waiting on it.
+
+   > **`[RESOLVED 2026-08-09 (hc-c), by observation.]` They route to stderr.** The gate ran
+   > `mix aetheris --json run agents/ollama_smoke.exs` once with the streams separated by
+   > redirection. Positive control first: the trajectory meta's `containment` was **non-nil**
+   > (`priv/runs/ollama-cqyzBw/trajectory.json`, `.meta.containment` — `seccomp: true`,
+   > `exec_server: true`), so a worker ran. Then the count: **2** `[sandbox]` lines total,
+   > **2 in `stderr.txt`, 0 in `stdout.txt`** — verdict-table row 3, *routes to stderr*.
+   > The two lines are the success-path pair hc-b2 §G3(3) predicted (namespace entry, and the
+   > cgroup-delegation arm), so the source derivation was **confirmed rather than refuted**.
+   > The run itself failed — Ollama could not load `llama3.2:latest` in 2.1 GiB of available
+   > memory — which the control was written to be independent of, and is: the `[sandbox]` lines
+   > are emitted by the worker at startup, which `containment` proves happened.
 
 2. **Whether the chaos gate has ever run in a clean-store environment.** m4 t1b partly resolved
    this: the first chaos capture in the harness repo

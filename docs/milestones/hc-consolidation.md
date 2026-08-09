@@ -10,8 +10,8 @@
 > not find it. Named for what it is: milestone `hc`, subject `consolidation`.
 
 **Status:** **OPEN** — hc-a, hc-b and hc-c closed; **hc-d closed 2026-08-09 at r3**; **hc-e
-opened 2026-08-09 and stopped at its anatomy census**, and reopens against the anatomy this edit
-lands. **Opened:** 2026-08-08.
+reopened 2026-08-09** against the anatomy landed at `e047dd1` and corrected at its r1, and is in
+progress. **Opened:** 2026-08-08.
 **Document created:** 2026-08-08 (hc-b). **Repos:** `aetheris-agents` and `aetheris`
 (harness). **Preceding cycle:** m4-cloudcost, closed 2026-08-08.
 
@@ -654,7 +654,7 @@ own output — and a round carries no row, so it has **none by design**.
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
 | **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
 | **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Closed** 2026-08-09 at **r3**. Gate G0–G5 passed; BL-077 closed, BL-133 face 2 discharged, R3 answered (`expected_fail` keys on a shell condition, so BL-044 stays filed and no `lib/` file was touched). Four rounds. agents `240eb59`→`f8ed90f`, harness `2d76a65`→`48f59e7`. **Earlier state, kept per decision 7:** *"Opened and stopped 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it."* `[updated 2026-08-09 (hc-e's opening edit, E1) — R19 scopes the row edit to the session that changed the state, and hc-d's session is over, so this carry is reviewer-authorised explicitly. The range is derived from the repos (`git log --grep='hc-d'`), not from the packets.]` |
-| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it. **Earlier state, kept per decision 7:** *"Not started"* |
+| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Reopened** 2026-08-09 at agents `3d79a6f`, against the anatomy authored at `e047dd1` and corrected at its r1 (`3d79a6f`). **In progress** — its step-1 gate G1–G6 has not yet returned, so no outcome is claimed here. **Earlier states, kept per decision 7:** *"**Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it."*, and before that *"Not started"* |
 
 ### hc-a — the scoping read
 
@@ -1854,6 +1854,19 @@ pattern and different flags. Not a reviewer instance — claude-code's — and i
 because the carrier is the same one level over: a check whose output is trusted because it is
 shaped like a check. F9 ratified the positive-control rule in this same round; the rule was applied
 in form and not in substance.
+
+**(viii)** F1's own text at hc-e's anatomy edit r1 dated R19 twice in one sentence, as `3901121`
+and `3971121`. Only the second resolves; the first is not an object in either repo. It was not
+mis-remembered from a packet, as (i)–(vi) were — **it was invented**: a plausibly-shaped hash typed
+where one was needed. That is the sub-shape with no source to go back and check, and the only thing
+that catches it is resolving the identifier rather than reading it again. claude-code caught it with
+`git cat-file -t` against both, and its own note about the catch was wrong on first draft in the
+same way — `3971141` — caught by the same command. **A hash in a correction inherits the
+correction's authority**, which is why this one mattered more than its size.
+
+**Operational close for (viii), narrower than the candidate's general form: an identifier is
+resolved, never transcribed.** `git cat-file -t`, `git rev-parse`, or the command that produced it
+— not a second reading.
 
 **(vi) is the list's first append, and it arrived one round after the list replaced a total.** The
 form was chosen at A4 because *"Three instances in this round"* went stale one commit after it was

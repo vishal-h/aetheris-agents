@@ -454,3 +454,35 @@ quietly, because r1's authorisation is scoped to F1–F3 and this is the one edi
 
 **R20 does not otherwise bind hc-e**, which is a ticket round and keeps `docs/reviews/hc-e-review.md`
 under R2 unchanged. That file is untouched by this round.
+
+---
+
+**`[note added 2026-08-09 (hc-e's reopening, C2) — anchor staleness, recorded and not fixed.]`**
+
+F3's disposition above cites hc-a's row at **`:624`**. The r1 packet's own §1c census, run
+post-commit, shows the same text at **`:661`**. Both are right at their own commit and the packet
+carries them side by side without saying so — the disposition's number was derived before F1's and
+F3's insertions, the census's after.
+
+Derived rather than asserted, over the two commits, and it shows the shift is not uniform:
+
+```
+$ git show <commit>:…hc-consolidation.md | grep -n '<text>'
+  'the ruling questions R1–R11 answer'        e047dd1=624   3d79a6f=661   (+37)
+  'Document created 2026-08-08'               e047dd1=1865  3d79a6f=1913  (+48)
+  'R15 through R19, authored by the reviewer'  e047dd1=477   3d79a6f=477   ( 0)
+```
+
+Two of the four anchors in that disposition moved, one did not, and the third — hc-d's prompt —
+moved with them. **Nothing is renumbered here**: the numbers are correct for the commits they were
+taken at, and rewriting them would replace a dated truth with an undated one.
+
+**The standing form, and hc-e will be citing anchors heavily:**
+
+> **A line number cited in a document is stamped with the commit it was derived at, or it is not
+> cited** — the same rule A4 landed for counts, applied to anchors. Where the anchor is only
+> navigational, cite by heading or quoted text instead.
+
+This is the harness `CLAUDE.md` rule *cite by anchor with the line number as a parenthetical*
+sharpened by A4's stamp requirement: the anchor names the referent so the citation survives a
+shift, and the commit stamp says which reading produced the number.

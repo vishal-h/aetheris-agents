@@ -581,3 +581,176 @@ clause 2, and this round is stopped.
 - **The milestone summary** — not written.
 - **G6** — not run; §23.
 - **No backlog row filed or closed** by this round.
+
+---
+
+# Round 3 — clause 3 corrected, the vocabulary sweep, G5/G6 proceed, and a stated stop inside §7
+
+**Repos.** agents from `8082e40`; harness from `48f59e7` — **the harness is touched this round**,
+for the one promotion §7's census produced. **Date.** 2026-08-09.
+
+> **Outcome: A, B, C, D applied; G5 re-run PROCEED; G6 PROCEED; §7's prior-claims census run and
+> its one absent rule promoted and verified. The ticket then STOPS at a stated point inside §7** —
+> before the distillation of this round's own seven candidates, and before the Done-check. hc-e is
+> not closed and the export boundary was not approached.
+
+---
+
+## 26. A — clause 3 corrected, with the more-or-less test on the record
+
+Disposition set now reads *"resolved, still open, **decided**, or superseded"*. The dated block
+beneath the table carries the justification verbatim: **more, not less** — a fourth disposition
+means item 4 must be *reported* rather than omitted or misfiled, no item leaves the sweep, and one
+that had no truthful heading now has one. The contrast case is named so the shape is legible:
+dropping `superseded` to make a sweep shorter would have been a relaxation. Original kept per
+decision 7.
+
+## 27. B — the vocabulary sweep. Population derived, four verdicts, one refutation
+
+**Pattern** `\[RESOLVED\]|\[OPEN\]|\[DECIDED\]` over the whole file → **33 hits**, of which **12
+are §Not established's own item heads**, leaving **21 across 14 sites**. Second pattern for prose
+enumerations (`resolved, still open|…or superseded`) → clause 3 alone. **Positive control:**
+`Not established` → **25**.
+
+**Corrected — three members that enumerated an incomplete set:**
+
+| Member | Read | Now |
+|---|---|---|
+| §Close criteria clause 3 | *resolved, still open, or superseded* | + `decided` (block A) |
+| A7's preamble instruction | *Read each item's `[RESOLVED]` / `[OPEN]` prefix* | + `[DECIDED]` |
+| A4's block: *the per-item prefixes are authoritative* | two values, *"once already"* | three values, *"twice already"* |
+
+The last two are corrected **in place under decision 8** — *live operational guidance is corrected
+in place* — because both tell a reader **how to determine an item's state** rather than recording
+what a figure was. The dated blocks that record past figures are untouched.
+
+**Correctly incomplete, left alone:** G4's quoted original inside its `[amended]` block. A
+historical quotation that gained a value it never had would stop being a quotation.
+
+**Refuted rather than assumed:** hc-e's `Contract refs` was named as an expected member. It
+carries **0** prefix tokens and enumerates nothing. **It is not a member** — recorded, because the
+instruction was to confirm expected members rather than assume them, and one did not hold.
+
+**Reported ambiguous, not decided:** hc-e's `Do not generate` forbids *"relaxation, rewording or
+quiet resolution of any `[OPEN]` item"*. R21 introduced a move the wording does not obviously
+reach — re-labelling `[OPEN]` → `[DECIDED]`, which removes an item from the open count without
+touching a word of its body. Done openly it is a correction (item 4). Done quietly it is the
+prohibited act wearing R21's clothes. The note is in the document; the ruling is not mine.
+
+## 28. C — item 5's settling condition, sharpened, anchors re-derived not carried
+
+Transcribed verbatim, with the current condition kept beneath per decision 7. The `[V]` required
+re-derivation rather than carrying the r2 packet's numbers: at agents **`8082e40`**, file last
+changed **`bda1fef`** — `:3`, `:6`, `:21`, `:24`, `:37`; and `supervisor.ex:62` at harness
+**`48f59e7`**, file last changed **`36326d7`**. **All five agents-side anchors and the harness one
+resolve unchanged**, which is a result and not a formality: the alternative was a silent carry.
+
+## 29. D — the vocabulary-sweep candidate, landed, with its first application recorded
+
+Transcribed verbatim into §Promotion candidates, followed by a dated block recording that the
+sweep it asks for was **then run** — population, control, and the four verdicts above. The
+candidate's own instrument, exercised in the commit that files it.
+
+## 30. G5 re-run. **PROCEED.**
+
+Every clause's check restated at HEAD:
+
+| Clause | The check | Form |
+|---|---|---|
+| 1 | For each §Ticket set row, read the backlog rows it claims to close and confirm both directions | checkable |
+| 2 | Read §Rows filed's population; confirm each filed row has a closure record in one of the two shapes | checkable — and it will find §24's defect |
+| 3 | Sweep §Not established item by item: resolved / still open / decided / superseded, and if resolved, where | **checkable** — the states in use are `[RESOLVED]`, `[OPEN]`, `[DECIDED]`, and clause 3 now has a heading for each |
+| 4 | For each decision, confirm no divergence is left silent; decision 13 already has its dated record | checkable |
+| 5 | Residual only; §7's verification step and its census carry it | checkable |
+| 6 | Restate `docs/milestones/`'s population at the boundary, both halves, with `docs/rig/milestones/` as counter-example | checkable |
+
+## 31. G6. **PROCEED.** The export set's population, derived before any regen
+
+**25 rows**, enumerated in full in the packet: **13 `aetheris-agents`, 12 `aetheris`**.
+**Positive control:** `grep -c '^|'` over the table → **27** = 25 + header + separator, so the
+row pattern is not silently dropping lines. The regen's count is compared against this with both
+printed, when the boundary is reached.
+
+## 32. §7's prior-claims census — run, and it found one
+
+**Population, derived.** Documents claiming learnings were promoted, searched by substance across
+both repos (`learnings promoted|rules promoted|review-discipline learnings|promotions? landed|complete`):
+**10 agents-side, 2 harness-side**. Of these, three carry an actual promotion-claim block from the
+preceding cycle, and **every item in every block was checked — not the ones that looked
+unfamiliar**, which is §7's explicit warning.
+
+**Block 1 — `handoff-linode-provider-three-kickoff-2026-08-04.md` §Review-discipline learnings
+promoted (4 items).** All four present. Re-verified rather than inherited from the m3 close's
+census: click-through merge gate (harness 1), name-the-branch (harness 1), `drift_check`
+current-not-complete (agents 1), remove-all-upload-all (harness 1 / agents 1), primitive-known-good
+(harness 1).
+
+**Block 2 — `handoff-cloudcost-rig-batch-close-2026-08-04.md` §Review learnings promoted (4
+items). Never censused before, and this is where the census earns itself.** By token, three
+returned zero. By **substance** — several wordings each, terms recorded — two of the three are
+present after all:
+
+- **"Rebuild Rig after each frontend merge"** — its *invariant* is present: *"a gate is only valid
+  if the build under test holds the change"* (harness `:844`). The Tauri-specific mechanism is not,
+  and does not need to be. **Not absent.**
+- **"Re-derive, don't copy; the live store is the oracle"** — present as *"A document that quotes
+  repo state is a snapshot with no invalidation — verify before acting… when they disagree the
+  source wins"*, *"An inherited citation is still uncited"* (harness `:787`), and *"enumerate
+  before fixing the class"* (`:710`). **Not absent.**
+- **"Anti-vacuity — every all-empty/degrade assertion needs a positive control."** **ABSENT from
+  both files**, and absent in substance, not only by token. The harness carries the **mutation
+  test** (`:594`–`:596`) — *construct the broken state and watch the check fail* — which is a
+  **different instrument**: the mutation test proves a check *can* fail; a positive control proves
+  a *zero* means absence rather than a broken search. `grep -c 'positive control'` over both files
+  → **0** and **0**. **Positive control for that search:** the same phrase over
+  `hc-consolidation.md` → **12**, so the term is findable and the zeros are real.
+
+**Block 3 — `handoff-m3-close-2026-08-05.md`.** Carries **no learnings section by design** and says
+so, pointing at both `CLAUDE.md` files instead. Its claim — *"the four are promoted, along with
+five m3 learnings and a credential-provenance rule"* — is the claim Block 1 verifies above. **A
+document that makes no restatement makes no unverifiable claim**; it is the shape the m3 close
+adopted after its own census, and it works.
+
+## 33. The promotion the census produced, and its verification
+
+§7: *"anything absent is promoted now with a `Source:` naming the cycle it came from and the fact
+that it was found absent."*
+
+**Landed in `../aetheris/CLAUDE.md`** §Continuous learning → Workflow patterns → Silent-wrong-answer,
+immediately after the mutation-test paragraph, because it is that paragraph's mirror. Harness
+rather than agents: it sits inside an existing harness entry it completes, and hc-e's `Touches`
+provides for either with **harness first**.
+
+**§7's verification step, performed by opening the file** — the entry quoted with its surrounding
+lines in the packet, at `../aetheris/CLAUDE.md` §Silent-wrong-answer (`:599`), read after the edit.
+`grep -c 'positive control'` over that file → **2** where it was **0**. The promotion is complete
+because the entry can be read out of the file, not because the edit was made.
+
+## 34. **The stated stop, and where it falls**
+
+The reviewer authorised a partial close that **names its boundary**. This is the boundary.
+
+**Complete and recorded:** blocks A–D; G5 re-run; G6; §7's prior-claims census over all three
+blocks, every item; the one promotion it produced, verified by reading the destination file.
+
+**Not done, and not started:**
+
+1. **§7's scan and distillation over this round's own seven §Promotion candidates.** Each must be
+   promoted or dropped, and a promotion authors a standing rule in a `CLAUDE.md`. Seven of those is
+   the largest single piece of hc-e and it deserves its own round and its own review — doing it
+   quickly is how a vague rule gets promoted, which §7's own closing test warns about.
+2. **The Done-check, items 1–9.** In particular item 1's full harness gate set
+   (`format`, `compile --warnings-as-errors`, `hex.audit`, `credo --strict`, `dialyzer`, `test`)
+   has **not** been run this round, and it should run over the *complete* content edit set rather
+   than a partial one — the export boundary is the last content operation by design, and content
+   is not complete.
+3. **The export boundary** (Done-check 4–7) — untouched. The manifest is **not** regenerated,
+   nothing is staged, and the operator hand-off at step 6 has not been reached.
+4. **The milestone summary** — not written.
+5. **§Close criteria's six sweeps** — G5 established each has a checkable form; **none has been
+   run**. Clause 2 will meet §24's §Rows filed defect, and the reviewer's two carried questions
+   (record BL-135 as *filed and folded*, and rule whether a folded row counts toward the
+   population) belong to that sweep.
+
+**hc-e is not closed.** `drift_check --strict` is green at 0 FAIL with the three expected
+staleness WARNs, which is the state to expect mid-cycle, not the boundary's own truth-maker.

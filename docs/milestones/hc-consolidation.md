@@ -11,8 +11,9 @@
 
 **Status:** **OPEN** — hc-a, hc-b and hc-c closed; **hc-d closed 2026-08-09 at r3**; **hc-e
 reopened 2026-08-09 and stopped twice** — at G4 (five `[OPEN]` items named no resolver; upheld,
-and adjudicated by **R21**) and then at G5 (§Close criteria clause 3 cannot express `[DECIDED]`).
-No close work; the round stays open. **Opened:** 2026-08-08.
+and adjudicated by **R21**) then at G5 (§Close criteria clause 3 could not express `[DECIDED]`). Both upheld and adjudicated;
+clause 3 corrected, **G5 and G6 now proceed**, and §7's prior-claims census ran and promoted the
+one rule it found absent. **Stopped at a stated point inside §7**; the round stays open. **Opened:** 2026-08-08.
 **Document created:** 2026-08-08 (hc-b). **Repos:** `aetheris-agents` and `aetheris`
 (harness). **Preceding cycle:** m4-cloudcost, closed 2026-08-08.
 
@@ -679,7 +680,7 @@ own output — and a round carries no row, so it has **none by design**.
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
 | **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
 | **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Closed** 2026-08-09 at **r3**. Gate G0–G5 passed; BL-077 closed, BL-133 face 2 discharged, R3 answered (`expected_fail` keys on a shell condition, so BL-044 stays filed and no `lib/` file was touched). Four rounds. agents `240eb59`→`f8ed90f`, harness `2d76a65`→`48f59e7`. **Earlier state, kept per decision 7:** *"Opened and stopped 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it."* `[updated 2026-08-09 (hc-e's opening edit, E1) — R19 scopes the row edit to the session that changed the state, and hc-d's session is over, so this carry is reviewer-authorised explicitly. The range is derived from the repos (`git log --grep='hc-d'`), not from the packets.]` |
-| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Reopened and stopped twice** 2026-08-09, at agents `3d79a6f`, against the anatomy authored at `e047dd1` and corrected at its r1. The held push was released and C1/C2 landed; the step-1 gate then ran **G1, G2, G3 → proceed** (§7's two steps quoted from the methodology; m4's seven located at HEAD with the four/three split derived; six candidates enumerated with controls) and **stopped at G4**: five of the eight `[OPEN]` §Not established items name no resolver, and §Not carried asserts each does. **No close work** — §7's ritual, the export boundary and the milestone summary are untouched, and G5/G6 were not run. That stop was upheld and adjudicated: **R21** landed, the five were re-labelled, §Not carried was corrected and **G4 was amended** — the amendment tested against both trees and shown stricter, not weaker. **G4 re-run → proceed; the ticket then stopped again at G5**, on §Close criteria clause 3, whose three-value disposition set cannot express the `[DECIDED]` prefix R21 introduced. **G6 not run. Still no close work.** **Earlier states, kept per decision 7:** *"**Reopened** 2026-08-09 … **In progress** — its step-1 gate G1–G6 has not yet returned, so no outcome is claimed here."*, and before that *"**Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it."*, and before that *"Not started"* |
+| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Reopened and stopped twice** 2026-08-09, at agents `3d79a6f`, against the anatomy authored at `e047dd1` and corrected at its r1. The held push was released and C1/C2 landed; the step-1 gate then ran **G1, G2, G3 → proceed** (§7's two steps quoted from the methodology; m4's seven located at HEAD with the four/three split derived; six candidates enumerated with controls) and **stopped at G4**: five of the eight `[OPEN]` §Not established items name no resolver, and §Not carried asserts each does. **No close work** — §7's ritual, the export boundary and the milestone summary are untouched, and G5/G6 were not run. That stop was upheld and adjudicated: **R21** landed, the five were re-labelled, §Not carried was corrected and **G4 was amended** — the amendment tested against both trees and shown stricter, not weaker. **G4 re-run → proceed; the ticket then stopped again at G5**, on §Close criteria clause 3, whose three-value disposition set could not express the `[DECIDED]` prefix R21 introduced. Both stops upheld: clause 3 corrected under authorisation, the vocabulary swept for other consumers (three corrected, one refuted, one reported ambiguous), item 5's settling condition sharpened, and a candidate filed. **G5 and G6 re-run → proceed.** §7's **prior-claims census** ran over all three promotion-claim blocks, every item, and found one rule absent in substance — *a negative needs a positive control* — now promoted to `../aetheris/CLAUDE.md` and verified by reading it back. **Stopped at a stated point inside §7**, before the distillation of this round's seven candidates and before the Done-check. **Still no close work; the export boundary was not approached.** **Earlier states, kept per decision 7:** *"**Reopened** 2026-08-09 … **In progress** — its step-1 gate G1–G6 has not yet returned, so no outcome is claimed here."*, and before that *"**Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it."*, and before that *"Not started"* |
 
 ### hc-a — the scoping read
 
@@ -1151,6 +1152,18 @@ close read complete: items 10, 11 and 12 have resolvers that are not hc-e, and t
 round open. Do not start counting runs toward BL-075 arm 2. No planted cloud resource (R9). No
 hash-driven diff at the export boundary.
 
+> **`[reported ambiguous, not decided — 2026-08-09 (hc-e r3, block B's sweep).]`** This field's
+> prohibition is scoped to `[OPEN]`: *"No relaxation, rewording or quiet resolution of any
+> `[OPEN]` §Not established item to make the close read complete."* **R21 introduced a move the
+> wording does not obviously reach** — re-labelling an item `[OPEN]` → `[DECIDED]`. Done openly
+> and on authority it is a correction, and item 4's re-label is exactly that. Done quietly it is
+> the prohibited act wearing R21's clothes, and it is *more* attractive than the moves named,
+> because it removes an item from the open count without touching a word of its body.
+>
+> **Not resolved here.** Whether the prohibition should read `[OPEN]`-or-`[DECIDED]`, or gain a
+> clause requiring any re-label to be dated and attributed, is a ruling; hc-e's own field is
+> reviewer-authored and this is exactly the sweep's instruction to report rather than decide.
+
 **Runbook update rule.** hc-e changes no operator-facing behaviour, so it owes the runbook no new
 text. What it owes is a **verification**: the runbook sections hc-c and hc-d wrote — the
 output-stream/`--json` contract, and the sprint exit contract with its four failure modes and the
@@ -1297,10 +1310,29 @@ rather than what was expected.
 |---|---|---|
 | **1** | Every ticket in §Ticket set, checked against the backlog rows it closes. A row closed in the repo and open here, or the reverse, is the defect the clause exists to catch | **m4 clause 1.** Direct. hc-c closes BL-105 and BL-106; hc-d closes BL-077 and BL-133 (or its face 2, if the row is split) and conditionally BL-044 |
 | **2** | Every row in §Rows filed, checked for a closure record if it closed. **This backlog records closure in two shapes and a sweep must read both** — see the note below | **m4 clause 2**, carried with its population widened, **not with its wording faulted.** m4's *"a DONE section"* is accurate for the rows m4 itself closed; what it does not cover is the older shape. The widening is additive |
-| **3** | §Not established, item by item: resolved, still open, or superseded — and if resolved, where | **m4 clause 3.** hc-b's ticket text offered *"m4's clause 3 may have none here"* as a hypothesis; **it does not hold.** This round opens with four §Not established entries, one of which — `[sandbox]` routing — is the gate hc-c turns on. The clause has more to do here than it had at m4, not less. Recorded as a refutation |
+| **3** | §Not established, item by item: resolved, still open, **decided**, or superseded — and if resolved, where. `[corrected 2026-08-09 (hc-e r3) — see the block below the table]` | **m4 clause 3.** hc-b's ticket text offered *"m4's clause 3 may have none here"* as a hypothesis; **it does not hold.** This round opens with four §Not established entries, one of which — `[sandbox]` routing — is the gate hc-c turns on. The clause has more to do here than it had at m4, not less. Recorded as a refutation |
 | **4** | The decision log, for any decision the implementation diverged from. A divergence is closed by changing the code or the decision, never left silent | **m4 clause 4**, and it has live work before the round starts: **R6 puts decision 13 under review.** The close either amends it with its own dated record (decision 7's shape) or records that the round did not overturn it. Silence is the one disposition unavailable |
 | **5** | Anything §7 does not itself verify about the promotions | **m4 clause 5, partly superseded.** m4's clause said *"§Rules promoted, read out of the two `CLAUDE.md` files rather than trusted"*. That is now **§7's own verification step**, and its prior-claims census besides. Carrying it as a full clause would put one obligation in two places, where they can drift. Kept only as a residual |
 | **6** | The manifest's inclusion note, for the sentence `docs/milestones/` now owes — **both halves** | **No m4 analogue.** New, created by this round's placement decision. See below |
+
+> **`[corrected 2026-08-09 (hc-e r3, block A — authorised by the reviewer after hc-e's G5 stopped
+> on this clause). Clause 3's disposition set read "resolved, still open, or superseded"; it now
+> reads "resolved, still open, decided, or superseded". The original stands here, per decision 7.]`**
+>
+> **Why the change was owed.** **R21**, landed one round earlier, added `[DECIDED]` as a fourth
+> value of §Not established's prefix and re-labelled item 4 to it. Clause 3's three-value set could
+> then express neither item 4's standing nor its omission, so a sweep run as written had to misfile
+> an item or drop it silently. The gap survived the commit that created it and was found only
+> because G5 forces a clause-by-clause read.
+>
+> **Does the corrected clause require more of the sweep, or less?** **More.** Adding a fourth
+> disposition means item 4 must be reported rather than omitted or misfiled; no item leaves the
+> sweep, and one that had no truthful heading now has one. **A criterion that covers more is not a
+> relaxed criterion.** Contrast the shape this is not: dropping `superseded` to make a sweep
+> shorter would have been.
+>
+> Said out loud because a close criterion changed during a close needs its own justification, and
+> *"it was our own doing"* is not one.
 
 **Clause 6, in full, because half of it invites the error the other half prevents.**
 
@@ -1409,8 +1441,14 @@ Carried forward rather than resolved. Each is a question this round opens and ha
 
 > `[amended 2026-08-09 (anatomy edit r1). Items are added here open and resolved in place; a
 > resolved item keeps its original text and gains a dated resolution block, per decision 7. Read
-> each item's `[RESOLVED]` / `[OPEN]` prefix for its current state — the preamble describes how
-> items arrive, not what they all still are.]`
+> each item's `[RESOLVED]` / `[OPEN]` / `[DECIDED]` prefix for its current state — the preamble
+> describes how items arrive, not what they all still are.]`
+>
+> `[the prefix list above corrected in place 2026-08-09 (hc-e r3, block B) — it read
+> "`[RESOLVED]` / `[OPEN]`", enumerating two of the three values R21 now defines. Corrected
+> rather than superseded because it is live operational guidance telling a reader how to
+> determine an item's state, which decision 8 corrects in place; the dated blocks that record
+> what a figure *was* are left alone.]`
 >
 > **The state prefixes were derived, not assigned by hand.** Population: every numbered item in
 > this section, `grep -c '^[0-9]\+\. \*\*'` over it → **9**. Each item's state comes from its own
@@ -1467,9 +1505,13 @@ Carried forward rather than resolved. Each is a question this round opens and ha
 > > resolver, and that is corrected at §Not carried — but the population it quantified was one too
 > > large, which is this block's own subject arriving in its own numbers.
 > >
-> > **This block is a snapshot at the commit named above. The per-item `[RESOLVED]` / `[OPEN]`
-> > prefixes are authoritative; these totals are a convenience that goes stale the moment an item
-> > is added, and have done so once already.**
+> > **This block is a snapshot at the commit named above. The per-item `[RESOLVED]` / `[OPEN]` /
+> > `[DECIDED]` prefixes are authoritative; these totals are a convenience that goes stale the
+> > moment an item is added or re-labelled, and have done so twice already.**
+> >
+> > `[prefix list and count corrected in place 2026-08-09 (hc-e r3, block B) — it enumerated two
+> > of R21's three values and said "once", which item 4's re-label made "twice". Decision 8:
+> > live operational guidance is corrected in place.]`
 >
 > **Item 7 is the only item whose blocks disagree, and the rule is what settles it.** It carries
 > `[STAYS OPEN. … (hc-d, D1)]` and, later, `[RESOLVED … by ruling — R15.]`; both are dated
@@ -1613,6 +1655,29 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > satisfies the same predicate. It is outside this entry's stated directory, which is why the
    > entry's literal claim holds — but the item is more reachable than *"no such agent file
    > exists"* alone suggests, and a later round should know that before writing one.
+
+   > **`[settling condition sharpened 2026-08-09 (hc-e r3, block C — authored by the reviewer,
+   > from claude-code's own r2 §17b observation). The condition above stands beneath, per
+   > decision 7; this replaces it.]`**
+   >
+   > **Settled by:** running an agent whose config satisfies `worker_child_spec/1`'s fall-through —
+   > `provider: "stub"` with a non-empty `mcp_servers:` — and observing whether a worker spawns and
+   > where its `[sandbox]` lines land. **No new agent file is needed.**
+   > `provenance/agents/search_agent.exs` takes its provider from `AETHERIS_PROVIDER` and builds
+   > `mcp_servers` non-empty under `CORPUS_SEARCH_MCP_ENABLED=true` with `PROVENANCE_DB_PATH` set,
+   > so `AETHERIS_PROVIDER=stub` over that existing file satisfies the predicate.
+   >
+   > **Anchors re-derived at the commit they were read at, not carried from the r2 packet.** In
+   > this repo at agents `8082e40`, the file itself last changed at `bda1fef`:
+   > `PROVENANCE_DB_PATH` required (`:3`), the `CORPUS_SEARCH_MCP_ENABLED == "true"` guard (`:6`),
+   > `mcp_servers` assembled and nil-rejected (`:21`), `provider = System.get_env("AETHERIS_PROVIDER")
+   > || "anthropic"` (`:24`), and the struct field (`:37`). The deciding clause is
+   > `worker_child_spec/1`'s first head in `../aetheris/lib/aetheris/agent/supervisor.ex` (`:62`),
+   > read at harness `48f59e7`, that file last changed at `36326d7`.
+   >
+   > **Still (b), still no owner.** The condition is now runnable, but this round does not run it
+   > and nobody is named to. What changed is that the next round to need `[sandbox]` routing
+   > without a model server has **a recipe rather than a prerequisite**.
 
 6. **`[OPEN]` (b)** **Whether any consumer outside these two repos reads harness *log* output on stdout.**
    hc-c moved Logger to stderr for **every** invocation and every mode, not only `--json`, so the
@@ -2037,6 +2102,43 @@ Instances so far: the promotion candidate's own *"three instances in this round"
 commit after it was written; §Not carried's *"four"* open questions, wrong at every reading since;
 this block's *"9 total"*. Origin: claude-ui authored A7's census requirement without a staleness
 clause; found by claude-code at hc-e's anatomy edit.
+
+---
+
+**A vocabulary change owes a sweep of everything that speaks it.** R21 added a fourth disposition
+value to §Not established and updated the entries; it did not update §Close criteria clause 3,
+whose three-value set could then express neither item 4's standing nor its omission. The gap
+survived the same commit that created it, and was found only because a gate happened to read that
+clause one by one.
+
+The failure is not forgetting a consumer. It is that a vocabulary's consumers are invisible from
+the definition: nothing at R21's site lists who reads `[OPEN]`. So: when a label, a status set, a
+field name or a prefix changes, derive the population that speaks it and check each member, in the
+same commit. A sweep that finds nothing costs one command; a member left behind is a document that
+cannot describe its own contents. Origin: claude-code's G5 stop at hc-e r2, which reported the gap
+and declined to fix it on its own authority.
+
+> **`[first application, recorded 2026-08-09 (hc-e r3, block B).]`** The sweep this candidate asks
+> for was then run over `hc-consolidation.md`. Population: every line naming a prefix token,
+> pattern `\[RESOLVED\]|\[OPEN\]|\[DECIDED\]`, **33 hits of which 12 are §Not established's own
+> item heads**, leaving **21** across **14 sites**; plus a second pattern for prose enumerations
+> (`resolved, still open|…or superseded`) returning clause 3 alone. **Positive control:**
+> `Not established` → 25 occurrences, so the file is searchable.
+>
+> **Three members were incomplete and are corrected**: clause 3 (block A), A7's preamble
+> instruction, and A4's *"the per-item prefixes are authoritative"* sentence — the last two in
+> place, per **decision 8**, because both are live operational guidance telling a reader how to
+> determine an item's state rather than records of what a figure was.
+>
+> **One member is correctly incomplete and was left alone**: G4's quoted original, inside its
+> `[amended]` block. A historical quotation that gained a value it never had would stop being a
+> quotation.
+>
+> **One expected member was refuted rather than assumed.** hc-e's `Contract refs` was named as a
+> member to confirm; it carries **0** prefix tokens and enumerates nothing. It is not a member.
+>
+> **One is reported as ambiguous rather than decided** — see the note under hc-e's
+> `Do not generate`.
 
 ---
 

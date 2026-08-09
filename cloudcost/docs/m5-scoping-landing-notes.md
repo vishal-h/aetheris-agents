@@ -754,8 +754,10 @@ as PASS. A defect in the authored document, not in the landing.
 > nesting tickets under §Ticket set. Three cloudcost cycle documents do —
 > `cloudcost/milestone.md`, `m2-milestone.md`, `m3-milestone.md` — and
 > `m4-consolidation.md`, the one the finding leaned on, does not: it carries a
-> state table and no ticket headings. The correction is accepted; §6's template
-> is the authority regardless of what the siblings do.
+> state table and no ticket *sections* — its three `###` headings under
+> §Ticket set carry none of §6's seven fields (derived at r2, G2). The
+> correction is accepted; §6's template is the authority regardless of what the
+> siblings do.
 
 **F3 — R20 restatement.** r0's closing observation characterised R20 as making an
 implementation-notes file the committed record for a reviewer-authored

@@ -112,10 +112,15 @@ as a finding and leave it; fixing it is not this ticket.
 
 ```bash
 # 1. The offline pytest spine over the cloudcost suite, as a HEAD baseline.
-#    DERIVE the exact invocation from cloudcost/runbook.md or CLAUDE.md and
-#    record the command verbatim beside its summary line. Do not invent one;
-#    if neither document states it, report that as a finding and record what
-#    you ran and why.
+#    Pinned 2026-08-09 by the reviewer. Command: cloudcost/runbook.md
+#    §Offline tests. Working directory: the aetheris-agents/ root, per
+#    CLAUDE.md §Commands — the runbook's block states no cd and every cd in
+#    that file points elsewhere, so the root is not inferable from the
+#    runbook alone.
+#    RE-RESOLVE BOTH ANCHORS AT HEAD BEFORE RUNNING. Quote each. If either
+#    has moved, report it and run what the anchors say now — the pin is an
+#    anchor, not an assertion.
+python3 -m pytest cloudcost/tests/ -v
 
 # 2. The notes file exists and is non-empty.
 test -s cloudcost/docs/m5-t1-implementation-notes.md && echo NOTES_PRESENT

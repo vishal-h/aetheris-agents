@@ -12,6 +12,54 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 
 ---
 
+### BL-135 — `run_helpers_timeout_test.exs:84` is timing-flaky: a 200 ms feeder against a 300 ms bound (#TBD)
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/test/aetheris/cli/commands/run_helpers_timeout_test.exs`)
+
+Filed 2026-08-09 from **hc-d r3's** ticket-boundary gate run — off-territory, the way the gate rule
+intends, and filed the day it was found rather than carried.
+
+**The observation.** `mix test` returned **exit 2**, `972 tests, 1 failure`:
+
+```
+1) test a status change alone counts as activity, with no events at all
+   (Aetheris.CLI.Commands.RunHelpersTimeoutTest)
+   test/aetheris/cli/commands/run_helpers_timeout_test.exs:84
+   right: {:error, "run await-status-activity-8610 stalled: no status or event
+           activity for 300ms (last status: running, last event seq: -1)"}
+   stacktrace: test/…/run_helpers_timeout_test.exs:98
+```
+
+**Not caused by the ticket that found it.** hc-d r3's diff (`48f59e7`) touches
+`scripts/sprint.sh` and nothing else — no `lib/`, no `test/`, no `config/`. The three preceding gate
+runs in the same cycle all reported `972 tests, 0 failures`.
+
+**The mechanism is structural, and visible in the test's own source.** A feeder task writes four
+status changes with `Process.sleep(200)` between them, while the assertion runs
+`await_bounded(run_id, await_inactivity_timeout_ms: 300)`. **A 100 ms margin.** Any scheduling delay
+that pushes one 200 ms sleep past 300 ms fires the inactivity bound and the test fails. The gate run
+that caught it was executing concurrently with sprint runs and filesystem watchers.
+
+**Not reproduced, and that is stated rather than glossed.** **9 attempts, 0 reproductions**: 8
+consecutive runs of `…:84` on an idle machine (8 PASS), plus 1 run under deliberate CPU load (6 spin
+loops) which also passed. So the failure is real and observed, and the conditions that produce it
+are **not** established — only the 100 ms margin that makes it possible.
+
+**Do not "fix" it by widening the bound alone.** `await_inactivity_timeout_ms` is the behaviour under
+test; inflating it to buy margin weakens the assertion it exists to make. The likely correct shape is
+to make the feeder's activity observable rather than timed — drive it off a signal the assertion can
+wait on — or to give this test an explicitly generous bound *with the reason recorded*, so a later
+reader does not read the number as the contract.
+
+**Done when:** the test is either deterministic under load, or its timing margin is stated as
+deliberate with a recorded rationale, and 20 consecutive runs under CPU load pass. Until then the
+gate runs **expected-flaky, named with this row's ref** per the tracked-carry clause — named in
+packets, not re-triaged, and **not relaxed**.
+
+`Source: hc-d r3 ticket-boundary gate run, 2026-08-09 (harness 48f59e7, agents 4222804). One
+observation; the non-reproduction is recorded above as part of the evidence, not omitted from it.`
+
+---
+
 ## Housekeeping (do first, near-zero effort)
 
 ### BL-001 — Capture clean drift baseline (#42)

@@ -734,3 +734,34 @@ No new promotions. No change to `json_read`, the BL-100 scan, the D2 guard, or a
 `../aetheris/lib/`, `native/`, `config/`. §Not established items 10, 11, 12 unchanged and `[OPEN]`.
 BL-077 and BL-133 face 2 stay closed/discharged — r3 touches neither row. **No new defect found in
 F9's fix.**
+
+## 30. A red gate at r3's boundary — BL-135 filed the day it was found
+
+**`mix test` returned exit 2**, `972 tests, 1 failure`, in r3's post-commit gate run:
+`run_helpers_timeout_test.exs:84`, *"a status change alone counts as activity"*, failing with
+`stalled: no status or event activity for 300ms`.
+
+**Not r3's.** `48f59e7` touches `scripts/sprint.sh` and nothing else — no `lib/`, `test/` or
+`config/` — and the three preceding gate runs this cycle all reported `972 tests, 0 failures`.
+
+**The mechanism is in the test's own source:** a feeder sleeping `200` ms between four status
+writes, against `await_inactivity_timeout_ms: 300`. **A 100 ms margin.** The gate run was executing
+concurrently with sprint runs and filesystem watchers.
+
+**Not reproduced — 9 attempts, 0 reproductions**, and that is published as part of the evidence
+rather than left out of it: 8 consecutive idle runs of `:84` all passed, and one run under six
+deliberate spin loops also passed. So the failure is **observed and real**; the conditions producing
+it are **not established**. Recording the non-reproduction matters because the alternative — quietly
+re-running until green and reporting the green — is the shape the whole exit-contract ticket exists
+to remove, in the review of that very ticket.
+
+**Filed as BL-135, not carried**, per the gate rule: a red gate gets a tracked ticket the day it is
+found, is named in packets with its ref rather than re-triaged, and is **not** relaxed to get a
+clean run. The row explicitly warns against the tempting fix — widening the bound is weakening the
+assertion, because the bound *is* the behaviour under test.
+
+## 31. What r3 did NOT change
+
+No new promotions. No `lib/`, `native/`, `config/`. §Not established items 10–12 unchanged and
+`[OPEN]`. BL-077 and BL-133 face 2 stay closed/discharged. **No new defect found in F9's fix.** The
+one red gate is BL-135, off-territory and pre-existing.

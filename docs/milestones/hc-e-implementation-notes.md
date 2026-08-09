@@ -1379,3 +1379,67 @@ already current, which it must not be before a boundary that has content to expo
 
 **This commit is the line after which nothing is content.** Everything below is the boundary: the
 manifest regen, the export set, and the operator hand-off.
+
+## 62. Done-check items 4 and 5 — the boundary's content operations
+
+**Item 4 — content complete and committed at `a04309a`.** Everything after it is boundary work.
+
+**Item 5 — the manifest regenerated at `7a78f92`, and the count compared with both printed.**
+
+```
+G6's derived count, before any regen   : 25
+regenerated row count                  : 25
+                                         -> they agree; no row added or removed
+```
+
+**Four rows re-pinned, all four this cycle's own edits.** Nothing else moved:
+
+| export name | was | now |
+|---|---|---|
+| `aetheris-agents--CLAUDE.md` | `080ad24` | `dcf1d42` |
+| `backlog-2026-06.md` | `384656c` | `7dbdb7d` |
+| `aetheris--CLAUDE.md` | `288c8ef` | `2ef0517` |
+| `aetheris--runbook.md` | `ae0c510` | `2ebc59c` |
+
+The other twenty were verified current **by field** against `git log -1 --format=%h -- <path>` in
+each row's own repo, and the self-referential row keeps `_(this export)_`.
+
+**The BL-002 mirror-pair check ran before the regen**, because `drift_check` is blind to that class:
+`diff -q` over `aetheris/docs/methodology/triad-loop.md` and its `aetheris-agents/docs/` mirror →
+**byte-identical**, so no canonical sync was owed this boundary.
+
+**`drift_check --strict` post-regen: `9 PASS  0 FAIL  0 WARN`, exit 0**, with check 8 reading
+*"24 manifest entries all match git HEAD"* — 24 checkable plus the self-referential row.
+
+> **This zero is not the boundary's truth-maker, and reading it as one would be the exact error the
+> manifest's own header describes.** The manifest is now current *with git*; the upload has **not**
+> happened. Check 8 detects the repo moving ahead of an export and is **blind to the reverse** — a
+> manifest describing an export set the project does not yet hold reports green. **The zero that
+> settles the boundary is the one at Done-check step 7, after the operator confirms the upload and
+> the project is read back.**
+
+## 63. Done-check item 6 — **STOP. Hand-off to the operator.**
+
+**hc-e is NOT closed.** It is not closed until step 7 runs. The upload is the operator's step and
+this session does not perform it, simulate it, or report past it.
+
+**What must be uploaded.** The export set is staged flat at **`/tmp/claude-project-export/`** — 25
+files, named by the manifest's `export name` column, each verified byte-identical to its source and
+non-empty.
+
+**Remove all, then upload all — against the full 25-file set, never a diff of the four re-pinned
+rows.** Twenty-one files are unchanged and would read as *"nothing to re-upload"*, which is exactly
+the direction the check cannot see.
+
+**After the upload, step 7 is owed and hc-e stays open until it runs:** read the project back and
+verify the manifest's export-boundary date, every hash post-`48f59e7`, at least four content checks
+landing in the documents that should carry them, and the document count reconciled against the
+export set plus any `claude/` session briefs that are correctly untouched. Then
+`drift_check.py --strict` again — **zero `project_knowledge` WARNs is the boundary's own
+truth-maker, and a non-zero count is a stop.**
+
+## 64. What r8 did not do, and will not
+
+No upload. No step 7. No close statement — `hc-consolidation.md`'s §Ticket set hc-e row and header
+`Status:` line still say the round is open, because it is. **Push held** until the boundary is
+complete, per decision 6.

@@ -412,16 +412,54 @@ inherits` etc. beneath it); hc-consolidation does the same (`## Ticket set :664`
 > **three** cloudcost cycle documents nest actual ticket sections one level under
 > `## Ticket set` — `cloudcost/milestone.md:844`/`:846`, `cloudcost/m2-milestone.md:453`/`:460`,
 > `cloudcost/m3-milestone.md:347`/`:349`. `m4-consolidation.md:133` is **not** among them: it
-> carries a two-column state table and no ticket headings at all, and its `### What t1b
-> inherits` are inheritance notes rather than ticket sections. r0 cited the one sibling that
-> does not demonstrate the convention and omitted the three that do.
+> carries a two-column state table, and the three `###` headings between it and `## Sequence`
+> (`:247`) — `### What t1b inherits` (`:188`), `### What t2 inherits` (`:216`), `### What t3, t4
+> and t5 inherit` (`:230`) — carry none of §6's seven field markers.
+>
+> **`[Derived at r2 (G2), 2026-08-09 — this replaces a reading with a test.]`** The claim that
+> those headings are inheritance notes rather than ticket sections was stated at r1 as an
+> interpretation. It is decidable mechanically: a ticket section carries §6's fields, an
+> inheritance note does not. The seven markers return **zero hits over the whole file**, not
+> merely zero inside §Ticket set:
+>
+> ```bash
+> for f in cloudcost/milestone.md cloudcost/m3-milestone.md cloudcost/m2-milestone.md \
+>          cloudcost/m5-n1-compose.md cloudcost/m4-consolidation.md; do
+>   printf '%s:%s\n' "$f" "$(command grep -c \
+>     -e '\*\*Scope\.\*\*' -e '\*\*Contract refs\.\*\*' -e '\*\*Touches\.\*\*' \
+>     -e '\*\*Do not generate\.\*\*' -e '\*\*Runbook update rule\.\*\*' \
+>     -e '\*\*Done-check\.\*\*' -e '\*\*Claude-code prompt\.\*\*' "$f")"
+> done
+> ```
+>
+> One file per call, and `command grep` rather than the bare name: a multi-file `grep -c` in this
+> session returns its lines in a **non-deterministic order** — the shell's `grep` is a wrapper
+> function delegating to `ugrep`, which searches the arguments in parallel. The counts were
+> identical under both, but a quoted output block whose row order the command does not reproduce
+> is a block that cannot be re-derived. The loop fixes the order in the argument list.
+>
+> ```
+> cloudcost/milestone.md:25
+> cloudcost/m3-milestone.md:18
+> cloudcost/m2-milestone.md:15
+> cloudcost/m5-n1-compose.md:14
+> cloudcost/m4-consolidation.md:0
+> ```
+>
+> The four non-zero counts are the positive control: the patterns match where ticket sections
+> exist, so `m4-consolidation.md`'s zero is a fact about that file and not about the grep. A
+> heading with none of §6's fields beneath it is not a ticket section, so m4 does not
+> demonstrate the nesting convention in either direction — and r0's correction stands on a
+> derivation rather than on a reading. r0 cited the one sibling that does not demonstrate the
+> convention and omitted the three that do.
 
 ---
 
 ## §F1 — the anchor discrepancy and its resolution
 
-Two sessions at the same agents HEAD reported the provider-four seam-sweep gate statement in
-`cloudcost/m4-consolidation.md` at two different line numbers — `:52` and `:362`. A line number
+Two sessions at the same agents HEAD reported what each took to be the provider-four seam-sweep
+gate statement in `cloudcost/m4-consolidation.md` at two different line numbers — `:52` and
+`:362`. A line number
 cannot move at a fixed HEAD.
 
 **(a) The file is unchanged across both readings.**
@@ -484,17 +522,31 @@ case, and a leg added to non-deterministic reads inherits the flakiness — m3 a
 three times.
 ```
 
-**(d) Resolution: BOTH carry a gate statement, and they are TWO distinct statements.** Neither
-report was wrong; both were partial. Enumerated:
+**(d) Resolution: the two reports named passages of different kinds, and `:362` is a third
+kind.** Neither report was wrong; both were partial. The two **non-identical statements**
+§Not established item 1 names are `:52` on the gate side and the sequence lines `:249–250` /
+`:1228–1229` on the other. `:362` is neither — a sequencing rationale that cites the seam sweep
+by analogy — and it is what made a partial reading of either side look complete. Enumerated by
+kind:
 
-| `path:line` | statement | section it sits in |
-|---|---|---|
-| `cloudcost/m4-consolidation.md:52` | `- **Provider four.** Gated on this cycle's seam sweep and on the harness round.` | §Scope → *"Not in scope, and deliberately so."* — a scope exclusion |
-| `cloudcost/m4-consolidation.md:362` | `**The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074` | §Sequence — a sequencing rationale |
+| `path:line` | kind | statement | section it sits in |
+|---|---|---|---|
+| `cloudcost/m4-consolidation.md:52` | **gate** — gates provider four on the seam sweep *and* the harness round | `- **Provider four.** Gated on this cycle's seam sweep and on the harness round.` | §Scope → *"Not in scope, and deliberately so."* — a scope exclusion |
+| `cloudcost/m4-consolidation.md:249–250`, `cloudcost/m4-consolidation.md:1228–1229` | **sequence** — `… → BL-131 → provider four`, seam sweep unnamed | enumerated verbatim in (e) below | §Sequence; §The close → *7. The sequence from here, unchanged* |
+| `cloudcost/m4-consolidation.md:362` | **sequencing rationale — not a gate** | `**The harness round runs before provider four**, and for the same reason the seam sweep does. BL-074` | §Sequence |
 
-Both name the seam sweep and both gate provider four. They are not duplicates: `:52` excludes
-provider four from m4's scope and names two gates; `:362` argues *why* the harness round
-precedes it and cites the seam sweep by analogy rather than as a second gate.
+`:52` and `:362` both name the seam sweep, which is why one could be read for the other; only
+`:52` gates on it. `:362` argues *why* the harness round precedes provider four and cites the
+seam sweep by analogy rather than as a second gate — so it belongs in neither of the two sides
+the discrepancy is between.
+
+> **`[Corrected in place at r2 (G3), 2026-08-09 — not a dated supersession block, because the
+> file has never been pushed and no reader ever saw the earlier text.]`** This table previously
+> read *"BOTH carry a gate statement, and they are TWO distinct statements"* and listed `:52`
+> and `:362` as its two rows, while the prose beneath said `:362` cites the seam sweep *"by
+> analogy rather than as a second gate"*. A passage tabled as a gate and described as not-a-gate
+> leaves the section with no readable finding. The table now sorts by kind and `:362` sits in
+> its own row as the third kind.
 
 Three further statements name provider four **without** the seam sweep, and are therefore not
 candidates for either report: `:286` (BL-131 decides the N>1 question *"before provider four,
@@ -516,9 +568,10 @@ edit.** It says m4 *"states in one place that provider four is gated on the cycl
 and the harness round, and sequences it in another as following BL-131 with no seam sweep
 named."* At HEAD the first is `:52` and the second is `:249–250`. The item claims two
 non-identical statements and two is what the enumeration finds. What the enumeration adds is
-that the *gate* side has a second member at `:362` and the *sequence* side has a second member
-at `:1228–1229` — four passages, two per side, and the item's characterisation of the
-disagreement survives all four.
+that the *sequence* side has a second member at `:1228–1229`, and that a third passage of a
+third kind sits beside both — `:362`, a sequencing rationale — which adds a member to neither
+side. Four passages in all, and the item's characterisation of the disagreement survives every
+one of them.
 
 ---
 
@@ -668,3 +721,111 @@ inserted four lines above `:13` and F2 removed four, so the file is 300 lines at
 while anchors between `:6` and `:57` differ from r0's.
 
 `Landed at r1. Commits: r0 = eebd47c7acafbc6b9eb93682b3f3a6aaa8689802; r1 = this commit.`
+
+---
+
+## Review
+
+`[Authored by the reviewer, 2026-08-09, at r2. R20's shape: findings verbatim,
+dispositions beneath. Covers r0 and r1 of the m5 scoping landing. This edit is
+not a ticket round and gets no review file.]`
+
+**F1 — anchor discrepancy.** Two sessions at the same agents HEAD gave two
+different line numbers for the same claim about `cloudcost/m4-consolidation.md`:
+`:52` in the scoping read, `:362` in r0's packet. A line number cannot move at a
+fixed HEAD, so at most one is right — or there are two such statements and both
+reports were partial.
+
+> **Disposition: resolved at r1, and the finding's own framing was wrong.**
+> Neither report was wrong and neither was complete. `:52` is a scope exclusion
+> gating provider four on the seam sweep and the harness round; `:362` is a
+> sequencing rationale citing the seam sweep by analogy; the sequence lines at
+> `:249–250` and `:1228–1229` name no seam sweep. §Not established item 1 in the
+> round document is correct as landed and was not edited. §F1's own table
+> conflated `:362` with `:52` and was corrected in place at r2 (G3).
+
+**F2 — §6 heading level.** The landed document promoted `## t1 —` and `## t2 —`
+to top level. §6's template specifies `### t<N> — <title>`. r0's verification 1
+checked field NAMES and not the heading that carries them, so a divergence passed
+as PASS. A defect in the authored document, not in the landing.
+
+> **Disposition: applied at r1, and the finding's supporting claim was corrected
+> by the implementer.** The finding cited "both sibling cycle documents" as
+> nesting tickets under §Ticket set. Three cloudcost cycle documents do —
+> `cloudcost/milestone.md`, `m2-milestone.md`, `m3-milestone.md` — and
+> `m4-consolidation.md`, the one the finding leaned on, does not: it carries a
+> state table and no ticket headings. The correction is accepted; §6's template
+> is the authority regardless of what the siblings do.
+
+**F3 — R20 restatement.** r0's closing observation characterised R20 as making an
+implementation-notes file the committed record for a reviewer-authored
+section-scoped edit, while the same packet's anchor table quoted R20 as *"is not a
+ticket round and gets no review file."* Those are not the same claim and the
+second is a quotation. Resolve R20's body and restate.
+
+> **Disposition: resolved at r1, and the finding's premise inverted.** R20's first
+> body line reads *"Its implementation-notes file is its committed record."* r0's
+> observation was faithful to the body; the anchor table's quotation was
+> heading-only and carried one half of a two-part rule. The reviewer wrote the
+> finding expecting the opposite and was wrong about which half was partial.
+> **Standing consequence, recorded because it binds work that has not run yet:**
+> every future reviewer-authored section-scoped edit in this round — pinning t1's
+> done-check invocation, completing t2's R13-marked slots, authoring the ruling
+> into §Ratified decisions — owes its own implementation-notes file as its
+> committed record, with the reviewer's findings appended there as a dated
+> `## Review` section. Not a packet. Not this file.
+
+**F4 — landing record.** No in-repo artifact recorded that the landing session
+ran: the round document's deviation note was authored before the session it
+describes, and r0's six verifications existed only in a packet. §Not established
+item 2's own shape one level up.
+
+> **Disposition: accepted and created at r1** as this file. Its filename diverges
+> from the directory's dominant `*-implementation-notes.md` pattern; the
+> divergence is raised in the file's own opening blockquote and stands — no ticket
+> ran, so the notes suffix would describe it wrongly.
+
+**F5 — population derivation.** r0's verification 2 called a 21-path list "every
+path named in the landed document" and checked it, but the list was
+hand-assembled rather than derived from the file. A count over an undemonstrated
+population is carrier 1.
+
+> **Disposition: applied at r1.** The mechanical derivation returned 23 tokens:
+> three the hand list missed (`cloudcost/`, and the bare basenames
+> `compose_report_data.py` and `tools.json`, both normalised to qualified forms
+> before the count) and one the hand list supplied from knowledge of the tree
+> rather than from the document (`cloudcost/docs`). Every one of r0's 21 was real
+> and correctly resolved. What was missing was the derivation, not the arithmetic
+> — which is the carrier exactly.
+
+**F6 — the attribution rule, self-clearance reversed.** §Carried in's first rule
+is in force for this round. r0 applied it and then cleared it as *"the file's
+established convention"*, citing BL-070's dated block sitting above its own
+`Source:`. That is precedent for the defect, not a defence of it.
+
+> **Disposition: placement stands, justification replaced, application recorded
+> at r1.** What bounds the re-attribution is the date pair — each annotation opens
+> 2026-08-09, each row's `Source:` carries 2026-08-07 — and that is the whole of
+> it. Convention is not the reason and is not recorded as one. The procedural half
+> stands independently of r0 having reached the right outcome: an implementer does
+> not clear a carried rule on the reviewer's behalf.
+
+**F7 — two section names.** `## Why this exists` and `## Scope` existed as
+unheaded opening paragraphs, leaving the round document ungreppable by the section
+names its siblings use.
+
+> **Disposition: applied at r1.** Headings inserted, no text moved. The residual
+> divergence against `m4-consolidation.md` is five close-side sections, which a
+> document opened before its first ticket cannot carry.
+
+**F8 — this section's own absence.** `m5-scoping-landing-notes.md` was created at
+r1 as R20's committed record and carried no `## Review` section, so the reviewer's
+findings on the edit remained in packets alone — the gap the file exists to close,
+one level up. Found only because F3 forced R20's body to be read in full rather
+than cited from its heading.
+
+> **Disposition: closed by this section, at r2.**
+
+`Source: m5 scoping landing, r0 (agents eebd47c) and r1 (agents a039a0d),
+2026-08-09. Findings authored by the reviewer; dispositions record what the
+implementing sessions established, including where they corrected the finding.`

@@ -1147,11 +1147,25 @@ No file under `../aetheris/lib/`, `native/`, `config/`, `scripts/`, or `test/`.
 No new backlog row except one the census itself produces, and a census finding gets a row, never
 a fix. No promotion of a candidate that fails §7's verification step — a candidate that cannot be
 quoted from the destination file after the edit is not promoted, it is recorded as not promoted.
-No relaxation, rewording or quiet resolution of any `[OPEN]` §Not established item to make the
-close read complete: items 10, 11 and 12 have resolvers that are not hc-e, and they close the
-round open. Do not start counting runs toward BL-075 arm 2. No planted cloud resource (R9). No
+No relaxation, rewording, re-labelling or quiet resolution of any §Not established item to make
+the close read complete. **A change to an item's prefix is a disposition change and is covered
+here exactly as a rewording is** — more so, because it moves every count over the section while
+leaving the body intact. Any re-label is dated, attributed, and states the ground on which the new
+label rests; an undated re-label is the prohibited act whatever its merits. Items 10, 11 and 12
+have resolvers that are not hc-e, and they close the round open. Do not start counting runs toward BL-075 arm 2. No planted cloud resource (R9). No
 hash-driven diff at the export boundary.
 
+> **`[extended 2026-08-09 (hc-e r3's report, ruled by the reviewer). The field was scoped to
+> "[OPEN]" items and named relaxation, rewording and quiet resolution. R21 introduced re-labelling,
+> which the wording did not obviously reach — reported as ambiguous by claude-code at r3's
+> vocabulary sweep rather than decided by it. Item 4's re-label satisfies the extended form: dated,
+> attributed, ground stated. The original text and the ambiguity report both stand below, per
+> decision 7.]`**
+>
+> **The original field read:** *"No relaxation, rewording or quiet resolution of any `[OPEN]`
+> §Not established item to make the close read complete: items 10, 11 and 12 have resolvers that
+> are not hc-e, and they close the round open."*
+>
 > **`[reported ambiguous, not decided — 2026-08-09 (hc-e r3, block B's sweep).]`** This field's
 > prohibition is scoped to `[OPEN]`: *"No relaxation, rewording or quiet resolution of any
 > `[OPEN]` §Not established item to make the close read complete."* **R21 introduced a move the
@@ -1163,6 +1177,10 @@ hash-driven diff at the export boundary.
 > **Not resolved here.** Whether the prohibition should read `[OPEN]`-or-`[DECIDED]`, or gain a
 > clause requiring any re-label to be dated and attributed, is a ruling; hc-e's own field is
 > reviewer-authored and this is exactly the sweep's instruction to report rather than decide.
+>
+> **`[ruled 2026-08-09 — the second disjunct, and wider than either. The field above now covers
+> every §Not established item rather than only the `[OPEN]` ones, names re-labelling alongside
+> rewording, and requires date, attribution and stated ground. Reported here, decided there.]`**
 
 **Runbook update rule.** hc-e changes no operator-facing behaviour, so it owes the runbook no new
 text. What it owes is a **verification**: the runbook sections hc-c and hc-d wrote — the

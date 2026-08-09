@@ -754,3 +754,127 @@ blocks, every item; the one promotion it produced, verified by reading the desti
 
 **hc-e is not closed.** `drift_check --strict` is green at 0 FAIL with the three expected
 staleness WARNs, which is the state to expect mid-cycle, not the boundary's own truth-maker.
+
+---
+
+# Round 4 — F11, the re-labelling ruling, and §7's distillation
+
+**Repos.** agents from `088f9c2`; harness from `02db6bb` — **cross-repo, harness first.**
+**Date.** 2026-08-09.
+
+> **Outcome: F11 reconciled (all three pairs, no stop); the `Do not generate` ruling applied; §7's
+> distillation run over all seven candidates — one promoted, five merged, one general claim
+> dropped, every entry verified by reading it out of its destination file.** The Done-check, the
+> six sweeps, the boundary and the milestone summary remain untouched. **hc-e is not closed.**
+
+---
+
+## 35. F11 — the three pairs, reconciled. **No stop.**
+
+**(a) Which commit each figure was derived at.** §27's and §32's figures were derived **before**
+this round's own commit: the vocabulary sweep ran against the clean tree at **`8082e40`**, and the
+`positive control` count ran mid-edit against a working tree whose hc-consolidation.md content
+matched `8082e40` for that token. §1's figures were derived **post-commit**, at **`088f9c2`**, when
+the packet was generated.
+
+**(b) Stamped, with both trees printed.** Same pattern, same flags, one command per row:
+
+```
+figure                                        8082e40   088f9c2   reconciles
+prefix tokens [RESOLVED|OPEN|DECIDED]              33        41     yes  (+8)
+'Not established'  (the control)                   25        30     yes  (+5)
+'positive control'                                 12        13     yes  (+1)
+§Not established item heads (invariant)            12        12     yes  ( 0)
+```
+
+**Each pair is one count at two trees, not a contradiction.** The item-head row is the control on
+the reconciliation itself: a figure this round did **not** move stays put across the same two
+trees, so the three that moved moved because of content and not because of a drifting pattern.
+
+**(c) Nothing failed to reconcile**, so there is nothing to stop on. And the `+1` is worth naming
+rather than absorbing: the extra `positive control` hit is **this round's own §Ticket set row
+saying *"found one rule absent in substance — a negative needs a positive control"***. The count
+was moved by the sentence describing the census that produced it — the same shape as hc-d's
+8-against-10, arriving in the packet that files the candidate about it. That is now a promoted
+standing rule (§36, candidate 1+6) and this is its first instance under the rule rather than
+before it.
+
+## 36. §7's distillation — the population, re-derived
+
+**Not carried from G3.** Pattern `^\*\*[A-Z(]` over §Promotion candidates → **11** bold leads at
+`088f9c2`+worktree, where G3 recorded 10; the section has grown by D's candidate. **4 of the 11 are
+candidate 5's internal structure** (*Instances, an open list*; *(viii)*; *Operational close for
+(viii)*; *(vi) is the list's first append*), leaving **7 candidates**. **Positive controls**, same
+pattern and flags: §Ratified decisions → 18, §Rows filed → 1.
+
+**Scan inputs** per §7's own widening — *"the review files are not the only input"*: this round's
+`docs/reviews/hc-*-review.md`, the four `hc-*` implementation-notes files, and this file's own
+Rounds 1–3, which is where the sweep-discovered defects live that no reviewer ever saw.
+
+## 37. The outcome table
+
+| # | Candidate | Outcome | Destination | Verification |
+|---|---|---|---|---|
+| 1 | The promoted count rule's carrier 1 has a sub-shape (a prediction carried as a count) | **MERGED with 6** | harness → *a count is a claim about a population* | `0 → 1` |
+| 2 | The packet is the artifact that travels, and packet assembly is itself a place claims are made | **PROMOTED** | agents → §Learning — BL-007 | `0 → 1` |
+| 3 | An artifact selected by recency is not bound to its purpose | **MERGED** | harness → the command-binding carrier | `0 → 1` |
+| 4 | A restore is verified, not assumed | **MERGED** | harness → the mutation test | `0 → 1` |
+| 5 | Asserting a document's or a check's state from memory of prior packets | **MERGED** (its operational close only); **general claim DROPPED** | harness → *an inherited citation is still uncited* | `0 → 1` |
+| 6 | A census recorded inside the document it censuses goes stale as that document grows | **MERGED with 1** | harness → same entry as 1 | (entry 1) |
+| 7 | A vocabulary change owes a sweep of everything that speaks it | **MERGED** | harness → *the class is not only code* | `0 → 1` |
+
+**Seven candidates → six entries.** Five new paragraphs in the harness, one in agents.
+
+**Why each landed where it did.** 1+6, 3, 4, 5 and 7 all extend rules whose subject already lives
+in the harness `CLAUDE.md` — counts, command binding, the mutation test, citations, the class
+census — and each is written as a continuation of the entry it belongs to rather than as a sibling
+that will be read as unrelated. **2 is the exception and goes agents-side**, because the packet-rule
+family lives in `CLAUDE.md` §Learning — BL-007 and this is a packet rule; it cites harness
+`Packet-integrity` rather than duplicating it.
+
+**The one drop, recorded rather than avoided.** Candidate 5's *general* claim — asserting a
+document's state from memory of prior packets — is **already covered** by the harness's *"An
+inherited citation is still uncited"*, which says the same thing in the same file. Promoting it
+again would have produced two entries a reader must reconcile. What was **not** covered is its
+operational close from instance (viii): **an identifier is resolved, never transcribed** — the
+sub-shape where the identifier was *invented* rather than copied, so no re-reading can refute it
+and only resolving can. That is the part promoted, and the drop is stated in its own `Source:`
+line so the next reader knows the general claim was considered and why it did not land again.
+
+**Two merges of two candidates into one rule.** 1 and 6 are the same rule at different distances:
+a figure whose population you could not enumerate when you stated it (a prediction), and a figure
+whose population moved after you stated it (a census inside its own subject). Both close the same
+way — stamp the commit, prefer a pointer — so they became one addition rather than two entries
+that would be read as unrelated. 7 merges into the class-census rule as its *change-triggered*
+half, since the existing rule fires on finding a defect and this one fires on making a change,
+which is easier to miss because nothing has gone wrong yet.
+
+**Nothing was promoted to avoid the appearance of dropping.** Each of the seven produced a
+standing instruction someone could follow without the narrative; where one did not, it was dropped
+and said so. **No candidate was left as prose**: none had to be held back as "not yet statable in
+one instruction".
+
+## 38. §7's verification step — every entry read out of its destination file
+
+Performed **after** the edits, with a before/after count for a token unique to each entry. Full
+quotations with surrounding lines are in the packet.
+
+```
+unique token                                      before  after  file
+a count names the commit it was derived at             0      1  aetheris/CLAUDE.md
+Bind an artifact to what produced it…                  0      1  aetheris/CLAUDE.md
+…the restore is the second one                         0      1  aetheris/CLAUDE.md
+An identifier is resolved, never transcribed           0      1  aetheris/CLAUDE.md
+A vocabulary change owes a sweep…                      0      1  aetheris/CLAUDE.md
+A packet publishes the invocation…                     0      1  aetheris-agents/CLAUDE.md
+POSITIVE CONTROL — a token deliberately absent         0      0  both
+```
+
+**Six of six can be read out of the file**, which is what makes the promotion complete rather than
+the edit having been made.
+
+## 39. Not reached — unchanged from §34, minus the distillation
+
+The Done-check items 1–9 including the harness gate set; §Close criteria's six sweeps and their two
+carried questions about BL-135 as *filed and folded*; the export boundary; the milestone summary.
+**hc-e is not closed and the manifest is not regenerated.**

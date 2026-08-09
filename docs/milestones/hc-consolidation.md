@@ -494,9 +494,46 @@ before transcription, and none was withheld.`
 > conflict, R19 governs the fact and the instruction governs only the wording. A session that
 > receives such an instruction writes the row anyway and names the conflict in its packet.
 >
-> Three surfaces have now gone stale under a rule written to stop it: hc-b's row at hc-c, hc-c's
-> own row at r1, and hc-e's row here — the last one authorised by the reviewer rather than missed
-> by the implementer.
+> R19 was written after three surfaces had already gone stale — the three its own preamble
+> enumerates. hc-e's row is the **first since**, and it is the one that matters most: it did not go
+> stale because anyone forgot, but because a reviewer instruction told a session to leave it, and
+> nothing in the loop flagged that an instruction was overriding a standing rule. That is what this
+> amendment is for. No total is carried here; the preamble's enumeration and this instance are the
+> record, per the candidate one section below.
+>
+> > **`[corrected 2026-08-09 (hc-e's anatomy edit r1, F1 — the reviewer's own correction of the
+> > sentence they authored). The original stands unrewritten beneath, per decision 7.]`**
+> >
+> > **It read:** *"Three surfaces have now gone stale under a rule written to stop it: hc-b's row
+> > at hc-c, hc-c's own row at r1, and hc-e's row here — the last one authorised by the reviewer
+> > rather than missed by the implementer."*
+> >
+> > **Wrong twice.** It **misattributed** — hc-b's row at hc-c and hc-c's own row at r1 both went
+> > stale *before* R19 existed (added at `3971121`, dated by `git log -S`); they are the instances
+> > that caused R19, not instances of it failing. And it **double-counted** — R19's preamble
+> > already enumerates three ending with **hc-d's** row, where this sentence's three ended with
+> > **hc-e's**: two totals over overlapping-but-different members, one section apart, in the commit
+> > that landed the candidate about exactly that shape. **R19 did not fail three times. It failed
+> > once, in the way rules of its kind actually fail — overridden from above rather than forgotten
+> > from below.**
+
+---
+
+### R20 — a reviewer-authored section-scoped edit is not a ticket round and gets no review file.
+
+Its implementation-notes file is its committed record, and the reviewer's findings on it land
+there, appended as a dated `## Review` section with the findings verbatim and the dispositions
+beneath — the same shape **R2** requires of a review file, in the artifact the edit already has.
+R2 is unchanged for `hc-*` ticket rounds.
+
+The reason is that R2's purpose is a committed trail for every session that changes the repo, not
+a particular filename. Inventing a review file for a session with no rounds would make the file's
+own `## Round N` structure a fiction; putting the findings in the notes keeps the trail and keeps
+the structure honest.
+
+`Recorded 2026-08-09, closing hc-d anatomy r1.4 Finding 2, which had been stood in for at that
+edit's r1.5 and again at hc-e's anatomy edit §5. Authored by the reviewer at hc-e's anatomy edit
+r1, F3.`
 
 ---
 
@@ -1131,7 +1168,7 @@ operation.**
 **Claude-code prompt.**
 
 > Close hc-e per this section. Read `docs/milestones/hc-consolidation.md` §Ratified decisions
-> R1–R19, the methodology's §7 milestone-end ritual **in the methodology document itself**, and
+> R1–R20, the methodology's §7 milestone-end ritual **in the methodology document itself**, and
 > both repos' CLAUDE.md learning sections before the first edit. **Cite §7's steps by name, never
 > by ordinal**, and take the step names from §7's own text rather than from any packet. Run the
 > step-1 gate below before writing anything; any item unestablished stops the ticket without an
@@ -1750,6 +1787,17 @@ cut mid-stream, every published line accurate. Caught by the line count, not by 
 packet reads an artifact only after establishing its producer has exited, and a partial capture
 is indistinguishable from a complete one by content alone. Origin: claude-code, caught before
 publication at hc-e.
+
+The figures are claude-code's account, given in hc-e's opening-edit packet preamble and recorded
+here; packets are not committed in either repo, so they are not reconstructible from the tree. The
+claim they support does not depend on them — a capture read before its producer exits is partial
+whatever the line counts were.
+
+> `[appended 2026-08-09 (hc-e's anatomy edit r1, F2). The paragraph above landed at `e047dd1`
+> carrying specifics no repo can check, which §7's promotion-verification step would have quoted
+> from its destination file successfully while its evidence stayed unverifiable. The provenance is
+> stated rather than the figures dropped: the substance was established by a line count, not by
+> inspection, and it stands without them.]`
 
 **An artifact selected by recency is not bound to its purpose.** At hc-d r2 a packet chose its
 evidence with `ls -1dt | head -1`, and the newest run at that instant was a deliberately-corrupted

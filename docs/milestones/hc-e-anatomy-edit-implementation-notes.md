@@ -306,3 +306,151 @@ lands.
 - **hc-d anatomy r1.4 Finding 2 is still open** — reviewer edits have no review-file carrier, so
   whether their notes file *is* the committed record remains a ruling nobody has made. §5 above is
   the same stand-in r1.5 used, applied a second time.
+
+---
+
+## Review
+
+Per **R20**, recorded 2026-08-09 at this edit's r1: a reviewer-authored section-scoped edit gets no
+review file, and this notes file is its committed record. Findings verbatim; dispositions beneath.
+This section is r1's own record.
+
+**Raised at:** agents `e047dd1`, harness `48f59e7`. **Round 1**, narrowly scoped and
+pre-authorised to close.
+
+---
+
+### F1 — MUST FIX. A3's closing sentence is wrong twice, and your §1f is right.
+
+> The sentence is mine and it does not survive your check. Two defects:
+>
+> 1. **It misattributes.** *"Three surfaces have now gone stale under a rule
+>    written to stop it"* — hc-b's row at hc-c and hc-c's own row at r1 both went
+>    stale **before R19 existed** (`3901121`-era; you dated it at `3971121` by
+>    `git log -S`). They are the instances that *caused* R19, not instances of it
+>    failing. Only hc-e's row went stale after the rule existed.
+> 2. **It double-counts.** R19's own preamble already enumerates three, ending
+>    with **hc-d's row**; A3's three ends with **hc-e's**. Two totals over
+>    overlapping-but-different members, one section apart, in the commit that
+>    lands A5 — the candidate about exactly this shape.
+>
+> Replace the sentence, keeping the original beneath per decision 7:
+>
+>   R19 was written after three surfaces had already gone stale — the three its
+>   own preamble enumerates. hc-e's row is the **first since**, and it is the one
+>   that matters most: it did not go stale because anyone forgot, but because a
+>   reviewer instruction told a session to leave it, and nothing in the loop
+>   flagged that an instruction was overriding a standing rule. That is what this
+>   amendment is for. No total is carried here; the preamble's enumeration and
+>   this instance are the record, per the candidate one section below.
+>
+> The point gets sharper by being accurate: R19 did not fail three times. It
+> failed once, in the way rules of its kind actually fail — overridden from above
+> rather than forgotten from below.
+
+**Disposition: APPLIED**, `hc-consolidation.md` §Ratified decisions → R19, inside the A3
+amendment block. The replacement is transcribed verbatim; the original sentence is quoted beneath
+it in a nested `[corrected]` block per decision 7, together with both defects named as the finding
+names them.
+
+**One transcription note, and it is the finding's own instance re-appearing.** F1's text dates R19
+two ways in one sentence — *"(`3901121`-era; you dated it at `3971121` by `git log -S`)"*, the
+first digit-string differing from the second. Only the second resolves:
+
+```
+$ git cat-file -t 3901121   -> fatal: Not a valid object name 3901121
+$ git cat-file -t 3971121   -> commit
+```
+
+The correction block therefore carries `3971121` alone, with the commands above as its
+truth-maker, and no reference to a hash that does not exist. Flagged rather than silently
+normalised, because a hash in a correction inherits the correction's authority — the rule the
+harness `CLAUDE.md` states as *a correction inherits the authority of the claim it replaces*.
+
+**And this note was itself wrong on its first draft**, which is why the commands are printed
+rather than described: it rendered the resolving hash as `3971141` while quoting a sentence that
+says `3971121` — a mis-transcribed hash inside the paragraph about a mis-transcribed hash, caught
+by running `git cat-file` against both rather than by re-reading. Recorded for the same reason the
+discharge sentence's three forms are (§2.1): the check that catches this class is running the
+command, never reading the number again.
+
+---
+
+### F2 — MUST FIX. The packet-integrity append rests on figures no repo can check. Your §6 named it; it needs to be in the candidate, not only in the notes.
+
+> *"69 of 184 lines, four gates green and the fifth cut mid-stream"* describes
+> hc-e's opening-edit packet preamble. Packets are not committed here, so a
+> promoted candidate now carries specifics that are unreconstructible from either
+> repo — and §7's promotion-verification step will ask that entry to be quoted
+> from its destination file with its surrounding lines, which will succeed while
+> its evidence remains unverifiable.
+>
+> That is not a reason to drop the candidate. Its substance — a partial capture is
+> indistinguishable from a complete one by content alone — is sound and was
+> established by a line count, not by inspection. It is a reason to say where the
+> figures come from.
+>
+> Append to that paragraph:
+>
+>   The figures are claude-code's account, given in hc-e's opening-edit packet
+>   preamble and recorded here; packets are not committed in either repo, so they
+>   are not reconstructible from the tree. The claim they support does not depend
+>   on them — a capture read before its producer exits is partial whatever the
+>   line counts were.
+
+**Disposition: APPLIED**, `hc-consolidation.md` §Promotion candidates → the packet-integrity
+candidate. The appended text is verbatim, followed by a dated `[appended]` block recording what
+the paragraph carried at `e047dd1` and why the provenance was stated rather than the figures
+dropped. The finding is upheld against my own §6, which named the gap and left it in the notes —
+where §7's verification step would never have looked.
+
+---
+
+### F3 — RULING, closing hc-d anatomy r1.4 Finding 2. Reviewer edits' review trail.
+
+> Your §2.4 and §6 both note the same open question, stood in for twice now:
+> reviewer-authored edits write no review file, so whether their notes file is
+> their committed record has never been ruled. Ruling, to land in §Ratified
+> decisions as R20:
+>
+>   R20 — a reviewer-authored section-scoped edit is not a ticket round and gets
+>   no review file. Its implementation-notes file is its committed record, and the
+>   reviewer's findings on it land there, appended as a dated `## Review` section
+>   with the findings verbatim and the dispositions beneath — the same shape R2
+>   requires of a review file, in the artifact the edit already has. R2 is
+>   unchanged for `hc-*` ticket rounds.
+>
+>   The reason is that R2's purpose is a committed trail for every session that
+>   changes the repo, not a particular filename. Inventing a review file for a
+>   session with no rounds would make the file's own `## Round N` structure a
+>   fiction; putting the findings in the notes keeps the trail and keeps the
+>   structure honest.
+>
+>   Recorded 2026-08-09, closing hc-d anatomy r1.4 Finding 2, which had been
+>   stood in for at that edit's r1.5 and again at hc-e's anatomy edit §5.
+>
+> Then apply it to this edit: append F1–F3 verbatim, with your dispositions, to
+> `docs/milestones/hc-e-anatomy-edit-implementation-notes.md` as its `## Review`
+> section. That section is r1's own record.
+
+**Disposition: APPLIED, and applied to itself.** R20 landed in §Ratified decisions between R19 and
+the m4-decisions table, transcribed verbatim with its reason and its closing stamp. This section
+is R20's first application. §2.4 and §6 above are superseded by it and left standing per decision
+7 — both said the ruling was unmade, which was true when written.
+
+**One consequence, derived not assumed, and it is the only edit r1 makes beyond F1–F3.** R20's
+landing stales any live citation of the decision range. A census over the whole document for
+`R1[–-]R(1[0-9]|20)` and `R[0-9]+ through R[0-9]+` returns **five** hits; **four are historical
+records and are correctly left alone** — `:477` (*"R15 through R19"*, the provenance stamp for
+what hc-d's anatomy edit added), `:624` (hc-a's row, *"the ruling questions R1–R11 answer"*),
+hc-**d**'s Claude-code prompt (`R1–R19`, and hc-d is closed: its prompt records what hc-d was
+told), and the document-created stamp (*"Decisions R1–R13"*). **One is live**: hc-**e**'s
+Claude-code prompt, for a ticket that has not reopened. Transcribed as **`R1–R20`**.
+
+Precedent, and it is exact: hc-d's anatomy edit met this at its own §2 item 4 — authored `R1–R18`
+where R19 landed in the same commit — and the reviewer ratified the change at r1's A6, *"a prompt
+shipping stale at birth is worse than a transcription divergence."* Named here rather than made
+quietly, because r1's authorisation is scoped to F1–F3 and this is the one edit outside it.
+
+**R20 does not otherwise bind hc-e**, which is a ticket round and keeps `docs/reviews/hc-e-review.md`
+under R2 unchanged. That file is untouched by this round.

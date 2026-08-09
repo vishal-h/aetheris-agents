@@ -58,6 +58,42 @@ packets, not re-triaged, and **not relaxed**.
 `Source: hc-d r3 ticket-boundary gate run, 2026-08-09 (harness 48f59e7, agents 4222804). One
 observation; the non-reproduction is recorded above as part of the evidence, not omitted from it.`
 
+> **`[FOLDED into BL-075, 2026-08-09 (hc-e's opening edit, E3). Same defect — this row should not
+> have been filed. Kept, not deleted, because the fold and its reason are the record.]`**
+>
+> **They are the same defect, established from the rows and the source, not from resemblance.**
+> BL-075's m4 close-b annotation already names the identity in full — same module
+> (`Aetheris.CLI.Commands.RunHelpersTimeoutTest`), same file and line
+> (`test/aetheris/cli/commands/run_helpers_timeout_test.exs:84`), same stacktrace line (`:98`),
+> same assertion (`await_bounded(run_id, await_inactivity_timeout_ms: 300)`), and the same error
+> shape (`stalled: no status or event activity for 300ms … last event seq: -1`). The only
+> difference between the two observations is the generated run id — `await-status-activity-7139`
+> at close-b, `-8610` here — which is `System.unique_integer` and distinguishes nothing.
+>
+> **Not two tests in one module, and not two failures of one test.** One test, one assertion, two
+> observations seven days apart. `grep -c 'run_helpers_timeout_test'` over `../aetheris/scripts/`
+> is not the question; the question is the module's test count, and the row above named a single
+> `test …:84`.
+>
+> **So this row is a duplicate, and the error is mine.** The gate rule says a red gate gets a
+> tracked ticket *the day it is found* — it does not say file without looking. I filed BL-135 at
+> hc-d r3 without searching the backlog for an existing row on the same test, and BL-075 not only
+> existed but already carried the identical stack trace. **The count error is over a population of
+> size two:** filing a second row for one defect, exactly as filing one row for two would have
+> been.
+>
+> **What BL-135 contributes, folded onto BL-075 above as a third observation:** the 2026-08-09
+> failure with its own date and evidence, and — new — **nine non-reproductions** (8 idle runs of
+> `:84`, one under six CPU spin loops, plus a full green suite), which is the first time the
+> reproduction conditions have been probed rather than only the failures counted. **The warning
+> against the tempting fix stands and is not duplicated:** widening
+> `await_inactivity_timeout_ms` weakens the assertion, because the bound *is* the behaviour under
+> test — which is BL-075's own *"fixed-ms window rather than a poll"* mechanism class, and
+> BL-054's §Suggested order entry already names the cure.
+>
+> **Status:** folded. Track the defect on **BL-075**. This row stays as the record of the
+> duplication and of the non-reproduction evidence.
+
 ---
 
 ## Housekeeping (do first, near-zero effort)
@@ -2841,10 +2877,74 @@ arm — is unchanged; and no timing, poll interval or window is touched. **That 
 diff, not a measurement.** Not re-run to chase a red: one green does not refute a flake and one red
 would not confirm it.
 
+**Annotated 2026-08-09 (hc-e's opening edit, E3) — a third observation, folded in from BL-135,
+which was a duplicate row.** hc-d r3's boundary gate hit **the same defect**: same module, same
+`…run_helpers_timeout_test.exs:84`, same `:98` stacktrace, same
+`await_bounded(…, await_inactivity_timeout_ms: 300)`, same `stalled: … for 300ms … last event
+seq: -1`. Only the generated run id differs (`-7139` at close-b, `-8610` here), and that is
+`System.unique_integer`. **BL-135 should not have been filed** — the gate rule requires a tracked
+row the day a red is found, not a row filed without checking whether one exists. BL-135 is kept as
+the record of the duplication, not deleted.
+
+```
+run 1 (2026-08-02, m2 t2)        969 tests, 1 failure    identity uncaptured (tail -12)
+run 2 (2026-08-08, m4 close-b)   969 tests, 1 failure    identity captured
+run 3 (2026-08-09, hc-d r3)      972 tests, 1 failure    identity captured, same assertion
+```
+
+**What is new, and it is the first probe of the reproduction conditions rather than another
+failure count: nine non-reproductions.** Eight consecutive runs of `…:84` alone on an idle machine
+(all PASS), one under six deliberate CPU spin loops (PASS), and one full suite immediately after
+(`972 tests, 0 failures`). So across three observations the failure is real and its trigger is still
+**not established** — only the **100 ms margin** that makes it possible (a feeder sleeping 200 ms
+against a 300 ms bound) is established, from the test's own source.
+
+**Do not widen the bound to buy margin.** `await_inactivity_timeout_ms` is the behaviour under
+test; inflating it weakens the assertion it exists to make. That is this row's own *"fixed-ms window
+rather than a poll"* mechanism class, and BL-054's §Suggested order entry already names the cure —
+*"fold into a polling-based rewrite of the fixed-ms windows when someone is in that file."*
+
+**Annotated 2026-08-09 (hc-e's opening edit, E4) — arm 2's blocker is PARTLY lifted, and the
+remaining gap is a different shape.** The blocking clause read: *"Three further full-output runs
+come back clean"* requires that those runs' full output be **retained somewhere durable**, and
+**BL-133** establishes that no such place exists: `../aetheris/sprint/` archives `run.json` alone,
+and `mix test` output is archived nowhere at all.*
+
+**The first half of that premise is now false.** hc-d discharged BL-133 face 2: every sprint run
+retains `console.log` — every arm, in order, untruncated, streams merged — beside a
+`provenance.txt` naming both repos' commits, the target and the command, under a stated, bounded and
+enforced 30-day retention. A durable place with provenance **exists**.
+
+**The second half still holds, and it is the half arm 2 needs.** Established rather than assumed:
+
+- `sprint.sh` invokes `mix test` **once**, at `:1517`, on **two named files**
+  (`server_checkpoint_test.exs`, `server_inject_test.exs`) inside one case — not the suite.
+- It never references this flake's file: `grep -c 'run_helpers_timeout_test'` over
+  `../aetheris/scripts/sprint.sh` → **0**. *Positive control:* `grep -c 'server_checkpoint_test'`
+  → **3**, so the pattern finds referenced test files where they exist.
+- The boundary-gate `mix test` is a **direct invocation**, outside any sprint process, and
+  `SPRINT_CONSOLE` exists only inside one — so its output is not captured.
+- Measured against the retained corpus: `grep -rlE '[0-9]+ tests, [0-9]+ failures' sprint/*/console.log`
+  → **0 files**. *Positive control:* the same pattern over a direct `mix test` capture → **1**.
+
+**So: the place exists; the routing does not.** Arm 2 remains unsatisfiable as written, but the
+blocker has changed shape — from *"no durable place exists"* to *"the full suite is never run where
+the durable place would capture it."* That is smaller, and it is a routing decision rather than a
+ruling. **Face 1 (reviews as session artifacts) is untouched and is not what arm 2 needed** — arm 2
+is about run output.
+
+**One thing recorded against hc-d's own reasoning:** hc-d chose the 30-day retention bound *citing
+this row's "three further full-output runs come back clean"* as its justification. That citation was
+optimistic — the bound was set for a consumer the mechanism does not yet serve. The bound is not
+wrong; its stated rationale reached one step further than the mechanism does.
+
+**Arm 2 is not started here.** E4's whole scope was establishing the blocker's status.
+
 `Source: m2-cloudcost t2 done-check, 2026-08-02 (aetheris-agents 7a7b7ec; aetheris fd9ac48,
 untouched). Annotated at m4-cloudcost close-b, 2026-08-08 — close-a Part 5 for the retention
 finding; the reproduction and the failing test's identity are this close's own four runs, at agents
-2806305 / aetheris 288c8ef, neither of which touches harness code.`
+2806305 / aetheris 288c8ef, neither of which touches harness code. Annotated again 2026-08-09 at
+hc-e's opening edit (E3 fold, E4 blocker status), at agents f8ed90f / aetheris 48f59e7.`
 
 ---
 

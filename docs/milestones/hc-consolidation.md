@@ -596,7 +596,7 @@ own output — and a round carries no row, so it has **none by design**.
 | **hc-a** | The scoping read | **Closed.** Produced no repo artifact by design |
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
 | **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
-| **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Opened and stopped** 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it |
+| **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Closed** 2026-08-09 at **r3**. Gate G0–G5 passed; BL-077 closed, BL-133 face 2 discharged, R3 answered (`expected_fail` keys on a shell condition, so BL-044 stays filed and no `lib/` file was touched). Four rounds. agents `240eb59`→`f8ed90f`, harness `2d76a65`→`48f59e7`. **Earlier state, kept per decision 7:** *"Opened and stopped 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it."* `[updated 2026-08-09 (hc-e's opening edit, E1) — R19 scopes the row edit to the session that changed the state, and hc-d's session is over, so this carry is reviewer-authorised explicitly. The range is derived from the repos (`git log --grep='hc-d'`), not from the packets.]` |
 | **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | Not started |
 
 ### hc-a — the scoping read
@@ -1545,6 +1545,21 @@ the status that command returned, or it re-runs and publishes the re-run. It nev
 illustrate a result obtained some other way, because a re-run can bind differently than the
 original and the difference is invisible in the output. Origin: claude-code's own diagnosis at
 hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
+
+**An artifact selected by recency is not bound to its purpose.** At hc-d r2 a packet chose its
+evidence with `ls -1dt | head -1`, and the newest run at that instant was a deliberately-corrupted
+test run. One command then returned an empty result that read as a defect in the subject rather than
+in the selection, and a second — the provenance stamp — was published as clean-post-commit evidence
+drawn from the same broken run. **The stamp's contents were accurate, which is exactly why it
+survived review.** An artifact can be correct and still be the wrong artifact, and nothing in its
+contents distinguishes the two.
+
+So: bind an artifact to the thing that produced it, never to its position in a listing. A run
+directory comes from the run's own output. This is the command-binding carrier with a timestamp in
+place of a path, and it is the form that defeats content inspection. Origin: claude-code's own
+diagnosis at hc-d r3 §28, in answer to a finding that offered two disjuncts and got a third.
+
+---
 
 **A restore is verified, not assumed.** At hc-d r1 a `git checkout --` ran under a persisting `cd`,
 failed with *"pathspec did not match"*, restored nothing, and the run labelled RESTORED then

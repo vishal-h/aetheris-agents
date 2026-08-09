@@ -105,6 +105,15 @@ hc-c did not touch `sprint.sh` (its own §Ticket set row says so), which is why 
 > exactly **31**. G5 asks for a derivation, not for an explanation of the wrong number, so this is
 > an input and not a finding.
 
+> **`[corrected at r1 — see §r1.2.]`** The blockquote above is **wrong, and wrong in the class it
+> was verifying.** There are **two** unindented `section "` hits, not three: `:38` is
+> `section() { … }` and contains no `section "` at all, so it is matched by `grep -n '^section'` —
+> the pattern this observation used — and not by the pattern the 29 and the 31 come from. Under one
+> pattern, 29 + 2 = 31. **R1's parenthetical is right about the count and wrong about its members**
+> (`:176` and `:3161`, not `:38` and `:176`), which is a different correction from the one this
+> blockquote proposed. Original text left standing per decision 7; the correction itself lands in
+> G5's edit, per r1's A3.
+
 ### 1f. Block E2 — hc-d's own state
 
 | Claim | Verdict | Evidence |
@@ -248,3 +257,164 @@ it before hc-d's gate runs rather than after its packet is written.
 - **No review file was touched.** This is a reviewer edit, not an `hc-*` ticket round; `599747e`
   (hc-c's opening edit, which added R14) is the precedent for a doc-only commit with no review-file
   entry. hc-d's own review file keeps Round 0 and its empty Round 1.
+
+---
+
+# Round 1 — six reviewer additions
+
+**Accepted at agents `3971121`.** r1 is a **round of the anatomy edit, not a new session-ticket** —
+per **R15**, which the anatomy edit itself ratified one commit earlier. **Repos.** agents from
+`3971121`, harness `1b09b23` (untouched, and clean). **Date.** 2026-08-09.
+
+**Landed:** hc-d Done-check items 7 and 8, and item 2 amended; **G0** before G1; a G5 reconciliation
+clause; §Not established **item 9**; the promotion candidate's count replaced by an open list; and a
+`[partly falsified]` marker on hc-e's named question.
+
+---
+
+## r1.1 Phase 1 — the two `[V]`s
+
+**Both confirmed. Neither differs from the authority it points at, so both items transcribe.**
+
+**Item 7's `[V]` — R7's own wording.** Quoted from `hc-consolidation.md` §Ratified decisions → R7,
+verbatim:
+
+> **With one constraint, and it is not optional.** Arms defaulting to non-blocking silently would
+> let the sprint report green over an unaudited set — the silent-wrong-answer shape, in the
+> mechanism built to stop it. **The summary block prints how many arms are blocking and how many
+> are not yet declared.** A zero in the second column is a claim; a number is a status. Both
+> printed explicitly, never by omission.
+
+The phrase r1 offered for comparison — *"A zero in the second column is a claim; a number is a
+status"* — is **character-for-character R7's**. **No difference to report.** R7's *"it is not
+optional"* is also its own words, so item 7's opening clause is quoting, not paraphrasing. Both are
+now quoted inside the item so a later reader is not sent to R7 to check it.
+
+**Item 8's `[V]` — R1's wording.** Quoted verbatim:
+
+> The run directory gets the sprint's own console output — every arm, in order, untruncated — **and**
+> a small stamp naming both repos' commits, the target, and the command. Retention is **stated and
+> bounded**, not indefinite; hc-d picks the bound and prints it.
+
+**Transcribed against it, with one sharpening the `[V]` instruction required.** r1's item 8 said the
+stamp *"names what produced it"*; R1 names **four** elements — both repos' commits, the target, the
+command. *"Transcribe against R1's wording"* therefore means the item must carry the four, or it
+would license a stamp naming one of them. The item now does, and the substitution is named here
+rather than made silently.
+
+---
+
+## r1.2 A3 — the figures reconcile, and the error is mine
+
+**A3 was right that the three figures were in tension and right to forbid a correction written on
+them. The reconciliation is now on the record, and it shows the tension was an artefact of my own
+§1e.**
+
+`sprint.sh:38` is `section() { echo -e … }` and contains **no `section "` at all** —
+`sed -n '38p' scripts/sprint.sh | grep -c 'section "'` → **0**. My §1e's *"3 unindented hits"* came
+from `grep -n '^section'`, which matches the **definition**; the 29 and the 31 come from
+`section "`, which does not. Under the one pattern the counts actually use:
+
+```
+$ grep -c '^section "'   scripts/sprint.sh    →  2      (:176 Prerequisites, :3161 Sprint Complete)
+$ grep -c '  *section "' scripts/sprint.sh    →  29
+$ grep -c 'section "'    scripts/sprint.sh    →  31     ← 29 + 2
+```
+
+**They sum.** A3's second disjunct is the true one.
+
+**Consequences, stated rather than acted on.** R1's parenthetical is **right about the count and
+wrong about the members**: there are exactly two unindented `section "` hits, as it says, but they
+are `:176` and `:3161` — it named the definition, which the pattern does not match, and omitted
+`Sprint Complete`. **Not corrected here**, per A3's instruction: the correction lands in G5's edit
+beside the derivation. G5's paragraph is transcribed as authored, with the reconciliation recorded
+as a dated blockquote beneath it so the document does not carry an open tension that is closed.
+
+**The error's class, and it is the round's second instance.** A count over the wrong population,
+inside a verification of a count — one level above what it was verifying. hc-d's R-i found the
+first (reads-per-file where the question was reads-per-invocation). Mine is reads-of-one-pattern
+where the question was about another. **What G5 still owes is undiminished:** one stated pattern, the
+enumeration printed beside the count, R1's parenthetical corrected, and the *"31"* provenance
+**established or not offered**.
+
+---
+
+## r1.3 A2 — no revert was performed, because none was needed
+
+A2 asked for the `config/config.exs` block to be recorded verbatim and then reverted so the tree
+would be clean for G0. **It reverted itself, and that is the finding's second half.**
+
+| Time | State | Evidence |
+|---|---|---|
+| `09:03:07` | block present, uncommitted | mtime; `git diff` shows +4 |
+| `09:08–09:10` | a second `mix test` runs | mtime **unchanged** → `mix test` refuted as the writer |
+| `09:24:05` | block **gone** | mtime moved; `grep -c playground_tokens` → 0 |
+| `09:26` | tree clean | `git status --porcelain` → **0 lines** |
+
+No session action touched that file at any point. **Nothing was reverted by hand and nothing was
+committed**, so no claim about the cause is made in either direction. The four lines are recorded
+verbatim in §Not established item 9 from the `git diff` captured at the anatomy edit's done-check —
+the working-tree copy no longer exists to re-read, which is itself why recording it first was the
+right instruction.
+
+**G0 is transcribed as authored** and is the standing consequence: hc-d stops on a dirty harness
+tree rather than producing a sprint result no commit can reproduce.
+
+---
+
+## r1.4 Two findings, reported and not fixed
+
+**Finding 1 — §Not carried's count of §Not established is stale, and this commit is what staled
+it.** It reads *"the open questions are **§Not established's four**, each with its resolver named"*.
+The section holds **nine** items, enumerated: 1 `[sandbox]` routing (resolved), 2 the chaos gate, 3
+hc-a Part 4's transcription, 4 no harness-side pointer, 5 hc-c's Ollama dependency, 6 stdout log
+consumers, 7 hc-b2's anatomy (resolved), 8 the provenance suites (resolved), 9 the `config.exs`
+writer — added by this round. It was true at hc-b, when there were four. **Not fixed**: it is a
+count inside reviewer-authored §Not carried prose, and R19 is scoped to ticket rows, not to every
+count. Named so the next edit does not have to rediscover it.
+
+**Finding 2 — R15's mechanism has no carrier for reviewer edits, and r1 is the first case.** R15
+credits R2's committed review file with making a repair round's scope *"committed and pre-date the
+round"*. **R2 binds `hc-*` tickets, and the anatomy edit is a reviewer edit with no review file** —
+so r1's scope (A1–A6) lived in conversation until this commit, which is precisely the condition D1
+established for hc-b2 and R15 was written to rule about. **Not resolved here**, and no review file
+created unilaterally: whether reviewer edits acquire review files, or whether their notes file *is*
+the committed record, is a ruling. **What this round does instead** is transcribe A1–A6 verbatim in
+r1.5 below, so r1's scope is committed by the round that ran it even if the mechanism naming that
+obligation does not yet reach here.
+
+---
+
+## r1.5 A1–A6, verbatim, so this round's scope is committed and not only conversational
+
+Recorded per Finding 2. The reviewer's text as received, abbreviated only by dropping the `[V]`
+annotations that r1.1 discharges.
+
+- **A1** — hc-d's Done-check gains items **7** (the summary block's printed counts, both, including
+  the zero case; R7 non-optional; observed on a real run, an omitted line being the defect) and
+  **8** (the provenance stamp and retention bound on a real artifact; a bound stated but unenforced
+  is permitted and must be *stated as unenforced* in the runbook and §Not established). Item **2**
+  amended: `shellcheck` is absent as of 2026-08-09, attempt the install, and on failure publish the
+  failure output and record the absence in §Not established rather than omitting the line. Nothing
+  renumbered.
+- **A2** — **G0** added *before* G1 so G1–G5 keep the numbers the document already references: the
+  harness working tree is clean at the ticket's start, `git status --porcelain` zero lines, HEAD
+  recorded; not clean → stop and report, however harmless the modification looks, because a sprint
+  run on an uncommitted tree cannot be re-derived from any commit. Plus the §Not established entry,
+  the verbatim record, and the revert.
+- **A3** — G5 also reconciles the three non-summing figures under **one** stated pattern, prints the
+  full enumeration, accounts for every line the pattern matches and does not, then corrects R1's
+  parenthetical in the same edit and records whether the whole-file figure is BL-077's *"31"*
+  provenance or a coincidence. *"A provenance is established or it is not offered."* R1's
+  parenthetical is **not** to be corrected now.
+- **A4** — the promotion candidate's *"Three instances in this round"* replaced by an open list
+  (i)–(v) with **no total**, later ones appending; the rest of the candidate unchanged.
+- **A5** — hc-e's named question **marked, not rewritten**, with the `[partly falsified 2026-08-09
+  (anatomy edit r1)]` block; revised in full at hc-e's own opening anatomy edit; original wording
+  stands per decision 7.
+- **A6** — the anatomy edit's four recorded divergences accepted with no action; its (2) and (3) are
+  now **(iv)** and **(v)** in A4's list; its (4), transcribing `R1–R19` where `R1–R18` was written,
+  confirmed correct — *"a prompt shipping stale at birth is worse than a transcription divergence"*.
+
+**Scope held.** Documents only. No `sprint.sh` change, no code, no hc-d contract work, no backlog
+row filed or closed. hc-d opens in the next session against the anatomy after this round.

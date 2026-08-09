@@ -833,8 +833,9 @@ find surprising. Harness first.
    `mix compile --warnings-as-errors`, `mix hex.audit`, `mix credo --strict`, `mix dialyzer`,
    `mix test` — full output, no `tail`, elisions stated. `sprint.sh` is a harness file; the gates
    apply even with no `lib/` change.
-2. `shellcheck` on `sprint.sh` if it is available; if it is not, say so rather than omitting the
-   line.
+2. `shellcheck` on `sprint.sh`. It is absent on this machine as of 2026-08-09; attempt the install
+   first. If the install fails, say so with the failure output, and record the absence in
+   §Not established rather than omitting the line.
 3. The changed stage exercised in BOTH postures, with the broken state observed rather than
    simulated: a case that is red and listed, and a case that is red and unlisted. Plus at least
    one of R17's arms (b) and (c), constructed.
@@ -843,6 +844,23 @@ find surprising. Harness first.
 5. `drift_check.py --strict` from the agents repo, located by finding it, bound by absolute path,
    exit code captured from that invocation.
 6. Push both repos, harness first, held for review.
+7. **The summary block's printed counts, both of them, including the zero case.** R7 makes this
+   non-optional — *"**With one constraint, and it is not optional.** … **The summary block prints
+   how many arms are blocking and how many are not yet declared.** A zero in the second column is a
+   claim; a number is a status. Both printed explicitly, never by omission"* — and hc-d's
+   `Contract refs` cites R7. Observe on a real run, not by reading the code: the summary block
+   prints a blocking count and a not-yet-declared count, and both appear when their value is
+   **zero**. An omitted line is the defect — a missing number reads as *"nothing to report"*, which
+   is the claim R7 forbids making silently.
+8. **The provenance stamp and the retention bound, on a real artifact.** R1's wording: *"The run
+   directory gets the sprint's own console output — every arm, in order, untruncated — **and** a
+   small stamp naming both repos' commits, the target, and the command. Retention is **stated and
+   bounded**, not indefinite; hc-d picks the bound and prints it."* Observe on a capture the run
+   actually produced: the stamp is present and names what produced it — **all four of R1's
+   elements, both repos' commits, the target and the command** — and the bound is printed. If hc-d
+   states the bound without enforcing it, that is a permitted outcome and it is **stated as
+   unenforced** in the runbook and in §Not established — an unenforced bound recorded as a bound is
+   the same shape as the zero that does not print.
 
 **Claude-code prompt.**
 
@@ -860,6 +878,13 @@ edit**.
 
 Run before any edit. Each item gets an explicit verdict. Any `unestablished` verdict stops the
 ticket without an edit — that is the correct outcome.
+
+**G0 — the harness working tree is clean at the ticket's start.**
+`git -C ../aetheris status --porcelain` returns zero lines, and `git -C ../aetheris log -1
+--format=%h` is recorded.
+**VERDICTS:** clean → proceed. Not clean → **stop and report**, whatever the modification is and
+however harmless it looks. hc-d's evidence is a sprint run, and a sprint run on an uncommitted tree
+cannot be re-derived by anyone else from any commit.
 
 **G1 — R16's resolver.** Establish that a failing agent run's captured file carries a readable
 terminal status. Run one failing case through `run_agent`'s own path and read the capture with
@@ -895,6 +920,43 @@ the row is about. Name the population, print the enumeration beside the count.
 **VERDICTS:** a derived number matching one of the two → proceed, and correct the row in this
 ticket. A third number → proceed, correct the row, and record both prior numbers as wrong. Cannot
 be derived → unestablished, stop.
+
+G5 also reconciles three figures recorded at the anatomy edit and at R1 which do not sum: 29
+indented `section "` calls, 3 unindented hits (`:38`, `:176`, `:3161`), and 31 for a whole-file
+`grep -c 'section "'`. State ONE pattern, derive the population with it, print the full enumeration
+beside the count, and account for every line the pattern matches and every line it does not. Then
+correct R1's parenthetical — which currently says **two** unindented hits — in the same edit, and
+record whether the whole-file figure is BL-077's *"31"* provenance or a coincidence. **A provenance
+is established or it is not offered**; a plausible explanation for a wrong number is not a
+truth-maker.
+
+> **The arithmetic reconciled at anatomy edit r1, so G5 inherits a smaller job than the paragraph
+> above describes — and the error it exposes is claude-code's, not R1's.** `2026-08-09`.
+>
+> **The three figures were keyed on two different patterns.** `sprint.sh:38` is
+> `section() { echo -e … }` — it contains **no** `section "` at all (`sed -n '38p' … | grep -c
+> 'section "'` → **0**). The *"3 unindented hits"* came from `grep -n '^section'`, which matches the
+> definition; the 29 and the 31 come from `section "`, which does not. Under the one pattern the
+> counts actually use: **`grep -c '^section "'` → 2** (`:176` `Prerequisites`, `:3161`
+> `Sprint Complete`), **`grep -c '  *section "'` → 29**, **`grep -c 'section "'` → 31**. **29 + 2 =
+> 31.** They sum.
+>
+> **So R1's parenthetical is right about the count and wrong about the members.** There are exactly
+> **two** unindented `section "` hits, as it says — but they are `:176` and `:3161`, not `:38` and
+> `:176`: it named the definition, which the pattern does not match, and omitted `Sprint Complete`.
+> **Not corrected here, per r1's own instruction** — the correction lands in G5's edit, with the
+> derivation beside it.
+>
+> **The error is the anatomy edit's §1e**, which reported *"three unindented hits, not two"* against
+> a pattern different from the one whose count it was checking. That is a count over the wrong
+> population, inside a verification of a count — one level up from the class it was verifying, and
+> the second time this round that counting by the wrong unit produced a wrong claim (hc-d's R-i
+> found the first, reads-per-file where the question was reads-per-invocation).
+>
+> **What G5 still owes, undiminished:** one stated pattern, the population derived with it, the full
+> enumeration printed beside the count, R1's parenthetical corrected, and the *"31"* provenance
+> **established or not offered**. The whole-file figure being a real count of `section "` makes it a
+> live candidate and nothing more.
 
 **Precondition: none.** Every item is a read or a local run; nothing here needs an API key, a
 model server, or network.
@@ -943,6 +1005,11 @@ and consumes its answer.
 **The named question that gates the rest.** *What hc-c and hc-d actually did* — which arm landed,
 whether decision 13 was overturned, whether BL-044 came in, which rows closed and which were
 filed. None of it is knowable now, and guessing it would be R13's worse failure.
+
+> `[partly falsified 2026-08-09 (anatomy edit r1). "None of it is knowable now" no longer holds for
+> hc-c: its arm landed, decision 13 was not overturned, and both rows closed. hc-d's half stands —
+> it has not run. Revised in full at hc-e's own opening anatomy edit; the original wording stands,
+> per decision 7.]`
 
 **Two obligations recorded now so hc-e does not rediscover them.**
 
@@ -1286,6 +1353,42 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > reads-per-invocation. Two subprocess families live in one file, and counting by file merged
    > them. This is the adjacent-case shape, one level up from the code it was written about.
 
+9. **What wrote — and then unwrote — the uncommitted `config/config.exs` block is not established.**
+   Found at the anatomy edit (2026-08-09) by its own done-check, which had claimed the harness would
+   show no change and reported the divergence instead of asserting green. The block, **recorded
+   verbatim here because the working-tree copy no longer exists to re-read** — this is the
+   `git diff -- config/config.exs` output captured at that done-check, added lines only:
+
+   ```diff
+   +
+   +if config_env() == :dev do
+   +  config :aetheris, :playground_tokens, ["tok-abc"]
+   +end
+   ```
+
+   **Never committed, anywhere.** `git show HEAD:config/config.exs | grep -c playground_tokens` → 0
+   while the working tree read 1, and `git log --all -S'playground_tokens, ["tok-abc"]'` returns no
+   commit on any ref.
+
+   **`mix test` is refuted as the writer, by a positive control.** The file's mtime was
+   `09:03:07`, inside the first `mix test` window — but a second `mix test` (09:08–09:10) left the
+   mtime **unchanged at `09:03:07`**. A full-tree search found no writer: the path appears only in
+   docs (`--exclude-dir` on `.git`, `_build`, `deps`, `node_modules`, `target`), `mix.exs` has no
+   aliases, `.git/hooks/` holds only samples, and `sprint.sh`'s `playground_tokens` use is a runtime
+   `Application.put_env`, not a file write.
+
+   **It then reverted itself, which is the second half of the finding.** r1 asked for the block to be
+   recorded and then reverted so the tree would be clean for G0. **No revert was performed and none
+   was needed**: by `09:26` the block was gone, `git status --porcelain` returned zero lines, and the
+   mtime had moved to `09:24:05` — a second external write, removing what the first added, with no
+   action from the session in between. r1's *"if it reappears, that reappearance is the finding"*
+   therefore already has its mirror: **the writer is external to these repos and was active during
+   this session, in both directions.** Nothing was committed and nothing was reverted by hand, so no
+   claim about the cause is made.
+
+   **G0 is the standing consequence** — hc-d stops on a dirty harness tree rather than running a
+   sprint whose results no commit can reproduce.
+
 ---
 
 ## Promotion candidates
@@ -1312,10 +1415,17 @@ original and the difference is invisible in the output. Origin: claude-code's ow
 hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
 
 **The reviewer asserting a document's state from memory of prior packets rather than from the
-document.** Three instances in this round, each caught by claude-code rather than by the reviewer:
-hc-c's A3 named two sections that live in `cloudcost/m4-consolidation.md`, not in this document;
-hc-c's F3 scoped a status fix to two surfaces and left a third contradicting them; hc-d's opening
-claimed its anatomy was authored when 2 of 7 fields were. The carrier is not the sibling document —
+document.** Each instance was caught by claude-code rather than by the reviewer.
+
+**Instances, an open list** — later ones append rather than restate a total, since the count was
+wrong one commit after it was written and that is carrier 1: **(i)** hc-c's A3 named two sections
+that live in `cloudcost/m4-consolidation.md`; **(ii)** hc-c's F3 scoped a status fix to two surfaces
+and left a third contradicting them; **(iii)** hc-d's opening claimed its anatomy was authored when
+2 of 7 §6 fields were; **(iv)** the anatomy edit cited `hc-d §1a` and `§1d`, letter sub-anchors that
+file does not have; **(v)** the anatomy edit called an `hc-c r2` note *"its hc-d r2 note"*, and hc-d
+has no r2.
+
+The carrier is not the sibling document —
 it is that a packet reports enough of a document to make re-reading it feel unnecessary, and a
 reported document is not a read one. Cited-means-read binds the reviewer identically. Origin:
 claude-ui, named here.

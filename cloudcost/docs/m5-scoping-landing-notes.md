@@ -324,7 +324,7 @@ awk '/^## Not established/,/^## Carried in/' cloudcost/m5-n1-compose.md | grep -
 
 **PASS, both arms.** The two `(b)` items carry `**Settled by:**` and state `**No owner**`,
 inventing none — R21(b)'s requirement. The one `(a)` item's `**Resolver:** t1's **E7**`
-resolves to a heading that exists at `cloudcost/m5-n1-compose.md:176` (see verification 6).
+resolves to a heading that exists at `cloudcost/m5-n1-compose.md:181` (see verification 6).
 
 ### 6. The eight E-items — re-run at r1
 

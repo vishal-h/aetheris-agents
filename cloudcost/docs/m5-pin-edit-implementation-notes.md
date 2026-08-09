@@ -77,6 +77,28 @@ runbook. The working directory is stated nowhere in the runbook, and comes from 
 command and a wrong root, and `pytest cloudcost/tests/` fails from the wrong root by *not finding
 the path* — which reads as a missing suite, not as a wrong cwd.
 
+```
+$ ( cd ../aetheris && python3 -m pytest cloudcost/tests/ -v -p no:cacheprovider ); echo "exit=$?"
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /home/it/.local/share/mise/installs/python/3.12.13/bin/python3
+rootdir: /home/it/sandbox/elixirws/aetheris
+plugins: anyio-4.13.0
+collecting ... ERROR: file or directory not found: cloudcost/tests/
+
+collected 0 items
+
+============================ no tests ran in 0.00s =============================
+exit=4
+```
+
+That block is the clause's truth-maker, run in this session at r4's tree rather than carried from
+r3's packet: the failure is a usage error (exit 4) whose one diagnostic line names the *path* and
+never the working directory, so the only cue to the real cause is the `rootdir:` line stating the
+wrong root as though it were the right one — which is precisely why a session holding a
+complete-looking command would read this as a suite that is missing rather than as a root that is
+wrong. (`-p no:cacheprovider` so the demonstration writes nothing into the harness tree; the
+harness repo was confirmed clean before and after.)
+
 **Command:** `python3 -m pytest cloudcost/tests/ -v`
 
 **Anchor 1 — the command.** `cloudcost/runbook.md` §Offline tests. Re-resolved at HEAD in this

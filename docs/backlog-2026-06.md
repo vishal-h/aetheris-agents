@@ -7532,6 +7532,13 @@ a sprint leg for N>1 and "removed" means deleting a declared tool interface and 
 consolidation round, before provider four** — the first fan-out is exactly when the wrong answer
 starts costing.
 
+**Scoped 2026-08-09 into `cloudcost/m5-n1-compose.md`** — a two-ticket round
+with a gate stop: t1 establishes read-only and stops, the reviewer rules, t2
+applies the ruling and amends §Contracts. Both tickets' §6 anatomy is authored
+there before either opens, per hc-consolidation R12. **This row is not amended
+by that scoping** — it states the same question it stated when filed, and the
+round is where the answer will be.
+
 `Source: m4 t5b G2 gate-stop and G7, 2026-08-07. Reachability derived at agents 6832159; the
 orchestrator, sprint, runbook and tools.json all read at that commit.`
 
@@ -7575,6 +7582,10 @@ it costs.
 **Costs:** S. Fifteen contracts, one question each, one entry point.
 **Collides with:** BL-131, which decides the two known instances. **Take BL-131 first** — otherwise
 this row re-derives its answer and then has to change it.
+
+**Annotated 2026-08-09.** BL-131 is scoped in `cloudcost/m5-n1-compose.md`. This
+row's *"Take BL-131 first"* clause is unchanged; the round to take first now has
+a document.
 
 `Source: m4 t5b G2 gate-stop, 2026-08-07 — the finding that C4 ratified an m1 position decision H
 had already superseded, and that no step between the census and the contract checked reachability.`

@@ -360,6 +360,23 @@ right instruction.
 **G0 is transcribed as authored** and is the standing consequence: hc-d stops on a dirty harness
 tree rather than producing a sprint result no commit can reproduce.
 
+**Superseded above — the cause is now established.** The sentence this note overtakes is, in full:
+*"Nothing was reverted by hand and nothing was committed, so no claim about the cause is made **in
+either direction**."* It was correct when written: no command available to this session could have
+reached the answer. What reached it was the operator's own account, which is a source no search
+produces.
+
+> `[attributed 2026-08-09 (anatomy edit r1). The writer is established: the operator added the
+> block while setting up Rig's API authentication, and has since reverted it. The search was sound
+> and its answer was unreachable — no process wrote the file, so no tree search could have found
+> the writer. The mtime refutation of `mix test` was correct. Recorded because §1.4 as written
+> leaves the cause open, and it is not.]`
+
+The note's *"§1.4"* is the packet's numbering, not this file's — this file's sub-anchors are
+§1a–§1g, and none of them reports the tree state; **r1.3, here, is the section that does**, which
+is why the note lands beneath it. Recorded as a divergence rather than smoothed, and filed as
+instance **(vi)** on the promotion candidate's open list.
+
 ---
 
 ## r1.4 Two findings, reported and not fixed
@@ -418,3 +435,62 @@ annotations that r1.1 discharges.
 
 **Scope held.** Documents only. No `sprint.sh` change, no code, no hc-d contract work, no backlog
 row filed or closed. hc-d opens in the next session against the anatomy after this round.
+
+---
+
+## r1.6 The r1 delta — A2 re-authored, A7 added, and one transcription repaired
+
+r1.1–r1.5 above were committed at `d29f5c6`. **Five of A1–A6 landed there and were re-verified
+before this commit, not assumed:** items 7 and 8 present after the existing 6 with nothing
+renumbered; G0 verbatim before G1 with G1–G5 keeping their numbers; A3's G5 clause with its
+reconciliation blockquote; A4's list as **(i)–(v)** with no total; A5's `[partly falsified]` marker
+verbatim; A6 no action. What follows is what changed after that commit.
+
+**A2 was re-authored, and its instruction met a state it was not written against.** It now states
+the cause — the operator added the `config.exs` block while setting up Rig to authenticate against
+the local harness API, and reverted it — and directs that **no §Not established entry exist**. One
+already did, item 9, carrying the four lines verbatim. The entry is **resolved in place, not
+deleted**: the working-tree copy is gone, and a `grep` for
+`uncommitted|dirty|porcelain|working tree|config.exs|playground_tokens` over this file's §1–§6
+(lines 1–262) returns **0** — positive control, whole file → **8**, all in the r1 sections — so the
+anatomy edit's own notes never recorded the observation and item 9 is the only durable copy of it
+anywhere. The clause is superseded, not violated, and the deviation is named rather than made
+quietly.
+
+**A7 — the `[RESOLVED]`/`[OPEN]` convention.** Both edits are scoped to §Not established: a state
+prefix on every item head, no head reworded; and the preamble amended by **append**. The states are
+derived, with the population named (**9**, every numbered item) and the full enumeration printed
+beside the count in the preamble block itself, so a wrong assignment is visible rather than buried.
+**4 resolved (1, 7, 8, 9), 5 open (2–6).** The rule is stated because one item needed it: **item 7
+carries two opposed blocks**, `[STAYS OPEN … (hc-d, D1)]` and a later `[RESOLVED … by ruling —
+R15]`, both dated `2026-08-09`, so the date does not order them. **Last dated state block in
+document order wins**, and here that block supersedes explicitly in its own words. Named as the one
+assignment a reader should check rather than take.
+
+**The two `[V]`s.**
+
+- **r1.3's closing sentence — abbreviated, not refuted.** The rendering offered for comparison was
+  *"…so no claim about the cause is made"*; the real sentence ends *"…in either direction"*
+  (`:354–355`). **Three words omitted, no word differs**, referent unambiguous — so the sentence is
+  transcribed in full above rather than withheld, and the difference is reported here.
+- **The §Not established preamble — exact, and the falsity is wider than the quote.** *"Each is a
+  question this round opens and has not closed"* is **character-for-character** the real text. But
+  the preamble opens with a second sentence, *"Carried forward rather than resolved."*, equally
+  false for the resolved items. The appended `[amended]` block describes the whole preamble and so
+  covers both; the authored wording needed no change, and the wider scope is reported rather than
+  silently absorbed.
+
+**One transcription repaired.** Done-check item 2 read *"It **is** absent … attempt the install
+first"* against an authored *"It **was** absent … **re-check and** attempt the install first"*.
+Load-bearing both ways: `re-check` tells hc-d not to trust a 2026-08-09 observation, and the present
+tense asserts about hc-d's machine what only the re-check can establish. Now transcribed as
+authored.
+
+**Carried, not fixed, and re-reported rather than left to be rediscovered.** §Not carried still
+reads *"the open questions are §Not established's **four**"*. It is now wrong twice over — nine
+items, of which **five** are open. Reviewer-authored prose; R19 is scoped to ticket rows. Flagged at
+r1.4 Finding 1 and unchanged by this round, which resolved a fourth item and so widened the gap.
+
+**Scope held, again.** Documents only — two files. R1's parenthetical stays **uncorrected** (A3: it
+lands in G5's edit). hc-e's question stays **marked, not rewritten**. No `sprint.sh` change, no
+code, no hc-d contract work, no backlog row filed or closed.

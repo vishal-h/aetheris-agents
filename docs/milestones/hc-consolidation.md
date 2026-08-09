@@ -833,9 +833,9 @@ find surprising. Harness first.
    `mix compile --warnings-as-errors`, `mix hex.audit`, `mix credo --strict`, `mix dialyzer`,
    `mix test` — full output, no `tail`, elisions stated. `sprint.sh` is a harness file; the gates
    apply even with no `lib/` change.
-2. `shellcheck` on `sprint.sh`. It is absent on this machine as of 2026-08-09; attempt the install
-   first. If the install fails, say so with the failure output, and record the absence in
-   §Not established rather than omitting the line.
+2. `shellcheck` on `sprint.sh`. It was absent on this machine as of 2026-08-09; re-check and
+   attempt the install first. If the install fails, say so with the failure output, and record the
+   absence in §Not established rather than omitting the line.
 3. The changed stage exercised in BOTH postures, with the broken state observed rather than
    simulated: a case that is red and listed, and a case that is red and unlisted. Plus at least
    one of R17's arms (b) and (c), constructed.
@@ -1149,7 +1149,28 @@ it under clause 2.
 
 Carried forward rather than resolved. Each is a question this round opens and has not closed.
 
-1. **`[sandbox]` line stream routing.** Carried unresolved from `cloudcost/m4-consolidation.md`
+> `[amended 2026-08-09 (anatomy edit r1). Items are added here open and resolved in place; a
+> resolved item keeps its original text and gains a dated resolution block, per decision 7. Read
+> each item's `[RESOLVED]` / `[OPEN]` prefix for its current state — the preamble describes how
+> items arrive, not what they all still are.]`
+>
+> **The state prefixes were derived, not assigned by hand.** Population: every numbered item in
+> this section, `grep -c '^[0-9]\+\. \*\*'` over it → **9**. Each item's state comes from its own
+> nested blocks, by one stated rule — **the last dated state block in document order wins** —
+> enumerated so a wrong assignment is visible rather than buried: **1** RESOLVED (hc-c),
+> **2** OPEN, **3** OPEN, **4** OPEN, **5** OPEN, **6** OPEN (its `[amended]` and `[corrected]`
+> blocks refine the question, they do not close it), **7** RESOLVED, **8** RESOLVED (hc-d R-i),
+> **9** RESOLVED (anatomy edit r1). **4 resolved, 5 open, 9 total.**
+>
+> **Item 7 is the only item whose blocks disagree, and the rule is what settles it.** It carries
+> `[STAYS OPEN. … (hc-d, D1)]` and, later, `[RESOLVED … by ruling — R15.]`; both are dated
+> `2026-08-09`, so the date does not order them. Document order does, and the later block
+> supersedes explicitly in its own words — *"The second question D1's refutation raised … is
+> answered by R15 rather than by a new obligation."* That is supersession, not ambiguity, so the
+> convention's *ambiguous → mark `[OPEN]`* branch does not fire. Named here because it is the one
+> assignment a reader should check rather than take.
+
+1. **`[RESOLVED]`** **`[sandbox]` line stream routing.** Carried unresolved from `cloudcost/m4-consolidation.md`
    §Not established, open since t1a: the command that demonstrated BL-105 spawns no worker, so
    whether `[sandbox]` lines go to stdout or stderr has never been observed. **R5 makes hc-c's
    step-1 gate its resolver**, and every downstream choice in this round — the arm, BL-106's
@@ -1188,20 +1209,20 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > shape as the resolved-versus-advertised finding this ticket recorded about its own config
    > read. The verdict is unchanged; its basis is now stated in two parts.]`
 
-2. **Whether the chaos gate has ever run in a clean-store environment.** m4 t1b partly resolved
+2. **`[OPEN]`** **Whether the chaos gate has ever run in a clean-store environment.** m4 t1b partly resolved
    this: the first chaos capture in the harness repo
    (`../aetheris/sprint/20260806_172144/chaos/maxsteps.json`) exists and *did* warn, in a
    **noisy**-store environment, so that behaviour is observed rather than inferred. **The
    clean-store question itself is untouched** — no chaos run has been made in a clean store, and
    nothing established what one would do.
 
-3. **The transition claim in hc-a Part 4 rests on a transcription, not a file read.** hc-a was
+3. **`[OPEN]`** **The transition claim in hc-a Part 4 rests on a transcription, not a file read.** hc-a was
    read-only and produced no repo artifact, so the claim's basis is a session capture in neither
    repo. **It has not been re-derived here**, and hc-b does not act on it. Whoever needs it opens
    the file; hc-a's own record is not a truth-maker for it. This is BL-133's subject arriving
    inside the round that scopes BL-133.
 
-4. **No harness-side pointer to this document exists, and none is being created.** The round's
+4. **`[OPEN]`** **No harness-side pointer to this document exists, and none is being created.** The round's
    subject and nearly all its code edits are harness-side; its canonical record is in the sibling.
    A pointer file would be a second artifact to keep in sync — the mirror problem this project
    already has one instance of, with `drift_check` having no byte-identity check between mirrors.
@@ -1209,14 +1230,14 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    `../aetheris/CLAUDE.md` names this round and this path, which is the one place a harness-side
    reader will already be looking.
 
-5. **hc-c's gate requires a live local Ollama serving `llama3.2:latest` at `localhost:11434`.**
+5. **`[OPEN]`** **hc-c's gate requires a live local Ollama serving `llama3.2:latest` at `localhost:11434`.**
    Whether `[sandbox]` routing can be established without a model server is not established. A
    `stub`-provider agent with a non-empty `mcp_servers:` list would spawn a worker under
    `../aetheris/lib/aetheris/agent/supervisor.ex:62-63` and would remove the dependency, but no
    such agent file exists in `../aetheris/agents/` (hc-b2 §G3(4)) and this round did not write
    one. Carried to BL-133's territory.
 
-6. **Whether any consumer outside these two repos reads harness *log* output on stdout.**
+6. **`[OPEN]`** **Whether any consumer outside these two repos reads harness *log* output on stdout.**
    hc-c moved Logger to stderr for **every** invocation and every mode, not only `--json`, so the
    population at risk is wider than the row that motivated it. **The in-repo sweep is clean and
    its population is named** — every file in both repos with an executable extension
@@ -1264,7 +1285,7 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > rationale falls. Established at §Not established item 8's resolution; original text left
    > standing per decision 7.]`
 
-7. **hc-b2's §6 anatomy was never written into this document — an R12 gap, recorded rather than
+7. **`[RESOLVED]`** **hc-b2's §6 anatomy was never written into this document — an R12 gap, recorded rather than
    back-filled.** R12 requires a ticket's anatomy here **before that ticket opens**. hc-b2 opened
    and closed on 2026-08-08 (agents `6c61393`) and appears in this document only as six source
    citations; §Ticket set has **no `hc-b2` row and no `### hc-b2` subsection** — established by
@@ -1318,7 +1339,7 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > findings before opening — is answered by R15 rather than by a new obligation: as rounds, they
    > already do.
 
-8. **Whether the five provenance pytest suites passed on the harness *before* hc-c is not
+8. **`[RESOLVED]`** **Whether the five provenance pytest suites passed on the harness *before* hc-c is not
    established.** They spawn `["mix", "run", "--eval", …]` with `capture_output=True` and read
    stdout with `json.loads(result.stdout.strip())` — a whole-stdout parse. hc-c r2 established they
    pass on the changed harness (41 tests) and that the boot path is real (stdout 0 bytes, three
@@ -1353,7 +1374,7 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > reads-per-invocation. Two subprocess families live in one file, and counting by file merged
    > them. This is the adjacent-case shape, one level up from the code it was written about.
 
-9. **What wrote — and then unwrote — the uncommitted `config/config.exs` block is not established.**
+9. **`[RESOLVED]`** **What wrote — and then unwrote — the uncommitted `config/config.exs` block is not established.**
    Found at the anatomy edit (2026-08-09) by its own done-check, which had claimed the harness would
    show no change and reported the divergence instead of asserting green. The block, **recorded
    verbatim here because the working-tree copy no longer exists to re-read** — this is the
@@ -1389,6 +1410,21 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    **G0 is the standing consequence** — hc-d stops on a dirty harness tree rather than running a
    sprint whose results no commit can reproduce.
 
+   > **`[RESOLVED 2026-08-09 (anatomy edit r1).]`** The writer is the operator, who added the block
+   > while setting up Rig to authenticate against the local harness API, and has since reverted it.
+   > Established by the operator's own account, not by the search — no process wrote the file, so no
+   > tree search could have found the writer, and the mtime refutation of `mix test` was correct.
+   > The harness tree is clean again; G0 checks it rather than assuming it.
+   >
+   > **The entry stays, and that is the point.** The instruction that closed this was *"do not add a
+   > §Not established entry for it — there is nothing left unestablished"*, written believing none
+   > existed. One did, with the four lines transcribed verbatim — and the working-tree copy is gone,
+   > so this entry is now the **only** durable record of them in either repo. The anatomy edit's own
+   > notes §1–§6 never recorded the observation at all (`grep` for
+   > `uncommitted|dirty|porcelain|working tree|config.exs|playground_tokens` over lines 1–262 → **0**;
+   > positive control, whole file → **8**, all in the r1 sections). Resolving in place rather than
+   > deleting is what keeps the record; the clause is **superseded, not violated**.
+
 ---
 
 ## Promotion candidates
@@ -1423,7 +1459,15 @@ that live in `cloudcost/m4-consolidation.md`; **(ii)** hc-c's F3 scoped a status
 and left a third contradicting them; **(iii)** hc-d's opening claimed its anatomy was authored when
 2 of 7 §6 fields were; **(iv)** the anatomy edit cited `hc-d §1a` and `§1d`, letter sub-anchors that
 file does not have; **(v)** the anatomy edit called an `hc-c r2` note *"its hc-d r2 note"*, and hc-d
-has no r2.
+has no r2; **(vi)** A2 directed an amendment to `hc-d-anatomy-edit-implementation-notes.md`
+**§1.4**. That file has no §1.4 — its sub-anchors are §1a–§1g. §1.4 is the *packet's* numbering for
+the section that reported the dirty tree, and the packet is not the file. Same carrier as (iv): a
+packet's internal structure asserted as a document's.
+
+**(vi) is the list's first append, and it arrived one round after the list replaced a total.** The
+form was chosen at A4 because *"Three instances in this round"* went stale one commit after it was
+written; it has now taken an addition one round later, without restating anything. **The form is
+doing what it was chosen for** — which is evidence for the candidate, not merely bookkeeping.
 
 The carrier is not the sibling document —
 it is that a packet reports enough of a document to make re-reading it feel unnecessary, and a

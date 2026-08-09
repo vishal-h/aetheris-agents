@@ -2227,6 +2227,22 @@ the context is. Origin: hc-e r4, found by the reviewer in claude-code's own publ
 
 ---
 
+**m4-5 says the §7 promotion runs mid-cycle when the rules bind the cycle's own remaining tickets.
+This round did not, and the workaround worked well enough to hide the cost.** Rules that bound
+later tickets — bind-the-artifact, verify-the-restore, the positive control — were carried in
+§Promotion candidates and repeated in each ticket's `STANDING` block, so they were in force. What
+deferring cost was not compliance but accumulation: seven candidates arrived at the close at once,
+and their distillation took a round of its own plus a round to repair where it landed. **Promote
+mid-cycle when a rule binds work that has not run yet** — not because the deferral broke anything
+here, but because the close is the worst place to do careful authoring under the pressure of
+finishing. Origin: hc-e r7's clause-4 sweep, which found the divergence recorded everywhere except
+the decision log.
+
+`[filed at hc-e r8; carried to the next cycle. Recorded as a divergence-with-record against m4-5 in
+this round's clause-4 sweep, not as a defect in what shipped.]`
+
+---
+
 ## Not carried, and why
 
 Two of m4's sections are deliberately absent. Stated, because a section missing without a note
@@ -2261,3 +2277,74 @@ reads as an oversight.
 `Document created 2026-08-08 (hc-b), at agents 8490362 / harness b4d782a. Decisions R1–R13
 authored by the reviewer; §What the methodology owes, the derived counts, and the repo-state
 sections composed by claude-code and verified at those two commits.`
+
+---
+
+## Milestone summary
+
+Written at hc-e r8, 2026-08-09, per §7's final step. **The round is closed on its work and open on
+its questions, and both halves are stated as results.**
+
+### What shipped
+
+**hc-c — the `--json` contract.** BL-105 and BL-106 closed as one contract. Harness log output moved
+off stdout for **every** invocation and mode, so a `--json` consumer gets a payload alone; a failed
+run now emits a JSON document rather than nothing. `[sandbox]` routing — open since m4's t1a and the
+gate the whole round waited on — **resolved by observation plus a source-derived class argument**:
+16 of 16 emission sites are `eprintln!`, and the port sets no `:stderr_to_stdout`. Decision 13
+reviewed and **not overturned**, with its own dated disposition.
+
+**hc-d — the sprint exit contract.** BL-077 closed and **BL-133 face 2 discharged**, in one ticket
+because the `tee`/`pipefail` coupling made them one landing. `sprint.sh`'s `fail()` now counts;
+`blocking_fail`/`blocking_ok` and a `KNOWN_RED` declaration keyed by ticket ref carry R7's
+fail-safe posture, with the blocking and not-yet-declared counts both printed. Every run retains its
+own console output beside the payload under an enforced 30-day bound with a provenance stamp.
+R3 answered by the design: `expected_fail` keys on a shell condition, so **BL-044 stays filed** and
+no `lib/` file was touched.
+
+**hc-e — the close.** §7's ritual run in full: the scan, the distillation of seven candidates into
+six entries across both `CLAUDE.md` files, the verification step performed by reading each entry out
+of its destination file, and **the prior-claims census**, which found the preceding cycle's
+*"a negative needs a positive control"* claimed as promoted and present in neither file. Promoted
+and verified. Twenty-one ratified decisions, R1–R21.
+
+### What the close's six sweeps found
+
+Three produced edits and three produced findings; all six are results, not pointers.
+
+| Clause | Result |
+|---|---|
+| **1** | **A defect that would have shipped.** §Ticket set had claimed since `88183b8` that hc-d discharged BL-133 face 2; **the row carried no disposition of any kind.** Fixed on the row, with the work attributed to hc-d and only the record to the sweep. Direction B: 3 hc-* closure records across all three shapes, all claimed, no orphans |
+| **2** | **The criterion's own subject was wrong.** It enumerated **two** closure shapes; there are **three**, and the unnamed one — `**Status:** Done <date> — <ticket>` — is **the most common and is how BL-077's closure is recorded**. A sweep run as written would have reported this round's own hc-d closure as missing. Corrected. §Rows filed superseded with a derived population: **one row, BL-135, filed by hc-d r3 and folded onto BL-075** — the fold is a disposition, not an erasure |
+| **3** | All twelve §Not established items read from their prefixes: **4 resolved** (each with the dated block that resolved it), **1 decided**, **7 open** |
+| **4** | All **37** decisions enumerated — R1–R21 and m4's sixteen — after a first pass reported a bare *"silent divergences: 0"* over thirty-two nobody had looked at. **27 no divergence, 7 divergence-with-record, 3 not applicable. Zero silent**, which is the clause's actual requirement, now demonstrated rather than asserted |
+| **5** | **The residual is not empty.** §7's verification step confirms an entry can be *read out of* its file; it never asserts **where it landed**. Three of this round's six promotions orphaned the provenance of the entry above them, and the check that would have caught it did not exist. Carried as a candidate |
+| **6** | The manifest's inclusion sentence authored, **both halves**: `docs/milestones/` is out **as a kind**, and `docs/rig/milestones/`'s two tracked files are why the rule reads the artifact's kind and never its directory |
+
+### What stays open, and why that is correct
+
+**Seven `[OPEN]` items and one `[DECIDED]`.** Under **R21**, ratified in this round, §Not established
+holds three kinds of entry and only one owes a resolver:
+
+- **Three owned questions (a)** — items 10, 11, 12: `shellcheck` absent, an uncaught raise stalling
+  a run, and R17's arm (c) available but not automatic. Each names a resolver that exists.
+- **Four carried unknowns (b)** — items 2, 3, 5, 6: the chaos gate in a clean store; hc-a Part 4's
+  transition claim, **whose subject cannot be identified from any committed artifact**; hc-c's gate
+  dependency, now with a runnable recipe rather than a prerequisite; and consumers outside these two
+  repos, which is **unresolvable in principle** and says so. Each names what would settle it. **No
+  owner was invented for any of them**, which is the point of R21 and the reason the earlier gate
+  that demanded one was amended.
+- **One `[DECIDED]`** — item 4, the harness-side pointer: considered, declined with reasons,
+  mislabelled `[OPEN]` from A7 until this round and inflating every count over the section by one.
+
+**A round that closes with open questions has recorded what it did not establish. That is the
+section working, not the close failing.**
+
+### Open for the next cycle
+
+Three promotion candidates are carried rather than promoted here: *an entry's attribution is
+structural* (clause 5's residual), *a vocabulary change owes a sweep* — promoted, with its first
+application recorded — and **m4-5's divergence**: rules that bound later tickets were carried in
+`STANDING` blocks rather than promoted mid-cycle, which cost accumulation rather than compliance.
+**BL-075 arm 2 remains unsatisfiable as written**, its blocker changed shape rather than lifted: the
+durable place exists; the routing does not.

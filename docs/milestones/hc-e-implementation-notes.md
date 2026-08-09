@@ -1246,6 +1246,31 @@ count was right by luck about the property it asserted and wrong about the work 
 **Nothing is fixed.** Clause 4's result is now the table above rather than a total, and the round
 stops here.
 
+> **`[adjudicated 2026-08-09 (hc-e r8) — the stop is lifted, and the condition was the
+> reviewer's and malformed. §55c's text above is unedited.]`**
+>
+> **The stop fired as written.** F13(d) said a divergence the five did not name is a stop, and the
+> sweep found four. That is what the condition asked for and it was applied literally rather than
+> read past.
+>
+> **The condition was malformed.** It was written expecting a **silent** divergence — the one
+> disposition clause 4 says is unavailable. What the sweep found were four **recorded** ones that
+> an incomplete enumeration had missed. Those are different things, and clause 4 cares about the
+> first.
+>
+> **Run this round's own two-part test on it.** *Does the defect survive?* The defect F13 named was
+> a negative asserted over thirty-two decisions nobody had looked at — **fixed**: the enumeration
+> exists, the method was stated before it ran, and the population is printed beside the count. *Does
+> the condition still fire on the corrected tree?* **Yes, and it always will** — any complete sweep
+> finds divergences an incomplete one missed. **A stop condition that cannot be cleared by doing the
+> work correctly is a defect in the condition, not evidence that the work is unfinished.**
+>
+> **Clause 4 is satisfied on its own terms.** Seven divergences, every one carrying a dated record,
+> **zero silent** — demonstrated by enumeration rather than asserted by a total. §49's *"silent
+> divergences: 0"* was right about the property and wrong about the method; withdrawing and
+> replacing it was the whole of F13, and the sweep's value was **replacing a total with an
+> enumeration**.
+
 **One observation about the four, offered and not acted on.** Three are about *process* decisions
 the round bent under its own weight — anatomy authored late (R12), promotion deferred to the close
 (m4-5), the reviewer's checkable specifics (m4-1) — and one is a mechanism gap already filed
@@ -1257,3 +1282,100 @@ while recording the divergence somewhere other than the decision log.
 The milestone summary; Done-check items 1–3 (harness gate set, `shellcheck`, pre-boundary
 `drift_check`); items 4–5 (content complete, manifest regen against G6's derived **25**); item 6's
 hand-off. **hc-e is not closed**, the manifest is not regenerated, and nothing is staged.
+
+---
+
+# Round 8 — the close, to the hand-off
+
+**Repos.** agents from `0c3ed01`; harness `2ef0517`, untouched. **Date.** 2026-08-09.
+
+> **Outcome: C1 and C2 landed, the milestone summary written, Done-check items 1–3 run in full.**
+> Content is complete at this commit. The manifest regen and the operator hand-off follow.
+
+---
+
+## 57. C1 and C2
+
+**C1** — the adjudication recorded beneath §55c, unedited above it: the stop fired as written, the
+condition was malformed, and clause 4 is satisfied on its own terms. The two-part test is run on the
+condition itself — the defect F13 named **is** fixed, and the condition **still fires on the
+corrected tree**, which makes it uncleavable by correct work and therefore a defect in the condition.
+
+**C2** — m4-5's divergence filed in §Promotion candidates as a carry, marked like the attribution
+one. Its point is not that the deferral broke something: **it did not.** It is that seven candidates
+arriving at once cost a round to distil and a round to repair where they landed.
+
+## 58. The milestone summary
+
+Written into `hc-consolidation.md` §Milestone summary. Carries what shipped per ticket, **all six
+clause results as results** — clauses 1, 2 and 6 produced edits; 3, 4 and 5 produced findings — and
+states plainly that the round closes with **seven `[OPEN]` and one `[DECIDED]`**, that R21 makes
+four of the seven legitimately owner-less, and that **a round which closes with open questions has
+recorded what it did not establish**.
+
+## 59. Done-check item 1 — the full harness gate set
+
+Run at harness `2ef0517`, full output in the packet, no `tail`.
+
+| Gate | Result |
+|---|---|
+| `mix format --check-formatted` | **exit 0** |
+| `mix compile --warnings-as-errors` | **exit 0** |
+| `mix hex.audit` | **exit 0** — *No retired or security advisory packages found* |
+| `mix credo --strict` | **exit 0** — 228 files, 2056 mods/funs, **no issues** |
+| `mix dialyzer` | **exit 0** — *Total errors: 0, Skipped: 0, Unnecessary Skips: 0* |
+| `mix test` | **exit 2 — RED, and it is BL-075** |
+
+**Resource versus findings, stated as the field requires.** Five gates are **findings** results:
+each ran to completion and reported on the code. `mix test` is also a **findings** result, not a
+resource one — the suite ran, **972 tests, 1 failure, 133 excluded**, in 90.3 seconds. Nothing was
+skipped for want of a machine.
+
+**`mix dialyzer` reported *"PLT is up to date!"***, which — per this field's own wording —
+**establishes findings and not headroom**: zero errors over the files it checked, and nothing about
+what a rebuilt PLT would find.
+
+**The red is BL-075, named with its ref and left alone.**
+
+```
+1) test a status change alone counts as activity, with no events at all
+   (Aetheris.CLI.Commands.RunHelpersTimeoutTest)
+   test/aetheris/cli/commands/run_helpers_timeout_test.exs:84
+   right: {:error, "run await-status-activity-7042 stalled: no status or event activity
+                    for 300ms (last status: running, last event seq: -1)"}
+```
+
+Same module, same file, same line, same assertion, same error shape as **BL-075**, and as **BL-135**
+which hc-e's opening edit established as its duplicate and folded onto it. **Not re-triaged, not
+relaxed, and not re-run for green** — the run id differs only by `System.unique_integer`, which
+distinguishes nothing. This is the third observation BL-075 now carries, and the sixth data point on
+its flakiness.
+
+## 60. Done-check items 2 and 3
+
+**`shellcheck` — re-checked, not inherited.** The field requires the re-check and the install
+attempt before the absence is recorded. Both ran:
+
+```
+$ command -v shellcheck            -> NOT PRESENT
+$ sudo -n apt-get install -y shellcheck
+sudo: a password is required
+$ command -v shellcheck            -> STILL ABSENT
+$ bash -n ../aetheris/scripts/sprint.sh   -> exit 0
+```
+
+**§Not established item 10 stays `[OPEN]` (a)**, its resolver unchanged: an operator with sudo runs
+it and records the result. `bash -n` establishes syntax and nothing about quoting, unused variables
+or the `$(( ))` arithmetic under `set -e`.
+
+**`drift_check.py --strict`, pre-boundary** — `8 PASS  0 FAIL  4 WARN  7 INFO`, **exit 0**. The four
+WARNs are the expected `project_knowledge` staleness set, and **all four are this cycle's own doing**:
+agents `CLAUDE.md` (`080ad24` → `dcf1d42`), `docs/backlog-2026-06.md` (`384656c` → `7dbdb7d`),
+harness `CLAUDE.md` (`288c8ef` → `2ef0517`), harness `docs/aetheris/runbook.md` (`ae0c510` →
+`2ebc59c`). **They are what the regen clears**, and a zero here would have meant the manifest was
+already current, which it must not be before a boundary that has content to export.
+
+## 61. Content complete
+
+**This commit is the line after which nothing is content.** Everything below is the boundary: the
+manifest regen, the export set, and the operator hand-off.

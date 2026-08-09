@@ -24,10 +24,18 @@ Two notes on the mechanics:
   clauses as anchored; hc-b2 §G3(4) does carry *"no such agent file exists"* and *"all twenty use
   `anthropic`, `ollama` or `gemini`"*, and `ls ../aetheris/agents/` returns 20.
 
-**Status surfaces left untouched, deliberately.** The document header still reads *"hc-a closed,
-hc-b in review"* and §Ticket set still gives hc-c *Not started*. Three amendments were authorised;
-a fourth edit to a status claim is not mine to fold into their commit. **It is a real divergence
-and it is named here rather than silently followed** — whoever opens hc-d should settle it.
+**Status surfaces: left untouched at r0, fixed at r1 (F3).** At r0 the header still read *"hc-a
+closed, hc-b in review"* and §Ticket set still gave hc-c *Not started*. I left them because three
+amendments were authorised and a fourth edit to a status claim was not mine to fold into their
+commit — and named the divergence rather than following it silently. The reviewer's F3 ruled that
+correct at the time and **now authorises the fix, because hc-c is what made those surfaces false**:
+a canonical document saying hc-c is *Not started* while hc-c is closed is a live false claim
+carried across a ticket boundary. The header line and hc-c's row are updated; hc-d's and hc-e's
+rows are untouched.
+
+**The status line was written after the gates ran, not before.** *Closed* is a claim about the
+pre-authorisation's four conditions, one of which is the gates re-running clean — so writing it
+first would have been a claim landing in the same commit as the thing that makes it true.
 
 ---
 
@@ -170,11 +178,99 @@ No planted cloud resource (R9).
 
 ---
 
-## 7. For hc-d and hc-e
+## 7. The consumer sweep (r1, F1) — population, enumeration, disposition
+
+**Why it was owed.** BL-106's fix enumerated every consumer before touching the first. BL-105's
+did not: `route_logging_to_stderr/0` runs on the boot path and moves the stream for **every**
+invocation and every mode, while r0's packet verified two consumers — both `--json` readers. The
+absence of a known log-on-stdout reader is not the established absence of one.
+
+**Population.** Every file in both repos with an executable extension (`.sh .py .rs .ts .tsx .exs
+.ex`), excluding `node_modules`, `target`, `_build`, `deps`, `priv`, `.git`, containing a harness
+invocation. **Search terms run** (recorded because a method record that misdescribes what executed
+is itself a false claim): `mix aetheris`; `./aetheris`; the Rust/Python argv vectors
+`["mix", "aetheris"]` and `"aetheris".to_string`. **39 files matched.**
+
+**Of the 39, five actually spawn the harness and read a stream.** The other 34 are prose:
+comments, docstrings, runbook lines inside agent `.exs` files, UI display strings
+(`rig/src/components/modules/harness/RunList.tsx` renders `mix aetheris run` as `<code>`), a
+mocked test (`docbuilder/tests/test_chain_docbuilder.py` patches `subprocess.run`), and the
+harness's own modules under `../aetheris/lib/`, which are the harness rather than consumers of it.
+
+| # | Consumer | Streams | What it reads | Affected? |
+|---|---|---|---|---|
+| 1 | `../aetheris/scripts/sprint.sh` | see below | `json_read` (JSON) + text over **merged** captures | **no** |
+| 2 | `docbuilder/scripts/chain_docbuilder.py` | `capture_output=True` | `returncode` and `stderr` only — never stdout text | **no** |
+| 3 | `provenance/scripts/validate_search.py` | `capture_output=True` | `result.stdout + result.stderr` **concatenated** for its text search (`:61`); `_extract_run_id` (`:70`) scans stdout for `"Run ID:"` — **formatter** output, not Logger | **no** |
+| 4 | `rig/src-tauri/src/commands/orchestrate.rs` | stdout piped, `stderr(Stdio::null())` | stdout line-by-line, **keeps only lines that parse as JSON** (`:84`), drops the rest | **no** |
+| 5 | `rig/src-tauri/src/commands/fork.rs` | stdout piped, stderr collected | first stdout line parsing as JSON with a `run_id`; stderr prose on the failure path | **no** |
+
+**sprint.sh, in detail** — 92 non-comment lines invoke the harness (`run_aetheris`, `mix aetheris`,
+`mix run --eval`, `run_agent`, `run_orb`). `mix run --eval` is in the population because it boots
+the app, so `route_logging_to_stderr/0` runs there too. Derived split:
+
+```
+captured via run_agent/run_orb (the helper redirects `> "$file" 2>&1`)   36
+no capture — streams to the console                                      28
+captured directly with stderr MERGED (2>&1)                              14
+`if … 2>/dev/null; then` — stderr discarded, gate is the EXIT CODE       11
+helper definitions themselves                                             3
+                                                                       ----
+                                                                         92
+stdout captured WITHOUT stderr merged, and read as text                    0
+```
+
+The eleven exit-code gates are the seven `mix run --eval` eval-checks (`:1794`, `:1907`, `:1996`,
+`:2080`, `:2216`, `:2315`, `:2697`), two `mix aetheris server … &>/dev/null &` backgrounds
+(`:1160`, `:1251`) which discard both streams, and two `mix aetheris trajectory … --export`
+calls (`:1198`, `:1282`) whose consumer is the exported **file**.
+
+**The four text searches over harness artifacts** (`grep`/`=~` over an output file or captured
+var) were checked individually: `:918` greps `"Sent:"` in `email/run.json` — written by
+`run_agent`, which merges; `:2759`/`:2760` grep `$CC_GUARD_OUT`, captured `2>&1`, for an Elixir
+raise message that was always on stderr; `:1640` greps a `curl` response, not harness output; and
+`:890` is a `find` over PDFs. **None reads harness stdout in isolation.**
+
+**One behavioural change worth naming, not a breakage:** the seven `2>/dev/null` eval-gates used
+to let the boot log lines through to the sprint console on stdout, and now discard them with
+stderr. The sprint gets **quieter**; the gate is the exit status either way.
+
+**Disposition — clean, not exhaustive.** Zero broken consumers in the named population. The sweep
+cannot reach an operator's own shell pipeline, anything outside these two repos, or an invocation
+spelled in a way none of the four terms matched. **Recorded as §Not established item 6** rather
+than allowed to read as completeness, and the change is announced in the operator-facing runbook
+(F1(c)) rather than only in the backlog.
+
+---
+
+## 8. For hc-d and hc-e
 
 - **`mix test` is green** — 972 tests, 0 failures. BL-075 is not red in this environment today.
   Recorded in both directions per the gate rule: a gate that silently heals trains the same reflex
   as one that silently rots, and nothing was watching when it changed.
+
+  **With a qualification this ticket owes, because hc-c edited the flake's own module family.**
+  BL-075's flake was named at m4 close-b as `Aetheris.CLI.Commands.RunHelpersTimeoutTest`, and
+  hc-c's diff touches `../aetheris/lib/aetheris/cli/commands/run_helpers.ex` — the module that
+  test exercises — and `test/aetheris/cli/commands/run_helpers_test.exs`. **No `mix test` was run
+  on this tree before the edits**, so "green because of this ticket" and "green despite it" are
+  not distinguished by any measurement here.
+
+  What the diff does say, read against the test rather than asserted in general:
+
+  - The flake's own file, `test/aetheris/cli/commands/run_helpers_timeout_test.exs`, is **not in
+    hc-c's diff** (last touched at `a935038`, BL-031 r2).
+  - The assertion it flakes on is on the **`:done` success path** —
+    `{:ok, %{run_id: ^run_id, status: :done}}` (`run_helpers_timeout_test.exs`, *"a status change
+    alone counts as activity"*, `:98`). hc-c changed only `handle_run_status/5`'s `"failed"` and
+    `"cancelled"` branches.
+  - The branch it *failed* into is `continue_or_timeout/5`'s inactivity arm, which hc-c left
+    exactly as it was — still a bare-string error.
+  - No timing, polling interval, sleep or inactivity bound is touched anywhere in the diff.
+
+  **So hc-c changed neither the path that test asserts nor the path it failed on — but that is
+  reasoning from source, not a measurement.** Not re-run to chase a red: one green does not refute
+  a flake and one red would not confirm it.
 - **The status surfaces in `hc-consolidation.md` are stale** (§1 above). hc-d's opening
   section-scoped edit is the natural place to settle it.
 - **`## Suggested order` has no row for BL-105 or BL-106** — its table ends at BL-095. Checked, so

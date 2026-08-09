@@ -9,7 +9,7 @@
 > cloudcost-series document; this one is not, and a sweep looking under `cloudcost/` will
 > not find it. Named for what it is: milestone `hc`, subject `consolidation`.
 
-**Status:** **OPEN** — hc-a closed, hc-b in review. **Opened:** 2026-08-08.
+**Status:** **OPEN** — hc-a, hc-b and hc-c closed; hc-d next. **Opened:** 2026-08-08.
 **Document created:** 2026-08-08 (hc-b). **Repos:** `aetheris-agents` and `aetheris`
 (harness). **Preceding cycle:** m4-cloudcost, closed 2026-08-08.
 
@@ -470,7 +470,7 @@ that cannot yet be authored is marked with its resolver rather than left blank o
 |---|---|---|
 | **hc-a** | The scoping read | **Closed.** Produced no repo artifact by design |
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **In review** |
-| **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | Not started |
+| **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at r1. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents `1f82118`+, harness `e8889c3` |
 | **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | Not started |
 | **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | Not started |
 
@@ -872,17 +872,38 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    step-1 gate its resolver**, and every downstream choice in this round — the arm, BL-106's
    `run_id` item, decision 13's fate, R11's guard — has been waiting on it.
 
-   > **`[RESOLVED 2026-08-09 (hc-c), by observation.]` They route to stderr.** The gate ran
-   > `mix aetheris --json run agents/ollama_smoke.exs` once with the streams separated by
-   > redirection. Positive control first: the trajectory meta's `containment` was **non-nil**
-   > (`priv/runs/ollama-cqyzBw/trajectory.json`, `.meta.containment` — `seccomp: true`,
-   > `exec_server: true`), so a worker ran. Then the count: **2** `[sandbox]` lines total,
-   > **2 in `stderr.txt`, 0 in `stdout.txt`** — verdict-table row 3, *routes to stderr*.
-   > The two lines are the success-path pair hc-b2 §G3(3) predicted (namespace entry, and the
-   > cgroup-delegation arm), so the source derivation was **confirmed rather than refuted**.
-   > The run itself failed — Ollama could not load `llama3.2:latest` in 2.1 GiB of available
+   > **`[RESOLVED 2026-08-09 (hc-c).]` They route to stderr — part observed, part derived, and
+   > the two are separated here because the observation alone does not carry the class.**
+   >
+   > **Observed.** The gate ran `mix aetheris --json run agents/ollama_smoke.exs` once with the
+   > streams separated by redirection. Positive control first: the trajectory meta's
+   > `containment` was **non-nil** (`priv/runs/ollama-cqyzBw/trajectory.json`,
+   > `.meta.containment` — `seccomp: true`, `exec_server: true`), so a worker ran. Then the
+   > count: **2** `[sandbox]` lines, **2 in `stderr.txt`, 0 in `stdout.txt`** — verdict-table
+   > row 3. Those two are the **success-path pair**; a clean run emits no others.
+   >
+   > **Derived, not observed — and this is what carries the class.** The emission sites are
+   > **16**, derived from source rather than carried from hc-b2 or from the ticket text:
+   > `../aetheris/native/aetheris_worker/src/sandbox.rs` (**11** — the `unshare` failure at
+   > `:177`, the namespace-entry line at `:214`, the overlay pair at `:264`/`:269`, and the
+   > seven cgroup sites `:537`–`:574`) and `main.rs` (**5** — `:88`, `:94`, `:114`, `:117`,
+   > `:153`, all failure paths). **16 of 16 are `eprintln!`; 0 are `println!`** — including the
+   > three whose format string sits on a continuation line (`sandbox.rs:177`, `:214`, `:264`,
+   > each opened by an `eprintln!(` on the line above). They therefore write to the worker's
+   > fd 2, and `Aetheris.Worker.Client.port_options/1`
+   > (`../aetheris/lib/aetheris/worker/client.ex`, `:132`–`:139`, used by the `Port.open` call
+   > at `:243`) sets **no `:stderr_to_stdout`**, so that fd is inherited rather than folded into
+   > the port. The other 14 sites route identically to the 2 that fired.
+   >
+   > **The run itself failed** — Ollama could not load `llama3.2:latest` in 2.1 GiB of available
    > memory — which the control was written to be independent of, and is: the `[sandbox]` lines
-   > are emitted by the worker at startup, which `containment` proves happened.
+   > are emitted at worker startup, which `containment` proves happened.
+   >
+   > `[amended 2026-08-09 (hc-c r1, F2). The block first read "They route to stderr" over an
+   > observation of two lines and called the derivation "confirmed rather than refuted" — a
+   > resolution that read as fully observed when the class-wide half of it was derived. Same
+   > shape as the resolved-versus-advertised finding this ticket recorded about its own config
+   > read. The verdict is unchanged; its basis is now stated in two parts.]`
 
 2. **Whether the chaos gate has ever run in a clean-store environment.** m4 t1b partly resolved
    this: the first chaos capture in the harness repo
@@ -911,6 +932,21 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    `../aetheris/lib/aetheris/agent/supervisor.ex:62-63` and would remove the dependency, but no
    such agent file exists in `../aetheris/agents/` (hc-b2 §G3(4)) and this round did not write
    one. Carried to BL-133's territory.
+
+6. **Whether any consumer outside these two repos reads harness *log* output on stdout.**
+   hc-c moved Logger to stderr for **every** invocation and every mode, not only `--json`, so the
+   population at risk is wider than the row that motivated it. **The in-repo sweep is clean and
+   its population is named** — every file in both repos with an executable extension
+   (`.sh .py .rs .ts .tsx .exs .ex`, excluding `node_modules`, `target`, `_build`, `deps`,
+   `priv`, `.git`) containing a harness invocation: **39 files, of which 5 actually spawn the
+   harness and read a stream**, and **0 of the 5 read log text from stdout**. The enumeration is
+   in `docs/milestones/hc-c-implementation-notes.md` §7.
+
+   **What the sweep cannot reach**, and therefore what stays open: an operator's own shell
+   pipeline or ad-hoc command; any consumer outside these two repos; and any invocation whose
+   spelling none of the four search terms matched. **The sweep is clean, not exhaustive**, and
+   the distinction is recorded rather than allowed to read as completeness. The mitigation is
+   that the change is announced in the operator-facing runbook rather than only in the backlog.
 
 ---
 

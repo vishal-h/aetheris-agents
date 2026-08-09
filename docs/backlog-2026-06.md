@@ -2776,6 +2776,23 @@ would quietly relax a row rather than fix what makes it unsatisfiable.
 — fold into BL-054 or file on its own — is the next ticket's, and BL-054 is now known to be the
 wrong home. Arm 2 stays blocked on **BL-133**.
 
+**Annotated 2026-08-09 (hc-c) — one green run, on a tree that edited this flake's own module.**
+`mix test` at hc-c's boundary: **972 tests, 0 failures, 133 excluded**. It does **not** count
+toward arm 2 (a single run, and its output is retained nowhere durable — the same BL-133 block),
+and it is **not** evidence of a fix.
+
+**It also cannot be read as an untouched-tree observation, which is why it is qualified rather
+than just recorded.** hc-c edits `../aetheris/lib/aetheris/cli/commands/run_helpers.ex`, the module
+`RunHelpersTimeoutTest` exercises, and **no `mix test` was run on this tree before those edits** —
+so "green because of hc-c" and "green despite hc-c" are not separated by any measurement. What is
+established from source: the flake's own file
+(`../aetheris/test/aetheris/cli/commands/run_helpers_timeout_test.exs`) is untouched by hc-c; the
+assertion it flakes on is the `:done` success path, while hc-c changed only `handle_run_status/5`'s
+`failed` and `cancelled` branches; the branch it failed into — `continue_or_timeout/5`'s inactivity
+arm — is unchanged; and no timing, poll interval or window is touched. **That is reasoning from the
+diff, not a measurement.** Not re-run to chase a red: one green does not refute a flake and one red
+would not confirm it.
+
 `Source: m2-cloudcost t2 done-check, 2026-08-02 (aetheris-agents 7a7b7ec; aetheris fd9ac48,
 untouched). Annotated at m4-cloudcost close-b, 2026-08-08 — close-a Part 5 for the retention
 finding; the reproduction and the failing test's identity are this close's own four runs, at agents
@@ -6166,6 +6183,17 @@ the noise looks like"*, and it costs observability to boot.
 
 **Reach, unchanged and restated honestly:** `mix` compile noise is a different emitter and still
 goes to stdout on a run that recompiles. The Done-when is about Logger, and Logger is what moved.
+
+**The change is wider than this row, so its consumers were swept (hc-c r1, F1).** Moving Logger
+affects **every** invocation and every mode, not only `--json`, so "no `--json` reader broke" is
+not the question. **Population:** every file in both repos with an executable extension
+(`.sh .py .rs .ts .tsx .exs .ex`, excluding `node_modules`, `target`, `_build`, `deps`, `priv`,
+`.git`) containing a harness invocation — **39 files**, of which **5** actually spawn the harness
+and read a stream. **0 of the 5 read log text from stdout**; the enumeration and each site's
+reading behaviour are in `docs/milestones/hc-c-implementation-notes.md` §7. **The sweep is clean,
+not exhaustive** — it cannot reach an operator's own pipeline or anything outside these two repos,
+and that residue is recorded in `docs/milestones/hc-consolidation.md` §Not established item 6
+rather than left to read as completeness.
 
 `Source: t1a, 2026-08-06 — established by the stdout/stderr split above; BL-100's `2>&1` diagnosis
 corrected in the same round. Citations verified at aetheris@aaf0f9a / aetheris-agents@90c7c67.`

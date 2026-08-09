@@ -1443,3 +1443,306 @@ truth-maker, and a non-zero count is a stop.**
 No upload. No step 7. No close statement — `hc-consolidation.md`'s §Ticket set hc-e row and header
 `Status:` line still say the round is open, because it is. **Push held** until the boundary is
 complete, per decision 6.
+
+---
+
+# r9 — Done-check step 7, the close statement, and the push
+
+**Repos at open.** agents `f909b95`, harness `2ef0517`. **Date.** 2026-08-09.
+**Outcome: step 7 passed on both halves; hc-e is CLOSED at r9.** Nothing before step 7 was reopened.
+
+## 65. The surface problem, stated before the result
+
+This session has **no Projects tool**. `prompts/bl-002-refresh-project-knowledge.md`
+§Post-upload verification already says so — the read-back *"is run by a surface that can read
+project knowledge (claude-ui's Projects tool, or the human in the UI) and handed back"*. The
+operator ruled the route: **Chrome, against a supplied URL**, bounded, with a two-source fallback if
+Chrome could not do it.
+
+**The budget, set before starting and reported as set:** at most **8 browser tool calls**, of which
+at most **2 navigations** to
+`https://claude.ai/cowork/project/019e0f74-cf86-75f7-9aac-13b5789bf248`.
+
+**The budget's trigger did not fire, and the extension is recorded rather than back-dated.** Chrome
+reached the project on navigation **1** and enumerated its document list on call **3**. What
+remained was reading content, not attempting access. I **extended the call bound to 24 for the
+content phase and said so at the time**, holding the navigation bound at 2 (1 used) and abandoning
+any single check that cost more than 3 calls. Redefining the original bound after the fact — "those
+were reads, not attempts" — is the move this note exists to not make. Final usage: **1** navigation,
+**14** browser calls, fallback not taken.
+
+**The URL was not verified as this project's in advance**, per the operator's own statement; the
+read-back is what binds it. It bound: 28 documents, the 25 export names, exactly the three named
+`claude/` briefs.
+
+## 66. Step 7(c) — the document count. **RECONCILED at 28.**
+
+Run first, because it gates every content check: a content check against the wrong artifact is the
+failure mode, not the fix.
+
+**The store's own header says it.** The Context dialog reports **`28 items`** — read from the store
+(`ref_586`), not counted by me off a rendered grid.
+
+**The enumeration, from the dialog's file tree.** 3 in `claude/` + 25 flat:
+
+```
+store: claude/ briefs = 3  flat = 25  TOTAL = 28
+store dialog header   = 28 items  (read from the store itself, ref_586)
+manifest export rows  = 25
+
+--- set comparison, both directions (flat store vs manifest) ---
+in store, not in manifest : (empty)
+in manifest, not in store : (empty)
+
+--- the three claude/ briefs, against the expected set ---
+expected-not-found: (empty)
+found-not-expected: (empty)
+
+RECONCILIATION: 25 export rows + 3 claude/ briefs = 28 == store's 28
+```
+
+Four empty results, and **each is a result**: the set comparison is run in both directions rather
+than as a count, which is what distinguishes a genuine remove-all-upload-all from a partial upload
+that happens to total 28. The three briefs — `aetheris--playground-token-config-defect.md`,
+`aetheris-agents--inbox-brief.md`, `aetheris-agents--ravenmigrate-brief.md` — are **not
+manifest-tracked** and are correctly untouched; the manifest's own inclusion rule is what makes
+their presence expected rather than an over-describe.
+
+## 67. Step 7(a) — the manifest document *in the project*. **PASS.**
+
+Not the repo copy. The store's copy of `project-knowledge-manifest.md` (404 lines), opened in the
+Context viewer and read out of the rendered page:
+
+```
+'Regenerated 2026-08-09'                 -> 1
+"hc round's export boundary"             -> 1
+'dcf1d42'  -> 2      '7dbdb7d'  -> 2      '2ef0517'  -> 2      '2ebc59c'  -> 2
+'080ad24'  -> 2      '384656c'  -> 2      '288c8ef'  -> 2      'ae0c510'  -> 1
+```
+
+Rendered, with the four re-pins each beside the hash it replaced:
+
+```
+generic "Regenerated 2026-08-09 at the hc round's export boundary (hc-e r8)."
+generic "they agree, and no row was added or removed."
+generic "Four rows re-pinned"
+generic "aetheris-agents--CLAUDE.md"   generic "080ad24"   generic "dcf1d42"
+generic "backlog-2026-06.md"           generic "384656c"   generic "7dbdb7d"
+generic "aetheris--CLAUDE.md"          generic "288c8ef"   generic "2ef0517"
+generic "aetheris--runbook.md"         generic "ae0c510"   generic "2ebc59c"
+```
+
+The counts of 2 are the table row plus the regen paragraph; `ae0c510`'s 1 is the paragraph alone,
+since it is a superseded value and holds no row. The clause-6 sentence
+(*"Added 2026-08-09 at the hc round's close (hc-e), per its §Close criteria clause 6"*) is present
+in the same capture — an unasked-for fifth confirmation, recorded because it is evidence.
+
+## 68. Step 7(b) — the four content checks, **named before they were run**
+
+Derived from what this round actually changed: **one per re-pinned row**, each landing in the
+document that should carry it, each chosen so it could only be present after this cycle. Named in
+the plan before the first browser call, not selected afterwards from what happened to be found.
+
+| | Document | What it establishes | Verdict |
+|---|---|---|---|
+| **C1** | `aetheris-agents--CLAUDE.md` | *A packet publishes the invocation that produced its result*, with `Source: hc round close 2026-08-09 (hc-e r4)` — authored at r4, re-placed at r5 (`dcf1d42`) | **PASS** |
+| **C2** | `aetheris--CLAUDE.md` | the positive-control rule, with `Source: promoted 2026-08-09 at the hc round's close (hc-e), by §7's prior-claims census` (`02db6bb`) | **PASS** |
+| **C3** | `backlog-2026-06.md` | BL-135's `[FOLDED into BL-075, 2026-08-09 (hc-e's opening edit, E3)` | **PASS** |
+| **C4** | `aetheris--runbook.md` | hc-d's sprint exit contract — the `KNOWN_RED` section, the counter block, the four failure modes, `provenance.txt` (`2ebc59c`) | **PASS** |
+
+**C2 is its own positive control by construction.** It is the rule §7's prior-claims census found
+claimed-as-promoted and **present in neither file**; an unchanged store would carry that absence.
+Its presence is therefore only-after-this-cycle in the strongest available sense — the check cannot
+be satisfied by a stale upload.
+
+**C1, quoted from the store:**
+
+```
+"A packet publishes the invocation that produced its result"        -> 1
+"hc round close 2026-08-09 (hc-e r4)"                               -> 1
+"a partial capture is indistinguishable from a complete one"        -> 1
+-- positive control, pre-cycle text in the same document --
+"Scripts do; agents decide"                                         -> 1
+"The packet is the artifact that travels"                           -> 1
+```
+
+**C2, quoted from the store** — the entry and its Source line, adjacent:
+
+```
+generic "And its mirror, owed by whoever reports a negative: an empty result is a result, and a negative need…"
+generic "Source: promoted 2026-08-09 at the hc round's close (hc-e), by §7's prior-claims census, and recorde…"
+-- positive control, pre-cycle harness text --
+"Every claim has a truth-maker"  -> 1        "Silent-wrong-answer"  -> 2
+```
+
+**C3, quoted from the store** — the last node the viewer rendered for BL-135:
+
+```
+generic "> **`[FOLDED into BL-075, 2026-08-09 (hc-e's opening edit, E3). Same defect — this row should not"
+generic "> have been filed. Kept, not deleted, because the fold and its reason are the record.]`**"
+```
+
+**C4, quoted from the store** — hc-d's section, by its own heading:
+
+```
+heading "The sprint's exit code, and what a green sprint asserts (BL-077, 2026-08-09)"
+generic "Exit contract (BL-077): arms declared blocking .......... 1 arms tracked KNOWN_RED .......... 0 …"
+generic "— what it means when you see it."   generic "KNOWN_RED"
+generic "Four ways the gate fails, and the last two will surprise you."
+"provenance.txt" -> 1     "console.log" -> 1     "KNOWN_RED" -> 5
+-- positive control, pre-cycle runbook text --
+"mix aetheris run" -> 1   "mix aetheris inspect" -> 2
+```
+
+### 68a. Two limits of the instrument, recorded rather than glossed
+
+**(i) Absence is not readable from this capture; only presence is.** The accessibility tree
+truncates long text nodes at ~100 characters with an ellipsis, which is why the bare string
+`positive control` returns **0** in the C2 capture while the entry is plainly there. Every one of
+the four checks is a **presence** check, so the limit does not touch the verdicts — but a zero from
+this instrument means nothing, and any later reader reusing the method must know that before
+reading a zero as evidence.
+
+**(ii) C3's second string was not reachable, and the check is carried by the first.** I named two
+strings for C3; the store's viewer prints *"This file is too large to fully render. Showing a
+simplified plain-text view"* and *"Only part of this file is shown"* for the 7,732-line backlog, so
+BL-077's `**Status:** Done 2026-08-09 — hc-d` at repo line ~3073 is **not reachable in that view**.
+It was not chased — the per-check bound was 3 calls and the check already had a decisive
+this-cycle string. **Stated, not quietly dropped:** C3 passes on one of its two named strings, and
+the reason the second is absent from this record is a viewer limit, not a store defect.
+
+## 69. Step 7's second half — `drift_check.py --strict`, bound by absolute path
+
+```
+$ python3 /home/it/sandbox/elixirws/aetheris-agents/scripts/drift_check.py --strict; echo "exit=$?"
+Rig doc-drift checker — 9 check(s)
+
+[PASS] event_types: 22 event types match between event.ex and specs.md §6
+[PASS] tauri_commands: 50 commands checked: lib.rs / .rs files / specs.md §4
+[PASS] db_schema: 4 documented tables match store.ex schema
+[INFO] env_vars: 'AETHERIS_PROVIDER' in specs.md §1 but not read via env::var() in Rig (may be agent-side)
+[INFO] env_vars: 'CORPUS_SEARCH_MCP_ENABLED' in specs.md §1 but not read via env::var() in Rig (may be agent-side)
+[INFO] env_vars: 'DOCBUILDER_TENANT' in specs.md §1 but not read via env::var() in Rig (may be agent-side)
+[INFO] env_vars: 'GITHUB_PERSONAL_ACCESS_TOKEN' in specs.md §1 but not read via env::var() in Rig (may be agent-side)
+[PASS] env_vars: env vars consistent: 9 in specs, 5 read in Rust
+[PASS] routes: 11 registry paths all have matching App.tsx routes
+[INFO] payload_fields: prompt_built.key in DB events but not listed in specs.md §6
+[INFO] payload_fields: llm_responded.content in DB events but not listed in specs.md §6
+[INFO] payload_fields: llm_responded.type in DB events but not listed in specs.md §6
+[PASS] payload_fields: sampled DB payload fields consistent with specs.md §6
+[PASS] milestone_status: 11 milestone READMEs all have Status: lines
+[PASS] project_knowledge: 24 manifest entries all match git HEAD
+[PASS] command_fields: 11 documented §4 structs (56 fields) match commands/*.rs
+
+Summary: 9 PASS  0 FAIL  0 WARN  7 INFO
+exit=0
+```
+
+Full output, no `tail`, nothing elided; the exit is captured from the invocation printed above it.
+**Zero `project_knowledge` WARNs.** The seven INFOs are the standing set and are not WARNs.
+
+**And the sentence a later reader will most want written down: this zero is necessary and not
+sufficient.** Check 8 compares the manifest against git history. It detects the repo running ahead
+of an export; it is **structurally blind** to a file uploaded without a regen, to a partial upload,
+and to a stale file uploaded under a current name. A store holding four documents would produce
+exactly this zero. What covers that direction is §66's both-direction set comparison and §68's
+content checks — **not this check** — and r8's §62 said so in advance, which is why the boundary was
+built with two halves rather than one.
+
+## 70. Step 8 — the close statement, and the legality check it rests on
+
+**`hc-consolidation.md` is not manifest-tracked. Checked, not assumed** — this is what makes a
+content edit *after* the boundary legal rather than a re-staling of a row the boundary just pinned:
+
+```
+$ grep -n 'hc-consolidation' docs/project-knowledge-manifest.md; echo "grep exit=$?"
+grep exit=1        (1 = no match)
+
+-- positive control, same grep against a name that IS tracked --
+$ grep -n 'capability-matrix.md' docs/project-knowledge-manifest.md | head -3; echo "grep exit=$?"
+37:| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `4d98ec2` | 2026-08-05 |
+163:> repo-side work; the artifact it produces — `capability-matrix.md` — is exported and
+173:`aetheris-agents--CLAUDE.md` (`9afd8e7`→`0fc9396`), `capability-matrix.md`
+grep exit=0        (0 = match)
+
+-- positive control 2: any docs/milestones/ path in the table at all --
+$ grep -nE '^\|.*docs/milestones/' docs/project-knowledge-manifest.md; echo "grep exit=$?"
+grep exit=1        (1 = none, which is clause 6's rule holding)
+```
+
+An empty result is a result, and here it is the load-bearing one — so it is run with a control that
+proves the pattern finds what it is meant to find. `hc-e-implementation-notes.md` is out on the same
+rule (a milestone working artifact), so this append is legal for the same reason.
+
+### 70a. The counts in the header line, derived at `f909b95`
+
+Not carried from §Milestone summary, which asserts the same numbers one section away — a count
+carried from a neighbour is not a derivation:
+
+```
+$ (§Not established, every item, prefix read from the item's own line)
+ 1. `[RESOLVED]`     2. `[OPEN]` (b)    3. `[OPEN]` (b)    4. `[DECIDED]`
+ 5. `[OPEN]` (b)     6. `[OPEN]` (b)    7. `[RESOLVED]`    8. `[RESOLVED]`
+ 9. `[RESOLVED]`    10. `[OPEN]` (a)   11. `[OPEN]` (a)   12. `[OPEN]` (a)
+
+      1 DECIDED       7 OPEN       4 RESOLVED       population: 12
+```
+
+**Seven `[OPEN]`, one `[DECIDED]`** — which is what the Status line now names, and it agrees with
+§Milestone summary's independently-written figure.
+
+### 70b. The round count and the ranges, derived from the repos
+
+`git log --reverse --extended-regexp --grep='^(docs|fix)\(hc-e'` — **subject-scoped**, because a
+bare `--grep='hc-e'` also matches hc-b/hc-c/hc-d commits whose *bodies* mention hc-e, and that
+inflates the population by six:
+
+```
+9fbba09  label="hc-e"              <- the opening edit          => r0
+e047dd1  label="hc-e anatomy"      <- reviewer-authored, R20    => not a round
+3d79a6f  label="hc-e anatomy r1"   <- reviewer-authored, R20    => not a round
+e77a530  label="hc-e"              <- the reopen                => r1
+83ef305  label="hc-e"              <- the gate, STOP at G4      => r1 (same round)
+8082e40  label="hc-e r2"                                        => r2
+088f9c2  label="hc-e r3"                                        => r3
+04a329a  label="hc-e r4"                                        => r4
+dcf1d42  label="hc-e r5"                                        => r5
+7dbdb7d  label="hc-e r6"                                        => r6
+0c3ed01  label="hc-e r7"                                        => r7
+a04309a  label="hc-e r8"                                        => r8
+7a78f92  label="hc-e"              <- the manifest regen        => r8 (same round)
+f909b95  label="hc-e r8"                                        => r8
+```
+
+**r0 through r8 is nine; this round is r9; ten rounds.** r0 counts as a round because hc-d's row
+counts its own r0 in reaching *"Four rounds"* — the same convention, not a fresh one. The two
+`hc-e anatomy` commits fall **inside** the range and are excluded from the count under **R20**, a
+reviewer-authored section-scoped edit being not a ticket round.
+
+**Ranges.** agents **from** `9fbba09`; harness `02db6bb`→`2ef0517` (three commits). The agents range
+is written *from* rather than closed with a hash for the reason hc-c's row was: **the range closes
+at this very commit, and a row cannot name its own hash from inside itself.**
+
+### 70c. Both edits, one commit — **R19**
+
+This session changed hc-e's state, so it writes hc-e's row in the same commit, and the header
+`Status:` line with it. R19's amendment is the reason this is not optional and not deferrable to a
+tidier moment. Earlier states are kept verbatim per **decision 7** — the r8 cell entire, including
+the states it had already nested, rather than a summary of it.
+
+## 71. Step 9 — the push
+
+Recorded in §72 below, after it ran.
+
+## 72. What r9 found and did not fix
+
+**Nothing that would have been a stop, and the bound was stated in the ticket rather than invented
+here:** the boundary is the last gate, and a defect found after it belongs to the next cycle. Two
+observations, neither a defect:
+
+1. **The read-back instrument's truncation (§68a(i))** is a property of reading a store through a
+   browser's accessibility tree, not of the store. It is recorded because the *method* will be
+   reused and its zero must not be trusted.
+2. **`docs/milestones/` staying out of the manifest** is what made this close legal, and the
+   clause-6 sentence that says so was itself verified present in the store's copy (§67). The rule
+   and its own evidence landed in the same boundary.

@@ -329,6 +329,17 @@ and 11. That is *a count printed beside an enumeration that contradicts it*, pro
 discharging a finding about population discipline. Corrected by binding the count to the five files
 by name; recorded in the notes §8c rather than silently fixed.
 
+> **`[amended 2026-08-09 (hc-d, R-i) — F8(b)'s disposition above is wrong in its rationale, and
+> the correction is recorded here rather than by rewriting the row, per decision 7.]`**
+>
+> *"None broken; all helped — their four stdout reads are whole-stdout `json.loads`"* attributes to
+> the harness four reads that belong to **Python-CLI** subprocesses in the same files. Per
+> *invocation* rather than per *file*: 17 `subprocess.run` calls across the five — **7 harness, 10
+> Python CLI** — and **no harness invocation reads stdout**. hc-d ran the five suites against the
+> pre-hc-c harness (`b4d782a`, positive-controlled): **41 passed**, the same as after. So they are
+> **unaffected**, not helped, and were never at risk. **"None broken" stands**; the rationale does
+> not. This also resolves what was §Not established item 8 (D3), which asked exactly this question.
+
 **One correction to F6's text, offered rather than pressed.** F6 says the r1 result was *"carried
 from r0"*. It was not: a correctly-bound `drift_check --strict` **was** run post-commit at r1 and
 reported `current=3d5a8da` / `current=1b09b23` — hashes that appear nowhere in r0's output

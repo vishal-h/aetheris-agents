@@ -350,6 +350,19 @@ the five files). The boot path was confirmed to be real rather than inferred fro
 running one test's exact command directly gives **stdout 0 bytes** and three
 `[Aetheris.Application]` lines on stderr, in 815 ms.
 
+> **`[corrected 2026-08-09 (hc-d, R-i) — the paragraph above is wrong in its rationale.]`** The
+> four `json.loads(result.stdout.strip())` reads it attributes to the harness belong to
+> **Python-CLI** subprocesses (`[sys.executable, SCRIPT]`) in the same files. Enumerated per
+> *invocation* rather than per *file*: the five files make **17** `subprocess.run` calls — **7**
+> spawn the harness, **10** spawn a Python CLI — and **all four whole-stdout parses are the Python
+> CLIs'**. No harness invocation in these files reads stdout; the 7 read `returncode` and `stderr`.
+> So the suites are **unaffected by hc-c, not helped by it**, and they were already green on the
+> pre-hc-c tree (**41 passed at `b4d782a`**, positive-controlled both ways). **"None is broken"
+> stands.** The error is a census keyed on the wrong unit — reads-per-file where the question was
+> reads-per-invocation, merging two subprocess families that share a file. Established under
+> hc-d's R-i; see `hc-consolidation.md` §Not established item 8. Original text left standing per
+> decision 7.
+
 > **A count error of my own, in this section, corrected rather than quietly fixed.** My first pass
 > counted stdout/stderr reads with `grep -c … test_*.py`, which globs **every** test file in
 > `provenance/tests/`, not the five under discussion — 21 and 18 against an enumeration showing 4

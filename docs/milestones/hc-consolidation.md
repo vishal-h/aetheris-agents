@@ -976,6 +976,15 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    >
    > **The residue is unchanged in kind and smaller in size**: an operator's own pipeline, and
    > anything outside these two repos. Still clean, still not exhaustive.
+   >
+   > `[corrected 2026-08-09 (hc-d, R-i). The sentence above reading "None is broken; the change
+   > helps them" is **wrong in its second half**. The four whole-stdout parses it cites belong to
+   > **Python-CLI** subprocesses in those files, not to the harness invocations: enumerated per
+   > invocation, the five files make 17 subprocess calls — 7 harness, 10 Python — and **no harness
+   > invocation reads stdout at all**. The suites are **unaffected**, not helped, and they were
+   > green on the pre-hc-c tree (41 passed at `b4d782a`). **"None is broken" stands**; only the
+   > rationale falls. Established at §Not established item 8's resolution; original text left
+   > standing per decision 7.]`
 
 7. **hc-b2's §6 anatomy was never written into this document — an R12 gap, recorded rather than
    back-filled.** R12 requires a ticket's anatomy here **before that ticket opens**. hc-b2 opened
@@ -989,6 +998,71 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    claude-code's. **So the gap is named, and the choice of remedy — a row authored by the reviewer,
    or a ruling that a mid-round repair ticket needs none — is left to whoever takes it up.**
    Whichever way it goes, `Five tickets.` above needs revisiting with it.
+
+   > **`[STAYS OPEN. 2026-08-09 (hc-d, D1). A narrowing of R12 was offered conditionally; its
+   > premise was tested first and does not hold, so the narrowing is not written.]`**
+   >
+   > The offered narrowing would have applied to *"a repair ticket whose scope is exactly a prior
+   > round's committed review findings"* — on the premise that hc-b2's scope existed **verbatim, in
+   > a committed repo artifact, before hc-b2 opened**. **It did not.**
+   >
+   > **What was checked, and how.** hc-b2 opened and closed at agents `6c61393`; the tree
+   > immediately before it is `a581a8c`. (1) The only `hc-*` review file present at `a581a8c` is
+   > `docs/reviews/hc-b-review.md`. (2) `docs/reviews/hc-b2-review.md` was **first added by
+   > `6c61393` itself** — hc-b2's own commit — so it does not pre-date the ticket. (3) Six wordings
+   > of hc-b2's findings were searched over the **entire committed tree** at `a581a8c`:
+   > *"exactly two slots"*, *"inconclusive"*, *"two invocations"*, *"the gate's home"* and
+   > *"Finding B"* return **0 files**; *"stub-provider run with a worker"* returns **1**, and that
+   > one is hc-b's own gate text — the premise hc-b2 refuted, not hc-b2's finding about it.
+   > (*"placeholder"* matches 115 unrelated files and is not a discriminator.) (4) `hc-b-review.md`
+   > §Round 1 at `a581a8c` is about the decision-count split and clause 2 — hc-b's own artifact,
+   > nothing about hc-c's gate.
+   >
+   > **The structural reason, which matters more than this instance.** **R2 requires a ticket's
+   > review file to be *committed*, not to *pre-date* the ticket** — and a ticket's own review file
+   > is committed **by** that ticket. So R2 cannot supply the pre-dating artifact the narrowing
+   > needs; for hc-b2 the findings lived in conversation until hc-b2 itself committed them. A
+   > narrowing resting on *"already satisfies that purpose"* would therefore have been written over
+   > a condition this process does not currently produce.
+   >
+   > **Item 7 stays open, and `Five tickets.` still needs revisiting with it.** What a future
+   > remedy now also has to decide: whether repair tickets should commit their findings *before*
+   > opening — which would make the narrowing's premise true rather than assumed.
+
+8. **Whether the five provenance pytest suites passed on the harness *before* hc-c is not
+   established.** They spawn `["mix", "run", "--eval", …]` with `capture_output=True` and read
+   stdout with `json.loads(result.stdout.strip())` — a whole-stdout parse. hc-c r2 established they
+   pass on the changed harness (41 tests) and that the boot path is real (stdout 0 bytes, three
+   `[Aetheris.Application]` lines on stderr). **It did not run them pre-fix.** If boot output
+   reached their stdout before hc-c, those parses should have raised, which would mean the suites
+   were red and unnoticed; if they were green, the r2 claim that *"the change helps them"* rests on
+   a mechanism not yet identified. **Exactly one of those is true and neither is established.**
+   Carried to hc-d, whose subject is gates that pass without looking.
+
+   > **`[RESOLVED 2026-08-09 (hc-d, R-i), by running them. The second horn is the true one, and the
+   > r2 claim it tests was wrong.]`**
+   >
+   > **Run.** The harness was checked out at `b4d782a` — the commit before hc-c's `e8889c3` —
+   > detached, with a positive control confirming the fix was absent (`route_logging_to_stderr`: 0
+   > occurrences; the `:json` error clause: 0). The five suites were run against that tree:
+   > **41 passed**, the same 41 that pass on the changed harness. The tree was restored to `main`
+   > with the same control run in reverse (3 and 1 occurrences). **They were green before hc-c.**
+   >
+   > **The mechanism, which the r2 claim got wrong.** r2 enumerated stdout reads **per file** and
+   > put them on the harness's account. Enumerated **per invocation** instead — the unit that
+   > actually matters — the five files make **17** `subprocess.run` calls: **7 spawn the harness**
+   > (`["mix", "run", "--eval", …]`) and **10 spawn a Python CLI** (`[sys.executable, SCRIPT]`).
+   > **All four `json.loads(result.stdout.strip())` calls belong to the Python CLIs**, which never
+   > touch the harness. **No harness invocation in these files reads stdout at all** — the 7 read
+   > `returncode` and `stderr` only.
+   >
+   > **So hc-c neither helps nor risks them: they are unaffected.** F8's conclusion — no broken
+   > consumer — stands; the *"the change helps them"* rationale does not, and is corrected wherever
+   > it landed rather than left to propagate.
+   >
+   > **The error's class.** A census keyed on the wrong unit: reads-per-file where the question was
+   > reads-per-invocation. Two subprocess families live in one file, and counting by file merged
+   > them. This is the adjacent-case shape, one level up from the code it was written about.
 
 ---
 
@@ -1004,6 +1078,16 @@ no population to enumerate, so the operational close ("name the population and p
 enumeration") cannot be applied to it at all. Mark it as a prediction when made, or do not make
 it. Origin: claude-ui's hc-c ticket text ("exactly two slots marked under R13"; four marks across
 three fields); named by claude-code at hc-b2.
+
+**The packet is the artifact that travels, and packet assembly is itself a place claims are made.**
+At hc-c r1 a correctly-bound `drift_check --strict` ran in-session and reported real hashes; the
+packet published a different invocation — one that had failed under a persisting `cd` — beside an
+`exit=` literal bound to nothing, and a WARN count the published command had not produced. The
+verification was sound; the artifact was false. So: a packet transcribes the command that ran and
+the status that command returned, or it re-runs and publishes the re-run. It never re-runs to
+illustrate a result obtained some other way, because a re-run can bind differently than the
+original and the difference is invisible in the output. Origin: claude-code's own diagnosis at
+hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
 
 ---
 

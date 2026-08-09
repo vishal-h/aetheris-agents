@@ -643,3 +643,94 @@ No new promotions — `drift_check` remains the only blocking arm. No change to 
 BL-100 backward scan, the D2 guard, or any file under `../aetheris/lib/`, `native/`, `config/`.
 §Not established items 10 and 11 unchanged and still `[OPEN]`; item 12 is new. BL-077 and BL-133
 face 2 stay closed/discharged — r2 touches neither row.
+
+---
+
+# Round 3 — F9, F10, and the closure adjudication recorded
+
+**Repos.** harness `2ebc59c` → r3, agents `2b62192` → r3. **Date.** 2026-08-09.
+
+## 26. The r2 stop, adjudicated — and the reasoning kept, per the reviewer
+
+**The stop did not fire.** The defect r2 declared arrived with **F2(b) at r1**, where a *truncated*
+capture would have produced the identical contradiction; F7(b)'s exercise made it visible. **A
+defect exposed by a fix is not a defect in it** — one floor down from the pre-authorisation's *"in
+F7's fix"*.
+
+**The reviewer asked that the reasoning for handing the call over be recorded, as worth more than
+the finding it accompanied, so it is here in the words it was made in:** *a rule whose purpose is to
+stop the implementer deciding their own closure is not one I should interpret twice in my own
+direction.* The previous round's ambiguity of exactly that shape had already been resolved in my
+favour once. The distinction is now settled and I may apply it myself next time — which is a
+narrower licence than deciding closure, and is the only part that was ever in doubt.
+
+## 27. F9 — the fix that moved the true number out of the record
+
+**The defect, and r2's fix is what created it.** The provisional/final split cured the
+contradiction between tally and exit code — but the FINAL block printed on **restored stdout**,
+which is by construction outside the capture. So `console.log` carried only the **provisional**
+numbers, and its last line said *"exit contract above is the verdict"*, pointing at them.
+
+**Both sentences were true live at a terminal.** As a durable record — the one thing BL-133 face 2
+exists to produce — the file asserted a verdict that was not the run's. That is worse than the
+contradiction it replaced, because the contradiction was at least visible in the same view.
+
+**What landed.** (a) The FINAL block is appended to `$SPRINT_CONSOLE` directly, after the drain and
+after the assertion; `tee` has exited, so the append is ordered and is never routed back through the
+capture. (b) Guarded on **exists AND non-empty**: when the assertion has just declared the record
+broken, creating or padding the file with a verdict would convert a *broken* record into one that
+looks merely *short* — a confident tally over no run. **Verified both ways**: the absent-capture run
+leaves no `console.log`, and the guard refuses to pad a zero-byte file (0 bytes before, 0 after).
+(c) The sentinel points **forward** now, and print-string and compare-string remain **one variable**
+— which is the only thing standing between this assertion and silent vacuity. (d) The ordering
+**drain → assert → append** is written into the code together with its counter-intuitive
+consequence: after the append the file's last line is the FINAL block, so re-running the assertion
+over the finished file would fail. Correct, because the assertion is a claim about the *drain*,
+complete at step 3, not about the file's permanent ending.
+
+**The record's ending, observed:**
+
+```
+[INFO]  Sprint output ends here — the FINAL exit-contract tally is appended below, after the capture check.
+Exit contract (BL-077) — FINAL, after the capture check:
+  arms declared blocking .......... 1
+  …
+  → exit 0
+```
+
+## 28. F10 — the answer is a third thing, and the carrier is mine
+
+**Neither disjunct the finding offered is true.** The retention line was not missing from the
+sprint's output, and the packet did not drop it. **The grep genuinely returned empty, because it was
+bound to the wrong artifact.**
+
+**§1g chose the run directory with `ls -1dt | head -1`.** The newest run at that instant was the
+**EMPTY-state test run** — the one whose `console.log` a watcher of mine had been truncating to zero
+seconds earlier. My own test had erased the line from that specific file.
+
+**Derived, not asserted:** `r2empty.txt` names `sprint/20260809_132417`, which is exactly the
+directory §1g read; its `console.log` starts mid-stream at *"Rig doc-drift checker"* with the
+Prerequisites and provenance lines gone. Uncorrupted runs all carry the line — `132413` → 1,
+`131128` → 1, r3's passing run → 1 at `:3`. **Positive control** on the corrupted file itself:
+`grep -c 'Exit contract'` → **1**, so the file is readable and the pattern works; the zero is
+absence in that file, not a broken search.
+
+**So it is the command-binding carrier with a timestamp in place of a path** — an artifact selected
+by **recency** rather than bound to its **purpose**. And it hit twice in one packet: **r2's item 8
+provenance stamp came from the same corrupted run.** The stamp's *contents* were accurate, which is
+precisely why it survived review — it was published as clean-post-commit evidence while being drawn
+from a run I had deliberately broken.
+
+**The method is fixed rather than the code:** every run directory in r3's packet is taken from **the
+run's own output** (`grep -o 'sprint/20260809_[0-9]*'` over its stdout), never from `ls -t`.
+
+**And the finding's standing rule lands on my own packet:** an empty result is a result. A command
+published with nothing beneath it reads as *"ran, nothing to say"* — the same silence the
+exit-contract block was built to remove, reproduced in the packet reporting it.
+
+## 29. What r3 did NOT change
+
+No new promotions. No change to `json_read`, the BL-100 scan, the D2 guard, or any file under
+`../aetheris/lib/`, `native/`, `config/`. §Not established items 10, 11, 12 unchanged and `[OPEN]`.
+BL-077 and BL-133 face 2 stay closed/discharged — r3 touches neither row. **No new defect found in
+F9's fix.**

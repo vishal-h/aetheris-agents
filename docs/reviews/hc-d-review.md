@@ -338,3 +338,112 @@ open design decision and **the first `KNOWN_RED` arm's author** as its resolver.
 ### Promotion candidate — transcribed
 
 **A restore is verified, not assumed.** Added to §Promotion candidates verbatim as authored.
+
+---
+
+## Round 3
+
+**Raised at:** harness `2ebc59c`, agents `2b62192`. **r2's stop did NOT fire** — the reviewer
+adjudicated the defect as originating at F2(b) and merely *exposed* by F7(b), one floor below F7's
+fix. Two new findings.
+
+### F9 — MUST FIX, code. The authoritative tally is not in the durable record, and the record's own last line calls the provisional one the verdict.
+
+> The FINAL block prints on restored stdout, after the drain. So it is not in `console.log`. What
+> `console.log` contains is:
+>
+>     blocking failures ............... 0
+>     → sprint will exit 0 unless the capture check below changes it
+>     (provisional — the console-capture check runs after the drain; final tally follows it)
+>     …
+>     Sprint finished — exit contract above is the verdict.
+>
+> The final tally that follows is nowhere in the file, and the last line in the file asserts that
+> the block above it — the one labelled provisional — is the verdict. Both sentences are
+> individually true when read live at the terminal. Read back from the file in six weeks, which is
+> the entire purpose of BL-133 face 2, they are a durable record that misstates its own verdict.
+>
+> The provisional/final split was the right fix for the contradiction. It moved the authoritative
+> number out of the artifact kept for reading the run back.
+>
+> Required:
+> (a) After the drain and after the capture assertion has run, append the FINAL block to
+>     `$SPRINT_CONSOLE` directly. `tee` has exited by then, so a plain append is ordered and safe —
+>     do not route it back through the capture.
+> (b) Append ONLY when the capture exists and is non-empty. If it is absent or empty, the record is
+>     already declared broken; recreating the file with a verdict and nothing else would make a
+>     broken record look like a short one. Say in the code why the append is conditional.
+> (c) Fix the sentinel. `Sprint finished — exit contract above is the verdict.` must stop pointing at
+>     the provisional block. Reword it, and keep the sentinel string and the assertion's compare
+>     string as **one variable** so they cannot drift apart.
+> (d) State the ordering explicitly in the code: drain → assert → append. The assertion compares the
+>     last line against the sentinel *before* the append, so after the append the file's last line is
+>     the final tally and the assertion would no longer hold if re-run. That is correct and it is the
+>     kind of thing that reads as a bug to the next person unless it is written down.
+> (e) Show `console.log`'s tail in the packet for both a passing run and the absent-capture run, so
+>     the record's own ending is visible rather than described.
+
+**Disposition: ACCEPTED, (a)–(e) applied.** The finding is exactly right and the diagnosis is the
+part worth keeping: **r2's fix cured the contradiction by moving the true number out of the artifact
+that exists to carry it.** Live at a terminal both sentences were true; as a durable record the file
+asserted a verdict that was not the run's.
+
+(a) FINAL block appended directly after drain and assertion; `tee` has exited, so the append is
+ordered and is not routed back through the capture. (b) Guarded on exists-and-non-empty, with the
+reason in the code — a broken record must stay visibly broken rather than become a confident tally
+over no run; **verified both ways**, the absent run leaves no `console.log` at all and the guard
+refuses to pad a zero-byte file. (c) Sentinel reworded to point *forward*; it was already one
+variable for print and compare and remains so — that shared variable is the only thing preventing
+this assertion from going quietly vacuous. (d) Ordering stated, including the consequence: after the
+append the file's last line is the FINAL block, **so re-running the assertion over the finished file
+would fail**, which is correct because the assertion is about the drain, not about the file's
+permanent ending. (e) Both tails published in the packet.
+
+### F10 — MUST FIX. §1g published a command with no output and no statement.
+
+> §1g ends:
+>
+>     $ grep "Retention sweep" console.log
+>
+> with nothing beneath it and no comment. r1's §1g ran the same command and published
+> `[INFO]  Retention sweep: pruned 0 of 0 run directories older than 30d (root: …)`.
+>
+> Exactly one of two things is true and neither is stated:
+> - The retention line is missing from `console.log` at r2 — a real regression, since the sweep runs
+>   after the `exec >` redirect and should be captured.
+> - The output was dropped when the packet was assembled — packet-integrity, the carrier you named
+>   yourself at hc-c r2 §8a.
+>
+> Required: establish which, with the command bound and its output published. If the line is
+> genuinely absent, that is a new defect and a stop — report it, do not fix it inside a closing
+> round. If the packet dropped it, say so and name it as the carrier's next instance.
+>
+> An empty result is a result. A command published with nothing beneath it reads as "ran, nothing to
+> say", which is the same silence the exit-contract block was built to remove.
+
+**Disposition: ACCEPTED — and it resolves to a THIRD thing, so the stop does not fire.**
+
+**Neither disjunct is true.** The retention line is **not** missing from the sprint's output, and
+the packet did **not** drop it. The grep really did return empty, and it returned empty because it
+was pointed at the wrong artifact: **§1g selected the run directory with `ls -1dt | head -1`, and
+the newest run at that moment was the EMPTY-state test run** — the one whose `console.log` I had
+been repeatedly truncating with a watcher seconds earlier. My own test had erased the line from that
+specific file.
+
+Established, bound, and published in the packet: the retention line is present in every
+uncorrupted run (`132413` → 1, `131128` → 1, and the r3 passing run → 1 at `:3`), and absent only
+from `132417`, which `r2empty.txt` names as the EMPTY-state run. Positive control on the same file:
+`grep -c 'Exit contract'` → 1, so the file is readable and the pattern works.
+
+**So it is the carrier's next instance after all, in a form neither of us named: an artifact
+selected by RECENCY rather than bound to its purpose.** `ls -1dt | head -1` is the command-binding
+failure with a timestamp in place of a path — and it hit twice in the same packet, because **r2's
+item 8 provenance stamp came from that same corrupted run**. Its contents were accurate, but it was
+published as clean-post-commit evidence while being drawn from a run I had deliberately broken.
+
+**Fixed in method, not in code:** every run directory in this packet is taken from **the run's own
+output** (`grep -o 'sprint/20260809_[0-9]*'` over the run's stdout), never from `ls -t`.
+
+**And the finding's standing rule is upheld against my own packet:** an empty result is a result. I
+published a command with nothing beneath it, which read as "ran, nothing to say" — the same silence
+the exit-contract block exists to remove.

@@ -32,12 +32,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `eae14d4` | 2026-08-07 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `080ad24` | 2026-08-08 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `dcf1d42` | 2026-08-09 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `4d98ec2` | 2026-08-05 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `384656c` | 2026-08-08 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `288c8ef` | 2026-08-08 |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ae0c510` | 2026-07-26 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `7dbdb7d` | 2026-08-09 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `2ef0517` | 2026-08-09 |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
@@ -48,7 +48,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
 | `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `aaf0f9a` | 2026-08-05 |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `265d336` | 2026-08-03 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-08 |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
@@ -63,6 +63,24 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > at the export boundary is the only thing that catches it. Edit the harness copy.
 > The mirror's own last change is `7328755`, which is why it carries no manifest row —
 > the row tracks the canonical copy, and a second row would drift against it.
+
+> **Regenerated 2026-08-09 at the hc round's export boundary (hc-e r8).** Row count **25**,
+> derived — and compared against the **25** hc-e's step-1 gate G6 derived before any regen, both
+> printed: **they agree, and no row was added or removed.** **Four rows re-pinned**, all four this
+> cycle's own edits: `aetheris-agents--CLAUDE.md` `080ad24`→`dcf1d42`, `backlog-2026-06.md`
+> `384656c`→`7dbdb7d`, `aetheris--CLAUDE.md` `288c8ef`→`2ef0517`, `aetheris--runbook.md`
+> `ae0c510`→`2ebc59c`. The other twenty were verified current against
+> `git log -1 --format=%h -- <path>` in each row's own repo, by field rather than by grep, and the
+> self-referential row carries `_(this export)_` as the convention requires.
+>
+> **Mirror-pair check run before the regen, per BL-002:** `diff -q` over
+> `aetheris/docs/methodology/triad-loop.md` and its `aetheris-agents/docs/` mirror →
+> **byte-identical**, so no canonical sync was needed this boundary. `drift_check` cannot see that
+> class; the `diff -q` is the only thing that catches it.
+>
+> **Upload is remove-all then upload-all against the full 25-row set**, never a diff of the four
+> re-pinned rows. Twenty-one rows are unchanged and would read as "nothing to re-upload", which is
+> exactly the direction check 8 is blind in.
 
 > **`docs/milestones/` is out of the manifest, and it is out as a *kind* rather than as a
 > directory.** Added 2026-08-09 at the hc round's close (hc-e), per its §Close criteria clause 6,

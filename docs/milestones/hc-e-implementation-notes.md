@@ -878,3 +878,121 @@ the edit having been made.
 The Done-check items 1–9 including the harness gate set; §Close criteria's six sweeps and their two
 carried questions about BL-135 as *filed and folded*; the export boundary; the milestone summary.
 **hc-e is not closed and the manifest is not regenerated.**
+
+---
+
+# Round 5 — F12, and a stop after it
+
+**Repos.** agents from `04a329a`; harness from `712d434` — **cross-repo, harness first.**
+**Date.** 2026-08-09.
+
+> **Outcome: F12 fixed in both files, with a discriminating instrument rather than the one I first
+> wrote; the carry candidate filed. The ticket then STOPS before r5's remaining items.** The six
+> sweeps, the milestone summary, the Done-check and the boundary are untouched. **hc-e is not
+> closed.**
+
+---
+
+## 40. F12 (a) — the three moves
+
+Each inserted paragraph now follows the preceding entry's complete claim-plus-`Source:` unit. **No
+prose was edited**; the blocks were moved whole, with their own `Source:` lines attached.
+
+| Site | Entry | Was between | Now follows |
+|---|---|---|---|
+| harness | the restore rule | the positive-control paragraph and its `Source:` | that `Source:` block, complete |
+| harness | *a count names the commit* | *a count is a claim about a population* and its `Source: t1a…` | **both** of the truth-maker entry's `Source:` lines |
+| agents | *a packet publishes the invocation* | the full-output rule and its `Source: m4-cloudcost t5c…` | that `Source:` line |
+
+The harness count-stamp case needed care the other two did not: the truth-maker entry carries
+**two** `Source:` lines by design, so "after the entry's Source" means after the second, not the
+first. Moving it after only the first would have reproduced the defect one line down.
+
+## 41. F12 (b) — the check, and **the first check I wrote was wrong**
+
+**Recorded because it is the round's own subject.** My first instrument asked whether the line
+above each insertion *starts* with `` `Source: ``. It reported **4 of 6 misplaced after the fix**,
+including two that were correct — because `Source:` blocks in these files **wrap across lines**, so
+the last line of one ends with a backtick and starts with prose. **A check keyed on a line prefix
+where the structure is a multi-line block**: the substring-versus-structure carrier, inside the
+check written to catch a structural defect.
+
+**The control is what refuted it.** Run over every paragraph-initial bold entry in both files, that
+check reported **34 of 55** harness and **28 of 50** agents as "misplaced". A pattern that fires on
+two-thirds of a file is not finding a defect; it is describing the file. **A check that cannot
+distinguish the defect from house style is not a check** — which is the instruction (b) gave, and
+it is what made the wrong instrument visible.
+
+**The instrument that discriminates: two `Source:` blocks back to back.** That is the visible
+symptom — a `Source:` whose preceding non-blank run also ends a `Source:` — and it is exactly what
+the packet printed at site 1 and I did not read.
+
+```
+harness @712d434 (pre-fix)   -> 4   :619 (site 1)  :846 (site 2)  :851  :917
+harness @worktree (post-fix) -> 2                                  :830  :917
+agents  @04a329a (pre-fix)   -> 1   :494 (site 3)
+agents  @worktree (post-fix) -> 0
+```
+
+**The two survivors are not residue and are not fixed.** `:830` is the truth-maker entry's t1a +
+m4-cloudcost pair; `:917` is the cite-by-anchor entry's m3-close + m3-t2 pair. Both are **one entry
+carrying two sources**, which is legitimate. **Positive control on the baseline:** the same
+instrument over `288c8ef` and `b4d782a` — the harness `CLAUDE.md` as it stood before this round
+touched it — returns **2** at both. So the file's baseline is 2, this round pushed it to 4 + 1, and
+the fix returns it to **exactly the baseline**. A zero would have been the wrong target.
+
+## 42. F12 (c) — §7's verification re-run, **asserting** what surrounds rather than quoting it
+
+The distinction (c) asked for: the quotation surfaced this defect and the reading of it did not, so
+the check now states the structural fact instead of printing lines for a human to notice.
+
+| Entry | Above ends | Entry begins | Own `Source:` |
+|---|---|---|---|
+| count-stamp (1+6), harness `:839` | the `Source:` block opened at `:830` | its own claim | `:849` |
+| recency-binding (3), harness `:682` | the `Source:` block opened at `:678` | its own claim | `:690` |
+| restore (4), harness `:617` | the `Source:` block opened at `:608` | its own claim | `:624` |
+| identifier (5), harness `:874` | an **inline** `Source:` | its own claim | `:881` |
+| vocab sweep (7), harness `:772` | the `Source:` block opened at `:768` | its own claim | `:780` |
+| packet (2), agents `:478` | the `Source:` block opened at `:476` | its own claim | `:489` |
+
+**Six of six**: the entry above ends with its own attribution, the entry below opens with its own
+claim, and each carries its own `Source:`. The identifier entry's neighbour ends with an *inline*
+Source rather than a block — stated rather than smoothed, because a check that only recognised
+blocks would have called it a defect.
+
+## 43. The carry candidate, filed and marked as arriving after the distillation
+
+Transcribed verbatim into §Promotion candidates with its `[filed after hc-e r4's distillation
+completed; carried to the next cycle rather than reopening §7's distillation step, which is done.]`
+mark. **§7's distillation is not reopened** — the candidate is recorded for the next cycle's ritual,
+which is what the mark exists to say.
+
+## 44. The stop, and where it falls
+
+**Complete and recorded:** F12 (a), (b) and (c) in both files; the carry candidate.
+
+**Not started, and named:** §Close criteria's six sweeps with their results — including clause 2's
+§Rows filed defect, BL-135 recorded as **filed and folded**, and the ruling on whether a folded row
+counts toward the population; the milestone summary; Done-check items 1–3 (the harness gate set,
+`shellcheck`, the pre-boundary `drift_check`); items 4–5 (content complete, the manifest regen with
+its count printed beside G6's derived **25**); and item 6's operator hand-off.
+
+**The boundary is the one r5's instruction named** — the sweeps and the summary sit ahead of the
+gate set and the regen — except that F12 alone consumed the round, because the first instrument I
+wrote for it was wrong and the control was what showed it. **hc-e is not closed**, the manifest is
+not regenerated, and nothing is staged for upload.
+
+## 45. One live instance of a rule this round promoted, in the act of committing it
+
+The agents-side commit for F12 was issued in a shell whose `cd` had persisted into the **harness**
+repo. `git add docs/milestones/` failed there with *"pathspec did not match any files"*, and the
+`git status --porcelain` that followed reported **`agents=0 dirty`** — a clean result about the
+wrong repo, which is *"a check that reads the wrong thing reports a clean result, not an error"*
+(harness `CLAUDE.md`), the exact carrier the recency-binding entry landed beside one commit
+earlier.
+
+**No damage: the harness commit `2ef0517` is correct and complete** — one file, the two moves, 22
+insertions and 22 deletions — and the agents tree was simply left uncommitted rather than partially
+committed. **Caught by the pathspec error, not by the status line**, which would have read the same
+had the work been lost. Re-issued with `git -C <repo>` on every command, which is what the rule
+says and what the rest of this round's checks already did.

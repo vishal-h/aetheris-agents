@@ -2160,6 +2160,21 @@ and declined to fix it on its own authority.
 
 ---
 
+**An entry's attribution is structural: an insertion between a claim and its `Source:`
+re-attributes both, and neither paragraph reads as wrong.** Five rules were promoted into two
+`CLAUDE.md` files; three landed inside the preceding entry rather than after it, orphaning its
+provenance — including one promoted the round before, whose `Source:` then appeared to belong to a
+rule about a different subject. §7's verification step quoted the surrounding lines and the defect
+was visible in the quotation; what was missing was a *check* on what surrounds, not a quotation of
+it. So: an edit that inserts into a structured document states where the insertion point falls
+relative to the surrounding unit's boundaries, and a verification that quotes context asserts what
+the context is. Origin: hc-e r4, found by the reviewer in claude-code's own published evidence.
+
+`[filed after hc-e r4's distillation completed; carried to the next cycle rather than reopening
+§7's distillation step, which is done.]`
+
+---
+
 ## Not carried, and why
 
 Two of m4's sections are deliberately absent. Stated, because a section missing without a note

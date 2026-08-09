@@ -3,10 +3,14 @@
 `Opened 2026-08-09. Canonical document for BL-131. Authored by the reviewer
 before t1 opens, per hc-consolidation R12.`
 
+## Why this exists
+
 **What this round decides.** BL-131: whether the N>1 compose path is a supported
 surface. The row owes a ruling — supported, or removed — and the §Contracts
 amendment that follows it. Read `docs/backlog-2026-06.md` → BL-131 for the
 subject; it is not restated here.
+
+## Scope
 
 **Shape: two tickets with a gate stop between them.** t1 establishes, read-only,
 and stops. The reviewer rules. t2 applies the ruling. **The ruling is not
@@ -50,9 +54,7 @@ Round 0 recorded that citation as a manufactured authority.
 **R19 applies.** A session that changes a ticket's state updates its row in the
 table above in the same commit.
 
----
-
-## t1 — establish the N>1 compose surface (read-only)
+### t1 — establish the N>1 compose surface (read-only)
 
 **Step-1 gate** *(m4 decision 3, carried by R8 — run before any other work in
 the ticket).*
@@ -186,9 +188,7 @@ git status --short
 > gate stop**: report, and stop. Do not rule, do not propose t2's shape, and do
 > not edit any row in `docs/backlog-2026-06.md`.
 
----
-
-## t2 — apply the ruling
+### t2 — apply the ruling
 
 **Step-1 gate** *(m4 decision 3, carried by R8).* **R13-marked.** The gate's
 content depends on the ruling's direction. `Resolver: authored by the reviewer

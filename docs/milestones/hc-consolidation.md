@@ -9,8 +9,9 @@
 > cloudcost-series document; this one is not, and a sweep looking under `cloudcost/` will
 > not find it. Named for what it is: milestone `hc`, subject `consolidation`.
 
-**Status:** **OPEN** — hc-a, hc-b and hc-c closed; **hc-d opened 2026-08-09 and stopped at its
-step-1 gate**, and reopens against the anatomy this edit lands. **Opened:** 2026-08-08.
+**Status:** **OPEN** — hc-a, hc-b and hc-c closed; **hc-d closed 2026-08-09 at r3**; **hc-e
+opened 2026-08-09 and stopped at its anatomy census**, and reopens against the anatomy this edit
+lands. **Opened:** 2026-08-08.
 **Document created:** 2026-08-08 (hc-b). **Repos:** `aetheris-agents` and `aetheris`
 (harness). **Preceding cycle:** m4-cloudcost, closed 2026-08-08.
 
@@ -478,6 +479,25 @@ recorded here by claude-code. The three blockquoted verification notes above are
 per decision 2: every checkable claim the authored text marked for verification was confirmed
 before transcription, and none was withheld.`
 
+> **`[amended 2026-08-09 (hc-e's anatomy edit, block A3 — authored by the reviewer). The text
+> above stands unrewritten, per decision 7; what follows extends it.]`**
+>
+> R19 has now been evaded once by the mechanism meant to serve it. hc-e's opening session **did**
+> change hc-e's state — it opened the ticket and stopped it — so R19 applied and the row was owed
+> in that commit. It was not written, because the reviewer's ticket text said to leave hc-e's row
+> untouched on the grounds that the census might change what it should say. That instruction was
+> wrong, and the general form of the error is worth more than the instance:
+>
+> **A ticket instruction cannot suspend R19.** Not knowing the final wording is never a reason to
+> leave a false one standing — the row records what happened, which is always known at the moment
+> it happens, and it is revised later like any other dated state. Where an instruction and R19
+> conflict, R19 governs the fact and the instruction governs only the wording. A session that
+> receives such an instruction writes the row anyway and names the conflict in its packet.
+>
+> Three surfaces have now gone stale under a rule written to stop it: hc-b's row at hc-c, hc-c's
+> own row at r1, and hc-e's row here — the last one authorised by the reviewer rather than missed
+> by the implementer.
+
 ---
 
 ### The m4 decisions, by reference
@@ -597,7 +617,7 @@ own output — and a round carries no row, so it has **none by design**.
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
 | **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
 | **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Closed** 2026-08-09 at **r3**. Gate G0–G5 passed; BL-077 closed, BL-133 face 2 discharged, R3 answered (`expected_fail` keys on a shell condition, so BL-044 stays filed and no `lib/` file was touched). Four rounds. agents `240eb59`→`f8ed90f`, harness `2d76a65`→`48f59e7`. **Earlier state, kept per decision 7:** *"Opened and stopped 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it."* `[updated 2026-08-09 (hc-e's opening edit, E1) — R19 scopes the row edit to the session that changed the state, and hc-d's session is over, so this carry is reviewer-authorised explicitly. The range is derived from the repos (`git log --grep='hc-d'`), not from the packets.]` |
-| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | Not started |
+| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it. **Earlier state, kept per decision 7:** *"Not started"* |
 
 ### hc-a — the scoping read
 
@@ -1016,14 +1036,27 @@ written, and §Close criteria's reads are all performed and recorded.
 and *a green pin proves currency, never completeness*. **BL-102**, which asked for §Close criteria
 and consumes its answer.
 
-**The named question that gates the rest.** *What hc-c and hc-d actually did* — which arm landed,
-whether decision 13 was overturned, whether BL-044 came in, which rows closed and which were
-filed. None of it is knowable now, and guessing it would be R13's worse failure.
+**The named question that gates the rest.** Both halves are now knowable, so this slot no longer
+gates anything and is kept as the record of what was open when it was written. **hc-c**: the
+`--json` contract landed as one contract over BL-105 and BL-106, `[sandbox]` routing resolved to
+stderr, decision 13 not overturned, closed at r2. **hc-d**: the sprint exit contract landed,
+BL-077 closed and BL-133 face 2 discharged, R3 answered without touching BL-044, closed at r3
+after four rounds. What remains unknowable at authoring time is only hc-e's own outcome, which is
+not something a ticket's anatomy may assert about itself.
 
-> `[partly falsified 2026-08-09 (anatomy edit r1). "None of it is knowable now" no longer holds for
-> hc-c: its arm landed, decision 13 was not overturned, and both rows closed. hc-d's half stands —
-> it has not run. Revised in full at hc-e's own opening anatomy edit; the original wording stands,
-> per decision 7.]`
+> `[revised 2026-08-09 (hc-e's opening anatomy edit, block A — authored by the reviewer). The r1
+> mark below deferred the revision to this edit and it is now made. The original body and that
+> mark both stand unrewritten beneath, per decision 7; the revision above supersedes them.]`
+>
+> **The original body, as authored at hc-b:** *What hc-c and hc-d actually did* — which arm
+> landed, whether decision 13 was overturned, whether BL-044 came in, which rows closed and which
+> were filed. None of it is knowable now, and guessing it would be R13's worse failure.
+>
+> **And its r1 mark, whose surviving half was itself false by the time this edit ran** — hc-d had
+> closed at r3: `[partly falsified 2026-08-09 (anatomy edit r1). "None of it is knowable now" no
+> longer holds for hc-c: its arm landed, decision 13 was not overturned, and both rows closed.
+> hc-d's half stands — it has not run. Revised in full at hc-e's own opening anatomy edit; the
+> original wording stands, per decision 7.]`
 
 **Two obligations recorded now so hc-e does not rediscover them.**
 
@@ -1035,7 +1068,141 @@ filed. None of it is knowable now, and guessing it would be R13's worse failure.
 2. **The manifest inclusion note owes a sentence about `docs/milestones/`, and it owes both
    halves.** See §Close criteria, clause 6.
 
-**Everything else is `[R13: deferred, per R12.]`**
+**Touches.** `docs/milestones/hc-consolidation.md`; `docs/backlog-2026-06.md`;
+`docs/project-knowledge-manifest.md`; `docs/milestones/hc-e-implementation-notes.md`;
+`docs/reviews/hc-e-review.md`; and the repo `CLAUDE.md` learning sections —
+`../aetheris/CLAUDE.md`, `CLAUDE.md`, or both — for whatever §7's promotion step promotes.
+Harness-first if both are touched.
+
+Not a repo file and named because it is part of the boundary: the claude.ai project's uploaded
+document set. It is changed by the operator, not by this session — see the Done-check.
+
+No file under `../aetheris/lib/`, `native/`, `config/`, `scripts/`, or `test/`.
+
+**Do not generate.** No code in either repo. hc-e closes a round; it does not change behaviour.
+
+No new backlog row except one the census itself produces, and a census finding gets a row, never
+a fix. No promotion of a candidate that fails §7's verification step — a candidate that cannot be
+quoted from the destination file after the edit is not promoted, it is recorded as not promoted.
+No relaxation, rewording or quiet resolution of any `[OPEN]` §Not established item to make the
+close read complete: items 10, 11 and 12 have resolvers that are not hc-e, and they close the
+round open. Do not start counting runs toward BL-075 arm 2. No planted cloud resource (R9). No
+hash-driven diff at the export boundary.
+
+**Runbook update rule.** hc-e changes no operator-facing behaviour, so it owes the runbook no new
+text. What it owes is a **verification**: the runbook sections hc-c and hc-d wrote — the
+output-stream/`--json` contract, and the sprint exit contract with its four failure modes and the
+retention paragraph — are read at HEAD and confirmed present and accurate against what actually
+shipped. Quote each with its surrounding lines, as §7's promotion step requires of promoted
+entries; the same discipline applies to a claim the round wrote into an operator-facing file. A
+divergence found here is a finding and a correction, not a new section.
+
+**Done-check.** **Ordered, and the order is load-bearing: the export boundary is the LAST content
+operation.**
+
+1. The full harness gate set — `mix format --check-formatted`,
+   `mix compile --warnings-as-errors`, `mix hex.audit`, `mix credo --strict`, `mix dialyzer`,
+   `mix test` — full output, no `tail`, elisions stated. A resource failure and a findings failure
+   are different results; say which. A green `mix dialyzer` reporting "PLT is up to date"
+   establishes findings and not headroom. `mix test` is expected-flaky under BL-075 and named with
+   that ref if it goes red — not re-triaged, not relaxed, and not re-run until green.
+2. `shellcheck` on `sprint.sh` if it has become available; if not, say so and leave
+   §Not established item 10 open.
+3. `drift_check.py --strict` from the agents repo, located by finding it, bound by absolute path,
+   exit captured from the invocation — run **before** the export boundary. The three
+   `project_knowledge` WARNs are expected here.
+4. All content edits complete and committed. Everything below this line is the boundary and its
+   verification.
+5. Regenerate `docs/project-knowledge-manifest.md` and produce the export set. **Remove-all then
+   upload-all, never a hash-driven diff.** State the row count as derived, with its enumeration,
+   not carried from a prior cycle.
+6. **STOP and hand off.** The upload is the operator's step, not this session's. Report exactly
+   what must be uploaded and say plainly that hc-e is not closed until step 7 runs.
+7. **After the operator confirms the upload** — a later session or a later turn: read the project
+   back and verify. The manifest's export-boundary date, every hash post-`48f59e7`, at least four
+   content checks landing in the documents that should carry them, and the document count
+   reconciled against the export set plus any `claude/` session briefs that are correctly
+   untouched. Then `drift_check.py --strict` again: **zero `project_knowledge` WARNs** is the
+   boundary's own truth-maker. A non-zero count is a stop.
+8. The close statement lands after the boundary. `hc-consolidation.md` is not manifest-tracked,
+   which is what makes that legal — state the check, do not assume it.
+9. Push both repos, harness first. Held for review.
+
+**Claude-code prompt.**
+
+> Close hc-e per this section. Read `docs/milestones/hc-consolidation.md` §Ratified decisions
+> R1–R19, the methodology's §7 milestone-end ritual **in the methodology document itself**, and
+> both repos' CLAUDE.md learning sections before the first edit. **Cite §7's steps by name, never
+> by ordinal**, and take the step names from §7's own text rather than from any packet. Run the
+> step-1 gate below before writing anything; any item unestablished stops the ticket without an
+> edit.
+
+**Step-1 gate — decision 3, not a §6 field.** Placed last for the same reason hc-c's and hc-d's
+are: a Done-check runs after the work and reports; a gate runs before and stops without an edit.
+Every item gets an explicit verdict. **Precondition: none** — every item is a local read.
+
+**G1 — §7's own steps.** Open the methodology document and enumerate §7's steps by name. Confirm
+the two this round depends on exist and quote them: the promotion-verification step, and the
+prior-claims census.
+**VERDICTS:** both found and quoted → proceed. Either absent, or named differently → report the
+real names and proceed against those. §7 unreadable → unestablished, stop.
+
+**G2 — m4's seven promoted entries.** Locate all seven, in whichever files carry them, and
+enumerate them beside the count. Establish which four hc-b's G4 discharged and which three it did
+not — a G4 result is not the census.
+**VERDICTS:** seven located and the four/three split derived → proceed. A number other than seven
+→ **report before proceeding**; the seven is a carried claim and this is where it gets checked.
+Cannot be enumerated from any document → unestablished, stop, because a census with no population
+is not a census.
+
+**G3 — §Promotion candidates.** Enumerate the candidates with a stated pattern and a positive
+control. Each is promoted or dropped at this close; recording one was never promoting it.
+**VERDICTS:** enumerated → proceed. Pattern returns a zero without a control → unestablished,
+stop.
+
+**G4 — §Not established, every item.** Enumerate with its `[RESOLVED]`/`[OPEN]` prefix, derived
+not copied. For every `[OPEN]` item confirm its resolver names something that exists (R13).
+**VERDICTS:** all open items carry a live resolver → proceed, and the round closes with them open,
+which is correct. An open item whose resolver names nothing → **stop and report**; that is R13's
+own failure and it is not hc-e's to paper over.
+
+**G5 — §Close criteria, clause by clause.** Read the clauses and state, for each, the check that
+would settle it at HEAD.
+**VERDICTS:** every clause has a checkable form → proceed. Any clause that cannot be checked as
+written → **stop and report** — a close criterion that cannot be evaluated is the silent-green
+shape in the close itself.
+
+**G6 — the export set's population.** Derive the manifest's current row count with its
+enumeration, before any regen.
+**VERDICTS:** derived → proceed, and the regen's count is compared against it with both printed.
+Carried from a prior cycle rather than derived → unestablished, stop.
+
+**STANDING.**
+
+- Bind an artifact to what produced it, never to its position in a listing, and read it only after
+  its producer has exited.
+- Absent input is unknown, not benign — including the close's own inputs.
+- An empty result is a result. A count names its population and its commit and prints its
+  enumeration beside it.
+- A negative needs a positive control: same pattern, same flags, a corpus known to contain the
+  terms.
+- Complete output; no `tail`. A packet publishes the invocation.
+- Cite by anchor with a resolving line number as a parenthetical. §7's steps by name, never by
+  ordinal.
+
+**The catch-all is discharged.** It read: *"**Everything else is `[R13: deferred, per R12.]`**"*.
+Under it sat the five unauthored §6 fields — `Touches`, `Do not generate`, `Runbook update rule`,
+`Done-check`, `Claude-code prompt` — and, unlike hc-d's, **the step-1 gate slot as well**, which
+is why hc-e's stop was hc-d's shape and worse: hc-d's gate was R13-marked with a named resolver,
+hc-e's was deferred without one. All six are authored above. Nothing under hc-e is now deferred:
+every remaining occurrence of the `[R13:` token in this subsection is a **quotation inside this
+discharge note**, and no live mark survives it. Stated as a pointer rather than as a count on
+purpose — a count here is a claim about a population that this very sentence belongs to, so it
+falsifies itself the moment it is written, which is the defect §Promotion candidates records one
+section below.
+
+> `[discharged 2026-08-09 (hc-e's opening anatomy edit). The original catch-all is quoted rather
+> than deleted, per decision 7.]`
 
 ---
 
@@ -1175,6 +1342,37 @@ Carried forward rather than resolved. Each is a question this round opens and ha
 > **2** OPEN, **3** OPEN, **4** OPEN, **5** OPEN, **6** OPEN (its `[amended]` and `[corrected]`
 > blocks refine the question, they do not close it), **7** RESOLVED, **8** RESOLVED (hc-d R-i),
 > **9** RESOLVED (anatomy edit r1). **4 resolved, 5 open, 9 total.**
+>
+> > **`[corrected 2026-08-09 (hc-e's anatomy edit, block A4). The paragraph above read "4 resolved,
+> > 5 open, 9 total" and stands unrewritten per decision 7. It was true at the commit that wrote it
+> > and is false now.]`**
+> >
+> > **What it read, and where it was true.** The block was written at agents `149c1a8`, whose tree
+> > gives **9** by its own pattern — so the figure was correct in its own commit. It staled twice
+> > afterwards, both times by hc-d adding items rather than by anyone miscounting: `88183b8` → 11
+> > (items 10, 11) and `2b62192` → 12 (item 12).
+> >
+> > **Re-derived, and the derivation is the invariance rather than a single reading.** The same
+> > pattern was run against **two** trees — `9fbba09`, this edit's parent, and the working tree
+> > this edit produces — because a count written into the document it counts can be moved by the
+> > sentences describing it (hc-d's opening edit, E1, is the worked case: an **8** measured at one
+> > commit and written into another that gives **10**). Every line this correction adds sits inside
+> > a blockquote and so cannot match `^[0-9]\+\. \*\*`. Both trees return **12**, and the figures
+> > below hold at both:
+> >
+> > ```
+> > population : grep -cE '^[0-9]+\. \*\*' over §Not established   = 12
+> > resolved   : 1 7 8 9                                           =  4
+> > open       : 2 3 4 5 6 10 11 12                                =  8
+> > ```
+> >
+> > The three items added since: **10** OPEN (`shellcheck` absent), **11** OPEN (an uncaught raise
+> > leaves a run `running`), **12** OPEN (R17 arm (c) unpaired). No item's state changed; only the
+> > population grew.
+> >
+> > **This block is a snapshot at the commit named above. The per-item `[RESOLVED]` / `[OPEN]`
+> > prefixes are authoritative; these totals are a convenience that goes stale the moment an item
+> > is added, and have done so once already.**
 >
 > **Item 7 is the only item whose blocks disagree, and the rule is what settles it.** It carries
 > `[STAYS OPEN. … (hc-d, D1)]` and, later, `[RESOLVED … by ruling — R15.]`; both are dated
@@ -1546,6 +1744,13 @@ illustrate a result obtained some other way, because a re-run can bind different
 original and the difference is invisible in the output. Origin: claude-code's own diagnosis at
 hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
 
+And the artifact must be finished before it is read. At hc-e's opening edit a gate capture was
+assembled while its producer was still running — 69 of 184 lines, four gates green and the fifth
+cut mid-stream, every published line accurate. Caught by the line count, not by reading it. So a
+packet reads an artifact only after establishing its producer has exited, and a partial capture
+is indistinguishable from a complete one by content alone. Origin: claude-code, caught before
+publication at hc-e.
+
 **An artifact selected by recency is not bound to its purpose.** At hc-d r2 a packet chose its
 evidence with `ls -1dt | head -1`, and the newest run at that instant was a deliberately-corrupted
 test run. One command then returned an empty result that read as a defect in the subject rather than
@@ -1611,6 +1816,26 @@ The carrier is not the sibling document —
 it is that a packet reports enough of a document to make re-reading it feel unnecessary, and a
 reported document is not a read one. Cited-means-read binds the reviewer identically. Origin:
 claude-ui, named here.
+
+---
+
+**A census recorded inside the document it censuses goes stale as that document grows.**
+§Not established's own census block read *"4 resolved, 5 open, 9 total"* with its enumeration
+printed — correct when written, false three items later, and the enumeration went stale with the
+total rather than contradicting it, so the block stayed internally consistent while being wrong.
+That is carrier 1 with the usual detection removed: printing the enumeration beside the count
+catches a *miscount*, not a *growth*.
+
+The operational close is not a better count. It is: stamp the census with the commit it was
+derived at, and make the per-item markers authoritative so the totals are a convenience rather
+than a claim. Where a pointer will do, do not carry a number at all — §Not carried's *"four"* was
+fixed that way at hc-d's opening edit, and this is the same defect one section over, surviving
+because only the instance was fixed and not the shape.
+
+Instances so far: the promotion candidate's own *"three instances in this round"*, wrong one
+commit after it was written; §Not carried's *"four"* open questions, wrong at every reading since;
+this block's *"9 total"*. Origin: claude-ui authored A7's census requirement without a staleness
+clause; found by claude-code at hc-e's anatomy edit.
 
 ---
 

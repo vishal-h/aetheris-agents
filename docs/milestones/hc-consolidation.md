@@ -9,7 +9,8 @@
 > cloudcost-series document; this one is not, and a sweep looking under `cloudcost/` will
 > not find it. Named for what it is: milestone `hc`, subject `consolidation`.
 
-**Status:** **OPEN** — hc-a, hc-b and hc-c closed; hc-d next. **Opened:** 2026-08-08.
+**Status:** **OPEN** — hc-a, hc-b and hc-c closed; **hc-d opened 2026-08-09 and stopped at its
+step-1 gate**, and reopens against the anatomy this edit lands. **Opened:** 2026-08-08.
 **Document created:** 2026-08-08 (hc-b). **Repos:** `aetheris-agents` and `aetheris`
 (harness). **Preceding cycle:** m4-cloudcost, closed 2026-08-08.
 
@@ -365,6 +366,109 @@ what the round did not settle.
 
 `Added 2026-08-09 (hc-c's opening edit), authored by the reviewer.`
 
+### R15 — a repair of a ticket's own output is a further **round** of that ticket, not a new ticket.
+
+A new ticket is for new scope.
+
+hc-b2 is the instance that produced this rule. It was opened to repair hc-c's specification, which
+hc-b had authored — that is hc-b's output, so it was hc-b r2. Classifying it as a new ticket
+engaged R12, which requires anatomy in this document before a ticket opens, and no anatomy was ever
+written. Item 7 is the residue of that misclassification.
+
+The mechanism the misclassification bypassed is the one that already works: review findings are
+committed to the ticket's review file by the round that raised them, before the next round opens
+(R2). So a repair round's scope is committed and pre-dates the round, without R12 being engaged at
+all. A repair opened as a new ticket has neither — its scope lives in conversation until the ticket
+itself commits it, which is why claude-code's hc-d §1 search found hc-b2's findings nowhere in the
+tree at `a581a8c`.
+
+R15 does not renumber or unwind hc-b2. It is recorded as having run, under the classification it
+was given, with this rule as what it produced.
+
+> **The mechanism was checked against this round's own practice, not only argued.** hc-c's r1
+> findings were committed at agents `3d5a8da` (*"docs(hc-c r1)"*) **before** r2 opened at
+> `eee5fed`, and `docs/reviews/hc-b-review.md` carries Round 0 and Round 1 and no more — so an
+> hc-b r2 would have opened with its scope already in the repo. The counterfactual in item 7's
+> resolution is a counterfactual about classification, not about whether the mechanism works.
+
+### R16 — the sprint's per-case verdict keys on the payload's terminal status word, not on the process exit code.
+
+BL-044 stands: `Mix.Tasks.Aetheris.run/1` discards `Aetheris.CLI.run/1`'s code, so a failed run
+exits 0. `run_agent` already branches on exit status, which makes its `else fail` arm unreachable
+while BL-044 stands. hc-c put a real terminal status into the `--json` payload of every terminal
+outcome precisely so a machine consumer need not wait on BL-044. hc-d reads that. BL-044 is not
+fixed here and is not a blocker; the exit-code branch stays as a second signal, never as the only
+one.
+
+R16's resolver is hc-d's step-1 gate G1. If G1 refutes it, R16 is refuted and the ticket stops
+rather than being redesigned mid-session.
+
+> **Both of R16's premises derived from source at harness `1b09b23`, since hc-c asserted the first
+> and did not observe it.** `../aetheris/lib/mix/tasks/aetheris.ex` is `_ = Aetheris.CLI.run(argv)`
+> then `:ok`; `Aetheris.CLI.run/1` returns `Formatter.print(result, mode)` and its own
+> `System.halt` is **commented out** (`../aetheris/lib/aetheris/cli/main.ex`, `:46`–`:48`) — only
+> the escript's `main/1` halts on the value. `Formatter.print({:error, _}, :json)` returns **1**
+> (`../aetheris/lib/aetheris/cli/output/formatter.ex`, `:78`–`:82`), and a failed solo run reaches
+> it: `RunHelpers.handle_run_status/5` returns `{:error, %{run_id:, status: :failed}}`
+> (`../aetheris/lib/aetheris/cli/commands/run_helpers.ex`, `:119`–`:121`). So the code exists, is
+> 1, and is discarded. The status word is there on every terminal outcome as R16 says — `done`,
+> `failed`, `cancelled`, and `error` for a bare-string reason.
+>
+> **One qualification on *unreachable*, which G2 should not be surprised by.** `run_agent`'s `else`
+> arm is unreachable for a run that **reaches** `Formatter.print`. A `mix` compile failure or an
+> uncaught raise still exits non-zero and trips it, so the arm is dead to run failure and live to
+> harness failure — which is exactly why R16 keeps it as a second signal.
+
+### R17 — fail-safe posture, three arms, all of which resolve to FAILURE.
+
+- **(a)** a case with no `KNOWN_RED` entry that is red → failure. The ordinary case.
+- **(b)** a `KNOWN_RED` entry whose evidence is missing, empty, or unparseable → failure, not
+  "known red". Absent-is-unknown, applied to the gate's own input.
+- **(c)** a `KNOWN_RED` entry whose case PASSES → failure. A known-red that healed is a stale
+  entry, and a gate that silently accepts its own staleness is the defect this round exists to
+  remove. The remedy is deleting the entry, which is a code change, which is reviewable.
+
+Every `KNOWN_RED` entry carries the backlog row that justifies it. An entry naming no row is
+arm (b).
+
+### R18 — capturing the console must not change what the gate reads.
+
+BL-133 face 2 adds a durable console capture; R1 couples it to BL-077 through `tee`/`pipefail`,
+because a `tee` in the pipeline changes which command's status the caller sees. Two constraints:
+
+- **(a)** The exit status the gate keys on after the capture is added must be the same status it
+  keyed on before, for the same case. Demonstrated, not argued — gate item **G3**.
+- **(b)** The capture keeps the streams **merged**. R11's finding fires on a capture-side stream
+  split (`sprint.sh`'s D2 anti-vacuity block guards with a payload-specific `grep -q run_id`, which
+  a stderr-only capture would fail on a clean run). If hc-d's design requires a split, that is a
+  stop, not a widening.
+
+> **R11's guard re-derived at harness `1b09b23`**, since R11 cited it at `288c8ef` and a verified
+> citation decays when the file moves. It has not moved: the loop and its guard are still
+> `../aetheris/scripts/sprint.sh` `:3125`–`:3136`, and the per-file gate is still
+> `if [[ -s "$cc_file" ]] && grep -q run_id "$cc_file"; then` (`:3128`). hc-c did not touch
+> `sprint.sh`, which is why the anchor survived.
+
+### R19 — a session that changes a ticket's state updates that ticket's row in the same commit.
+
+This document has now gone stale on its own ticket states three times: hc-c's closure left hc-b's
+row saying *In review* (hc-c r2 F7), hc-c's own row claimed closure at r1 while r2 was open (hc-c
+r2 F7(c), found by census rather than by the finding), and hc-d's row said *Not started* after
+hc-d had run and stopped. Each was caught downstream by a reviewer or a census rather than by the
+session that caused it.
+
+The state is part of what the session did, not bookkeeping after it. A session that opens, stops,
+or closes a ticket writes that into §Ticket set before it commits — and if a reviewer's ticket
+text did not authorise that edit, the session makes it anyway and names it in the packet, because
+R19 is the standing authorisation. Closing rounds still write their own row, as hc-c r2 did.
+
+R19 does not extend to a ticket the session did not touch.
+
+`Added 2026-08-09 (hc-d's opening anatomy edit) — R15 through R19, authored by the reviewer and
+recorded here by claude-code. The three blockquoted verification notes above are claude-code's,
+per decision 2: every checkable claim the authored text marked for verification was confirmed
+before transcription, and none was withheld.`
+
 ---
 
 ### The m4 decisions, by reference
@@ -463,20 +567,27 @@ disposition. Read the wording there.
 
 ## Ticket set
 
-Five tickets. Per **R12**, anatomy is authored here before the ticket opens; per **R13**, a slot
-that cannot yet be authored is marked with its resolver rather than left blank or guessed.
+Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;
+per **R13**, a slot that cannot yet be authored is marked with its resolver rather than left blank
+or guessed. **hc-b2 is the sixth session**; under **R15** it is hc-b **r2** — a repair of hc-b's
+own output — and a round carries no row, so it has **none by design**.
 
 > **Five is the planned set, and it is not a census of what ran.** A sixth ticket, **hc-b2**,
 > opened and closed on 2026-08-08 to repair hc-c's specification, and it has no row and no
 > subsection here. That is a live R12 gap; it is recorded at **§Not established item 7** rather
 > than papered over by a row written after the fact. `[added 2026-08-09 (hc-c r2, F7(b)).]`
+>
+> `[amended 2026-08-09 (hc-d's opening anatomy edit). **Not a live R12 gap.** hc-b2 is classified
+> under **R15** as **hc-b r2**: a repair of a ticket's own output is a further round of that
+> ticket, a round carries no row, and no R12 obligation was ever engaged. §Not established item 7
+> is resolved by ruling on that basis. The wording above stands unrewritten, per decision 7.]`
 
 | | Scope | State |
 |---|---|---|
 | **hc-a** | The scoping read | **Closed.** Produced no repo artifact by design |
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
 | **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
-| **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | Not started |
+| **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Opened and stopped** 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it |
 | **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | Not started |
 
 ### hc-a — the scoping read
@@ -698,9 +809,104 @@ exit code from `run_agent` to key on?* If yes, **BL-044 is in this ticket** and
 finding recorded. Do not pre-decide it; BL-044's row already carries the audit inputs either
 answer needs.
 
-**Step-1 gate — decision 3, not a §6 field.** **`[R13: not authorable. hc-d's design is not done,
-and a gate is written against a design. Resolver: hc-d's own opening section-scoped edit, per
-R12 — the gate is authored there, before the ticket opens, and it answers R3 above.]`**
+**Touches.** `../aetheris/scripts/sprint.sh`; `../aetheris/docs/aetheris/runbook.md`;
+`docs/backlog-2026-06.md` (BL-077, BL-133, and any row a `KNOWN_RED` entry cites);
+`docs/milestones/hc-consolidation.md`; `docs/milestones/hc-d-implementation-notes.md`;
+`docs/reviews/hc-d-review.md`. No file under `../aetheris/lib/`, `native/`, or `config/`.
+
+**Do not generate.** No fix to BL-044 — R16 makes it unnecessary and R3's question is answered by
+reading the status word. No change to `json_read` or to BL-100/t1b's backward scan. No new sprint
+stage, no new agent file, no planted cloud resource (R9). No `KNOWN_RED` entry without a backlog
+row. No stream split at the capture (R18(b)). No change to the D2 anti-vacuity block's guard: R11
+established the array is configuration and the guard is not, so touching the guard is new scope,
+not this ticket's.
+
+**Runbook update rule.** The sprint's exit semantics are operator-facing and change in this
+ticket, so `../aetheris/docs/aetheris/runbook.md` states them here, in this ticket, not later:
+what a green sprint now asserts, what `KNOWN_RED` means to a reader, and all three of R17's
+failure arms including (c), the healed-entry arm, which is the one an operator will meet first and
+find surprising. Harness first.
+
+**Done-check.**
+
+1. The full harness gate set — `mix format --check-formatted`,
+   `mix compile --warnings-as-errors`, `mix hex.audit`, `mix credo --strict`, `mix dialyzer`,
+   `mix test` — full output, no `tail`, elisions stated. `sprint.sh` is a harness file; the gates
+   apply even with no `lib/` change.
+2. `shellcheck` on `sprint.sh` if it is available; if it is not, say so rather than omitting the
+   line.
+3. The changed stage exercised in BOTH postures, with the broken state observed rather than
+   simulated: a case that is red and listed, and a case that is red and unlisted. Plus at least
+   one of R17's arms (b) and (c), constructed.
+4. The full sprint run if it can run in this environment. If it cannot, say why, record it in
+   §Not established, and do not let item 3's success stand in for it.
+5. `drift_check.py --strict` from the agents repo, located by finding it, bound by absolute path,
+   exit code captured from that invocation.
+6. Push both repos, harness first, held for review.
+
+**Claude-code prompt.**
+
+> Implement hc-d per this section. Read `docs/milestones/hc-consolidation.md` §Ratified decisions
+> R1–R19 and both repos' CLAUDE.md learning sections before the first edit. Run the step-1 gate
+> below before writing anything; any of its items coming back unestablished stops the ticket
+> without an edit. Standing rules: every claim has a truth-maker; a count names its population and
+> prints its enumeration; commands are bound to their targets explicitly and exit codes captured
+> from the invocation; a negative needs a positive control; cite by anchor with the line number as
+> a parenthetical.
+
+**Step-1 gate — decision 3, not a §6 field.** Placed last for the same reason hc-c's is: a
+`Done-check` runs **after** the work and reports, a gate runs **before** and stops **without an
+edit**.
+
+Run before any edit. Each item gets an explicit verdict. Any `unestablished` verdict stops the
+ticket without an edit — that is the correct outcome.
+
+**G1 — R16's resolver.** Establish that a failing agent run's captured file carries a readable
+terminal status. Run one failing case through `run_agent`'s own path and read the capture with
+`json_read`. Record: the status value read, and whether it is the last parsing object in the
+merged capture.
+**VERDICTS:** a readable terminal status → R16 holds, proceed. No status, or a status that does
+not distinguish failure from success → **R16 REFUTED, stop.** Capture unreadable or absent →
+unestablished, stop.
+
+**G2 — what `run_aetheris` resolves to, and what it exits with.** Establish whether it invokes
+`mix aetheris`, the escript, or something else, and observe its exit code on the same failing
+case. This is what makes BL-044's reach a fact rather than an inference: the escript returns
+`Aetheris.CLI.run/1`'s code, `mix aetheris` discards it.
+**VERDICTS:** exit 0 on a failed run → BL-044's reach confirmed, R16 is load-bearing. Non-zero →
+BL-044 does not reach this path; record it, and R16 still holds but is no longer the only option —
+report before proceeding.
+
+**G3 — R18(a)'s resolver, the `tee`/`pipefail` coupling.** Establish `sprint.sh`'s current shell
+options (`set -e`, `set -o pipefail`, and where they are set). Then, on the same failing case,
+compare the status the caller observes with and without a `tee` in the pipeline.
+**VERDICTS:** same status both ways → proceed. Different → the coupling is live; record exactly
+how, and it becomes a constraint on the design rather than a stop. Options unreadable →
+unestablished, stop.
+
+**G4 — establish that `expected_fail()` and `KNOWN_RED` do not already exist** in `sprint.sh`,
+with a positive control so the zero reads as absence rather than as a broken pattern.
+**VERDICTS:** absent → this ticket authors them. Present in any form → stop and report; the design
+is being written over something that already exists.
+
+**G5 — BL-077's population.** Its Done-when says *"Audit all 31 cases"*; a constraint recorded
+elsewhere in this document says the population is 29, not 31. Derive the number from the source
+the row is about. Name the population, print the enumeration beside the count.
+**VERDICTS:** a derived number matching one of the two → proceed, and correct the row in this
+ticket. A third number → proceed, correct the row, and record both prior numbers as wrong. Cannot
+be derived → unestablished, stop.
+
+**Precondition: none.** Every item is a read or a local run; nothing here needs an API key, a
+model server, or network.
+
+> **`[superseded 2026-08-09 (hc-d's opening anatomy edit)]`** — this edit is the resolver the mark
+> named, so the mark is discharged rather than deleted. The slot previously read, in full:
+> *"**Step-1 gate — decision 3, not a §6 field.** `[R13: not authorable. hc-d's design is not done,
+> and a gate is written against a design. Resolver: hc-d's own opening section-scoped edit, per
+> R12 — the gate is authored there, before the ticket opens, and it answers R3 above.]`"* — and it
+> carried the hc-b2 correction below. Both are kept, per decision 7. **R13's mark did its job**:
+> hc-d stopped at the unauthored gate rather than completing it confidently, which is the outcome
+> the mark was for.
 
 > `[corrected 2026-08-08 (hc-b2). The R3 paragraph previously ended "**Resolver: this ticket's
 > step-1 gate.**" — a resolver pointing at an artifact that existed nowhere in this document or
@@ -708,15 +914,20 @@ R12 — the gate is authored there, before the ticket opens, and it answers R3 a
 > unauthored artifact is a guess wearing a citation's clothes.** The repair is to mark the gate,
 > not to author it — authoring it now would be the guess R13 forbids, one level up.]`
 
-**Everything else is `[R13: deferred to the section-scoped edit that opens this ticket, per
-R12.]`** Two constraints on that edit, recorded now so they are not rediscovered:
+**The catch-all is discharged.** It read: *"Everything else is `[R13: deferred to the
+section-scoped edit that opens this ticket, per R12.]`"* — that edit is this one, and the five §6
+fields and the gate above are what it deferred. `[discharged 2026-08-09 (hc-d's opening anatomy
+edit).]` **Its two constraints stay live**, and are not absorbed by being restated in a gate:
 
 - **The population is 29, not 31.** BL-077's Done-when says *"Audit all 31 cases"*; derived above
   under R1, two independent ways, the answer is 29. Derive it again at the ticket and name the
-  population; correct the row rather than working around it.
+  population; correct the row rather than working around it. **This is G5**, which adds the
+  third-number branch.
 - **BL-077's §Suggested order entry is stale.** It reads *"Blocked in practice until BL-069 is
   re-armed or the `expected_fail()` half is designed."* BL-069 closed by retirement (decision 12),
-  so only the second disjunct is live. R9 forbids reading the first as licence.
+  so only the second disjunct is live. R9 forbids reading the first as licence. **No gate item
+  covers this one** — it is carried here and nowhere else, and `Touches` reaches it via
+  `docs/backlog-2026-06.md`.
 
 ### hc-e — the close
 
@@ -1029,6 +1240,17 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > remedy now also has to decide: whether repair tickets should commit their findings *before*
    > opening — which would make the narrowing's premise true rather than assumed.
 
+   > **`[RESOLVED 2026-08-09 (hc-d's opening anatomy edit), by ruling — R15.]` The gap is real and
+   > its cause is a misclassification, not a missing row.** hc-b2 was a repair of hc-b's output and
+   > therefore hc-b r2; as a round it would have had no R12 obligation, and its scope would have
+   > been committed to `docs/reviews/hc-b-review.md` by hc-b before it opened, per R2. No anatomy is
+   > back-filled: authoring it now would place it after the ticket closed, which is the failure R12
+   > exists to prevent, and claude-code was right to decline it at hc-c r2 F7(b) and again here.
+   >
+   > The second question D1's refutation raised — whether repair tickets should commit their
+   > findings before opening — is answered by R15 rather than by a new obligation: as rounds, they
+   > already do.
+
 8. **Whether the five provenance pytest suites passed on the harness *before* hc-c is not
    established.** They spawn `["mix", "run", "--eval", …]` with `capture_output=True` and read
    stdout with `json.loads(result.stdout.strip())` — a whole-stdout parse. hc-c r2 established they
@@ -1088,6 +1310,15 @@ the status that command returned, or it re-runs and publishes the re-run. It nev
 illustrate a result obtained some other way, because a re-run can bind differently than the
 original and the difference is invisible in the output. Origin: claude-code's own diagnosis at
 hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
+
+**The reviewer asserting a document's state from memory of prior packets rather than from the
+document.** Three instances in this round, each caught by claude-code rather than by the reviewer:
+hc-c's A3 named two sections that live in `cloudcost/m4-consolidation.md`, not in this document;
+hc-c's F3 scoped a status fix to two surfaces and left a third contradicting them; hc-d's opening
+claimed its anatomy was authored when 2 of 7 fields were. The carrier is not the sibling document —
+it is that a packet reports enough of a document to make re-reading it feel unnecessary, and a
+reported document is not a read one. Cited-means-read binds the reviewer identically. Origin:
+claude-ui, named here.
 
 ---
 

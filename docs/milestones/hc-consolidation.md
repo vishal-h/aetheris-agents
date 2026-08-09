@@ -10,7 +10,8 @@
 > not find it. Named for what it is: milestone `hc`, subject `consolidation`.
 
 **Status:** **OPEN** — hc-a, hc-b and hc-c closed; **hc-d closed 2026-08-09 at r3**; **hc-e
-reopened 2026-08-09 and stopped at G4** — five `[OPEN]` §Not established items name no resolver.
+reopened 2026-08-09 and stopped twice** — at G4 (five `[OPEN]` items named no resolver; upheld,
+and adjudicated by **R21**) and then at G5 (§Close criteria clause 3 cannot express `[DECIDED]`).
 No close work; the round stays open. **Opened:** 2026-08-08.
 **Document created:** 2026-08-08 (hc-b). **Repos:** `aetheris-agents` and `aetheris`
 (harness). **Preceding cycle:** m4-cloudcost, closed 2026-08-08.
@@ -537,6 +538,30 @@ r1, F3.`
 
 ---
 
+### R21 — §Not established holds three kinds of entry, and only one of them owes a resolver.
+
+**(a) Open question with an owner.** Someone or something will settle it. Carries a **Resolver**
+naming something that exists, in R13's form. Items 10, 11 and 12 are this kind.
+
+**(b) Carried unknown.** Recorded so a later reader does not mistake absence of evidence for
+evidence of absence. It names **what would settle it**, not who will. **No owner is invented.**
+*"Nobody currently owns this"* is a legitimate and useful state, and manufacturing an owner to
+satisfy a checklist is R13's own origin failure — a resolver that names something that does not
+exist — reproduced in a different section. A carried unknown that is unresolvable in principle
+says so, and names its mitigation instead.
+
+**(c) Decision not to fix.** Not open at all: the round considered it and chose not to act, with
+reasons. Marked `[DECIDED]`, never `[OPEN]` — leaving it `[OPEN]` overstates what is unresolved
+and inflates every count over the section.
+
+Each entry's kind is stated in the entry. A7's `[RESOLVED]`/`[OPEN]` prefixes gain `[DECIDED]` as
+a third value; `[OPEN]` items additionally carry `(a)` or `(b)`.
+
+`Recorded 2026-08-09 at hc-e's G4 stop, correcting the reviewer's own G4, which applied R13's
+anatomy-slot resolver requirement to a section that does a different job.`
+
+---
+
 ### The m4 decisions, by reference
 
 `cloudcost/m4-consolidation.md` §Ratified decisions holds sixteen. They are **not**
@@ -654,7 +679,7 @@ own output — and a round carries no row, so it has **none by design**.
 | **hc-b** | This document, and I0 — the harness copy of the repos rule | **Closed** 2026-08-08 at r1. Its specification of hc-c was then repaired by **hc-b2**, which has no row here — see §Not established item 7. agents `e8cd5cd`→`a581a8c`, harness `b4d782a` |
 | **hc-c** | The `--json` contract: BL-105 + BL-106 as one contract, both consumer verifications, both mutation postures. Gated on `[sandbox]` routing (R5) | **Closed** 2026-08-09 at **r2**. Gate passed — routes to stderr; BL-105 and BL-106 closed; decision 13 not overturned. agents from `599747e`, harness from `e8889c3` |
 | **hc-d** | The sprint exit contract: BL-077's counter and `KNOWN_RED` with fail-safe defaults (R7), **and** BL-133 face 2's console capture — together, because of the `tee`/`pipefail` coupling (R1) | **Closed** 2026-08-09 at **r3**. Gate G0–G5 passed; BL-077 closed, BL-133 face 2 discharged, R3 answered (`expected_fail` keys on a shell condition, so BL-044 stays filed and no `lib/` file was touched). Four rounds. agents `240eb59`→`f8ed90f`, harness `2d76a65`→`48f59e7`. **Earlier state, kept per decision 7:** *"Opened and stopped 2026-08-09 at agents `240eb59`. Its opening edit landed — D1's narrowing refuted at its premise, D2 filed, D3 filed and resolved — and the ticket then stopped at its step-1 gate, which was R13-marked and unauthored, with 2 of 7 §6 fields written. No contract work; BL-077 and BL-133 untouched. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-d reopens against it."* `[updated 2026-08-09 (hc-e's opening edit, E1) — R19 scopes the row edit to the session that changed the state, and hc-d's session is over, so this carry is reviewer-authorised explicitly. The range is derived from the repos (`git log --grep='hc-d'`), not from the packets.]` |
-| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Reopened and stopped** 2026-08-09 at agents `3d79a6f`, against the anatomy authored at `e047dd1` and corrected at its r1. The held push was released and C1/C2 landed; the step-1 gate then ran **G1, G2, G3 → proceed** (§7's two steps quoted from the methodology; m4's seven located at HEAD with the four/three split derived; six candidates enumerated with controls) and **stopped at G4**: five of the eight `[OPEN]` §Not established items name no resolver, and §Not carried asserts each does. **No close work** — §7's ritual, the export boundary and the milestone summary are untouched, and G5/G6 were not run. Unblocked by a reviewer ruling on the five, plus a correction to §Not carried. **Earlier states, kept per decision 7:** *"**Reopened** 2026-08-09 … **In progress** — its step-1 gate G1–G6 has not yet returned, so no outcome is claimed here."*, and before that *"**Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it."*, and before that *"Not started"* |
+| **hc-e** | The close: §7's ritual including its prior-claims census over m4's seven promoted entries, the export boundary, the milestone summary | **Reopened and stopped twice** 2026-08-09, at agents `3d79a6f`, against the anatomy authored at `e047dd1` and corrected at its r1. The held push was released and C1/C2 landed; the step-1 gate then ran **G1, G2, G3 → proceed** (§7's two steps quoted from the methodology; m4's seven located at HEAD with the four/three split derived; six candidates enumerated with controls) and **stopped at G4**: five of the eight `[OPEN]` §Not established items name no resolver, and §Not carried asserts each does. **No close work** — §7's ritual, the export boundary and the milestone summary are untouched, and G5/G6 were not run. That stop was upheld and adjudicated: **R21** landed, the five were re-labelled, §Not carried was corrected and **G4 was amended** — the amendment tested against both trees and shown stricter, not weaker. **G4 re-run → proceed; the ticket then stopped again at G5**, on §Close criteria clause 3, whose three-value disposition set cannot express the `[DECIDED]` prefix R21 introduced. **G6 not run. Still no close work.** **Earlier states, kept per decision 7:** *"**Reopened** 2026-08-09 … **In progress** — its step-1 gate G1–G6 has not yet returned, so no outcome is claimed here."*, and before that *"**Opened and stopped** 2026-08-09 at agents `9fbba09`. Its opening edit landed — hc-d's row closed under R19, the recency-selection candidate filed, BL-135 established as a duplicate of BL-075 and folded, and BL-075's arm-2 blocker established as partly lifted (the durable place exists; the routing does not). The ticket then stopped at its anatomy census: **2 of 7 §6 fields authored and no step-1 gate slot at all**. No close work. Anatomy and gate authored by the reviewer's section-scoped edit of 2026-08-09 (this commit); hc-e reopens against it."*, and before that *"Not started"* |
 
 ### hc-a — the scoping read
 
@@ -1197,11 +1222,26 @@ control. Each is promoted or dropped at this close; recording one was never prom
 **VERDICTS:** enumerated → proceed. Pattern returns a zero without a control → unestablished,
 stop.
 
-**G4 — §Not established, every item.** Enumerate with its `[RESOLVED]`/`[OPEN]` prefix, derived
-not copied. For every `[OPEN]` item confirm its resolver names something that exists (R13).
-**VERDICTS:** all open items carry a live resolver → proceed, and the round closes with them open,
-which is correct. An open item whose resolver names nothing → **stop and report**; that is R13's
-own failure and it is not hc-e's to paper over.
+**G4 — §Not established, every item.** Enumerate with its `[RESOLVED]`/`[OPEN]`/`[DECIDED]`
+prefix, derived not copied. Then, per **R21**: every `[OPEN]` **(a)** item names a resolver and
+that resolver names something that exists; every `[OPEN]` **(b)** item names what would settle it;
+no `[DECIDED]` item is mislabelled `[OPEN]` and no `[OPEN]` item is a decision in disguise.
+**VERDICTS:** all three hold → proceed, and the round closes with the open items open, which is
+correct. An (a) item whose resolver names nothing, a (b) item with no settling condition, or a
+decision carrying `[OPEN]` → **stop and report**. Inventing an owner to clear this gate is the
+failure it exists to prevent.
+
+> `[amended 2026-08-09, after G4 stopped hc-e. The original required a resolver of every open
+> item, which applied R13's anatomy-slot rule to a section that records unknowns. The defect G4
+> found stands and is corrected at §Not carried; what changed is the remedy it demanded. Net
+> stricter: the resolver obligation narrows to (a) items, and two checks are added that did not
+> exist.]`
+>
+> **The original, kept per decision 7:** *"**G4 — §Not established, every item.** Enumerate with
+> its `[RESOLVED]`/`[OPEN]` prefix, derived not copied. For every `[OPEN]` item confirm its
+> resolver names something that exists (R13). **VERDICTS:** all open items carry a live resolver →
+> proceed, and the round closes with them open, which is correct. An open item whose resolver names
+> nothing → **stop and report**; that is R13's own failure and it is not hc-e's to paper over."*
 
 **G5 — §Close criteria, clause by clause.** Read the clauses and state, for each, the check that
 would settle it at HEAD.
@@ -1407,6 +1447,26 @@ Carried forward rather than resolved. Each is a question this round opens and ha
 > > leaves a run `running`), **12** OPEN (R17 arm (c) unpaired). No item's state changed; only the
 > > population grew.
 > >
+> > **`[re-derived 2026-08-09 (hc-e, after its G4 stop, under R21). The figures above are correct
+> > for the prefixes as they read at `83ef305`; R21 added `[DECIDED]` and re-labelled item 4, so
+> > they are superseded here rather than rewritten, per decision 7.]`** Derived at agents
+> > `83ef305` + this edit, both trees, same pattern:
+> >
+> > ```
+> > population : 12   (unchanged; this edit adds no numbered item)
+> > RESOLVED   : 1 7 8 9                        = 4
+> > DECIDED    : 4                              = 1   ← was counted OPEN until here
+> > OPEN       : 2 3 5 6 10 11 12               = 7
+> >   of which (a) owned   : 10 11 12           = 3
+> >   of which (b) carried : 2 3 5 6            = 4
+> > OPEN carrying no kind  :                      0
+> > ```
+> >
+> > **The `8 open` this supersedes is the figure hc-e's G4 stopped on**, and one of its eight was a
+> > decision mislabelled `[OPEN]` since A7. The stop stands regardless — five of the eight named no
+> > resolver, and that is corrected at §Not carried — but the population it quantified was one too
+> > large, which is this block's own subject arriving in its own numbers.
+> >
 > > **This block is a snapshot at the commit named above. The per-item `[RESOLVED]` / `[OPEN]`
 > > prefixes are authoritative; these totals are a convenience that goes stale the moment an item
 > > is added, and have done so once already.**
@@ -1458,20 +1518,46 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > shape as the resolved-versus-advertised finding this ticket recorded about its own config
    > read. The verdict is unchanged; its basis is now stated in two parts.]`
 
-2. **`[OPEN]`** **Whether the chaos gate has ever run in a clean-store environment.** m4 t1b partly resolved
+2. **`[OPEN]` (b)** **Whether the chaos gate has ever run in a clean-store environment.** m4 t1b partly resolved
    this: the first chaos capture in the harness repo
    (`../aetheris/sprint/20260806_172144/chaos/maxsteps.json`) exists and *did* warn, in a
    **noisy**-store environment, so that behaviour is observed rather than inferred. **The
    clean-store question itself is untouched** — no chaos run has been made in a clean store, and
    nothing established what one would do.
 
-3. **`[OPEN]`** **The transition claim in hc-a Part 4 rests on a transcription, not a file read.** hc-a was
+   > **`[kind assigned 2026-08-09 (hc-e, under R21) — carried unknown, kind (b).]`**
+   > **Settled by:** a chaos run made in a clean store, with its output retained. **No owner.**
+   > m4 t1b established the noisy-store behaviour by observation; the clean-store case has never
+   > been run and this round did not run it.
+
+3. **`[OPEN]` (b)** **The transition claim in hc-a Part 4 rests on a transcription, not a file read.** hc-a was
    read-only and produced no repo artifact, so the claim's basis is a session capture in neither
    repo. **It has not been re-derived here**, and hc-b does not act on it. Whoever needs it opens
    the file; hc-a's own record is not a truth-maker for it. This is BL-133's subject arriving
    inside the round that scopes BL-133.
 
-4. **`[OPEN]`** **No harness-side pointer to this document exists, and none is being created.** The round's
+   > **`[kind assigned 2026-08-09 (hc-e, under R21) — carried unknown, kind (b). No owner.]`**
+   >
+   > **Settled by: opening the file the claim is about and reading it — and *which file that is
+   > cannot be identified from any committed artifact in either repo*.** The `[V]` asked for the
+   > file to be named. It cannot be, and saying so makes the item stronger rather than weaker: a
+   > claim whose *subject* cannot be located is further from established than one that merely
+   > rests on a transcription.
+   >
+   > **Derived, with a control.** Three in-repo mentions exist and **every one refers to the claim
+   > without stating its content**: this entry; `docs/milestones/hc-b-implementation-notes.md`
+   > §7 Open, forwarded (*"Rests on a transcription in neither repo; not re-derived, not acted
+   > on"*); and hc-e's own notes quoting this entry. The harness returns **0** files for
+   > `hc-a Part 4` — **positive control**, `hc-consolidation` over the same repo returns **2**, so
+   > the harness is searchable and the zero is absence. §Ticket set → hc-a says it plainly:
+   > *"Its findings are not in either repo."*
+   >
+   > **So the settling condition is two-part and the first part is the harder one:** recover what
+   > hc-a Part 4's transition claim was about — which no repo search can do — and only then open
+   > the file it names. Recorded rather than papered over with a plausible guess at the subject,
+   > which is the failure R13 exists to prevent.
+
+4. **`[DECIDED]`** **No harness-side pointer to this document exists, and none is being created.** The round's
    subject and nearly all its code edits are harness-side; its canonical record is in the sibling.
    A pointer file would be a second artifact to keep in sync — the mirror problem this project
    already has one instance of, with `drift_check` having no byte-identity check between mirrors.
@@ -1479,14 +1565,56 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    `../aetheris/CLAUDE.md` names this round and this path, which is the one place a harness-side
    reader will already be looking.
 
-5. **`[OPEN]`** **hc-c's gate requires a live local Ollama serving `llama3.2:latest` at `localhost:11434`.**
+   > **`[re-labelled 2026-08-09 (hc-e, under R21) — `[OPEN]` → `[DECIDED]`, kind (c).]`**
+   > **This was never an open question.** The round considered a pointer file, declined it because
+   > a second artifact needs keeping in sync — the mirror problem these repos already have one
+   > instance of, with `drift_check` having no byte-identity check between mirrors — and recorded
+   > the mitigation. **A decision with reasons is not an unknown.**
+   >
+   > **It was carried as `[OPEN]` from A7 (`149c1a8`) until here, and the mislabel inflated every
+   > count over this section by one** — including A7's own derived census, hc-e's G4 enumeration,
+   > and the *"8 open"* figure that G4 stopped on. The counts were right about the prefixes they
+   > read; the prefix was wrong. Corrected in place, original prefix named here, per decision 7.
+
+5. **`[OPEN]` (b)** **hc-c's gate requires a live local Ollama serving `llama3.2:latest` at `localhost:11434`.**
    Whether `[sandbox]` routing can be established without a model server is not established. A
    `stub`-provider agent with a non-empty `mcp_servers:` list would spawn a worker under
    `../aetheris/lib/aetheris/agent/supervisor.ex:62-63` and would remove the dependency, but no
    such agent file exists in `../aetheris/agents/` (hc-b2 §G3(4)) and this round did not write
    one. Carried to BL-133's territory.
 
-6. **`[OPEN]`** **Whether any consumer outside these two repos reads harness *log* output on stdout.**
+   > **`[kind assigned and pointer re-aimed 2026-08-09 (hc-e, under R21) — carried unknown, kind
+   > (b). No owner.]`**
+   >
+   > **The `"Carried to BL-133's territory"` clause is withdrawn as a pointer.** hc-d discharged
+   > BL-133 face 2 and **R2** put face 1 out of scope, so that territory has no open carrier for
+   > this. Original clause stands above, per decision 7.
+   >
+   > **Settled by:** a `stub`-provider agent with a non-empty `mcp_servers:` list, which spawns a
+   > worker and so removes the model-server dependency. The clause that decides it is
+   > `worker_child_spec/1`'s first head in `../aetheris/lib/aetheris/agent/supervisor.ex`
+   > (`:62` — `defp worker_child_spec(%{provider: "stub", mcp_servers: []}), do: []`), read at
+   > harness `48f59e7`, the file itself last changed at `36326d7`: a **stub** provider short-circuits
+   > to no worker **only when `mcp_servers` is empty**, so a non-empty list falls through to the
+   > general head and a worker is spawned.
+   >
+   > **No such agent file exists and no round has written one — verified, not carried.** The three
+   > files under `../aetheris/agents/` that mention `mcp_servers` are `research_orb.exs` and
+   > `research_orb_v3.exs` (`provider: "anthropic"`) and `research_orb_local.exs`
+   > (`provider: "ollama"`); **positive control**, 20 `.exs` files in that directory, so the search
+   > reaches them.
+   >
+   > **One observation, reported and not folded into the settling condition, which is the
+   > reviewer's.** The configuration is nonetheless reachable **today, without writing a new
+   > file**: this repo's `provenance/agents/search_agent.exs` takes
+   > `provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"` (`:24`) and builds
+   > `mcp_servers` non-empty when `CORPUS_SEARCH_MCP_ENABLED=true` with `PROVENANCE_DB_PATH` set
+   > (`:5`–`:21`, `:37`), read at agents `83ef305`. So `AETHERIS_PROVIDER=stub` over that file
+   > satisfies the same predicate. It is outside this entry's stated directory, which is why the
+   > entry's literal claim holds — but the item is more reachable than *"no such agent file
+   > exists"* alone suggests, and a later round should know that before writing one.
+
+6. **`[OPEN]` (b)** **Whether any consumer outside these two repos reads harness *log* output on stdout.**
    hc-c moved Logger to stderr for **every** invocation and every mode, not only `--json`, so the
    population at risk is wider than the row that motivated it. **The in-repo sweep is clean and
    its population is named** — every file in both repos with an executable extension
@@ -1533,6 +1661,18 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > green on the pre-hc-c tree (41 passed at `b4d782a`). **"None is broken" stands**; only the
    > rationale falls. Established at §Not established item 8's resolution; original text left
    > standing per decision 7.]`
+
+   > **`[kind assigned 2026-08-09 (hc-e, under R21) — carried unknown, kind (b), and
+   > unresolvable in principle.]`**
+   >
+   > **Settled by: nothing available to this project.** The population is consumers *outside* both
+   > repos, which cannot be enumerated from inside them. **This entry can never be closed — only
+   > mitigated**, and its mitigation is stated above and stands: the change is announced in the
+   > operator-facing runbook rather than only in the backlog.
+   >
+   > Said plainly so no later round opens it expecting closure and **no census counts it as work
+   > outstanding**. An unknown recorded as unknown is not a defect; this one is the section's
+   > clearest case.
 
 7. **`[RESOLVED]`** **hc-b2's §6 anatomy was never written into this document — an R12 gap, recorded rather than
    back-filled.** R12 requires a ticket's anatomy here **before that ticket opens**. hc-b2 opened
@@ -1701,7 +1841,7 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > lines. **Item 9 stays RESOLVED regardless** — its resolution rests on the operator's
    > attribution, never on this search.
 
-10. **`[OPEN]`** **`shellcheck` is not installed on this machine and could not be installed, so
+10. **`[OPEN]` (a)** **`shellcheck` is not installed on this machine and could not be installed, so
     `sprint.sh` was linted only by `bash -n`.** Done-check item 2 requires the re-check and the
     install attempt before the absence is recorded; both ran at hc-d (2026-08-09) and the install
     failed. Verbatim:
@@ -1721,7 +1861,7 @@ Carried forward rather than resolved. Each is a question this round opens and ha
     with sudo runs `shellcheck scripts/sprint.sh` and records the result; the ticket cannot supply
     it.
 
-11. **`[OPEN]`** **An uncaught raise inside a run's Task leaves the run `running` until the 300 s
+11. **`[OPEN]` (a)** **An uncaught raise inside a run's Task leaves the run `running` until the 300 s
     stall timeout rather than marking it failed.** Observed incidentally at hc-d's G1: a malformed
     `stub_responses` entry raised `KeyError` at `../aetheris/lib/aetheris/execution/loop.ex:253`,
     the Task terminated, and the CLI returned `{"status":"error", …}` only after *"no status or
@@ -1734,7 +1874,7 @@ Carried forward rather than resolved. Each is a question this round opens and ha
     whether an invalid `stub_responses` entry should fail fast or stall. Recorded here so the
     observation does not die with the session.
 
-12. **`[OPEN]`** **R17 arm (c) is available but not automatic — nothing pairs `known_red_healed`
+12. **`[OPEN]` (a)** **R17 arm (c) is available but not automatic — nothing pairs `known_red_healed`
     with the arm that declared the red.** `expected_fail` goes in an arm's failure branch and
     `known_red_healed` in its pass branch, and no mechanism enforces that both are wired. An arm
     written with `expected_fail BL-0xx` on failure and a plain `ok` on success **accepts a healed
@@ -1913,7 +2053,15 @@ reads as an oversight.
   *perform*. At this size the distinction costs a section and buys nothing: **the open questions
   are §Not established's, whichever carry `[OPEN]`** — the count is not restated here, because it
   has been wrong at every reading since it was written and a pointer to the marked items cannot be.
-  Each has its resolver named, and §Close criteria clause 3 is the read that sweeps them.
+  Under **R21** those are of two kinds: **(a)** owned questions, which name a resolver, and
+  **(b)** carried unknowns, which name what would settle them and no owner. Neither kind is
+  claimed here to be complete or uniform — read the entries. §Close criteria clause 3 is the read
+  that sweeps them, and it sweeps both kinds.
+
+  > `[corrected 2026-08-09 (hc-e, after its G4 stop). The sentence read "Each has its resolver
+  > named", which was false for five of eight open items — established by hc-e's G4, which stopped
+  > the ticket on it. The replacement drops the universal rather than repairing it, per
+  > §Promotion candidates' census-staleness entry.]`
 
   > `[amended 2026-08-09 (hc-d's opening edit, authored by the reviewer). The original said
   > "four"; the section then held nine items, five open. Reported at the anatomy edit r1.4 Finding 1

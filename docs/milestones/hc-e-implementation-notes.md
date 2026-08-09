@@ -392,3 +392,192 @@ that reopens does not re-derive them.
 - **The milestone summary** — not written.
 - **§Close criteria's six clauses** — not read; that is G5's work.
 - **No backlog row filed or closed.** §Rows filed still reads *"Empty at hc-b"*.
+
+---
+
+# Round 2 — R21, the re-labelling, and a stop at G5
+
+**Repos.** agents from `83ef305`, harness `48f59e7` (untouched, clean). **Date.** 2026-08-09.
+
+> **Outcome: R21 landed, the five entries were re-labelled, §Not carried was corrected, G4 was
+> amended and re-run PROCEED — and the ticket STOPPED at G5, on §Close criteria clause 3.**
+> G6 not run. Still no close work.
+
+---
+
+## 17. The two `[V]`s, checked before transcription
+
+### 17a. Item 3's `[V]` — name the file. **It cannot be named, and that is the answer.**
+
+The `[V]` asked which file hc-a Part 4's transition claim concerns, and said that if it cannot be
+identified from any committed artifact, saying so *"makes the item stronger, not weaker."* **It
+cannot be.**
+
+**Three in-repo mentions exist and every one refers to the claim without stating its content:**
+this entry; `docs/milestones/hc-b-implementation-notes.md` §7 *Open, forwarded*
+(*"Rests on a transcription in neither repo; not re-derived, not acted on"*); and hc-e's own notes
+quoting the entry. The harness returns **0** files for `hc-a Part 4` — **positive control**,
+`hc-consolidation` over the same repo returns **2 files**, so the harness is searchable and the
+zero is absence rather than a broken search. §Ticket set → hc-a states it directly: *"Its findings
+are not in either repo."*
+
+So the settling condition is **two-part**, and the transcribed entry says so: recover what the
+claim was about — which no repo search can do — and only then open the file it names.
+
+### 17b. Item 5's checkable specifics — both confirmed, and one observation reported
+
+**The supervisor clause, read rather than cited.** `worker_child_spec/1`'s first head is
+`defp worker_child_spec(%{provider: "stub", mcp_servers: []}), do: []` —
+`../aetheris/lib/aetheris/agent/supervisor.ex:62`, read at harness `48f59e7`, the file last
+changed at `36326d7`. A stub provider short-circuits to no worker **only when `mcp_servers` is
+empty**, so a non-empty list falls through and a worker is spawned. The settling condition is
+sound.
+
+**"No such agent file exists" — verified, not carried.** The three files under
+`../aetheris/agents/` mentioning `mcp_servers` are `research_orb.exs` and `research_orb_v3.exs`
+(`provider: "anthropic"`) and `research_orb_local.exs` (`provider: "ollama"`). None is `stub`.
+**Positive control:** 20 `.exs` files in that directory, so the search reaches them.
+
+**One observation, reported and not folded into the settling condition, which is the reviewer's.**
+`provenance/agents/search_agent.exs` **in this repo** takes
+`provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"` (`:24`) and builds `mcp_servers`
+non-empty when `CORPUS_SEARCH_MCP_ENABLED=true` with `PROVENANCE_DB_PATH` set (`:5`–`:21`, `:37`),
+read at agents `83ef305`. **`AETHERIS_PROVIDER=stub` over that existing file satisfies the same
+predicate**, so the configuration is reachable today without writing anything. It sits outside the
+entry's stated directory, which is why the entry's literal claim holds — recorded in the entry so
+a later round knows before writing a new agent.
+
+## 18. R21, and the five re-labelled
+
+R21 transcribed verbatim into §Ratified decisions between R20 and the m4 table. Each of the five
+entries keeps its body unchanged and gains a dated block, per decision 7:
+
+| Item | Was | Now | What the block adds |
+|---|---|---|---|
+| 2 | `[OPEN]` | `[OPEN] (b)` | settled by a chaos run in a clean store, output retained. No owner |
+| 3 | `[OPEN]` | `[OPEN] (b)` | settled by opening the file — **and the file cannot be identified**; §17a |
+| 4 | `[OPEN]` | **`[DECIDED]`** | never an open question; carried mislabelled from A7 and inflating every count by one |
+| 5 | `[OPEN]` | `[OPEN] (b)` | the BL-133 pointer withdrawn; settled by a stub+`mcp_servers` agent, clause cited and read |
+| 6 | `[OPEN]` | `[OPEN] (b)` | **unresolvable in principle** — the population is outside both repos; mitigation only |
+
+Items 10, 11 and 12 gain `(a)`; they already carried `**Resolver:**` labels.
+
+**And A7's census block, which R21 staled inside the same commit.** The block read *4 resolved,
+8 open, 12 total*. Item 4 leaving `[OPEN]` makes that **4 resolved, 1 decided, 7 open**. A further
+dated block re-derives it, stamped, with the enumeration printed — the block's own rule applied to
+the block a third time. **The `8 open` that G4 stopped on was one too large**, and one of its
+eight was a decision mislabelled since A7. The stop stands on its own ground regardless: five of
+those eight named no resolver.
+
+## 19. §Not carried, corrected
+
+*"Each has its resolver named"* replaced by R21's two kinds, with **no universal claimed** and a
+dated block quoting the original. Per A5's lesson, the fix is not a better universal — it is to
+stop carrying one.
+
+## 20. G4 amended — and the amendment is **not** a relaxation, tested rather than asserted
+
+The transcribed amendment carries its own `[amended]` block and quotes the original beneath. The
+reviewer's caution — *"a gate that stopped a ticket, edited so the ticket passes, is the exact
+shape this round exists to catch"* — is answered with two runs, not with a claim.
+
+**Test 1 — run the AMENDED G4 against the PRE-EDIT tree (`83ef305`).** If the amendment were a
+relaxation it would pass there.
+
+```
+[DECIDED] prefixes present            : 0
+OPEN items carrying a kind            : 0  of 8 open
+'Settled by' clauses                  : 0
+```
+
+**It stops, on two conditions the original G4 could not express:** item 4 is a decision carrying
+`[OPEN]`, and every carried unknown lacks a settling condition. **The amended gate is strictly
+harder to pass on the very tree the original stopped on.**
+
+**Test 2 — run the ORIGINAL G4 against the CORRECTED tree.** If the amendment were what made the
+defect go away, the original would now pass.
+
+```
+OPEN items now             : 7
+'**Resolver:**' labels now : 3
+```
+
+**It still stops.** The original's requirement is unmet and was never made to be met — no owner
+was invented for items 2, 3, 5 or 6. **The defect survives the amendment**, which is the test the
+reviewer named.
+
+## 21. G4 as amended, re-run at HEAD. **PROCEED.**
+
+```
+population                    : 12   (unchanged; this round adds no numbered item)
+OPEN with no kind (must be 0) :  0
+(a) items : 3   '**Resolver:**' labels : 3
+(b) items : 4   'Settled by' clauses   : 4
+[DECIDED] : 1
+```
+
+- **Every (a) resolver names something that exists.** 10 → `scripts/sprint.sh` and an operator
+  with sudo; 11 → whoever rules on invalid `stub_responses`; 12 → the first `KNOWN_RED` arm's
+  author, and `expected_fail`/`known_red_healed` exist in `sprint.sh` (`:106`, `:142`) with zero
+  call sites, which is what item 12 records.
+- **Every (b) item names what would settle it** — four clauses, four items.
+- **No `[DECIDED]` item is mislabelled `[OPEN]`, and no `[OPEN]` item is a decision in disguise.**
+  Checked one by one: 2, 3, 5 and 6 are genuine unknowns; 10 is blocked on tooling; 11 needs a
+  ruling; 12 needs a design decision or a first arm. None is a considered choice not to act.
+
+## 22. G5 — §Close criteria, clause by clause. **STOP AND REPORT, on clause 3.**
+
+The check that would settle each clause at HEAD:
+
+| Clause | The check at HEAD | Form |
+|---|---|---|
+| **1** | For each row in §Ticket set, read the backlog rows it claims to close and confirm each is closed there, and the reverse | checkable |
+| **2** | Read §Rows filed's population and confirm each filed row has a closure record in one of the two shapes | checkable — **and it will find a defect**; see §24 |
+| **3** | Sweep §Not established item by item and record each as *resolved, still open, or superseded* — and if resolved, where | **NOT checkable as written** |
+| **4** | For each decision in the log, confirm no divergence is left silent; R6/decision 13 already has its dated record | checkable |
+| **5** | Residual only — §7's verification step and its prior-claims census carry it | checkable |
+| **6** | Restate `docs/milestones/`'s population at the boundary, **both halves**, with `docs/rig/milestones/` as the counter-example | checkable |
+
+**Why clause 3 stops.** Its disposition set is *"resolved, still open, or superseded"* — **three**
+values. **R21, landed in this same round, added a fourth**: `[DECIDED]`. Item 4 now carries it,
+and clause 3's own vocabulary cannot express item 4's standing. A sweep run as written must either
+report item 4 under a heading that is false for it, or silently omit it — and an omitted item in a
+close sweep is exactly the silence this section exists to prevent.
+
+```
+clause 3 mentions 'resolver'  : 0    <- so it does NOT inherit the §Not carried defect
+POSITIVE CONTROL, 'resolver' document-wide : 32   <- the token is findable; the zero is real
+clause 3 mentions 'decided'   : 0
+```
+
+**The `[V]` result, stated separately from the stop.** The authorised check was whether clause 3
+*assumes every open item has a resolver*. **It does not** — zero occurrences, against a control of
+32. So the authorised correction does not fire and **clause 3 was not edited.**
+
+**Why the defect was not fixed anyway.** The gap is real, the fix is one word, and it is *this
+round's own doing* — R21 changed the section's vocabulary without updating the one close criterion
+that enumerates it. But the authorisation to edit clause 3 was conditional on the resolver defect,
+which does not hold, and *"changing a close criterion during a close needs saying out loud."*
+Editing it on my own authority would be the same class as inventing a resolver to clear G4: making
+the gate pass rather than reporting what it found. **Proposed correction, not applied:** clause 3's
+disposition set becomes *"resolved, still open, decided, or superseded"*.
+
+## 23. G6 — **not run.** G5 stopped the ticket. No verdict is claimed for it.
+
+## 24. Findings reported, not fixed
+
+**§Rows filed is stale, and clause 2's sweep is what will meet it.** It reads *"**Empty at hc-b**
+… hc-c and hc-d populate this section; hc-e sweeps it under clause 2."* **hc-d filed BL-135** at
+`f8ed90f`, and hc-e's opening edit folded it onto BL-075. The section was never populated, so a
+row exists that §Rows filed does not name. Not fixed here: populating it is close work under
+clause 2, and this round is stopped.
+
+## 25. Not reached, not dropped
+
+- **§7's ritual** — the scan, the distillation, the commit, the verification step and its
+  prior-claims census over the **t1a-p three** — untouched.
+- **The export boundary** — untouched; the manifest is not regenerated and nothing is staged.
+  **hc-e is not closed.**
+- **The milestone summary** — not written.
+- **G6** — not run; §23.
+- **No backlog row filed or closed** by this round.

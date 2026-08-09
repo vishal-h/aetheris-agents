@@ -448,3 +448,112 @@ separate cleanly after the gate — that is a finding about R1, reported here ra
 licence to have split mid-ticket.** They still belong in one ticket for the reason R1 gives: the
 decision about the capture's *shape* is what determines whether the counter's status survives, and
 that decision cannot be made in a ticket that does not own both.
+
+---
+
+# Round 1 — the six findings
+
+Under **R15** this is a further round of hc-d, not a new ticket. **Repos.** harness `5782cbb`,
+agents `ac839c3`. **Date.** 2026-08-09. Three findings required an edit; two of those were code.
+
+## 16. F1 — the `tail` regression, and why the justification was the worse half
+
+Done-check item 1 says *"full output, no `tail`, elisions stated"*, and r0's §1a used `tail` on
+three of the six gates. **Stating an elision is the mitigation for an elision, not a licence for the
+one thing the item names.**
+
+The sharper part is the justification I attached: *"the elision is the progress dots and the log
+noise, not any result line."* That is a claim about what was **cut**, made by someone who published
+only what **survived** — the truncated-capture carrier, in the packet of the ticket about gates that
+pass without being looked at. It was true here only because there were zero failures; a `tail` over
+a **red** `mix test` keeps the summary line and cuts the failure block, which is precisely the case
+where it decides something. And the round immediately before this one published `mix test` in full
+and said so, so the precedent existed inside the same round and was not held.
+
+All six gates re-run post-commit at r1 and published complete. **Nothing is elided, so there is no
+elision to state.**
+
+## 17. F2 — the drain, made deterministic, and an honest negative
+
+**The defect.** `sleep 0.2` was an unbounded wait fixed by timing. Nothing bounds how long a process
+substitution needs to flush, and the tail at risk is the `Exit contract` block — the four counters
+this ticket exists to add. A truncated capture loses the verdict and keeps the run.
+
+**Derived against this bash rather than assumed.** `$!` **does** carry the process substitution's
+PID here (bash `5.1.16`), confirmed by running it, and `wait` accepts it — so neither a named FIFO
+nor a `coproc` is needed, and the fallback F2(a) offered is not taken. The form: save the originals
+on fds 3/4 before the `exec`; capture `$!`; at exit restore fds 1/2 (which closes the write end and
+gives `tee` EOF) and `wait`.
+
+**F2(b) — asserted in the script, not once in a packet.** The sprint prints a known last line, then
+compares the capture's last non-blank line against it and **increments `FAILURES` on mismatch**. The
+check reports on the *restored* stdout, necessarily outside the capture it is checking. A future
+regression therefore trips the gate rather than a reader's attention.
+
+**The honest negative, volunteered rather than omitted.** *I could not make the `sleep` form
+truncate on this machine.* 20 000 lines through `tee`, and 3 000 through a deliberately slow
+line-at-a-time consumer, five runs each, reading the file immediately on return — the sentinel was
+present every time, 0/5 truncated in both forms. **So this change removes the race by construction
+and is not backed by an observed failure.** That sentence is in the code comment too, so a later
+reader does not infer the fix was regression-driven. F2(c)'s §Not established entry is **not** filed,
+because a deterministic form *was* available — (c) was conditional on there being none.
+
+## 18. F3 — shape versus existence, and why branch (a)
+
+`[[ ! "$ref" =~ ^BL-[0-9]{3}$ ]]` checks the reference's **shape**. Both arm-(b) exercises at r0 —
+`<empty>` and `not-a-row` — were malformed, so the gap was invisible to the exercise that was
+supposed to prove the arm. A well-formed `BL-999` took the KNOWN-RED branch and silenced the red.
+
+**Branch (a) chosen, and the reason is cost against consequence.** (a) is one anchored `grep`
+against a file the script can already reach — `sprint.sh` already invokes `drift_check.py` in the
+agents repo, so no new coupling is created. (b) would have cost a permanent caveat in three
+documents describing a gap that one line closes. **(b) is the right call when the check is expensive
+or unreliable; this one is neither.** And a dangling reference is the more dangerous half precisely
+because it *looks* correct — (b) would have written down the worse gap and left it open.
+
+**Implementation detail that matters:** matched as an **anchored heading** (`^### BL-nnn `), a field
+match rather than a substring hit anywhere in a 7 500-line file — the substring-versus-field carrier.
+**A backlog that cannot be read is arm (b) as well**: the gate does not assume a row it could not
+look for, which is absent-is-unknown applied to its own input.
+
+**And the path is bound to the script, not the caller.** `SPRINT_BACKLOG` resolves through
+`$(dirname "$0")/..`, verified from a different working directory to prove it is script-bound.
+
+## 19. F4 — a destructive command bound to the caller's cwd
+
+Two defects in one block. **The count was a prediction printed in the past tense** — measured before
+the delete, reported as what the delete did, with any partial failure swallowed by `|| true`. Now
+taken **after** as `candidates - remaining`, with a `warn` when the remainder is non-zero.
+
+**The `find` and the `rm -rf` were cwd-relative** while every other path in the script resolves
+through `$(dirname "$0")/..`. Both are now bound to `SPRINT_ROOT`, and the root is **printed in the
+line**, so the target of a destructive command is visible in the capture rather than inferred.
+
+**This class bit this round's own work, and the instance is published rather than quietly re-run.**
+While re-running the mutation check, a `git checkout -- docs/rig/specs.md` executed under a
+persisting `cd` into the harness repo. It failed with *"pathspec did not match"*, the mutation was
+**not** restored, and the "restored" run that followed reported `exit 1` — a red I would have had to
+explain away had I not read the error. Restored properly with `git -C`, with a positive control that
+the phantom string had genuinely been present (2 hits in the red run's own output) and was then
+absent (0). That is the same carrier F4 names, one level up, in the review of the fix for it.
+
+## 20. F5 and F6
+
+**F5.** `expected_fail`'s failure branch increments `FAILURES` without incrementing
+`BLOCKING_ARMS` — correct, because a malformed or dangling declaration is not a declared arm and is
+still blocking, but it reads as a contradiction. One paragraph in the runbook now says how to read
+the pair, covering the dangling case F3 adds as well as the malformed one.
+
+**F6.** r0's item-8 artifact was produced on a dirty tree (`harness_dirty: yes`) while item 5's
+`drift_check` was deliberately re-run post-commit — **two pieces of evidence in one round held to
+different standards.** Re-run post-commit at r1 on clean trees; both stamps are published side by
+side so the asymmetry and its closure are both visible. `harness_dirty: no` is what makes the
+artifact reconstructible from a commit, which is what G0 protects.
+
+## 21. What r1 did NOT change
+
+No new promotions — the `drift_check` arm remains the only blocking one, for R7's reason. No change
+to `json_read`, the BL-100 backward scan, the D2 anti-vacuity guard, or any file under
+`../aetheris/lib/`, `native/` or `config/`. §Not established items 10 and 11 are unchanged and still
+`[OPEN]`. **No new defect was found in the fixes themselves** — the one defect this round surfaced
+(§19's persisting `cd`) was in the review procedure, not in the shipped code, and it is recorded.

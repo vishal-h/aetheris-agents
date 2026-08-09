@@ -457,6 +457,21 @@ anatomy edit's own notes never recorded the observation and item 9 is the only d
 anywhere. The clause is superseded, not violated, and the deviation is named rather than made
 quietly.
 
+> `[amended 2026-08-09 (hc-d's opening edit, E1). The paragraph's conclusion survives; two of its
+> figures do not, and the packet's version of the check was worse than the document's.]` The **8**
+> was measured at `d29f5c6` and written into `149c1a8`, which gives **10** — stale at its own
+> commit. Both are right about their own tree, and the two added lines are this section's own prose
+> about the block plus its quotation of the search pattern: **the count was moved by the sentences
+> describing it.** Worse, r1's packet published the negative as a `grep` **without `-E`** — in BRE
+> `|` is literal, so the command as printed returns `0` against any corpus — and labelled a prose
+> placeholder as its positive control. The commands that *ran* were correct; the packet transcribed
+> retyped `echo`s rather than the invocations, which is **Packet-integrity** (harness `CLAUDE.md`):
+> packets are generated, not retyped. Re-derived with `-E`, the negative is still **0**, lines
+> 1–262 are byte-identical between the two commits, and a real positive control over the disjoint
+> r1 sections returns **10** — full enumeration and commands in `hc-d-implementation-notes.md` §7.
+> **The "only durable record" clause holds**, now derived by `git grep -l` over all tracked files in
+> both repos rather than inferred from the negative alone.
+
 **A7 — the `[RESOLVED]`/`[OPEN]` convention.** Both edits are scoped to §Not established: a state
 prefix on every item head, no head reworded; and the preamble amended by **append**. The states are
 derived, with the population named (**9**, every numbered item) and the full enumeration printed

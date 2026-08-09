@@ -833,6 +833,11 @@ find surprising. Harness first.
    `mix compile --warnings-as-errors`, `mix hex.audit`, `mix credo --strict`, `mix dialyzer`,
    `mix test` — full output, no `tail`, elisions stated. `sprint.sh` is a harness file; the gates
    apply even with no `lib/` change.
+   A gate that fails for **resources** — OOM, swap exhaustion, a killed process — and a gate that
+   fails for **findings** are different results, and only the second is a gate failure. Say which,
+   with the evidence that distinguishes them. A green `mix dialyzer` that reports *"PLT is up to
+   date"* establishes findings and does **not** establish memory headroom; if headroom is the
+   question, a cold-PLT build is what answers it, and if that is not run, say so.
 2. `shellcheck` on `sprint.sh`. It was absent on this machine as of 2026-08-09; re-check and
    attempt the install first. If the install fails, say so with the failure output, and record the
    absence in §Not established rather than omitting the line.
@@ -1425,6 +1430,33 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > positive control, whole file → **8**, all in the r1 sections). Resolving in place rather than
    > deleting is what keeps the record; the clause is **superseded, not violated**.
 
+   > `[amended 2026-08-09 (hc-d's opening edit, E1). The conclusion above holds; the evidence
+   > offered for it did not, and is replaced rather than repaired in place.]` The block's **8** was
+   > measured at `d29f5c6` and written into `149c1a8`, whose own tree gives **10** — a figure stale
+   > at the commit that carries it. And r1's packet published the negative as a `grep` **without
+   > `-E`**, in which `|` is a literal, so the command as printed searches one literal string and
+   > returns `0` against any corpus. The command that *ran* did carry `-E`; the packet transcribed a
+   > retyped `echo` instead of the invocation — **Packet-integrity** (harness `CLAUDE.md`), the rule
+   > that packets are generated, not retyped. Re-derived here, each command bound to its target:
+   >
+   > - **The negative, with `-E`, same range, at `149c1a8`:** `sed -n '1,262p' … | grep -Ec …` →
+   >   **0**.
+   > - **A real positive control** — same pattern, same flags, over a **disjoint** corpus known to
+   >   contain the terms (the r1 sections, `sed -n '263,$p'`) → **10**, enumerated in
+   >   `hc-d-implementation-notes.md` §7. A non-zero there is what makes the zero above readable as
+   >   absence rather than as a broken pattern.
+   > - **The negative's corpus never moved:** `diff` of lines 1–262 between `d29f5c6` and `149c1a8`
+   >   → identical, so the **0** holds at both commits.
+   > - **8 and 10 count the same file at different commits**, and both are right about their own:
+   >   `d29f5c6` → 8, `149c1a8` → 10. The two added lines are r1.6's own prose about the block and
+   >   its quotation of the search pattern — the count was moved by the sentences describing it.
+   >
+   > **The clause stands, and is now derived rather than inferred.** `git grep -l 'playground_tokens,
+   > \["tok-abc"\]'` over **all tracked files in both repos** returns `docs/milestones/hc-consolidation.md`
+   > and nothing else; the harness returns nothing. This entry is the only durable copy of the four
+   > lines. **Item 9 stays RESOLVED regardless** — its resolution rests on the operator's
+   > attribution, never on this search.
+
 ---
 
 ## Promotion candidates
@@ -1450,8 +1482,17 @@ illustrate a result obtained some other way, because a re-run can bind different
 original and the difference is invisible in the output. Origin: claude-code's own diagnosis at
 hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
 
-**The reviewer asserting a document's state from memory of prior packets rather than from the
-document.** Each instance was caught by claude-code rather than by the reviewer.
+**Asserting a document's or a check's state from memory of prior packets rather than from the
+thing itself.** Instances (i)–(vi) were the reviewer's, each caught by claude-code; **(vii) is
+claude-code's**, caught by the reviewer.
+
+> `[retitled 2026-08-09 (hc-d's opening edit, E1(e)). The heading read "**The reviewer** asserting
+> a document's state from memory of prior packets rather than from the document", and the opening
+> sentence read "Each instance was caught by claude-code rather than by the reviewer" — the `[V]`
+> asked whether the framing was reviewer-scoped, and it was, in both places. The carrier is not
+> reviewer-specific and (vii) is the demonstration, so the scope is widened and the asymmetry moved
+> into the sentence where it is a fact about the instances rather than a property of the class.
+> Original wording recorded here, per decision 7.]`
 
 **Instances, an open list** — later ones append rather than restate a total, since the count was
 wrong one commit after it was written and that is carrier 1: **(i)** hc-c's A3 named two sections
@@ -1462,7 +1503,12 @@ file does not have; **(v)** the anatomy edit called an `hc-c r2` note *"its hc-d
 has no r2; **(vi)** A2 directed an amendment to `hc-d-anatomy-edit-implementation-notes.md`
 **§1.4**. That file has no §1.4 — its sub-anchors are §1a–§1g. §1.4 is the *packet's* numbering for
 the section that reported the dirty tree, and the packet is not the file. Same carrier as (iv): a
-packet's internal structure asserted as a document's.
+packet's internal structure asserted as a document's; **(vii)** r1 §1d's negative used BRE
+alternation without `-E`, so it could not match, and paired it with a control running a different
+pattern and different flags. Not a reviewer instance — claude-code's — and it is kept on this list
+because the carrier is the same one level over: a check whose output is trusted because it is
+shaped like a check. F9 ratified the positive-control rule in this same round; the rule was applied
+in form and not in substance.
 
 **(vi) is the list's first append, and it arrived one round after the list replaced a total.** The
 form was chosen at A4 because *"Three instances in this round"* went stale one commit after it was
@@ -1487,8 +1533,15 @@ reads as an oversight.
   in §Ticket set and this note is what says a §Sequence would then be owed.
 - **§Open for the close.** m4 distinguished decisions the close must *take* from reads it must
   *perform*. At this size the distinction costs a section and buys nothing: **the open questions
-  are §Not established's four**, each with its resolver named, and §Close criteria clause 3 is the
-  read that sweeps them.
+  are §Not established's, whichever carry `[OPEN]`** — the count is not restated here, because it
+  has been wrong at every reading since it was written and a pointer to the marked items cannot be.
+  Each has its resolver named, and §Close criteria clause 3 is the read that sweeps them.
+
+  > `[amended 2026-08-09 (hc-d's opening edit, authored by the reviewer). The original said
+  > "four"; the section then held nine items, five open. Reported at the anatomy edit r1.4 Finding 1
+  > and again at r1.6 without authority to fix it. The replacement drops the number rather than
+  > correcting it — carrier 1's only durable remedy is not to carry a count where a pointer will
+  > do.]`
 
 ---
 

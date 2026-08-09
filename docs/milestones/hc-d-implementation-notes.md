@@ -152,3 +152,154 @@ can only be made after the design exists; asserting it now would be the guess R1
 - **No code changed in this ticket**, in either repo. The harness tree is byte-identical to the one
   hc-c's gates passed on — it was checked out to `b4d782a` for §2's experiment and restored, with a
   positive control both ways.
+
+---
+
+# hc-d's opening edit — 2026-08-09
+
+Four reviewer amendments (E1–E3, and E1(e)'s list append) land here as a section-scoped edit, then
+G0–G5 run. **E1 is a finding against the anatomy edit r1 and is upheld.**
+
+## 7. E1 — the negative that could not match, re-derived
+
+### 7a. The three defects, adjudicated separately
+
+**Defect 1 — upheld against the packet, and it is worse than a wrong flag.** r1 §1d published
+`grep -c "uncommitted|dirty|…"` with **no `-E`**. In BRE `|` is an ordinary character, so the
+command as printed searches for one literal string. Its own control:
+
+```
+$ sed -n '1,262p' <anatomy notes> | grep -c 'uncommitted|dirty|porcelain|working tree|config.exs|playground_tokens'
+0
+$ grep -c   <same BRE pattern>   <anatomy notes>          # corpus that DOES contain the terms
+1
+```
+
+The BRE form returns **1** over the whole file, and the single line it matches is r1.6's own
+*quotation of the pattern* — the one place those characters appear with literal pipes. So the
+published command was inert as evidence about the corpus, exactly as E1 says, and its only hit is
+the sentence describing it.
+
+**The command that ran, however, carried `-E`.** The packet's echoed line and its executed line
+were different text; the `0` was a real observation published with a false transcript. That is not
+the lesser defect — it is **Packet-integrity** (harness `CLAUDE.md`: *"Review packets are generated
+artifacts, not retyped ones"*), and it is why the standing rule offers two options, *transcribe the
+command that ran* or *re-run and publish the re-run*. Retyping is the third, and it is the one that
+failed. **Nothing in the packet could have exposed the divergence** — the reader sees one command
+and one number, and both were individually plausible.
+
+**Defect 2 — upheld.** The control line read `grep -Ec "same pattern" whole file`: a prose
+placeholder, not a command. What *ran* was in fact the same pattern and flags over the whole file,
+a valid superset control — but nothing in the packet showed that, and a control a reader cannot
+re-run is not a control. It is replaced below with a **disjoint** corpus, which is stronger than
+the superset the run used.
+
+**Defect 3 — upheld, and it is carrier 2 of the count rule.** The packet printed `10` beneath prose
+saying `8`.
+
+### 7b. E1(a) — the negative, re-run with `-E`, same range
+
+```
+$ sed -n '1,262p' <anatomy notes> | grep -Ec 'uncommitted|dirty|porcelain|working tree|config\.exs|playground_tokens'
+0
+$ ... ; echo $?      # exit captured from the invocation
+1                    # 1 = no match, the expected shape of a true negative
+```
+
+**0. E1(d) does not fire** — the anatomy edit's own §1–§6 do not record the observation, so item 9's
+*"only durable record"* clause is not refuted and needs no correction on that ground.
+
+### 7c. E1(b) — a real positive control: same pattern, same flags, disjoint corpus
+
+Lines 263–end are the r1 sections: known to contain the terms, and sharing no line with the
+negative's range. A non-zero here is what makes the zero above readable as absence rather than as a
+broken pattern.
+
+```
+$ sed -n '263,$p' <anatomy notes> | grep -Ec <same pattern, same flags>
+10
+
+$ sed -n '263,$p' <anatomy notes> | grep -En <same>      # enumeration printed beside the count
+82:A2 asked for the `config/config.exs` block to be recorded verbatim and then reverted so the tree
+87:| `09:03:07` | block present, uncommitted | mtime; `git diff` shows +4 |
+89:| `09:24:05` | block **gone** | mtime moved; `grep -c playground_tokens` → 0 |
+90:| `09:26` | tree clean | `git status --porcelain` → **0 lines** |
+98:**G0 is transcribed as authored** and is the standing consequence: hc-d stops on a dirty harness
+126:consumers, 7 hc-b2's anatomy (resolved), 8 the provenance suites (resolved), 9 the `config.exs`
+156:  harness working tree is clean at the ticket's start, `git status --porcelain` zero lines, HEAD
+158:  run on an uncommitted tree cannot be re-derived from any commit. Plus the §Not established entry,
+188:the cause — the operator added the `config.exs` block while setting up Rig to authenticate against
+192:`uncommitted|dirty|porcelain|working tree|config.exs|playground_tokens` over this file's §1–§6
+```
+
+Ten lines, listed. The pattern works; the zero in 7b is absence.
+
+### 7d. E1(c) — 8 against 10, reconciled
+
+**They count the same file at different commits, and each is right about its own.**
+
+```
+$ git show d29f5c6:<anatomy notes> | grep -Ec <same>
+8
+$ git show 149c1a8:<anatomy notes> | grep -Ec <same>
+10
+
+$ diff <(git show d29f5c6:… | grep -E <same>) <(git show 149c1a8:… | grep -E <same>)
+> the cause — the operator added the `config.exs` block while setting up Rig to authenticate against
+> `uncommitted|dirty|porcelain|working tree|config.exs|playground_tokens` over this file's §1–§6
+
+$ diff <(git show d29f5c6:… | sed -n '1,262p') <(git show 149c1a8:… | sed -n '1,262p')
+(identical)
+```
+
+**The document's figure is the wrong one.** `8` was measured at `d29f5c6` and then written into
+`149c1a8`, so it was already stale in the commit that carries it — the self-falsifying-claim shape.
+The two added lines are r1.6's own prose about the block and its quotation of the search pattern:
+**the count was moved by the sentences describing it.** That is why a count must name its commit,
+and both sites are now amended with theirs. The negative's corpus, by contrast, is byte-identical
+across the two commits, so the **0** holds at both.
+
+### 7e. The clause E1 was protecting — derived over both repos, not inferred
+
+The negative never established *"the only durable record"*; it established that one range of one
+file lacks the observation. The claim quantifies over both repos, so it is derived that way:
+
+```
+$ git grep -l 'playground_tokens, \["tok-abc"\]' -- .                    # agents, all tracked files
+docs/milestones/hc-consolidation.md
+$ git -C ../aetheris grep -l 'playground_tokens, \["tok-abc"\]' -- .     # harness
+(no match)
+```
+
+**One file, one repo.** §Not established item 9 is the only durable copy of the four lines. The
+clause stands, now derived rather than inferred. **Item 9 stays `[RESOLVED]` either way** — its
+resolution rests on the operator's attribution, never on any of these searches.
+
+### 7f. What it cost, and the rule it lands under
+
+F9 ratified the positive-control rule **in this same round**, and r1 then applied it in form and not
+in substance: a check trusted because it was shaped like a check. That is instance **(vii)** on the
+promotion candidate's open list — the first entry there that is claude-code's rather than the
+reviewer's, which is why the candidate's heading was widened off *"The reviewer…"* under E1(e). The
+narrow operational residue: **a packet publishes the invocation, never a retyped `echo` of it.**
+
+## 8. E2 — §Not carried's count, replaced by a pointer
+
+Authorised by the reviewer after being reported without authority at r1.4 Finding 1 and again at
+r1.6. The `[V]` asked for the sentence exactly; it read *"the open questions are §Not established's
+**four**"* (`hc-consolidation.md` §Not carried, §Open for the close bullet) — confirmed verbatim.
+The replacement points at the `[OPEN]` markers A7 introduced rather than restating a number, so the
+two mechanisms are now coupled: the marker convention is what makes the pointer resolvable.
+
+## 9. E3 — resource failure and findings failure are different results
+
+Appended to hc-d's Done-check item 1, generalising the dialyzer elision this round reported: a green
+`mix dialyzer` reporting *"PLT is up to date"* establishes findings and not memory headroom, and if
+headroom is the question a cold-PLT build is what answers it. The distinction now lives in the
+anatomy rather than only in a packet, which is where E3 says it belongs.
+
+## 10. Scope of this edit
+
+Four documents' worth of amendment across **two files**, both docs. No `sprint.sh` change and no
+code — those belong after G0–G5. R-iii and R-iv remain undischarged and are carried into the gate
+(G3 is R-iv's resolver).

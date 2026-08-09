@@ -1390,6 +1390,30 @@ rather than what was expected.
 | **A — in-row paragraph** | `**DONE <date> (<ticket>).**` as a bold paragraph inside the open row, which is left intact | **9**, and **every one is m4-cycle-dated** (t1b, t2, t3, t4a/b/c, t5b) |
 | **B — sibling heading** | `### BL-0NN — DONE <date> …` as its own heading near the open row | **15 headings**, one of which — `### BL-050 + BL-055 + BL-056 — DONE 2026-07-25` — covers three rows, so 17 rows. Dated 2026-07-23 to 2026-08-05 |
 
+> **`[corrected 2026-08-09 (hc-e, §Close criteria clause 2's own sweep). There are THREE shapes,
+> not two, and all three counts above are stale. The table stands unrewritten per decision 7; the
+> derivation below supersedes it.]`**
+>
+> **This is fixed rather than carried** because clause 2's subject *is* the shapes a closure is
+> recorded in, and a criterion that describes its own subject wrongly cannot settle it.
+>
+> **Shape C — an in-row `**Status:** Done <date> — <ticket>.` line**, which the two-shape
+> enumeration never named and which is **the most common of the three**. It is how **BL-077's
+> closure by hc-d is recorded**, so a sweep reading only A and B would have reported this round's
+> own hc-d closure as missing.
+>
+> Derived at agents `dcf1d42`, one stated pattern per shape, enumerations available from the same
+> commands:
+>
+> ```
+> A  ^\*\*DONE                                  = 11   (was 9)
+> B  ^### BL-[0-9]+.*— DONE                      = 16   (was 15)
+> C  ^\*\*Status:\*\* *(Done|Closed)             = 26   ← unnamed until here
+> ```
+>
+> **All three are non-zero, which is what makes each readable as a real shape** rather than a
+> pattern that happens to match. A sweep must read all three.
+
 The shapes are **not exclusive**: BL-069 carries both, an in-row paragraph and a sibling heading,
 because its closure record was written at the m4 close rather than at t2 when the work landed.
 
@@ -1438,6 +1462,26 @@ this ticket files no backlog row and closes none, by its own *Not this ticket*.
 The backlog is `docs/backlog-2026-06.md`, single-file. **The highest row filed is BL-134**, so
 anything this round files begins at **BL-135**. hc-c and hc-d populate this section; hc-e sweeps
 it under clause 2.
+
+> **`[superseded 2026-08-09 (hc-e, §Close criteria clause 2's sweep). "Empty at hc-b" was true when
+> written and is not now. The original stands above, per decision 7.]`**
+>
+> **The population, derived and not assumed.** Rows this round filed:
+> `grep -oE '^### BL-[0-9]+' docs/backlog-2026-06.md` → highest is **135**, and **BL-135 is the
+> only row at or above the round's own starting number**. So the population is **one**.
+>
+> | Row | Filed | Disposition |
+> |---|---|---|
+> | **BL-135** — `run_helpers_timeout_test.exs:84` is timing-flaky | **2026-08-09 (hc-d r3)**, agents `f8ed90f` | **Folded onto BL-075, 2026-08-09 (hc-e's opening edit, E3)** — established as the same defect field by field, with only a `System.unique_integer` run id differing. The row is kept as the record of the duplication |
+>
+> **The fold is a disposition, not an erasure**, and BL-135 counts toward this section: a round
+> that files a row and then finds it was a duplicate has still filed a row, and a §Rows filed that
+> hid it would make the duplication invisible to exactly the reader who needs it.
+>
+> **hc-c filed nothing.** It *closed* BL-105 and BL-106, and closures live on the rows themselves
+> under clause 2 — derived, not assumed: the two hc-c records are shape-A `**DONE 2026-08-09
+> (hc-c).**` paragraphs on those rows. **hc-d's BL-077 closure is shape C**, and **BL-133's face-2
+> discharge was recorded on no row until this sweep added it** — see clause 1's result.
 
 > **A note for whoever writes the first entry.** The backlog has no `## DONE` section and rows are
 > not moved on closure. A closed row acquires a closure record **in one of two shapes** — an

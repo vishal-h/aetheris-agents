@@ -64,6 +64,19 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > The mirror's own last change is `7328755`, which is why it carries no manifest row —
 > the row tracks the canonical copy, and a second row would drift against it.
 
+> **`docs/milestones/` is out of the manifest, and it is out as a *kind* rather than as a
+> directory.** Added 2026-08-09 at the hc round's close (hc-e), per its §Close criteria clause 6,
+> which requires both halves because half 1 alone re-installs the error half 2 refutes.
+> **Half 1** — everything `docs/milestones/` holds today is a milestone working artifact: cycle
+> documents, `*-implementation-notes.md`, and the `m-eduloka-discovery-*` pair, which is direct
+> precedent for a milestone-level document living there untracked. **Half 2, and it is the half
+> that keeps the rule honest** — `docs/rig/milestones/` is the counter-example. Same path segment,
+> **two tracked files** (`docs/rig/milestones/p3/protocol.md`,
+> `docs/rig/milestones/bl-007/README.md`), admitted on the *specification* test stated below. **So
+> the inclusion rule reads the artifact's kind and never its directory**, and a future session must
+> not generalise "everything under a `milestones/` directory is out" from half 1 — that
+> generalisation was asserted once, checked, and refuted.
+>
 > **What this table does not include, by rule.** Milestone working artifacts —
 > `docs/reviews/*.md`, `*-implementation-notes.md`, scan files — are not exported.
 > They are the record of *how* a decision was reached and are read from the repo by

@@ -996,3 +996,142 @@ insertions and 22 deletions — and the agents tree was simply left uncommitted 
 committed. **Caught by the pathspec error, not by the status line**, which would have read the same
 had the work been lost. Re-issued with `git -C <repo>` on every command, which is what the rule
 says and what the rest of this round's checks already did.
+
+---
+
+# Round 6 — the six sweeps, run
+
+**Repos.** agents from `dcf1d42`; harness `2ef0517`, **untouched this round**. **Date.** 2026-08-09.
+
+> **Outcome: all six clauses run and recorded.** Two false claims about the repos fixed (BL-133's
+> unrecorded discharge; clause 2's shape enumeration), the rulings applied, clause 6's sentence
+> authored. **The bound held** — presentational defects found on the way were carried, not fixed.
+> The milestone summary, the Done-check and the boundary are r7. **hc-e is not closed.**
+
+---
+
+## 46. Clause 1 — every ticket against the rows it claims, both directions
+
+**Direction A — what §Ticket set claims, checked on the rows.**
+
+| Ticket | Claims | On the row |
+|---|---|---|
+| hc-a, hc-b | closes nothing | — |
+| hc-c | BL-105, BL-106 closed | **both**, shape A: `**DONE 2026-08-09 (hc-c).**` (`:6335`, `:6423`) |
+| hc-d | BL-077 closed | **yes**, and **in a third shape** — `**Status:** Done 2026-08-09 — hc-d.` (`:3073`) |
+| hc-d | BL-133 **face 2 discharged** | **NOT RECORDED — the sweep's one repo-side defect. Fixed.** |
+| hc-d | BL-044 stays filed | correct: no closure record, and none owed |
+
+**The defect and its fix.** BL-133 carried no disposition of any kind — no `Status:`, no `DONE`, no
+note — while this document has said since `88183b8` that hc-d discharged its face 2. A reader of
+the row could not have learnt it. **Fixed on the row**, not here: a `**Face 2 discharged 2026-08-09
+(hc-d).**` paragraph naming the mechanism, the harness range `2d76a65`→`48f59e7`, and **why the row
+stays open** (face 1 is untouched and R2 ruled it out of scope), with a pointer to what face 2 does
+not cover — `mix test` output still routed nowhere, per hc-e's E4 and BL-075. **The work was hc-d's;
+only the record was missing**, and that is said in the row's own provenance line.
+
+**Direction B — every hc-* closure record on any row, checked against §Ticket set.** Derived across
+**all three** shapes: shape A → 2 (BL-105, BL-106), shape B → **0**, shape C → 1 (BL-077).
+**Three records, all three claimed here. No orphans.** **Positive controls**, the same three
+patterns without the `hc-`/date filter: **11 / 16 / 26**, all non-zero, so a zero in shape B reads
+as absence rather than as a pattern that never matches.
+
+## 47. Clause 2 — §Rows filed, and a third closure shape the clause never named
+
+**The clause's own subject was wrong, so it is fixed rather than carried** — the exception r6
+names. Clause 2 enumerated **two** shapes at **9** and **15**. Derived at `dcf1d42`, one stated
+pattern per shape:
+
+```
+A  ^\*\*DONE                          = 11   (clause said 9)
+B  ^### BL-[0-9]+.*— DONE             = 16   (clause said 15)
+C  ^\*\*Status:\*\* *(Done|Closed)     = 26   ← never named, and the most common of the three
+```
+
+**Shape C is how BL-077's closure is recorded**, so a sweep reading only A and B would have
+reported **this round's own hc-d closure as missing**. All three counts stale, one shape absent;
+the original table stands with a dated correction beneath it.
+
+**§Rows filed, superseded with a derived population.** *"Empty at hc-b"* was true when written.
+Derived now: the highest row is **135**, and **BL-135 is the only row at or above this round's
+starting number** — population **one**.
+
+| Row | Filed | Disposition |
+|---|---|---|
+| **BL-135** | 2026-08-09 (hc-d r3), agents `f8ed90f` | **folded onto BL-075** 2026-08-09 (hc-e's opening edit, E3) |
+
+**Per the ruling: the fold is a disposition, not an erasure**, and hiding it would make the
+duplication invisible to exactly the reader who needs it. **hc-c filed nothing** — it closed two
+rows, and closures live on the rows.
+
+## 48. Clause 3 — §Not established, all twelve
+
+| | | | |
+|---|---|---|---|
+| 1 `[RESOLVED]` — resolved at hc-c | 2 `[OPEN] (b)` | 3 `[OPEN] (b)` | 4 `[DECIDED]` |
+| 5 `[OPEN] (b)` | 6 `[OPEN] (b)` | 7 `[RESOLVED]` — by ruling, R15 | 8 `[RESOLVED]` — hc-d, R-i |
+| 9 `[RESOLVED]` — anatomy edit r1 | 10 `[OPEN] (a)` | 11 `[OPEN] (a)` | 12 `[OPEN] (a)` |
+
+**Four resolved, one decided, seven open (3 owned, 4 carried).** **Each resolved item's "where" is
+its own dated block**, and the four blocks found — `hc-c`, `hc-d's opening anatomy edit`,
+`hc-d, R-i`, `anatomy edit r1` — match items 1, 7, 8, 9 exactly. **The prefixes were read, not
+assumed**, and every one is confirmed against its entry's body. Nothing is superseded.
+
+## 49. Clause 4 — the decision log
+
+**Twenty-one ratified R-decisions and sixteen m4 decisions by reference.** Divergences, enumerated
+rather than assumed to be one:
+
+- **Decision 13** — under review by R6, **resolved not overturned**, with its own dated disposition
+  block (`:633`). The record clause 4 demands exists.
+- **Decision 15** — **refuted narrowly by R11**, and the m4 table's own cell says *"carries as
+  amended"*. Recorded, not silent.
+- **Decision 16** — lapsed with m4's scope; R10 re-decides freshly. Recorded in the table.
+- **R19** — amended by this round at A3 (a ticket instruction cannot suspend it), dated in R19's
+  own block.
+- **R13** — its resolver requirement was applied too widely by G4; **R21 corrects the application,
+  not the decision**, and says so in its own closing line.
+
+**No divergence is silent.** Every one carries a dated record in the document, which is the one
+disposition clause 4 says is unavailable.
+
+## 50. Clause 5 — the residual, and it is **not** empty
+
+Clause 5 covers *"anything §7 does not itself verify about the promotions"*. §7's verification step
+verified that each promoted entry **can be read out of its file**, and the prior-claims census
+verified the preceding cycle's claims. **What neither covers is where an entry landed relative to
+its neighbours** — and that is exactly the gap F12 found: three entries readable out of the file,
+each orphaning the provenance of the entry above it. §7's step quoted the surrounding lines; it
+does not assert what they are.
+
+**So the residual is one item, it is real, and it is already carried** — the *an entry's
+attribution is structural* candidate in §Promotion candidates, filed after r4's distillation. **The
+residual is stated as non-empty rather than confirmed as nothing**, which is what the clause asks.
+
+## 51. Clause 6 — the sentence, authored, both halves
+
+Landed in `docs/project-knowledge-manifest.md` immediately above the existing *what this table does
+not include* note, so a reader meets both together. **Half 1**: everything `docs/milestones/` holds
+today is a working artifact, with the `m-eduloka-discovery-*` pair as precedent. **Half 2**:
+`docs/rig/milestones/` is the counter-example — same path segment, two tracked files admitted on the
+specification test — **so the rule reads the artifact's kind and never its directory**, and the
+generalisation from half 1 is named as one that was asserted, checked and refuted.
+
+**This is a content edit and it precedes the boundary**, as clause 6 requires.
+
+## 52. The bound held — what was found and carried rather than fixed
+
+- **Clause 2's counts for shapes A and B were stale (9→11, 15→16)** as well as the shape being
+  missing. Fixed **only because** the shapes are clause 2's own subject; the staleness of the two
+  numbers rode along with the correction rather than being chased separately.
+- **No sibling sweep was run** for other stale figures in this document, and none was fixed.
+- **§Rows filed's note about "the two shapes"** now under-describes the backlog in a second place.
+  **Carried, not fixed** — it is presentational residue in this round's own paperwork, which the
+  bound says to record and move past.
+
+## 53. Not reached — r7
+
+The milestone summary; Done-check items 1–3 (the harness gate set, `shellcheck`, the pre-boundary
+`drift_check`); items 4–5 (content complete and committed, the manifest regen with its count
+printed beside G6's derived **25**); and item 6's operator hand-off. **hc-e is not closed**, the
+manifest is not regenerated, and nothing is staged for upload.

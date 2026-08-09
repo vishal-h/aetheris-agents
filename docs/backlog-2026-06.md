@@ -7660,6 +7660,18 @@ Archive counts re-derived at the close against ../aetheris at e75f838, not inher
 reported "three hold no cloudcost artifact at all", and the re-run found 3 with no cloudcost dir
 plus 5 more holding an empty one — 8 of 26.`
 
+**Face 2 discharged 2026-08-09 (hc-d).** Every sprint run now retains its own console output
+beside the run payload, under a stated and enforced retention bound, with a provenance stamp
+naming both repos' commits, the target and the command — harness `2d76a65`→`48f59e7`. **The row
+stays open**: face 1 (reviews as session artifacts) is untouched, and **R2** of the hc round ruled
+it out of scope as a methodology obligation the round simply meets rather than a mechanism to
+build. What face 2 does **not** cover is recorded at hc-e's opening edit E4 and on **BL-075**: the
+durable place exists, but `mix test` output is still routed nowhere into it.
+
+`Recorded 2026-08-09 by hc-e's §Close criteria clause 1 sweep, which found the discharge claimed
+in docs/milestones/hc-consolidation.md §Ticket set and recorded on no row here. The work is hc-d's;
+only the record was missing.`
+
 ---
 
 ### BL-134 — verify the seven comment-anchored census claims, and hand-classify the eight the sweep could not reach (#TBD)

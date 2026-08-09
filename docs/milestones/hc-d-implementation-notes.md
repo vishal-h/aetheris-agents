@@ -557,3 +557,89 @@ to `json_read`, the BL-100 backward scan, the D2 anti-vacuity guard, or any file
 `../aetheris/lib/`, `native/` or `config/`. §Not established items 10 and 11 are unchanged and still
 `[OPEN]`. **No new defect was found in the fixes themselves** — the one defect this round surfaced
 (§19's persisting `cd`) was in the review procedure, not in the shipped code, and it is recorded.
+
+---
+
+# Round 2 — F7, F8, and a stop I am declaring
+
+**Repos.** harness `5782cbb` → r2, agents `28741ae` → r2. **Date.** 2026-08-09. Two findings, both
+in F2's new code — plus one defect found in this round's own shipped code, reported under §24.
+
+## 22. F7 — absent-is-unknown, applied to the gate's own output
+
+**The defect, and the diagnosis is the finding's.** The outer guard had no `else`. A capture that
+was never written — `tee` failed to start, the run directory was not writable, the process
+substitution never ran — skipped the assertion entirely: nothing printed, `FAILURES` untouched,
+exit 0 over a run with **no record of it at all**. Strictly worse than the truncation the assertion
+was written for, and the only state it could not see.
+
+**It is R17(b) inverted, in the script that ratifies R17(b).** I applied *absent input is unknown,
+not benign* to a backlog I **read** and not to a file I **wrote**. The gate does not assume a row it
+could not look for; it was assuming a capture it could not look at.
+
+**Four states now, three of which fail**, reported distinctly because their causes differ:
+**ABSENT** (no file — filesystem or shell), **EMPTY** (zero bytes), **TRUNCATED** (drain did not
+complete — the capture mechanism).
+
+**F7(b), constructed in a real run rather than simulated.** The first attempt was wrong and is
+reported: `chmod 555 sprint/` makes `mkdir -p "$OUT_DIR"` fail under `set -e`, so the script dies
+*before* the capture exists — exit 1, but never reaching the assertion, so it exercises nothing.
+What worked: **unlink `console.log` during the run**. `tee` holds the fd and keeps writing to the
+unlinked inode, so the run completes normally while the file is gone from the directory — precisely
+the state the assertion must catch. Scoped with `find -newer` so previously published captures were
+not touched. Result: `console capture ABSENT — no file at …`, sprint **exit 1**.
+
+**F7(c)** — the runbook's failure modes go from three to four, with the three causes distinguished
+and the "this will read like the sprint itself broke" framing, because it will.
+
+## 23. F8 — the pairing convention, and the `[V]` derived
+
+**The `[V]`, run rather than taken.** `grep -nE 'known_red_healed' scripts/sprint.sh` → **one line,
+`:142`, the definition. Zero call sites.** `expected_fail` the same — `:106`, definition only.
+**Positive control**, identical form over a helper that is called: `blocking_ok` → 2 occurrences,
+definition plus a real call site at `:1584`. The pattern finds call sites where they exist, so the
+zero is absence. Both `KNOWN_RED` helpers exist only as helpers exercised by sourcing, exactly as
+the finding says.
+
+**(a)** The convention is stated at the definitions, with the two-branch shape written out: *an arm
+declared `KNOWN_RED` wires BOTH branches, or arm (c) does not exist for it.* Arm (c) is available
+but not automatic, and an arm with `expected_fail` on failure and a plain `ok` on success accepts a
+healed red silently.
+
+**(b)** §Not established **item 12 `[OPEN]`**, naming the open design question — structural
+enforcement, one helper taking the arm's own condition so an author cannot supply half — with **the
+first `KNOWN_RED` arm's author** as resolver. Filed now precisely because it is not live: the
+convention has to exist before the first arm, not after.
+
+## 24. The defect this round found in its own shipped code — a stop, declared
+
+**F7(b)'s first successful exercise exposed it.** With the capture absent the sprint exited **1**,
+while its summary had already printed `blocking failures … 0 → sprint will exit 0`. **The tally and
+the exit code contradicted each other, in the block this ticket exists to add** — the
+silent-wrong-answer shape inside the mechanism built to prevent it.
+
+**The cause is structural, not a typo.** The capture assertion cannot run until the capture has
+drained; the drain cannot run until all captured output — *including the summary* — has been
+written. So a capture-driven `FAILURES` increment necessarily lands after the tally prints. **This
+predates F7:** it arrived with F2(b) at r1, where a *truncated* capture would have produced the same
+contradiction. F7 did not create it; F7's exercise made it visible. **Nobody found it at r1 because
+the only exercise there was the passing case.**
+
+**Fixed, and reported rather than folded in.** The in-capture block is labelled **provisional** and
+says why; a **FINAL** tally prints after the capture check on the restored stdout, and that is the
+one comparable to `$?`. Verified: the absent-capture run now prints `blocking failures … 1 → exit 1`
+and exits 1.
+
+**Why I am not claiming closure.** The pre-authorisation makes a new defect in F7's fix a stop. This
+one is *adjacent* to F7 rather than inside it — it lives in the interaction between F2(b)'s
+assertion and r0's summary block. That is a real distinction and it may well be the right one, but
+the previous round's ambiguity of exactly this shape was resolved in my favour, and **I should not
+assume the same twice about a rule whose whole purpose is to stop me deciding my own closure.**
+Everything else in the pre-authorisation is met; the closure call is the reviewer's.
+
+## 25. What r2 did NOT change
+
+No new promotions — `drift_check` remains the only blocking arm. No change to `json_read`, the
+BL-100 backward scan, the D2 guard, or any file under `../aetheris/lib/`, `native/`, `config/`.
+§Not established items 10 and 11 unchanged and still `[OPEN]`; item 12 is new. BL-077 and BL-133
+face 2 stay closed/discharged — r2 touches neither row.

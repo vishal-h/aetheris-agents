@@ -227,3 +227,114 @@ covering the dangling case F3 adds as well as the malformed one, with the readin
 packet, the r0 one reading `harness_dirty: yes` and the r1 one `harness_dirty: no`. The asymmetry
 was real — one gate was held to the committed-tree standard and the other was not, in the same
 round.
+
+---
+
+## Round 2
+
+**Raised at:** harness `5782cbb`, agents `28741ae`. Two findings, both in F2's new code. Narrowly
+scoped and pre-authorised to close — **but see the stop declared beneath F7.**
+
+### F7 — MUST FIX, code. The drain assertion treats a MISSING capture as benign.
+
+>     if [[ -f "$SPRINT_CONSOLE" ]]; then
+>       _cap_last=$(grep . "$SPRINT_CONSOLE" | tail -1 || true)
+>       if [[ "$_cap_last" == *"$_sprint_last_line"* ]]; then
+>         ok "console capture drained complete (last line matches)"
+>       else
+>         echo -e "…TRUNCATED…"; FAILURES=$((FAILURES + 1))
+>       fi
+>     fi
+>
+> The outer `if` has no `else`. If `$SPRINT_CONSOLE` does not exist — `tee` failed to start, the
+> directory was not writable, the process substitution never ran — the assertion is skipped
+> entirely, nothing is printed, `FAILURES` is untouched, and the sprint exits 0 reporting a clean
+> run with no capture at all.
+>
+> That is a strictly worse outcome than the truncation the assertion was written to catch, and it is
+> the only one the assertion cannot see. It is also R17(b) inverted, in the same commit that
+> ratified R17(b): *"absent input is unknown, not benign"*, and *"the gate does not assume a row it
+> could not look for"* — the same reasoning you applied to an unreadable backlog, not applied to an
+> unreadable capture.
+>
+> Required:
+> (a) A missing or empty `$SPRINT_CONSOLE` is a failure on the same footing as a truncated one.
+>     Increment `FAILURES`, with a message that distinguishes *absent* from *truncated* — they have
+>     different causes and a reader needs to know which.
+> (b) Exercise it: construct a run where the capture cannot be written, and show the sprint
+>     reporting the absence and exiting non-zero. If the absence cannot be constructed here, say so
+>     and say what you did instead.
+> (c) The runbook's exit-contract section names three ways the gate fails. It is now four — a
+>     capture that is missing or truncated. Add it, with the same "this will surprise you" framing
+>     the healed-entry arm gets, because an operator meeting it will assume the sprint itself broke.
+
+**Disposition: ACCEPTED, (a)+(b)+(c) applied.** Four states now, three of which fail, with **absent**,
+**empty** and **truncated** reported distinctly. (b) was constructed in a *real run*, not simulated:
+unlinking `console.log` mid-run leaves `tee` writing to the unlinked inode, so the run completes
+normally while the file is gone from the directory — exactly the state the assertion must catch. The
+sprint reported `console capture ABSENT` and exited **1**. (c) added as a fourth failure mode with
+the three causes distinguished.
+
+**The diagnosis is exactly right and worth restating**: it is R17(b) inverted in the same script that
+ratifies R17(b). I applied absent-is-unknown to the backlog I read and not to the file I wrote.
+
+> **STOP DECLARED — a defect found in this round's own shipped code, not in the review procedure.**
+>
+> F7(b)'s first exercise exposed it. With the capture absent, the sprint exited **1** while its
+> summary block had already printed `blocking failures … 0 → sprint will exit 0`. **The tally and
+> the exit code contradicted each other**, in the block this ticket exists to add.
+>
+> **Cause, and it is structural rather than a typo.** The capture assertion cannot run until the
+> capture has drained; the drain cannot run until all captured output — including the summary — has
+> been written. So any `FAILURES` increment from the capture check necessarily lands *after* the
+> tally is printed. This predates F7: it arrived with F2(b) at r1, where a *truncated* capture would
+> have produced the same contradiction. F7 did not create it; F7's exercise is what made it visible.
+>
+> **Fixed, and the fix is reported rather than folded in silently.** The in-capture block is now
+> labelled **provisional** and says why, and a **FINAL** tally prints after the capture check on the
+> restored stdout — the one that can be compared against `$?`. Verified: the absent-capture run now
+> prints `blocking failures … 1 → exit 1` and exits 1.
+>
+> **I am not claiming closure on my own authority.** The pre-authorisation says a new defect in F7's
+> fix is a stop. This one is adjacent rather than inside — it is in the interaction between F2(b)'s
+> assertion and r0's summary — and that distinction is the reviewer's to make, not mine, since the
+> last round's ambiguity of exactly this kind was resolved in my favour and I should not assume it
+> twice. Everything else in the pre-authorisation is met.
+
+### F8 — RECORD. R17(c) is available but not automatic.
+
+> `expected_fail` fires in an arm's failure branch; `known_red_healed` has to be called in its pass
+> branch. Nothing enforces the pairing. An arm written with `expected_fail BL-0xx` on failure and a
+> plain `ok` on success accepts a healed red silently — which is precisely the defect R17(c) exists
+> to remove, surviving in every arm whose author forgets the other half.
+>
+> `[V: establish whether `known_red_healed` has any call site in `sprint.sh` at all, or exists only
+> as a helper exercised by sourcing. Report the count with its command; do not take mine.]`
+>
+> This is not live — there are zero `KNOWN_RED` arms today — which is exactly why it is worth
+> writing down before the first one is added.
+>
+> Required, record only, no mechanism this round:
+> (a) State the convention explicitly where the helpers are defined: an arm declared `KNOWN_RED`
+>     wires BOTH branches, or arm (c) does not exist for it.
+> (b) File it in §Not established with a resolver — whether the pairing should be enforced
+>     structurally (one helper taking the arm's own condition, rather than two the author must
+>     remember) is a design question this ticket does not have to settle, and the first `KNOWN_RED`
+>     arm is when it must be.
+
+**Disposition: ACCEPTED, `[V]` confirmed, (a)+(b) applied.**
+
+**The `[V]`, derived rather than taken.** `grep -nE 'known_red_healed' scripts/sprint.sh` → **one
+line**, `:142`, the definition. **Zero call sites.** `expected_fail` the same: `:106`, definition
+only. **Positive control**, identical form over a helper that is called: `blocking_ok` → 2
+occurrences, definition plus a real call site at `:1584`. So the pattern finds call sites where they
+exist, and both `KNOWN_RED` helpers exist only as helpers exercised by sourcing — as the finding
+says.
+
+(a) The convention is stated at the helper definitions with the two-branch shape written out.
+(b) §Not established **item 12 `[OPEN]`**, with the structural-enforcement question named as the
+open design decision and **the first `KNOWN_RED` arm's author** as its resolver.
+
+### Promotion candidate — transcribed
+
+**A restore is verified, not assumed.** Added to §Promotion candidates verbatim as authored.

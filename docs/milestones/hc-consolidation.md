@@ -1499,6 +1499,28 @@ Carried forward rather than resolved. Each is a question this round opens and ha
     whether an invalid `stub_responses` entry should fail fast or stall. Recorded here so the
     observation does not die with the session.
 
+12. **`[OPEN]`** **R17 arm (c) is available but not automatic — nothing pairs `known_red_healed`
+    with the arm that declared the red.** `expected_fail` goes in an arm's failure branch and
+    `known_red_healed` in its pass branch, and no mechanism enforces that both are wired. An arm
+    written with `expected_fail BL-0xx` on failure and a plain `ok` on success **accepts a healed
+    red silently** — the exact defect arm (c) exists to remove, surviving in any arm whose author
+    remembers one half.
+
+    **Not live, and that is why it is filed now.** Derived at hc-d r2 rather than taken from the
+    finding: `grep -nE 'known_red_healed' ../aetheris/scripts/sprint.sh` returns **one** line,
+    `:142`, which is the definition — **zero call sites**. `expected_fail` likewise: `:106`,
+    definition only. **Positive control**, same form over a helper that *is* called: `blocking_ok`
+    → 2 occurrences, definition plus a real call site at `:1584`. So the pattern finds call sites
+    where they exist, and there are no `KNOWN_RED` arms today. The convention has to exist before
+    the first one, not after.
+
+    **What is done here:** the convention is stated where the helpers are defined — *an arm declared
+    `KNOWN_RED` wires BOTH branches, or arm (c) does not exist for it* — with the two-branch shape
+    written out. **Resolver:** whether the pairing should instead be enforced **structurally** — one
+    helper taking the arm's own condition, so an author cannot supply half — is a design question
+    hc-d does not settle. **The first `KNOWN_RED` arm is when it must be**, and that arm's author is
+    the resolver.
+
 ---
 
 ## Promotion candidates
@@ -1523,6 +1545,19 @@ the status that command returned, or it re-runs and publishes the re-run. It nev
 illustrate a result obtained some other way, because a re-run can bind differently than the
 original and the difference is invisible in the output. Origin: claude-code's own diagnosis at
 hc-c r2 §8a, which corrected the reviewer's finding — the result was not carried from r0.
+
+**A restore is verified, not assumed.** At hc-d r1 a `git checkout --` ran under a persisting `cd`,
+failed with *"pathspec did not match"*, restored nothing, and the run labelled RESTORED then
+reported a red. The error was on screen and was read; had it not been, the mutation check's second
+half — *restore, confirm zero* — would have been reported as performed without having happened, and
+the red would have been explained away. The fix was a positive control on the restoration itself:
+the mutated string present (2 hits), then absent (0).
+
+So: a mutation check has two halves and both are observations. The restore is not the absence of
+the mutation step — it is its own claim, and it needs its own truth-maker. Origin: claude-code's own
+§5 at hc-d r1, published rather than quietly re-run.
+
+---
 
 **Asserting a document's or a check's state from memory of prior packets rather than from the
 thing itself.** Instances (i)–(vi) were the reviewer's, each caught by claude-code; **(vii) is

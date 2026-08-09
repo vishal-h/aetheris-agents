@@ -1730,9 +1730,81 @@ This session changed hc-e's state, so it writes hc-e's row in the same commit, a
 tidier moment. Earlier states are kept verbatim per **decision 7** — the r8 cell entire, including
 the states it had already nested, rather than a summary of it.
 
-## 71. Step 9 — the push
+## 71. Step 9 — the push. **The whole held stack released, harness first.**
 
-Recorded in §72 below, after it ran.
+Held since decision 6, released only now because the boundary is complete. **Harness first**, so a
+manifest pinning a harness hash never describes an export nobody else can reproduce.
+
+**Harness — 3 commits, `48f59e7..2ef0517`:**
+
+```
+$ git -C /home/it/sandbox/elixirws/aetheris rev-list --left-right --count origin/main...HEAD
+behind=0  ahead=3
+2ef0517 fix(hc-e r5): F12 — move two r4 entries out of the preceding entry's Source unit
+712d434 docs(hc-e r4): §7's distillation — five harness entries from six candidates
+02db6bb docs(hc-e r3): promote the positive-control rule, found absent by §7's prior-claims census
+
+$ git push origin main
+To github.com:vishal-h/aetheris.git
+   48f59e7..2ef0517  main -> main
+push exit=0
+```
+
+**Agents — 12 commits, `3d79a6f..8bc603d`:**
+
+```
+$ git -C /home/it/sandbox/elixirws/aetheris-agents rev-list --left-right --count origin/main...HEAD
+behind=0  ahead=12
+8bc603d docs(hc-e r9): step 7 verified from both sides — hc-e CLOSED, the round closes
+f909b95 docs(hc-e r8): the boundary record and the operator hand-off
+7a78f92 docs(hc-e): regenerate the project-knowledge manifest at the export boundary
+a04309a docs(hc-e r8): C1, C2, the milestone summary, and the harness gate set — content complete
+0c3ed01 docs(hc-e r7): F14 settled, F13 re-run over all 37 — STOP at clause 4
+7dbdb7d docs(hc-e r6): the six close sweeps, run — two repo-side defects fixed
+dcf1d42 fix(hc-e r5): F12 — the packet rule moved after the full-output entry's Source
+04a329a docs(hc-e r4): F11 reconciled, the re-labelling ruling, and §7's distillation closed
+088f9c2 docs(hc-e r3): clause 3 corrected, the vocabulary swept, G5/G6 proceed, stated stop inside §7
+8082e40 docs(hc-e r2): R21, the five re-labelled, G4 amended and re-run, STOP at G5
+83ef305 docs(hc-e): the gate ran G1-G3 green and STOPPED at G4 — five open items name no resolver
+e77a530 docs(hc-e): reopened — C1 instance (viii), C2 anchor staleness, and the row under R19
+
+$ git push origin main
+To github.com:vishal-h/aetheris-agents.git
+   3d79a6f..8bc603d  main -> main
+push exit=0
+```
+
+**The heads read back from the remote, not from a local tracking ref** — a local `origin/main`
+is a claim about the remote, and after a push it is a claim this session just wrote:
+
+```
+$ git -C <repo> ls-remote origin refs/heads/main
+harness  origin/main = 2ef0517057e4eda991a8da10ccba66650d1e65a2
+agents   origin/main = 8bc603d0d98c895aec8af6a1f357aa7a7dd95f70
+
+$ git -C <repo> rev-parse HEAD
+harness  HEAD        = 2ef0517057e4eda991a8da10ccba66650d1e65a2
+agents   HEAD        = 8bc603d0d98c895aec8af6a1f357aa7a7dd95f70
+```
+
+**Divergence check — `0 0` on both**, and both working trees clean:
+
+```
+$ git -C <repo> rev-list --left-right --count origin/main...HEAD     # behind  ahead
+harness : 0	0
+agents  : 0	0
+
+$ git -C <repo> status --porcelain | wc -l
+harness : 0
+agents  : 0
+```
+
+Every hash this cycle's manifest pins is now public in the repo that owns it, which is the condition
+the m3 boundary's push-state paragraph named and this one inherits.
+
+**Post-commit `drift_check --strict` after the close statement landed: `9 PASS 0 FAIL 0 WARN`,
+exit 0** — unchanged from §69. The close commit re-staled nothing, which is §70's
+not-manifest-tracked check holding in practice rather than only in principle.
 
 ## 72. What r9 found and did not fix
 

@@ -1406,13 +1406,21 @@ rather than what was expected.
 > commands:
 >
 > ```
-> A  ^\*\*DONE                                  = 11   (was 9)
-> B  ^### BL-[0-9]+.*— DONE                      = 16   (was 15)
+> A  ^\*\*DONE                                  = 11   (was 9 — this round's two hc-c closures)
+> B  ^### BL-[0-9]+.*— DONE                      = 16   (the clause said 15; see below)
 > C  ^\*\*Status:\*\* *(Done|Closed)             = 26   ← unnamed until here
 > ```
 >
 > **All three are non-zero, which is what makes each readable as a real shape** rather than a
 > pattern that happens to match. A sweep must read all three.
+>
+> **B's 15 → 16 is not a change in the backlog** — established 2026-08-09 (hc-e r7, F14) with one
+> command: the shape-B enumeration at `e8cd5cd`, the commit whose ticket text asserted 15, is
+> **identical member-for-member to HEAD's and already numbered 16**. No heading appeared this
+> round; the m4-era 15 was derived with a pattern that differs from the one above. **Which pattern
+> is not established** and is not pursued — the figure here is derived at this commit and stands on
+> that. A's `9 → 11` *is* this round's doing; B's is one count replaced by another over an
+> unchanged set.
 
 The shapes are **not exclusive**: BL-069 carries both, an in-row paragraph and a sibling heading,
 because its closure record was written at the m4 close rather than at t2 when the work landed.

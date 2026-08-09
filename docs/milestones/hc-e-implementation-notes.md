@@ -1135,3 +1135,125 @@ The milestone summary; Done-check items 1–3 (the harness gate set, `shellcheck
 `drift_check`); items 4–5 (content complete and committed, the manifest regen with its count
 printed beside G6's derived **25**); and item 6's operator hand-off. **hc-e is not closed**, the
 manifest is not regenerated, and nothing is staged for upload.
+
+---
+
+# Round 7 — F14 settled, F13 re-run, and a stop at clause 4
+
+**Repos.** agents from `7dbdb7d`; harness `2ef0517`, untouched. **Date.** 2026-08-09.
+
+> **Outcome: F14 settled in one command. F13's re-run STOPS the round** — the enumeration over all
+> thirty-seven decisions finds **four divergences the five did not name**, per F13(d). The
+> milestone summary, the Done-check and the boundary do not run. **hc-e is not closed.**
+
+---
+
+## 54. F14 — shape B's 15 → 16, settled in one command
+
+```
+$ diff <(git -C <agents> show e8cd5cd:docs/backlog-2026-06.md | grep -E '^### BL-[0-9]+.*— DONE' | sed 's/ —.*//') \
+       <(git -C <agents> show HEAD:docs/backlog-2026-06.md    | grep -E '^### BL-[0-9]+.*— DONE' | sed 's/ —.*//')
+  -> identical sets
+  counts: e8cd5cd = 16    HEAD = 16
+```
+
+**The cause is named, not left unexplained.** Shape B was **already 16 at `e8cd5cd`** — the commit
+whose ticket text asserted 15 — and the two enumerations are **identical, member for member**. So
+**no heading appeared this round**, and the +1 is not a change in the corpus at all: the m4-era
+**15** was derived with a pattern that differs from `^### BL-[0-9]+.*— DONE`. **Which** pattern is
+not established, and is not worth a second command: the correction block's figure is derived at this
+commit and stands on that, and the claim *"was 15"* is amended to say the prior figure counted
+something else.
+
+**Corrected in the block**: A's `9 → 11` is this round's doing (hc-c's two closures); **B's
+`15 → 16` is not** — it is one count replaced by another over an unchanged set.
+
+## 55. F13 — clause 4, re-run over the whole population
+
+### 55a. The method, stated before it was run
+
+**A decision diverges when the implementation does something the decision forbids, or fails to do
+something it requires, and the document does not record it.** Three verdicts, and the third is a
+real answer rather than an evasion:
+
+- **NO DIVERGENCE** — this round's work engaged the decision's subject and followed it.
+- **DIVERGENCE WITH RECORD** — the work departed, and a dated record exists in this document.
+- **N/A** — this round's work never engaged the subject. Expected for decisions about tickets and
+  scopes that never ran here.
+
+The previous sweep's *"silent divergences: 0"* was a claim about thirty-two decisions nobody had
+looked at. It is withdrawn and replaced by the enumeration below.
+
+### 55b. The enumeration — all thirty-seven, printed beside the count
+
+| # | Verdict | Where the record is, or why N/A |
+|---|---|---|
+| R1 | no divergence | retention + provenance stamp landed at hc-d |
+| R2 | no divergence | a review file committed per round |
+| R3 | no divergence | answered by the design; BL-044 stayed filed |
+| R4 | no divergence | arm 2 not started; E4 established the blocker only |
+| R5 | no divergence | hc-c's gate ran and answered by evidence |
+| R6 | no divergence | one of its two outcomes, with its dated disposition block |
+| R7 | no divergence | counter + `KNOWN_RED` + printed undeclared set |
+| R8 | no divergence | every ticket that ran carried a step-1 gate |
+| R9 | no divergence | no planted-resource assertion re-armed |
+| **R10** | **N/A** | BL-108 out; never engaged |
+| R11 | no divergence | hc-c carries the finding |
+| **R12** | **DIVERGENCE WITH RECORD** | **not among the five.** Anatomy written before the ticket opens — **hc-d opened at 2 of 7 fields and hc-e at 2 of 7 with no gate slot**. Recorded: both stops, both anatomy edits, and §Not established item 7 for hc-b2 |
+| **R13** | divergence with record | hc-e's catch-all deferred the gate with no resolver named; the stop and the discharge |
+| R14 | no divergence | hc-c's gate ran on the operator's service |
+| R15 | no divergence | applied to hc-b2 and to both anatomy-edit rounds |
+| R16 | no divergence | the verdict keys on the status word |
+| **R17** | **DIVERGENCE WITH RECORD** | **not among the five.** Three arms all resolving to FAILURE — **arm (c) is available but not automatic**, nothing pairs `known_red_healed` with the arm that declared the red. Recorded at §Not established **item 12** |
+| R18 | no divergence | verified at hc-d |
+| **R19** | divergence with record | hc-e's opening session did not write its own row; A3's amendment |
+| R20 | no divergence | r1's findings landed in the notes, no review file created |
+| R21 | no divergence | applied to all twelve items |
+| **m4-1** | **DIVERGENCE WITH RECORD** | **not among the five.** The reviewer asserts no checkable specifics — fired repeatedly: the 41 and the ten (hc-b), *"exactly two slots"* (hc-c), and **F1's invented `3901121`**. Recorded in the m4 table's own cell and as instances (i)–(viii) |
+| m4-2 | no divergence | a verification pass every round |
+| m4-3 | no divergence | carried by R8 |
+| m4-4 | no divergence | `hc-*` names final |
+| **m4-5** | **DIVERGENCE WITH RECORD** | **not among the five.** *"The §7 promotion runs mid-cycle when the rules bind the cycle's own remaining tickets."* Rules that bound remaining tickets — recency-binding, restore-verified, positive-control — were **not** promoted mid-cycle; they were carried in §Promotion candidates and in each ticket's `STANDING` block, and promoted only at r3/r4. **Recorded**: §Promotion candidates' preamble states the deferral in terms — *"Candidates recorded here are promoted or dropped at hc-e … recording one is not promoting it"* |
+| m4-6 | no divergence | pushes held; the one cross-repo pair landed harness-first |
+| m4-7 | no divergence | used throughout |
+| m4-8 | no divergence | used at r3's block B |
+| m4-9 | no divergence | item 9's attribution |
+| **m4-10** | **N/A** | no milestone-named-document classification arose |
+| m4-11 | no divergence | named at every anatomy edit |
+| m4-12 | no divergence | none planted |
+| m4-13 | no divergence | reviewed, not overturned, dated |
+| m4-14 | no divergence | hc-c's contract is this |
+| **m4-15** | divergence with record | refuted narrowly by R11 |
+| **m4-16** | **N/A** | lapsed with m4's scope; R10 re-decides |
+
+```
+population        : R1–R21 (21) + m4's 1–16 (16)              = 37
+no divergence     : 27
+divergence w/ rec : R12 R13 R17 R19 m4-1 m4-5 m4-15           =  7
+not applicable    : R10 m4-10 m4-16                           =  3
+                                                     27+7+3   = 37
+```
+
+### 55c. **The stop.** Four divergences the five did not name
+
+F13(d): *"If the sweep finds a divergence the five did not name, that is a stop — report it, do not
+fix it, and r7 waits."*
+
+**R12, R17, m4-1 and m4-5.** All four carry dated records already — none is silent — but none was
+named by §49's five, and §49's *"silent divergences: 0"* was reached without looking at them. **The
+count was right by luck about the property it asserted and wrong about the work behind it.**
+
+**Nothing is fixed.** Clause 4's result is now the table above rather than a total, and the round
+stops here.
+
+**One observation about the four, offered and not acted on.** Three are about *process* decisions
+the round bent under its own weight — anatomy authored late (R12), promotion deferred to the close
+(m4-5), the reviewer's checkable specifics (m4-1) — and one is a mechanism gap already filed
+(R17 → item 12). None is a defect in what shipped; all four are decisions the round diverged from
+while recording the divergence somewhere other than the decision log.
+
+## 56. Not reached — r7's remainder waits on the stop
+
+The milestone summary; Done-check items 1–3 (harness gate set, `shellcheck`, pre-boundary
+`drift_check`); items 4–5 (content complete, manifest regen against G6's derived **25**); item 6's
+hand-off. **hc-e is not closed**, the manifest is not regenerated, and nothing is staged.

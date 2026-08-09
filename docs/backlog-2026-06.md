@@ -2903,6 +2903,35 @@ pass/fail tally (it is static text today), and the change is mutation-checked �
 break one assertion in one case, confirm a non-zero exit; restore, confirm zero. Audit all 31
 cases for reds that would newly become blocking before flipping the default.
 
+> **`[corrected 2026-08-09 (hc-d, G5). The population is 29, not 31 — derived, not inherited.]`**
+> One pattern, stated: `^if \[\[ "\$TARGET" ==`, the line that opens a case block.
+> **30 blocks, 29 distinct case names** (`uc4` opens twice, at `:202` and `:303`); `all` is the
+> selector, not a case. Both non-case-head `$TARGET` lines are accounted for rather than dropped —
+> `:192` is the credential preflight's `!=` guard and `:1467` is an inner exit inside the
+> `playground_api` case. The independent population agrees: `$TARGET ==` takes 30 distinct values,
+> one of which is `all`.
+>
+> **Identical at `fa158a4`, the commit this row cites, and at `1b09b23`** — so the row was wrong
+> when filed, not overtaken. **Whether 31 has a provenance is NOT established and is therefore not
+> offered:** `grep -c 'section "'` returns exactly 31 at both commits (29 indented + 2 unindented),
+> which makes it the only quantity in the file equal to 31 and a live candidate — but a plausible
+> explanation for a wrong number is not a truth-maker, and nothing in either repo settles what the
+> row's author counted.
+>
+> The audit clause is answered by **R7's fail-safe posture** rather than by sweeping 29 cases: no
+> arm becomes blocking without individual verification, so nothing newly blocks by default and the
+> undeclared count is printed on every run.
+
+**Status:** Done 2026-08-09 — hc-d. `fail()` now counts; `blocking_fail`/`blocking_ok` are the
+per-arm promotion; `expected_fail <BL-row>` is the tracked carry and rejects an entry naming no
+row; `known_red_healed` makes a healed entry a failure. The summary prints all four counters
+including zeros, and the script exits 1 iff a blocking failure occurred. **Mutation-checked both
+ways on a real red**, not a simulated one: a phantom event type added to `docs/rig/specs.md` §6
+made the promoted `drift_check` arm fail — `sprint.sh drift_check` exited **1**; restored, it
+exited **0**. R17's arms (b) and (c) were constructed and observed. **One arm promoted** — the
+`drift_check` case, the only one individually verifiable here without credentials or network;
+every other arm stays undeclared by design, which is R7, not an omission.
+
 `Source: m2-cloudcost t3 review, claude-ui N1, 2026-08-02 (aetheris fa158a4; observed on both
 cloudcost legs). Reported by claude-code in the t3 packet before the review raised it.`
 
@@ -7456,6 +7485,24 @@ picking one before the ruling builds the wrong thing cheaply.
 **Owes:** a ruling on what a run's durable record must contain, and then the mechanism.
 **Costs:** S to rule. Implementation depends on the ruling; capturing the sprint's stdout into the
 existing run directory is the cheap end.
+
+> **`[FACE 2 DISCHARGED 2026-08-09 (hc-d). Face 1 is not this row's to close and stays open.]`**
+> The ruling is **hc-consolidation R1**: the record is a **debugging aid with provenance** — (b)
+> plus one element of (a) — explicitly *not* an audit trail (`sprint/` is gitignored, so one here
+> is one machine's) and *not* a gate input (no consumer keys on a verdict document; the trigger for
+> re-opening (c) is recorded on R1). The mechanism, landed with BL-077 as R1's coupling requires:
+> `sprint/<ts>/console.log` carries every arm in order, untruncated, **streams merged** (R18(b));
+> `sprint/<ts>/provenance.txt` carries both repos' commits with dirty flags, the target, the
+> command, and the start time. **Retention is stated, bounded and enforced** — 30 days, swept at
+> the start of every run, printed on each run, `SPRINT_RETENTION_DAYS` to override.
+>
+> **R18(a) was demonstrated, not argued.** The capture uses `exec > >(tee -a …) 2>&1`, which
+> creates no pipeline, so the status the counter drives is untouched. hc-d's G3 measured the
+> alternative directly on the same failing case: status `0` with and without a `tee`, with a
+> positive control showing `tee` under `pipefail` does preserve a real non-zero (`1` both ways) —
+> so the sameness is an observation about this command, not a `tee` swallowing everything.
+>
+> **Face 1 — reviews as session artifacts — is untouched and still open.**
 **Collides with:** **BL-075**, which cannot be closed without it (annotated to say so);
 **BL-077**, whose `expected_fail()`/`KNOWN_RED` counter would produce exactly the verdict summary
 face 2 is missing, so the two should be looked at together.

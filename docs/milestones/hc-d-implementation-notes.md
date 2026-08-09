@@ -6,6 +6,13 @@ harness `1b09b23`. **Date.** 2026-08-09.
 **Outcome: the opening edit landed; the ticket stopped at the step-1 gate, which is unauthored.**
 No contract work was done. That is the correct outcome, not a setback.
 
+> `[superseded 2026-08-09 — the stop was lifted and the ticket ran to completion. The original
+> stands, per decision 7: it was the correct outcome for that session, and the gate it stopped at
+> was authored by the reviewer's anatomy edit afterwards.]` **Current outcome: G0–G5 all pass and
+> the contract landed.** BL-077 closed, BL-133 face 2 discharged, R3 answered (BL-044 stays filed),
+> R-iii and R-iv discharged. §§7–15 below are the later sessions; §§1–6 are the original stop and
+> are unchanged.
+
 ---
 
 ## 1. D1 — the R12 narrowing was offered conditionally, and its premise fails
@@ -303,3 +310,141 @@ anatomy rather than only in a packet, which is where E3 says it belongs.
 Four documents' worth of amendment across **two files**, both docs. No `sprint.sh` change and no
 code — those belong after G0–G5. R-iii and R-iv remain undischarged and are carried into the gate
 (G3 is R-iv's resolver).
+
+---
+
+## 11. The step-1 gate — G0–G5, every verdict explicit
+
+Run before any edit past the opening section-scoped one. Harness at `1b09b23` throughout.
+
+| Gate | Verdict | What was established |
+|---|---|---|
+| **G0** | **clean → proceed** | `git -C ../aetheris status --porcelain` → **0 lines**; HEAD `1b09b23` |
+| **G1** | **R16 holds → proceed** | A failing run's capture carries `"status":"failed"`, read by `sprint.sh`'s own `json_read` (sourced from `:87–110`, not re-implemented). It is the **only** parsing object in the capture and its last non-blank line. Positive control: a stub run reads `done` |
+| **G2** | **BL-044's reach CONFIRMED** | `run_aetheris()` is `mix aetheris "$@"` (`:40–42`) — the mix task, never the escript. Exit **0** on a run whose payload says `failed`. So R16 is load-bearing |
+| **G3** | **same status both ways → proceed** | With and without a `tee`, the caller sees **0** on the same failing case; captures content-identical (timestamps only). Positive control: `false` under `pipefail` yields **1** with and without `tee` |
+| **G4** | **absent → this ticket authors them** | `expected_fail`/`KNOWN_RED`/`FAILURES` → **0 matches**. Positive control: the same anchored form finds `ok()` `:35` and `fail()` `:37` |
+| **G5** | **derived 29, matches one of the two → proceed, correct the row** | See §12 |
+
+**G2's qualification, which R16 anticipated and this run confirms.** `run_agent`'s `else fail` arm
+is dead to *run* failure and live to *harness* failure: every failing run above exited 0 and took
+the `if` branch, while the malformed-fixture run (§13) exited 0 too but only after stalling. The arm
+survives as a second signal, never the only one.
+
+## 12. G5 — the population, derived under one pattern
+
+**Pattern, stated once:** `^if \[\[ "\$TARGET" ==` — the line that opens a case block.
+
+**30 blocks, 29 distinct case names.** `uc4` opens twice (`:202`, `:303`); `all` is the selector,
+not a case. Enumerated: `capability_matrix chaos cloudcost docbuilder docbuilder_context
+docbuilder_fresh docbuilder_fresh_render docbuilder_invoice_jinja docbuilder_offer_letter
+drift_check drive eduloka email eval m12 news payslip playground_api uc1 uc2 uc3 uc4
+uc_api_agent_t1 uc_api_agent_t2_greenfield uc_api_agent_t2_steady uc_api_agent_t3 uc_api_agent_t4
+uc_api_agent_t5 uc_auto`.
+
+**Every `$TARGET` line the pattern does NOT match is accounted for**, not dropped: `:192` is the
+credential preflight's `!=` guard, `:1467` an inner exit inside the `playground_api` case. Those are
+the only two.
+
+**The figures are identical at `fa158a4` — the commit BL-077 cites — and at `1b09b23`.** So the row
+was wrong when filed, not overtaken by drift.
+
+**The "31" provenance is NOT established, and is therefore not offered.** `grep -c 'section "'`
+returns exactly **31** at both commits (29 indented + 2 unindented), making it the only quantity in
+the file equal to 31 and a live candidate. It is not evidence: a plausible explanation for a wrong
+number is not a truth-maker, and nothing in either repo settles what the row's author counted.
+**R1's parenthetical is corrected in the same edit** — the count of two was right, the members were
+not. The unindented hits are `:176` and `:3161`; `:38` is the `section()` definition and matches the
+pattern **0** times.
+
+## 13. The contract — what landed, and how each clause was observed
+
+**Posture (R7).** Fail-safe with per-arm promotion. `fail()` keeps its name and every call site;
+what changed is that its red is now **counted** (`NOT_DECLARED`) instead of vanishing. Promotion is
+`blocking_fail`/`blocking_ok`, per arm. **One arm is promoted** — the `drift_check` case, the only
+one individually verifiable here without credentials or network. Every other arm stays undeclared
+**by design**, and the count is printed, which is R7's non-optional constraint rather than an
+omission.
+
+**Four counters, all printed on every run including when zero.** Observed on a real run:
+
+```
+Exit contract (BL-077):
+  arms declared blocking .......... 1
+  arms tracked KNOWN_RED .......... 0
+  reds NOT YET DECLARED ........... 0   (printed, non-blocking — R7 fail-safe)
+  blocking failures ............... 0
+  → sprint will exit 0
+```
+
+**The mutation check, on a genuinely broken state rather than a simulated one.** A phantom event
+type (`hcd_phantom_event`) added to `docs/rig/specs.md` §6 — `git status` confirming the tree really
+changed — made `drift_check` emit `[FAIL] … (ghost)`. `./scripts/sprint.sh drift_check` exited
+**1**, `blocking failures = 1`. Restored via `git checkout --`, tree clean, exited **0** again.
+**A first mutation was insufficient and is reported rather than dropped:** deleting a documented
+payload field produced only INFO, so the arm never went red and the sprint still exited 0 — the
+first attempt did not exercise the check, and a second was constructed until it did.
+
+**R17's three arms, each constructed and observed** (helpers sourced verbatim out of `sprint.sh`):
+
+| Arm | Input | Result |
+|---|---|---|
+| red + **unlisted** | `fail …` | `[FAIL]`, `NOT_DECLARED=1`, `FAILURES=0` — printed, counted, non-blocking |
+| red + **listed** | `expected_fail BL-069 …` | `[KNOWN-RED] … (tracked: BL-069)`, `FAILURES=0` |
+| **(a)** promoted arm red | `blocking_fail …` | `[FAIL] … [blocking]`, `FAILURES=1` |
+| **(b)** entry with no valid row | `expected_fail "" …` / `expected_fail not-a-row …` | both `[FAIL] … [blocking]`, `FAILURES=3` |
+| **(c)** known-red that PASSED | `known_red_healed BL-069 …` | `[FAIL] … stale; delete it [blocking]`, `FAILURES=4` |
+
+**R18(a), demonstrated not argued.** The capture is `exec > >(tee -a "$SPRINT_CONSOLE") 2>&1`, which
+creates **no pipeline**, so the status the counter drives is untouched by capturing. G3 measured the
+alternative directly rather than reasoning about it.
+
+**R18(b), the streams stay merged.** `2>&1` follows the stdout redirect. On a real capture: 29
+`[INFO]`/`[OK]` lines and 11 `[PASS]`/`[WARN]` lines from the tool, interleaved in one file. No
+split, so R11's payload-specific `grep -q run_id` guard is unaffected.
+
+**R1's provenance stamp and bound, on an artifact the run produced** (`sprint/20260809_121954/`):
+all four required elements plus a dirty flag for each repo, and the bound **enforced**, not merely
+printed — the sweep runs at the start of every sprint and reports what it pruned.
+
+```
+harness_commit: 1b09b237d5689880aaf48c4e640ebe4217614dcb
+harness_dirty:  yes
+agents_commit:  05a4cdb5a1e9c995f03d6f5964f72a61553cdde9
+agents_dirty:   no
+target:         drift_check
+command:        ./scripts/sprint.sh drift_check
+retention:      30 days — STATED AND BOUNDED, and enforced by the sweep below
+```
+
+**Why 30 days:** long enough for BL-075's *"three further full-output runs come back clean"* to be
+counted across a review cycle, short enough that a gitignored directory on one machine does not grow
+without bound. `SPRINT_RETENTION_DAYS` overrides it.
+
+## 14. R3's named question, answered
+
+**Does `expected_fail()`'s design need a real exit code from `run_agent` to key on? — No.** It keys
+on the assertion's own outcome at the call site, which is a shell condition, not a child process's
+status. G1 and G2 confirm the status word is available where a verdict does need one. **So BL-044
+stays filed with the finding recorded, `../aetheris/lib/mix/tasks/aetheris.ex` does not join
+`Touches`, and no file under `../aetheris/lib/` was touched** — which is also what
+`Do not generate` requires.
+
+## 15. R-iii and R-iv, discharged
+
+**R-iii — fail-safe defaults, stated for missing/malformed/empty input, not only wrong input.**
+`expected_fail` with an **empty** ref, a **malformed** ref, and a ref that is merely absent all take
+the same branch: `[FAIL] … [blocking]`. That is R17(b) and it is deliberate — absent input is
+unknown, not benign, and a default that treated absent as green is the defect this ticket removes.
+The counters initialise to `0` and are only ever incremented, so a counter that was never touched
+prints `0` as a **status**, and the summary prints it whether or not anything happened.
+
+**R-iv — the `tee`/`pipefail` coupling, and whether BL-077 and BL-133 face 2 are really one
+ticket.** G3 is its resolver and the answer is nuanced: **the coupling is real but avoidable**, and
+avoiding it is what makes the two separable *in implementation* while still needing to be decided
+together. A `tee` in a pipeline does propagate correctly under `pipefail` (positive control: `1`
+both ways), and the chosen `exec > >(tee …)` form creates no pipeline at all. **So the work did
+separate cleanly after the gate — that is a finding about R1, reported here rather than taken as
+licence to have split mid-ticket.** They still belong in one ticket for the reason R1 gives: the
+decision about the capture's *shape* is what determines whether the counter's status survives, and
+that decision cannot be made in a ticket that does not own both.

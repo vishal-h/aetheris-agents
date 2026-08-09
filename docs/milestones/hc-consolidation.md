@@ -146,6 +146,15 @@ gate is building a contract for a consumer that does not exist.
 > population agrees: `$TARGET == "…"` takes **30** distinct values, of which one is `all`,
 > leaving **29** cases.
 >
+> > `[corrected 2026-08-09 (hc-d, G5). The count is right; the two members named are not.]` The
+> > two unindented `section "` hits are **`:176` `Prerequisites` and `:3161` `Sprint Complete`**.
+> > `:38` is the `section()` **definition** and contains no `section "` at all —
+> > `sed -n '38p' … | grep -c 'section "'` → **0** — so the parenthetical named a line the pattern
+> > does not match and omitted one it does. Under one pattern at `1b09b23`:
+> > `grep -c 'section "'` → **31**, `grep -c '^section "'` → **2**, `grep -c '  *section "'` →
+> > **29**; **29 + 2 = 31**. Both other figures in this note survive re-derivation unchanged, and
+> > the `$TARGET` population is confirmed at **30 values / 29 cases**.
+>
 > **41 does not reproduce.** `run_agent` invocations **28**, `run_orb` **8**, one direct
 > `mix aetheris run` — **37** on that population. No population this document can construct
 > yields 41. **The number is not carried forward.** Whether 41 was taken over a wider set
@@ -1456,6 +1465,39 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    > and nothing else; the harness returns nothing. This entry is the only durable copy of the four
    > lines. **Item 9 stays RESOLVED regardless** — its resolution rests on the operator's
    > attribution, never on this search.
+
+10. **`[OPEN]`** **`shellcheck` is not installed on this machine and could not be installed, so
+    `sprint.sh` was linted only by `bash -n`.** Done-check item 2 requires the re-check and the
+    install attempt before the absence is recorded; both ran at hc-d (2026-08-09) and the install
+    failed. Verbatim:
+
+    ```
+    $ command -v shellcheck   → not present (re-checked 2026-08-09)
+    $ sudo -n apt-get install -y shellcheck
+    sudo: a password is required
+    $ command -v shellcheck   → STILL ABSENT
+    ```
+
+    `bash -n scripts/sprint.sh` → exit **0**, which establishes syntax and nothing about quoting,
+    unused variables, or the `$(( ))` arithmetic under `set -e`. **What that leaves unchecked is
+    named rather than implied:** the four new counters, `expected_fail`'s regex guard, and the
+    `exec > >(tee …)` redirect have no static analysis behind them — only the constructed exercises
+    of R17's arms and the two-way mutation check, which are behavioural. **Resolver:** an operator
+    with sudo runs `shellcheck scripts/sprint.sh` and records the result; the ticket cannot supply
+    it.
+
+11. **`[OPEN]`** **An uncaught raise inside a run's Task leaves the run `running` until the 300 s
+    stall timeout rather than marking it failed.** Observed incidentally at hc-d's G1: a malformed
+    `stub_responses` entry raised `KeyError` at `../aetheris/lib/aetheris/execution/loop.ex:253`,
+    the Task terminated, and the CLI returned `{"status":"error", …}` only after *"no status or
+    event activity for 300000ms"*. The `{:run_failed, reason}` cast at
+    `../aetheris/lib/aetheris/agent/server.ex:684` fires on an `{:error, reason}` return, not on a
+    raise, and the `{:DOWN, …}` clause covers the **worker** monitor rather than this Task.
+    **Not this ticket's** — hc-d touches no file under `../aetheris/lib/` by its own
+    `Do not generate` — and not filed as a backlog row without adjudication, because the fixture
+    that produced it was invalid input rather than a supported path. **Resolver:** whoever rules
+    whether an invalid `stub_responses` entry should fail fast or stall. Recorded here so the
+    observation does not die with the session.
 
 ---
 

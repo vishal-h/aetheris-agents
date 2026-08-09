@@ -356,6 +356,15 @@ existed in no document.`
 > round and past this document: a marked deferral advertises where to look, and a confident
 > completion advertises nothing. Review effort follows confidence, not deferral.
 
+### R14 — a gate whose precondition is an operator-run service is a gate only that operator can run.
+
+A gate whose precondition is a service the operator must be running is a gate only that operator
+can run. Name the dependency in §Not established as well as in the gate's precondition text: the
+precondition tells this operator how to run it, the §Not established entry tells the next reader
+what the round did not settle.
+
+`Added 2026-08-09 (hc-c's opening edit), authored by the reviewer.`
+
 ---
 
 ### The m4 decisions, by reference
@@ -858,6 +867,28 @@ Carried forward rather than resolved. Each is a question this round opens and ha
    **Recorded rather than fixed.** The mitigation is that I0's dated note in
    `../aetheris/CLAUDE.md` names this round and this path, which is the one place a harness-side
    reader will already be looking.
+
+5. **hc-c's gate requires a live local Ollama serving `llama3.2:latest` at `localhost:11434`.**
+   Whether `[sandbox]` routing can be established without a model server is not established. A
+   `stub`-provider agent with a non-empty `mcp_servers:` list would spawn a worker under
+   `../aetheris/lib/aetheris/agent/supervisor.ex:62-63` and would remove the dependency, but no
+   such agent file exists in `../aetheris/agents/` (hc-b2 §G3(4)) and this round did not write
+   one. Carried to BL-133's territory.
+
+---
+
+## Promotion candidates
+
+Candidates recorded here are promoted or dropped at hc-e under the methodology's milestone-end
+ritual; recording one is not promoting it.
+
+**The promoted count rule's carrier 1 has a sub-shape.** A prediction about an artifact that has
+not been written yet, later carried as though it had been counted. Distinct from the earlier
+instances, which were counts over populations that existed and were miscounted — a prediction has
+no population to enumerate, so the operational close ("name the population and print the
+enumeration") cannot be applied to it at all. Mark it as a prediction when made, or do not make
+it. Origin: claude-ui's hc-c ticket text ("exactly two slots marked under R13"; four marks across
+three fields); named by claude-code at hc-b2.
 
 ---
 

@@ -1070,6 +1070,210 @@ The harness is unedited.**
 
 ---
 
+## r3 — the block Unit 5 was owed, and the sweep's blind spot filed as a second instance
+
+`Authored 2026-08-10 at r3, the fourth commit of the ruling edit, on top of 4cdd31f (r2),
+3f66353 (r1) and a2d63d1 (r0). Under R15 a further round of the ruling edit; under R20 not
+a ticket round and no review file. Figures derived at agents 4cdd31f or in the working tree
+this round produces, and each says which. Line numbers appear only for claims about lines,
+per m5-D1.`
+
+**The last round before t2 opens, and the round that pushes.**
+
+### Gate on the instruction
+
+| Claim | Resolved |
+|---|---|
+| `4cdd31f` at HEAD with **six beneath it** | ✓ `3f66353`, `a2d63d1`, `40c2d58`, `5db4585`, `70addd3`, `b648867` — six, in that order, with `a9639de` beneath |
+| Both trees clean | ✓ agents and `../aetheris` both `git status --porcelain` → empty |
+| The harness has nothing to push, at `2ef0517057e4eda991a8da10ccba66650d1e65a2` | ✓ exact match; `git rev-list --count origin/main..main` → **0** |
+| *"all six m5 commits"* to push | ✓ `origin/main` is at `70addd3`, so agents carries **five** unpushed before r3 and r3 makes six |
+| m5-D2's *What this does not decide* reads at HEAD as the prompt assumes | ✓ quoted verbatim at A1 below; the BL-136 sentence is present and carries no dated block |
+| §Promotion candidates' **first** entry is the blind-check rule | ✓ *"A check that structurally cannot observe the failure it stands in for returns green for the wrong reason"*, closing `Origin: claude-code at m5 r4, against a check the reviewer specified` |
+| The r2 sweep derivation error, as A2's block describes it | ✓ §r2 → *"the sweep of §Ratified decisions"*: the instructed single range diff, m5-D2 created inside that range, the per-commit correction, two instances found |
+| m5-D1's `[Extended …]` form | ✓ plain left-margin, single-backtick-delimited, blank line either side, **and placed after m5-D1's own `Ratified … Source:` stamp** — see A1's insertion point |
+| The ruling was ratified 2026-08-10, so A1's *against* argument self-defeats | ✓ `Ratified 2026-08-10 by the reviewer at t1's gate stop, per R12`, and the appended clause reads *"filed at the reviewer edit of 2026-08-10"* — same day, so the date distinguishes nothing |
+
+**All hold. Nothing in this prompt was wrong about repo state.**
+
+**Two corrections to the instruction that are not about repo state**, both raised before
+acting and both ruled on by the reviewer in-session:
+
+- **A3(a) says *"one entry"* and supplies two** — Unit 5 and Unit 1's residue. Ruled:
+  land both, and record the count error. It is the reviewer's own, in the round whose
+  subject is a count that should not have been written — the same shape as r1's
+  *"three times"* and r0's *"item 2 is resolved"*, now three instances of one habit.
+- **A3(a)'s bullets are the prompt's typography, not the file's shape.** §Review's `### r1`
+  and `### r2` groups render entries as `#### <title>` sub-headings with an italic finding
+  and a bold disposition. Ruled: **a prompt's formatting is never a claim about the file's
+  shape** — where they differ the file's established form governs and the divergence is
+  reported. Landed as `####` sub-entries with the supplied wording preserved.
+
+### What r3 changed, and where
+
+| A | file | change |
+|---|---|---|
+| A1 | `cloudcost/m5-n1-compose.md` §Ratified decisions, m5-D2 | the dated block appended beneath *What this does not decide*, after the decision's `Ratified … Source:` stamp |
+| A2 | same, §Promotion candidates | a second instance appended to the **first** entry, before the second entry |
+| A3 | this file | this section, and an `### r3` group appended to §Review |
+
+`docs/backlog-2026-06.md` is not edited, neither ticket is opened, and the harness is
+untouched (HEAD `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean, nothing to push).
+
+---
+
+### A1 — the block Unit 5 was owed
+
+**Unit at HEAD, quoted before the edit:**
+
+> **What this does not decide.** Whether a cross-provider aggregator is ever built —
+> H places it outside the pipeline, **E7** establishes it does not exist, and H's own
+> precondition is satisfied today. Whether N>1 should later become an operator
+> surface — **E5** is the costing if that is ever asked. C4's minor-unit exponent and
+> currency-relative tolerance stay filed; they bite only at N>1, which the pipeline
+> does not reach. **The first of those now has an owner:** **BL-136**, filed at the
+> reviewer edit of 2026-08-10, carries H's consequent — a read-only reader over the
+> per-provider snapshots `persist_history` already writes — as a backlog row rather
+> than as an undecided, unowned question.
+
+**After:** the unit is **unchanged**. The instruction's block is appended, verbatim, as a
+plain left-margin backticked block in the form m5-D1's `[Extended …]` note uses:
+
+```
+`[Appended 2026-08-10 at the reviewer edit r1, after this decision was ratified
+earlier the same day. The sentence naming BL-136 is not part of what was ratified at
+t1's gate stop: the ruling recorded the aggregator question as undecided and unowned,
+and the row that owns it was filed afterwards. The clause's own date does not
+distinguish it — the ruling and the row share 2026-08-10 — which is why this note
+exists rather than being redundant with it. Recorded per decision 7; the before and
+after are at §r1 of cloudcost/docs/m5-ruling-edit-implementation-notes.md.]`
+```
+
+**Where the insertion point falls, stated per §Carried in's first carried rule.** The block
+lands **after m5-D2's `Ratified 2026-08-10 … Source: BL-131 …` stamp and before the
+section's closing `---`** — not between *What this does not decide* and that stamp, which
+is where *"append beneath it"* reads most literally. Two independent reasons, pointing the
+same way:
+
+1. **The carried rule itself:** *"An insertion between a claim and its `Source:`
+   re-attributes both."* The stamp is m5-D2's `Ratified … Source:` unit. A dated note
+   inserted immediately above it would sit between the decision's body and its
+   ratification-and-source stamp, and a reader could take the stamp as attributing the
+   note rather than the decision. That is the exact hazard the rule names.
+2. **The form the instruction invokes places it there.** m5-D1's `[Extended …]` block —
+   named in the instruction as the form to follow — sits *after* m5-D1's own
+   `Ratified 2026-08-09 … Source: …` stamp, as does its `[Landed as m5-D1 …]` block. The
+   form is a placement as well as a markup, and the two readings agree.
+
+**This does not disturb Z1, and the reviewer's reaffirmation of Z1 stands.** Z1's block sits
+between two *body* units — the four numbered requirements and *What this does not decide* —
+and crosses no `Source:` boundary, so the carried rule does not reach it. The two insertion
+points are one rule applied to different neighbours, not two conventions.
+
+---
+
+### A2 — the sweep's blind spot, filed as a second instance rather than a fourth entry
+
+**Entry at HEAD, quoted before the edit** — §Promotion candidates' first entry, unchanged
+by this edit:
+
+> **A check that structurally cannot observe the failure it stands in for
+> returns green for the wrong reason.** r4 was told to confirm the harness tree
+> was clean after running pytest against it, using `git status`. That path is
+> gitignored in the harness, so `git status` could not have seen the artifact it
+> was watching for — it would have returned clean whether or not one appeared.
+> claude-code substituted an mtime capture on both sides of the run, which can
+> see it. The rule is not *use mtime*: it is that a check states what it can and
+> cannot observe, and a check standing in for a failure mode outside its own
+> visibility is reported as a substitution rather than as a pass. Same shape as
+> a positive control one level up — a positive control shows the search works;
+> this shows the search can reach. Origin: claude-code at m5 r4, against a check
+> the reviewer specified.
+
+**After:** the entry is **unchanged**. The instruction's block is appended verbatim beneath
+it, before the second entry (*An elision justified by "this is inlined above" …*).
+
+**Where the insertion point falls, stated per §Carried in's first carried rule.** The block
+lands **after the entry's closing `Origin:` sentence**, which is the position the second and
+third entries' `[Filed by the reviewer …]` notes already occupy. No `Origin:` unit is
+severed: the block follows the attribution rather than splitting the entry from it. The
+entry's own attribution is therefore unaltered, and the block carries its own date and round
+in its first sentence.
+
+**Why a second instance rather than a fourth entry, recorded because it was the reviewer's
+call and not this session's.** The instruction's ground is that an instance strengthens a
+candidate more than a near-duplicate does. It holds here on the entry's own terms: the first
+entry generalises to *a check states what it can and cannot observe*, and the r2 derivation
+failed that test in a different medium — blind not to a path it could not read but to a
+class of change its method could not represent. Filing it as a fourth entry would have split
+one rule across two candidates before §7 ever weighed it.
+
+---
+
+### A4 — the sweep re-run over §Ratified decisions
+
+**Method, unchanged from r2 and re-derived rather than transcribed.** The section
+(`## Ratified decisions` up to `## Promotion candidates`) extracted at each commit in
+`b648867..HEAD` and diffed consecutively. Endpoints extended by r2's own commit; granularity
+per-commit, for the reason A2 files.
+
+**Run 1, before r3's commit (HEAD `4cdd31f`):**
+
+```
+b648867 -> 70addd3 :  3 removed /  11 added
+70addd3 -> 5db4585 :  0 removed /   0 added
+5db4585 -> 40c2d58 :  0 removed /   0 added
+40c2d58 -> a2d63d1 :  5 removed /  92 added
+a2d63d1 -> 3f66353 :  3 removed /   6 added
+3f66353 -> 4cdd31f :  0 removed /  10 added
+```
+
+`[The counts are a claim about lines and are stamped at the commits named, per m5-D1.]`
+
+**The first five rows reproduce r2's published table exactly**, which is this run's positive
+control: a method that had drifted would not have reproduced a table it was not shown. The
+sixth row is new since r2, and its ten added lines are **r2's own block** — the
+`[Corrected 2026-08-10 at the reviewer edit r1 (Y3b) …]` note plus its trailing blank —
+confirmed by reading the delta directly rather than inferring it from the counts. **A block
+is not an unblocked change.**
+
+**No third instance.** The population is r2's, with one disposition moved:
+
+| # | Unit | Changed at | Dated note beside it? |
+|---|---|---|---|
+| 1 | The section's **opening paragraph**, closing sentence | r6 (`70addd3`) | Superseded whole at `a2d63d1`, which carries a block |
+| 2 | **m5-D1**, second paragraph — the stamping clause | r6 (`70addd3`) | ✓ `[Extended 2026-08-09 at r6 …]` |
+| 3 | The section's **opening paragraph**, replaced whole | ruling edit (`a2d63d1`) | ✓ `[corrected in place 2026-08-10 …]` |
+| 4 | **m5-D2**, *What bounded requires* | r1 (`3f66353`) | ✓ **blocked at r2 (Z1)** |
+| 5 | **m5-D2**, *What this does not decide* | r1 (`3f66353`) | ✓ **blocked at r3 (A1)** |
+
+Unit 1 remains preamble-class and is left standing, with its residue recorded at §Review's
+`### r3` group. Under the instruction that is explicitly not a hold.
+
+**Run 2, after r3's commit** — the added row and the tree state are published in the packet
+and in §Deviations below; the expectation stated before running it was an addition-only
+delta equal to A1's block.
+
+---
+
+### Deviations
+
+**One, and it is an insertion point rather than a change to instructed text:** A1's block
+lands after m5-D2's `Ratified … Source:` stamp rather than immediately beneath the paragraph
+it annotates, for the two reasons stated at A1. Reported here rather than left for a reader
+to notice, because *"append beneath it"* reads the other way on a first pass.
+
+**Two instruction corrections, both raised before acting and both ruled on**, recorded at
+§Gate on the instruction above: the *"one entry"* count, and bullets-versus-`####`.
+
+**Everything else landed as instructed.** A1's and A2's blocks are the instruction's text
+verbatim; both target units are byte-unchanged.
+
+**No file outside `cloudcost/m5-n1-compose.md` and this one was changed. t2 is not opened.
+The harness is unedited.**
+
+---
+
 ## Review
 
 `Dated 2026-08-10. Per R20 this edit gets no review file; the reviewer's findings on t1 r1
@@ -1186,3 +1390,32 @@ r0 had itself done differently at W1b in the same section.*
 in-place corrections rested on is recorded as a promotion candidate (Z2).** The
 instruction was the reviewer's and was wrong; the session followed it and flagged it,
 which is the behaviour that makes a wrong instruction recoverable.
+
+### r3 — the reviewer's dispositions on the two units r2 reported
+
+`Dated 2026-08-10 at r3. Two entries, not one — the instruction says "one entry appended"
+and supplies two; both are landed and the count error is recorded at §r3's gate, per the
+reviewer's ruling. Rendered as sub-entries in the shape the r1 and r2 groups established,
+rather than as the instruction's bullets: a prompt's formatting is not a claim about the
+file's shape.`
+
+#### Unit 5 — an addition inside a ratified decision
+
+*Finding, raised by claude-code at r2's sweep: m5-D2's* What this does not decide *gained a
+sentence after ratification with no dated note. Reported and not fixed, per the instruction,
+with both arguments stated.*
+
+**Disposition: accepted; the block lands at r3 (A1).** The *against* argument was the
+sharper of the two and it defeats itself — the clause self-dates to the day the decision was
+ratified, so the date separates nothing a reader could use.
+
+#### Unit 1's residue — a correction chain that quotes one link back
+
+*Reported at r2: the ruling edit's preamble block quotes the r6 wording it displaced, not
+the r5 wording r6 itself displaced, so the r5 sentence survives only in the pin-edit record.*
+
+**Disposition: left standing, deliberately.** It is a preamble under decision 8, not a
+decision under decision 7, and the displaced wording is committed — in a different file,
+which is the whole of the residue. Requiring each block to quote its predecessor would make
+every in-place correction grow without bound. Recorded so a later reader who traces the
+chain and finds it one link short knows it was seen.

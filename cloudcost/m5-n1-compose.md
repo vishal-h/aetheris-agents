@@ -486,6 +486,14 @@ than as an undecided, unowned question.
 implementation notes — the step-1 gate and E1–E8 — and t1 r1's harness-side
 population. Source: BL-131, filed 2026-08-07 from m4 t5b's G2 gate-stop.`
 
+`[Appended 2026-08-10 at the reviewer edit r1, after this decision was ratified
+earlier the same day. The sentence naming BL-136 is not part of what was ratified at
+t1's gate stop: the ruling recorded the aggregator question as undecided and unowned,
+and the row that owns it was filed afterwards. The clause's own date does not
+distinguish it — the ruling and the row share 2026-08-10 — which is why this note
+exists rather than being redundant with it. Recorded per decision 7; the before and
+after are at §r1 of cloudcost/docs/m5-ruling-edit-implementation-notes.md.]`
+
 ---
 
 ## Promotion candidates
@@ -507,6 +515,16 @@ visibility is reported as a substitution rather than as a pass. Same shape as
 a positive control one level up — a positive control shows the search works;
 this shows the search can reach. Origin: claude-code at m5 r4, against a check
 the reviewer specified.
+
+`[A second instance, recorded 2026-08-10 at r3. The reviewer's r2 instruction derived
+a sweep population from a single diff across a commit range in which the text being
+swept was created. A range diff renders text created inside it as added, never as
+changed, so the derivation was structurally unable to see any change within that text
+— including the instance the sweep was commissioned to find. Run as written it would
+have returned a clean "no second instance". claude-code corrected the granularity to
+a per-commit extraction over the same endpoints, reported the correction, and found
+two. Same shape as the entry above, one level over: the check was blind not to a file
+it could not read but to a kind of change its method could not represent.]`
 
 **An elision justified by "this is inlined above" carries the check that
 establishes it, or the diff is not elided.** t1 r0's packet elided a new file's diff

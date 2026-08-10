@@ -1173,10 +1173,29 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   **new-provider caveat** and the **multi-currency "No combined total"** rendering exist only
   in test fixtures: structurally tested (adjacency asserted by index, the withheld scalar
   asserted absent) and rendered to PDF during the build, but no eyeball has hit them in a
-  browser. Correct for m1 — both are unreachable while DO is the only provider — but the
+  browser. **Both are reachable and uninvoked** *(corrected m5 t2 r1, 2026-08-10 — this
+  clause read "Correct for m1 — both are unreachable while DO is the only provider —")*: the
   flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
-  the first ticket that makes either path reachable owes it the same two-minute look.
-  `Source: t4 review r0, human browser check.`
+  the first ticket that makes either path reachable **from the pipeline** owes it the same
+  two-minute look.
+
+  **Reachability here is not a function of provider count**, which is what the superseded
+  wording got wrong and what makes this more than a wording fix. Both paths sit on the N>1
+  compose surface, which **m5-D2** (`cloudcost/m5-n1-compose.md` §Ratified decisions — *"a
+  library-and-CLI capability the pipeline does not invoke"*) retains: three routes reach it
+  today with DO as one of three providers, and no orchestrator invocation takes any of them.
+  So the paths were never gated on a second provider arriving, and a second provider does not
+  open them — decision **H** makes provider four a fourth solo run. The superseded clause
+  restated the *"live at the first fan-out"* reading that m5 t1's **E1** killed, as a premise.
+
+  **The item stays open and the eyeball is still owed** — that is the substance, and it is
+  unchanged. What changes is who owes it and when: not the arrival of a second provider, but
+  **the first ticket that makes either path reachable from the pipeline**, which under H and
+  m5-D2 is no ticket now scheduled. Until then the two renderings remain exercised only by
+  fixtures and by the CLI surface m5-D2 declares.
+  `Source: t4 review r0, human browser check. Reachability claim corrected at m5 t2 r1,
+  2026-08-10, under m5-D2 and on t2 r0's flag; §Open items added to t2's Touches by the
+  reviewer at r1 to authorise it.`
 - **`STOPPED_STATES` normalisation — a place where a provider's own vocabulary reached shared
   machinery, and ~~the one seam~~ ~~*one of three seams*~~ *one of 54 values censused for provider
   divergence at m4 t4a*. RESOLVED at m2 t2 a.**
@@ -1228,8 +1247,20 @@ t3's report-data shape is agreed). t5 is the integration + the milestone done-wh
   `orphans.totals.monthly_saving_estimate` (`:500`, derived from the former, so it follows
   whatever that does). The fix is t3's and must cover **all four** — a partial fix leaves the
   same class alive in the sections it skipped. Options: withhold like `grand_total` does, or
-  emit each per currency. **Latent while m1 is DO-only single-currency; live at the first
-  fan-out.** t4 mitigates on the render side only, which is the most a render-only stage may
+  emit each per currency. **Reachable and uninvoked; not gated on a fan-out that decision H
+  forecloses** *(corrected m5 t2 r1, 2026-08-10 — this clause read "**Latent while m1 is
+  DO-only single-currency; live at the first fan-out.**")*. All four sites sum across bundles,
+  so they are on the N>1 compose surface **m5-D2**
+  (`cloudcost/m5-n1-compose.md` §Ratified decisions) retains as *"a library-and-CLI capability
+  the pipeline does not invoke"* — three routes reach them and no orchestrator invocation takes
+  any. **There is no first fan-out to go live at:** under decision **H** provider four is a
+  fourth solo run, so no future provider brings these sites into the pipeline. The
+  single-currency condition also no longer holds for the reason the superseded wording gave —
+  m1 is not DO-only, three adapters ship — but the exposure is still nil because all three
+  declare `USD` (§Contracts **C4**), which is a fact about the adapters and not about
+  reachability. **These are BL-070's four cross-currency aggregation sites, whose deletion is
+  disposed *not taken*, so they stay** — and the fix above stays owed, on the surface rather
+  than on a schedule. t4 mitigates on the render side only, which is the most a render-only stage may
   do: the MoM headline carries a "this change spans more than one currency" caveat beside the
   figure, and the three estimate aggregates print with no currency code rather than a wrong
   one. `Source: t4 notes §Open items; t4 review r0 F1 (claude-code named the MoM site only —

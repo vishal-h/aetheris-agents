@@ -302,3 +302,218 @@ items, so it has an owner and is not prose in a notes file. **The reviewer's cal
 whether that is sufficient or whether §Open items should be corrected in a follow-up. Named
 here because a standing rule in both repos is that a deferred finding gets an executor in
 the round it is deferred, and BL-070 is the executor this ticket could reach.
+
+---
+
+## r1 — the claim corrected, the Touches amended, the review file
+
+`Authored 2026-08-10 at t2 r1, on top of 305b3a1 (r0). Verdict on r0 was APPROVE with one
+finding; nothing in §1–§7 above is re-run and no figure there is restated. Figures below are
+derived at 305b3a1 or in the working tree this round produces, and each says which.`
+
+### Gate on the instruction
+
+| Claim | Resolved |
+|---|---|
+| `305b3a1` is t2 r0 and is held | ✓ HEAD at gate time, `docs(m5 t2): apply m5-D2 …` |
+| Both trees clean | ✓ agents and `../aetheris` both `git status --porcelain` → empty |
+| The harness is read-only and not committed to | ✓ `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean; r1 opens no harness file |
+| agents will be **two ahead** of origin after r1 | ✓ `origin/main` is `0b8804b` (the r4 edit); one ahead at gate time, two after this commit |
+| §Open items carries *"unreachable while DO is the only provider"* | ✓ quoted verbatim at W2 below, in the two-t4-rendered-paths item |
+| t2's `Touches` names `cloudcost/milestone.md` *"§Contracts C4 and C11 only"* | ✓ quoted verbatim at W1 below |
+| `docs/reviews/` convention | ✓ `m{N}-cloudcost-t{N}-review.md` across m2, m3 and m5 → `m5-cloudcost-t2-review.md` |
+
+**All hold. Nothing in this prompt was wrong about repo state.**
+
+### W1 — the reviewer amends `Touches`
+
+**Bullet at HEAD, before:**
+
+> - `cloudcost/milestone.md` — §Contracts **C4** and **C11** only: the cross-provider
+>   clause in each, and each one's m4 t5b pointer block.
+
+**After** — the instruction's replacement, verbatim:
+
+> - `cloudcost/milestone.md` — §Contracts **C4** and **C11**: the cross-provider clause
+>   in each, and each one's m4 t5b pointer block. **And §Open items**: any claim there
+>   resting on the reachability premise **m5-D2** overturns.
+>   *(§Open items added 2026-08-10 by the reviewer at t2 r1, on t2 r0's flag. The field
+>   as authored named §Contracts only and missed a third site in the same file carrying
+>   the same premise — the reviewer's scoping gap, not the ticket's.)*
+
+**No other field changed.** The bullet keeps its position — first in the list, before
+`cloudcost/scripts/compose_report_data.py` — so nothing is re-attributed and the list's order
+still tracks the order the ticket applies them in. `Do not generate`, `Scope`, `Contract refs`,
+the runbook rule, the done-check and the claude-code prompt are untouched.
+
+**This is the authority for W2 and W3, and it is dated before them.** r0 declined to edit §Open
+items because it was outside `Touches`; that refusal is not reversed here, it is made unnecessary.
+A ticket's scoping stays authoritative over a ticket's judgement — what changed is the scoping.
+
+### W2 — the claim corrected
+
+**Unit at HEAD, quoted before the edit** (the clause, in the two-t4-rendered-paths item):
+
+> browser. Correct for m1 — both are unreachable while DO is the only provider — but the
+> flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
+> the first ticket that makes either path reachable owes it the same two-minute look.
+
+**After** — same shape as r0 gave the runbook: superseded wording quoted in place, correction
+dated, **m5-D2** named, accurate claim stated, and the status carried.
+
+> browser. **Both are reachable and uninvoked** *(corrected m5 t2 r1, 2026-08-10 — this
+> clause read "Correct for m1 — both are unreachable while DO is the only provider —")*: the
+> flex-`gap` defect was invisible to every assertion and to one of two rendering engines, so
+> the first ticket that makes either path reachable **from the pipeline** owes it the same
+> two-minute look.
+
+followed by two new paragraphs and an extended `Source:` line — the reachability paragraph
+(*"Reachability here is not a function of provider count"*), the status paragraph (*"The item
+stays open and the eyeball is still owed"*), and the stamp naming the r1 correction and the
+`Touches` amendment that authorised it.
+
+**Three things the correction does that a wording fix would not**, which is why the item grew:
+
+1. **It names the mechanism.** The old clause made reachability a function of **provider count**.
+   It is not: all three routes to the N>1 surface are open today with three providers shipping,
+   and none is taken by an orchestrator invocation. Provider count and reachability are
+   independent, and the old wording tied them.
+2. **It kills the schedule, not just the adjective.** *"View them at fan-out"* implied a fan-out
+   would arrive and open these paths. Under decision **H** provider four is a fourth solo run, so
+   no future provider opens them. The superseded clause restated the *"live at the first fan-out"*
+   reading that **E1** killed, as a premise — which is the reviewer's F1 in one sentence.
+3. **It carries the obligation forward rather than closing it.** The eyeball is still owed. What
+   changes is the trigger: **the first ticket that makes either path reachable from the pipeline**,
+   which is no ticket now scheduled. An item whose trigger can never fire would be worse than the
+   wrong wording, so the trigger is stated in terms that can.
+
+**Insertion points, per §Carried in's first carried rule.** The correction is in-clause; the two
+new paragraphs land **after the item's prose and before its `Source:` line**, and the `Source:`
+line itself is **extended, not replaced** — its original sentence (*"t4 review r0, human browser
+check"*) stands first and the r1 stamp follows it. No attribution is severed and the item's
+original provenance still reads first.
+
+**Nothing else in §Open items changed at W2, and no other section of the file was opened at W2.**
+
+### W3 — the second-claim sweep over `cloudcost/milestone.md`
+
+**(a) Population and vocabulary.** The premise m5-D2 overturns is *the cross-provider compose
+surface is not reachable*. Claims can spell that eighteen ways, swept case-insensitively over the
+whole file:
+
+`unreachabl` · `reachabl` · `dormant` · `dead code` · `latent` · `fan-out`/`fanout` · `N>1` ·
+`N≥2` · `cross-provider` · `cross-currency` · `multi-currency` · `combined total` · `N-merge` ·
+`N provider` · `input-dir` · `discover_bundles` · `second provider` · `first fan-out`
+
+**42 hits.** The enumeration is printed in full in the review packet; it is not reproduced here,
+because a list published twice is a list that can diverge.
+
+**(b) Positive control.** No arm of this sweep returned zero, so the zero-control question does not
+arise in its usual form. The control that does apply is whether the vocabulary can **reach a claim
+of the kind sought**: it independently re-found both sites already known to rest on the premise —
+C4's and C11's paragraphs corrected at r0, and the §Open items clause F1 names — without either
+being searched for by name. A vocabulary that missed those would have been reporting its own
+blind spot as a clean sweep.
+
+**(c) Classification.** Of 42 hits, **one** rests on the overturned premise and was not already
+corrected. The rest divide into four kinds, none of them reachability claims about the compose
+surface:
+
+| Kind | Example | Why it is not on the premise |
+|---|---|---|
+| **Schema vocabulary** | *"Every **first-class** (top-level) field is part of the cross-provider contract"*; *"cross-provider priors"* | Says which fields are canonical, not what any invocation reaches |
+| **Decision H, what the pipeline *does*** | §Ticket set t3's *"merge **N providers** (trivial at N=1)"*; t4's *"At N≥2, the MoM headline must render its new-provider caveat"* | Describes the code's capability, which m5-D2 retains — still true |
+| **Already corrected at r0 or r1** | C4's and C11's *Source-only by ruling* paragraphs and discharged pointers; the W2 clause | Same premise, already handled |
+| **Unrelated reachability** | *"It is unreachable on all three current adapters"* (`generated_at` fallback, D17); *"latent on a hypothetical provider, exhibited by none of the three"* (C8 note) | Adapter data coverage and provider divergence — different subject, same words |
+
+**The one hit, corrected** — §Open items, the cross-currency aggregation item. Quoted before:
+
+> Options: withhold like `grand_total` does, or emit each per currency. **Latent while m1 is
+> DO-only single-currency; live at the first fan-out.**
+
+This is F1's finding a second time and in a sharper form: *"live at the first fan-out"* is not a
+description here but a **premise about four named code sites**, and those four sites are exactly
+BL-070's *"four cross-currency aggregation sites"* whose deletion this ticket disposed **not
+taken**. Corrected in place, same shape, naming m5-D2 and decision H, and recording that the
+single-currency condition now holds for a different reason than the one given — not *"m1 is
+DO-only"* (three adapters ship) but all three declaring `USD`, which §Contracts **C4** states.
+That is a fact about adapters, not about reachability, and the correction says so rather than
+letting a true conclusion keep resting on a false premise. **In §Open items, so inside the amended
+`Touches`.**
+
+**(d) Reported, not fixed — two, and the reviewer's call.** Both are in §Open items and both are
+staleness, but **neither rests on the premise m5-D2 overturns**, which is the only thing the
+amended bullet authorises correcting. Fixing them would be exceeding the scoping at the very round
+whose subject is that scoping is authoritative.
+
+1. **The recency-modifier item** — *"Unreachable while DO is the only provider (the field is
+   null), so it lands with the first adapter that populates it"*
+   (`detect_orphans.py`, `modifier_recent_activity`). The **wording collides** with F1's, and the
+   mechanism does not: this is unreachable because DO emits no `last_activity_at`, which is
+   adapter data coverage. m5-D2 says nothing about it. **But *"while DO is the only provider"* is
+   stale on its own terms** — AWS and Linode ship — and whether either populates the field is not
+   established in this file and was not established here, because doing so means reading two
+   adapters, which is outside this ticket in every direction.
+2. **The orphan-filename item** — *"`detect_orphans.py` writes `orphan_candidates_{period}.json`,
+   which collides at N≥2 in one directory … **Lands with the second adapter.**"* The collision
+   analysis is about output filenames under one directory, not about the compose surface. The
+   **schedule** is stale in the same way as (1): the second adapter landed at m2 and the third at
+   m3. Whether the collision was handled by per-provider output dirs in the interim is not
+   established here.
+
+**Both are the same shape** — an item whose trigger has already fired, or whose framing predates
+two adapters — and both would be found by a §Open items freshness census that nothing currently
+owns. Named together so the reviewer can decide once rather than twice.
+
+### W5(a) — t2's row, rebuilt for readability
+
+The row had accreted across four edits — authored, completed at the ruling edit, amended at the
+reviewer edit, opened-and-applied at r0 — and was the longest in the table.
+
+**No fact is dropped.** The rebuild is structural: the row is reorganised into labelled clauses in
+the order **state → gate → what landed → r1 → provenance**, and phrasing is compressed where two
+sentences carried one fact.
+
+**What was compressed, named rather than left to be diffed:**
+
+- The four authoring/amendment events are stated once as a provenance clause rather than
+  re-narrated in sequence; every date, editor and record-file reference survives.
+- The r0 gate result keeps both arms and both empty diffs, stated as one clause instead of two
+  sentences.
+- The five backlog dispositions keep all five row identifiers and all five outcomes, as a list
+  rather than as prose.
+- The r1 additions are appended as their own clause rather than interleaved into r0's.
+
+**Nothing in the row is new information** except r1's own clause. Every figure it carries — the
+386, the route counts, the row outcomes — is unchanged from r0's row and is not re-derived by the
+rebuild.
+
+### r1 — deviations
+
+**One, named because `Touches` requires exactly that.** The field ends *"Nothing else. Any other
+path that changes is a deviation and is named in the implementation notes"* — so this is the named
+form, not an unnamed one.
+
+`docs/reviews/m5-cloudcost-t2-review.md` **is not in `Touches`** and is created by this round. It
+lands on two authorities, neither of them this ticket's judgement: the reviewer's explicit W4
+instruction at r1, and the standing review-file obligation the round document states in its own
+§Review files — methodology **§1 principle 4** and **§8**, both unscoped, *"which are the sections
+R2 grounds itself in"*, R2's own text being scoped to `hc-*` tickets and so not literally reaching
+this round.
+
+**Precedent in this round, checked rather than assumed:** t1's `Touches` names two paths and
+neither is a review file, yet t1 r1 produced `docs/reviews/m5-cloudcost-t1-review.md` and t1's row
+records it. So a review file landing outside `Touches` is this round's established practice, and
+r1 follows it rather than setting it.
+
+**Why it is not folded into `Touches` here.** r1's one authorised amendment is the §Open items
+addition at W1, and the instruction says *"Change no other field."* Adding a seventh path would be
+a second amendment, and the round whose subject is that a ticket's scoping is authoritative over a
+ticket's judgement is the wrong round to widen a scoping unasked. **The reviewer's call** whether
+`Touches` should carry it.
+
+**No other deviation.** No executable line changed at r1 — `compose_report_data.py` is
+**byte-identical** to `305b3a1`, confirmed by an empty diff and by AST equality; the harness was
+not opened; no contract other than C4 and C11 is amended; no reachability work was done over
+C1–C15; and the two staleness items W3(d) surfaced are reported rather than fixed, being outside
+what the amended `Touches` authorises.

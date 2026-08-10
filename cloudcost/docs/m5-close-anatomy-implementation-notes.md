@@ -315,6 +315,122 @@ clause, not this edit's, and it is not run here.
 
 ---
 
+## r1 — the flag was in the packet and not in the file
+
+`Dated 2026-08-10, on the reviewer's r1 instruction on this edit. Per R15 this is a further
+round of this edit, not a new one: it repairs this edit's own output. One append to §Review,
+inside an existing blockquote; no other unit in this file or any other is touched.`
+
+### What r0 got right, and what it got wrong
+
+r0's gate reported that C6a's first disposition asserted a flag t2 r1 never raised, and
+recorded a dated resolution block saying so. **The finding was right about the file and wrong
+about the packet.** t2 r1's implementation-notes file carries no flag on the cross-currency
+item — it asserts authority in place at W3(c), as r0 quoted. **t2 r1's packet flags it, in
+§10.** r0 never opened the packet: the check it ran was `grep -c 'exceed'` over the notes
+file, and a search for a word cannot find a flag that does not use it. That is
+§Promotion candidates' first entry — *a check that structurally cannot observe the failure it
+stands in for returns green for the wrong reason* — one level over, and r1 records it as a
+further instance of that entry rather than as a fourth candidate.
+
+### The unit, before — §Review → *W3(c) was authorised*, its resolution blockquote at `ed36d22`
+
+> **`[Resolved against the file, 2026-08-10 at this edit. The disposition's ruling stands
+> verbatim and is not edited — it is the reviewer's to make, and it is correct on the
+> merits. Its characterisation of t2 r1 is not what the file says, and that is recorded
+> here rather than smoothed.]`**
+>
+> **t2 r1 raised no flag on this item.** Its §*W3 — the second-claim sweep over
+> `cloudcost/milestone.md`*, part (c), corrected the cross-currency aggregation item and
+> asserted the same authority the disposition now confirms, closing *"**In §Open items, so
+> inside the amended `Touches`.**"* The word *exceed* occurs once in that file, in **W3(d)**
+> — *"Fixing them would be exceeding the scoping at the very round whose subject is that
+> scoping is authoritative"* — which is about the two staleness items, disposition two
+> below. The other reserved call is in §*r1 — deviations*, about the review file,
+> disposition three below.
+>
+> **The ruling is unaffected**, and so is what follows from it: the correction landed inside
+> the amended bullet, on the reading the disposition gives. What changes is only the
+> provenance of the question — the session settled it in place rather than referring it up.
+
+### Where the insertion falls
+
+**Inside the same blockquote, after its last paragraph, before the next `###` heading.** The
+quoted block ends at *"…rather than referring it up."*; the next unit in §Review is the
+heading `### The two staleness items get a row, not a third `Touches` amendment` and its
+italic finding line. The two new paragraphs are appended as blockquote continuation lines
+(`>`), separated from the existing text by a `>`-only line — the separator the block already
+uses between its own paragraphs — so they land inside the block rather than after it.
+
+**Nothing above them changed.** The block's three existing paragraphs are byte-unchanged, and
+this round's diff over the whole file is additions only — `git diff --stat HEAD~1` reports
+**140 insertions and 0 deletions**, and the only `-`-prefixed line anywhere in it is the
+`--- a/…` file header.
+
+> **`[The figure above is r1's own correction of itself — twice, and the correction is the
+> point.]`** It was written first as **127**, then **128**, and each restatement was overtaken
+> by a later edit in the same round; the last of them was this block, which moved the number by
+> describing why it had moved. A figure about a diff goes stale the moment the diff grows,
+> which is `rev note goes last` in miniature, and each staleness was caught by re-deriving
+> `git diff --stat HEAD~1` rather than trusting the written value. The final figure was
+> measured after the last edit and set in the same amend. r1's commit was amended in place,
+> which §Promotion candidates licenses for an unpushed record of a session's own work;
+> **`ed36d22` was not touched**.
+
+**No claim was separated from its attribution**: the
+dated `[Resolved against the file…]` stamp opens the block and stays at its head, and the new
+text carries its own dated `[Amended…]` stamp rather than borrowing that one.
+
+### The unit, after — the two appended paragraphs
+
+> **`[Amended 2026-08-10 at the reviewer's r1 on this edit.]`** The block above says t2 r1
+> raised no flag on this item. **That is true of t2 r1's implementation-notes file and
+> false of its packet.** … *That is a flag: it names the judgement, names the alternative
+> reading, and names what to pull if the reviewer takes it. The reviewer's disposition was
+> accurate about the packet; this block's correction is accurate about the file; neither
+> said which it was reading.*
+>
+> **The residue is this round's own recurring subject, arriving with its sign reversed.** …
+> *Recorded as a further instance of that entry rather than filed as a fourth candidate.
+> t3 weighs that entry under §Close criteria clause 1, and this is its input.*
+
+**Elided here, not in the artifact.** The two paragraphs are landed in full in §Review and
+published in full in this round's diff; what is elided above is the middle of each, and the
+elision covers only text that appears verbatim in that diff. The §10 quotation itself is
+reproduced complete in the landed text.
+
+### Verification — t2 r1's packet §10
+
+**I hold that packet as a file and read it; the quotation is not taken on the reviewer's
+word.** It is at
+`/tmp/…/4299d03a-d555-4486-8edc-0b77006367d7/scratchpad/m5-t2-r1-packet.md` — a prior
+session's scratchpad, outside both repos, 732 lines. Packets are not committed in either
+repo, so this is not re-derivable from the tree and will not survive scratchpad cleanup; the
+path is recorded here so a later reader knows what was read, not so they can re-read it.
+
+Its §10 heading is `## 10. A LINE I LANDED THAT I BELIEVE IS WRONG` — the section whose only
+purpose is flagging — and the section is five lines. Read in full:
+
+> **None.** The one judgement exercised — correcting the cross-currency item at W3(c) rather than
+> only reporting it — rests on the amended bullet's own words, *"any claim there resting on the
+> reachability premise m5-D2 overturns"*, and that item's *"live at the first fan-out"* is the
+> premise verbatim. If the reviewer reads the amendment as authorising only the clause F1 named,
+> that correction is the one line to pull, and it is isolated to a single §Open items item.
+
+**The reviewer's quotation is accurate.** Its `…` covers exactly one span — *", "any claim
+there resting on the reachability premise m5-D2 overturns", and that item's "live at the first
+fan-out" is the premise verbatim."* — and every other word matches the file, including the
+opening `**None.**`. The bolding the instruction applies to *"If the reviewer reads the
+amendment…"* is the reviewer's emphasis and is not in the source; the words are.
+
+**The identification was checked, not assumed.** The file is t2 r1's packet and not another
+round's: its §9 heading reads *"DEVIATIONS — one, named because `Touches` requires exactly
+that"*, the same wording as the committed `cloudcost/docs/m5-t2-implementation-notes.md`
+§*r1 — deviations*, and its §4 is *"W3 — the second-claim sweep over `cloudcost/milestone.md`"*,
+the unit this whole exchange is about.
+
+---
+
 ## Review
 
 `Dated 2026-08-10. Per R20 this edit gets no review file; the reviewer's dispositions on t2
@@ -344,6 +460,30 @@ right to be raised and the correction is right to stand.
 > **The ruling is unaffected**, and so is what follows from it: the correction landed inside
 > the amended bullet, on the reading the disposition gives. What changes is only the
 > provenance of the question — the session settled it in place rather than referring it up.
+>
+> **`[Amended 2026-08-10 at the reviewer's r1 on this edit.]`** The block above says t2 r1
+> raised no flag on this item. **That is true of t2 r1's implementation-notes file and
+> false of its packet.** The packet's §10 — the section whose only purpose is flagging —
+> opens *"**None.**"* and then reads: *"The one judgement exercised — correcting the
+> cross-currency item at W3(c) rather than only reporting it — rests on the amended
+> bullet's own words … **If the reviewer reads the amendment as authorising only the
+> clause F1 named, that correction is the one line to pull**, and it is isolated to a
+> single §Open items item."* That is a flag: it names the judgement, names the alternative
+> reading, and names what to pull if the reviewer takes it. The reviewer's disposition was
+> accurate about the packet; this block's correction is accurate about the file; neither
+> said which it was reading.
+>
+> **The residue is this round's own recurring subject, arriving with its sign reversed.**
+> t2 r1 flagged the judgement in its packet and asserted its authority in the file, so the
+> flag reached the reviewer and never reached the repo. Every prior instance in this round
+> was a claim in the packet that the file lacked because the packet said *more*; this one
+> is a claim the file lacked because the packet said something *different*. And the search
+> that produced the correction is a search shaped like a check — looking for the word
+> *exceed* could not have found a flag that does not use it, which is
+> §Promotion candidates' first entry one level over.
+>
+> **Recorded as a further instance of that entry rather than filed as a fourth candidate.**
+> t3 weighs that entry under §Close criteria clause 1, and this is its input.
 
 ### The two staleness items get a row, not a third `Touches` amendment
 

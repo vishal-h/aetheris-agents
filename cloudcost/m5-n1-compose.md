@@ -42,7 +42,7 @@ either.
 
 | Ticket | Subject | State |
 |---|---|---|
-| **t1** | Establish the N>1 compose surface, read-only, to the point where the ruling can be made | **Not opened.** Anatomy authored 2026-08-09 |
+| **t1** | Establish the N>1 compose surface, read-only, to the point where the ruling can be made | **Opened and stopped at the gate stop** 2026-08-10, r0. Step-1 gate ran: (b) unmoved; (a) **diverges from BL-131 and is not temporal** — three routes reach N>1, not one, and the route-bearing code is byte-unchanged since `6832159`. Continued under the reviewer's mid-ticket ruling of 2026-08-10 that the stop condition is temporal. **E1–E8 all answered**; no ruling made, no behaviour changed. Record: `cloudcost/docs/m5-t1-implementation-notes.md`. **Waits on** the BL-131 ruling, which §Ratified decisions says the reviewer authors into this document at the gate stop, per R12. |
 | **t2** | Apply the ruling; amend §Contracts; dispose the rows that resolve with it | **Not opened.** Anatomy authored 2026-08-09, most slots R13-marked |
 
 **Ticket anatomy in this document is §6's seven fields plus a step-1 gate. The

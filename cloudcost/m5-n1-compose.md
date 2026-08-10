@@ -462,6 +462,16 @@ opens:
    them. **BL-119 stays open and is now unambiguously in scope**, because the route
    it concerns is retained.
 
+`[Corrected 2026-08-10 at the reviewer edit r1 (Y3b), on the day of ratification and
+before t2 opened. The text above read *"has been left in place three times without
+being declared"* and *"A fourth silent retention is the failure this ruling exists to
+prevent."* The count was a characterisation rather than a countable fact — the rows
+named beside it are the evidence and are checkable, the number was not — and removing
+it applies the reviewer's own standing rule that an authored spec asserts no checkable
+specific. The claim is unchanged; only the count is gone. Original wording recorded
+here per decision 7, and in full at §r1 of
+cloudcost/docs/m5-ruling-edit-implementation-notes.md.]`
+
 **What this does not decide.** Whether a cross-provider aggregator is ever built —
 H places it outside the pipeline, **E7** establishes it does not exist, and H's own
 precondition is satisfied today. Whether N>1 should later become an operator
@@ -513,6 +523,22 @@ reviewer finding and finding the stronger form of it.
 `[Filed by the reviewer at the m5-D2 ruling edit, 2026-08-10, on t1 r1's flag that
 the rule bound every remaining packet in this round and had no owner in this
 document. The flag was correct: prose in a packet or a notes file owns nothing.]`
+
+**An unpushed artifact may be corrected in place; a ratified one may not, and the
+difference is what the artifact's authority rests on.** This round corrected several
+unpushed records in place, arguing each time that a dated supersession block would
+preserve a reading history no reader ever had. That argument is sound for a record of
+a session's own work, whose claims become meaningful when someone reads them. It does
+not reach a ratified decision: its authority is the act of ratification rather than
+its publication, so a reader citing it later is entitled to know its text is what was
+ratified, and cannot learn that from a notes file they have no reason to open. The
+rule is not *never correct in place* — it is that the licence comes from the
+artifact's kind, not from its push state. Origin: claude-code at the m5 reviewer edit
+r1, flagging its own compliance with a reviewer instruction that pointed the other
+way.
+
+`[Filed by the reviewer at r2, 2026-08-10, on that flag. The flag is the harder kind
+to raise — the session had done exactly what it was told, and said so anyway.]`
 
 ---
 

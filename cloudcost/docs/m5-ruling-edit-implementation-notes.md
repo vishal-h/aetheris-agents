@@ -886,6 +886,190 @@ unedited. **No push. t2 is not opened.**
 
 ---
 
+## r2 — the dated block m5-D2 was owed, and the distinction it rests on
+
+`Authored 2026-08-10 at r2, the third commit of the ruling edit, on top of 3f66353 (r1)
+and a2d63d1 (r0). Under R15 a further round of the ruling edit; under R20 not a ticket
+round and no review file. Figures derived at agents 3f66353 or in the working tree this
+round produces, and each says which. Line numbers appear only for claims about lines,
+per m5-D1.`
+
+**The last round before t2 opens.**
+
+### Gate on the instruction
+
+| Claim | Resolved |
+|---|---|
+| `3f66353` at HEAD with five commits beneath | ✓ `3f66353`, `a2d63d1`, `40c2d58`, `5db4585`, `70addd3`, `b648867` — six, in that order, with `a9639de` beneath |
+| Both trees clean | ✓ agents and `../aetheris` both `git status --porcelain` → empty |
+| The harness has nothing to push | ✓ `../aetheris` at `2ef0517`, `git rev-list --count origin/main..HEAD` → **0** |
+| *"all five m5 commits"* to push | ✓ `git rev-list --count origin/main..HEAD` on agents → **4** before r2; origin/main is at `70addd3`, so r2 makes five |
+| m5-D2's *What bounded requires* reads at HEAD as the prompt assumes | ✓ quoted verbatim below |
+| §Ratified decisions uses a plain backticked bracketed block for m5-D1's `[Extended …]` note | ✓ *"`[Extended 2026-08-09 at r6 with the stamping clause, on claude-code's r5 flag that the exemption covers a whole document's anchors and said nothing about their tense.]`"* — left-margin, blank line either side, not a blockquote |
+| §Promotion candidates' first entry establishes a shape r2's entry follows | ✓ bold rule sentence → worked case → *"The rule is not X: it is that…"* → `Origin: <who> at <round>` |
+
+**All hold. Nothing in this prompt was wrong about repo state.**
+
+### What r2 changed, and where
+
+| Z | file | change |
+|---|---|---|
+| Z1 | `cloudcost/m5-n1-compose.md` §Ratified decisions, m5-D2 | the dated correction block appended beneath *What bounded requires* |
+| Z2 | same, §Promotion candidates | the third entry appended, with its filing note |
+| Z3 | this file | this section, and one disposition appended to §Review |
+
+`docs/backlog-2026-06.md` is not edited, neither ticket is opened, and the harness is
+untouched (HEAD `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean, nothing to push).
+
+---
+
+### Z1 — the block m5-D2 was owed
+
+**Unit at HEAD, quoted before the edit:**
+
+> **What *bounded* requires, and this is the operative half.** This surface has been
+> left in place before without being declared, and each silence produced a row:
+> BL-070 assumed it dead, BL-131 assumed one route, BL-132 found two contracts
+> describing a path nothing takes. **Another silent retention is the failure this
+> ruling exists to prevent.** Retention is therefore conditional on the declaration
+> landing, and the declaration must be reachable from the artifacts a reader actually
+> opens:
+
+**After:** the unit is **unchanged**. The instruction's block is appended beneath it,
+verbatim, as a plain left-margin backticked block in the form m5-D1's `[Extended …]`
+note uses.
+
+**Where the insertion point falls, stated per §Carried in's first carried rule.** The
+block lands **after the fourth numbered requirement and before *What this does not
+decide***, not between the paragraph and its enumeration. The paragraph ends on a colon
+that introduces those four requirements; inserting there would sever a claim from the
+list it introduces, which is the re-attribution hazard that rule names. So *"the text
+above"* in the block spans the paragraph and its enumeration, and the four requirements
+are byte-unchanged either way.
+
+**Why the block belongs, recorded because r1 argued the other way and was told to.** The
+instruction at r1 said *"change nothing else in the paragraph"*, and r1 complied and
+flagged it. The reviewer's ruling at r2: decision 7 governs, and the distinction that
+makes this round's three earlier in-place corrections consistent rather than arbitrary
+is that **an unpushed session record may be corrected in place and a ratified decision
+may not** — a record's claims become meaningful when someone reads them and no one had;
+a ratified decision's authority is the act of ratification, not its publication. Filed
+as a promotion candidate at Z2.
+
+---
+
+### Z1 — the sweep of §Ratified decisions
+
+**The instructed derivation has a blind spot, and it was corrected rather than run as
+written.** The instruction says to derive the population from *"the section's diff across
+`b648867..HEAD`"*. **m5-D2 was created inside that range**, at `a2d63d1`. A
+`b648867..HEAD` diff therefore renders the whole of m5-D2 as added lines and can show no
+*change* within it — including Z1's own subject, which that diff reports as part of a
+92-line addition rather than as a 2-line edit. **A derivation that cannot see the instance
+it was commissioned to find is not a sweep**, so the population was derived per-commit
+across the same range instead. The endpoints are the instruction's; only the granularity
+changed.
+
+**Method.** The section (`## Ratified decisions` up to `## Promotion candidates`) extracted
+at each of the six commits in `b648867..HEAD` and diffed consecutively:
+
+```
+b648867 -> 70addd3 : 3 removed / 11 added
+70addd3 -> 5db4585 : 0 removed /  0 added
+5db4585 -> 40c2d58 : 0 removed /  0 added
+40c2d58 -> a2d63d1 : 5 removed / 92 added
+a2d63d1 -> 3f66353 : 3 removed /  6 added
+```
+
+`[The counts are a claim about lines and are stamped at the commits named, per m5-D1.]`
+
+**Population: four changed units**, across three commits. t1 (`5db4585`) and t1 r1
+(`40c2d58`) touched the section not at all, which is the positive control that the
+extraction reaches — a run that reported change everywhere would be reporting its own
+noise.
+
+| # | Unit | Changed at | Dated note beside it? |
+|---|---|---|---|
+| 1 | The section's **opening paragraph**, closing sentence | r6 (`70addd3`) | **No at the time**; superseded whole at `a2d63d1`, which carries a block |
+| 2 | **m5-D1**, second paragraph — the stamping clause | r6 (`70addd3`) | ✓ *"`[Extended 2026-08-09 at r6 with the stamping clause…]`"* |
+| 3 | The section's **opening paragraph**, replaced whole | ruling edit (`a2d63d1`) | ✓ *"`[corrected in place 2026-08-10 at the ruling edit…]`"* |
+| 4 | **m5-D2**, *What bounded requires* | r1 (`3f66353`) | **No** — Z1's subject, fixed at this round |
+| 5 | **m5-D2**, *What this does not decide* | r1 (`3f66353`) | **No — second instance. Reported, not fixed.** |
+
+**Unit 1 is not the Z1 class, and the reason is the distinction itself.** The section's
+opening paragraph is not a ratified decision; it is the section preamble, and `a2d63d1`'s
+block reasons explicitly that it falls under **decision 8** (*"Live operational guidance
+is corrected in place"*) rather than decision 7. It does carry one residue worth naming:
+that block quotes the **r6** wording it displaced, not the **r5** wording r6 itself
+displaced, so the r5 sentence (*"An empty section at open is the correct state and is
+stated rather than omitted"*) survives only in `m5-pin-edit-implementation-notes.md` §T1.
+Named, not fixed — it is a preamble, not a decision.
+
+**Unit 5 is the second instance, and I believe it needs a block.** At r1 the *What this
+does not decide* paragraph gained a sentence — *"**The first of those now has an owner:**
+**BL-136**, filed at the reviewer edit of 2026-08-10…"* — appended inside a ratified
+decision, after ratification, with no bracketed note. **Not fixed, per the instruction's
+"do not fix a second instance"**; whether a given change needs a block is the reviewer's
+to apply.
+
+**The argument for a block, and the argument against, both stated:**
+
+- **For.** Z1's own principle reaches it without modification: a reader citing m5-D2's
+  *What this does not decide* is entitled to know that clause is not what was ratified at
+  the gate stop. It is an addition rather than a rewrite, but the reader's question is the
+  same one.
+- **Against.** The appended sentence **self-dates** — *"filed at the reviewer edit of
+  2026-08-10"* — which the *"three times"* rewrite did not. A reader can see the clause
+  postdates the ruling. What it does not say is that it was **added after ratification**,
+  which is the fact a block would carry.
+
+I read the *for* as stronger, which is why this round **holds rather than pushes**.
+
+---
+
+### Z2 — §Promotion candidates, third entry
+
+**Section at HEAD, quoted before the edit:** the preamble (*"Candidates recorded here are
+promoted or dropped at this round's close under the methodology's §7 ritual; recording one
+is not promoting it…"*), then two entries — **A check that structurally cannot observe the
+failure it stands in for returns green for the wrong reason**, closing *"Origin:
+claude-code at m5 r4, against a check the reviewer specified"*; and **An elision justified
+by "this is inlined above" carries the check that establishes it, or the diff is not
+elided**, closing *"Origin: claude-code at m5 t1 r1…"* followed by its
+`[Filed by the reviewer at the m5-D2 ruling edit, 2026-08-10…]` note.
+
+**After:** the instruction's third entry appended verbatim beneath the second entry's
+filing note, separated by a blank line, following the shape the first entry establishes —
+bold rule sentence in the imperative-general voice → the worked case in past tense with
+the specific artifact named → the generalisation in *"The rule is not X — it is that…"*
+form → `Origin: <who> at <round>, <against what>` — plus its own dated filing note, which
+is the shape the second entry established.
+
+**Its worked case is checkable in this file.** *"This round corrected several unpushed
+records in place"* resolves to three: §Not established's preamble correction block
+(`a2d63d1`, W4's sweep), that block's own *"item 2 is resolved"* clause (`3f66353`, §r1's
+sweep), and §Ratified decisions' opening paragraph (`a2d63d1`, W1b). Each argued decision
+8 or a no-reader-yet ground. **None of the three is a ratified decision**, which is why
+the entry says the licence comes from the artifact's kind and not from its push state, and
+why fixing them is not what it asks for.
+
+---
+
+### Deviations
+
+**One, reported above and not silent:** Z1's sweep was derived per-commit rather than from
+a single `b648867..HEAD` diff, because the single diff structurally cannot see a change to
+text created inside its own range — including the change the sweep exists to find. Same
+endpoints, finer granularity.
+
+**Everything else landed as instructed.** Z1's block and Z2's entry are the instruction's
+text verbatim; the only judgement exercised was Z1's insertion point, stated above.
+
+**No file outside `cloudcost/m5-n1-compose.md` and this one was changed. t2 is not opened.
+The harness is unedited.**
+
+---
+
 ## Review
 
 `Dated 2026-08-10. Per R20 this edit gets no review file; the reviewer's findings on t1 r1
@@ -986,3 +1170,19 @@ it was.
 **A second instance of the same shape, found by the sweep this round owes and fixed with
 it:** r0's §Not established preamble correction block closed *"— item 2 is resolved"*, a
 count of one that item 3's resolution falsified within the day. Recorded under Y4's sweep.
+
+### r2 — the reviewer's disposition on r1's flagged line
+
+`Dated 2026-08-10 at r2. One entry, on the line r1 flagged against its own instructed
+behaviour.`
+
+#### The flagged line — a ratified decision corrected without a dated block
+
+*Finding, raised by claude-code at r1 against its own instructed behaviour: Y3(b) rewrote
+text inside m5-D2 and landed no correction note, which decision 7 points against and which
+r0 had itself done differently at W1b in the same section.*
+
+**Disposition: accepted; the block lands at r2 (Z1), and the distinction the earlier
+in-place corrections rested on is recorded as a promotion candidate (Z2).** The
+instruction was the reviewer's and was wrong; the session followed it and flagged it,
+which is the behaviour that makes a wrong instruction recoverable.

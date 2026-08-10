@@ -1,9 +1,11 @@
 # m5 — the pin edit
 
-A reviewer-authored section-scoped edit landing t1's done-check pin (`cloudcost/m5-n1-compose.md`,
-the `**Done-check.**` block of §t1) and one correction (`cloudcost/docs/m5-scoping-landing-notes.md`,
-§Review, F2's disposition), at agents r3 — the fourth commit of the m5 scoping round, on top of
-`eebd47c` (r0), `a039a0d` (r1) and `2876d26` (r2). **The r3 SHA is deferred to the packet:** this
+`Record for the m5 pin edit and the rounds that followed it, per R20. Opened at r3 and appended
+at r4, r5 and r6; each round's section names the round that made it, and none names its own
+commit. No commit count is stated here — this file grows with the edit, and a count would go
+stale on the next append.`
+
+**The r3 SHA is deferred to the packet:** this
 file is committed *in* r3, the round lands as one commit with no amend, so it cannot carry its own
 hash without falsifying the thing it records.
 
@@ -301,6 +303,167 @@ identifier check "resolved without a collision you had to work around". It did n
 
 ---
 
+## r6 — four corrections, and the exemption given a tense
+
+`Authored 2026-08-09 at r6, the seventh commit of the round, on top of eebd47c (r0), a039a0d
+(r1), 2876d26 (r2), 9d7afe0 (r3), a9639de (r4) and b648867 (r5). The last round of the m5 scoping
+landing. Under R15 this is a further round of the pin edit and appends here.`
+
+**T0 — the substitution is ratified.** `m5-D1` stands as the decision identifier; `M1` was taken
+as a mutation label in `cloudcost/m2-milestone.md` (the set `M1–M8`, cited in that document's own
+outcome line) and in `docs/milestones/bl-067-implementation-notes.md`. The commit message at r5
+still reads `ratify M1` and is left as the historical record of what was asked. Recorded here per
+T0; no edit was made for it, and none to m5-D1's `Ratified` line.
+
+### What r6 changed, and where
+
+| T | file | change |
+|---|---|---|
+| T1 | `cloudcost/m5-n1-compose.md` §Ratified decisions | *"An empty section at open is the correct state…"* replaced; the ragged r5 seam-wrap repaired |
+| T2 | this file, header | the self-describing sentence replaced with a provenance line that names the rounds |
+| T3 | `cloudcost/docs/m5-scoping-landing-notes.md` closing line | `Landed at r1. Commits: …` replaced with a line naming every round that wrote into it |
+| T4b | same file, §The attribution rule | a stamp beneath the annotation table binding its offsets to the commit that made the insertions |
+| T4c/d | `cloudcost/m5-n1-compose.md` §Ratified decisions | **m5-D1** extended with the stamping clause, and an `[Extended … at r6]` note beneath its existing r5 note |
+| — | `cloudcost/m5-n1-compose.md` §Not established | item **4**, `[DECIDED]` (c): the stale-but-not-false residue, recorded rather than repaired |
+| T5 | this file | this section, and **F13**/**F14** appended to §Review |
+
+`docs/backlog-2026-06.md` is not edited, neither ticket is opened, and the harness is untouched
+(HEAD `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean, nothing to push).
+
+### T1 — the sentence at HEAD, and what replaced it
+
+```
+$ sed -n '/^## Ratified decisions/,/^### m5-D1/p' cloudcost/m5-n1-compose.md
+**The BL-131 ruling is not here yet.** It lands in this section, authored by the
+reviewer at the gate stop between t1 and t2 per R12, with its own date. The
+decision below is methodological and was made in the course of opening the
+round. An empty section at open is
+the correct state and is stated rather than omitted.
+```
+
+Replaced from *"An empty section at open is"* through *"…stated rather than omitted."* — that
+sentence and only it — and the r5 seam-wrap closed up in the same edit, its purpose discharged.
+
+### T2 — the header check, and a clause built rather than transcribed
+
+**Which rounds wrote into this file**, derived rather than taken from the r6 prompt:
+
+```
+$ git log --oneline --follow -- cloudcost/docs/m5-pin-edit-implementation-notes.md
+b648867 docs(m5 r5): retire the r1-anchor convention; ratify M1; open §Promotion candidates
+a9639de docs(m5 r4): truth-maker for §G1's cwd clause; stale-anchor sweep after the pin
+9d7afe0 docs(m5 r3): pin t1's done-check invocation; correct F2's disposition; pin-edit record
+```
+
+Opened at **r3**, appended at **r4** and **r5** — and at **r6**, by this section, which is why
+the landed line names four rounds and not three. A line written in r6 that omitted r6 would
+reproduce the defect T2 exists to fix.
+
+**The header at HEAD before the edit:**
+
+```
+A reviewer-authored section-scoped edit landing t1's done-check pin (`cloudcost/m5-n1-compose.md`,
+the `**Done-check.**` block of §t1) and one correction (`cloudcost/docs/m5-scoping-landing-notes.md`,
+§Review, F2's disposition), at agents r3 — the fourth commit of the m5 scoping round, on top of
+`eebd47c` (r0), `a039a0d` (r1) and `2876d26` (r2).
+```
+
+**One clause of the specified shape was false and was built from what was verified instead.** The
+shape read *"each round's section names its own commit."* No section in this file names its own
+commit and none can: r3's header says in the very next sentence that **the r3 SHA is deferred to
+the packet** because a file committed *in* r3 cannot carry r3's hash, and r5's section names the
+five commits beneath it and not itself. Landed as **"each round's section names the round that
+made it, and none names its own commit"** — true of r3 (`Authored 2026-08-09 at r3`), r4 (*"run
+in this session at r4's tree"*), r5 (`Authored 2026-08-09 at r5`) and r6 — and consistent with
+the retained sentence two lines below rather than contradicting it. Nothing else in the header
+changed; the replacement is a provenance line, so the surviving sentence begins a paragraph of
+its own.
+
+### T3 — the history check, and a second clause built rather than transcribed
+
+**Which rounds wrote into the landing record:**
+
+```
+$ git log --oneline --follow -- cloudcost/docs/m5-scoping-landing-notes.md
+b648867 docs(m5 r5): retire the r1-anchor convention; ratify M1; open §Promotion candidates
+a9639de docs(m5 r4): truth-maker for §G1's cwd clause; stale-anchor sweep after the pin
+9d7afe0 docs(m5 r3): pin t1's done-check invocation; correct F2's disposition; pin-edit record
+2876d26 docs(m5 r2): R20 review section on the landing record; §F1 corrected; class 4 derived
+a039a0d docs(m5 r1): nest tickets under §Ticket set per §6; landing record; F1 anchor resolved
+```
+
+Opened at **r1**, amended at **r2**, **r3**, **r4**, **r5** — and **r6**, which lands T3 and
+T4b into it. Five amendments, not four; every round of this landing except r0 wrote into it, and
+r0 is the round that created the round document and the two backlog annotations instead.
+
+**The shape's clause *"each amendment is dated at its site"* is false, and this was checked
+before landing it.** Only two of the five amendments carry a date where they sit:
+
+| round | what it changed in this file | dated at its site? |
+|---|---|---|
+| r1 | the file's creation | — |
+| r2 | §Review added; §F1's table corrected; §Divergences class 4's G2 derivation | **yes** — `[Authored … at r2]`, `[Corrected in place at r2 (G3)…]`, `[Derived at r2 (G2)…]` |
+| r3 | §Review, F2's disposition (*"no ticket headings"* → *"no ticket sections"*) | **no** — corrected in place, deliberately, per §P2 above |
+| r4 | verification 5's E7 anchor, `:176` → `:181` | **no** — a bare anchor change |
+| r5 | three citation conversions; the §Closing note replacement | **partly** — the closing note carries `[Convention retired … at r5]`; the three conversions carry nothing |
+| r6 | this round's T3 and T4b | **yes** for T4b's stamp |
+
+So the landed line says instead: **"each amendment is dated at its site, or — where it was
+corrected in place before this file had ever been pushed — recorded in
+`cloudcost/docs/m5-pin-edit-implementation-notes.md`."** That is true of all five: r3's is
+recorded at §P2, r4's and r5's in the r5 section's conversion table, r2's and r5's closing note
+at their own sites. The *"before this file had ever been pushed"* clause is itself checked —
+nothing in this round has been pushed; `origin/main` is still `da1bcb2a11647bdae9b5f546288ef858c6da066f`.
+
+**Both built clauses are deviations from the r6 prompt's literal text**, taken under T2(c)'s
+*"built from what you verified, in this shape"* and T3(b)'s *"built from what you verified"*, and
+they are why r6 holds its push rather than taking it.
+
+### T4 — the commit that made the annotations, derived
+
+Not assumed. The pickaxe over each annotation's own text returns one commit, and that commit's
+backlog hunk contains both:
+
+```
+$ git log --oneline -S'**Scoped 2026-08-09 into `cloudcost/m5-n1-compose.md`**' -- docs/backlog-2026-06.md
+eebd47c docs(m5): open the N>1 compose round — BL-131 scoped, t1/t2 anatomy authored
+$ git log --oneline -S'**Annotated 2026-08-09.**' -- docs/backlog-2026-06.md
+eebd47c docs(m5): open the N>1 compose round — BL-131 scoped, t1/t2 anatomy authored
+$ git show eebd47c --stat -- docs/backlog-2026-06.md
+ docs/backlog-2026-06.md | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+$ git rev-parse eebd47c
+eebd47c7acafbc6b9eb93682b3f3a6aaa8689802
+```
+
+**The offsets were measured at r1's tree and the stamp names r0's commit; these are the same
+file.** `docs/backlog-2026-06.md` has not changed since the annotations landed:
+
+```
+$ git diff --stat eebd47c HEAD -- docs/backlog-2026-06.md ; echo "exit=$?"
+exit=0
+```
+
+Empty diff, so the offsets recorded at r1 are exactly the offsets at `eebd47c`, and the stamp
+binds them to the commit that made the insertions rather than to the commit that read them —
+which is the stronger of the two bindings and the one the clause asks for.
+
+**T4's ruling is applied as ruled: the annotation table does not convert.** The r5 flag was
+correct to raise it and wrong to have been acted on; nothing in §The attribution rule changed
+except the stamp beneath its table.
+
+### Recorded rather than repaired
+
+Per this round's standing instruction, §Not established item **4** (`[DECIDED]`, kind (c)) on the
+round document carries four self-scoped statements that later content has grown above — the
+landing record's *"across two rounds"* opening and its *"derived in this session at r1's tree"*
+closing note, this file's closing *"Every figure above was derived in this session"*, and this
+file's own r5 sweep transcript, whose offsets are unstamped positional claims of exactly the kind
+m5-D1 now names. Each is bounded by its own text or its own enumeration, so none is false; all
+four are left standing.
+
+---
+
 ## Review
 
 `[Authored by the reviewer, 2026-08-09, at r3. R20's shape: findings verbatim, dispositions
@@ -385,6 +548,26 @@ arithmetic — so r4 held rather than pushing past it.*
 > the round document (S5).** The finding is against the check the reviewer wrote, and the
 > substitution was reported rather than silently made, which is the behaviour the candidate asks
 > for.
+
+**F13 — a sentence left standing by a scoped replacement.** *Finding, raised by claude-code at
+r5: §Ratified decisions' "An empty section at open is the correct state" survived a replacement
+that named two sentences, and the section it describes is no longer empty. Reported rather than
+silently extended.*
+
+> **Disposition: accepted and corrected at r6 (T1).** The defect is in the reviewer's instruction
+> — a replacement scoped by naming sentences, against a paragraph whose remaining sentence
+> depended on what the replacement changed. Reporting it rather than fixing beyond scope was the
+> right call and is the behaviour the instruction relies on.
+
+**F14 — an exemption with no tense.** *Finding, raised by claude-code at r5: m5-D1's exemption
+for positional claims covers every backlog anchor in these records, so the conversion example
+converted nothing — and the rule says nothing about whether an exempt offset describes HEAD or
+the commit that made it.*
+
+> **Disposition: exemption confirmed, rule extended at r6 (T4).** The annotation table does not
+> convert; positional claims are stamped with the commit they were measured at. Found by applying
+> the rule to a population its author had not enumerated, which is the rule's own subject
+> arriving in its own application.
 
 ---
 

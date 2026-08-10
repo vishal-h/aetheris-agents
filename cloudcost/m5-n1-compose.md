@@ -247,8 +247,8 @@ the ruling and before t2 opens, per R12.`
 **The BL-131 ruling is not here yet.** It lands in this section, authored by the
 reviewer at the gate stop between t1 and t2 per R12, with its own date. The
 decision below is methodological and was made in the course of opening the
-round. An empty section at open is
-the correct state and is stated rather than omitted.
+round. The BL-131 slot standing open and saying so is the correct state before
+t1 runs, and is stated rather than omitted.
 
 ### m5-D1 — a citation into a document still being edited names its section and quotes its text; a line number is only for a claim about a line.
 
@@ -263,7 +263,11 @@ citation form is the fix.
 A line number is correct where the claim is itself about a line — a count, a
 diff hunk, a position, a `file:count` grep output. Everywhere else, name the
 section and quote enough text that a reader finds it by search rather than by
-offset. This is the form already required of t1's `Done-check` pin.
+offset. This is the form already required of t1's `Done-check` pin. Where the
+exempt claim is positional — where an insertion fell, what a count was taken
+over — it is stamped with the commit it was measured at, so it reads as history
+rather than as a statement about HEAD. An unstamped positional claim is the
+census-staleness shape with offsets in place of the total.
 
 **Binds t1 and t2**, whose implementation notes cite into this document and
 into the backlog while both are still being edited. Promoted mid-cycle rather
@@ -276,6 +280,10 @@ Source: the m5 scoping landing, r4's stale-anchor sweep.`
 cloudcost/m2-milestone.md (mutations M1–M8) and in
 docs/milestones/bl-067-implementation-notes.md. The fallback and its condition
 are the reviewer's own, at r5 S4(a).]`
+
+`[Extended 2026-08-09 at r6 with the stamping clause, on claude-code's r5 flag
+that the exemption covers a whole document's anchors and said nothing about
+their tense.]`
 
 ---
 
@@ -334,6 +342,23 @@ carries no total.
    actually makes has not been established, and *removed* forecloses more if it
    is not.
    **Resolver:** t1's **E7**, in this document.
+
+4. **`[DECIDED]` (c)** **Four self-scoped statements in the two m5 record files
+   predate content later appended above them.** `cloudcost/docs/m5-scoping-landing-notes.md`
+   opens by saying it records the landing *"across two rounds"* and names r1 as
+   *"this commit"*; its §Closing note says every figure above was *"derived in this
+   session at r1's tree"*; `cloudcost/docs/m5-pin-edit-implementation-notes.md` closes
+   with *"Every figure above was derived in this session at the HEAD it names"*,
+   enumerating four r3 figures; and that file's r5 section publishes a sweep
+   transcript whose offsets are positional claims carrying no stamp of the kind
+   **m5-D1** now requires. Each is scoped by its own text to the round that wrote it,
+   and every later insertion above them carries its own dated mark, so none states
+   something false — but a reader taking the quantifier at face value reads it wider
+   than its author meant, and the r5 transcript is the first population m5-D1's
+   stamping clause does not reach.
+   **Not fixed, deliberately:** r6 repairs false claims only, and there is no further
+   round of the scoping landing. Recorded so a later reader knows the scoping was
+   read and left, not missed.
 
 ---
 

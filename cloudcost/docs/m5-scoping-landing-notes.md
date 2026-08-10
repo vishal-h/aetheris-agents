@@ -662,6 +662,12 @@ row's `Source:` line — the exact position the rule names:
 | `**Scoped 2026-08-09 into `cloudcost/m5-n1-compose.md`**` | `docs/backlog-2026-06.md:7535` | BL-131, opening `:7484` |
 | `**Annotated 2026-08-09.**` | `docs/backlog-2026-06.md:7586` | BL-132, opening `:7547` |
 
+`[The offsets in this section are positional claims, measured at agents
+eebd47c7acafbc6b9eb93682b3f3a6aaa8689802 — the commit that made the insertions. They are
+historical and are not re-resolved at HEAD: a later edit to docs/backlog-2026-06.md moves the
+rows without making this record wrong. Stamped 2026-08-09 at r6, under m5-D1's exemption for a
+claim about where an insertion fell.]`
+
 **Where each insertion point falls, with the surrounding context asserted rather than quoted
 (F6d), at r1's tree.**
 
@@ -732,7 +738,10 @@ every line number cited into cloudcost/m5-n1-compose.md to be an r1 number;
 r4's stale-anchor fix made that false for one anchor, and section-name
 citation makes it unnecessary for all of them.]`
 
-`Landed at r1. Commits: r0 = eebd47c7acafbc6b9eb93682b3f3a6aaa8689802; r1 = this commit.`
+`Opened at r1 and amended at r2, r3, r4, r5 and r6; each amendment is dated at its site, or —
+where it was corrected in place before this file had ever been pushed — recorded in
+cloudcost/docs/m5-pin-edit-implementation-notes.md. The commits are named in §Review and in the
+entries that made them.`
 
 ---
 

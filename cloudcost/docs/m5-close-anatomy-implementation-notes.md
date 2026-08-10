@@ -72,6 +72,16 @@ r1 actually says. Rewriting a ratification to fit the file would be the error m5
 §Promotion candidates entry on ratified-vs-unpushed artifacts describes; letting the record
 assert a flag that is not in the file would be a different one. Neither is taken.
 
+`[Amended 2026-08-10 at r2, on the reviewer's ruling. **This section is scoped to t2 r1's
+implementation-notes file and says so nowhere.** t2 r1's packet §10 does flag the item —
+see §Review → *W3(c) was authorised*, and §r1 above, which establishes it against the
+packet read as a file. Read the two together: this section states what the committed file
+carries, that block states what the packet carried, and the disagreement between them is
+the finding rather than an error in either. Corrected by pointer rather than by rewriting,
+because the paragraph is accurate about what it checked and wrong only about what it did
+not check. The file was pushed at a2ae6bf before this amendment, so the pointer is dated
+rather than the text silently qualified.]`
+
 ---
 
 ## C1 — §Ticket set conventions: the review file stops being a per-ticket deviation
@@ -428,6 +438,90 @@ round's: its §9 heading reads *"DEVIATIONS — one, named because `Touches` req
 that"*, the same wording as the committed `cloudcost/docs/m5-t2-implementation-notes.md`
 §*r1 — deviations*, and its §4 is *"W3 — the second-claim sweep over `cloudcost/milestone.md`"*,
 the unit this whole exchange is about.
+
+---
+
+## r2 — the gate section points at the correction it predates
+
+`Dated 2026-08-10, on the reviewer's r2 instruction. Per R15 this is a further round of this
+edit, not a new one. One append to §Gate on the instruction; no other unit in this file or
+any other is touched. The reviewer accepted r1's flagged observation and ruled that declining
+to widen unasked had been right — so the widening arrives as its own round, with its own
+record, rather than as an edit made to get past one.`
+
+### The unit, before — §Gate on the instruction → *The one claim that does not hold*, at `a2ae6bf`
+
+> **C6a's first disposition says t2 r1 *"flagged that correcting the cross-currency item might
+> exceed the amended bullet."* t2 r1 raised no such flag.** What it did was the opposite: at
+> **W3(c)** it corrected the item and asserted its authority in place, closing that paragraph
+> *"**In §Open items, so inside the amended `Touches`.**"*
+> (`cloudcost/docs/m5-t2-implementation-notes.md` §*W3 — the second-claim sweep over
+> `cloudcost/milestone.md`*, part (c)).
+>
+> The two things r1 did reserve for the reviewer are dispositions two and three, both of which
+> the instruction states accurately: **W3(d)** — *"Reported, not fixed — two, and the
+> reviewer's call"* — and **§r1 — deviations** — *"**The reviewer's call** whether `Touches`
+> should carry it."* A `grep` for `exceed` over the whole file returns one hit, and it is in
+> W3(d), about the two staleness items.
+>
+> **What was done about it.** The disposition's *ruling* — that the correction did not exceed
+> the bullet — is sound and is the reviewer's to make, so it lands **verbatim**, unedited.
+> What does not land unqualified is the characterisation: the `## Review` section below
+> carries the disposition as written and, beneath it, a dated resolution note quoting what t2
+> r1 actually says. Rewriting a ratification to fit the file would be the error m5's own
+> §Promotion candidates entry on ratified-vs-unpushed artifacts describes; letting the record
+> assert a flag that is not in the file would be a different one. Neither is taken.
+
+**Left byte-unchanged**, all three paragraphs. This round's diff is additions only; the only
+`-`-prefixed line in it is the `--- a/…` file header.
+
+### Where the insertion falls
+
+**Inside the `### The one claim that does not hold` subsection, after its last paragraph,
+before the section boundary.** The unit above the insertion ends at *"Neither is taken."* The
+unit below is the `---` rule that closes §Gate on the instruction, then the heading
+`## C1 — §Ticket set conventions: the review file stops being a per-ticket deviation`. The
+dated note sits between that final sentence and that rule, blank-line separated on both
+sides, so it lands **inside** the subsection it qualifies rather than at the head of C1.
+
+**No claim was separated from its attribution.** The subsection carries no `Source:` line;
+each of its three paragraphs cites its evidence inline and keeps it. The note is appended
+after the last of them and carries its own dated `[Amended…]` stamp rather than borrowing
+one.
+
+### The unit, after — the appended note
+
+> `[Amended 2026-08-10 at r2, on the reviewer's ruling. **This section is scoped to t2 r1's
+> implementation-notes file and says so nowhere.** t2 r1's packet §10 does flag the item —
+> see §Review → *W3(c) was authorised*, and §r1 above, which establishes it against the
+> packet read as a file. Read the two together: this section states what the committed file
+> carries, that block states what the packet carried, and the disagreement between them is
+> the finding rather than an error in either. Corrected by pointer rather than by rewriting,
+> because the paragraph is accurate about what it checked and wrong only about what it did
+> not check. The file was pushed at a2ae6bf before this amendment, so the pointer is dated
+> rather than the text silently qualified.]`
+
+### The third instance, and where it goes
+
+**This is the third instance in this round of a correction landing in one section while the
+same claim survived in another**, and the count is enumerated rather than asserted: **(1)**
+t2 r1's **F1** — r0 corrected the reachability premise in `cloudcost/milestone.md` §Contracts
+at C4 and C11, and §Open items still carried *"unreachable while DO is the only provider"*;
+**(2)** the **W3(c)** hit — the sweep F1 commissioned found the same premise surviving a
+second time in §Open items, in the cross-currency aggregation item's *"live at the first
+fan-out"*; **(3)** this one — r1 corrected the packet-versus-file claim in §Review while the
+unqualified form survived in §Gate on the instruction. **t3 weighs it under §Close criteria
+clause 1 as further input to §Promotion candidates' first entry, not as a fourth candidate.**
+
+`[Method, and its limit. The two priors were read out of `cloudcost/docs/m5-t2-implementation-notes.md`
+at HEAD — F1's surviving clause and W3(c)'s *"The one hit, corrected"* — not taken from the
+instruction. What was not run is an exhaustive semantic census of the round's nine record
+files; this class has no grep-able marker, so the enumeration is of *recorded* instances and
+a fourth could exist unrecorded. Stated so the figure is read for what it is.]`
+
+`[No figure about this round's own diff appears in this section. r1 published one three
+times and was overtaken by its own later edits each time; the fix there was to re-derive
+after the last edit, and the fix here is not to make the claim.]`
 
 ---
 

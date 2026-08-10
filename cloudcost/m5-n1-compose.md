@@ -43,7 +43,8 @@ either.
 | Ticket | Subject | State |
 |---|---|---|
 | **t1** | Establish the N>1 compose surface, read-only, to the point where the ruling can be made | **Opened and stopped at the gate stop** 2026-08-10, r0. Step-1 gate ran: (b) unmoved; (a) **diverges from BL-131 and is not temporal** — three routes reach N>1, not one, and the route-bearing code is byte-unchanged since `6832159`. Continued under the reviewer's mid-ticket ruling of 2026-08-10 that the stop condition is temporal. **E1–E8 all answered**; no ruling made, no behaviour changed. Record: `cloudcost/docs/m5-t1-implementation-notes.md`. **r1** 2026-08-10: verdict on r0 was **APPROVE**; both findings closed without re-running E1–E8 — **F1**, E4(6)'s document sweep run over the harness's full tracked population (2 hits, both LLM-provider, **zero in scope**, three controls plus a case-insensitive guard); **F2**, r0's packet §1/§2 diffed byte-for-byte against the committed file — identical, and the elision's basis corrected to 577 of 634 lines. **F1a** recorded not repaired: E4(6)'s stated `.md` population and its own distribution disagree by one file. Review file: `docs/reviews/m5-cloudcost-t1-review.md`. Still **waits on** the BL-131 ruling, which §Ratified decisions says the reviewer authors into this document at the gate stop, per R12; the resolver is unchanged. |
-| **t2** | Apply the ruling; amend §Contracts; dispose the rows that resolve with it | **State — opened and applied 2026-08-10 (r0), reviewed and corrected 2026-08-10 (r1); in review.** **Step-1 gate (r0), passed on both arms:** (a) the orchestrator's two STEP 3 forms each pass at most one of `--cost`/`--inventory`/`--orphans`, so one bundle on both, and `git diff a2d63d1 HEAD` on the agent file is empty; (b) both m4 t5b pointer blocks present in §Contracts, and the same diff over `cloudcost/milestone.md` is empty. **Nothing had moved since m5-D2 was ratified**, so the ruling's factual basis held and t2 continued rather than being re-scoped. **What landed (r0) — m5-D2's four declaration requirements:** **C4** and **C11** each gain a *Source-only by ruling* paragraph, with each one's pointer block **discharged in place, not deleted**; `compose_report_data.py`'s module docstring declares one-bundle invocation with **no executable line changed**, proven by AST equality outside the docstring rather than by reading the diff; `cloudcost/runbook.md`'s *now-unreachable* sentence corrected to reachable-and-uninvoked. **Five rows disposed:** **BL-070** not taken — its Done-when clause 4 corrected in place, since nothing is resolved-by-deletion; **BL-121** framing resolved and closed; **BL-131** closed on the ruling; **BL-132** and **BL-119** annotated and left open, **BL-119** gaining the **BL-136** cross-reference and no other row gaining one. **r1 — verdict APPROVE, one finding.** **F1:** §Open items still carried *"unreachable while DO is the only provider"*, restating as a premise the *"live at the first fan-out"* reading t1's **E1** killed; r0 was right to decline it as outside `Touches`, and recording it in BL-070 did not discharge it, BL-070 being DONE. **The reviewer amended `Touches`** — the `cloudcost/milestone.md` bullet gains **§Open items**, the scoping gap being the reviewer's — and the claim is corrected in that authority: reachable and uninvoked, **reachability not a function of provider count**, the eyeball still owed by the first ticket making either path reachable *from the pipeline*. **The second-claim sweep** owed on that file — 18-term vocabulary, 42 hits, control by re-finding both known sites — returned **one further hit on the same premise**, the cross-currency aggregation item's *"live at the first fan-out"* over BL-070's own four deferred sites, corrected in the same commit; and **two staleness items reported not fixed**, outside the premise and so outside what the amended bullet authorises. Review file: `docs/reviews/m5-cloudcost-t2-review.md`. **Done-check, both rounds: 386 passed**, identical to t1's recorded figure, as a docs-and-docstring ticket requires; no executable line changed at r1 either. Record: `cloudcost/docs/m5-t2-implementation-notes.md`. **Provenance of the ticket text itself:** anatomy authored 2026-08-09 and **completed 2026-08-10** at the ruling edit — **no slot R13-marked, no `Resolver:` left in the subsection** — with all seven §6 fields plus the step-1 gate written: the gate stops on *moved* and says so, `Touches` names six paths, the runbook rule states why a docs-only ticket still touches the runbook, and the done-check pins the same pytest spine t1 ran against t1's recorded **386 passed**; the ticket applies **m5-D2** and carries no ruling of its own (record: `cloudcost/docs/m5-ruling-edit-implementation-notes.md`). **Amended 2026-08-10 at the reviewer edit, four fields** — `Scope` rewritten to name the four artifacts the ruling lands in and to state the manifest out of scope by decision rather than by omission; `Contract refs` re-tensed and extended with **m5-D2**, decision H, **BL-132** and **BL-136**; the `docs/backlog-2026-06.md` bullet in `Touches` gains **BL-136** (still six paths); and the `Claude-code prompt`'s backlog paragraph gains the BL-136 cross-reference instruction (record: the same file, §r1). **Further amended at t2 r1**, one field, as above. |
+| **t2** | Apply the ruling; amend §Contracts; dispose the rows that resolve with it | **State — opened and applied 2026-08-10 (r0), reviewed and corrected 2026-08-10 (r1); closed, approved at r1 and pushed at `f6acc9c`.** **Step-1 gate (r0), passed on both arms:** (a) the orchestrator's two STEP 3 forms each pass at most one of `--cost`/`--inventory`/`--orphans`, so one bundle on both, and `git diff a2d63d1 HEAD` on the agent file is empty; (b) both m4 t5b pointer blocks present in §Contracts, and the same diff over `cloudcost/milestone.md` is empty. **Nothing had moved since m5-D2 was ratified**, so the ruling's factual basis held and t2 continued rather than being re-scoped. **What landed (r0) — m5-D2's four declaration requirements:** **C4** and **C11** each gain a *Source-only by ruling* paragraph, with each one's pointer block **discharged in place, not deleted**; `compose_report_data.py`'s module docstring declares one-bundle invocation with **no executable line changed**, proven by AST equality outside the docstring rather than by reading the diff; `cloudcost/runbook.md`'s *now-unreachable* sentence corrected to reachable-and-uninvoked. **Five rows disposed:** **BL-070** not taken — its Done-when clause 4 corrected in place, since nothing is resolved-by-deletion; **BL-121** framing resolved and closed; **BL-131** closed on the ruling; **BL-132** and **BL-119** annotated and left open, **BL-119** gaining the **BL-136** cross-reference and no other row gaining one. **r1 — verdict APPROVE, one finding.** **F1:** §Open items still carried *"unreachable while DO is the only provider"*, restating as a premise the *"live at the first fan-out"* reading t1's **E1** killed; r0 was right to decline it as outside `Touches`, and recording it in BL-070 did not discharge it, BL-070 being DONE. **The reviewer amended `Touches`** — the `cloudcost/milestone.md` bullet gains **§Open items**, the scoping gap being the reviewer's — and the claim is corrected in that authority: reachable and uninvoked, **reachability not a function of provider count**, the eyeball still owed by the first ticket making either path reachable *from the pipeline*. **The second-claim sweep** owed on that file — 18-term vocabulary, 42 hits, control by re-finding both known sites — returned **one further hit on the same premise**, the cross-currency aggregation item's *"live at the first fan-out"* over BL-070's own four deferred sites, corrected in the same commit; and **two staleness items reported not fixed**, outside the premise and so outside what the amended bullet authorises. Review file: `docs/reviews/m5-cloudcost-t2-review.md`. **Done-check, both rounds: 386 passed**, identical to t1's recorded figure, as a docs-and-docstring ticket requires; no executable line changed at r1 either. Record: `cloudcost/docs/m5-t2-implementation-notes.md`. **Provenance of the ticket text itself:** anatomy authored 2026-08-09 and **completed 2026-08-10** at the ruling edit — **no slot R13-marked, no `Resolver:` left in the subsection** — with all seven §6 fields plus the step-1 gate written: the gate stops on *moved* and says so, `Touches` names six paths, the runbook rule states why a docs-only ticket still touches the runbook, and the done-check pins the same pytest spine t1 ran against t1's recorded **386 passed**; the ticket applies **m5-D2** and carries no ruling of its own (record: `cloudcost/docs/m5-ruling-edit-implementation-notes.md`). **Amended 2026-08-10 at the reviewer edit, four fields** — `Scope` rewritten to name the four artifacts the ruling lands in and to state the manifest out of scope by decision rather than by omission; `Contract refs` re-tensed and extended with **m5-D2**, decision H, **BL-132** and **BL-136**; the `docs/backlog-2026-06.md` bullet in `Touches` gains **BL-136** (still six paths); and the `Claude-code prompt`'s backlog paragraph gains the BL-136 cross-reference instruction (record: the same file, §r1). **Further amended at t2 r1**, one field, as above. |
+| **t3** | The close: §7's ritual, the close criteria, and the milestone summary | **Not opened.** Anatomy authored 2026-08-10 |
 
 **Ticket anatomy in this document is §6's seven fields plus a step-1 gate. The
 gate is not a §6 field.** §6 defines seven fields and no gate. The gate is m4
@@ -64,6 +65,13 @@ literally reach this round. The obligation is
 `../aetheris/docs/methodology/milestone-methodology.md` §1 principle 4 and §8, both
 unscoped, which are the sections R2 grounds itself in. Cited correctly here after
 t1 r1 established it against a round instruction that cited R2 as the source.
+
+**A review file is not a `Touches` path, and landing one is not a deviation.** It is a
+standing obligation on every ticket round in this document, discharged in the round's
+own commit, and both t1 and t2 named it as a deviation because this sentence did not
+exist. Declared once here rather than re-declared per round. A ticket's `Touches` still
+governs everything else, and the round that established the distinction is the round
+that proved why: t2 r1 declined to widen its own scoping unasked, correctly.
 
 **R19 applies.** A session that changes a ticket's state updates its row in the
 table above in the same commit.
@@ -345,6 +353,142 @@ git status --short
 > Run the done-check and include its output in the review packet. Update t2's row
 > in §Ticket set in the same commit, per R19. Do not push.
 
+### t3 — the close
+
+**Step-1 gate** *(m4 decision 3, carried by R8 — run before any other work).* **This
+gate's stop condition is temporal, and says so.** It stops on *moved*, not on *differs*.
+Reference point: t2 r1, the last commit before this ticket.
+
+Re-derive at HEAD:
+
+- **(a)** that t1's and t2's rows in §Ticket set both state a terminal state, and that
+  both tickets' commits are on the remote;
+- **(b)** that no entry in §Promotion candidates already carries a promotion
+  disposition, and that §Carried in still names the entries inherited from the
+  preceding cycle.
+
+Name each section and quote it; state how any zero was established as absence. **If
+either has moved since t2 r1, stop and report** — the close's input set has changed and
+t3 is re-scoped rather than continued.
+
+**Scope.** After this ticket the round is closed: every promotion candidate — this
+round's and the ones carried in — is promoted or dropped with §7's test applied and its
+result stated, every promoted entry has been read back out of its destination file, the
+preceding cycle's promotion claims have been censused against both `CLAUDE.md` files, the
+drift checker has run, and §Milestone summary states what shipped and what stays open. No
+behaviour changes and no contract is amended.
+
+**Contract refs.** `../aetheris/docs/methodology/milestone-methodology.md` **§7** —
+the ritual, all five steps, and the *"review files are not the only input"* clause ·
+this document's **§Close criteria**, **§Promotion candidates**, **§Carried in**,
+**§Not established**, **§Ratified decisions** (m5-D1, m5-D2) ·
+`docs/milestones/hc-consolidation.md` — **R19**, **R20**, **R21** · both repos'
+`CLAUDE.md` learning sections. Normative and not restated in the prompt.
+
+**Touches.**
+
+- `cloudcost/m5-n1-compose.md` — §Promotion candidates (dispositions), §Not established
+  (clause 3's result), §Ticket set (t3's row per R19, and any row clause 4 finds
+  understated), §Milestone summary *(new)*.
+- `CLAUDE.md` — the learning section, for entries promoted into the agents repo.
+- `../aetheris/CLAUDE.md` — the learning section, for entries promoted into the harness.
+- `docs/backlog-2026-06.md` — **one new row**, the §Open items freshness census
+  described in the prompt.
+- `cloudcost/docs/m5-t3-implementation-notes.md` *(new)*.
+
+Nothing else. Any other path that changes is a deviation and is named. The round's
+review file is not a `Touches` path — see §Ticket set's conventions.
+
+**Do not generate.** No amendment to any contract in `cloudcost/milestone.md`; no change
+to any executable line anywhere; no reachability work over C1–C15; no edit to a
+disposed backlog row; no new `m5-D<n>` decision — the round's decisions are ratified and
+the close records, it does not rule. **Do not fix the two §Open items staleness findings
+t2 r1 reported** — they are the new row's subject, and fixing them needs adapter reads
+this ticket does not do.
+
+**Runbook update rule.** t3 introduces no environment variable, startup step,
+configuration key or operational procedure, and changes the observable semantics of no
+command, flag or UI affordance. **No runbook section is in `Touches`, and that is stated
+rather than left to inference.** If the close surfaces an operator-visible gap, record it
+as a finding and file it; do not fix it here.
+
+**Done-check.**
+
+```bash
+# 1. The offline pytest spine — the same pin t1 and t2 ran. Re-resolve both anchors at
+#    HEAD before running (cloudcost/runbook.md §Offline tests for the command,
+#    CLAUDE.md §Commands for the root), quote each, and if either has moved report it
+#    and run what the anchors say now. A count differing from t1's and t2's recorded
+#    figure is a FINDING, not a pass — t3 changes no executable line.
+python3 -m pytest cloudcost/tests/ -v
+
+# 2. Every promoted entry reads out of its destination file. For each entry promoted,
+#    grep its rule's opening words in the file it was promoted into and quote the hit
+#    WITH ITS SURROUNDING LINES — from the file, never from the packet. State the
+#    pattern you used per entry. A promotion that cannot be read back is not promoted.
+
+# 3. The drift checker. DERIVE its invocation from cloudcost/runbook.md or CLAUDE.md
+#    and record the exact command beside its output. Do not invent one; if neither
+#    document states it, report that as a finding and record what you ran and why.
+
+# 4. Every §Promotion candidate carries a dated disposition. State the count of entries
+#    in the section and the count carrying a disposition; they must be equal, and both
+#    are derived by enumeration with the enumeration printed.
+
+# 5. Nothing outside Touches changed.
+git status --short
+```
+
+**Claude-code prompt.**
+
+> Read this ticket's `Contract refs` and do not restate them. Run the step-1 gate above
+> first and report its result before continuing.
+>
+> Then run §Close criteria's six clauses in order, reporting each clause's result
+> whether or not it produced an edit.
+>
+> **On clause 1 and clause 2 together.** §7's input is not only the review files — its
+> own text says so. The population you weigh is: this document's §Promotion candidates,
+> the entries §Carried in names from the preceding cycle, this round's two review files,
+> and the implementation-notes files of t1, t2 and the reviewer edits. Derive that
+> population with a command and print the enumeration before weighing it. For each
+> candidate state its instances, whether §7's ≥2 bar is met, and the disposition. Where
+> instances are reviewer-edit rounds rather than tickets, **say so and rule explicitly**
+> — a round is not a ticket and the difference is the reviewer's to be told about, not
+> yours to smooth.
+>
+> **On the promotion format.** §7 step 2 fixes it: a bold one-line rule, one to three
+> sentences of why, and a `Source:` naming where it came from. Read the destination
+> section's own established shape before writing and follow it. **§Carried in's first
+> rule binds you here more than anywhere** — an insertion between a claim and its
+> `Source:` re-attributes both, and the preceding cycle recorded three promotions
+> landing inside the wrong entry. State where each insertion point falls relative to the
+> surrounding entry's boundaries, and assert what the surrounding context is rather than
+> quoting it.
+>
+> **On the prior-claims census.** Every item in the preceding cycle's promotion block is
+> checked against both `CLAUDE.md` files, not the ones that look unfamiliar. Two found by
+> eye is not a census — enumerate the block and check each member.
+>
+> **File one backlog row**: a freshness census over `cloudcost/milestone.md` §Open items.
+> Its subject is items whose trigger has already fired or whose framing predates adapters
+> that have since shipped — t2 r1 reported two, the recency-modifier item and the
+> orphan-filename item, and named the shape. The row states that neither rests on the
+> premise m5-D2 overturned, that settling either needs adapter reads, and that the two
+> reported instances are a starting population and not the census. Derive the row number
+> and the placement from the file. **m5-D1 governs every citation you write.**
+>
+> **Write §Milestone summary** as clause 6 requires. It states what shipped, what each of
+> the six clauses found, and what stays open with why that is correct. It carries no
+> total over §Not established — the per-item prefixes are authoritative.
+>
+> Run the done-check and include its output in the review packet. Update t3's row per
+> R19 in the same commit. **Land the harness commit first if the harness is touched**, per
+> the round's cross-repo ordering, and hold both pushes.
+
+`Anatomy authored 2026-08-10 by the reviewer, before t3 opens, per R12. No slot is
+R13-marked: every field is authorable now, because the close's inputs are all committed.`
+
 ---
 
 ## Ratified decisions
@@ -497,6 +641,37 @@ and the row that owns it was filed afterwards. The clause's own date does not
 distinguish it — the ruling and the row share 2026-08-10 — which is why this note
 exists rather than being redundant with it. Recorded per decision 7; the before and
 after are at §r1 of cloudcost/docs/m5-ruling-edit-implementation-notes.md.]`
+
+---
+
+## Close criteria
+
+Six clauses. Each is checkable, and the close reports the result of each whether or not
+it produced an edit — a clause that produced nothing is a result, not a silence.
+
+1. **Every entry in §Promotion candidates is promoted or dropped**, with §7's
+   *recurred on ≥2 tickets* test applied and its result stated per entry. **Where an
+   entry's instances are reviewer-edit rounds rather than tickets, say so** and state
+   whether the bar is met, met by analogy, or not met — do not silently count a round
+   as a ticket. A candidate deliberately left recorded is a decision and is marked as
+   one, not left unmarked.
+2. **The entries carried in from the preceding cycle are weighed on the same terms.**
+   §Carried in names them and says they are in force for this round's §7; they are its
+   input, not its background. And §7's prior-claims census runs: any document from the
+   preceding cycle claiming learnings were promoted is checked against **both**
+   `CLAUDE.md` files, and anything absent is promoted now with a `Source:` naming the
+   cycle it came from and the fact that it was found absent.
+3. **Every §Not established item's state reads from its own prefix**, each `[OPEN]`
+   item names what would settle it, and each `[OPEN]` (a) item's resolver names
+   something that exists. The section carries no total.
+4. **Every row in §Ticket set states its terminal state**, and no row's state is
+   inferable only from a record file.
+5. **The drift checker runs and its result is recorded** — the command derived, not
+   invented, and published with its output.
+6. **§Milestone summary is written**: what shipped, what the close's clauses found,
+   what stays open and why that is correct.
+
+`Authored 2026-08-10 by the reviewer, before t3 opens, per R12.`
 
 ---
 

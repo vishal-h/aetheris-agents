@@ -43,7 +43,7 @@ either.
 | Ticket | Subject | State |
 |---|---|---|
 | **t1** | Establish the N>1 compose surface, read-only, to the point where the ruling can be made | **Opened and stopped at the gate stop** 2026-08-10, r0. Step-1 gate ran: (b) unmoved; (a) **diverges from BL-131 and is not temporal** — three routes reach N>1, not one, and the route-bearing code is byte-unchanged since `6832159`. Continued under the reviewer's mid-ticket ruling of 2026-08-10 that the stop condition is temporal. **E1–E8 all answered**; no ruling made, no behaviour changed. Record: `cloudcost/docs/m5-t1-implementation-notes.md`. **r1** 2026-08-10: verdict on r0 was **APPROVE**; both findings closed without re-running E1–E8 — **F1**, E4(6)'s document sweep run over the harness's full tracked population (2 hits, both LLM-provider, **zero in scope**, three controls plus a case-insensitive guard); **F2**, r0's packet §1/§2 diffed byte-for-byte against the committed file — identical, and the elision's basis corrected to 577 of 634 lines. **F1a** recorded not repaired: E4(6)'s stated `.md` population and its own distribution disagree by one file. Review file: `docs/reviews/m5-cloudcost-t1-review.md`. Still **waits on** the BL-131 ruling, which §Ratified decisions says the reviewer authors into this document at the gate stop, per R12; the resolver is unchanged. |
-| **t2** | Apply the ruling; amend §Contracts; dispose the rows that resolve with it | **Not opened, and ready to open.** Anatomy authored 2026-08-09; **completed 2026-08-10** at the ruling edit — **no slot is R13-marked and no `Resolver:` remains in the subsection.** All seven §6 fields plus the step-1 gate are written: the gate stops on *moved* and says so, `Touches` names six paths, the runbook rule states why a docs-only ticket still touches the runbook, and the done-check pins the same pytest spine t1 ran against t1's recorded **386 passed**. The ticket applies **m5-D2** and carries no ruling of its own. Record of the completing edit: `cloudcost/docs/m5-ruling-edit-implementation-notes.md` |
+| **t2** | Apply the ruling; amend §Contracts; dispose the rows that resolve with it | **Not opened, and ready to open.** Anatomy authored 2026-08-09; **completed 2026-08-10** at the ruling edit — **no slot is R13-marked and no `Resolver:` remains in the subsection.** All seven §6 fields plus the step-1 gate are written: the gate stops on *moved* and says so, `Touches` names six paths, the runbook rule states why a docs-only ticket still touches the runbook, and the done-check pins the same pytest spine t1 ran against t1's recorded **386 passed**. The ticket applies **m5-D2** and carries no ruling of its own. Record of the completing edit: `cloudcost/docs/m5-ruling-edit-implementation-notes.md`. **Amended 2026-08-10 at the reviewer edit, four fields** — `Scope` rewritten to name the four artifacts the ruling lands in and to state that the manifest is out of scope by decision rather than by omission; `Contract refs` re-tensed and extended with **m5-D2**, decision H, **BL-132** and **BL-136**; the `docs/backlog-2026-06.md` bullet in `Touches` gains **BL-136** (still six paths); and the `Claude-code prompt`'s backlog paragraph gains the BL-136 cross-reference instruction. Record of that edit: the same file, §r1 |
 
 **Ticket anatomy in this document is §6's seven fields plus a step-1 gate. The
 gate is not a §6 field.** §6 defines seven fields and no gate. The gate is m4
@@ -226,16 +226,23 @@ either has moved since m5-D2, stop and report before doing anything else** — t
 ruling's factual basis has changed and t2 is re-scoped rather than continued. Do
 not repair the ruling from inside the gate.
 
-**Scope.** After this ticket, the BL-131 ruling is implemented in
-`compose_report_data.py` and its declared interface; `cloudcost/milestone.md`
-§Contracts C4 and C11 state the post-ruling position rather than the
-pre-ruling one; and the rows that resolve with BL-131 carry their dispositions.
-What "implemented" means is the ruling's content and is not assumed here.
+**Scope.** After this ticket the BL-131 ruling is implemented where a reader meets
+it: `cloudcost/milestone.md` §Contracts **C4** and **C11** state that their
+cross-provider clauses describe behaviour no orchestrator invocation reaches;
+`compose_report_data.py`'s module docstring says the pipeline invokes it at one
+bundle; `cloudcost/runbook.md` no longer asserts the merge is unreachable; and the
+backlog rows that resolve with BL-131 carry their dispositions. **No executable line
+changes, and the declared interface does not change** — the manifest is out of scope
+by decision, not by omission, per `Do not generate`.
 
-**Contract refs.** t1's implementation notes · this document's §Ratified
-decisions, which will hold the ruling · `cloudcost/milestone.md` §Contracts C4,
-C11 · `docs/backlog-2026-06.md` — BL-131, BL-070, BL-119, BL-121 ·
-`docs/milestones/hc-consolidation.md` — R13, R19.
+**Contract refs.** This document's §Ratified decisions — **m5-D2**, which this
+ticket applies · t1's implementation notes,
+`cloudcost/docs/m5-t1-implementation-notes.md`, for the establishment m5-D2 rests on
+· `cloudcost/m2-milestone.md` §H · `cloudcost/milestone.md` §Contracts **C4**,
+**C11** · `docs/backlog-2026-06.md` — **BL-070**, **BL-119**, **BL-121**,
+**BL-131**, **BL-132**, and **BL-136**, the row filed at the reviewer edit of
+2026-08-10 · `docs/milestones/hc-consolidation.md` — **R13**, **R19**. Normative for
+this ticket and not restated in the prompt.
 
 **Touches.**
 
@@ -245,8 +252,8 @@ C11 · `docs/backlog-2026-06.md` — BL-131, BL-070, BL-119, BL-121 ·
   executable line changes.
 - `cloudcost/runbook.md` — the sentence asserting the cross-provider merge is
   now-unreachable pending BL-070.
-- `docs/backlog-2026-06.md` — the **BL-070**, **BL-119**, **BL-121**, **BL-131** and
-  **BL-132** rows.
+- `docs/backlog-2026-06.md` — the **BL-070**, **BL-119**, **BL-121**, **BL-131**,
+  **BL-132** and **BL-136** rows.
 - `cloudcost/m5-n1-compose.md` — **t2's row only** in §Ticket set, per R19.
 - `cloudcost/docs/m5-t2-implementation-notes.md` *(new)*.
 
@@ -322,6 +329,10 @@ git status --short
 > BL-132's two known instances answered so its census need not re-derive them;
 > BL-119 stays open and in scope. Use the closure shape the file itself uses —
 > derive it from the rows, do not invent one. Each disposition names **m5-D2**.
+> Then cross-reference **BL-136** — the cross-provider summary row filed 2026-08-10 —
+> from **BL-119**'s row, since BL-119's subject is what BL-136 surfaces, and from
+> nowhere else. **Do not** cross-reference it from BL-070 or BL-131: this ticket
+> disposes both, and a new pointer into a disposed row is noise.
 >
 > **m5-D1 governs every citation you write**: section name plus quotation, a line
 > number only for a claim about a line, positional claims stamped with the commit
@@ -428,9 +439,9 @@ pipeline capable of a cross-provider report would sit against H rather than besi
 it.
 
 **What *bounded* requires, and this is the operative half.** This surface has been
-left in place three times without being declared, and each silence produced a row:
+left in place before without being declared, and each silence produced a row:
 BL-070 assumed it dead, BL-131 assumed one route, BL-132 found two contracts
-describing a path nothing takes. **A fourth silent retention is the failure this
+describing a path nothing takes. **Another silent retention is the failure this
 ruling exists to prevent.** Retention is therefore conditional on the declaration
 landing, and the declaration must be reachable from the artifacts a reader actually
 opens:
@@ -456,7 +467,10 @@ H places it outside the pipeline, **E7** establishes it does not exist, and H's 
 precondition is satisfied today. Whether N>1 should later become an operator
 surface — **E5** is the costing if that is ever asked. C4's minor-unit exponent and
 currency-relative tolerance stay filed; they bite only at N>1, which the pipeline
-does not reach.
+does not reach. **The first of those now has an owner:** **BL-136**, filed at the
+reviewer edit of 2026-08-10, carries H's consequent — a read-only reader over the
+per-provider snapshots `persist_history` already writes — as a backlog row rather
+than as an undecided, unowned question.
 
 `Ratified 2026-08-10 by the reviewer at t1's gate stop, per R12. Evidence: t1 r0's
 implementation notes — the step-1 gate and E1–E8 — and t1 r1's harness-side
@@ -518,8 +532,16 @@ carries no total.
 > `[RESOLVED]`. So the state prefixes in use are `[RESOLVED]` / `[OPEN]` /
 > `[DECIDED]`, of which only `[DECIDED]` marks a *kind*; the other two are states
 > an (a) or (b) entry can be in. The opening sentence describes how items arrive,
-> not what they all still are — item 2 is resolved. Corrected rather than left
-> standing because it is live guidance telling a reader how to read this section.]`
+> not what they all still are — read each item's own prefix for its current state.
+> Corrected rather than left standing because it is live guidance telling a reader
+> how to read this section.]`
+
+> `[amended 2026-08-10 at the reviewer edit, as the vocabulary sweep owed by item
+> 3's prefix change. The block above closed *"— item 2 is resolved"*, and item 3
+> resolved in the same section on the same day, so the clause named a state of the
+> section that had already moved. It now reads *"read each item's own prefix for its
+> current state"* — the form `docs/milestones/hc-consolidation.md` §Not established
+> uses, and one that carries no count to decay. Nothing else in the block changed.]`
 
 1. **`[OPEN]` (b)** **Provider four carries two non-identical gate statements at
    HEAD.** `cloudcost/m4-consolidation.md` states in one place that provider four
@@ -560,13 +582,26 @@ carries no total.
    > R21 came from and the only in-repo precedent — this section had no resolved
    > item before now.]`
 
-3. **`[OPEN]` (a)** **Whether decision H's re-derivability clause is satisfied
+3. **`[RESOLVED]` (a)** **Whether decision H's re-derivability clause is satisfied
    today.** Decision H drops the merge-across-clouds while stating that a
    cross-provider total stays later re-derivable from per-provider normalized
    history. Whether that history is written on the invocations the pipeline
    actually makes has not been established, and *removed* forecloses more if it
    is not.
    **Resolver:** t1's **E7**, in this document.
+
+   > **`[RESOLVED 2026-08-10 — by t1 r0's E7, ratified at m5-D2, and owned onward by
+   > the row filed at this edit.]`** The item named its resolver as t1's **E7**, and E7
+   > has reported. H's precondition is satisfied today by the live pipeline for all
+   > three providers: the per-provider normalized snapshots H names are written on
+   > every orchestrator run, in the layout H specifies, established by execution rather
+   > than by reading.
+   >
+   > **Both halves are answers, and only one was ever the question.** The item asked
+   > whether the clause is *satisfied*, and the precondition is. That H's consequent —
+   > the thin read-only aggregator — is not built is not an unresolved question but an
+   > unbuilt artifact, and it now has a backlog row, **BL-136**, rather than an open
+   > item. m5-D2's *what this does not decide* names that row.
 
 4. **`[DECIDED]` (c)** **Four self-scoped statements in the two m5 record files
    predate content later appended above them.** `cloudcost/docs/m5-scoping-landing-notes.md`

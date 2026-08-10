@@ -7740,3 +7740,85 @@ both of which were its parser's limits rather than the census's, and both were d
 itself read this as a row rather than a promotion candidate, and that read is adopted here.`
 
 ---
+
+### BL-136 — decision H's consequent: a read-only cross-provider cost summary over the persisted per-provider snapshots (#TBD)
+**Kind:** feature · **Census items:** n/a (surfaced by m5 t1's E7) · **Contract:** verify and record which of C1–C15 apply
+**Size:** S–M · **Priority:** medium · **Section:** cloudcost
+
+**What it is.** A read-only reader over the per-provider cost snapshots the pipeline
+already persists, emitting one table — markdown or HTML — with a row per provider
+per period. **It runs on artifacts, never on the pipeline:** it invokes no adapter,
+no orchestrator and no compose, and it writes nothing into the history or output
+trees.
+
+**This is decision H's own consequent, and its precondition is already met.**
+H (`cloudcost/m2-milestone.md` §H — *Per-provider reporting; no cross-provider
+roll-up*) drops the merge-across-clouds while stating that consolidation is not
+foreclosed, because each provider persists a normalized cost snapshot from which a
+cross-provider total stays re-derivable by *"a thin read-only aggregator — a
+separate optional read-layer, never coupled to the pipeline."* m5 t1's **E7**
+(`cloudcost/docs/m5-t1-implementation-notes.md`) established **by execution** that
+the layout H names is written on every orchestrator run, and that snapshots for
+three providers exist on disk. **The aggregator is the only part of H that was
+never built.**
+
+**And it is independent of the N>1 compose surface.** **m5-D2** retains that surface
+as a library-and-CLI capability the pipeline does not invoke. This row does not use
+it: H's route is reading persisted artifacts after the fact, not merging bundles at
+compose time. Either ruling on BL-131 would have left this row exactly where it is.
+Stated because the two were assumed coupled until t1 separated them.
+
+**The table.** One row per provider per period. Columns: provider, period,
+currency, amount, and the run stamp each snapshot carries, plus whatever else the
+snapshot supports. **Verify the field names against a snapshot and record them; do
+not take them from this row.**
+
+**Four requirements that are not obvious, each for a reason:**
+
+- **Group or sort by period, and never sum across periods.** Two providers whose
+  latest snapshots are different periods sit adjacent in any table sorted by
+  provider, and a reader adds them. Whatever shape the output takes, a period
+  mismatch is visible without arithmetic.
+- **No currency conversion, and no grand total across currencies.** Conversion needs
+  rates, rate dates and a source of truth for both, and it inherits C4's unresolved
+  minor-unit exponent and currency-relative tolerance. Per-currency figures only.
+  Where a period holds one currency across every provider in it, a subtotal is safe
+  and is the one aggregation this row endorses.
+- **Say when a declared total has no line items.** **BL-119** records that such a
+  snapshot is silently dropped from discovery. A reader over the history tree does
+  not drop it — so it must say so, or it reports an unbacked figure as though it
+  were backed.
+- **Every row names the artifact it came from.** The table is an input to a
+  reconciliation nobody has scoped; a figure whose artifact cannot be found is not
+  reconcilable.
+
+**One thing it cannot do today, and this is the row's known limit.** m5 t1's **E7**
+could not establish which run wrote a given snapshot: the history tree is
+gitignored, the files carry a generation timestamp but no run identifier, and a
+listing cannot bind a file to a command. **So the run column is a timestamp, not a
+run reference.** Verify and record what the snapshots actually carry. If a later
+consumer needs run provenance — and a bank reconciliation would — that is a change
+to what the pipeline *writes*, which is a different row and not this one. This row
+stays read-only.
+
+**The destination, named and deliberately not scoped in.** The eventual use is
+reconciling cloud spend against a bank statement, factoring conversion rate and bank
+commission. That is not this row and nothing here is built for it. It is named
+because it is why the two requirements above — artifact traceability, and no silent
+conversion — are requirements rather than preferences.
+
+**Owes:** the reader, its offline tests against fixture history trees, and a runbook
+entry — it is operator-run, so the runbook rule applies to it.
+**Costs:** S–M. One script, one output template, no pipeline coupling, no adapter
+work, no change to anything the pipeline writes.
+**Collides with:** **BL-119**'s subject, which this row surfaces rather than fixes.
+Nothing else — it is additive and reads artifacts the pipeline already writes.
+
+`Source: m5 t1 r0 §E7, 2026-08-10 — `cloudcost/docs/m5-t1-implementation-notes.md`,
+which established H's precondition by execution and its consequent absent. Decision H
+itself: `cloudcost/m2-milestone.md` §H — *Per-provider reporting; no cross-provider
+roll-up (ratified 2026-07-30, rev 3)*. Filed at the human's direction at the **m5-D2**
+ruling, where H's consequent was named as neither decided nor owned —
+`cloudcost/m5-n1-compose.md` §Ratified decisions, m5-D2's *What this does not decide*.`
+
+---

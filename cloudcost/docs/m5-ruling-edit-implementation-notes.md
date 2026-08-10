@@ -496,6 +496,396 @@ harness is unedited.
 
 ---
 
+## r1 — the aggregator row filed, item 3 resolved, and three findings closed
+
+`Authored 2026-08-10 at r1, the second commit of the ruling edit, on top of a2d63d1 (r0),
+itself on 40c2d58 (t1 r1), 5db4585 (t1 r0) and 70addd3. Under R15 this is a further round
+of the ruling edit and appends here rather than opening a fourth record file; under R20 it
+is likewise not a ticket round and gets no review file. Every figure and quotation below
+was derived at agents a2d63d1 or in the working tree this round produces, and each says
+which. Line numbers appear only for claims about lines, per m5-D1.`
+
+**The R15 classification, and where it differs.** R15 is written about a ticket; this
+repairs r0's own output, one level down, exactly as `m5-pin-edit-implementation-notes.md`
+r5 did. It differs from R15's supporting mechanism in the same way r5 did: r0 held its
+findings in a packet, and a packet travels as a claim about its content, so the three
+findings this round closes are committed by r1 rather than pre-dating it. Recorded rather
+than smoothed.
+
+### Gate on the instruction
+
+The round instruction states its own claims are unverified. **All hold.**
+
+| Claim | Resolved |
+|---|---|
+| The m5-D2 ruling edit is at HEAD | ✓ `a2d63d1` — *docs(m5): ratify m5-D2 — BL-131 retained and bounded; t2's anatomy completed* |
+| Commits beneath it unamended | ✓ `git log --oneline -6` → `40c2d58`, `5db4585`, `70addd3`, `b648867`, `a9639de`, in that order — the sequence r0's own gate table names |
+| agents three ahead of origin, tree clean | ✓ `git rev-list --count origin/main..HEAD` → **3**; `git status --porcelain` → empty |
+| harness clean at unchanged HEAD | ✓ `../aetheris` at `2ef0517`, `git status --porcelain` → empty |
+| r0's packet flagged *"three times"* as a characterisation | ✓ §*Claims in m5-D2 checked against t1's record*, closing paragraph: *"whether that constitutes three retentions is the reviewer's characterisation, not a countable fact"* |
+| §Not established item 3 reads `[OPEN]` with a delivered resolver | ✓ at a2d63d1 the item heads `` **`[OPEN]` (a)** `` and its `**Resolver:**` is *"t1's **E7**, in this document"* |
+| t2's `Scope` and `Contract refs` are as the findings describe | ✓ both quoted verbatim under Y5 below |
+
+### What r1 changed, and where
+
+| Y | file | change |
+|---|---|---|
+| Y2 | `docs/backlog-2026-06.md` | **BL-136** filed, appended at EOF |
+| Y3a | `cloudcost/m5-n1-compose.md` §Ratified decisions, m5-D2 *What this does not decide* | one dated sentence appended, giving the aggregator question its owner |
+| Y3b | same, m5-D2 *What bounded requires* | two substitutions — the count removed, the enumeration left carrying the claim |
+| Y4 | same, §Not established item 3 | `[OPEN]` → `[RESOLVED]`, kind letter (a) kept, resolution block appended |
+| Y4 | same, §Not established preamble correction block | the sweep's one fix — a count-of-one clause replaced with the count-free pointer |
+| Y5 | same, t2's `Scope` and `Contract refs` | each field replaced whole |
+| Y6a/b | same, t2's `Touches` and `Claude-code prompt` | the backlog bullet gains BL-136; the prompt gains one cross-reference instruction |
+| Y6c | same, §Ticket set t2 row | R19 update recording all four field amendments |
+| Y7 | this file | this section, and four dispositions appended to §Review |
+
+`cloudcost/milestone.md`, `cloudcost/runbook.md`, `cloudcost/tools.json` and everything
+under `cloudcost/scripts|tests|templates|agents` are untouched — they are t2's work. **t2
+is not opened. The harness is unedited** (HEAD `2ef0517`, clean, nothing to push).
+
+---
+
+### Y2 — BL-136 filed
+
+**a. The number, derived over a named population.** Population: every `BL-<n>` token in
+`docs/backlog-2026-06.md`, at a2d63d1 — **136 distinct numbers**, and the range `1..135`
+is **dense**: the set difference against `seq 1 135` is empty, so the numbering is not
+sparse and the highest is the next free one minus one. The highest few, enumerated rather
+than asserted: `…131, 132, 133, 134, 135`.
+
+Two exclusions, both checked rather than assumed. **`BL-999`** appears in the repo but is
+not a row — `../aetheris/docs/aetheris/runbook.md` §*(the dangling-ref check)* defines it
+as *"**dangling** — `BL-999`, a row that does not exist in `docs/backlog-2026-06.md`"*, a
+deliberate sentinel. And the **harness repo's** highest `BL-` token is `BL-133`, below the
+agents maximum, so it constrains nothing. **Next free: `BL-136`.**
+
+**b. The placement convention, derived from the file's own history and reported before
+writing.** Three commits filed cloudcost rows into this file, and all three appended at
+**EOF**: `e1a1830` (17 rows) at `@@ -6400,3 +6427,528 @@`, `080ad24` (2 rows) at
+`@@ -7226,3 +7287,122 @@`, and the earlier filing of BL-131/BL-132 in the same tail. The
+tail at a2d63d1 reads `…BL-130, BL-131, BL-132, BL-133, BL-134` — ascending, so appending
+satisfies both readings of the convention at once.
+
+**The one counter-example, named rather than averaged away.** `f8ed90f` inserted **BL-135**
+at the *top* (`@@ -12,6 +12,54 @@`). It is a harness gate-red row filed hot at a ticket
+boundary, and it was subsequently folded into BL-075 as a duplicate. It is the outlier, not
+the convention. **BL-136 appends at EOF**, after BL-134's closing `---`.
+
+**c. The row.** Body landed verbatim from the instruction. **The header line is the only
+field derived**, since the instruction's body already carries `Kind` / `Census items` /
+`Contract` / `Size` / `Priority` / `Section`:
+
+```
+### BL-136 — decision H's consequent: a read-only cross-provider cost summary over the persisted per-provider snapshots (#TBD)
+```
+
+Shape taken from the rows around it — `### BL-<n> — <descriptive lowercase clause> (#TBD)`,
+as BL-131 (*"decide whether the N>1 compose path is a supported surface"*) and BL-119
+(*"a cost snapshot with a declared total and no line items is silently dropped from
+discovery"*) both read. The `(#TBD)` suffix is every recent row's.
+
+**The row's own factual claims, checked before landing them** — the row asks a later reader
+to verify field names against a snapshot, and does not itself assert them, but its framing
+claims were checked here:
+
+| Row says | Checked |
+|---|---|
+| H states consolidation stays re-derivable by *"a thin read-only aggregator — a separate optional read-layer, never coupled to the pipeline"* | ✓ verbatim, `cloudcost/m2-milestone.md` §H — *Per-provider reporting; no cross-provider roll-up (ratified 2026-07-30, rev 3)* |
+| E7 established the layout by execution, snapshots for three providers on disk | ✓ `cloudcost/docs/m5-t1-implementation-notes.md` §E7 — *"Four snapshots across three providers"*, written by `persist_history` on every orchestrator run |
+| BL-119 records a declared-total-no-line-items snapshot silently dropped from discovery | ✓ BL-119's title and its *"The consequence is a silent omission, not an error"* paragraph |
+| The snapshots carry a generation timestamp and no run identifier | ✓ a live snapshot's keys are `provider, account, period, currency, source_granularity, line_items, totals, balance, generated_at, provider_extra` — a `generated_at` and no run id, which is E7's *"Which run wrote each file is not established"* |
+| C1–C15 is the contract population the row defers to | ✓ `cloudcost/milestone.md` §*Contracts (C1–C15 …)*, fifteen `### C<n>` headings |
+
+**d. The `Source:` line**, in the file's own shape — a single backticked block at the row's
+foot, as BL-130's and BL-131's are — naming m5 t1 r0 §E7 (2026-08-10) with its file,
+decision H with its section and ratification stamp, and the filing direction at the m5-D2
+ruling, where H's consequent was named neither decided nor owned.
+
+---
+
+### Y3a — m5-D2's *What this does not decide*
+
+**Unit at HEAD, quoted before the edit:**
+
+> **What this does not decide.** Whether a cross-provider aggregator is ever built —
+> H places it outside the pipeline, **E7** establishes it does not exist, and H's own
+> precondition is satisfied today. Whether N>1 should later become an operator
+> surface — **E5** is the costing if that is ever asked. C4's minor-unit exponent and
+> currency-relative tolerance stay filed; they bite only at N>1, which the pipeline
+> does not reach.
+
+**After** — the same paragraph, with one dated sentence appended and nothing else touched:
+
+> … which the pipeline does not reach. **The first of those now has an owner:**
+> **BL-136**, filed at the reviewer edit of 2026-08-10, carries H's consequent — a
+> read-only reader over the per-provider snapshots `persist_history` already writes — as a
+> backlog row rather than as an undecided, unowned question.
+
+*"The first of those"* resolves to the paragraph's own first clause, *"Whether a
+cross-provider aggregator is ever built"* — the sentence is appended to that paragraph and
+names it by position within it, so no second identifier is introduced. `persist_history` is
+named because it is what E7 establishes writes the snapshots the row reads.
+
+---
+
+### Y3b — m5-D2's *What bounded requires*
+
+**Unit at HEAD, quoted before the edit:**
+
+> **What *bounded* requires, and this is the operative half.** This surface has been
+> left in place three times without being declared, and each silence produced a row:
+> BL-070 assumed it dead, BL-131 assumed one route, BL-132 found two contracts
+> describing a path nothing takes. **A fourth silent retention is the failure this
+> ruling exists to prevent.** Retention is therefore conditional on the declaration
+> landing, and the declaration must be reachable from the artifacts a reader actually
+> opens:
+
+**After** — the two instructed substitutions, and nothing else in the paragraph:
+
+> **What *bounded* requires, and this is the operative half.** This surface has been
+> left in place before without being declared, and each silence produced a row:
+> BL-070 assumed it dead, BL-131 assumed one route, BL-132 found two contracts
+> describing a path nothing takes. **Another silent retention is the failure this
+> ruling exists to prevent.** Retention is therefore conditional on the declaration
+> landing, and the declaration must be reachable from the artifacts a reader actually
+> opens:
+
+`three times` → `before`; `A fourth silent retention` → `Another silent retention`. **The
+three named rows are unchanged** — they are the evidence, they are checkable, and after the
+edit they are the only thing carrying the claim. The four numbered declaration requirements
+beneath the colon are untouched.
+
+**One thing landed as instructed that a reader may want to overturn, named rather than
+buried.** This rewrites text inside a **ratified** decision and lands no dated correction
+block beneath it, because the instruction says *"Change nothing else in the paragraph."*
+Decision 7 — *"A closed record gets a dated superseded note; its original text is not
+rewritten"* — points the other way, and r0 landed exactly such a block at W1b when it
+replaced a paragraph in this same section. The reading taken: m5-D2's author is correcting
+their own ruling within a day of ratifying it and before the ticket that applies it opens,
+and the before/after is committed here, which under R20 is this edit's record. **If the
+reviewer wants the note in the document itself, it is a one-block addition and this section
+holds the original text verbatim.**
+
+---
+
+### Y4 — §Not established item 3 resolved
+
+**Unit at HEAD, quoted entire before the edit:**
+
+> 3. **`[OPEN]` (a)** **Whether decision H's re-derivability clause is satisfied
+>    today.** Decision H drops the merge-across-clouds while stating that a
+>    cross-provider total stays later re-derivable from per-provider normalized
+>    history. Whether that history is written on the invocations the pipeline
+>    actually makes has not been established, and *removed* forecloses more if it
+>    is not.
+>    **Resolver:** t1's **E7**, in this document.
+
+**After:** the same text, prose unrewritten per decision 7, with the head prefix changed
+`` `[OPEN]` (a) `` → `` `[RESOLVED]` (a) `` and the instruction's dated block appended as a
+nested blockquote. The `**Resolver:**` line stays — it names something that exists and has
+delivered, which is what kind (a) requires.
+
+**The kind letter is kept, on r0's own reasoning for item 2**, not re-derived: *"`[RESOLVED]`
+is a **state**, not a fourth kind — in the precedent an (a) or (b) item keeps its kind and
+gains the state, and only (c) has a prefix of its own"* (§*Two consequences of that, decided
+rather than assumed*). Item 3 is still an open question whose resolver named something that
+exists; resolving it did not change that. **No bracketed prefix-change note was added here**,
+unlike item 2's: item 2's note existed to record a borrowed precedent, and after item 2 the
+precedent is in-document.
+
+**One fill, reported.** The instruction's block reads *"it now has a backlog row rather than
+an open item"* with the number to be filled from Y2. Landed as *"it now has a backlog row,
+**BL-136**, rather than an open item."* That is the only departure from the block verbatim.
+
+**The item's own resolver did report.** `cloudcost/docs/m5-t1-implementation-notes.md` §E7
+concludes: *"H's precondition — normalized per-provider snapshots persisted in the layout it
+names — **is satisfied today, by the live pipeline, for all three providers**. H's
+consequent — the thin read-only aggregator — **is not built**."* r0 found this and reported
+it rather than acting on it, correctly: the disposition is the reviewer's.
+
+---
+
+### Y4 — the vocabulary sweep this prefix change owes
+
+Owed by §Carried in's second carried rule: *"**A vocabulary change owes a sweep of
+everything that speaks it.** When a label, status set, field name or prefix changes, derive
+the population that speaks it and check each member in the same commit."* **Reported whether
+or not it found anything — it found one.**
+
+**Population, derived not assumed.** `grep -n 'RESOLVED\|\[OPEN\]\|\[DECIDED\]'` over
+`cloudcost/m5-n1-compose.md` at **`a2d63d1`** (read via `git show HEAD:…`, so the population
+is the pre-edit one): **9 lines**, all in §Not established — `:510` (the preamble's kind
+list), `:518`/`:519` (r0's correction block), `:524` (item 1), `:533` (item 2), `:541`
+(item 2's resolution-block head), `:554` (item 2's prefix-change note), `:563` (item 3),
+`:571` (item 4). No other section of the document speaks these tokens, so the sweep does not
+reach §Ticket set, §Ratified decisions, §Promotion candidates or §Carried in.
+`[Line numbers are a claim about lines and are stamped at a2d63d1, per m5-D1.]`
+
+| Member | Check against the section as it now reads | Result |
+|---|---|---|
+| **The preamble's kind list** | Names the three R21 kinds; a second resolution changes no kind | Correct as it stands |
+| **r0's correction block** | Closed *"— item 2 is resolved"*, a count of one | **Mis-describes — fixed.** See below |
+| **Item 1** `` `[OPEN]` (b) `` | Provider-four gate statements; no resolver, none delivered | Correct as it stands |
+| **Item 2** `` `[RESOLVED]` (b) `` + its two blocks | Unaffected by a second resolution elsewhere; its blocks are scoped to itself by name | Correct as it stands |
+| **Item 3** `` `[RESOLVED]` (a) `` | The member this sweep is owed for | Changed by Y4; consistent |
+| **Item 4** `` `[DECIDED]` (c) `` | A decision not to fix, unaffected | Correct as it stands |
+
+**The one fix.** r0's correction block ended *"The opening sentence describes how items
+arrive, not what they all still are — **item 2 is resolved**. Corrected rather than left
+standing because it is live guidance telling a reader how to read this section."* That
+clause is a count of one over a section that now holds two resolved items — **the same shape
+as the count Y3b removes**, one section down and one day later. Replaced in place with
+*"read each item's own prefix for its current state"*, which is the form
+`docs/milestones/hc-consolidation.md` §Not established uses (*"Read each item's `[RESOLVED]`
+/ `[OPEN]` / `[DECIDED]` prefix for its current state"*) and which carries no count to
+decay. A dated `[amended 2026-08-10 …]` block beneath records the change and states that
+nothing else in the block moved. Corrected in place under **decision 8** — it is live
+guidance telling a reader how to read the section, which is exactly why r0 corrected it in
+the first place.
+
+**Post-edit population, working tree: 10 lines.** The nine above, relocated, plus **one**
+introduced by this round — item 3's resolution-block head, `` `[RESOLVED 2026-08-10 — by t1
+r0's E7, …]` ``. **No item's prefix changed except item 3's**, which is the change the sweep
+is owed for; the preamble fix and its amendment note deliberately carry **no** state token,
+which is the point of the fix.
+
+---
+
+### Y5 — t2's `Scope` and `Contract refs`
+
+Both were authored 2026-08-09, before the ruling, and neither was among r0's five authorised
+units — which is why r0 reported them (§*Findings for the reviewer — two anatomy fields not
+in this edit's scope*) rather than editing them. Each is replaced whole here.
+
+**`Scope` at HEAD, quoted before the edit:**
+
+> **Scope.** After this ticket, the BL-131 ruling is implemented in
+> `compose_report_data.py` and its declared interface; `cloudcost/milestone.md`
+> §Contracts C4 and C11 state the post-ruling position rather than the
+> pre-ruling one; and the rows that resolve with BL-131 carry their dispositions.
+> What "implemented" means is the ruling's content and is not assumed here.
+
+**After** — the instruction's text verbatim:
+
+> **Scope.** After this ticket the BL-131 ruling is implemented where a reader meets
+> it: `cloudcost/milestone.md` §Contracts **C4** and **C11** state that their
+> cross-provider clauses describe behaviour no orchestrator invocation reaches;
+> `compose_report_data.py`'s module docstring says the pipeline invokes it at one
+> bundle; `cloudcost/runbook.md` no longer asserts the merge is unreachable; and the
+> backlog rows that resolve with BL-131 carry their dispositions. **No executable line
+> changes, and the declared interface does not change** — the manifest is out of scope
+> by decision, not by omission, per `Do not generate`.
+
+The finding was that *"and its declared interface"* read wider than `Touches` allows — the
+declared interface is `cloudcost/tools.json`, which `Touches` does not name. The replacement
+closes it by saying the opposite explicitly and pointing at the field that makes it a
+decision. Cross-checked: t2's `Do not generate` is *"Authorable now, and complete as
+written"* and lists no manifest work, and `Touches`'s script bullet reads *"the module
+docstring only. No executable line changes"* — both now agree with `Scope`.
+
+**`Contract refs` at HEAD, quoted before the edit:**
+
+> **Contract refs.** t1's implementation notes · this document's §Ratified
+> decisions, which will hold the ruling · `cloudcost/milestone.md` §Contracts C4,
+> C11 · `docs/backlog-2026-06.md` — BL-131, BL-070, BL-119, BL-121 ·
+> `docs/milestones/hc-consolidation.md` — R13, R19.
+
+**After** — the instruction's text, with two resolutions reported below:
+
+> **Contract refs.** This document's §Ratified decisions — **m5-D2**, which this
+> ticket applies · t1's implementation notes,
+> `cloudcost/docs/m5-t1-implementation-notes.md`, for the establishment m5-D2 rests on
+> · `cloudcost/m2-milestone.md` §H · `cloudcost/milestone.md` §Contracts **C4**,
+> **C11** · `docs/backlog-2026-06.md` — **BL-070**, **BL-119**, **BL-121**,
+> **BL-131**, **BL-132**, and **BL-136**, the row filed at the reviewer edit of
+> 2026-08-10 · `docs/milestones/hc-consolidation.md` — **R13**, **R19**. Normative for
+> this ticket and not restated in the prompt.
+
+**Two resolutions, both reported rather than silent.** The number was filled from Y2. And
+the instruction's *"the row filed at this edit"* was anchored to its date: inside t2's own
+anatomy, which a t2 session reads as instructions for itself, *"this edit"* resolves to
+t2's edit and names the wrong thing. Everywhere the phrase sits under a dated head — as in
+Y4's `[RESOLVED 2026-08-10 …]` block — it was left verbatim.
+
+The finding's three parts all close: the future tense is gone, `cloudcost/m2-milestone.md`
+§H is present (m5-D2 reasons from H in three paragraphs), and BL-132 is present (`Touches`
+names its row).
+
+---
+
+### Y6 — `Touches`, the `Claude-code prompt`, and t2's row
+
+**a. `Touches`, the backlog bullet at HEAD:**
+
+> - `docs/backlog-2026-06.md` — the **BL-070**, **BL-119**, **BL-121**, **BL-131** and
+>   **BL-132** rows.
+
+**After:**
+
+> - `docs/backlog-2026-06.md` — the **BL-070**, **BL-119**, **BL-121**, **BL-131**,
+>   **BL-132** and **BL-136** rows.
+
+The bullet only. **`Touches` still names six paths** — the row count inside one bullet
+changed, not the path count — so t2's §Ticket set row keeps that figure.
+
+**b. The `Claude-code prompt`'s backlog paragraph at HEAD:**
+
+> **The backlog.** Dispose the five rows as m5-D2 states: BL-070's cross-provider
+> deletions **not taken**; BL-121's framing resolved; BL-131 closed on the ruling;
+> BL-132's two known instances answered so its census need not re-derive them;
+> BL-119 stays open and in scope. Use the closure shape the file itself uses —
+> derive it from the rows, do not invent one. Each disposition names **m5-D2**.
+
+**After** — the same paragraph, with one instruction appended:
+
+> … Each disposition names **m5-D2**.
+> Then cross-reference **BL-136** — the cross-provider summary row filed 2026-08-10 —
+> from **BL-119**'s row, since BL-119's subject is what BL-136 surfaces, and from
+> nowhere else. **Do not** cross-reference it from BL-070 or BL-131: this ticket
+> disposes both, and a new pointer into a disposed row is noise.
+
+*"Dispose the five rows"* is left standing and is still correct: BL-136 is
+cross-referenced, not disposed, so the disposal population is unchanged at five.
+
+**c. t2's §Ticket set row, updated per R19.** The row's state changed at this edit, so R19
+binds. The update records **all four** field amendments — Y5's two included. The
+instruction's Y6(c) conditions the update on (a) or (b) alone, which is narrower than R19;
+both conditions are met either way, so there is no conflict to resolve, but the row is
+written to R19's requirement rather than the narrower one. Appended to the existing row,
+which is otherwise unchanged:
+
+> … Record of the completing edit: `cloudcost/docs/m5-ruling-edit-implementation-notes.md`.
+> **Amended 2026-08-10 at the reviewer edit, four fields** — `Scope` rewritten to name the
+> four artifacts the ruling lands in and to state that the manifest is out of scope by
+> decision rather than by omission; `Contract refs` re-tensed and extended with **m5-D2**,
+> decision H, **BL-132** and **BL-136**; the `docs/backlog-2026-06.md` bullet in `Touches`
+> gains **BL-136** (still six paths); and the `Claude-code prompt`'s backlog paragraph gains
+> the BL-136 cross-reference instruction. Record of that edit: the same file, §r1
+
+**t1's row is not touched** — this round changes nothing about t1's state, and R19 does not
+extend to a ticket the session did not touch.
+
+---
+
+### Deviations
+
+**None from the instruction's units.** Each of Y3a, Y3b, Y4, Y5 and Y6 was quoted at HEAD
+and replaced by unit, none by naming sentences. Three fills and one resolution are reported
+in place above: BL-136 into Y4's block and into Y5's `Contract refs`, and *"the row filed at
+this edit"* → *"the row filed at the reviewer edit of 2026-08-10"* in `Contract refs` only.
+
+**One judgment landed as instructed and flagged for overturn:** Y3b's rewrite inside a
+ratified decision without a decision-7 note. Recorded under Y3b with the original text
+verbatim.
+
+**No file outside the three named above was changed.** `cloudcost/milestone.md`,
+`cloudcost/runbook.md`, `cloudcost/tools.json` and everything under
+`cloudcost/scripts|tests|templates|agents` are t2's work and are untouched. The harness is
+unedited. **No push. t2 is not opened.**
+
+---
+
 ## Review
 
 `Dated 2026-08-10. Per R20 this edit gets no review file; the reviewer's findings on t1 r1
@@ -538,3 +928,61 @@ cost more than the number is worth.
 **Confirmed at this edit:** m5-D2's *Why not removed* paragraph cites E4 for the
 enumeration of kinds and cites no count, so the ruling does not inherit the disputed
 figure.
+
+### r1 — the reviewer's dispositions on r0's own findings
+
+`Dated 2026-08-10 at r1. The §Review preamble above is scoped to "the reviewer's findings
+on t1 r1", which was the whole population when it was written; this group is a second and
+different one — the reviewer's dispositions on the findings **this file** raised at r0.
+Added as its own group rather than by rewriting that preamble, which is a closed record
+under decision 7.`
+
+**Identifier resolution.** The instruction labels these *Finding 1*, *Finding 2*, *Finding
+3* and *the flagged line*. This file does not number them, so each is resolved to the text
+it names before its disposition is recorded, rather than transcribed:
+
+| Instruction's label | Resolves to, in this file |
+|---|---|
+| **Finding 1** | §*The vocabulary sweep* → *"Finding — item 3's resolver has delivered, and the item still reads `[OPEN]`"* |
+| **Finding 2** | §*Findings for the reviewer* → **A** — *"`Scope` says the ruling is implemented in the script's declared interface"* |
+| **Finding 3** | §*Findings for the reviewer* → **B** — *"`Contract refs` says §Ratified decisions *will hold* the ruling"* |
+| **The flagged line** | §*Claims in m5-D2 checked against t1's record*, closing paragraph — *"One claim in m5-D2 is not checkable from the repo and was not checked"* |
+
+#### Finding 1 — item 3 open while its resolver had reported
+
+*Raised at r0: the document ratified E7's answer in §Ratified decisions while §Not
+established carried the same question open with a resolver that had reported.*
+
+**Disposition: accepted; resolved at Y4.** Declining to resolve it from inside the ruling
+edit was right — it is the same reasoning under which t1 declined to resolve item 2 from
+inside a ticket, and the disposition belongs to the reviewer.
+
+#### Finding 2 — t2's `Scope` read wider than its `Touches`
+
+*Raised at r0 as finding **A**.*
+
+**Disposition: accepted; `Scope` rewritten at Y5.** The packet was right that the tension
+was a reader's rather than an executor's, and right not to leave it standing: an anatomy
+whose `Scope` and `Touches` disagree is how a later `Touches` gets written wrong.
+
+#### Finding 3 — t2's `Contract refs` in the future tense, omitting decision H and BL-132
+
+*Raised at r0 as finding **B**.*
+
+**Disposition: accepted; rewritten at Y5.**
+
+#### Flagged line — m5-D2's *"three times"*
+
+*Raised at r0 in §Claims in m5-D2 checked against t1's record: the count was named rather
+than silently ratified, on the ground that whether the surface's three rows constitute
+three retentions is a characterisation and not a countable fact.*
+
+**Disposition: accepted; the count is removed at Y3(b).** The flag was correct and is the
+reviewer's own standing rule applied to the reviewer: a spec asserts no checkable specific,
+and a count of retentions is a characterisation wearing a number's clothes. The enumeration
+that follows it — BL-070, BL-131, BL-132 — was always the evidence, and it stays exactly as
+it was.
+
+**A second instance of the same shape, found by the sweep this round owes and fixed with
+it:** r0's §Not established preamble correction block closed *"— item 2 is resolved"*, a
+count of one that item 3's resolution falsified within the day. Recorded under Y4's sweep.

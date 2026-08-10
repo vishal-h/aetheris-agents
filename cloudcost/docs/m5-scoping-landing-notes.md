@@ -185,7 +185,7 @@ ABSENT    tools.json
 
 | token | reading |
 |---|---|
-| `cloudcost/docs/m5-t1-implementation-notes.md` | **Absent by design.** Declared `*(new)*` by t1's **Touches** field at `cloudcost/m5-n1-compose.md:91` — the line reads ``- `cloudcost/docs/m5-t1-implementation-notes.md` *(new)*``. t1 has not opened, so the file cannot exist. |
+| `cloudcost/docs/m5-t1-implementation-notes.md` | **Absent by design.** Declared `*(new)*` by t1's **Touches** field in `cloudcost/m5-n1-compose.md` — the line reads ``- `cloudcost/docs/m5-t1-implementation-notes.md` *(new)*``. t1 has not opened, so the file cannot exist. |
 | `compose_report_data.py` | **Extraction artifact, not a path claim.** A bare basename in E2's prose (*"Every in-repo invocation of `compose_report_data.py`"*). Resolves as `cloudcost/scripts/compose_report_data.py`, which RESOLVES above. |
 | `tools.json` | **Extraction artifact, not a path claim.** A bare basename in E2's enumeration of invocation sites. Resolves as `cloudcost/tools.json`, which RESOLVES above. |
 
@@ -324,7 +324,8 @@ awk '/^## Not established/,/^## Carried in/' cloudcost/m5-n1-compose.md | grep -
 
 **PASS, both arms.** The two `(b)` items carry `**Settled by:**` and state `**No owner**`,
 inventing none — R21(b)'s requirement. The one `(a)` item's `**Resolver:** t1's **E7**`
-resolves to a heading that exists at `cloudcost/m5-n1-compose.md:181` (see verification 6).
+resolves to a heading that exists in `cloudcost/m5-n1-compose.md` — t1's **Claude-code prompt**
+→ **E7**, `**E7 — Decision H's re-derivability clause.**` (see verification 6).
 
 ### 6. The eight E-items — re-run at r1
 
@@ -624,7 +625,8 @@ heading, and nothing in the packet reconciled them. A rule characterised from an
 of its full text is a rule that can be cited against itself.
 
 **R20 nonetheless does not reach this document, and that is why this file exists.** The round
-document's own deviation blockquote records it at `cloudcost/m5-n1-compose.md:19–23`:
+document's own deviation blockquote records it — `cloudcost/m5-n1-compose.md` §Scope, the
+blockquote opening `[Deviation, recorded rather than glossed.`:
 
 ```
 > `[Deviation, recorded rather than glossed. R20 covers a reviewer-authored
@@ -716,9 +718,19 @@ Every figure, line number, count and quotation above was **derived in this sessi
 by the command printed beside it, and each command was transcribed after it exited. Nothing was
 re-run to illustrate a result obtained another way, and nothing was carried from r0's packet
 except the four divergence classes and the six verification subjects, both marked as such where
-they appear. Line numbers cited into `cloudcost/m5-n1-compose.md` are **r1** line numbers: F7
-inserted four lines above `:13` and F2 removed four, so the file is 300 lines at both commits
-while anchors between `:6` and `:57` differ from r0's.
+they appear.
+
+**Anchors in this file resolve at HEAD.** Where this record cites a document
+that is still being edited it names the section and quotes enough text to be
+found by search; a line number appears only where the claim is itself about a
+line — a count, a diff hunk, a position, or a `file:count` grep output. The
+r0→r1 shift that once needed a standing caveat is recorded historically, in
+the entries that made it, rather than as a rule the reader has to carry.
+
+`[Convention retired 2026-08-09 at r5. The sentence replaced here declared
+every line number cited into cloudcost/m5-n1-compose.md to be an r1 number;
+r4's stale-anchor fix made that false for one anchor, and section-name
+citation makes it unnecessary for all of them.]`
 
 `Landed at r1. Commits: r0 = eebd47c7acafbc6b9eb93682b3f3a6aaa8689802; r1 = this commit.`
 

@@ -244,9 +244,60 @@ the ruling and before t2 opens, per R12.`
 
 ## Ratified decisions
 
-**None yet.** The round's ruling lands here, authored by the reviewer at the gate
-stop between t1 and t2 per R12, with its own date. An empty section at open is
+**The BL-131 ruling is not here yet.** It lands in this section, authored by the
+reviewer at the gate stop between t1 and t2 per R12, with its own date. The
+decision below is methodological and was made in the course of opening the
+round. An empty section at open is
 the correct state and is stated rather than omitted.
+
+### m5-D1 — a citation into a document still being edited names its section and quotes its text; a line number is only for a claim about a line.
+
+A line number into a moving document rots silently. The citation still
+resolves — to whatever now occupies the offset — so nothing fails and the
+reader is misdirected rather than stopped. This round produced the worked
+case: a sweep corrected one anchor after an insert shifted part of a file, and
+the correction falsified a standing caveat that had declared every anchor in
+that record to be from an earlier commit. The caveat was the workaround; the
+citation form is the fix.
+
+A line number is correct where the claim is itself about a line — a count, a
+diff hunk, a position, a `file:count` grep output. Everywhere else, name the
+section and quote enough text that a reader finds it by search rather than by
+offset. This is the form already required of t1's `Done-check` pin.
+
+**Binds t1 and t2**, whose implementation notes cite into this document and
+into the backlog while both are still being edited. Promoted mid-cycle rather
+than at the close, per §Carried in's third item.
+
+`Ratified 2026-08-09 at r5 by the reviewer, on claude-code's r4 hold.
+Source: the m5 scoping landing, r4's stale-anchor sweep.`
+
+`[Landed as m5-D1, not M1 as specified: M1 is taken as an identifier in
+cloudcost/m2-milestone.md (mutations M1–M8) and in
+docs/milestones/bl-067-implementation-notes.md. The fallback and its condition
+are the reviewer's own, at r5 S4(a).]`
+
+---
+
+## Promotion candidates
+
+Candidates recorded here are promoted or dropped at this round's close under
+the methodology's §7 ritual; recording one is not promoting it. Where a
+candidate binds work that has not run yet, it is promoted mid-cycle instead —
+see §Carried in's third item and **m5-D1**.
+
+**A check that structurally cannot observe the failure it stands in for
+returns green for the wrong reason.** r4 was told to confirm the harness tree
+was clean after running pytest against it, using `git status`. That path is
+gitignored in the harness, so `git status` could not have seen the artifact it
+was watching for — it would have returned clean whether or not one appeared.
+claude-code substituted an mtime capture on both sides of the run, which can
+see it. The rule is not *use mtime*: it is that a check states what it can and
+cannot observe, and a check standing in for a failure mode outside its own
+visibility is reported as a substitution rather than as a pass. Same shape as
+a positive control one level up — a positive control shows the search works;
+this shows the search can reach. Origin: claude-code at m5 r4, against a check
+the reviewer specified.
 
 ---
 

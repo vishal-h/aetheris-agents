@@ -2474,6 +2474,48 @@ review's N1 (docs/reviews/m2-cloudcost-t2-review.md), 2026-08-02.`
 
 ---
 
+### BL-070 — DONE 2026-08-10 (m5 t2) — the cross-provider deletions are **not taken**, by ruling
+
+**m5-D2** (`cloudcost/m5-n1-compose.md` §Ratified decisions — *"the N>1 compose surface is
+retained and bounded. It is a library-and-CLI capability the pipeline does not invoke, and it is
+declared as such"*) disposes this row's deferred deletions **not taken**. The N-merge, the
+`providers_without_prior_snapshot` caveat, all four cross-currency aggregation sites and the
+multi-currency *"No combined total"* path all stay.
+
+**The row's premise did not hold, and that is why.** This row called those paths **unreachable**;
+m5 t1's **E1** established **three** routes that reach N>1 — the repeatable flags, `--input-dir`,
+and the directory route — and that the route-bearing code is byte-unchanged since the commit
+BL-131 read. So the paths are **reachable and uninvoked**, not dead: no orchestrator invocation
+takes any of the three. Deleting reachable, advertised, tested code because nothing in one caller
+happens to call it is the deletion m4 t5b withdrew and this ruling declines.
+
+**Its four Done-when clauses, each disposed rather than left to be read against a ruling that
+moved them:**
+
+1. **The deletions** — **not taken**, per the above.
+2. **The slug convergence** — already **DONE 2026-08-07 (m4 t5b)**, independently of this ruling
+   and on C9's assignment. Unaffected.
+3. **A test asserting the retained single-provider compose is unchanged** — **moot as written.**
+   It existed to prove a deletion changed nothing; with no deletion there is nothing for it to
+   bracket. The offline spine's 386 tests already constrain compose at N=1 and are unchanged by
+   this ticket.
+4. **The four m1 open items marked resolved-by-deletion** — **corrected in place, as this row's
+   Done-when was once before at m4 t5b.** Nothing is deleted, so nothing is resolved by deletion,
+   and the clause is unsatisfiable as written. Those items **stay open** in `cloudcost/milestone.md`
+   §Open items with a determinate status they did not have before: the paths they name are
+   reachable, uninvoked and now declared. **The one that changes character is the human-eyeball
+   item** — *"Two of t4's rendered paths have never been looked at by a human"*, the new-provider
+   caveat and the multi-currency *"No combined total"* rendering — which that section calls
+   *"unreachable while DO is the only provider"*. Under this ruling they are **not** unreachable;
+   they are uninvoked, and the eyeball is still owed by the first ticket that makes either
+   reachable from the pipeline. §Open items is not in this ticket's `Touches` and is not edited
+   here; the correction is recorded in this row, which owns the clause.
+
+`Source: m5-D2, ratified 2026-08-10 at the m5 gate stop; applied at m5 t2, 2026-08-10. Route
+count and byte-unchanged finding from m5 t1's E1 (cloudcost/docs/m5-t1-implementation-notes.md).`
+
+---
+
 ### BL-071 — Resource-level AWS cost + the resource-rate spot-check (#TBD)
 **Size:** M · **Priority:** low (deferred) · **Section:** aetheris-agents (cloudcost)
 
@@ -7097,6 +7139,28 @@ first scoping had put in tier 1. Its subject is `discover_bundles` — the `--in
 which is **the surface BL-131 decides the support of**. Deferring a decision about a surface and
 then investing in it is incoherent, so step 1 waits on BL-131 with step 2.
 
+**Annotated 2026-08-10 (m5 t2). This row stays open and is now unambiguously in scope.** The wait
+is over and it ended in retention: **m5-D2** (`cloudcost/m5-n1-compose.md` §Ratified decisions)
+retains the N>1 compose surface as a library-and-CLI capability the pipeline does not invoke. Its
+own text names this row — *"**BL-119** stays open and is now unambiguously in scope, because the
+route it concerns is retained."* The incoherence the m4 t5b annotation named is gone in the
+direction that keeps the work: `discover_bundles` is retained code, so investing in it is coherent,
+and **both steps are now takeable on their own merits** rather than blocked on a decision.
+
+**Step 1 is the one to take, and the ruling sharpens why.** A silent drop is worse on a retained
+surface than on one awaiting deletion: the surface is advertised in `cloudcost/tools.json` with a
+worked example, so an operator can reach `--input-dir` mode by following documentation and get a
+report missing a provider's costs with an `ok` exit. Step 1 converts that into a reported omission
+and does not depend on step 2's schema change.
+
+**Cross-reference — BL-136.** The read-only cross-provider summary filed 2026-08-10 reads the
+persisted per-provider snapshots, and its third requirement is *"say when a declared total has no
+line items"*, which cites this row. **The two are not duplicates and neither closes the other**:
+this row fixes the silent drop in `discover_bundles` at compose time; BL-136 must handle the same
+snapshot correctly in a reader that never invokes compose. Whichever lands first, the other still
+owes its own handling — and if this row's step 2 ever gives documents an explicit `document_type`,
+BL-136's reader is a second consumer that would need the compatibility read step 2 already costs.
+
 `Source: m4 t4a census item P8; ruled schema-level at m4 t4b under C10. Read at agents 611feba.`
 
 ---
@@ -7179,6 +7243,21 @@ The same treatment was given to the new tag table, which BL-101's own text requi
 **The row's stated consequence is not closed by this** — see the annotation above: *"a provider can
 be absent from the table entirely"* needs the N>1 path, which BL-131 decides. The cap-truncation
 gap itself was real at any N and is fixed.
+
+**Framing resolved 2026-08-10 (m5 t2) — and with it the row closes.** **m5-D2**
+(`cloudcost/m5-n1-compose.md` §Ratified decisions) rules the N>1 compose surface **retained as a
+library-and-CLI capability the pipeline does not invoke**. So this row's stated consequence —
+*"a provider can be absent from the table entirely while another fills every row"* — is
+**true of the surface and unreachable from the pipeline**: every orchestrator run composes one
+bundle, and at one bundle the cap drops rows without dropping a provider. It is not withdrawn and
+not re-characterised as a defect; it is **correctly stated and source-only**, which is the third
+reading this row could not choose between while BL-131 was open.
+
+Nothing further is owed. The **fix** landed at m4 t5b and never depended on the ruling; the
+**framing** was the whole of what waited, and it is settled here. C11 carries the same declaration
+in `cloudcost/milestone.md` §Contracts, where a reader meets it.
+
+`Source: m5-D2, ratified 2026-08-10; framing applied at m5 t2, 2026-08-10.`
 
 ---
 
@@ -7544,6 +7623,45 @@ orchestrator, sprint, runbook and tools.json all read at that commit.`
 
 ---
 
+### BL-131 — DONE 2026-08-10 (m5 t2) — closed on the ruling: **retained and bounded**
+
+The row asked for *"a ruling — supported, or removed — and the §Contracts amendment that follows
+it."* Both have landed. **m5-D2** (`cloudcost/m5-n1-compose.md` §Ratified decisions), ratified
+2026-08-10 at the m5 gate stop, rules the surface **neither supported nor removed but retained and
+declared**: *"It is a library-and-CLI capability the pipeline does not invoke, and it is declared
+as such."*
+
+**The three states this row could not choose between are all answered, and none was the answer.**
+Not **dead** — m5 t1's **E1** found three routes reaching N>1, not the one this row derived, and
+the route-bearing code byte-unchanged since `6832159`, so the derivation was incomplete rather
+than overtaken. Not **live at the first fan-out** — decision H makes provider four a fourth solo
+run, so nothing about a fourth provider brings the path into the pipeline, and the urgency this
+row borrowed from the first fan-out was borrowed from an event H forecloses. **Advertised but
+uninvoked** is what holds, and it is a state that needed declaring rather than resolving.
+
+**Its own framing, corrected where t1 falsified it.** This row's reachability derivation states
+*"the N>1 path is reachable only through `--input-dir` → `discover_bundles`"*. **E1** established
+that `bundles_from_args` reaches N>1 with no `--input-dir` at all, the three flags being
+`action="append"`. The row's **conclusion** — that no orchestrator invocation reaches N>1 — is
+unaffected and was confirmed at HEAD by this ticket's step-1 gate; only its route count was wrong.
+Recorded here rather than silently inherited, because a later reader citing this row would
+otherwise carry the one-route claim forward.
+
+**What landed, and where a reader meets it** — m5-D2's four declaration requirements, all
+discharged at m5 t2: §Contracts **C4** and **C11** in `cloudcost/milestone.md` each carry a
+*Source-only by ruling* paragraph and each one's m4 t5b pointer block is discharged in place;
+`cloudcost/scripts/compose_report_data.py`'s module docstring states the pipeline invokes it at one
+bundle, with no executable line changed; `cloudcost/runbook.md`'s now-unreachable sentence is
+corrected to reachable-and-uninvoked; and the rows that resolve with this one carry their
+dispositions — **BL-070** not taken, **BL-121** framing resolved, **BL-132** keeping its census
+with two instances answered, **BL-119** open and now unambiguously in scope.
+
+`Source: BL-131 filed 2026-08-07 from m4 t5b's G2 gate-stop; scoped 2026-08-09 into
+cloudcost/m5-n1-compose.md; established read-only at m5 t1 (E1–E8); ruled as m5-D2 2026-08-10 at
+the gate stop per R12; applied at m5 t2, 2026-08-10.`
+
+---
+
 ### BL-132 — establish, per contract, whether the behaviour it states is reachable from the live pipeline (#TBD)
 **Kind:** method · **Census items:** n/a (surfaced by the m4 t5b gate) · **Contract:** all of C1–C15
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
@@ -7586,6 +7704,26 @@ this row re-derives its answer and then has to change it.
 **Annotated 2026-08-09.** BL-131 is scoped in `cloudcost/m5-n1-compose.md`. This
 row's *"Take BL-131 first"* clause is unchanged; the round to take first now has
 a document.
+
+**Annotated 2026-08-10 (m5 t2). This row stays open, and its census is not run here.** BL-131 has
+been taken first, as this row required: **m5-D2** rules the N>1 surface retained and declared, and
+m5 t2 amended **C4** and **C11** accordingly. **The two known instances are answered, so the census
+need not re-derive them** — each now carries a *Source-only by ruling* paragraph naming m5-D2, and
+each one's m4 t5b pointer block is discharged in place. Start from **C1**; C4 and C11 are done and
+their answer is **source-only**, with the qualifying sentence this row asks for already written.
+
+**What is unchanged is the row's whole point.** Two contract instances found by accident are still
+not a census, and the remaining thirteen are still unexamined. m5 t2 deliberately did **no**
+reachability work over C1–C15 — its ticket forbids it (*"no reachability work over C1–C15 (BL-132's
+row)"*) — precisely so that this row's method runs once, over the full set, rather than being
+half-done as a side effect of another ticket.
+
+**One thing m5 t1 supplies that this row's method should use.** BL-132 names the entry point as
+`cloudcost/agents/cloudcost_orchestrator.exs` and asks one question per contract. m5 t1's **E1**
+showed that *"reachable only through a CLI flag the orchestrator never passes"* undercounted the
+routes to the same surface by two. The method survives — the question is still *is this produced by
+any invocation the orchestrator makes?* — but the answer for a source-only contract should
+**enumerate the routes it is reachable by**, not just assert the orchestrator misses one.
 
 `Source: m4 t5b G2 gate-stop, 2026-08-07 — the finding that C4 ratified an m1 position decision H
 had already superseded, and that no step between the census and the contract checked reachability.`

@@ -25,6 +25,17 @@ Written to merge N providers; N=1 is the DO-only m1 case. Each provider contribu
 bundle (cost + inventory + orphans), given either as a repeatable triple or discovered
 from a directory.
 
+**The cloudcost pipeline invokes this script at one bundle.** The orchestrator
+(`cloudcost/agents/cloudcost_orchestrator.exs`, STEP 3) offers two mutually-exclusive arg
+forms and each passes at most one of --cost/--inventory/--orphans, so every pipeline run
+composes N=1. N>1 is a **library-and-CLI capability the pipeline does not use** — it is
+advertised (the repeatable flags and --input-dir below), tested, and reachable by three
+routes, and no orchestrator invocation reaches any of them. That is source-only **by
+ruling, not by accident**: m5-D2 (`cloudcost/m5-n1-compose.md`, §Ratified decisions)
+retains this surface and requires it be declared where a reader meets it. The same
+declaration is carried by §Contracts C4 and C11 in `cloudcost/milestone.md`, for the
+cross-provider behaviour those contracts describe.
+
 Usage:
     python3 scripts/compose_report_data.py \\
         --cost output/do_costs_2026-07.json \\

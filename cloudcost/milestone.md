@@ -433,6 +433,20 @@ non-USD provider blanks the report's headline number for every provider**, becau
 becomes null and renders as an em dash. That is the honest output; it is also a surprise, and this
 sentence is the deliverable.
 
+**Source-only by ruling, not by accident** *(added m5 t2, 2026-08-10)*. The one-currency-scalar
+policy and its blast radius both describe **cross-provider** behaviour, and **no orchestrator
+invocation reaches it**: `cloudcost/agents/cloudcost_orchestrator.exs` §STEP 3 offers two
+mutually-exclusive arg forms — *"If STEP 1 printed `files.costs`, use this form"* and *"If STEP 1
+did NOT print `files.costs`, use this form instead"* — and each passes at most one of
+`--cost`/`--inventory`/`--orphans`, so every pipeline run composes exactly one bundle and no run
+can make two disagree on currency. **m5-D2** (`cloudcost/m5-n1-compose.md` §Ratified decisions —
+*"the N>1 compose surface is retained and bounded. It is a library-and-CLI capability the pipeline
+does not invoke, and it is declared as such"*) rules that surface **retained and declared**, so
+this paragraph is a true description of the source that states no behaviour the live pipeline
+produces. **The guarantee is unchanged** — where bundles do disagree on currency the grand total is
+still withheld and per-currency figures reported; what this contract now says differently is only
+what it claims about reachability.
+
 > **Pointer added m4 t5b, 2026-08-07 — read this paragraph with BL-131 beside it.** The policy
 > above and its blast radius both describe **cross-provider** behaviour, and the cross-provider
 > compose path is reachable only through a CLI flag the orchestrator never passes. The paragraph is
@@ -441,6 +455,17 @@ sentence is the deliverable.
 > until BL-131 rules.** m4 t5b's ruling to delete these paths was withdrawn on exactly that reading.
 > **BL-132** is the row for whether other contracts share the property; two instances are not a
 > census.
+>
+> `[Discharged 2026-08-10 at m5 t2. Its condition is met: BL-131 has ruled, as **m5-D2**, and the
+> amendment this pointer deferred is the *Source-only by ruling* paragraph above. Kept rather than
+> deleted, per decision 7 — it was true when written, and it records why the paragraph went
+> un-amended for three days rather than leaving that gap to read as an oversight. One correction it
+> earns in passing: the pointer says the path is *"reachable only through a CLI flag the
+> orchestrator never passes"*, and m5 t1's **E1** established three routes rather than one — the
+> repeatable flags, `--input-dir`, and the directory route — which changes the route count, not the
+> reachability finding this pointer rests on. **BL-132** is untouched: whether the other thirteen
+> contracts share the property is still its census to run, and two instances are still not a
+> census.]`
 
 **Presentation reads the exponent from the payload** (R2). **Closed arm**: R2's adapter-owned arm is
 closed because the renderer must not learn provider identity — asserted by
@@ -681,11 +706,27 @@ every row — and nothing reports it. The same file argues against silent caps e
 region list, on the same reasoning. The payload should record how many were dropped. Owed a row by
 t4c.
 
+**Source-only by ruling, not by accident** *(added m5 t2, 2026-08-10)*. The clause that makes this
+cap's failure mode cross-provider — *"capped **after a global sort across all providers**, so one
+provider can be absent from the table entirely while another fills every row"* — describes
+behaviour **no orchestrator invocation reaches**, for the reason C4's paragraph of the same name
+gives: every pipeline run composes exactly one bundle, and at one bundle the cap drops rows without
+dropping a provider. **m5-D2** (`cloudcost/m5-n1-compose.md` §Ratified decisions) rules that
+surface retained and declared rather than removed. **The guarantee is unchanged** — the cap still
+reports its truncation at any N, which is what P2 required and what landed at m4 t5b independently
+of this ruling; what changes is only what this contract claims about reachability.
+
 > **Pointer added m4 t5b, 2026-08-07 — same caveat as C4, and the fix has landed regardless.** The
 > dropped count is now in the payload (`untagged_not_shown`, `tags_not_shown`) and renders in both
 > states, so the cap reports its truncation at any N. But *"across all providers … one provider can
 > be absent from the table entirely"* describes the **cross-provider** path BL-131 decides the
 > support of. **Not false, not yet amendable** — see C4's pointer and **BL-132**.
+>
+> `[Discharged 2026-08-10 at m5 t2, with C4's. BL-131 has ruled, as **m5-D2**, and the amendment
+> this pointer deferred is the *Source-only by ruling* paragraph above. Kept rather than deleted,
+> per decision 7. The distinction it drew holds and is worth keeping visible: the **fix** — the
+> dropped count in the payload — never depended on BL-131 and landed at m4 t5b, while the **stated
+> consequence** did. Only the second is what this discharge settles.]`
 
 **Closed arm**: P2's adapter-owned arm is **closed** because the ranking is cross-provider by
 construction — no single adapter can own a cap applied across all of them.

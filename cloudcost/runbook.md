@@ -620,5 +620,11 @@ existing canonical type. Before provider four,
 read **BL-074** — the seam sweep for any remaining value, threshold or spelling a
 provider could differ on (rule-catalog age thresholds and the `keep=true` tag spelling are the
 named next candidates; Linode confirmed the `keep=true` finding, its tags being flat strings like
-DO's) — and **BL-070**, which retires the now-unreachable cross-provider merge
-code in `compose_report_data.py`.
+DO's). **BL-070's cross-provider deletions are not taken** *(corrected m5 t2, 2026-08-10 —
+this sentence read "and **BL-070**, which retires the now-unreachable cross-provider merge
+code in `compose_report_data.py`")*. That merge code is **reachable and uninvoked, not
+unreachable**: three routes reach it and no orchestrator invocation takes any of them, so
+nothing about provider four brings it into the pipeline. **m5-D2**
+(`cloudcost/m5-n1-compose.md` §Ratified decisions) retains it as a library-and-CLI
+capability the pipeline does not invoke, and requires it to say so — which
+`compose_report_data.py`'s module docstring and §Contracts C4 and C11 now do.

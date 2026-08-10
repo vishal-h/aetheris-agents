@@ -42,9 +42,9 @@ either.
 
 | Ticket | Subject | State |
 |---|---|---|
-| **t1** | Establish the N>1 compose surface, read-only, to the point where the ruling can be made | **Opened and stopped at the gate stop** 2026-08-10, r0. Step-1 gate ran: (b) unmoved; (a) **diverges from BL-131 and is not temporal** — three routes reach N>1, not one, and the route-bearing code is byte-unchanged since `6832159`. Continued under the reviewer's mid-ticket ruling of 2026-08-10 that the stop condition is temporal. **E1–E8 all answered**; no ruling made, no behaviour changed. Record: `cloudcost/docs/m5-t1-implementation-notes.md`. **r1** 2026-08-10: verdict on r0 was **APPROVE**; both findings closed without re-running E1–E8 — **F1**, E4(6)'s document sweep run over the harness's full tracked population (2 hits, both LLM-provider, **zero in scope**, three controls plus a case-insensitive guard); **F2**, r0's packet §1/§2 diffed byte-for-byte against the committed file — identical, and the elision's basis corrected to 577 of 634 lines. **F1a** recorded not repaired: E4(6)'s stated `.md` population and its own distribution disagree by one file. Review file: `docs/reviews/m5-cloudcost-t1-review.md`. Still **waits on** the BL-131 ruling, which §Ratified decisions says the reviewer authors into this document at the gate stop, per R12; the resolver is unchanged. |
+| **t1** | Establish the N>1 compose surface, read-only, to the point where the ruling can be made | **Opened and stopped at the gate stop** 2026-08-10, r0. Step-1 gate ran: (b) unmoved; (a) **diverges from BL-131 and is not temporal** — three routes reach N>1, not one, and the route-bearing code is byte-unchanged since `6832159`. Continued under the reviewer's mid-ticket ruling of 2026-08-10 that the stop condition is temporal. **E1–E8 all answered**; no ruling made, no behaviour changed. Record: `cloudcost/docs/m5-t1-implementation-notes.md`. **r1** 2026-08-10: verdict on r0 was **APPROVE**; both findings closed without re-running E1–E8 — **F1**, E4(6)'s document sweep run over the harness's full tracked population (2 hits, both LLM-provider, **zero in scope**, three controls plus a case-insensitive guard); **F2**, r0's packet §1/§2 diffed byte-for-byte against the committed file — identical, and the elision's basis corrected to 577 of 634 lines. **F1a** recorded not repaired: E4(6)'s stated `.md` population and its own distribution disagree by one file. Review file: `docs/reviews/m5-cloudcost-t1-review.md`. Still **waits on** the BL-131 ruling, which §Ratified decisions says the reviewer authors into this document at the gate stop, per R12; the resolver is unchanged. **`[Terminal state appended 2026-08-10 at the close (t3), on §Close criteria clause 4, which found this row understated.]` t1 is CLOSED — approved at r1 and pushed at `40c2d58`, its gate stop reached as designed.** The closing clause above was true when written and false from the moment **m5-D2** was ratified at `a2d63d1`; it is left standing per decision 7 and superseded here rather than rewritten. What t1 waited on has arrived: the ruling was authored at t1's gate stop per R12, t2 applied it, and nothing about t1 is outstanding. |
 | **t2** | Apply the ruling; amend §Contracts; dispose the rows that resolve with it | **State — opened and applied 2026-08-10 (r0), reviewed and corrected 2026-08-10 (r1); closed, approved at r1 and pushed at `f6acc9c`.** **Step-1 gate (r0), passed on both arms:** (a) the orchestrator's two STEP 3 forms each pass at most one of `--cost`/`--inventory`/`--orphans`, so one bundle on both, and `git diff a2d63d1 HEAD` on the agent file is empty; (b) both m4 t5b pointer blocks present in §Contracts, and the same diff over `cloudcost/milestone.md` is empty. **Nothing had moved since m5-D2 was ratified**, so the ruling's factual basis held and t2 continued rather than being re-scoped. **What landed (r0) — m5-D2's four declaration requirements:** **C4** and **C11** each gain a *Source-only by ruling* paragraph, with each one's pointer block **discharged in place, not deleted**; `compose_report_data.py`'s module docstring declares one-bundle invocation with **no executable line changed**, proven by AST equality outside the docstring rather than by reading the diff; `cloudcost/runbook.md`'s *now-unreachable* sentence corrected to reachable-and-uninvoked. **Five rows disposed:** **BL-070** not taken — its Done-when clause 4 corrected in place, since nothing is resolved-by-deletion; **BL-121** framing resolved and closed; **BL-131** closed on the ruling; **BL-132** and **BL-119** annotated and left open, **BL-119** gaining the **BL-136** cross-reference and no other row gaining one. **r1 — verdict APPROVE, one finding.** **F1:** §Open items still carried *"unreachable while DO is the only provider"*, restating as a premise the *"live at the first fan-out"* reading t1's **E1** killed; r0 was right to decline it as outside `Touches`, and recording it in BL-070 did not discharge it, BL-070 being DONE. **The reviewer amended `Touches`** — the `cloudcost/milestone.md` bullet gains **§Open items**, the scoping gap being the reviewer's — and the claim is corrected in that authority: reachable and uninvoked, **reachability not a function of provider count**, the eyeball still owed by the first ticket making either path reachable *from the pipeline*. **The second-claim sweep** owed on that file — 18-term vocabulary, 42 hits, control by re-finding both known sites — returned **one further hit on the same premise**, the cross-currency aggregation item's *"live at the first fan-out"* over BL-070's own four deferred sites, corrected in the same commit; and **two staleness items reported not fixed**, outside the premise and so outside what the amended bullet authorises. Review file: `docs/reviews/m5-cloudcost-t2-review.md`. **Done-check, both rounds: 386 passed**, identical to t1's recorded figure, as a docs-and-docstring ticket requires; no executable line changed at r1 either. Record: `cloudcost/docs/m5-t2-implementation-notes.md`. **Provenance of the ticket text itself:** anatomy authored 2026-08-09 and **completed 2026-08-10** at the ruling edit — **no slot R13-marked, no `Resolver:` left in the subsection** — with all seven §6 fields plus the step-1 gate written: the gate stops on *moved* and says so, `Touches` names six paths, the runbook rule states why a docs-only ticket still touches the runbook, and the done-check pins the same pytest spine t1 ran against t1's recorded **386 passed**; the ticket applies **m5-D2** and carries no ruling of its own (record: `cloudcost/docs/m5-ruling-edit-implementation-notes.md`). **Amended 2026-08-10 at the reviewer edit, four fields** — `Scope` rewritten to name the four artifacts the ruling lands in and to state the manifest out of scope by decision rather than by omission; `Contract refs` re-tensed and extended with **m5-D2**, decision H, **BL-132** and **BL-136**; the `docs/backlog-2026-06.md` bullet in `Touches` gains **BL-136** (still six paths); and the `Claude-code prompt`'s backlog paragraph gains the BL-136 cross-reference instruction (record: the same file, §r1). **Further amended at t2 r1**, one field, as above. |
-| **t3** | The close: §7's ritual, the close criteria, and the milestone summary | **Not opened.** Anatomy authored 2026-08-10 |
+| **t3** | The close: §7's ritual, the close criteria, and the milestone summary | **State — opened and closed 2026-08-10 (r0); both pushes held pending review.** **Step-1 gate, passed on both arms, stop condition temporal against t2 r1:** (a) every m5 commit returns `origin/main` under `git branch -r --contains`, and `HEAD` equals `origin/main` — t2's row states a terminal state, **t1's does not**, but the row is byte-unchanged since before t2 r1, so this is a *differs* and not a *moved*; the gate continued and clause 4 took it; (b) zero of the three §Promotion candidates entries carries a disposition, established by a positive-vocabulary grep with its control in `docs/milestones/hc-e-implementation-notes.md`, and §Carried in still names the preceding cycle's entries item-for-item. **What landed — the six clauses in order:** **1** three candidates promoted on three separately-stated grounds (analogy; bar-does-not-apply; below-bar-by-ratification), the last two ruled by the reviewer on the human's referral; **2** two carried-in candidates promoted and one already promoted, and the prior-claims census run over a command-derived population — **seven of seven present, nothing absent, no census promotion owed**; **3** §Not established passed on all four arms, result recorded in the section; **4** **t1's row corrected** — its terminal state appended, the superseded clause left standing per decision 7; **5** `drift_check --strict` post-commit **8 PASS · 0 FAIL · 4 WARN** (pre-commit 2), all four the declared `project_knowledge` exemption and named, with a finding that `cloudcost/runbook.md` states no invocation; **6** §Milestone summary written. **One row filed: BL-137**, the §Open items freshness census. **Beyond the done-check:** the harness gate set ran off-territory at `2ef0517` and is green — `deps.get`, `hex.audit`, `compile --warnings-as-errors`, `format --check-formatted`, `credo --strict`, `test` (972 tests, 0 failures) — with **`mix dialyzer` deferred, not skipped**, on a stated trigger. **Done-check: 386 passed**, identical to t1's and t2's recorded figure; no executable line changed anywhere. Record: `cloudcost/docs/m5-t3-implementation-notes.md`. **Provenance of the ticket text:** anatomy authored 2026-08-10 by the reviewer before t3 opened, per R12, with no slot R13-marked. |
 
 **Ticket anatomy in this document is §6's seven fields plus a step-1 gate. The
 gate is not a §6 field.** §6 defines seven fields and no gate. The gate is m4
@@ -705,6 +705,24 @@ a per-commit extraction over the same endpoints, reported the correction, and fo
 two. Same shape as the entry above, one level over: the check was blind not to a file
 it could not read but to a kind of change its method could not represent.]`
 
+**`[PROMOTED 2026-08-10 at the m5 close (t3), under §Close criteria clause 1.]`**
+**Instances: three, and all three are reviewer-edit rounds rather than tickets** — the
+scoping landing r4 (the gitignored `git status`), the ruling edit r3 (the range diff,
+recorded in the block above), and the close-anatomy edit r2 (a grep for one word standing
+in for a flag), which that record's §*The third instance, and where it goes* routed here as
+further input rather than filing as a fourth candidate. A fourth item is an **application,
+not an instance**: m5 t1 r0's done-check item 4 substituted an mtime capture for a
+`git status` structurally blind to `cloudcost/output/`, and named the substitution — the
+rule binding a ticket, which is evidence it reaches ticket work.
+**§7's ≥2-*ticket* bar: met by analogy, and the analogy is ruled rather than smoothed** —
+a reviewer-edit round is a session that changes the repo on the same terms a ticket does,
+and the count above is a count of rounds. Had the bar been read literally the entry would
+have been dropped on a technicality about the word *ticket*, which is not what the bar is
+for. **Destination:** `../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns →
+*Silent-wrong-answer*, as a sub-entry placed after *Sibling state* and before that entry's
+through-line paragraph — the candidate's own text puts it one level above the positive
+control, and the positive-control rule lives inside that entry.
+
 **An elision justified by "this is inlined above" carries the check that
 establishes it, or the diff is not elided.** t1 r0's packet elided a new file's diff
 on the ground that its content was inlined verbatim earlier in the same packet. The
@@ -721,6 +739,22 @@ reviewer finding and finding the stronger form of it.
 the rule bound every remaining packet in this round and had no owner in this
 document. The flag was correct: prose in a packet or a notes file owns nothing.]`
 
+**`[PROMOTED 2026-08-10 at the m5 close (t3), under §Close criteria clause 1. The bar does
+not apply.]`** **One recorded instance** — t1 r0's packet — **and the count is not the
+basis.** §7's ≥2 is a *recurrence* filter, and this is not a recurrence-derived rule: it
+extends the already-promoted packet rule in the agents `CLAUDE.md` §Learning — BL-007,
+*"A packet's sprint section shows the run's full output, or states what it elided and
+why"*, whose own `Source:` records it as *"promoted as a packet rule, not as a
+recurrence-derived learning entry"*. The bar is therefore **not met because it does not
+apply**, and that is what is recorded — **not an exception to it**. The distinction is not
+pedantry: an entry written as an override teaches that the bar bends, and this one does not
+bend it. **Destination:** that same section, immediately after the parent entry, so a
+reader meets the extension where the rule it extends already is. Duplication into the
+harness file was considered and declined — the packet-rule family lives agents-side, and
+the two files are near-duplicates with no byte-identity check in either the repos or
+`drift_check`. Ruled by the reviewer on the human's referral of the question at the m5
+close.
+
 **An unpushed artifact may be corrected in place; a ratified one may not, and the
 difference is what the artifact's authority rests on.** This round corrected several
 unpushed records in place, arguing each time that a dated supersession block would
@@ -736,6 +770,26 @@ way.
 
 `[Filed by the reviewer at r2, 2026-08-10, on that flag. The flag is the harder kind
 to raise — the session had done exactly what it was told, and said so anyway.]`
+
+**`[PROMOTED 2026-08-10 at the m5 close (t3), under §Close criteria clause 1. Below §7's
+bar, by explicit ratification.]`** **One recorded instance** — the m5 reviewer edit r1 —
+**and the honest word is one.** A later round reading this rule and finding it silent on a
+case would be an application, not a second finding, and the `Source:` must not blur the
+two. **The ground, stated because "the human said so" is not a reason:** §7's bar is a
+frequency test, and frequency is the wrong filter for a rule whose whole subject is a
+failure that bites rarely and irreversibly. Silently altering a ratified decision is not a
+defect that recurs its way to attention — it recurs by going unnoticed. A rule costing three
+sentences that forecloses a class of undetectable failure earns an entry at one instance;
+the same argument would not carry a finding about a *subject*, which is what the bar is
+there to filter. Recorded on **BL-007's exception form** so the override is auditable, with
+the ground written into the entry itself rather than only here.
+**Destination:** `../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns, in the
+record-integrity cluster immediately after *A claim that lands in the same commit as the
+thing that would make it true…*; the credential-provenance rule further down that section
+carries the same below-bar ground from the other direction and is named there as the form
+precedent. Placement is by subject, the precedent by form. Duplication into the agents file
+was considered and declined on the same mirror grounds as the entry above. Ruled by the
+reviewer on the human's referral of the question at the m5 close.
 
 ---
 
@@ -765,6 +819,22 @@ carries no total.
 > section that had already moved. It now reads *"read each item's own prefix for its
 > current state"* — the form `docs/milestones/hc-consolidation.md` §Not established
 > uses, and one that carries no count to decay. Nothing else in the block changed.]`
+
+> `[§Close criteria clause 3 ran over this section at the close, 2026-08-10 (t3), and
+> **passed on all four arms**. Recorded because a clause that produced no edit is a result,
+> not a silence. **(i) Every item's state reads from its own prefix** — the four entries
+> carry `[OPEN]` (b), `[RESOLVED]` (b), `[RESOLVED]` (a), `[DECIDED]` (c), each stating its
+> kind per R21, enumerated from the section rather than counted from memory. **(ii) The one
+> `[OPEN]` item names what would settle it** — item 1's *"a ruling that reconciles them,
+> authored wherever provider four is scoped"* — and, being kind (b), correctly invents no
+> owner. **(iii) `[OPEN]` (a) items: zero**, and the zero is read off the same enumeration
+> as (i) rather than from a search that found nothing, so it is absence and not a failed
+> query; the section's only (a)-kind entry is item 3, and it is `[RESOLVED]`, so the
+> population the arm quantifies over is empty rather than unexamined. **Arm (iii) is the one
+> that could have passed for the wrong reason** — a grep for `[OPEN]` (a) returning nothing
+> is indistinguishable from a broken grep, which is why it is derived from the printed
+> prefix enumeration instead. **(iv) The section carries no total**, per its own preamble,
+> and this block adds none — it states what was checked, not how many items exist.]`
 
 1. **`[OPEN]` (b)** **Provider four carries two non-identical gate statements at
    HEAD.** `cloudcost/m4-consolidation.md` states in one place that provider four
@@ -862,3 +932,102 @@ for the next cycle, and in force for this round's §7:
 
 **BL-075 arm 2 remains unsatisfiable as written** and is not this round's
 subject; carried so it is not rediscovered.
+
+---
+
+## Milestone summary
+
+`Written at t3, 2026-08-10, per §Close criteria clause 6 and §7's final step. Placement
+derived: this section closes the document, which is where`
+`docs/milestones/hc-consolidation.md` `puts its own §Milestone summary — after
+§Promotion candidates and last in the file. It carries no total over §Not established;
+the per-item prefixes there are authoritative.`
+
+### What shipped
+
+**The BL-131 ruling, and the declaration that makes it conditional.** **m5-D2**: the N>1
+compose surface is **retained and bounded** — a library-and-CLI capability the pipeline does
+not invoke, declared as such where a reader meets it. Not removed, and not made an operator
+surface.
+
+- **t1** established the surface read-only at HEAD: **three** routes to N>1 where BL-131
+  named one, the route-bearing code byte-unchanged since the commit the row cites, and E1–E8
+  answered with each population named and each enumeration printed. It made no ruling, which
+  was its design.
+- **The ruling edit** authored m5-D2 at t1's gate stop per R12, took BL-131's three verbs
+  apart — *advertised* false, *tested* false, only *invoked* surviving — and established that
+  decision H forecloses the fan-out BL-131 borrowed its urgency from.
+- **t2** applied m5-D2's four declaration requirements: C4 and C11 declared **source-only by
+  ruling** with their m4 t5b pointer blocks discharged in place, `compose_report_data.py`'s
+  module docstring stating one-bundle invocation with **no executable line changed**, the
+  runbook's *now-unreachable* claim corrected to reachable-and-uninvoked, and five backlog
+  rows disposed. Its r1 corrected two further §Open items claims resting on the same premise.
+- **t3** closed the round: three promotion candidates and two carried-in candidates disposed
+  into both `CLAUDE.md` files, the prior-claims census run, and this summary.
+- **Two rows filed**, both owning questions this round surfaced rather than settled:
+  **BL-136** (decision H's consequent — a read-only cross-provider summary over the
+  per-provider snapshots `persist_history` already writes) and **BL-137** (the §Open items
+  freshness census).
+
+**Behaviour is unchanged end to end.** `python3 -m pytest cloudcost/tests/ -v` returns
+**386 passed** at t1, at t2 both rounds, and at t3 — the same figure a docs-and-docstring
+arc requires, and the one number that would have caught an accidental edit.
+
+### What the close's six clauses found
+
+| Clause | Result |
+|---|---|
+| **1** — §Promotion candidates | **Three entries, three promotions, three different grounds** — stated per entry rather than applied uniformly. *Blind check*: three instances, **all reviewer-edit rounds rather than tickets**, §7's bar met **by analogy** and the analogy ruled explicitly. *Packet elision*: one instance, and the **bar does not apply** — a packet rule is not recurrence-derived, so this is not an exception to §7. *Unpushed-vs-ratified*: one instance, **below the bar and promoted by explicit ratification** on BL-007's exception form, with the ground written into the entry. Entry count 3, disposition count 3. |
+| **2** — carried-in entries + prior-claims census | **Two promoted, one already promoted.** *An entry's attribution is structural* and *promote mid-cycle* both clear the bar and landed harness-side; *a vocabulary change owes a sweep* was promoted at hc-e and needed no action — stated as a result, and this round applied it twice. **The census: population derived by command, not by eye** — the preceding cycle produced **no handoff**, so the carrier that bit at the m3 close does not exist here; the two documents claiming promotion are `hc-consolidation.md` §Milestone summary and `hc-e-implementation-notes.md` §37/§38. **All seven claims present, each in the file its claim names, with a positive and a negative control. Nothing absent, so the census produced no promotion.** |
+| **3** — §Not established | **Passed on all four arms**, recorded in the section itself because a clause that produced no edit is a result. The load-bearing arm — *zero `[OPEN]` (a) items* — is derived from the printed prefix enumeration, not from a grep that found nothing. |
+| **4** — §Ticket set terminal states | **One row understated, and it was t1's.** The row closed *"Still waits on the BL-131 ruling"* — true when written, false from the moment m5-D2 was ratified at `a2d63d1`, and byte-unchanged since, so the step-1 gate correctly did not stop on it. Terminal state appended, superseding rather than rewriting. t2's row already terminal; t3's written per R19. |
+| **5** — the drift checker | **Post-commit: 8 PASS · 0 FAIL · 4 WARN · 7 INFO, exit 0** (pre-commit: 2 WARN). All four WARNs are `project_knowledge` manifest staleness — the declared strict-mode exemption — and are **named, not chased**; zero FAIL and no *unexplained* WARN, which is what `--strict` actually asserts. **The 2 → 4 difference is the ordering rule firing**: the two added are both `CLAUDE.md` files, invisible to a pre-commit run because check 8 reads committed history, so a pre-commit-only report would have been a green over a gap. **A finding on the derivation, not the result:** `cloudcost/runbook.md` states no drift-check invocation at all (one unrelated `drift` hit), so the command was derived from the root `CLAUDE.md` §Definition of done — doc sync. A runbook that does not state its own gate is worth knowing about. |
+| **6** — this summary | Written. |
+
+**Beyond the six clauses: the harness gate set ran off-territory and is green.**
+`mix deps.get`, `mix hex.audit`, `mix compile --warnings-as-errors`,
+`mix format --check-formatted`, `mix credo --strict` (228 files, no issues), `mix test`
+(972 tests, 0 failures, 133 excluded) — all at harness `2ef0517` with a clean tree. **A green
+here is evidence of gate liveness, not of this change**: the harness tree is byte-identical
+to HEAD but for one markdown file, so nothing in this round could have moved any of them.
+**`mix dialyzer` is deferred, not skipped**, with a trigger that can fire — the next harness
+ticket whose `Touches` names any `.ex`/`.exs` file runs it, and if none runs before the next
+cycle's close, that close runs it.
+
+### What stays open, and why that is correct
+
+- **BL-132** — the reachability census over C1–C15. Its two known instances, C4 and C11, are
+  answered by m5-D2 so its census need not re-derive them. Open because the other thirteen
+  contracts were never in this round's scope, and taking them here would have mis-scoped both.
+- **BL-119** — a cost snapshot with a declared total and no line items. **Unambiguously in
+  scope now** precisely because the route it concerns is retained; cross-referenced from
+  **BL-136**, whose subject it surfaces.
+- **BL-136** — decision H's consequent. **E7** established H's precondition satisfied by the
+  live pipeline for all three providers and its consequent unbuilt. An unbuilt artifact with
+  a row is the correct state; an undecided, unowned question was not.
+- **BL-137** — the §Open items freshness census, filed here. Correct as a row rather than as
+  a fix: settling either reported instance needs adapter reads, which is establishment work.
+- **§Not established item 1** — provider four's two non-identical gate statements. `[OPEN]`
+  **(b)**, no owner invented, and correctly so: provider four is not open, and this round
+  declined to take BL-074 with BL-131.
+- **BL-075 arm 2** remains unsatisfiable as written, carried from the preceding cycle so it is
+  not rediscovered rather than re-litigated here.
+- **t1 F2's residue** — the elision check establishes that the on-disk packet matches the
+  committed file, and cannot establish that the on-disk packet is what the reviewer
+  *received*. Named at t1 r1 and unchanged; the rule promoted at clause 1 is what the residue
+  produced.
+- **t1 F1a** — E4(6)'s stated `.md` population and its own distribution disagree by exactly
+  the file the ticket was writing. Recorded not repaired at t1 r1, and left so.
+
+### Open for the next cycle
+
+The two `Touches`-scoping questions this round answered are worth carrying as practice
+rather than as rules: **a ticket's scoping is authoritative over a ticket's judgement**
+(t2 r0 declined to edit outside `Touches` and was vindicated, the fix being a scoping
+amendment rather than a licence to exceed one), and **a finding recorded inside a closed row
+is a record, not an executor** — BL-070 was DONE in the same commit that recorded a residue
+inside it. Neither is promoted here: the first is already carried by the standing deferred-
+finding rule, and the second is that rule's failure mode rather than a new rule.
+
+**Sequence from here:** BL-132 → provider four, which still carries §Not established item 1's
+two non-identical gate statements and needs them reconciled wherever it is scoped.

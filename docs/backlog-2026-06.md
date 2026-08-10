@@ -7960,3 +7960,75 @@ ruling, where H's consequent was named as neither decided nor owned —
 `cloudcost/m5-n1-compose.md` §Ratified decisions, m5-D2's *What this does not decide*.`
 
 ---
+
+### BL-137 — a freshness census over `cloudcost/milestone.md` §Open items: items whose trigger has already fired, or whose framing predates adapters that have since shipped (#TBD)
+**Kind:** method · **Census items:** n/a (surfaced by m5 t2 r1's second-claim sweep) · **Contract:** none — §Open items states no contract
+**Size:** S–M · **Priority:** medium · **Section:** cloudcost (`cloudcost/milestone.md` §Open items carried forward)
+
+**What it is.** §Open items is a carry-forward list, and a carry-forward list decays in a
+way nothing currently watches: an item written while one adapter shipped can name a
+condition that three adapters have since changed, or schedule itself against an event that
+has already happened. The item still reads as true — its own sentence is unchanged — so
+neither `drift_check` nor a review of the file's diff can see it. Only reading each item
+against the repo as it now stands can.
+
+**This is not the m5-D2 correction, and the distinction is the row's point.** m5 t2 and its
+r1 corrected two §Open items claims that rested on the reachability premise **m5-D2**
+overturned — the *"unreachable while DO is the only provider"* clause on the
+new-provider-caveat and multi-currency paths, and the cross-currency aggregation item's
+*"live at the first fan-out"*. **Neither of the two items this row names rests on that
+premise.** They are stale for an unrelated reason, which is why correcting them was outside
+t2's amended `Touches` and why they get a row instead of a third scoping amendment.
+
+**Two reported instances — a starting population, not the census.** Both were found by the
+sweep t2 r1 ran for a *different* premise and reported deliberately unfixed
+(`cloudcost/docs/m5-t2-implementation-notes.md` §*W3(d) — Reported, not fixed — two, and the
+reviewer's call*):
+
+- **The recency-modifier item**, `cloudcost/milestone.md` §Open items carried forward —
+  *"Bound the recency modifier's window at both ends"*. Its stale clause is *"Unreachable
+  while DO is the only provider (the field is null), so it lands with the first adapter that
+  populates it"*. AWS and Linode ship. **Whether either populates `last_activity_at` is not
+  established** — that is an adapter read, and it is this row's work, not a wording fix.
+- **The orphan-filename item**, same section — *"Give t2's output file a provider prefix
+  before the first multi-provider run"*. Its stale clause is the schedule, *"Lands with the
+  second adapter."*; the second adapter landed at m2 and the third at m3. **Lead, offered
+  for the census to verify rather than as a finding:** `cloudcost/m2-milestone.md` §*m1 open
+  items — final triage after A–H (LIVE / latent / RETIRED)* records a row *t2 output filename
+  collision* as **CLOSED — t2 b**, *"Each provider writes
+  `{provider}_orphan_candidates_{period}.json`"*, which if it holds at HEAD means the item's
+  trigger fired **and** was discharged, and the item is a residue rather than an open
+  question. Read `detect_orphans.py`, not the record — the record is the lead.
+
+**Why the two are a starting population and not the census.** They were surfaced by a sweep
+looking for something else, over the subset of the section that sweep happened to reach. The
+section carries **eleven** top-level items — seven bold carried items and four plain
+forward-looking bullets — and the census reads all eleven, including the four the sweep had
+no reason to touch. `(Count derived at agents d36b8e9 by enumeration of "^- " within the
+section; the enumeration, not just the count, belongs in the census's own record.)`
+
+**Done-when.** Every one of the eleven items in §Open items is read against HEAD and marked one of: still
+accurate; **trigger fired** (the condition it waits on has occurred — say what discharged it
+and whether the item survives); **framing stale** (the sentence is true but its stated reason
+is not — corrected in place with the superseded wording quoted, per decision 7); or
+**discharged elsewhere** (another milestone closed it — cite where). The two above are
+included, not assumed.
+
+**Owes:** adapter reads for the recency-modifier item (`cloudcost/scripts/fetch_aws.py` and
+`fetch_linode.py` — whether either populates `last_activity_at`, and `_normalized.py` for
+whether the field survives normalisation) and a source read of `detect_orphans.py` for the
+orphan-filename item; neither is a documentation-only change, which is exactly why this is a
+row rather than a wording fix inside a ticket already scoped elsewhere.
+**Costs:** S–M. No behaviour change and no contract amendment — establishment work over
+eleven items, most of which will settle by reading.
+**Collides with:** nothing. **BL-132** is the contract-reachability census over C1–C15 and
+this is the open-items freshness census; they share a shape and no subject matter.
+
+`Source: m5-cloudcost t2 r1, 2026-08-10 — the two instances and their shape are
+`cloudcost/docs/m5-t2-implementation-notes.md` §W3(d), and the reviewer's disposition that
+they get a row rather than a third `Touches` amendment is
+`cloudcost/docs/m5-close-anatomy-implementation-notes.md` §Review → *The two staleness items
+get a row, not a third `Touches` amendment*. Filed at the m5 close (t3), 2026-08-10, as the
+one row `cloudcost/m5-n1-compose.md` §t3 → `Touches` provides for. Read at agents `d36b8e9`.`
+
+---

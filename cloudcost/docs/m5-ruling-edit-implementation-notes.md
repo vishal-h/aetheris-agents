@@ -1250,9 +1250,64 @@ is not an unblocked change.**
 Unit 1 remains preamble-class and is left standing, with its residue recorded at §Review's
 `### r3` group. Under the instruction that is explicitly not a hold.
 
-**Run 2, after r3's commit** — the added row and the tree state are published in the packet
-and in §Deviations below; the expectation stated before running it was an addition-only
-delta equal to A1's block.
+**Run 2, after r3's commit** — its table, its final row's delta and the tree state are
+published below in this section; the expectation stated before running it was an
+addition-only delta equal to A1's block.
+
+`[Amended 2026-08-10 at r4. The paragraph above forward-referenced run 2's row and
+tree state as published "in the packet and in §Deviations below"; §Deviations carried
+neither, so this record promised content it did not hold. Run 2 is now published in
+§A4, re-derived at HEAD rather than transcribed from r3's packet, and the forward
+reference is narrowed to what this file carries. This file was pushed at c26095a
+before the amendment, so the change is dated rather than made silently — the first
+correction in this round to an artifact a reader could already have read, and the
+reading taken where §Promotion candidates' third entry is silent: kind licenses
+in-place correction, publication withdraws the licence to do it without a date.]`
+
+**Run 2, over `b648867..c26095a` — the same method, the endpoints extended by r3's own
+commit:**
+
+```
+b648867 -> 70addd3 :  3 removed /  11 added
+70addd3 -> 5db4585 :  0 removed /   0 added
+5db4585 -> 40c2d58 :  0 removed /   0 added
+40c2d58 -> a2d63d1 :  5 removed /  92 added
+a2d63d1 -> 3f66353 :  3 removed /   6 added
+3f66353 -> 4cdd31f :  0 removed /  10 added
+4cdd31f -> c26095a :  0 removed /   8 added
+```
+
+`[The counts are a claim about lines and are stamped at the commits named, per m5-D1.]`
+
+**The final row's delta, read directly rather than inferred from the count:**
+
+```
+143a144,151
+> `[Appended 2026-08-10 at the reviewer edit r1, after this decision was ratified
+> earlier the same day. The sentence naming BL-136 is not part of what was ratified at
+> t1's gate stop: the ruling recorded the aggregator question as undecided and unowned,
+> and the row that owns it was filed afterwards. The clause's own date does not
+> distinguish it — the ruling and the row share 2026-08-10 — which is why this note
+> exists rather than being redundant with it. Recorded per decision 7; the before and
+> after are at §r1 of cloudcost/docs/m5-ruling-edit-implementation-notes.md.]`
+> 
+```
+
+**The delta is addition-only — zero lines removed — and the addition is a dated block:**
+A1's own `[Appended 2026-08-10 …]` note plus its trailing blank. **That is the finding,
+and the count could not have carried it.** A dated block and an unblocked change both
+present as added lines, so only reading the delta separates them; `0 removed / 8 added`
+is equally consistent with r3 having appended an unblocked sentence of its own. So r3
+introduced no unblocked change inside a ratified decision by its own edit — which is the
+half of the sweep **run 1 structurally cannot perform**, its range ending before r3's
+commit exists. That is the same blindness A2 files one level over, and the reason run 2
+is a second run rather than a longer first one.
+
+**Both runs were re-derived at HEAD `c26095a` at r4** by a fresh per-commit extraction,
+not read back from r3's packet; the six rows the two runs share agree row for row. Tree
+state at that point: agents `git status --porcelain` empty and
+`git rev-list --count origin/main..main` **0**, with `origin/main` at `c26095a`; harness
+`../aetheris` at `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean, nothing to push.
 
 ---
 
@@ -1271,6 +1326,136 @@ verbatim; both target units are byte-unchanged.
 
 **No file outside `cloudcost/m5-n1-compose.md` and this one was changed. t2 is not opened.
 The harness is unedited.**
+
+---
+
+## r4 — the record supplies what it promised
+
+`Authored 2026-08-10 at r4, the fifth commit of the ruling edit, on top of c26095a (r3),
+4cdd31f (r2), 3f66353 (r1) and a2d63d1 (r0). Under R15 a further round of the ruling edit;
+under R20 not a ticket round and no review file. This round touches this file only. Every
+figure below was re-derived at agents c26095a by a fresh extraction; none is transcribed
+from r3's packet. Line numbers appear only for claims about lines, per m5-D1.`
+
+**The first round of this edit whose subject is this file rather than the ruling.**
+
+### Gate on the instruction
+
+| Claim | Resolved |
+|---|---|
+| `c26095a` and everything beneath it are **pushed** | ✓ `git ls-remote origin main` → `c26095afb3289296262b9dd6bdda85f51e1411c6`; `git rev-list --count origin/main..main` → **0** |
+| Both trees clean | ✓ agents and `../aetheris` both `git status --porcelain` → empty |
+| The harness is not touched and has nothing to push | ✓ `../aetheris` at `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean, count **0**; r4 edits no harness file |
+| §A4's run 2 paragraph forward-references §Deviations, and §Deviations carries neither the row nor the tree state | ✓ quoted verbatim at B1(d) below; §r3's §Deviations carries only the insertion-point deviation and the two instruction corrections |
+| The figures in the prompt are transcribed from r3's packet and are **not** authority | ✓ treated as such: both runs re-derived from a fresh per-commit extraction at HEAD, and the derived figures are what this section publishes. They agree with r3's packet, which is a result and not an assumption |
+
+**All hold.** Nothing in this prompt was wrong about repo state, and nothing the
+re-derivation produced contradicts what the prompt assumes — so the push condition at
+B3(d) is met on its own terms rather than by default.
+
+### What r4 changed, and where
+
+| B | file | change |
+|---|---|---|
+| B1 | this file, §r3 → §A4 | run 2 published — table, final-row delta read directly, and the finding; the forward-referencing paragraph replaced so it points into this section |
+| B2 | same, immediately beneath the replaced paragraph | the dated amendment block |
+| B3 | same | this section, and an `### r4` group appended to §Review |
+
+`cloudcost/m5-n1-compose.md` is **not** edited at r4, neither ticket is opened, and the
+harness is untouched (HEAD `2ef0517057e4eda991a8da10ccba66650d1e65a2`, clean, nothing to
+push).
+
+---
+
+### B1 — the content the record promised
+
+**Both runs re-derived at HEAD `c26095a`.** Method unchanged from r3 and re-derived rather
+than reused: the section `## Ratified decisions` up to `## Promotion candidates` in
+`cloudcost/m5-n1-compose.md`, extracted at each commit in `b648867..HEAD` into a fresh
+working directory and diffed consecutively. Run 1 stops at `4cdd31f`; run 2 extends to
+`c26095a`. Both tables, the final row's delta and the finding are published at §A4 above;
+they are not repeated here, because a figure published twice is a figure that can diverge.
+
+**What the re-derivation established, stated as a result:** the seven rows are as §A4 now
+publishes them, the six rows the two runs share agree row for row, and the final row's
+delta is addition-only with the addition being A1's dated block. r3's packet reported the
+same figures; that agreement is the outcome of an independent derivation, not its premise.
+
+**Why the promise was supplied rather than narrowed.** Run 2 is the half of the sweep that
+establishes r3 introduced no unblocked change by its own edit, and run 1 cannot perform it —
+run 1's range ends before r3's commit exists. Narrowing the sentence to *"published in the
+packet"* would have left the record's own verification depending on a document the repo does
+not hold. A verification that lives only in a packet is a verification the repo does not
+have.
+
+**Unit at HEAD, quoted before the edit:**
+
+> **Run 2, after r3's commit** — the added row and the tree state are published in the packet
+> and in §Deviations below; the expectation stated before running it was an addition-only
+> delta equal to A1's block.
+
+**After — the same three-line paragraph, with the forward reference narrowed to this
+section and nothing else changed:**
+
+> **Run 2, after r3's commit** — its table, its final row's delta and the tree state are
+> published below in this section; the expectation stated before running it was an
+> addition-only delta equal to A1's block.
+
+The closing clause is kept deliberately: it records the expectation as stated *before* run 2
+was executed, which is what makes the run a check rather than a description.
+
+**Where the insertion points fall, stated per §Carried in's first carried rule.** Two
+insertions, both inside §A4 and neither crossing an attribution boundary:
+
+1. **B2's dated block** lands **immediately beneath the replaced paragraph**, before run 2's
+   own material. It annotates that paragraph and nothing else, and no `Source:` or `Origin:`
+   unit lies between them.
+2. **Run 2's table, delta and finding** land **after that block and before §A4's closing
+   `---`**, at the section's end. Run 1's unit is left intact and unsevered — its table, its
+   `[The counts are a claim about lines …]` stamp and its *"first five rows reproduce"*
+   commentary remain one contiguous run, as do the `No third instance` population table and
+   its unit-1 note. Nothing was inserted between a table and the stamp or commentary that
+   attributes it.
+
+**One ordering left as it stands, named rather than silently changed.** §A4 states its
+`No third instance` conclusion and population table *before* run 2's evidence now sits.
+That ordering predates r4 and reads correctly — the conclusion is stated, then run 2
+supplies the half of the evidence that confirms row 5 — so it was not reordered. Moving it
+would have been an unrequested edit to a pushed record in the same commit that dates a
+requested one.
+
+---
+
+### B2 — the dated note, and the reading taken
+
+The block is the instruction's text, verbatim. It is recorded here because the choice it
+encodes is a reading of a rule that does not settle the case.
+
+**The rule and its gap.** §Promotion candidates' third entry holds that *"the licence comes
+from the artifact's kind, not from its push state"* — and this file's kind is a session
+record, which licenses in-place correction. But the entry's argument for that licence is
+that *"a record's claims become meaningful when someone reads them and no one had"*, and
+that ground is gone: this file was pushed at `c26095a` before the amendment. The entry
+rules on **kind versus push state** for the licence to correct in place; it is silent on
+whether publication changes what a correction must *carry*.
+
+**The reading taken, conservatively, and recorded so the choice is auditable:** kind
+licenses the in-place correction, and publication withdraws the licence to make it
+undated. So the paragraph is corrected in place rather than superseded whole — the entry
+governs that — and the correction is dated rather than silent. This is the first correction
+in this round to an artifact a reader could already have read, which is why the question
+arises here and did not at r0–r3.
+
+---
+
+### Deviations
+
+**None.** B1's replacement is the unit narrowed and otherwise unchanged; B2's block is the
+instruction's text verbatim; both runs are the instruction's method over the instruction's
+endpoints. The two insertion points and the one ordering left standing are stated at B1
+rather than deviated from.
+
+**No file outside this one was changed. t2 is not opened. The harness is unedited.**
 
 ---
 
@@ -1419,3 +1604,19 @@ decision under decision 7, and the displaced wording is committed — in a diffe
 which is the whole of the residue. Requiring each block to quote its predecessor would make
 every in-place correction grow without bound. Recorded so a later reader who traces the
 chain and finds it one link short knows it was seen.
+
+### r4 — the reviewer's disposition on the line r3 flagged against itself
+
+`Dated 2026-08-10 at r4. One entry, on the forward reference r3 landed and reported in the
+same packet.`
+
+#### A forward reference to a section that carries nothing
+
+*Finding, raised by claude-code at r3 against its own landed text: §A4's run 2 paragraph
+pointed at the packet and at §Deviations, and §Deviations held neither the row nor the tree
+state.*
+
+**Disposition: accepted; run 2 is supplied at r4 (B1) rather than the promise narrowed.**
+The sweep's closing half belongs in the record — a verification that lives only in a packet
+is a verification the repo does not have, which is this round's own subject arriving one
+file over.

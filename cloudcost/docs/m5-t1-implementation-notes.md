@@ -1,6 +1,9 @@
 # m5 t1 — establish the N>1 compose surface (read-only) — implementation notes
 
-`Round r0, 2026-08-10. Ticket: cloudcost/m5-n1-compose.md §Ticket set → t1.`
+`Ticket: cloudcost/m5-n1-compose.md §Ticket set → t1. Written across two rounds, both
+2026-08-10: r0 (5db4585) established E1–E8 and everything above §r1; r1 appends §r1 and
+replaced this line. Under R15 a repair of a ticket's own output is a further round of that
+ticket and appends here.`
 
 **What this file is.** t1 establishes; it does not rule. Eight questions are answered at
 HEAD so that the evidence the BL-131 ruling needs exists as a committed artifact in this
@@ -632,3 +635,235 @@ running, per the ticket; **neither has moved**.
 whether or not an artifact appeared. A `find -printf '%T@ %s %p'` snapshot of both trees was
 taken before and after the run — 25 files — and compared: **identical**, no mtime or size
 change. The substitution is named here rather than left to read as an item-4 pass.
+
+---
+
+## r1 — the harness-side population, and the packet check
+
+`Authored 2026-08-10 at r1, on top of 5db4585 (r0). Verdict on r0 was APPROVE with two
+findings, both closed here; E1–E8 are not re-run and no section above this one is rewritten.
+Under R15 this is a further round of t1 and appends here. Review file:
+docs/reviews/m5-cloudcost-t1-review.md. Everything below is measured at agents 5db4585
+(5db4585e96ca5490c170b9f7d02034b9b0f41517) and harness 2ef0517
+(2ef0517057e4eda991a8da10ccba66650d1e65a2) unless it names its own commit.`
+
+### What r1 changed, and where
+
+| | file | change |
+|---|---|---|
+| — | this file, line 3 | the `Round r0` self-description replaced with a provenance line naming both rounds — the repair m5 r6 made at **T2** on the pin-edit file, applied before it could go false |
+| **F1** | this file, §r1 | E4(6)'s vocabulary swept over the harness's full tracked population, beside E4's agents figure. **E4 is not rewritten** |
+| **F1a** | this file, §r1 | E4(6)'s stated `.md` population and its own distribution disagree by one file. Recorded, not repaired |
+| **F2** | this file, §r1 | a mechanical check of whether r0's packet §1 and §2 correspond to the committed file at `5db4585`, with what it can and cannot observe |
+| **R2** | `docs/reviews/m5-cloudcost-t1-review.md` *(new)* | the round's review file, reviewer findings verbatim, dispositions beneath. **Outside `Touches`** — deviation declared below |
+| **R19** | `cloudcost/m5-n1-compose.md` §Ticket set | t1's row extended with its r1 state; r0's text stands |
+
+`docs/backlog-2026-06.md` is not edited, `cloudcost/milestone.md` is not touched, nothing
+under `cloudcost/scripts|tests|templates|agents` nor `cloudcost/tools.json` changed, the
+harness is unedited (HEAD `2ef0517`, clean), and the push is held.
+
+### F1 — E4(6)'s vocabulary over the harness's full tracked population
+
+E4(6) above names its population as the agents repo's tracked `.md` files plus
+`cloudcost/tools.json`. **That is one repo.** The harness was swept in E2 — for
+`compose_report_data`, returning zero against a `cloudcost` control of 8 — but never for
+this vocabulary, so the blast radius was a count over a population narrower than its claim.
+Closed here.
+
+**Population, named by command before searching it.** In `../aetheris/`:
+
+```
+$ git ls-files | wc -l
+441
+$ git ls-files "*.md" | wc -l
+143
+```
+
+The sweep runs over all **441** tracked files, not the 143 `.md` subset. That is *wider in
+kind* than E4(6)'s population — `.md` plus one JSON manifest — so a harness zero is not an
+artefact of a narrower filter. The harness does carry a `tools.json`
+(`mcp/stdio/github/tools.json`, the GitHub MCP manifest); the all-tracked form covers it
+without needing to name it.
+
+**The same eight terms, the same `grep -F` form E4(6) used, stated rather than referenced:**
+
+```
+$ for t in <the eight terms>; do printf "%-22s %s\n" "$t" \
+    "$(git ls-files -z | xargs -0 grep -Fl -- "$t" | wc -l)"; done
+cross-provider         1
+across all providers   0
+N providers            0
+N-merge                0
+merge-across-clouds    0
+N>1                    0
+multi-provider         1
+per-provider bundles   0
+```
+
+`xargs` exits 123 on this form — that is `grep`'s per-invocation no-match, not an error;
+stderr was not suppressed and none was produced.
+
+**Two hits. Each quoted and classified exactly as E4(6) classifies its agents hits — and
+both land in the bucket E4(6) itself created for its own two out-of-scope hits, *"checked
+rather than assumed"*, not in either of its live/record buckets.**
+
+| # | `file:line` | Quotation | Classification |
+|---|---|---|---|
+| 1 | `docs/aetheris/milestones/bl-039-implementation-notes.md:59` | *"the fix is what makes cross-provider forking real, not merely legal."* | **Out of scope.** BL-039 is fork-context normalisation across **LLM** providers; the surrounding bullet is about a `role: "tool"` message that *"feeds none of the four providers correctly"*. Not this surface, so neither a live description of it nor a record of a decision about it |
+| 2 | `docs/aetheris/research/dirge-agent-2026-06.md:58` | *"Dirge uses role-based multi-provider routing: the main loop, review, escalation,"* | **Out of scope.** §*Mechanism 2: Model escalation on repeated failure* — routing a run's roles at different **models**, with `escalation_provider` as the subject. Not this surface |
+
+**So: zero in-scope hits in the harness. Nothing in the harness enters the REMOVE blast
+radius, and nothing in it must change either way the ruling goes.** The line numbers above
+are grep output — a claim about a line — and are exempt under **m5-D1**; both are stamped to
+harness `2ef0517`.
+
+**Positive controls, so each zero reads as absence.** Three, chosen to cover three different
+ways this sweep could have failed silently:
+
+| Control | Command form | Result | What it establishes |
+|---|---|---|---|
+| reach | `cloudcost` over the same population | **8** files — `CLAUDE.md`, `docs/aetheris/claude-notes.md`, `docs/aetheris/milestones/handoff-m10b-m11.md`, `docs/aetheris/milestones/milestone-reference.md`, `docs/aetheris/runbook-m10b.md`, `docs/methodology/milestone-methodology.md`, `docs/methodology/triad-loop.md`, `scripts/sprint.sh` | the sweep reaches the harness tree, and reproduces E2's control list exactly |
+| multi-word terms | `per provider` | **1** — `scripts/sprint.sh:2687` | a space-bearing term is findable, so *"across all providers"*, *"N providers"* and *"per-provider bundles"* did not zero on their spaces |
+| `>`-bearing terms | `>=` | **41** files | `N>1`'s zero is not the `>` |
+
+**A guard beyond E4(6)'s form, run because the form is inherited rather than chosen.** The
+same sweep with `-i` finds **one genuine capitalization variant the case-sensitive form
+misses**: `docs/reviews/bl-039-contract-draft.md:140`, *"### 3. Cross-provider fork stated
+without its reachability caveat"* — BL-039 again, **LLM** providers, out of scope. Every
+other `-i` delta is a substring artefact and not a term at all (`unknown providers`,
+`open providers`, `known providers`, `un-merged`). **The in-scope count is unchanged at
+zero**, so the guard strengthens the answer rather than changing it.
+
+*Inherited limitation, carried not resolved.* E4(6)'s agents sweep used the same
+case-sensitive form, so it may miss capitalization variants there too — one such variant
+exists in the harness, which is evidence that the class is real and not that the agents
+figure is wrong. **Not re-run**: r1's instruction is that E1–E8 stand and none is re-run.
+*Would settle it:* an `-i` pass over E4(6)'s own agents population.
+
+**E4's original figure was one repo, and it is retained rather than recomputed.** E4(6)
+reports **114 matching lines in 24 files** over the agents population — r0's figure, measured
+at `70addd3` per that section's own stamp, and not re-derived here. Beside it now:
+
+| Repo | Population | Matching | In scope |
+|---|---|---|---|
+| agents | tracked `.md` + `cloudcost/tools.json` (E4(6)'s own, r0's figure) | 114 lines in 24 files | 22 files — E4(6) checked and excluded 2 |
+| harness | **all 441 tracked files** | 2 lines in 2 files | **0** |
+
+### F1a — E4(6)'s stated population and its own distribution disagree by one file
+
+Found while resolving the population identifier for F1, and recorded rather than repaired.
+
+E4(6) names *"the **467** git-tracked `.md` files plus `cloudcost/tools.json` in this repo"*,
+under this file's §Measurement stamp, which says every figure was measured at `70addd3`.
+**At `70addd3` the tracked `.md` count is 466:**
+
+```
+$ git ls-tree -r --name-only 70addd3 | grep -c '\.md$'
+466
+$ git ls-tree -r --name-only 5db4585 | grep -c '\.md$'
+467
+```
+
+467 is the count at `5db4585` — after r0's own notes file joined the tree. And that file
+**does** speak the vocabulary: 47 matching lines across all eight terms, `cross-provider` 13
+· `N>1` 24 · `N-merge` 4 · `N providers` 3 · `multi-provider` 3 · `across all providers` 2 ·
+`per-provider bundles` 2 · `merge-across-clouds` 1. Yet
+`cloudcost/docs/m5-t1-implementation-notes.md` appears nowhere in E4(6)'s 24-file
+distribution.
+
+**Two readings, and the tree cannot separate them.** Either the sweep ran over 466 files and
+`467` was transcribed from a later command — in which case the population figure is
+mis-stamped by one — or it ran over 467 and the distribution omitted a member without saying
+so. Under either reading, two published figures in one section disagree by exactly one file:
+the file the ticket was writing. **Would settle it:** r0's transcript of the sweep command,
+which is not in the repo.
+
+**Not repaired.** r1's instruction is that E4 is not rewritten and r0's number is retained;
+114/24 stands as r0's figure. Recorded so a later reader who recomputes the population and
+gets a different number knows it was seen.
+
+### F2 — whether r0's packet §1 and §2 correspond to the committed file
+
+r0's packet asserted, in its preamble, that *"Every section below is inlined verbatim from
+the committed record or transcribed from the command that produced it, read after that
+command exited"*, and its §4 elided the notes file's diff on that basis: *"its diff is the
+file's entire content preceded by `+`, and that content is already inlined verbatim in §1
+and §2 above."* The assertion carried no check, and the elision meant the reviewer ratified
+from the packet rather than from the artifact.
+
+**The check, and it is the strong one rather than the fallback.** r0's packet survives as a
+file — `m5-t1-r0-review-packet.md` in the r0 session's scratchpad, 1203 lines, sha256
+`f87ff7947e33775d310f36fda581535e3e4cc293f7699fa8b786791d1ee9c1dc`, mtime
+`2026-08-10 08:45:20 +0530`, which is 62 s after r0's commit timestamp
+(`Mon Aug 10 08:44:18 2026 +0530`). So the packet's own §1 and §2 ranges can be diffed
+against `git show 5db4585:cloudcost/docs/m5-t1-implementation-notes.md` byte for byte.
+
+```
+§1   packet 16–120   vs  committed 21–125    → no diff   md5 e8bddac7a6641c573cf93beecf83f053
+§2   packet 128–599  vs  committed 129–600   → no diff   md5 68ce09e8e658c4bc6983861dba0e8aac
+```
+
+**The assertion is true. The elision's stated basis is not.** §1 and §2 carry 105 + 472 =
+**577** of the committed file's **634** lines. The other 57:
+
+- **lines 612–634**, the file's §Done-check — carried in the packet's §3, but *transcribed
+  from the commands* rather than inlined from the file, including the `find -printf`
+  substitution, which §3 states in its own words with `git check-ignore -v` output the file
+  does not have.
+- **lines 601–611**, §Deviations — its substance appears in the packet's §9 in different
+  words. The heading and the paragraph appear nowhere.
+- **lines 1–20 and 126–128**, the file's opening framing — title, round stamp, §*What this
+  file is*, §**Measurement stamp**, and the `## The eight questions` heading. These appear
+  **nowhere in the packet in any form**: `grep -n "Measurement stamp\|What this file is\|##
+  Deviations"` over the packet returns 0 hits.
+
+**That last omission is the material one.** The §Measurement stamp is the paragraph that
+binds every `path:line` in §1 and §2 to a commit and states the m5-D1 citation form the
+sections are written in. The reviewer read 577 verbatim lines without the sentence saying
+what they were measured at — the packet's own preamble gave the commits in its own words,
+which is a paraphrase standing in for the artifact's own statement.
+
+**What this check can observe:** that the packet file on disk has §1 and §2 byte-identical
+to the committed record at `5db4585`.
+
+**What it cannot:**
+- that the file on disk is what the reviewer *received*. The packet travels by relay and
+  this is claude-code's own copy; a truncation or substitution in the relay is invisible to
+  it. **This is the residue of F2 and the check does not close it.**
+- that the file is unmodified since the relay. mtime is the only evidence and mtime is
+  mutable.
+- anything about the packet's §3–§9, which the assertion also covered.
+- that the committed content is *correct* — only that the packet reported it faithfully.
+- durability. The scratchpad is session-scoped and under `/tmp`; the check is not
+  reproducible from either repo, so only this recorded result survives it.
+
+**The rule this implies, in force for the rest of this round.**
+
+> **An elision justified by "this is inlined above" carries the check that establishes it, or
+> the diff is not elided.** The assertion and the artifact are different things, and a packet
+> reporting a file is not the file. Where the elision is taken, name the ranges it covers and
+> the lines it does not: r0's basis was true of 577 of 634 lines and read as true of all of
+> them, and no reader of the packet could have told.
+
+This is a **§Promotion candidates candidate** for `cloudcost/m5-n1-compose.md` and is
+deliberately **not written there** — r1 authorises the t1 row only in that file. Flagged in
+the packet for the reviewer, who owns that section.
+
+### Deviation
+
+**One, declared rather than glossed.** `docs/reviews/m5-cloudcost-t1-review.md` is outside
+t1's `Touches`, which names this file and the t1 row and *"Nothing else"*. It lands anyway:
+the round's instruction directs it, and the standing obligation is
+`../aetheris/docs/methodology/milestone-methodology.md` §1 principle 4 (*"Feedback travels as
+files, not relay. Review findings are written verbatim to a review file in the repo"*) and §8
+(*"Review files, implementation notes, and milestone summaries are committed to the repo —
+they are part of the audit trail, not chat ephemera"*), both unscoped.
+
+**A precision on the authority, because the round's instruction cited a narrower one.** It
+cited **R2**, whose text in `docs/milestones/hc-consolidation.md` §R2 reads *"**Every `hc-*`
+ticket commits its review file**"*, and §R20 closes *"R2 is unchanged for `hc-*` ticket
+rounds."* m5 t1 is not an `hc-*` ticket, so R2 does not literally reach it. The obligation
+holds regardless, on the two methodology sections R2 itself invokes — §R2 grounds itself in
+*"the methodology's own text: §1.4 and §8 already require review files committed, verbatim"*.
+So R2 is cited here as the round-level restatement of a general rule, not as its source.
+`git status --short` shows exactly the three paths above and no fourth.

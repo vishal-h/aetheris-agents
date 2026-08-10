@@ -579,3 +579,152 @@ either**, on the ground that the first is already carried by the standing deferr
 and the second is that rule's failure mode rather than a new rule. Neither was a §Promotion
 candidates entry, so neither was clause 1's to dispose; recording them in the summary rather
 than filing them as candidates is a judgement, and it is the reviewer's to overturn.
+
+---
+
+## r1 — the closed-row precision, and the manifest question answered read-only
+
+`Dated 2026-08-10, on the reviewer's r1 instruction. Verdict on r0 was APPROVE with one
+finding. r0's commits — harness 0ed9068, agents d0fb25a — are held and unamended; r1 is one
+commit per repo on top. The six clauses are not re-run.`
+
+### Gate on the instruction
+
+Every claim resolved before acting. **Four checked; three hold, one is corrected.**
+
+1. **"the standing deferred-finding rule … or whatever its actual wording is"** — the wording
+   is *"A deferred finding gets a backlog row in the same round it's deferred — prose in a
+   packet or notes files nothing."* **Holds.**
+2. **G1(a)'s stop condition** — *"If it lives in neither `CLAUDE.md` that t3 already touches,
+   stop and report."* **Not met**: it lives in the agents `CLAUDE.md`, which t3 touches. **No
+   stop.**
+3. **"§6's `Touches` field already carries it in its own words"** — the reviewer's ground for
+   keeping the other practice declined. **Holds, and verified rather than accepted.** §6 →
+   **Touches**: *"files/dirs expected to change. Anything outside this list needs a note in the
+   implementation notes."* And §9's failure-mode table, nearly the literal form:
+   *"claude-code 'improves' something outside `Touches` | Unreviewed scope creep; violates
+   do-not-generate discipline | §6"*.
+4. **"the way m5-D1 was extended with its stamping clause rather than re-ratified"** — the
+   precedent the instruction offers for the edit's shape. **Holds.** §Ratified decisions →
+   m5-D1 carries `[Extended 2026-08-09 at r6 with the stamping clause, on claude-code's r5
+   flag …]`, an extension to a ratified decision made without re-ratifying it.
+
+### The one claim that does not hold
+
+**The parent rule is in one repo, not two.** Nothing in this prompt asserts otherwise — the
+instruction says *"or whatever its actual wording is"* and scopes its stop condition to *either*
+`CLAUDE.md` — so this is not a defect in the instruction. It is a defect in **this round's own
+t2 review file**, which describes the rule as *"The standing rule in both repos — a deferred
+finding gets a backlog row in the same round it's deferred; prose in a packet or notes files
+nothing"* (`docs/reviews/m5-cloudcost-t2-review.md`, §*F1 — accepted*).
+
+```
+$ grep -n "deferred finding" ../aetheris/CLAUDE.md          → (no output)
+$ grep -n "deferred finding" CLAUDE.md                      → 502: …
+$ grep -c "backlog row" ../aetheris/CLAUDE.md               → 0      # control
+$ grep -c "backlog row" CLAUDE.md                           → 1      # control
+```
+
+The control is what makes the harness zero readable as absence rather than as a broken search.
+
+**Not corrected, and the reason is this round's own promoted entry.**
+`docs/reviews/m5-cloudcost-t2-review.md` is a committed and **pushed** review record of a closed
+round. The entry promoted at clause 1 — *an unpushed artifact may be corrected in place; a
+ratified one may not* — puts an in-place edit there out of bounds, and r1's `Touches` does not
+name it either. Recorded here and in the review file so the next reader of that sentence knows.
+
+### G1 — the clause
+
+**Landed as one clause on the existing claim, and one extension to the existing `Source:`.**
+Not a second entry, not a second `Source:` line.
+
+**The unit, before** *(agents `CLAUDE.md`, §Learning — BL-007, at `d0fb25a`)*:
+
+> **A deferred finding gets a backlog row in the same round it's deferred — prose in a packet
+> or notes files nothing.** Three times this milestone a deferred item survived only because a
+> later reviewer re-noticed it; prose has no executor.
+> `Source: BL-007 t1, t2, t3`
+
+**The unit, after** — the appended clause, in the entry's own voice:
+
+> … prose has no executor. **And the row must be one that stays open: a finding recorded
+> inside a row the same commit closes has a record, not an executor.** That satisfies the rule
+> in letter and defeats it in substance, and the defeat is invisible precisely because the row
+> it lives in is the row being closed — so name the row you are putting it in, and if that row
+> is being disposed in this commit, file a new one.
+> `Source: BL-007 t1, t2, t3; the closing clause is a precision on the same rule from
+> m5-cloudcost t2, one recorded instance — r0 recorded a residue inside BL-070's disposition
+> and the same commit marked BL-070 DONE, so the residue had no executor from the moment it
+> was written, and it survived only because t2 r1 re-noticed it. Named as a failure mode of
+> this rule rather than promoted as one of its own, because it is not derivable from the claim
+> above: a session applying that claim correctly can still land here.`
+
+**Where the insertion falls.** **Entirely inside the unit** the claim and its `Source:` form —
+the clause is appended to the end of the claim's own paragraph, and the `Source:` is extended
+after its existing instance list. **The unit above** is *No action past a gate until that gate
+has run and its result is on the record*, and it is a **complete claim+`Source:` pair**, closing
+`Source: BL-007 t2, t4 (×2); b1 post-push correction, 2026-07-21 (d831220)`. **The unit below**
+is *Decisions that constrain ticket N+1 land in N+1's README section before its session
+starts*, also **complete**, closing `Source: BL-007 t2, t3, t4`. **Both are byte-unchanged**,
+and the file's line count is unchanged across this edit — two lines modified in place, none
+added or removed — which is the check that no claim was separated from its attribution and no
+new `Source:` was introduced for a later insertion to be misread against.
+
+**Why one instance is honest here and does not engage §7's bar.** The clause is a *precision on
+an existing rule*, not a rule. §7's bar filters what earns a standing instruction of its own;
+this earns none — it earns a sentence inside one that already cleared the bar at three tickets.
+The `Source:` says *one recorded instance* in those words rather than folding m5 into the
+`BL-007 t1, t2, t3` list, where it would have read as a fourth recurrence.
+
+### G1(d) — read back out of the file
+
+Performed after landing, from the file, with surrounding lines. Pattern:
+`grep -n -B4 -A4 "A deferred finding gets a backlog row"` over agents `CLAUDE.md`. **One hit**,
+with the two neighbouring entries and their `Source:` lines visible above and below it, both
+unchanged. Quoted in full in the packet.
+
+### G2 — who refreshes the project-knowledge manifest (read-only; nothing changed)
+
+Reported in the packet with its population, its controls and its verbatim quotations. **No
+manifest was refreshed, no row was filed, and no file was edited for this question** — the
+instruction reserves that decision to the reviewer.
+
+### The §Milestone summary correction, and why it is inside the scoping
+
+The reviewer's F1 makes §Milestone summary's *"Neither is promoted here"* false for one of its
+two practices. **Corrected in the same commit**, as a dated block that supersedes the second
+half while leaving the paragraph standing, per decision 7.
+
+**This is inside t3's `Touches`, not an extension of it.** The field names
+`cloudcost/m5-n1-compose.md` with **§Milestone summary** as an explicit sub-target. **And
+leaving it would have been this round's own recurring shape a fourth time** — a correction
+landing in one artifact while the same claim survives in another, which is the class
+close-anatomy r2 enumerated three instances of and routed to §Promotion candidates' first
+entry. The instruction did not name this edit; it is named here rather than left to be noticed.
+
+### Done-check, r1
+
+**Items 1 and 5 re-run. Items 2, 3 and 4 are r0's and are not re-run**, and this is stated
+rather than left to inference: item 2's read-backs cover r0's five promoted entries, none of
+which r1 touches (r1's own read-back is G1(d) above, reported separately); item 3's drift run
+is re-run under item 5's heading below because r1 commits again and check 8 reads committed
+history; item 4's 3-and-3 enumeration over §Promotion candidates is unchanged, r1 adding no
+candidate and no disposition.
+
+`[Item 3 is therefore re-run, and the instruction names items 1 and 5. Item 5 in r0's
+done-check is "nothing outside Touches"; the drift checker is item 3. Both are run — the
+drift check because a second commit re-stales the manifest and a green from r0's tree would
+be a claim about a tree that no longer exists. Named because running more than was asked is
+still a divergence from the instruction.]`
+
+### Deviations, r1
+
+**None.** Four paths changed, all inside `Touches` or its declared conventions:
+`CLAUDE.md` (the clause), `cloudcost/m5-n1-compose.md` (t3's row per R19, and the
+§Milestone summary correction), `cloudcost/docs/m5-t3-implementation-notes.md` (this section),
+and `docs/reviews/m5-cloudcost-t3-review.md` — which §Ticket set's conventions declare is not a
+`Touches` path and whose landing is not a deviation.
+
+**The harness is not touched at r1**, so there is no harness commit and the harness-first
+ordering has nothing to order. r0's harness commit `0ed9068` is unamended and is pushed first
+regardless, being the older of the two.

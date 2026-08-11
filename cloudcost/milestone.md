@@ -343,7 +343,13 @@ its own adapter, not in the rule engine (D11). That is a mapping decision made i
 
 **Reachability (BL-132, 2026-08-11) — guarantee reachable, the gap clause source-only.** Every
 orchestrator run composes from adapter output and all three adapters import the `TYPE_*`
-constants, so the closed-set guarantee is exercised on every invocation. The unenforced-validation
+constants, so the closed-set guarantee is exercised by every invocation that types a resource.
+`[Corrected 2026-08-11 at the exercise sweep, one commit after landing at a690014, where it read
+"exercised on every invocation". Of the five chains this census ran, the AWS one consumed a
+recorded inventory of **zero** resources and therefore typed nothing, so universality over
+invocations is not what the runs showed. The source half is unchanged and was verified: all three
+adapters import from `_normalized` and reference the `TYPE_*` constants. **The verdict is
+unchanged — reachable**; this narrows a claim about exercise, not about reachability.]` The unenforced-validation
 clause is **source-only**: an out-of-vocabulary `type` counted in `totals.resources` and evaluated
 by nothing requires an adapter that spells its own vocabulary, and none does. **Kept, qualified
 here** — the clause describes a real hole in `usable_resources`, reachable the moment a fourth
@@ -382,9 +388,15 @@ At HEAD there are exactly two interpolation sites, and **each is gated on
 `resource.get("state") not in STOPPED_STATES` returning false**, so the only value that can reach
 evidence text is the canonical one. No other route exists: the composed payload carries **no
 `state` field at all** — `top_untagged_spenders` does not carry it and the template never reads it.
-Measured over three runs of the orchestrator's own STEP 3 forms across recorded DO and Linode
-artifacts: **zero** `"state"` in either payload and either rendered report, against a control of
-**18** in the DO inventory those runs consumed. The raw strings are real and reach the *inventory
+Measured over three chains of the orchestrator's own STEP 3 forms across recorded DO and Linode
+artifacts — DO at both arg forms and Linode at the first: **zero** `"state"` across **all three
+composed payloads and all three rendered reports**, against a control of **18** in the DO inventory
+those chains consumed. `[Corrected 2026-08-11 at the exercise sweep. As landed at a690014 this read
+"zero in either payload and either rendered report" — "either" is two, which contradicted the same
+sentence's "three runs" and was the honest count of what had been measured: form B's payload and
+report were not in that check. The sweep measured all six artifacts and every one is zero, so the
+claim is now stated over what was actually measured and is stronger, not weaker. **The verdict is
+unchanged.**]` The raw strings are real and reach the *inventory
 artifact*; they stop there. **Qualified, not superseded** — the vocabulary gap X1 names is real and
 the prohibition it grounds (*no rule may key on a non-stopped state until the set is enumerated*)
 is unaffected; what does not hold is the claim that a reader meets those strings in the report.
@@ -423,13 +435,20 @@ are C8.
 
 **Reachability (BL-132, 2026-08-11) — arithmetic and grammar reachable; D17 and N3 source-only,
 and this contract's own unreachability claim is confirmed rather than inherited.** Age
-arithmetic, the strict-greater comparison and the second-precision UTC grammar are produced by
-every run — three runs emitted `as_of` values of the `%Y-%m-%dT%H:%M:%SZ` form. **D17's wall-clock
-fallback is source-only, and C3's assertion that it is unreachable on all three adapters holds
-under check**: every adapter stamps `generated_at` with `iso_now()` at every emission site, and
-the three runs resolved reference dates of `2026-08-07T16:56:59Z` (DO), `2026-08-04T04:29:40Z`
-(AWS) and `2026-08-05T08:18:08Z` (Linode) — each its recorded fetch timestamp, none the wall
-clock of the day they were run. **N3's naive-timestamp rejection is likewise source-only**, no
+arithmetic and the strict-greater comparison are exercised by every pass over a non-empty
+inventory, and the second-precision UTC grammar by every compose: all four composed payloads
+carried an `as_of` of the `%Y-%m-%dT%H:%M:%SZ` form. **D17's wall-clock fallback is source-only,
+and C3's assertion that it is unreachable on all three adapters holds under check**: every adapter
+stamps `generated_at` with `iso_now()` at every emission site, and the three **STEP 2** runs — one
+per provider — resolved reference dates of `2026-08-07T16:56:59Z` (DO), `2026-08-04T04:29:40Z`
+(AWS) and `2026-08-05T08:18:08Z` (Linode), each its recorded fetch timestamp and none the wall
+clock of the day they were run. `[Corrected 2026-08-11 at the exercise sweep. As landed at
+a690014 this said the arithmetic and grammar were "produced by every run" and then called two
+different sets "the three runs" — the compose runs that emitted `as_of` (DO at both forms, Linode)
+and the STEP 2 runs that resolved reference dates (DO, AWS, Linode). The AWS chain never reached
+compose, its inventory being empty, so it belongs to the second set only. Both halves are now
+scoped to the passes that produced them. **The verdict is unchanged**, and D17's confirmation
+rests on the STEP 2 set, which is complete at one run per adapter.]` **N3's naive-timestamp rejection is likewise source-only**, no
 adapter emitting a naive stamp. Both kept: each states an obligation on the next adapter.
 
 ### C4 — Money and currency  *(N5, P3, P5, R2)*
@@ -564,8 +583,14 @@ denominator should be taggable-resources-only — is stated and left to the tick
 stages together.
 
 **Reachability (BL-132, 2026-08-11) — the flat-list guarantee and both keyed decisions reachable;
-two clauses narrower than they read.** The coverage ratio and the keep-tag exclusion are computed
-on every run (`tag_coverage` 0.8889 over 18 DO resources, 0.4 over 15 Linode). **X3's `k=v`
+two clauses narrower than they read.** The coverage ratio is computed by every run that reaches
+compose (`tag_coverage` 0.8889 over 18 DO resources, 0.4 over 15 Linode) and the keep-tag exclusion
+is evaluated per resource in every detect pass — it excluded nothing in any of these runs, both
+providers reporting `excluded: 0`, which is the rule finding no keep-tagged resource rather than
+the rule not running. `[Corrected 2026-08-11 at the exercise sweep. As landed at a690014 this read
+"computed on every run", which the AWS chain does not support — it reached STEP 2 only, over an
+empty inventory, and never composed a coverage figure. The two clauses are also exercised by
+different stages, which the single verb obscured. **The verdict is unchanged.**]` **X3's `k=v`
 construction is reachable only under `CLOUDCOST_PROVIDER=aws`** — the contract already says DO and
 Linode pass native flat strings and cannot express a pair, so on two of three provider selections
 the grammar clause describes nothing the run produces. **N7's counted-skip for a non-`str` element

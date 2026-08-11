@@ -8457,3 +8457,68 @@ ground, reported without filing, is cloudcost/docs/bl-132-row-correction-impleme
 §2d.`
 
 ---
+
+### BL-144 — a round whose output is a derivation may leave it only in a scratch directory (#TBD)
+**Kind:** decision · **Census items:** n/a · **Contract:** n/a
+**Size:** S to decide · **Priority:** medium
+**Section:** process / round records (`docs/milestones/hc-consolidation.md`,
+`docs/measurements/2026-08-11-notes-readership/`)
+
+Filed 2026-08-11 at the rescue edit. **This row poses the obligation; it does not settle it.**
+
+**What happened.** The notes-readership measurement round produced a report and eleven derivation
+scripts, and wrote them only to its session scratch directory under `/tmp/claude-1000/`. It
+committed nothing, by instruction. One round later a promotion candidate was landed that rests on
+that report's figures — `cloudcost/m5-n1-compose.md:1188` — and at the moment it landed, **the
+evidence it rests on was in neither repo**. The artifact was found and preserved a round after
+that, at `docs/measurements/2026-08-11-notes-readership/`, **by chance rather than by rule**: the
+rescue happened because a reviewer thought to look, and nothing in either repo would have noticed
+its absence or its loss.
+
+**Why the existing rules do not cover it.** A round's obligations are written for rounds whose
+output is a *document*: R20 says a reviewer-directed edit gets no review file and its
+implementation-notes file is its record, and the readership candidate itself says a record should
+carry the findings and **point at the commit for the derivation**
+(`cloudcost/m5-n1-compose.md:1202`). **That rule assumes a commit exists to point at**, and this
+case is the counter-example — the derivation had no commit, so the pointer had nowhere to land and
+the candidate's own precondition was unmet at the moment it was written. A round instructed to
+produce no record is currently also, silently, a round that preserves no evidence.
+
+**Determine what a round owes when its output is a derivation rather than a document** — whether
+the artifact must be committed, whether the script must be, and where. The scripts are the larger
+half of the question: a measurement whose script survives is re-runnable, and re-runnability is
+most of a measurement's future value, but the eleven preserved here hardcode absolute scratch and
+repo paths and so are re-runnable only after repointing — which suggests any obligation on scripts
+has to say something about their portability, not only their existence.
+
+**Done when:** the obligation is stated in one named document with its scope — which artifacts,
+whose responsibility, and where they land — or declined with the reason recorded.
+
+**Costs:** S to decide. `docs/measurements/` was created by this round's rescue as a proposal, not
+a convention; no precedent for a preserved measurement existed in either repo, the nearest
+analogue being the capability matrix (derived doc at `docs/capability-matrix.md`, generator at
+`scripts/assemble_matrix.py`, intermediates gitignored at `.gitignore:10`). Ratifying or replacing
+that location is part of the decision.
+
+**Collides with:** nothing. It does not reopen the readership candidate; it supplies the
+precondition that candidate assumes.
+
+`Source: filed by the reviewer at the rescue edit, 2026-08-11, at agents a5381ee, with each claim
+below verified before it was written. **The producing round was instructed to produce no record
+and no row:** its report's own opening line states it — "**Read-only round.** No edits, no commit,
+no row, no notes file for this round." (docs/measurements/2026-08-11-notes-readership/report.md,
+first line of the preserved body). The instruction is the reviewer's: that round and the two
+after it were reviewer-directed prompts, and the round after it was told "Do not amend the
+measurement round's report — it was read-only by design and stays that way." What is verified is
+that the round was so instructed and that the instruction came through the reviewer-directed
+prompt channel; no separate authorship record was sought. **The report was found**, not lost, at
+/tmp/claude-1000/-home-it-sandbox-elixirws-aetheris-agents/90489c34-9e84-449e-b474-4ca763cbabb4/
+scratchpad/notes-readership-measurement.md — 17,895 bytes, mtime 2026-08-11 13:45:25 +0530, md5
+f90de0d50d0300d55470773c5f3fb26d — together with all eleven derivation scripts; the preserved
+copies are byte-identical, checked and published at the rescue edit. **The candidate that rests on
+it is landed** at cloudcost/m5-n1-compose.md §Milestone summary → §Open for the next cycle, the
+entry at :1188, appended at agents a5381ee. Note that /tmp on this machine is ext4 on the root
+device, not a tmpfs, so the loss risk was reboot- and cleaner-driven rather than memory-driven —
+the urgency was real but its stated mechanism was not.`
+
+---

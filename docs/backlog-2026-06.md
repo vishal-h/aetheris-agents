@@ -8223,3 +8223,146 @@ reachability sentence already points at the record this row supersedes.
 recorded at cloudcost/docs/bl-132-implementation-notes.md §5 and declined there on scope.`
 
 ---
+
+### BL-139 — record the conditions under which a triad exchange may be looped without a human turn (#TBD)
+**Kind:** method · **Census items:** n/a · **Contract:** n/a
+**Size:** S to rule · **Priority:** low
+**Section:** process / methodology (`docs/triad-loop.md` and its canonical harness copy
+`../aetheris/docs/methodology/triad-loop.md`)
+
+Filed 2026-08-11 at the m5 session close. **The item as agreed and parked, verbatim:**
+
+Record the conditions under which a triad exchange may be looped without a human turn, and the
+conditions under which it may not. The formulation reached in discussion and not yet tested
+against a document: verification loops, authority relays. Status: the loop itself is on hold by
+user decision; this row holds the criterion, not a build.
+
+**Done when:** the two conditions are written into whichever of the triad documents the ruling
+names, or the row is closed with a recorded decision that no criterion is to be stated.
+
+**Costs:** S to rule. No build is authorised by this row and none is implied by it — the hold is
+part of the item, not a blocker on it.
+
+**Collides with:** nothing. It states a criterion; **BL-140**, **BL-141** and **BL-142** are the
+three other methodology items parked at the same close, and no two of the four touch the same
+sentence.
+
+`Source: agreed in reviewer/user discussion after m5-cloudcost's close (2026-08-10) and existing
+in no file until this row. Filed at the m5 session close, 2026-08-11, at agents 8f36e45. Checked
+before filing: no "verification loop" or "authority relay" instance exists in either repo, and
+docs/triad-loop.md describes the loop with a human turn at every phase boundary and states no
+criterion for omitting one — so this row is opening the question, not restating a document.`
+
+---
+
+### BL-140 — whether a correction owes a same-commit sweep for recurrences as a standing obligation (#TBD)
+**Kind:** method · **Census items:** n/a · **Contract:** n/a
+**Size:** S to rule · **Priority:** medium
+**Section:** process / methodology (`../aetheris/docs/methodology/milestone-methodology.md`;
+the standing rule it would generalise is in this repo's `CLAUDE.md` §Learning — BL-007)
+
+Filed 2026-08-11 at the m5 session close. **The item as agreed and parked, verbatim:**
+
+A correction to a claim landed by a prior session currently sweeps for recurrences only when the
+ticket says so. Determine whether the sweep should be a standing obligation on every correction,
+and if so where it is stated. Anchor: the m5 BL-132 close, where a literal-string sweep and a
+class sweep gave different answers — verify that episode against its committed record before
+relying on it.
+
+**Done when:** the obligation is either stated in one named document with its scope (every
+correction, or a named subset) or declined with the reason recorded, and the existing
+`CLAUDE.md` correction-chasing entry is reconciled with whichever answer lands.
+
+**Costs:** S to rule. A ruling plus one edit in one document; the evidence is already committed
+and is named in the `Source:` below.
+
+**Collides with:** nothing directly. It **generalises** an existing standing rule — agents
+`CLAUDE.md` §Learning — BL-007, *"A correction chases the corrected claim into every doc that
+adopted it, in the same round"* — so whoever takes it reconciles with that entry rather than
+adding a second copy of it.
+
+`Source: agreed in reviewer/user discussion after m5-cloudcost's close (2026-08-10) and existing
+in no file until this row. Filed at the m5 session close, 2026-08-11, at agents 8f36e45. The
+anchor was verified before filing and holds, in a sharper form than the parked text states: the
+episode's committed record is the commit message of 8f36e45, which reads "The earlier sweep
+covered a literal string, not a class: grep for 'every detect pass' over cloudcost/ and docs/. It
+found C8 only because C8 shared the wording, not because the class was searched." The class sweep
+that followed found four of the nine landed sentences overstated and five accurate. Note for
+whoever takes this row: that commit touched cloudcost/milestone.md only, so the sweep has no
+implementation-notes record, and BL-132's own row above still carries the C2 wording that sweep
+corrected one file over.`
+
+---
+
+### BL-141 — a Done-check that cannot fail, and whether a positional claim must carry path:line (#TBD)
+**Kind:** method · **Census items:** n/a · **Contract:** n/a
+**Size:** S–M to rule (two questions, one document) · **Priority:** medium
+**Section:** process / methodology (`../aetheris/docs/methodology/milestone-methodology.md` §6)
+
+Filed 2026-08-11 at the m5 session close. **The item as agreed and parked, verbatim:**
+
+Two candidate methodology changes discussed together. (a) A Done-check that structurally cannot
+fail costs a session and proves nothing; decide whether §6 should bar them and how such a check
+is recognised. (b) Whether a positional claim must carry path:line as a standing requirement
+rather than per-ticket. Anchor: m5-D1 in cloudcost/m5-n1-compose.md §Ratified decisions — read it
+and report whether it already settles (b), before treating (b) as open.
+
+**Done when:** (a) §6 either carries a bar with a stated recognition test or records the decision
+not to add one; and (b) is either settled by reference to **m5-D1** with the reference written
+down, or ruled on separately.
+
+**Costs:** S–M to rule. (a) is the larger half: barring a check is easy to write and hard to make
+recognisable, and the recognition test is the deliverable.
+
+**Collides with:** nothing structurally, but (a) sits directly on two already-promoted standing
+rules and must not become a third copy — `CLAUDE.md` §Learning — m7-docbuilder (*"A done-check
+that can pass without exercising the thing it checks is worse than no check"*) and
+`../aetheris/CLAUDE.md` (*"A check that cannot observe the failure it stands in for returns green
+for the wrong reason"*). What is unsettled is whether **§6** should bar such a check, which
+neither rule does.
+
+`Source: agreed in reviewer/user discussion after m5-cloudcost's close (2026-08-10) and existing
+in no file until this row. Filed at the m5 session close, 2026-08-11, at agents 8f36e45. The
+anchor was read before filing, and m5-D1 does not settle (b) as posed: it rules the converse —
+"a line number is only for a claim about a line" — and for a positional claim it requires a
+commit stamp, not a path:line; and its scope is stated as "Binds t1 and t2", not the methodology
+at large. So (b) survives, narrowed to whether the stamped-positional form m5-D1 already defines
+should become standing.`
+
+---
+
+### BL-142 — whether §6 should require `Touches` to be derived from a search for the premise (#TBD)
+**Kind:** method · **Census items:** n/a · **Contract:** n/a
+**Size:** S to rule · **Priority:** medium
+**Section:** process / methodology (`../aetheris/docs/methodology/milestone-methodology.md` §6,
+the `Touches` field)
+
+Filed 2026-08-11 at the m5 session close. **The item as agreed and parked, verbatim:**
+
+A ticket's Touches field has more than once named a subset of the sections carrying the premise
+being changed, so the gap was found mid-ticket rather than at authoring. Determine whether §6
+should require Touches to be derived from a search for the premise rather than enumerated by the
+author. Anchor: verify the m5 t2 episode against docs/reviews/m5-cloudcost-t2-review.md and the
+t2 implementation-notes file before relying on it.
+
+**Done when:** §6's `Touches` field either states the derivation requirement with the search it
+implies, or records the decision that enumeration stays the author's and why.
+
+**Costs:** S to rule. One field's wording; the cost that matters is on the authoring side
+afterwards, which is what the ruling is weighing.
+
+**Collides with:** nothing. It changes how a field is authored, not what any ticket may edit, and
+it leaves untouched the rule the same round upheld — that a ticket's scoping is authoritative
+over a ticket's judgement.
+
+`Source: agreed in reviewer/user discussion after m5-cloudcost's close (2026-08-10) and existing
+in no file until this row. Filed at the m5 session close, 2026-08-11, at agents 8f36e45. The
+anchor was verified before filing and holds: cloudcost/docs/m5-t2-implementation-notes.md §W1
+quotes the amended field's own stamp — "The field as authored named §Contracts only and missed a
+third site in the same file carrying the same premise — the reviewer's scoping gap, not the
+ticket's" — and docs/reviews/m5-cloudcost-t2-review.md carries the same at its F1. One
+qualification for whoever takes this row: the parked text's "more than once" is true of rounds,
+not of tickets. Both amendments are m5 t2's (the BL-136 addition at the reviewer edit, §Open
+items at r1), and a third was declined into BL-137.`
+
+---

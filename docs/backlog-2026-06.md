@@ -7718,12 +7718,94 @@ reachability work over C1–C15 — its ticket forbids it (*"no reachability wor
 row)"*) — precisely so that this row's method runs once, over the full set, rather than being
 half-done as a side effect of another ticket.
 
+**Annotated 2026-08-10 (m5 t2), marked as such 2026-08-11.** The paragraph below landed at
+`305b3a1`, in the same commit as the annotation block above it, and until now carried no opening
+marker — so it read as text filed 2026-08-07. Its wording is unchanged.
+
 **One thing m5 t1 supplies that this row's method should use.** BL-132 names the entry point as
 `cloudcost/agents/cloudcost_orchestrator.exs` and asks one question per contract. m5 t1's **E1**
 showed that *"reachable only through a CLI flag the orchestrator never passes"* undercounted the
 routes to the same surface by two. The method survives — the question is still *is this produced by
 any invocation the orchestrator makes?* — but the answer for a source-only contract should
 **enumerate the routes it is reachable by**, not just assert the orchestrator misses one.
+
+**Taken 2026-08-11. Anatomy and method refinements, authored by the reviewer before the row
+is worked, per R12.**
+
+**Shape — light, and one part of it is new.** Taken directly as a backlog row: one
+implementation-notes file, no round document, no review file — the shape **BL-084**,
+**BL-085** and **BL-096** were taken in. **Those three carried no anatomy at all**, so the
+`Touches` and `Done-check` below are an addition to that shape rather than a relocation of
+§6's fields into it. They are added because both earned their place in m5: a scoping a
+ticket may not exceed, and a completion condition a ticket cannot declare for itself.
+
+**Touches.**
+
+- `cloudcost/milestone.md` — **§Contracts only**: a reachability sentence in each contract
+  found source-only, and nothing else. **C4 and C11 are neither re-derived nor re-edited** —
+  m5 t2 answered both, and each already carries its qualifying paragraph.
+- `docs/backlog-2026-06.md` — **this row only**.
+- `cloudcost/docs/bl-132-implementation-notes.md` *(new)*.
+
+Nothing else. Any other path that changes is a deviation and is named in the notes.
+
+**Do not generate.** No change to any executable line. **No amendment to any contract's
+guarantee** — only to what it claims about reachability. No new contract, no renumbering, no
+edit to a contract's `Closed arm` rulings. **No decision-record archaeology**: this row
+forbids it in its own text, and the population is the source at HEAD, not five milestone
+documents.
+
+**Done-check.**
+
+```bash
+# 1. The offline spine, unchanged — this row changes no executable line. Re-resolve both
+#    anchors at HEAD before running: cloudcost/runbook.md §Offline tests for the command,
+#    CLAUDE.md §Commands for the root. A differing count is a finding, not a pass.
+python3 -m pytest cloudcost/tests/ -v
+
+# 2. The census covers its population. Print §Contracts' identifier enumeration beside the
+#    table's rows and show they match. A table with a row missing is not a census, and a
+#    count without its enumeration is not an answer.
+
+# 3. Every contract found source-only carries its sentence in the file, read back from the
+#    file rather than from the packet.
+grep -n 'BL-132' cloudcost/milestone.md
+
+# 4. Nothing outside Touches changed.
+git status --short
+```
+
+**Method — three refinements on what this row already states.**
+
+1. **Execution before reading.** The two STEP 3 arg forms are the entry point and they can
+   be *run* — over recorded fixtures, with those exact forms, capturing the payload and the
+   rendered report. A contract is then checked against **what came out**, not against source
+   read for what it implies. Where a contract's subject sits upstream of compose, say so and
+   check it differently; do not stretch one instrument across the whole set. m5 t1 settled in
+   one run what three documents had disagreed about.
+2. **Three contracts state reachability about themselves — those are claims to check, not
+   answers to inherit.** C3 names a wall-clock fallback unreachable on all three adapters;
+   C8 says a modifier never fired against any real inventory; C12 says its own guarantee does
+   not hold. BL-131's entire cost was a reachability claim taken on a document's word.
+3. **C13 has no reachability question.** It states field ownership and a prohibition, not
+   behaviour an invocation produces. Record it **not applicable**, with that reason, rather
+   than forcing a verdict onto it.
+
+**Population, refined.** Fifteen contracts; **C4 and C11** answered at m5 t2; **C13** not
+applicable. **Twelve to answer** — verify that split against §Contracts at HEAD before
+relying on it.
+
+**Findings threshold, in force for this row.** A finding earns its own action only if it has
+already cost something pointable — a session that derived it, a ruling that rested on it, a
+check that passed for the wrong reason. **A gap argued from structure alone is recorded in
+the notes and swept once at the end, not acted on.** A gap argued from structure is a
+prediction; a gap with a session that paid for it is a finding.
+
+`Anatomy authored 2026-08-11 by the reviewer, before the row is worked, per R12. Shape ruled
+light by the human on the BL-084 / BL-085 / BL-096 precedent — row taken directly, one
+implementation-notes file, no round document, no review file. Those three carried no anatomy at
+all, so Touches and Done-check are new fields here rather than §6 fields relocated into the
+light shape. This block attributes to this date and not to the row's Source line below.`
 
 `Source: m4 t5b G2 gate-stop, 2026-08-07 — the finding that C4 ratified an m1 position decision H
 had already superseded, and that no step between the census and the contract checked reachability.`

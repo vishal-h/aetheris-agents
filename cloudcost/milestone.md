@@ -341,6 +341,14 @@ changes what the sprint's third arm means without touching the sprint.
 **Positive example, recorded as the shape to copy**: Linode maps its images onto `TYPE_SNAPSHOT` in
 its own adapter, not in the rule engine (D11). That is a mapping decision made in the right place.
 
+**Reachability (BL-132, 2026-08-11) — guarantee reachable, the gap clause source-only.** Every
+orchestrator run composes from adapter output and all three adapters import the `TYPE_*`
+constants, so the closed-set guarantee is exercised on every invocation. The unenforced-validation
+clause is **source-only**: an out-of-vocabulary `type` counted in `totals.resources` and evaluated
+by nothing requires an adapter that spells its own vocabulary, and none does. **Kept, qualified
+here** — the clause describes a real hole in `usable_resources`, reachable the moment a fourth
+adapter declares a type locally, which is the obligation C1's adapter arm already states.
+
 ### C2 — Resource state vocabulary  *(X1, N2, D10)*
 
 **Shared machinery guarantees** exactly one canonical state value today — `STATE_STOPPED` — and
@@ -366,6 +374,20 @@ machinery, which is the defect this whole contract exists to prevent.
 `resource.get("state") not in STOPPED_STATES`, so renaming that constant breaks a test that reads
 source rather than behaviour (D10). The test is doing its job; the surprise is only that the
 breakage will not look like a behaviour change.
+
+**Reachability (BL-132, 2026-08-11) — the `STOPPED_STATES` guarantee reachable; X1's clause
+source-only, and the route it names does not carry.** X1 says the other ~fifteen raw strings
+*"reach the rendered report verbatim"* via `detect_orphans` interpolating them into evidence text.
+At HEAD there are exactly two interpolation sites, and **each is gated on
+`resource.get("state") not in STOPPED_STATES` returning false**, so the only value that can reach
+evidence text is the canonical one. No other route exists: the composed payload carries **no
+`state` field at all** — `top_untagged_spenders` does not carry it and the template never reads it.
+Measured over three runs of the orchestrator's own STEP 3 forms across recorded DO and Linode
+artifacts: **zero** `"state"` in either payload and either rendered report, against a control of
+**18** in the DO inventory those runs consumed. The raw strings are real and reach the *inventory
+artifact*; they stop there. **Qualified, not superseded** — the vocabulary gap X1 names is real and
+the prohibition it grounds (*no rule may key on a non-stopped state until the set is enumerated*)
+is unaffected; what does not hold is the claim that a reader meets those strings in the report.
 
 ### C3 — Timestamps and age  *(N3, N4, D12, D17, D20)*
 
@@ -398,6 +420,17 @@ timestamp field set are properties of the schema and of shared machinery's own o
 can own them. D12's is closed for the same reason — age arithmetic is over already-normalized
 timestamps and belongs to no adapter; only the *thresholds* it compares against are open, and those
 are C8.
+
+**Reachability (BL-132, 2026-08-11) — arithmetic and grammar reachable; D17 and N3 source-only,
+and this contract's own unreachability claim is confirmed rather than inherited.** Age
+arithmetic, the strict-greater comparison and the second-precision UTC grammar are produced by
+every run — three runs emitted `as_of` values of the `%Y-%m-%dT%H:%M:%SZ` form. **D17's wall-clock
+fallback is source-only, and C3's assertion that it is unreachable on all three adapters holds
+under check**: every adapter stamps `generated_at` with `iso_now()` at every emission site, and
+the three runs resolved reference dates of `2026-08-07T16:56:59Z` (DO), `2026-08-04T04:29:40Z`
+(AWS) and `2026-08-05T08:18:08Z` (Linode) — each its recorded fetch timestamp, none the wall
+clock of the day they were run. **N3's naive-timestamp rejection is likewise source-only**, no
+adapter emitting a naive stamp. Both kept: each states an obligation on the next adapter.
 
 ### C4 — Money and currency  *(N5, P3, P5, R2)*
 
@@ -530,6 +563,16 @@ contractually shared between two stages, so it is not a local edit. The open que
 denominator should be taggable-resources-only — is stated and left to the ticket that can move both
 stages together.
 
+**Reachability (BL-132, 2026-08-11) — the flat-list guarantee and both keyed decisions reachable;
+two clauses narrower than they read.** The coverage ratio and the keep-tag exclusion are computed
+on every run (`tag_coverage` 0.8889 over 18 DO resources, 0.4 over 15 Linode). **X3's `k=v`
+construction is reachable only under `CLOUDCOST_PROVIDER=aws`** — the contract already says DO and
+Linode pass native flat strings and cannot express a pair, so on two of three provider selections
+the grammar clause describes nothing the run produces. **N7's counted-skip for a non-`str` element
+is source-only**: no adapter emits one, so the silent drop it describes is unreachable and the
+remedy it asks for is unexercised. Both kept — X3 binds the adapter that needs it, N7 states the
+obligation before an adapter breaks it.
+
 ### C7 — Attachment  *(D15, D16)*
 
 **Shared machinery guarantees** that `attached_to` is a **single opaque string**, that a null value
@@ -621,6 +664,19 @@ it was produced under. **The block is also write-only** — no consumer reads it
 stage, not the renderer, not the sprint. Both facts are recorded, and the gap is left open rather
 than closed.
 
+**Reachability (BL-132, 2026-08-11) — the catalog reachable; X4 source-only and self-confirmed;
+D21's write-only status confirmed, its enumeration not.** Bands, priors and the additive-clamped
+model are produced by every detect pass — a Linode run scored one candidate at base `0.85`, no
+modifiers, landing MEDIUM by margin. **X4 is source-only and this contract's own claim about it
+holds under check**: `last_activity_at` is `None` at all **eighteen** emission sites across the
+three adapters, so `modifier_recent_activity` and its fourteen-day window cannot fire — and the
+pipeline now says so in its own payload, which carries the marker
+`cannot_fire_no_last_activity_at`. That marker is the one place a self-reporting contract is
+checkable from output rather than from source, and it agrees. **D21's block is reachable and its
+write-only status confirmed** — no consumer in compose, the renderer, the template or the sprint
+reads it. Its *enumeration* is recorded as drifted in `cloudcost/docs/bl-132-implementation-notes.md`
+and is not amended here, under this row's findings threshold.
+
 ### C9 — Identity, slugs and filenames  *(N6, D18, P10)*
 
 **Shared machinery guarantees** that a provider's output filename is derived from a filesystem-safe
@@ -642,6 +698,16 @@ private slug function, byte-identical in behaviour to the shared one. It was fro
 that an earlier milestone's *"compose ran unchanged"* result stayed a clean negative proof, and
 **BL-070 owns the convergence**, to be taken when that file is next legitimately edited. Recorded
 here so it is not re-flagged as a finding by the next reader.
+
+**Reachability (BL-132, 2026-08-11) — derivation reachable; both collision routes source-only.**
+The slug-and-period filename derivation runs on every invocation: the recorded runs wrote
+`digitalocean_orphan_candidates_2026-08.json` and `linode_orphan_candidates_2026-07.json`, each
+name derived rather than passed. **Both of D18's collision routes are source-only.** The loud one
+needs two providers writing into one output directory, which the orchestrator never arranges — it
+runs one provider per invocation, selected by `CLOUDCOST_PROVIDER`. The quiet one needs a document
+carrying no `period`, and every adapter emits one. **Kept** — D18 is a statement about what a
+second concurrent provider would meet, and its value is that it is written before anything
+arranges that.
 
 ### C10 — Document shape and discovery  *(P4, P6, P8, P11)*
 
@@ -673,6 +739,16 @@ cost-granularity honesty claim checkable, is copied into the payload, and is **c
 nowhere**. A provider emitting account-level costs would have them grouped by service exactly as if
 they were service-level, with the only trace a string in the report. The totals function should warn
 on a granularity coarser than service. Owed a row by t4c. **[code consequence]**
+
+**Reachability (BL-132, 2026-08-11) — discovery and prior-period derivation reachable; P8 and P11
+source-only.** Shape discovery, per-provider grouping and the clock-free prior period are produced
+on every run: a two-month DO pair resolved `prior_period` `2026-07` from the period `2026-08` and
+reported `delta_amount -145.76`, `delta_pct -78.58`. **P8's silent drop is source-only** — it needs
+a snapshot with a declared total and no line items, which no adapter emits — and **P11's unvalidated
+`source_granularity` is reachable as a carried value and source-only as a defect**: the field is
+composed into the payload (`"source_granularity": "service"` on the DO provider row) and compared
+against nothing, but no adapter emits a granularity coarser than service, so the mis-grouping it
+warns of cannot arise today. Both kept; each is the obligation a coarser-grained provider meets.
 
 ### C11 — Optionality and presentation  *(R1, P2, P7)*
 
@@ -756,6 +832,17 @@ there is no adapter-side lever that could own it. (Whether the adapters specify 
 they *write* is a separate question, outside BL-074's four-file scope and not swept by the census —
 stated as a limit rather than assumed either way.)
 
+**Reachability (BL-132, 2026-08-11) — the contract's own report that its guarantee does not hold is
+confirmed at HEAD; the corruption it describes is source-only.** Counted at `8845d85`:
+`render_report.py` has **four** I/O sites and specifies UTF-8 at all four — three explicit
+`encoding="utf-8"` arguments plus the Jinja `FileSystemLoader`, whose own default is UTF-8;
+`detect_orphans.py` (2 sites) and `compose_report_data.py` (3) specify **none**, which is the
+five this contract names. So the asymmetry is real and unchanged. **The corruption is
+source-only**: it needs a non-UTF-8 locale *and* a non-ASCII value, and every value the three
+adapters emit is ASCII — which is this contract's own explanation for why it has gone unnoticed,
+restated here as a reachability verdict rather than as a reason to relax it. **Kept unqualified**;
+the fixture this needs is what makes the row it is owed real work.
+
 ### C13 — Carry-only fields (adapter-owned)  *(X2, D19)*
 
 **Shared machinery may carry these and must never key on them.** Sorting, comparing, summing,
@@ -801,6 +888,16 @@ and asserted per adapter.
 exactly its still-billing storage.* The rule infers "storage still bills" from a non-zero estimate on
 a stopped resource, which holds for the one provider that emits the type. Recorded plainly:
 **this makes one adapter's cost model load-bearing for a shared rule's correctness.**
+
+**Reachability (BL-132, 2026-08-11) — the no-provider-reasoning guarantee reachable; D14's
+inference source-only.** Shared machinery summing what the adapters priced is exercised on every
+run with a cost snapshot: the DO run built `grand_total 39.74` from three service line items and
+nothing else, and the reconcile arm fired against the declared total in the same pass. **D13's
+stopped-compute saving is reachable** in shape and was not exercised by these runs, no stopped
+instance appearing in the recorded inventories. **D14's stopped-database inference is source-only
+on the current three** — it fires only for a provider emitting the database type in a stopped
+state, and none of the recorded artifacts carries one. Kept: D14's point is that it makes one
+adapter's cost model load-bearing, and that is a statement about the obligation, not the run.
 
 ### C15 — Neither arm  *(D5, R4)*
 

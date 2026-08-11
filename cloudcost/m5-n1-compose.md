@@ -29,6 +29,12 @@ claude-code's to make, and t1 does not make it.**
 harness consolidation round (closed 2026-08-09, hc-e r9) → **m5 t1** → **the
 ruling** → **m5 t2** → BL-132 → provider four.
 
+> `[Superseded 2026-08-12 by gc t3. The line above stands unrewritten per decision 7, this
+> being a closed record. **BL-132 closed 2026-08-11**, so the sequence's last remaining
+> predecessor is discharged and nothing in it now stands between here and provider four.
+> Recorded, not rewritten: the line was true when written and is a record of what m5
+> sequenced, not an instruction to a current reader.]`
+
 **BL-074 is not in this round.** BL-131 alone, by the reviewer's scoping ruling
 of 2026-08-09. The seam sweep keeps its own row.
 
@@ -858,6 +864,20 @@ carries no total.
    is scoped. **No owner** — provider four is not open, and this round declined
    to take BL-074 with BL-131.
 
+   > `[Discharged 2026-08-12 by gc t3. The item's prefix and text stand unchanged — m5 is a
+   > closed round and decision 7 governs, so this is a dated record beside the item and not a
+   > resolution of it. **What the item describes is discharged, on both readings of it.** Its
+   > two statements disagree about whether provider four is gated on the seam sweep and the
+   > harness round or only follows BL-131; **all three named gates are closed** — BL-074
+   > 2026-08-07, BL-105 + BL-106 2026-08-09, BL-131 2026-08-10 — so the disagreement no longer
+   > selects between two live conditions. **What the item got right and is worth carrying:**
+   > two documents did state non-identical gates and neither superseded the other. The `gc`
+   > round ruled the disagreement an **equivocation on the word *live*** rather than a
+   > contradiction — m5 uses it for unretracted-at-HEAD, hc decision 10 for
+   > read-for-current-guidance — and ruled `cloudcost/m4-consolidation.md` archival on that
+   > basis, so its sentences are not corrected. See `docs/milestones/gc-stale-claims.md` §Decisions
+   > D2 and §Promotion candidates.]`
+
 2. **`[RESOLVED]` (b)** **BL-131's `Source:` line cites gate items that exist as no
    committed text.** The row attributes its derivation to two gate items of a
    ticket that produced no implementation-notes file; the only in-repo records of
@@ -1225,3 +1245,10 @@ reach §7's bar however they are counted.
 
 **Sequence from here:** BL-132 → provider four, which still carries §Not established item 1's
 two non-identical gate statements and needs them reconciled wherever it is scoped.
+
+> `[Superseded 2026-08-12 by gc t3. The paragraph above stands unrewritten per decision 7.
+> **Both of its clauses have been discharged since it was written.** BL-132 closed 2026-08-11,
+> so the sequence is empty. And item 1's two gate statements were reconciled by the `gc` round:
+> the seam sweep (BL-074) closed 2026-08-07 and the harness round (BL-105 + BL-106) closed
+> 2026-08-09, so the gate both statements describe is discharged however they are read — see
+> the block appended to item 1 itself, and `docs/milestones/gc-stale-claims.md`.]`

@@ -13,7 +13,9 @@
 > ratified as minted; the subject was re-ruled from `census` at the t1 review** — see §Naming
 > derivation.
 
-**Status:** **OPEN.** t1 run and reviewed 2026-08-11; t2 run 2026-08-11; t3 authored, not opened.
+**Status:** **OPEN — all three tickets run; the close is not authored.** t1 run and reviewed
+2026-08-11; t2 run 2026-08-11, reviewed and amended 2026-08-11; t3 run 2026-08-12. All five records
+committed (three implementation-notes, two review files). Pushes held throughout.
 **Opened:** 2026-08-11. **Document created:** 2026-08-11 (at t1, the round's first session).
 **Renamed** 2026-08-11 at the t1 review, from `gc-census.md`.
 **Repos:** `aetheris-agents` and `aetheris` (harness).
@@ -86,6 +88,12 @@ re-opening it. What this round owes them is application, not a verdict.
 > review packet**, which at the time of writing has **no in-repo home**: this round has produced no
 > implementation-notes file and no review file, so item 3's own instruction to *cite* t1's record
 > cannot be satisfied by a committed path. Raised at the t2 review and not resolved here.`
+>
+> `[Resolved 2026-08-12. The paragraph above stands unrewritten; its closing claim was true when
+> written and is false now. **The round's five records landed at Phase D and Phase E** — three
+> implementation-notes files and two review files — so item 3's citation has a committed path:
+> `docs/milestones/gc-t1-implementation-notes.md` §H, which carries the three controls with their
+> published values. The gap the paragraph names is closed, not carried.]`
 
 ---
 
@@ -281,9 +289,9 @@ not settled here.
 
 | Ticket | Purpose | State |
 |---|---|---|
-| **t1** | The gate-claim census — enumerate the class across both repos | **RUN 2026-08-11; REVIEWED 2026-08-11.** Census complete: 640 id-form hits and 162 description-form hits over a 143-row population, 48 closed; five live-read stale gate claims adjudicated in id form plus one in description form. Three method defects found by the ticket's own controls and corrected in the open. Record: the t1 review packet. **Reviewed at the t1 review, which authored §Decisions, §Close criteria, t3's body and §Promotion candidates, and renamed this document.** |
-| **t2** | The two pointer defects — one citation, one missing reverse pointer | **RUN 2026-08-11.** Both edits landed, cross-repo, harness-first per decision 6; mirror pair re-verified byte-identical after the sync. Pushes held. Record: the t2 review packet. |
-| **t3** | The stale-gate correction sweep, and the rows this round defers | **AUTHORED 2026-08-11 at the t1 review, NOT OPENED.** `Touches` unblocked — the resolver t1 named arrived. Two arms: corrections (D4) and rows (D4, D5). |
+| **t1** | The gate-claim census — enumerate the class across both repos | **RUN 2026-08-11; REVIEWED 2026-08-11.** Census complete: 640 id-form hits and 162 description-form hits over a 143-row population, 48 closed; five live-read stale gate claims adjudicated in id form plus one in description form. Three method defects found by the ticket's own controls and corrected in the open. Record: `docs/milestones/gc-t1-implementation-notes.md`; review file `docs/reviews/gc-t1-review.md`. **Reviewed at the t1 review, which authored §Decisions, §Close criteria, t3's body and §Promotion candidates, and renamed this document.** |
+| **t2** | The two pointer defects — one citation, one missing reverse pointer | **RUN 2026-08-11.** Both edits landed, cross-repo, harness-first per decision 6; mirror pair re-verified byte-identical after the sync. Pushes held. Record: `docs/milestones/gc-t2-implementation-notes.md`; review file `docs/reviews/gc-t2-review.md`. |
+| **t3** | The stale-gate correction sweep, and the rows this round defers | **RUN 2026-08-12.** Both arms landed. **Arm 1** — all six sentences corrected, per-destination shape established first and recorded: `cloudcost/runbook.md` in place under decision 8; `../aetheris/ROADMAP.md` in place under decision 8, **both halves of the E4 entry**, after establishing that hc's decisions do bind harness-side files (hc's own `Repos:` line names both, its subject was harness contracts, and its tickets committed nine times to the harness) — **so the harness half was not held**; `cloudcost/m5-n1-compose.md` by dated superseding block under decision 7, three times, with **no prefix flipped** per §Close criteria clause 3. **Arm 2** — five rows filed, **BL-145–BL-149**, each stating its question and none carrying a closure marker. Record: `docs/milestones/gc-t3-implementation-notes.md`. Pushes held. |
 
 ---
 

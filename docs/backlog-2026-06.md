@@ -8522,3 +8522,208 @@ device, not a tmpfs, so the loss risk was reboot- and cleaner-driven rather than
 the urgency was real but its stated mechanism was not.`
 
 ---
+
+### BL-145 — the backlog has two status surfaces and says so nowhere (#TBD)
+**Kind:** defect · **Census items:** n/a (surfaced by gc t1's row census) · **Contract:** none — the file states no status convention
+**Size:** S to decide, M to fix · **Priority:** medium
+**Section:** process / backlog hygiene (`docs/backlog-2026-06.md`)
+
+Filed 2026-08-12 at gc t3. **This row poses the question; it does not settle it.**
+
+**What happened.** gc t1 needed every row's status to cross-join against gate claims, and derived it
+programmatically. It found **two** surfaces that carry status and **they disagree in both
+directions**. Row bodies carry `DONE`/`CLOSED`/`Closed <date>` markers for **33** rows. The
+`## Suggested order` table at `:5662` carries ✔ marks for **28**. The union is **48**, and neither
+surface alone is right: **20** rows are closed in their body and not ticked in the table
+(BL-069, BL-070, BL-073, BL-074, BL-083, BL-090, BL-092, BL-095, BL-096, BL-099, BL-100, BL-101,
+BL-104, BL-105, BL-106, BL-107, BL-121, BL-127, BL-131, BL-132), and **15** are ticked with no
+closure marker in the body (BL-001, BL-002, BL-003, BL-004, BL-005, BL-009, BL-015, BL-028, BL-029,
+BL-031, BL-038, BL-039, BL-050, BL-055, BL-056). Every one of the 20 the table misses closed on or
+after 2026-08-04; the table has not been maintained since 2026-07-26.
+
+**Why the existing rules do not cover it.** Nothing in the file says there are two surfaces, so a
+reader consulting either alone gets a confident wrong answer about a different 20 or 15 rows — and
+the wrongness is invisible from inside whichever surface was consulted. `drift_check` has no check
+over this file. The nearest analogous rule, *A document that quotes repo state is a snapshot with no
+invalidation* (`aetheris/CLAUDE.md`), binds a reader who suspects staleness; here there is nothing to
+prompt the suspicion, because both surfaces read as authoritative.
+
+**Determine what the backlog's status convention is** — one surface or two, which is authoritative,
+and whether the second is a view that must be regenerated or a duplicate that should be retired.
+The `## Suggested order` table carries a second thing the row bodies do not: a sequencing opinion.
+Whether that survives a de-duplication is part of the question and not assumed here.
+
+**Done when:** the convention is stated in the file itself with its scope, or the second surface is
+retired with the reason recorded; and whichever survives is consistent with the other at the moment
+the row closes.
+
+**Costs:** S to decide. The fix is M and mechanical if the ruling is "one surface"; unknown if the
+sequencing opinion must be preserved somewhere.
+
+`Source: gc t1's row census, 2026-08-11 — 143 rows, extraction and both controls published at
+docs/milestones/gc-t1-implementation-notes.md §A and §H. The two figures and the two disagreement
+sets above are derived, not counted by eye. Filed gc t3, 2026-08-12, per D4.`
+
+---
+
+### BL-146 — a row's status marker can be a quotation of a different row's disposition (#TBD)
+**Kind:** defect · **Census items:** n/a (surfaced by gc t1's row census) · **Contract:** none
+**Size:** S · **Priority:** low–medium
+**Section:** process / backlog hygiene (`docs/backlog-2026-06.md`)
+
+Filed 2026-08-12 at gc t3. **This row poses the question; it does not settle it.**
+
+**What happened.** gc t1's status extraction classified **BL-137** as closed. It is not. The marker
+it matched is at `:8155`, and it is a **quotation of a row in `cloudcost/m2-milestone.md`** — BL-137's
+body quotes that row's disposition, in the same bold-marker form a row uses for its own status, as a
+lead for BL-137's own census. BL-137 was filed 2026-08-10 and is open. The extraction was corrected
+by hand and the exclusion recorded; the point of this row is that **the correction was a human
+judgement, not something the file's structure made available**.
+
+*(The offending marker is described above rather than reproduced. Quoting it literally — as the
+first draft of this row did — made **this** row trip the same extraction, which the done-check
+caught. That is the hazard demonstrating itself, and it is recorded here rather than left armed: a
+row that reads as closed to any marker-keyed reader is not a row that stays open.)*
+
+**Why the existing rules do not cover it.** Any status extraction keyed on bold markers inside a row
+body will read a quoted marker as the row's own. There is no syntactic difference between a row
+saying it is closed and a row quoting something else that is closed. The same trap caught a second
+row from the other direction — **BL-014**, whose body carries no status at all and which a
+span-bounding defect briefly credited with a marker from a table about other rows.
+
+**Determine whether row status should be structurally distinguishable from quoted text** — a
+dedicated field, a fixed position, or a rule that quoted dispositions are fenced. Any answer must
+survive the file's actual practice, in which rows quote other rows' dispositions routinely and
+usefully; the goal is not to stop that.
+
+**Done when:** either a structural convention is stated and the existing rows conform to it, or the
+hazard is recorded as accepted with the reason, so a later extraction author is warned rather than
+surprised.
+
+**Costs:** S. The population is small — one confirmed false positive across 143 rows — but the cost
+of the failure is a wrong closed/open answer that reads as confident.
+
+`Source: gc t1's row census, 2026-08-11; the BL-137 false positive and the BL-014 span defect are
+recorded at docs/milestones/gc-t1-implementation-notes.md §I. Filed gc t3, 2026-08-12, per D4.`
+
+---
+
+### BL-147 — the absence of a reachability stamp encodes three different dispositions (#TBD)
+**Kind:** defect · **Census items:** BL-132's census over C1–C15 · **Contract:** `cloudcost/milestone.md` §Contracts
+**Size:** S · **Priority:** medium
+**Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
+
+Filed 2026-08-12 at gc t3, per **D5**. **This row poses the question; it does not settle it.**
+
+**What happened.** BL-132's census ran over all fifteen contracts and landed **nine** reachability
+stamps — C1, C2, C3, C6, C8, C9, C10, C12, C14. Six carry none: **C4, C5, C7, C11, C13, C15**. The
+silence is not one thing. It encodes **three** dispositions, each recorded in the census's notes
+file and none of them in the contract: *answered elsewhere and deliberately not re-derived* (C4,
+C11 — m5 t2's ruling); *not applicable* (C13 — *"states field ownership and a keying prohibition,
+not behaviour an invocation produces"*); and *reachable, whole, nothing to qualify* (C5, C7, C15).
+
+**Why the existing rules do not cover it.** A reader of `cloudcost/milestone.md` alone sees the same
+absence in all six cases and cannot tell which. Two of the three verdicts exist **only** in
+`cloudcost/docs/bl-132-implementation-notes.md` — and §Carried in item 2 of the `gc` round carries
+m5's measurement that an implementation-notes file is read by the next round in its arc or by
+nobody, so a verdict parked there is a verdict with no reader. The census recorded its stamp-placement
+rule deliberately (*"None landed in C4, C11 … C13 … or C5, C7, C15"*), so this is a documented
+choice and not an oversight; the question is whether the choice survives contact with a reader who
+has only the contract.
+
+**Determine whether a contract should carry its reachability verdict even when the verdict is
+"nothing to qualify"** — and if so, in what form, given that the census deliberately declined to
+edit C4 and C11 and ruled C13 out of scope entirely.
+
+**Done when:** either every contract carries a legible disposition, or the three-way silence is
+stated once in §Contracts' preamble so a reader can decode it without the notes file.
+
+**Costs:** S. Six short additions or one preamble sentence. It is a contract-file edit and the `gc`
+round has no contracts ticket, which is why it is deferred rather than taken.
+
+`Source: gc t1 addendum A, 2026-08-11 — the nine stamps enumerated by grep and the six absences
+verified at HEAD, against cloudcost/docs/bl-132-implementation-notes.md §2 for the per-contract
+dispositions. Ruled deferred at gc D5. Filed gc t3, 2026-08-12.`
+
+---
+
+### BL-148 — C7 and C13 state adapter obligations with no exemplar and no verdict in the contract (#TBD)
+**Kind:** defect · **Census items:** D15, D16 (C7); X2, D19 (C13) · **Contract:** `cloudcost/milestone.md` §Contracts C7, C13
+**Size:** S–M · **Priority:** medium — before provider four
+**Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
+
+Filed 2026-08-12 at gc t3. **This row poses the question; it does not settle it.**
+
+**What happened.** Both contracts bind a new adapter and neither shows it what compliance looks
+like. **C7** requires an adapter to *"guarantee one attachment only, and **must declare its reduction
+rule** — first, or most significant — where the provider permits several"*, and states in the same
+breath that *"the adapters differ today in how they reduce; the reduction is currently an accident
+of each implementation rather than a stated obligation"* — so the obligation exists and **no adapter
+demonstrates it**. C7 also carries the `attached_to == "tag:<name>"` grammar, which *"originates in
+one adapter's normalizer, is emitted by no other adapter, is enforced by nothing and asserted by no
+test"*. **C13** requires an adapter to *"reduce its own richer structure into the single value the
+schema carries"* and to flatten a region hierarchy, with no worked case. Neither contract carries a
+reachability stamp (see **BL-147**), so a reader gets the obligation with neither an exemplar nor a
+verdict.
+
+**Why the existing rules do not cover it.** C1 has an exemplar and says so — Linode's image →
+`TYPE_SNAPSHOT` mapping is recorded there as *"the shape to copy"*. C14 makes its obligation testable
+by requiring each adapter to *"assert it in its own tests"*. C7 and C13 do neither, and the gap is
+invisible from inside them: an obligation stated clearly still reads as complete. A fourth adapter's
+author meets C7 first, at the point of deciding what `attached_to` carries.
+
+**Determine what a contract owes an adapter author beyond the obligation itself** — an exemplar, a
+test hook in the C14 shape, or an explicit statement that none exists yet — and whether C7's
+tag-targeting grammar should be asserted by a test before a fourth adapter can break it silently.
+
+**Done when:** C7 and C13 either carry an exemplar or state that they do not and why; and C7's
+tag-grammar obligation has a stated enforcement position, even if that position is "none, by
+decision".
+
+**Costs:** S–M. Wording is small; deciding whether the tag grammar earns a test is the substance.
+Sequenced **before provider four** — this is the obligation a fourth adapter meets earliest.
+
+`Source: gc t1 addendum B, 2026-08-11 — C7 and C13 confirmed at HEAD to carry adapter obligations,
+no reachability stamp and no m5-D2 paragraph, with the two Source-only-by-ruling paragraphs verified
+to exist only at cloudcost/milestone.md:488 (C4) and :816 (C11). Filed gc t3, 2026-08-12, per D4.`
+
+---
+
+### BL-149 — two live documents use "live" in incompatible senses (#TBD)
+**Kind:** decision · **Census items:** n/a (surfaced by gc t1's census, ruled at gc D2) · **Contract:** `docs/milestones/hc-consolidation.md` decision 10
+**Size:** S to decide · **Priority:** medium
+**Section:** process / round vocabulary (`docs/milestones/hc-consolidation.md`, `cloudcost/m5-n1-compose.md`)
+
+Filed 2026-08-12 at gc t3, per **D2**. **This row poses the question; it does not settle it.**
+
+**What happened.** gc t1 reported a contradiction: `cloudcost/m5-n1-compose.md` §Not established
+item 1 calls two statements in `cloudcost/m4-consolidation.md` *"live"*, while the `gc` round ruled
+that document **archival** under hc decision 10. Both are correct, because *live* means two
+different things. m5 uses it for **unretracted-at-HEAD** — the statements have not been withdrawn.
+hc decision 10 uses it for **read-for-current-guidance** — whether a reader seeking the current
+answer goes there. A document can be the first and not the second, and m4-consolidation is exactly
+that.
+
+**Why the existing rules do not cover it.** Neither document defines the word, and both use it in
+load-bearing positions: decision 10 turns on it, and §Not established item 1's disposition turns on
+it. The instrument that surfaced the collision — a census cross-joining claims against current
+state — **cannot tell the two senses apart**, because both render as the same English. gc D2 ruled
+the specific case and explicitly declined to rule the vocabulary: *"the equivocation is itself a
+finding this round records rather than resolves."*
+
+**Determine whether the two senses should be separated in vocabulary** — one word retired, or both
+kept with a stated discriminator — and where that lands, given that decision 10 lives in a closed
+round's document and is cited by rounds after it.
+
+**Done when:** either a discriminator is stated in one named document and the citing rounds are
+consistent with it, or the collision is recorded as accepted with the reason, so the next census
+author is warned before building an instrument that cannot see it.
+
+**Costs:** S to decide. The scope question is larger than the wording: decision 10 is a standing hc
+decision, and **gc D6 already interprets it** without amending it, reserving the write-back question
+for that round's close. This row and that reservation are the same seam approached from two sides.
+
+`Source: gc t1 §X.1, 2026-08-11 (filed there as a contradiction between two live documents); ruled
+an equivocation at gc D2 and carried to gc §Promotion candidates. Filed gc t3, 2026-08-12.`
+
+---

@@ -616,11 +616,19 @@ read the period the adapter reports, or glob for what the run wrote.
 
 The `STOPPED_STATES` and `type`-vocabulary seams m1 flagged are closed (m2 t2). Linode was
 provider three (m3) and needed **no §Normalized extension** — every in-scope class mapped onto an
-existing canonical type. Before provider four,
-read **BL-074** — the seam sweep for any remaining value, threshold or spelling a
-provider could differ on (rule-catalog age thresholds and the `keep=true` tag spelling are the
-named next candidates; Linode confirmed the `keep=true` finding, its tags being flat strings like
-DO's). **BL-070's cross-provider deletions are not taken** *(corrected m5 t2, 2026-08-10 —
+existing canonical type. **BL-074's seam sweep is done** — closed 2026-08-07, its output the
+54-item census and `cloudcost/milestone.md` §Contracts (C1–C15). Before provider four, read
+**§Contracts**, not the row: it is where the sweep's rulings live, and the adapter obligations a
+fourth adapter must meet are stated there per contract. The candidates the row named are ruled —
+the rule-catalog age thresholds and the `keep=true` tag spelling among them; Linode confirmed the
+`keep=true` finding, its tags being flat strings like DO's.
+*(Corrected gc t3, 2026-08-12 — this read "Before provider four, / read **BL-074** — the seam
+sweep for any remaining value, threshold or spelling a provider could differ on (rule-catalog age
+thresholds and the `keep=true` tag spelling are the named next candidates; …)". BL-074 had closed
+five days before that sentence was last read, so it sent an adapter author to an open row that was
+shut. Corrected in place under hc decision 8, live operational guidance.)*
+
+**BL-070's cross-provider deletions are not taken** *(corrected m5 t2, 2026-08-10 —
 this sentence read "and **BL-070**, which retires the now-unreachable cross-provider merge
 code in `compose_report_data.py`")*. That merge code is **reachable and uninvoked, not
 unreachable**: three routes reach it and no orchestrator invocation takes any of them, so

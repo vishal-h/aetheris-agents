@@ -7812,6 +7812,54 @@ had already superseded, and that no step between the census and the contract che
 
 ---
 
+### BL-132 — DONE 2026-08-11 — the census ran over all fifteen; **both `Owes:` items discharged**
+
+**The row's own `Owes:` is the checklist, and both are discharged.** *"The per-contract table"* —
+in `cloudcost/docs/bl-132-implementation-notes.md` §2, fifteen rows, each with its verdict and what
+the verdict rests on. *"A qualifying sentence in each contract found source-only"* — **nine**
+landed in `cloudcost/milestone.md` §Contracts, one closing each of **C1, C2, C3, C6, C8, C9, C10,
+C12** and **C14**, each tagged `Reachability (BL-132, 2026-08-11)` so the set is greppable from the
+file rather than from a packet.
+
+**The distribution.** Fifteen contracts. **Two** answered before this row ran and not re-derived —
+**C4** and **C11**, source-only by **m5-D2**. **One** not applicable: **C13** states field
+ownership and a keying prohibition, not behaviour an invocation produces, so it was recorded with
+that reason rather than given a verdict forced onto it. **Twelve** answered here, and none of the
+twelve was source-only *whole*: every one holds a guarantee the pipeline exercises beside a clause
+describing something no invocation reaches. **Three** — **C5**, **C7**, **C15** — are reachable
+entire and took no sentence.
+
+**The population was derived, not inherited.** `grep -c '^### C[0-9]' cloudcost/milestone.md` → 15,
+contiguous C1–C15, no gap and no duplicate, measured at `8845d85`. The anatomy's *twelve to answer*
+is confirmed; it was checked rather than relied on, which the anatomy required.
+
+**Method — the entry point was run, not read.** Both STEP 3 arg forms in
+`cloudcost/agents/cloudcost_orchestrator.exs` were executed over recorded artifacts, with STEP 2
+before and STEP 4 after, and contracts were checked against the payload and the rendered report.
+**The result that could not have come from reading**: **C2**'s X1 clause says the ~fifteen raw
+provider state strings *"reach the rendered report verbatim"* via evidence text — at HEAD both
+interpolation sites are gated on `STOPPED_STATES`, so only the canonical value can, and the
+composed payload carries no `state` field at all. Zero in either payload and either rendered
+report, against **18** in the inventory those runs consumed.
+
+**The three self-reporting contracts were treated as subject, not input**, per the anatomy's
+method refinement 2 — **C3**'s unreachable wall-clock fallback, **C8**'s never-fired activity
+modifier, **C12**'s own report that its guarantee does not hold. **All three hold under check**,
+each established by a different instrument. Had one been false the ticket was to stop and relay;
+none was.
+
+**One finding, and it is filed rather than carried here: `BL-138`.** C8's D21 clause enumerates the
+declared parameter block wrongly — it emits five keys, one of which the clause excludes. It was
+**declined on scope**: this row's subject is reachability and D21's defect is accuracy, and D21's
+operative claim — the block is write-only — is confirmed and unaffected. Filed as its own row
+rather than left as prose, because prose owns nothing.
+
+`Source: BL-132 filed 2026-08-07 from m4 t5b's G2 gate-stop; annotated 2026-08-09 and 2026-08-10
+(m5 t2); anatomy authored into this row 2026-08-11 by the reviewer per R12; census run and closed
+2026-08-11. Record: cloudcost/docs/bl-132-implementation-notes.md.`
+
+---
+
 ### BL-133 — the loop's evidence is not retained, so no past run's greenness is checkable after the fact (#TBD)
 **Kind:** method · **Census items:** n/a (surfaced by the m4 close) · **Contract:** n/a
 **Size:** S to rule, S–M to implement · **Priority:** medium
@@ -8112,5 +8160,66 @@ they get a row rather than a third `Touches` amendment is
 `cloudcost/docs/m5-close-anatomy-implementation-notes.md` §Review → *The two staleness items
 get a row, not a third `Touches` amendment*. Filed at the m5 close (t3), 2026-08-10, as the
 one row `cloudcost/m5-n1-compose.md` §t3 → `Touches` provides for. Read at agents `d36b8e9`.`
+
+---
+
+### BL-138 — C8's D21 clause enumerates the declared parameter block wrongly (#TBD)
+**Kind:** accuracy · **Census items:** D21 · **Contract:** C8 (`cloudcost/milestone.md` §Contracts)
+**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/milestone.md`)
+
+Filed 2026-08-11 by **BL-132**, which found it and declined it on scope.
+
+**The claim, quoted.** C8's D21 paragraph opens: *"**The declared parameter block covers the age
+thresholds and the coverage threshold, and nothing else** (D21). The six confidences, the two
+modifier deltas, the keep-tag spelling, the ephemeral pattern and the band cutoffs are **not**
+echoed, so a report cannot state the full parameterization it was produced under."*
+
+**What the block actually emits — five keys**, read from a `detect_orphans.py` run over a recorded
+inventory:
+
+```
+snapshot_age_days
+unattached_volume_min_age_days
+stopped_compute_min_age_days
+tagged_account_coverage_threshold
+recent_activity_window_days
+```
+
+**The omission is the fifth.** Three age thresholds and the coverage threshold are the four the
+clause names; **`recent_activity_window_days` is neither** — it is `modifier_recent_activity`'s
+fourteen-day window, and C8's own next sentence lists *"the two modifier deltas"* among what is
+**not** echoed. The deltas indeed are not; this modifier's *window* is. So *"and nothing else"* is
+false, and it is false in the direction that matters: the block is **less** incomplete than the
+contract says, and a reader deciding what a report can state about its own parameterization is
+told the modifier surface is absent from it when one member is present.
+
+**This is an enumeration defect, not a behaviour defect.** **D21's operative claim is confirmed and
+unaffected**: the block is **write-only** — no consumer reads it, not the compose stage, not the
+renderer, not the template, not the sprint, verified at BL-132's census. Nothing about what the
+pipeline *does* is in question, and no code is wrong. What is wrong is a canonical document's
+statement of what one of its own artifacts contains.
+
+**Why it is filed rather than fixed at BL-132.** That row's subject is **reachability** — whether a
+contract states behaviour an invocation produces — and this is **accuracy**: the clause is about
+content, and correcting it needs no reachability finding. BL-132's findings threshold routes a gap
+argued from structure to its notes; this is neither a gap nor a prediction but an error of fact, so
+it gets an executor rather than a sweep. Prose in a notes file owns nothing.
+
+**Done when:** C8's D21 clause names the five emitted keys, or names the four and says the fifth
+explicitly; and the *"and nothing else"* claim is either true as written or replaced.
+
+**Costs: XS, and sized from the work rather than by analogy to a neighbouring row.** Two reads —
+the emitting site in `detect_orphans.py` and the D21 paragraph — and one sentence rewritten. **No
+adapter work**, since no adapter supplies any of these values. **No execution required**: the key
+set is a literal at the emitting site and can be read there; the run BL-132 used is a convenience,
+not a dependency. The one judgement it carries is whether the clause should enumerate at all or
+state the rule that generates the set, and that is a wording call inside one paragraph.
+
+**Collides with:** nothing. It touches one paragraph of C8 and no other contract. BL-132 is closed
+and does not need reopening — its census verdict for C8 stands unchanged, and C8's landed
+reachability sentence already points at the record this row supersedes.
+
+`Source: BL-132's census, 2026-08-11 — found while confirming D21's write-only status, which holds;
+recorded at cloudcost/docs/bl-132-implementation-notes.md §5 and declined there on scope.`
 
 ---

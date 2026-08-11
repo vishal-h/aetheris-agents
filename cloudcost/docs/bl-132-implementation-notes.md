@@ -72,7 +72,20 @@ contract's own shape; the basis column says what each rests on.
 | **C12** | Encoding | self-report **confirmed**; the corruption **source-only** | 4 sites specified in `render_report.py`, 5 unspecified across the other two; every adapter value is ASCII |
 | **C13** | Carry-only fields | **not applicable** | states field ownership and a keying prohibition, not behaviour an invocation produces — the row's method refinement 3 |
 | **C14** | Adapter cost-model obligations | guarantee **reachable**; D14 **source-only** on the current three | `grand_total 39.74` built from three service line items; no recorded artifact carries a stopped database |
-| **C15** | Neither arm | **reachable** | the ephemeral matcher runs on every detect pass; it matched no name in these runs, which is a result and not an absence of exercise |
+| **C15** | Neither arm | **reachable** | the ephemeral matcher is invoked during candidate scoring — invoked once across these runs, on the single Linode candidate, returning no match |
+
+`[Corrected in place 2026-08-11, after a690014 was pushed. C15's basis cell previously read: "the
+ephemeral matcher runs on every detect pass; it matched no name in these runs, which is a result
+and not an absence of exercise." That was **false**, and established so by this ticket's own runs
+before it was written: the matcher is invoked during candidate *scoring*, so a pass producing zero
+candidates never reaches it — and the DigitalOcean run produced zero. Across these runs it was
+invoked exactly once, on the single Linode candidate, and returned no match (`"modifiers": []` in
+that candidate's payload entry). **The verdict is unchanged and this correction does not withdraw
+it**: one invocation is reachability, and a matcher that runs and does not match is a result, not
+an absence of exercise. What was wrong was the count of occasions, not the finding. Corrected
+rather than swept because the row's findings threshold routes **gaps and predictions**, and an
+established falsehood is neither — it is an error, and a filter that swallows known errors has
+stopped being a filter.]`
 
 **Sentences landed: nine** — C1, C2, C3, C6, C8, C9, C10, C12, C14, each closing its own contract.
 **None landed in C4, C11** (answered; the row forbids re-editing them), **C13** (not applicable),

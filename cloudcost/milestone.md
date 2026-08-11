@@ -665,9 +665,15 @@ stage, not the renderer, not the sprint. Both facts are recorded, and the gap is
 than closed.
 
 **Reachability (BL-132, 2026-08-11) — the catalog reachable; X4 source-only and self-confirmed;
-D21's write-only status confirmed, its enumeration not.** Bands, priors and the additive-clamped
-model are produced by every detect pass — a Linode run scored one candidate at base `0.85`, no
-modifiers, landing MEDIUM by margin. **X4 is source-only and this contract's own claim about it
+D21's write-only status confirmed, its enumeration not.** The band definitions and the declared
+parameter block are emitted by **every** detect pass, including one that finds nothing — a
+zero-candidate run still carries all three bands. The priors, the modifiers and the clamp produce
+a score only for a **scored candidate**: a Linode run scored one at base `0.85`, no modifiers,
+landing MEDIUM by margin. `[Corrected 2026-08-11, one commit after this sentence landed at
+a690014, where it read "Bands, priors and the additive-clamped model are produced by every detect
+pass". Over-broad for two of its three subjects, and the same error corrected in C15's basis cell
+in` `cloudcost/docs/bl-132-implementation-notes.md` `— chased here in the same round rather than
+left one file over. The verdict is unchanged: the catalog is reachable.]` **X4 is source-only and this contract's own claim about it
 holds under check**: `last_activity_at` is `None` at all **eighteen** emission sites across the
 three adapters, so `modifier_recent_activity` and its fourteen-day window cannot fire — and the
 pipeline now says so in its own payload, which carries the marker

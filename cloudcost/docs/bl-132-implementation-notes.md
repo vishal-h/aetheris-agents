@@ -59,7 +59,7 @@ contract's own shape; the basis column says what each rests on.
 | | contract | verdict | what it rests on |
 |---|---|---|---|
 | **C1** | Resource type vocabulary | guarantee **reachable**; unenforced-validation clause **source-only** | all three adapters import the `TYPE_*` constants, so no run emits an out-of-vocabulary `type` for `usable_resources` to miss |
-| **C2** | Resource state vocabulary | guarantee **reachable**; X1's clause **source-only, and its named route does not carry** | 0 `state` in either payload and either rendered report against 18 in the consumed inventory; both interpolation sites gated on `STOPPED_STATES` |
+| **C2** | Resource state vocabulary | guarantee **reachable**; X1's clause **source-only, and its named route does not carry** | 0 `state` across all three composed payloads and all three rendered reports, against a control of 18 in the DO inventory those chains consumed; both interpolation sites gated on `STOPPED_STATES` |
 | **C3** | Timestamps and age | **reachable**; D17 and N3 **source-only** — *self-report confirmed* | three runs resolved reference dates to their recorded fetch timestamps, none the wall clock; every adapter stamps `generated_at` via `iso_now()` |
 | **C4** | Money and currency | **source-only** — *answered m5 t2, not re-derived* | m5-D2; the *Source-only by ruling* paragraph already in the contract |
 | **C5** | Percentages and ratios | **reachable**, whole | coverage `0.8889` and `0.4` at four decimals; zero-base `delta_pct: null` on a real service row beside `-78.58` on two others |
@@ -86,6 +86,20 @@ an absence of exercise. What was wrong was the count of occasions, not the findi
 rather than swept because the row's findings threshold routes **gaps and predictions**, and an
 established falsehood is neither — it is an error, and a filter that swallows known errors has
 stopped being a filter.]`
+
+`[Corrected in place 2026-08-11 at the row-correction round, after 88fa5f4 was pushed. C2's basis
+cell previously read: "0 `state` in either payload and either rendered report against 18 in the
+consumed inventory". Both halves are superseded by the exercise sweep at `8f36e45`, which landed one
+commit after this file was last written and touched `cloudcost/milestone.md` only — so this cell
+kept the wording the sweep had already corrected in the contract. **"Either" is two**, and the sweep
+re-measured all six artifacts of the three chains, every one zero; **"the consumed inventory" is
+one** where those chains consumed two with different counts, 18 DO and 15 Linode. The cell now
+carries the text `cloudcost/milestone.md:391–394` holds at HEAD, quoted rather than re-derived.
+**The verdict is unchanged**, and the second half of the cell — both interpolation sites gated on
+`STOPPED_STATES` — is untouched and was never in question. This is the second of the two sites
+`8f36e45` left stale by touching one file; the other is BL-132's own row in
+`docs/backlog-2026-06.md`, corrected in the same commit as this. Only that one was named in
+**BL-140**'s note; this cell was found by the class sweep §8 records.]`
 
 **Sentences landed: nine** — C1, C2, C3, C6, C8, C9, C10, C12, C14, each closing its own contract.
 **None landed in C4, C11** (answered; the row forbids re-editing them), **C13** (not applicable),
@@ -220,3 +234,63 @@ and `CLAUDE.md` **§Commands** carries the root.
 - **Item 4** — `git status --short`: the two paths in §Deviations and nothing else.
 
 Full output in the packet.
+
+---
+
+## 8. The exercise sweep — appended 2026-08-11, one round after the row closed
+
+**Why this section exists.** The sweep ran on **2026-08-11** at `8f36e45`, one commit after this
+row's close at `88fa5f4`, and it touched `cloudcost/milestone.md` **only** — so the sweep that
+corrected four of the nine landed sentences had no record in this file, the file the row's `Source:`
+names as its record. `git log --oneline -- cloudcost/docs/bl-132-implementation-notes.md` returns
+`88fa5f4` and `a690014` and nothing later, and `git show --stat 8f36e45` returns one path. The gap
+is the one **BL-140**'s `Source:` block names in `docs/backlog-2026-06.md`. **Everything below is
+reconstructed from the commit message of `8f36e45` and the diff it carries; where something is not
+recoverable from committed evidence it is marked so rather than inferred.**
+
+**The literal-vs-class distinction, as the commit message states it** — quoted, because this is the
+sentence the episode is cited for:
+
+> The earlier sweep covered a literal string, not a class: grep for "every detect
+> pass" over cloudcost/ and docs/. It found C8 only because C8 shared the wording,
+> not because the class was searched. Stated plainly because the population a
+> sweep covered is the thing that makes its result mean anything.
+
+and the class, in the same message's words: *"the class the reviewer named — exercised vs merely
+emitted — checking each against what the five chains produced rather than against source."*
+
+**The vocabulary is not recoverable.** The message states the **earlier** sweep's search term
+exactly (`every detect pass`) and names the class the second sweep covered, but it records **no
+term list** for the class sweep, and the diff carries none. What *is* recoverable is the class
+sweep's **population and instrument** — all nine landed sentences, each checked against what the
+five chains produced rather than against source — which is the property the message itself says
+makes a sweep's result mean anything. Recorded as absent rather than reconstructed: a plausible
+vocabulary written here now would be this round's, presented as the sweep's.
+
+**Four narrowed, five held. The verdict column of §2 changed in none of them**, and the message
+states as much: *"No verdict changed. All nine tags intact, all nine headlines byte-unchanged."*
+
+| | outcome | the message's own basis |
+|---|---|---|
+| **C1** | **narrowed** | *"exercised on every invocation"* — the AWS chain consumed a zero-resource inventory and typed nothing; narrowed to every invocation that types a resource. Source half verified while there: all three adapters import from `_normalized` and reference `TYPE_*` |
+| **C2** | **narrowed** (and the claim got *stronger*) | *"either"* is two, contradicting the same sentence's *"three runs"*, and was the honest count — form B's payload and report were not in the original check. Re-measured over all six artifacts, all zero |
+| **C3** | **narrowed** | called two different sets *"the three runs"* — the compose runs that emitted `as_of` (DO both forms, Linode) and the STEP 2 runs that resolved reference dates (DO, AWS, Linode). AWS never reached compose; both halves scoped to the passes that produced them |
+| **C6** | **narrowed** | *"computed on every run"* — same AWS gap, and the two clauses are exercised by different stages, which one verb obscured. Also records `excluded: 0` on both providers — the keep-tag rule finding nothing rather than not running |
+| **C8** | **held** | verified — `bands=3` on both the zero-candidate and the one-candidate run |
+| **C9** | **held** | the AWS chain did write its orphan file, so *every invocation* holds |
+| **C10** | **held** | `prior_period` on all four compose payloads |
+| **C12** | **held** | a source count, explicitly stamped, claiming no run |
+| **C14** | **held** | already carried the qualifier the others lacked — *"every run with a cost snapshot"* — which correctly excludes form B |
+
+**What the sweep did not reach, and this round did.** `8f36e45` corrected the nine sentences in
+their contract and stopped at that file, leaving the same superseded C2 wording in two siblings:
+this file's §2 basis cell and BL-132's own row in `docs/backlog-2026-06.md`. Both are corrected at
+the round that appends this section, each with its own dated block at its position. **§6's deviation
+note is now historical in one respect**: it records that the census did not edit
+`docs/backlog-2026-06.md`, which was true of the census and is no longer true of the row — that edit
+belongs to this later round, not to the ticket, and §6 is left standing unrewritten.
+
+`Appended 2026-08-11 by the row-correction round, whose own record is
+cloudcost/docs/bl-132-row-correction-implementation-notes.md. This section adds a record and
+withdraws nothing: §1–§7 are unedited apart from §2's C2 basis cell, which carries its own dated
+block above.`

@@ -7839,8 +7839,35 @@ before and STEP 4 after, and contracts were checked against the payload and the 
 **The result that could not have come from reading**: **C2**'s X1 clause says the ~fifteen raw
 provider state strings *"reach the rendered report verbatim"* via evidence text — at HEAD both
 interpolation sites are gated on `STOPPED_STATES`, so only the canonical value can, and the
-composed payload carries no `state` field at all. Zero in either payload and either rendered
-report, against **18** in the inventory those runs consumed.
+composed payload carries no `state` field at all. Measured over three chains of the orchestrator's
+own STEP 3 forms across recorded DO and Linode artifacts — DO at both arg forms and Linode at the
+first: **zero** `"state"` across **all three composed payloads and all three rendered reports**,
+against a control of **18** in the DO inventory those chains consumed.
+
+> **`[corrected 2026-08-11 (the row-correction round). The measurement is stated over six artifacts
+> and one named inventory, not two artifacts and an unnamed one — taken from the corrected sibling,
+> not re-derived.]`**
+>
+> **It read:** *"Zero in either payload and either rendered report, against **18** in the inventory
+> those runs consumed."*
+>
+> **Both clauses failed, and in opposite directions — which is why this is a replacement and not a
+> narrowing.** *"Either"* is two; the exercise sweep at `8f36e45` re-measured all **six** artifacts
+> of the three chains and every one is zero, so the row **understated** the population its result
+> rests on. *"The inventory those runs consumed"* is the clause that is **over-broad**: those chains
+> consumed **two** inventories with different counts — **18** DO and **15** Linode
+> (`cloudcost/milestone.md` §C6's basis figures) — so one control attributed to *the* inventory
+> conflates them, which is the same defect `8f36e45` corrected in C3 one file over. The replacement
+> is the text `cloudcost/milestone.md:391–394` carries at HEAD, quoted rather than re-derived.
+>
+> **The verdict is unchanged**, and so is every other claim in this paragraph — the `STOPPED_STATES`
+> gating, the absent `state` field, and the finding that this result could not have come from
+> reading. Corrected here because `8f36e45` touched `cloudcost/milestone.md` **only**, leaving this
+> row as the sibling that still carried the superseded wording — the gap **BL-140**'s `Source:`
+> block names, below in this file. The second such site,
+> `cloudcost/docs/bl-132-implementation-notes.md` §2's C2 basis cell, is corrected in the same
+> commit as this and was **not** named in that note. The round's record is
+> `cloudcost/docs/bl-132-row-correction-implementation-notes.md`.
 
 **The three self-reporting contracts were treated as subject, not input**, per the anatomy's
 method refinement 2 — **C3**'s unreachable wall-clock fallback, **C8**'s never-fired activity

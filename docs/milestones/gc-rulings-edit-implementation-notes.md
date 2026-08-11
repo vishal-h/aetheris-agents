@@ -110,3 +110,45 @@ decision 7 / 8 / 10 docs/milestones/hc-consolidation.md:584, :585, :587
 carried-in source   cloudcost/m5-n1-compose.md:1035-1227
 resolve-in-place    cloudcost/m5-n1-compose.md:869-889
 ```
+
+---
+
+## Review
+
+`Appended 2026-08-12, recording the reviewer's findings on this edit from the Phase D review of
+2026-08-11. Per R20 this edit is not a ticket round and gets no review file; the findings land here,
+verbatim, with the dispositions beneath — the shape R2 requires of a review file, in the artifact the
+edit already has.`
+
+**F1 — A decision authored at this edit cited a finding this round did not carry.** D5 pointed at
+§Promotion candidates for a measurement finding that section did not hold; the finding is m5's. A
+claim about another document's contents that did not hold, inside the round convened to correct
+claims about other documents' contents that do not hold. Caught by the ticket, not by the reviewer.
+*Disposition: reviewer's error, accepted. Repointed at Phase C at §Carried in item 2. The missing
+inbound channel it exposed became §Carried in, which the round had lacked entirely.*
+
+**F2 — A close criterion presumed a resolution shape a closed round does not admit.** Clause 3
+required that m5 §Not established item 1 be *resolved*; m5 closed 2026-08-10 and decision 7 governs
+a closed record, so that item's `[OPEN]` prefix cannot be flipped.
+*Disposition: reviewer's error, accepted. Clause 3 replaced at Phase D with one requiring a dated
+record that the gate is discharged, leaving the shape to t3.*
+
+**F3 — Phase D's stop gate bounded a count without naming its population.** *"If that list exceeds
+four artifacts, report it and stop"* — artifacts owed (five) or artifacts the session could write
+(three)? The two readings differ and the instruction did not say which.
+*Disposition: ratified as read. The ticket read the gate against its stated purpose, said so
+explicitly, and did not present the reading as settled. A clause is appended inside the fifth
+§Promotion candidates entry rather than beside it — a precision on a finding is not a finding and
+does not engage §7's bar.*
+
+**F4 — The SHA rewrite.** Applying the records-land-with-their-commit convention meant amending, and
+amending rewrote two agents SHAs the prior packet had cited.
+*Disposition: ratified. The convention was established from committed history — `3971121` and
+`1f82118` — rather than assumed, and nothing was pushed, so amending was the compliant route. The
+alternative preserved SHAs at the price of leaving two commits permanently without their records.*
+
+**Not a finding, recorded because the session raised it and it bears on the disposition of F4.** The
+first cut of the t2 record cited the agents commit by SHA and the re-cut invalidated it within the
+hour — a stale pointer inside the record of a round about stale pointers. Caught and corrected in
+place before review, the record now naming *"this commit"*; the session reported it rather than
+letting it pass.

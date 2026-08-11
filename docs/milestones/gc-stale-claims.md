@@ -656,6 +656,14 @@ were about the fifth.]`
   t2 had a destination of the same kind — established at the t2 review rather than before it. The
   gap is in the authoring, which is what §11 governs. One instance. Carried, not promoted.
 
+  `[Clause appended 2026-08-11 at the Phase D review. The same failure has a second surface: an
+  instruction can be under-specified not by omission but by ambiguity in a constraint it does
+  write. Phase D's stop gate bounded a count without saying what it counted — artifacts owed, or
+  artifacts the session could write — and the two readings differ. The ticket read it against its
+  stated purpose, said so, and did not present the reading as settled; the reviewer ratified. A
+  numeric gate that does not name its population is not a gate. Carried inside this entry, not
+  beside it.]`
+
 ---
 
 ## Close criteria

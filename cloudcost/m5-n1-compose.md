@@ -1077,10 +1077,11 @@ a clause passes verification. Carried rather than promoted: one instance, and th
 excepted §7's bar twice already.
 
 **A negative-control token stops being a negative control once a record quotes it.** A
-sweep at the record-correction edit reused the token a prior edit had used for the same job
-and it returned three hits — the prior edit's own committed record, quoting its control
-table. Controls are minted fresh per sweep, or a sweep over records of prior sweeps finds
-its own instruments and reads them as content. **And minting fresh is necessary without being
+sweep at the headline-correction edit reused the token the record-correction edit had minted
+for the same job — and had already spent by publishing it at 0/0 in that edit's own control
+table — and it returned three hits, each of them a published control table. Controls are
+minted fresh per sweep, or a sweep over records of prior sweeps finds its own instruments
+and reads them as content. **And minting fresh is necessary without being
 sufficient: the act of *recording* a control is what spends it, and recording is a step every
 round performs by rule — so a round that mints fresh still hands its successor dead tokens.**
 The instance is this entry's own successor. The BL-132 row-correction edit minted three fresh
@@ -1088,7 +1089,18 @@ controls precisely because this entry told it to, published them, and they all r
 (`cloudcost/docs/bl-132-row-correction-implementation-notes.md:156–160` at `0587bf3`);
 re-running those same three over the tree *after* that commit returns **1 each**, every hit the
 one line of its own record that lists them (`:167–179`). The remedy held for the sweep that
-applied it and was already spent for the next one. Carried rather than promoted: one instance,
+applied it and was already spent for the next one. **And a third mode needs neither reuse nor
+recording, so the headline above does not reach it: a token can be freshly minted and never
+published anywhere and still not be a control, by colliding with ordinary English that some other
+document independently wrote.** The disposition-ground edit's first negative control, `rests on a
+single instance`, returned **1** — at `cloudcost/m4-consolidation.md:765`, a different cycle's
+sentence about a different entry — and **nothing had ever used the token**, so neither of the two
+modes above explains it
+(`cloudcost/docs/m5-disposition-ground-implementation-notes.md:163–178` at `4caa671`). **Minting
+fresh cannot catch this and neither can a reach-based pathspec**, the two remedies the modes above
+yield; the only thing that catches it is running the control and **verifying it returns 0 before
+relying on it** — which is what that round did, discarding it and minting three replacements it
+then verified at 0 before use. Carried rather than promoted: one instance,
 found by the sweep it broke.
 
 > **`[Corrected 2026-08-11 at the disposition-ground edit, on the reviewer's direction. The
@@ -1118,6 +1130,30 @@ the entry rather than beside it. The disposition line above is the reviewer's an
 byte-unchanged; what it now reads against is reported in this round's record,
 cloudcost/docs/m5-obligation-landing-implementation-notes.md §B3, not settled here.]`
 
+> **`[Corrected 2026-08-11 at the readership-landings edit, on the reviewer's direction. The
+> entry's second sentence is replaced rather than left standing — this is the published-record
+> form, and the superseded wording is quoted here at the position it occupied. The finding and
+> the disposition are untouched; only the attribution changes.]`** **Superseded:** *"A sweep at
+> the record-correction edit reused the token a prior edit had used for the same job and it
+> returned three hits — the prior edit's own committed record, quoting its control table."*
+>
+> **The attribution was backwards, and the edit it named is the one that got the zero.** At the
+> record-correction edit `zzz-not-a-real-rule` returned **0 in both repos**: that edit *minted and
+> spent* it, publishing it in its own control table
+> (`cloudcost/docs/m5-record-correction-implementation-notes.md:120` at `9b24b77`). The sweep that
+> reused the token and got **3** was the **headline-correction** edit, one commit later
+> (`cloudcost/docs/m5-headline-correction-implementation-notes.md:222–227` at `244e49e`); its
+> three hits are three published control tables — the record-correction table plus the two other
+> m5 records that had by then quoted the same token. Established from committed history at both
+> commits before the edit, not taken from the instruction that reported it.
+
+`[Clause appended 2026-08-11 at the readership-landings edit, on the reviewer's direction — the
+third failure mode, landed inside the entry in the shape the obligation-landing stamp above
+established, and for that stamp's reason: a precision on a finding is not a finding and does not
+engage §7's bar. The disposition line is again left byte-unchanged. The episode was verified
+against its committed record before it was landed; the derivation is in this round's record,
+cloudcost/docs/m5-readership-landings-implementation-notes.md §1a.]`
+
 **One standing obligation carried forward**, appended 2026-08-11 at the obligation-landing edit.
 It is **not** a §7 candidate and carries no promotion disposition — it is a gate this cycle
 deferred and still owes, so the next cycle meets it as work rather than as a finding to weigh.
@@ -1143,6 +1179,49 @@ round's own record. **That this channel carries obligations and not only §7 can
 document's own demonstration** — §Carried in (`:931–947`) is the inbound half of the same
 channel, and what it carried into m5 includes a directive (*"This round does not defer promotion
 to its close"*) and a standing item (BL-075 arm 2), neither of them a candidate for anything.
+
+**One promotion candidate carried forward**, appended 2026-08-11 at the readership-landings edit.
+It is separately preambled rather than joined to the two above for the reason the obligation block
+above is: the *"Two findings carried forward"* preamble is scoped to the body-addition edit that
+wrote it, and a later edit adds its own block rather than making that count read false.
+
+**An implementation-notes file is read by the next round in its arc or by nobody, so it should be
+written for that reader and not as a second copy of the packet.** The ground is a measurement over
+the whole population of round records in both repos — **163 files, 32,434 lines**, 2026-05-19 to
+2026-08-11 — on two instruments: later commits whose added lines cite a file, and later sessions
+that opened it. **119 of the 163 files (73%), holding 16,531 of 32,434 lines — 51% — have no trace
+of ever having been read by anything.** Where a file *was* read, the reader is almost always the
+immediately following round in the same arc: of 27 later opens, **18 are at a lag of one day**,
+2–3 days accounts for 6, 4–7 days for 2, 8–30 days for 1, and **more than 30 days for none** —
+median **1 day**, maximum **22**. Citation behaves the same way: median R-citation lag **1 day**,
+**54 of 75** landing within a day, only 6 more than a week later. **Past about a week the record is
+inert**, and roughly half of what is written is never opened at all. A record written as a second
+copy of its packet is therefore written for a reader who does not arrive.
+
+**What follows for the shape.** A round's record should carry what its successor actually opens it
+for — the findings, what is owed, what is uncertain, and the anchors — and point at the commit for
+the derivation, which git keeps and does not need re-narrating. **Census records are the
+exception, and the exception is specific.** The one unambiguous case in the population of a notes
+file used as a durable record is a successor **machine-reading a census's structure as data**:
+`m4-t4b` read `m4-t4a` one day later with `grep -cE "^#### (X|N|D|F|P|R)[0-9]+"` → **54**, then
+re-derived the class counts rather than trusting them. Structure survives that way; narrative does
+not — the three largest census files in the population (`m4-t4a` **1,474** lines, `hc-d` **767**,
+`bl-007-t5` **610**) have **zero** later opens between them. So a census earns machine-readable
+structure, and prose around it earns nothing.
+
+**The open question, stated as one and not as a proposed amendment.** §7 step 1 scans for findings
+that *"recurred on ≥2 tickets"*
+(`../aetheris/docs/methodology/milestone-methodology.md:218–219`, read at harness `6241972`). This
+finding **recurred across no tickets at all** — it is not a recurrence but a measurement over a
+whole population, and §7 has no channel for evidence of that kind. Whether the bar should have one,
+and what it would look like, is left open here rather than answered. **The strongest argument
+against the finding is recorded with it**: the instruments can only see traces that survive into a
+commit or a tool call, and cannot see the thing notes may actually be for — that writing them
+forces a check that catches an error at the time. The measurement round is its own evidence for
+that, having found four defects in its own instruments only because it was writing the derivation
+down. Carried rather than promoted, and the disposition needs no count: this round's own
+§Open-for-the-next-cycle neighbour establishes that reviewer-directed edits inside one cycle do not
+reach §7's bar however they are counted.
 
 **Sequence from here:** BL-132 → provider four, which still carries §Not established item 1's
 two non-identical gate statements and needs them reconciled wherever it is scoped.

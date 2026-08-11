@@ -226,6 +226,22 @@ negative-control token stops being a negative control the moment a record quotes
 have to be minted fresh per sweep, or a sweep over records of prior sweeps will find its own
 instruments and read them as content.]`
 
+`[Qualified 2026-08-11 at the readership-landings edit. The sentence above stands; what follows is
+a qualification it does not carry, added in place because this file **has later readers** — two
+later commits cite these lines by number and attribute their content (`9a2ae47`, `4caa671`), which
+is the test that decided this edit should happen at all. **The remedy as stated is stated too
+generally.** *"Controls have to be minted fresh per sweep"* is necessary and this cycle has since
+qualified it twice. **(1) Minting fresh is not sufficient**: recording a control is what spends it,
+and recording is a step every round performs by rule, so a round that mints fresh still hands its
+successor dead tokens — established at the obligation-landing edit against the BL-132
+row-correction sweep, whose three fresh controls returned 0 when published and 1 each afterwards.
+**(2) A freshly minted, never-published token can still fail**, by colliding with ordinary English
+another document independently wrote — the disposition-ground edit's `rests on a single instance`
+returned 1 at `cloudcost/m4-consolidation.md:765` with nothing having ever used it. **What survives
+both qualifications is not freshness but verification**: run the control and confirm it returns 0
+*before* relying on it. Both qualifications and their sources are carried in
+`cloudcost/m5-n1-compose.md` §Open for the next cycle, on this finding's entry.]`
+
 ### The split: 16 hits, **2 pointered, 14 left**
 
 **Pointered — quotes the old headline as authority:**

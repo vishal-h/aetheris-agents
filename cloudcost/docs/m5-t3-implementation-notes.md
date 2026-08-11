@@ -686,6 +686,27 @@ name it either. Recorded here and in the review file so the next reader of that 
 > > it with a dated block that quotes the superseded wording in the position it occupied,
 > > never silently, however few people have read it.
 >
+> `[Note added 2026-08-11 at the readership-landings edit. **The citation above is stale and
+> nothing else in this block is.** The argument below was right, is unchanged, and is what caused
+> the correction being reported here; only the authority it cites has moved. **The headline quoted
+> above no longer stands as the entry's headline.** It was replaced at harness `3dd2927` by: *"An
+> artifact's kind decides how a correction is made; its push state decides only whether the
+> correction may be silent."* **The body quoted above is unchanged and was never wrong** — which
+> matters, because the body is what the argument below reasons from. **The causal claim is the
+> harness entry's own, not this file's**: its dated block states that *"the correction was made
+> **after** and **because of** a misreading that quoted the headline and not the body —
+> `../aetheris-agents/cloudcost/docs/m5-t3-implementation-notes.md` §r1, where the entry was read
+> as putting an in-place edit 'out of bounds', corrected at the m5 record-correction edit (agents
+> `9b24b77`), whose §H3(e) reserved this wording question to the reviewer rather than settling it
+> inside the round that found it"*, and gives the reason for dating the order: *"A rule clarified
+> after a misreading and a rule reshaped to defeat one are indistinguishable unless the order is
+> dated, so it is."* **One precision, because it is easy to state wrongly:** the superseded
+> headline is gone from the *headline slot* but not from the file — its text survives at harness
+> HEAD `6241972` only inside the dated block that supersedes it (`CLAUDE.md:980–981`), and the
+> clause is quoted once more at `:1011` inside a quotation of a prior record, so a bare `grep` for
+> the clause returns **2**, not 0. Both surviving hits are quotations of it as superseded; none is
+> an assertion of it. Verified at harness HEAD before this note was written.]`
+>
 > **The correct reading.** The entry sorts artifacts by **kind**, and governs *how* each is
 > corrected — never *whether*. A **record** is corrected in place. A **ratified** artifact is
 > corrected too, with a dated block quoting the superseded wording in the position it

@@ -567,6 +567,86 @@ anatomy-slot resolver requirement to a section that does a different job.`
 
 ---
 
+### R22 — this section is a live registry, reviewer-amendable by dated entry, not a closed round's record.
+
+**Added by a later round than the one that wrote it, which is the thing it authorises.** The `gc`
+round cited R12, R13, R19, R20, R21 and the m4 decisions carried through this section as **standing**
+throughout its four tickets — its round document lists them in a §Round rules in force table — and at
+its t3 review it **interpreted** decision 10 without amending it (gc D6, on what *"current
+equivalent"* means). Nothing in this file said whether that was permitted, or who could do it.
+
+So: **the decisions and rules recorded here bind rounds after hc, and a later round's reviewer may
+amend or extend them by a dated entry in this section.** Three consequences, stated because each is
+a way the rule could be misread:
+
+- **The preamble's *"Numbered fresh for this round"* describes hc's own numbering, not a bar on
+  later entries.** R22, R23 and R24 are added by `gc` and say so in their stamps; the numbering
+  continues rather than restarting, because a reader citing R19 must get one entry and not two.
+- **hc stays closed.** Amending this section is not reopening the round. hc's §Ticket set, §Close
+  criteria and §Milestone summary are a closed record and decision 7 governs them; this section is
+  the exception, and it is an exception because it is the only part of the file a later round reads
+  for current guidance rather than for history. That is decision 10's own test applied to a section
+  rather than to a document.
+- **Interpretation is not amendment, and the difference is recorded.** gc D6 interprets decision 10
+  and deliberately did not write itself back into this file, reserving the question for gc's close.
+  Under this entry it now could. Whether it should is still gc's to decide, and this entry does not
+  decide it.
+
+`Recorded 2026-08-12 at the gc t3 review. Ruled by the arbiter. The ground is that gc cited these
+decisions as standing across four tickets and interpreted one of them with nothing in this file
+establishing whether anyone may amend them — so the registry was load-bearing and unowned at the
+same time. This entry authorises R23 and R24, which are landed with it.`
+
+---
+
+### R23 — findings about the documentation system append to one standing row; they do not each get their own.
+
+A defect in how the documentation system works — a status surface that disagrees with itself, a
+marker that cannot be distinguished from a quotation, a stamp whose absence encodes three different
+things — is not a unit of work. It is an observation about a system, and the system has one shape.
+Filing each as its own row produces a backlog that grows faster than anything discharges it, and
+each row states a question so small that closing it changes nothing.
+
+**So they append to one standing row**, created at this ruling and named in R23's stamp. That row is
+**append-only** and **does not close on any single item**; what discharges it is a decision about the
+system, not the clearing of its list.
+
+**This applies forward. BL-145–BL-149 stand as filed and are not collapsed into it.** They were
+filed by gc t3 on 2026-08-12, hours before this ruling, under the rule in force at the time — which
+is the agents-side rule that a deferred finding gets a backlog row in the round that defers it.
+**Re-filing rows a round has just filed is the churn this ruling exists to stop**, and applying a new
+collection rule retroactively to the round that prompted it would cost exactly what the rule saves.
+They stay; the standing row begins with what comes next.
+
+`Recorded 2026-08-12 at the gc t3 review. Ruled by the arbiter, authorised by R22. The standing row
+is BL-150, filed in the same commit. The prompting instance is gc t1's census, which surfaced five
+documentation-system findings in one pass and filed five rows for them.`
+
+---
+
+### R24 — a promotion candidate expires: carried at two consecutive closes without promotion, it is dropped at the second.
+
+A candidate that survives two closes undisposed is not being weighed; it is being deferred, and the
+deferral is free because nothing forces the choice. §7's bar asks whether a finding recurred on ≥2
+tickets — it does not ask how long a candidate may sit below that bar while a round declines to
+promote or drop it.
+
+**So: promoted or dropped at the second close, and the drop is recorded once and not re-litigated.**
+A dropped candidate may return only as a fresh finding from fresh evidence, not as the same entry
+carried a third time.
+
+**This close is the second carry for gc's §Carried in items 2, 3 and 4.** m5's close of 2026-08-10
+carried them forward as candidates rather than promoting them, which is the first; gc inherited them
+through §Open for the next cycle, which is the second. **So gc's close disposes them rather than
+carrying them again.** Item 1 of that section is not a candidate at all — it is the deferred
+`mix dialyzer` obligation, which is discharged by running the gate, not disposed by a verdict.
+
+`Recorded 2026-08-12 at the gc t3 review. Ruled by the arbiter, authorised by R22. The prompting
+instance is m5's §Open for the next cycle, whose three carried candidates arrived at gc undisposed
+with no rule saying when they must be answered.`
+
+---
+
 ### The m4 decisions, by reference
 
 `cloudcost/m4-consolidation.md` §Ratified decisions holds sixteen. They are **not**

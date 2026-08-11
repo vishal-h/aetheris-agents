@@ -8553,16 +8553,33 @@ and whether the second is a view that must be regenerated or a duplicate that sh
 The `## Suggested order` table carries a second thing the row bodies do not: a sequencing opinion.
 Whether that survives a de-duplication is part of the question and not assumed here.
 
-**Done when:** the convention is stated in the file itself with its scope, or the second surface is
-retired with the reason recorded; and whichever survives is consistent with the other at the moment
-the row closes.
+**RULED 2026-08-12 by the arbiter, at the gc t3 review. The question this row posed is answered;
+the execution is not done, and this row owns it.**
 
-**Costs:** S to decide. The fix is M and mechanical if the ruling is "one surface"; unknown if the
-sequencing opinion must be preserved somewhere.
+**The row bodies are authoritative. The `## Suggested order` ✔ table is retired.** The ruling is on
+the ground the row states: the table has not been maintained since 2026-07-26 and misses every one
+of the 20 rows that closed on or after 2026-08-04, while the bodies are written by the session that
+changes a row's state and are therefore current by construction. Two surfaces where one is
+maintained is not a redundancy, it is a trap.
+
+**What the ruling does not decide**, and what this row must therefore still establish: the table
+carries a **sequencing opinion** the bodies do not — an ordering of what to do next — and retiring
+the table drops it unless it is reconstructed somewhere. Whether that opinion is worth preserving,
+and where, is execution and belongs here.
+
+**Done when:** the `## Suggested order` table is either **retired** or **reconstructed from the row
+bodies** as a derived view that cannot drift; the file **states in its own text which surface
+answers the question**, so a reader is not left to infer it; and, if the table is retired, its
+sequencing opinion is either carried somewhere named or dropped with the reason recorded.
+
+**Costs:** M. The ruling removes the decision cost; what remains is 28 ✔ rows to reconcile against
+48 closures, and one judgement about the sequencing opinion.
 
 `Source: gc t1's row census, 2026-08-11 — 143 rows, extraction and both controls published at
 docs/milestones/gc-t1-implementation-notes.md §A and §H. The two figures and the two disagreement
-sets above are derived, not counted by eye. Filed gc t3, 2026-08-12, per D4.`
+sets above are derived, not counted by eye. Filed gc t3, 2026-08-12, per D4. Ruled by the arbiter
+2026-08-12 at the gc t3 review; the ruling is recorded here rather than in the round document
+because it is a fact about this file, and the round that surfaced it does not own it.`
 
 ---
 
@@ -8725,5 +8742,50 @@ for that round's close. This row and that reservation are the same seam approach
 
 `Source: gc t1 §X.1, 2026-08-11 (filed there as a contradiction between two live documents); ruled
 an equivocation at gc D2 and carried to gc §Promotion candidates. Filed gc t3, 2026-08-12.`
+
+---
+
+### BL-150 — standing: documentation-system findings, append-only (#TBD)
+**Kind:** standing · **Census items:** n/a · **Contract:** `docs/milestones/hc-consolidation.md` R23
+**Size:** n/a — does not close on any single item · **Priority:** medium
+**Section:** process / documentation system (both repos)
+
+Created 2026-08-12 at the gc t3 review, per **R23**. **This row collects; it does not settle.**
+
+**What it is.** The single home for findings about **how the documentation system works** rather
+than about what any document says. A status surface that disagrees with itself; a marker that cannot
+be told apart from a quotation of one; a stamp whose absence encodes three different dispositions; a
+pointer that resolves to a real section that does not contain the cited text. Each is an observation
+about a system with one shape, not a unit of work — so each **appends here** rather than opening its
+own row.
+
+**Why a standing row and not five rows.** R23's ground: filing each separately produces a backlog
+growing faster than anything discharges it, and each row states a question so small that closing it
+changes nothing. The prompting instance is gc t1's census, which surfaced five such findings in one
+pass.
+
+**It is append-only and does not close on any single item.** Clearing the list is not the discharge.
+What discharges it is a decision about the system — where these defects are collected, who rules on
+them, and what standard retires one — which is the question below.
+
+**Determine where documentation-system defects are collected and what discharges them.** Whether
+this row is the permanent home or an interim one; whether an appended item can be individually
+retired or only the row as a whole; and what evidence closes the question rather than the list.
+
+**Applies forward. BL-145–BL-149 are not collapsed into this row.** They were filed by gc t3 on
+2026-08-12, hours before R23 was ruled, under the rule then in force — the agents-side requirement
+that a deferred finding gets a backlog row in the round that defers it. Re-filing rows a round has
+just filed is the churn R23 exists to stop. They stand as filed; this row begins with what comes
+next.
+
+**Done when:** the collection question is answered in one named document with its scope — or
+declined, with the reason recorded and this row's fate stated either way. **Not** when the appended
+list is empty.
+
+**Costs:** n/a to hold. The decision is S; the appended items carry their own costs.
+
+`Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
+docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
+findings that prompted it are BL-145–BL-149, which stand as separately filed.`
 
 ---

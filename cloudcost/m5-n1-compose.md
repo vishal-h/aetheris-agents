@@ -791,6 +791,19 @@ precedent. Placement is by subject, the precedent by form. Duplication into the 
 was considered and declined on the same mirror grounds as the entry above. Ruled by the
 reviewer on the human's referral of the question at the m5 close.
 
+`[Pointer added 2026-08-11 at the headline-correction edit. **This candidate's headline
+and its closing clause state the rule in wording the promoted entry no longer uses.**
+The entry's headline now reads *"An artifact's kind decides how a correction is made;
+its push state decides only whether the correction may be silent"* — because *"in
+place"* carried two senses, and because denying push state any force is true of a
+ratified decision and false of a record. **The candidate is not rewritten**: it is what
+was filed, and a candidate that changes to match what it became stops being evidence of
+what was ratified. Read the promoted entry in harness `CLAUDE.md` for the operative
+wording, and its dated block for the diagnosis. **One thing this candidate got righter
+than the promotion did**, worth noting rather than burying: its body already said *"The
+rule is not never correct in place"* — the disambiguation was present at filing and was
+lost in the headline it was compressed into.]`
+
 ---
 
 ## Not established

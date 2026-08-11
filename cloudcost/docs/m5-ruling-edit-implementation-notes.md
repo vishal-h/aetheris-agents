@@ -1053,6 +1053,16 @@ sweep), and §Ratified decisions' opening paragraph (`a2d63d1`, W1b). Each argue
 the entry says the licence comes from the artifact's kind and not from its push state, and
 why fixing them is not what it asks for.
 
+> `[Pointer added 2026-08-11 at the headline-correction edit. **The clause quoted here as the
+> entry's — "the licence comes from the artifact's kind, not from its push state" — is
+> superseded.** The headline now reads *"An artifact's kind decides how a correction is made;
+> its push state decides only whether the correction may be silent"*: denying push state any
+> force is true of a ratified decision and false of a record. **The conclusion above is
+> unaffected and is not withdrawn** — none of the three is a ratified decision, so the kind
+> axis is what governs them, which is exactly what this paragraph concludes. Only the clause
+> it leans on was reworded. Full correction and its diagnosis: harness `CLAUDE.md`, the dated
+> block under that entry.]`
+
 ---
 
 ### Deviations

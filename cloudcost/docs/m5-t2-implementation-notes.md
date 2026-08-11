@@ -303,6 +303,42 @@ whether that is sufficient or whether §Open items should be corrected in a foll
 here because a standing rule in both repos is that a deferred finding gets an executor in
 the round it is deferred, and BL-070 is the executor this ticket could reach.
 
+> **`[Corrected 2026-08-11 at the m5 record-correction edit. This is the FIRST of two
+> occurrences of this claim in the round's records; the other carries a pointer here rather
+> than a second full correction. The superseded wording is quoted below in the position it
+> occupied and is not rewritten above, per decision 7 — this file is pushed, which is the
+> condition the promoted correction rule's "however few people have read it" clause covers.]`**
+>
+> **Superseded:** *"a standing rule in both repos is that a deferred finding gets an executor
+> in the round it is deferred"*.
+>
+> **The fact.** The rule stands in **one** repo — the agents `CLAUDE.md`, §Learning — BL-007,
+> *"A deferred finding gets a backlog row in the same round it's deferred — prose in a packet
+> or notes files nothing."* It is **not** in the harness `CLAUDE.md`, in that or any wording.
+>
+> **Truth-maker, re-derived at this edit rather than carried from any packet** — agents
+> `d025971`, harness `0ed9068`, `grep -c` over each repo's `CLAUDE.md`:
+>
+> ```
+> "deferred finding"                        harness=0   agents=1
+> "backlog row"                             harness=0   agents=1
+> "gets a backlog row in the same round"    harness=0   agents=1
+>
+> positive controls   "Source:"             harness=55  agents=35
+>                     "CLAUDE.md"           harness=11  agents=8
+>                     "ratified"            harness=7   agents=1
+> negative control    "zzz-not-a-real-rule" harness=0   agents=0
+> ```
+>
+> The positive controls fire in both files and the negative control in neither, so the three
+> harness zeros are **absence** and not a broken search.
+>
+> **What this does not withdraw.** The claim's *point* is untouched: **a rule standing in one
+> repo is still standing**, and it still bound this ticket — the session that wrote the
+> sentence above works in the agents repo, where the rule is. Nothing that followed from it
+> here changes. What was wrong is the rule's *reach*, asserted as two repos on no derivation;
+> only the count is corrected.
+
 ---
 
 ## r1 — the claim corrected, the Touches amended, the review file

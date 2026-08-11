@@ -633,6 +633,47 @@ round. The entry promoted at clause 1 — *an unpushed artifact may be corrected
 ratified one may not* — puts an in-place edit there out of bounds, and r1's `Touches` does not
 name it either. Recorded here and in the review file so the next reader of that sentence knows.
 
+> **`[Corrected 2026-08-11 at the m5 record-correction edit. This is the FIRST of three
+> occurrences of this misreading; the other two carry pointers here. Superseded wording left
+> standing above per decision 7.]`**
+>
+> **Superseded:** *"The entry promoted at clause 1 … puts an in-place edit there out of
+> bounds"*, and the sentence's framing that the promoted entry is what declined the edit.
+>
+> **The entry, quoted verbatim from the file rather than from memory of it** — harness
+> `CLAUDE.md` §Continuous learning → Workflow patterns, read at harness `0ed9068`:
+>
+> > **An unpushed artifact may be corrected in place; a ratified one may not — the licence
+> > comes from the artifact's kind, not from its push state.** Correcting an unpushed record
+> > in place is sound: its claims become meaningful when someone reads them, so a dated
+> > supersession block would preserve a reading history no reader ever had. A ratified
+> > decision is different in kind. Its authority is the act of ratification rather than its
+> > publication, so a reader citing it later is entitled to know its text is what was
+> > ratified — and cannot learn that from a notes file they have no reason to open. Correct
+> > it with a dated block that quotes the superseded wording in the position it occupied,
+> > never silently, however few people have read it.
+>
+> **The correct reading.** The entry sorts artifacts by **kind**, and governs *how* each is
+> corrected — never *whether*. A **record** is corrected in place. A **ratified** artifact is
+> corrected too, with a dated block quoting the superseded wording in the position it
+> occupied. **Publication withdraws the licence to correct silently, not the licence to
+> correct** — which is what *"however few people have read it"* is doing in that sentence.
+> **A review file is a record**, not a ratified decision: its authority is that someone reads
+> it, which is the entry's own test for the in-place case. Nothing in the entry put this edit
+> out of bounds.
+>
+> **The outcome was right and the ground was wrong, and both belong in the correction.**
+> Declining to edit `docs/reviews/m5-cloudcost-t2-review.md` at t3 r1 was **correct** — it is
+> not in t3's `Touches`, and a ticket's scoping is authoritative over a ticket's judgement.
+> §Ticket set's conventions exempt *the round's own* review file, which is t3's, not t2's. So
+> the decision stands and only its stated reason is withdrawn. The two were not distinguished
+> at the time, and stacking a sound scoping ground under an unsound rule-reading is what let
+> the misreading pass review.
+>
+> **The entry itself is not edited here** — see this round's record,
+> `cloudcost/docs/m5-record-correction-implementation-notes.md` §H3(e), which reports one
+> observation about its wording and deliberately leaves the promoted rule alone.
+
 ### G1 — the clause
 
 **Landed as one clause on the existing claim, and one extension to the existing `Source:`.**

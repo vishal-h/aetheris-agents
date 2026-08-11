@@ -124,6 +124,15 @@ a committed, pushed review record of a closed round, and this round's own promot
 ratified artifact is superseded with a dated block rather than edited. Recorded so the next
 reader of that sentence knows.
 
+> `[Corrected by pointer 2026-08-11 at the m5 record-correction edit. **The promoted entry did
+> not put that edit out of bounds** — it sorts artifacts by kind and governs *how* each is
+> corrected, never *whether*; publication withdraws the licence to correct **silently**, not
+> the licence to correct, and a review file is a **record**. **Declining was still right**, on
+> the ground the sentence above also gives: the file is not in t3's `Touches`. Only the
+> rule-reading half is withdrawn. Full correction, with the entry quoted verbatim, at
+> `cloudcost/docs/m5-t3-implementation-notes.md` §r1 → *The one claim that does not hold* —
+> the first of this misreading's three occurrences.]`
+
 **§6's `Touches` field carries the declined practice, verified rather than accepted.** The
 finding's ground for keeping *a ticket's scoping is authoritative over a ticket's judgement*
 unpromoted is that §6 already says it. It does, in two places:

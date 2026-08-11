@@ -79,6 +79,14 @@ standing rule in both repos — *a deferred finding gets a backlog row in the sa
 deferred; prose in a packet or notes files nothing* — was satisfied in letter and defeated in
 substance, and the defeat was invisible because the row it lived in was the row being closed.
 
+> `[Corrected by pointer 2026-08-11 at the m5 record-correction edit. **"in both repos" is
+> wrong — the rule stands in the agents `CLAUDE.md` only.** The full correction, with the
+> re-derivation and its controls, is in `cloudcost/docs/m5-t2-implementation-notes.md` at the
+> paragraph closing *"BL-070 is the executor this ticket could reach"* — the first of this
+> claim's two occurrences. Pointer rather than a second full correction, so the derivation has
+> one home. The surrounding argument is untouched and unwithdrawn: the rule bound this round
+> either way, a rule standing in one repo being still standing.]`
+
 **What landed.** §Open items' unit is corrected in place, in the shape r0 gave the runbook: the
 superseded wording quoted verbatim in the position it occupied, the correction dated, **m5-D2**
 named, and the accurate claim stated — **reachable and uninvoked**, with reachability explicitly

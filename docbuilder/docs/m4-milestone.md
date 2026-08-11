@@ -406,8 +406,11 @@ the diffs. Run the drift checker to confirm zero FAIL.
 - `milestone-methodology.md` §7 (milestone-end ritual) and §8 (sync rules)
 - `aetheris-agents/CLAUDE.md` — definition of done / doc-sync; drift checker
   invocation
-- `milestone-methodology.md` §9 anti-pattern: "Recovery sessions are where
-  doc-first discipline slips" — re-verify canonical-doc sync explicitly
+- `milestone-methodology.md` §8's final bullet, "Recovery sessions are
+  where doc-first discipline slips" — re-verify canonical-doc sync
+  explicitly. (Corrected 2026-08-11 (gc t2): this read "§9
+  anti-pattern"; §9 resolves — it is the Anti-patterns table — so the
+  citation was silently wrong rather than broken.)
 
 **Touches.**
 - `docbuilder/docs/m4-milestone.md` (milestone summary section,

@@ -135,8 +135,19 @@ claude-ui owns ratification — what the doc should say — and the arbiter owns
 mechanically making the doc say it. Only the first is a judgment call, which is why the sync
 belongs on the side that holds HEAD and the diff.
 
+**Extended by `milestone-methodology.md` §11 (Reviewer-authoring
+discipline), entry *A surgical edit is scoped by unit and quoted before it
+is replaced*.** That entry declares itself a continuation of this section
+and narrows the caveat above: the diff surfaces what changed, never what
+should have. The rule itself is stated there and is deliberately not
+restated here.
+
 `Source: m2-cloudcost t3, 2026-08-02 — the rev 5.2 mirror write (phantom N2 items) and its
-successor (three reverted F3/status fixes). Ratified with the human at the t3 close.`
+successor (three reverted F3/status fixes). Ratified with the human at the t3 close.
+Reverse pointer added 2026-08-11 (gc t2): the reference was one-directional — §11 named this
+section and this section named nothing back, so a reader arriving here got the rule and the caveat
+with no signal that the caveat had since been narrowed. Cited by section and entry headline rather
+than by ordinal, per aetheris/CLAUDE.md's cite-by-anchor rule.`
 
 ---
 

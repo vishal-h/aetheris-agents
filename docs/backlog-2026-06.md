@@ -8393,3 +8393,67 @@ not of tickets. Both amendments are m5 t2's (the BL-136 addition at the reviewer
 items at r1), and a third was declined into BL-137.`
 
 ---
+
+### BL-143 — the `project_knowledge` export boundary has no owner and no schedule (#TBD)
+**Kind:** decision · **Census items:** n/a · **Contract:** n/a
+**Size:** S to decide · **Priority:** medium
+**Section:** process / project knowledge (`docs/project-knowledge-manifest.md`,
+`prompts/bl-002-refresh-project-knowledge.md`)
+
+Filed 2026-08-11 at the obligation-landing edit. **This row is the reviewer taking the decision
+m5 t3's G2 reserved** — posing it, not settling it.
+
+**The exemption is not in question.** `project_knowledge` manifest-staleness WARNs are exempt
+under `--strict`, and the reasoning is stated consistently in four places
+(`scripts/drift_check.py:24–30` and `:78–80`, `CLAUDE.md` §Definition of done, and BL-009
+itself): mid-cycle manifest staleness is expected truth between export boundaries, and the export
+boundary is the enforcement point. Nothing here reopens that.
+
+**What is in question is the enforcement point.** It has no owner and no schedule. Its trigger is
+an event rather than a schedule — `docs/project-knowledge-manifest.md:13`, *"Refresh trigger:
+milestone end, or before any handoff session"* — and **the event has fired**: m5-cloudcost closed
+2026-08-10. Nothing in either repo will notice that it fired. So the exempt class, which the
+exemption itself describes as *mid-cycle* staleness, has become the steady state: four WARNs
+carried by every run, with nothing that will clear them and nothing that would tell the difference
+between a boundary not yet reached and a boundary indefinitely missed. That is the same
+alarm-fatigue shape BL-009 was filed to prevent, arriving through the exemption instead of
+through the count.
+
+**Determine who owns the refresh and by what trigger it is guaranteed to run** — or record the
+decision that a permanently-occupied exemption is accepted, with the reason.
+
+**Done when:** either the refresh has a named owner and a trigger with a mechanism behind it
+(something that fires without a human remembering), or the permanent occupancy is accepted in
+writing with its reason recorded **where `drift_check`'s output sends a reader**.
+
+**Costs:** S to decide. The acceptance branch is one paragraph in the place the WARN already
+points at. The owner branch is larger only if it implies building something: the upload half is
+human-owned by design (`prompts/bl-002-refresh-project-knowledge.md:11–13`) and no generator
+script exists in either repo, so a mechanism can guarantee the *reminder* and never the act —
+which is itself part of what the ruling has to say.
+
+**Collides with:** nothing. It does not reopen BL-002 or BL-009 and does not question the
+exemption's rationale, which four documents state consistently.
+
+`Source: filed by the reviewer at the obligation-landing edit, 2026-08-11, at agents 0587bf3,
+with each of the four claims below verified before it was written. **The trigger has fired, and
+what fired it:** docs/project-knowledge-manifest.md:13 states the trigger as "milestone end, or
+before any handoff session"; m5-cloudcost's close is written into cloudcost/m5-n1-compose.md
+§Milestone summary, authored at t3 on 2026-08-10 per §Close criteria clause 6 — so the
+milestone-end arm fired there. **m5 t3's G2 reported this read-only and reserved the decision:**
+cloudcost/docs/m5-t3-implementation-notes.md §G2 (:727–731 at 0587bf3) — "No manifest was
+refreshed, no row was filed, and no file was edited for this question — the instruction reserves
+that decision to the reviewer." **The reserved decision appears in no review file:**
+docs/reviews/m5-cloudcost-t2-review.md and docs/reviews/m5-cloudcost-t3-review.md each return 0
+for a case-insensitive sweep of manifest|G2|project_knowledge|export boundary; the control is
+that the same term over docs/reviews/ returns 35 files, so the two zeros are absence and not a
+broken search. **Nothing schedules a refresh:** the agents repo has no .github directory at all;
+the harness's only workflow, ../aetheris/.github/workflows/ci.yml, triggers on workflow_dispatch
+and pull_request with no schedule: key and no manifest or drift_check step; no cron/scheduled hit
+in either repo concerns export (they concern the harness's scheduled_runs table); and sprint.sh
+runs drift_check but no refresh. BL-002 and BL-009 are both "Done 2026-07-15"
+(docs/backlog-2026-06.md:218 and :4197), so no open row owns it. The prior read of the same
+ground, reported without filing, is cloudcost/docs/bl-132-row-correction-implementation-notes.md
+§2d.`
+
+---

@@ -1080,8 +1080,48 @@ excepted §7's bar twice already.
 sweep at the record-correction edit reused the token a prior edit had used for the same job
 and it returned three hits — the prior edit's own committed record, quoting its control
 table. Controls are minted fresh per sweep, or a sweep over records of prior sweeps finds
-its own instruments and reads them as content. Carried rather than promoted: one instance,
+its own instruments and reads them as content. **And minting fresh is necessary without being
+sufficient: the act of *recording* a control is what spends it, and recording is a step every
+round performs by rule — so a round that mints fresh still hands its successor dead tokens.**
+The instance is this entry's own successor. The BL-132 row-correction edit minted three fresh
+controls precisely because this entry told it to, published them, and they all returned 0
+(`cloudcost/docs/bl-132-row-correction-implementation-notes.md:156–160` at `0587bf3`);
+re-running those same three over the tree *after* that commit returns **1 each**, every hit the
+one line of its own record that lists them (`:167–179`). The remedy held for the sweep that
+applied it and was already spent for the next one. Carried rather than promoted: one instance,
 found by the sweep it broke.
+
+`[Clause appended 2026-08-11 at the obligation-landing edit, on the reviewer's direction. A
+precision on a finding is not a finding and does not engage §7's bar, so the clause lands inside
+the entry rather than beside it. The disposition line above is the reviewer's and is left
+byte-unchanged; what it now reads against is reported in this round's record,
+cloudcost/docs/m5-obligation-landing-implementation-notes.md §B3, not settled here.]`
+
+**One standing obligation carried forward**, appended 2026-08-11 at the obligation-landing edit.
+It is **not** a §7 candidate and carries no promotion disposition — it is a gate this cycle
+deferred and still owes, so the next cycle meets it as work rather than as a finding to weigh.
+
+**`mix dialyzer` is deferred, not skipped, and the deferral names a trigger that can fire.**
+Quoted from the round's own record rather than restated —
+`cloudcost/docs/m5-t3-implementation-notes.md:485–491` at `0587bf3`: *"Skipping silently makes
+'we skipped dialyzer' the precedent, and the gate that never runs is the gate that rots — which
+is the rule's whole reason for existing. **Trigger: the next harness ticket whose `Touches`
+names any `.ex` or `.exs` file runs it; and if no such ticket runs before the next cycle's
+close, that close runs it.**"*
+
+**Why it is recorded here when it is already recorded in four other places.** The four are the
+t3 record just quoted; this document's summary narrative at `:1006–1008`; this document's t3
+ticket-set row at `:47`; and
+`cloudcost/docs/bl-132-row-correction-implementation-notes.md:231–240`, which quotes it while
+verifying it. **None of the four is this subsection**, and this subsection is the one the next
+cycle opens — the preamble above calls it *"the subsection the next cycle's §7 reads, and it is
+the subsection m5 itself inherited its own carried candidates through"* (`:1067–1068`). The
+other four are read by someone auditing this round, not by whoever opens the next: a ticket-set
+row records a state, a summary narrative reports what a gate run found, and a notes file is a
+round's own record. **That this channel carries obligations and not only §7 candidates is this
+document's own demonstration** — §Carried in (`:931–947`) is the inbound half of the same
+channel, and what it carried into m5 includes a directive (*"This round does not defer promotion
+to its close"*) and a standing item (BL-075 arm 2), neither of them a candidate for anything.
 
 **Sequence from here:** BL-132 → provider four, which still carries §Not established item 1's
 two non-identical gate statements and needs them reconciled wherever it is scoped.

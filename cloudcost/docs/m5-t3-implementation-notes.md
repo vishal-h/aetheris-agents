@@ -490,6 +490,39 @@ runs before the next cycle's close, that close runs it.** Recorded here. **No ho
 invented for it in the round document** — this document has no cross-cycle obligations section
 and the ticket's instruction was to name one only if it exists.
 
+> **`[Corrected 2026-08-11 at the obligation-landing edit. Superseded wording left standing above
+> per decision 7. The trigger's wording and the deferral's reasoning are correct and are not
+> touched — only the claim about the round document is withdrawn.]`**
+>
+> **Superseded:** *"this document has no cross-cycle obligations section"*, and with it the
+> ground that clause supplies for *"No home was invented for it in the round document"*.
+>
+> **What the round document actually carries, and at which anchors.**
+> `cloudcost/m5-n1-compose.md` at `0587bf3` carries **`## Carried in` (`:931`)**, whose own
+> preamble names it as inherited *"from `docs/milestones/hc-consolidation.md` §Milestone summary
+> → §Open for the next cycle"* — the **inbound** half of a cross-cycle channel — and
+> **`### Open for the next cycle` (`:1035`)**, its **outbound** half, which the same document
+> calls *"the subsection the next cycle's §7 reads"* (`:1067–1068`). The obligation's own text
+> was already in that document at **`:1006–1008`**, and its t3 ticket-set row at **`:47`**. All
+> five anchors precede this round's own append and are unmoved by it.
+>
+> **The claim was false in its own commit, not superseded by later work.**
+> `git log -S"no cross-cycle obligations section"` puts this sentence at **`d0fb25a`**, and
+> `git show d0fb25a:cloudcost/m5-n1-compose.md` returns `918:## Carried in`,
+> `1022:### Open for the next cycle`, and the obligation itself at `993:`. t3 wrote the section,
+> wrote the obligation into the summary, and wrote the sentence denying the section existed — in
+> one commit.
+>
+> **The referent, named rather than smoothed.** *"this document"* reads grammatically as *this
+> notes file*, which indeed has no such section. Only the round-document reading makes the clause
+> do the work the sentence before it asks of it — it is offered as the ground for *"No home was
+> invented for it in the round document"* — and on that reading it is false. On the other reading
+> it is true and supports nothing.
+>
+> **The obligation has since been landed there.** This round appended it to
+> `### Open for the next cycle` as a standing obligation with its own dated stamp and no §7
+> disposition. Record: `cloudcost/docs/m5-obligation-landing-implementation-notes.md`.
+
 **No gate came back red**, so the contingency the reviewer specified — record, file a row, name
 it in §Milestone summary, do not fix — did not arise.
 

@@ -1091,6 +1091,27 @@ one line of its own record that lists them (`:167–179`). The remedy held for t
 applied it and was already spent for the next one. Carried rather than promoted: one instance,
 found by the sweep it broke.
 
+> **`[Corrected 2026-08-11 at the disposition-ground edit, on the reviewer's direction. The
+> sentence above stands unrewritten per decision 7; this block supersedes its ground and leaves
+> its disposition standing.]`** **Superseded:** *"Carried rather than promoted: one instance,
+> found by the sweep it broke."* **The disposition is unchanged and unweakened — carried, not
+> promoted.** What is withdrawn is the count offered as its ground. The entry now narrates **two**
+> instances of one shape, and a reader who counts them will find two: the sweep that reused a
+> token a prior edit had already spent and got that edit's own control table back as content, and
+> the round that minted three fresh controls and spent them in the very act of publishing them.
+>
+> **The ground is that neither instance is a ticket.** §7 step 1 scans for findings that
+> *"recurred on ≥2 tickets"* — `../aetheris/docs/methodology/milestone-methodology.md:218–219`,
+> read at harness `6241972`. Both instances here are **reviewer-directed edits inside a single
+> cycle**; neither is a ticket in m5's §Ticket set, and no third cycle is involved. So the bar is
+> not reached however the instances are counted, and it would not be reached by a third instance
+> of the same kind. **Two on no tickets is not two tickets.**
+>
+> Corrected rather than left standing because the count *was* the whole of the stated ground, and
+> the clause appended above had already made it false when it landed. An entry whose closing line
+> contradicts its own body teaches a reader to distrust the body — and this entry's body is the
+> part a later sweep has to act on.
+
 `[Clause appended 2026-08-11 at the obligation-landing edit, on the reviewer's direction. A
 precision on a finding is not a finding and does not engage §7's bar, so the clause lands inside
 the entry rather than beside it. The disposition line above is the reviewer's and is left

@@ -1061,5 +1061,27 @@ finding rule, and the second is that rule's failure mode rather than a new rule.
 > shape a fourth time — a correction landing in one artifact while the same claim survives in
 > another, which is what §Promotion candidates' first entry describes one level over.
 
+**Two findings carried forward for the next cycle's §7**, appended 2026-08-11 at the
+body-addition edit. Both are below §7's bar and **neither gets an exception: this round has
+excepted the bar twice already, and a third would make it a formality.** They are recorded
+here because this is the subsection the next cycle's §7 reads, and it is the subsection m5
+itself inherited its own carried candidates through.
+
+**§7's distillation can lose what the candidate got right.** The correction-rule entry was
+distilled from a §Promotion candidates entry that carried the disambiguation the promoted
+headline dropped — the candidate said *"The rule is not never correct in place"*, and the
+headline compressed from it kept the ambiguous phrase and lost the clause that resolved it.
+§7's verification step confirms an entry can be **read out of** its destination file; it
+does not compare the entry against the candidate it came from, so a distillation that loses
+a clause passes verification. Carried rather than promoted: one instance, and the round has
+excepted §7's bar twice already.
+
+**A negative-control token stops being a negative control once a record quotes it.** A
+sweep at the record-correction edit reused the token a prior edit had used for the same job
+and it returned three hits — the prior edit's own committed record, quoting its control
+table. Controls are minted fresh per sweep, or a sweep over records of prior sweeps finds
+its own instruments and reads them as content. Carried rather than promoted: one instance,
+found by the sweep it broke.
+
 **Sequence from here:** BL-132 → provider four, which still carries §Not established item 1's
 two non-identical gate statements and needs them reconciled wherever it is scoped.

@@ -31,12 +31,12 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `eae14d4` | 2026-08-07 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `dcf1d42` | 2026-08-09 |
+| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `8f36e45` | 2026-08-11 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `d025971` | 2026-08-10 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `4d98ec2` | 2026-08-05 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `7dbdb7d` | 2026-08-09 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `2ef0517` | 2026-08-09 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `124707f` | 2026-08-12 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
@@ -46,8 +46,8 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `aaf0f9a` | 2026-08-05 |
-| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `265d336` | 2026-08-03 |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `6bc49fc` | 2026-08-11 |
+| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `b400b12` | 2026-08-11 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
@@ -401,3 +401,49 @@ never a diff of the five movers — check 8 cannot see a partial upload, and tha
 the procedure covers.
 
 Previous export: 2026-08-05 (m3-cloudcost close — four rows advanced).
+
+---
+
+**Export boundary — 2026-08-12, the gc round's close (stale gate claims).** **Six rows advanced**,
+each pin derived by field with `git log -1 --format=%h -- <path>` run in that row's **own** repo,
+never taken from the instruction that named them — and the derivation independently produced the
+same six:
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `methodology--milestone-methodology.md` | aetheris | `aaf0f9a` | `6bc49fc` | 2026-08-11 |
+| `methodology--triad-loop.md` | aetheris | `265d336` | `b400b12` | 2026-08-11 |
+| `aetheris--CLAUDE.md` | aetheris | `2ef0517` | `fdb1d64` | 2026-08-12 |
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `dcf1d42` | `d025971` | 2026-08-10 |
+| `cloudcost--milestone.md` | aetheris-agents | `eae14d4` | `8f36e45` | 2026-08-11 |
+| `backlog-2026-06.md` | aetheris-agents | `7dbdb7d` | `124707f` | 2026-08-12 |
+
+**Row count 25, derived by parsing the table rather than assumed** — unchanged from the hc
+boundary's 25; no row was added or removed, and the nineteen not listed above were each verified
+current by the same command.
+
+**Uploaded 2026-08-12 by claude-ui.** The mirror-pair check ran **before** the upload, per the
+BL-002 convention: `diff -q` over `aetheris/docs/methodology/triad-loop.md` and its
+`aetheris-agents/docs/` mirror returned byte-identical, at sha256
+`1b9cbf57c6864cdaecc3a07c431d51d34ee69f1ebc6afc1a664d8e167ea46f8a` on both. `drift_check` cannot
+see that class; the `diff -q` is the only thing that catches it.
+
+> **DEVIATION, recorded and not absorbed. The upload was a diff of the six stale rows, not the
+> remove-all-then-upload-all this manifest requires.** The header paragraph above the table states
+> the procedure and states why: **check 8 detects the repo moving ahead of an export, and never a
+> file uploaded without a regen**, so a partial upload is invisible to the tooling by construction
+> and the procedure is the only thing covering it.
+>
+> **What is different here, stated as mitigation and not as a defence.** The six were identified by
+> **check 8 itself** — the `project_knowledge` WARNs standing at the gc close — rather than by eye,
+> so the *selection* was mechanical rather than a judgement about which files had changed. That
+> addresses the failure mode where a mover is missed; it does **not** address the one the procedure
+> is actually written for, which is a file present in the store that no longer belongs there, or one
+> whose stored content diverged without its commit moving. Against that, a full re-upload churns
+> every chat in the project.
+>
+> **The arbiter has not ruled on this deviation. It is recorded as OPEN.** The next boundary either
+> performs the full remove-all-upload-all or carries a ruling that the diff form is permitted, with
+> its bound.
+
+Previous export: 2026-08-09 (the hc round's close — four rows advanced).

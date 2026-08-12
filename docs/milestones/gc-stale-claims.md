@@ -13,9 +13,11 @@
 > ratified as minted; the subject was re-ruled from `census` at the t1 review** — see §Naming
 > derivation.
 
-**Status:** **OPEN — all three tickets run; the close is not authored.** t1 run and reviewed
-2026-08-11; t2 run 2026-08-11, reviewed and amended 2026-08-11; t3 run 2026-08-12. All five records
-committed (three implementation-notes, two review files). Pushes held throughout.
+**Status:** **CLOSED 2026-08-12** — see §Close criteria, §Dispositions and §Milestone summary. All
+seven close criteria met, one with a stated qualification. t1 run and reviewed 2026-08-11; t2 run
+2026-08-11, reviewed and amended 2026-08-11; t3 run 2026-08-12; t4 (the close) run 2026-08-12. Six
+records committed (four implementation-notes, two review files). **Pushes held for the arbiter** —
+the round is closed in the tree and unpushed in both repos.
 **Opened:** 2026-08-11. **Document created:** 2026-08-11 (at t1, the round's first session).
 **Renamed** 2026-08-11 at the t1 review, from `gc-census.md`.
 **Repos:** `aetheris-agents` and `aetheris` (harness).
@@ -313,7 +315,7 @@ is now answerable; it is still not answered here, and t4 disposes it.
 | **t1** | The gate-claim census — enumerate the class across both repos | **RUN 2026-08-11; REVIEWED 2026-08-11.** Census complete: 640 id-form hits and 162 description-form hits over a 143-row population, 48 closed; five live-read stale gate claims adjudicated in id form plus one in description form. Three method defects found by the ticket's own controls and corrected in the open. Record: `docs/milestones/gc-t1-implementation-notes.md`; review file `docs/reviews/gc-t1-review.md`. **Reviewed at the t1 review, which authored §Decisions, §Close criteria, t3's body and §Promotion candidates, and renamed this document.** |
 | **t2** | The two pointer defects — one citation, one missing reverse pointer | **RUN 2026-08-11.** Both edits landed, cross-repo, harness-first per decision 6; mirror pair re-verified byte-identical after the sync. Pushes held. Record: `docs/milestones/gc-t2-implementation-notes.md`; review file `docs/reviews/gc-t2-review.md`. |
 | **t3** | The stale-gate correction sweep, and the rows this round defers | **RUN 2026-08-12.** Both arms landed. **Arm 1** — all six sentences corrected, per-destination shape established first and recorded: `cloudcost/runbook.md` in place under decision 8; `../aetheris/ROADMAP.md` in place under decision 8, **both halves of the E4 entry**, after establishing that hc's decisions do bind harness-side files (hc's own `Repos:` line names both, its subject was harness contracts, and its tickets committed nine times to the harness) — **so the harness half was not held**; `cloudcost/m5-n1-compose.md` by dated superseding block under decision 7, three times, with **no prefix flipped** per §Close criteria clause 3. **Arm 2** — five rows filed, **BL-145–BL-149**, each stating its question and none carrying a closure marker. Record: `docs/milestones/gc-t3-implementation-notes.md`. Pushes held. |
-| **t4** | The close — the deferred gate, §7's ritual, every disposition, one promotion | **AUTHORED 2026-08-12 at the t3 review, NOT OPENED.** Reviewer-authored and arbiter-ratified before its session opens, per R12. Five steps; §Close criteria clauses 1–7 are its done-check. This round has no t5. |
+| **t4** | The close — the deferred gate, §7's ritual, every disposition, one promotion | **RUN 2026-08-12. The round is CLOSED.** All five steps done. **1** `mix dialyzer` → 0 errors, exit 0, discharging m5's deferred obligation. **2** §7's ritual performed; its prior-claims census over m5 returned **7 of 7 present**, after a first pass that reported 2 absent on drifted headlines — which is §Carried in item 4 firing on the close's own instrument. **3** Nine dispositions for nine entries: §Carried in item 1 discharged, items 2–4 **promoted** under R24 (second consecutive close), and all five §Promotion candidates **carried**, first carry, each below §7's ≥2-ticket bar. **4** **Four** entries promoted into harness `CLAUDE.md`, landed harness-first and read back from the file — one the arbiter's, three from step 3; the Touches excess is named. **5** Rows named by id: BL-145–BL-149 filed by t3, BL-150 created at the t3 review. Record: `docs/milestones/gc-t4-implementation-notes.md`. Pushes held. |
 
 ---
 
@@ -826,3 +828,117 @@ Authored by the reviewer at the t1 review.
 > takes is left to t3 rather than presumed here. The clause's other requirement — per-destination
 > establishment — is unchanged in substance and re-worded from *per document* to *per destination*,
 > since one document carries three of the six claims.]`
+
+## Dispositions — every candidate and every carried-in item
+
+`Written at t4, 2026-08-12, per §Close criteria clause 7 and step 3 of t4's body. Nine entries,
+nine dispositions. The count of dispositions equals the count of entries, and each carries its
+ground.`
+
+### §Carried in — four items, of which three are disposed and one is discharged
+
+| # | item | disposition | ground |
+|---|---|---|---|
+| 1 | the deferred `mix dialyzer` obligation | **DISCHARGED, not disposed** | It is a gate, not a candidate. Run at t4 step 1: `mix dialyzer` → *Total errors: 0*, `done (passed successfully)`, exit 0. m5's deferral is met, and met clean |
+| 2 | an implementation-notes file is read by the next round in its arc or by nobody | **PROMOTED** → harness `CLAUDE.md` | Second consecutive close under **R24**, so promote or drop. Promoted: the ground is a real measurement (163 files, 32,434 lines, 73% never read) and gc applied it before it was promoted — t1's record is machine-readable by declared anchors and points at the commit for its derivation. Its own counter-argument is carried into the entry rather than dropped |
+| 3 | a negative control is spent once a record quotes it | **PROMOTED** → harness `CLAUDE.md` | Second close under R24. Promoted on merits, not on the demonstrations — but the demonstrations are two and both are gc's own instruments: t1's three controls went 0 → 1 each between t1 and Phase D, and t1's positive controls moved 1→2 and 2→3, which is what forced t3's explicit corpus boundary |
+| 4 | §7's distillation can lose what the candidate got right | **PROMOTED** → harness `CLAUDE.md` | Second close under R24. Promoted on the strongest evidence available — **it fired at this close, on this close's own instrument**: §7's prior-claims census over m5, run as an exact-string search on the candidates' opening words, reported 2 of 7 ABSENT and both were present under a substance search |
+
+### §Promotion candidates — five entries, all first carry
+
+**None is promoted, and none is dropped.** Under **R24** a candidate is dropped at its *second*
+consecutive close without promotion; this is the first close for all five, so each is carried once
+and expires at the next round's close if not promoted there. Each is also below §7's step-1 bar,
+which asks for recurrence across ≥2 **tickets** — assessed individually below rather than as a group.
+
+| # | entry | bar | disposition |
+|---|---|---|---|
+| 1 | a round whose first ticket runs in the session that creates the round document has no reviewable ticket anatomy | one instance (gc t1), ratified as a one-off at **D3** | **CARRIED**, first carry |
+| 2 | two documents can use one word in incompatible senses and neither is wrong | one instance; ruled at **D2** and now owned by **BL-149** | **CARRIED**, first carry. A row is not a promotion, and the row asks a different question — where the vocabulary lands — than the entry states |
+| 3 | a five-instance positive control caught a defect suppressing a fifth of the class | one instance (gc t1); the round has no second census to test it against | **CARRIED**, first carry |
+| 4 | a reverse pointer that restates the rule it points at is a second copy of that rule | one instance (gc t2) | **CARRIED**, first carry |
+| 5 | a discrimination required of one ticket is not required of its sibling unless the reviewer writes it twice | two instances — t2's missing live/archival test, and Phase D's stop gate bounding a count without naming its population — but **neither is a ticket recurrence**, so §7's bar is not reached however they are counted | **CARRIED**, first carry |
+
+**Why entry 5 is not promoted despite narrating two instances.** §7 step 1 scans for findings that
+recurred on **≥2 tickets**. Entry 5's two instances are a ticket's authoring and a phase prompt's
+authoring, inside one round. That is the same reasoning m5 recorded for its own two-on-no-tickets
+entry, and it is applied here rather than re-derived.
+
+---
+
+## Close criteria — the per-clause assessment
+
+`Assessed at t4, 2026-08-12. Every clause individually, each pointed at the artifact that satisfies
+it. A clause satisfied by nothing is stated unmet, not omitted.`
+
+| # | clause | verdict | satisfied by |
+|---|---|---|---|
+| 1 | t1's census ratified; method record re-runnable as printed | **MET** | `docs/reviews/gc-t1-review.md` ratifies. Re-runnability was **established, not assumed**: at Phase D every one of the 11 patterns and 14 tokens ran unaltered and every count reproduced — 640 id-form, 162 description-form, all 25 per-class and per-token figures identical. Record: `docs/milestones/gc-t1-implementation-notes.md` §K |
+| 2 | t2 landed harness-first; mirror byte-identical at the end | **MET** | Harness `b400b12` before agents `fd1fd7d`, per decision 6. Final state after the Phase C trim: `diff -q` exit 0, sha256 `1b9cbf57…`, md5 `e8ca6559…`, **199 lines / 9532 bytes on both**. Record: `docs/milestones/gc-t2-implementation-notes.md` §Verification |
+| 3 | t3 corrected every live-read claim in the shape its destination requires, per destination; m5 item 1 gets a dated record and its `[OPEN]` prefix is not flipped | **MET** | Six sentences, three destinations, three shapes established before any edit — decision 8 in place for `cloudcost/runbook.md` and `../aetheris/ROADMAP.md`, decision 7 by dated block for `cloudcost/m5-n1-compose.md` ×3. m5 §Not established item 1's prefix and text are byte-unchanged. Record: `docs/milestones/gc-t3-implementation-notes.md` |
+| 4 | every deferred finding carries a backlog row, named here by id | **MET** | **BL-145, BL-146, BL-147, BL-148, BL-149**, filed by t3 2026-08-12, each stating its question and none carrying a closure marker — verified programmatically after filing. Plus **BL-150**, the standing row created at the t3 review per **R23** |
+| 5 | `mix dialyzer` run at this close per **D1**; command, exit status and output recorded, elisions named | **MET** | `mix dialyzer` in `../aetheris/`, run at t4 step 1: *"Total errors: 0, Skipped: 0, Unnecessary Skips: 0"*, `done (passed successfully)`, **exit 0**. The PLT file list is elided and named as elided; nothing else is |
+| 6 | the offline suite green at m5's pinned figure; no executable line changed anywhere in this round | **MET** | **386 passed, exit 0** — seven consecutive runs across t1, t2, Phase C, Phase D, t3 and t4, matching the figure m5 pinned. No executable line changed: this round touched documentation, one roadmap, one backlog and two `CLAUDE.md` learning sections only |
+| 7 | §7's ritual performed, with a disposition on every §Promotion candidates entry, and each promoted entry compared against the candidate it came from | **MET, with one qualification stated** | §Dispositions above: nine entries, nine dispositions. §7's prior-claims census over m5: **7 of 7 present, nothing absent, no census promotion owed**, with a fresh negative control at 0. The candidate-comparison ran for the three promoted carried-in items. **The qualification:** the arbiter's own promoted entry came from t1's and t3's records rather than from a §Promotion candidates entry, so it has no candidate to compare against — recorded rather than glossed |
+
+---
+
+## Milestone summary
+
+`Written at t4, 2026-08-12, per §7 step 5 and §Close criteria clause 7.`
+
+### What shipped
+
+**The round's subject was a class, and the class was enumerated before anything was corrected.** A
+**stale gate claim** is a sentence instructing a reader to complete some named prior work before
+some future work, where that prior work is closed at HEAD. BL-074 had closed and live documents
+still sent readers to it; finding those by reading four documents someone pointed at is observation,
+which is the failure mode BL-074's own promotion candidate names.
+
+- **t1** censused the class: 143 backlog rows, **48 closed** across two disagreeing status surfaces;
+  **640** id-form and **162** description-form gate-voice hits over both repos; 94 dropped as
+  retrospective; **five** live-read stale claims in id form and **one** in description form. Three
+  method defects were found by the ticket's own controls and corrected in the open — the largest
+  suppressed 21% of the class and was caught only by the fifth member of a five-member subset check.
+- **t2** landed the two pointer defects: a citation naming §9 for text that is §8's, and a missing
+  reverse pointer from `triad-loop.md` back to the methodology entry that declares itself its
+  continuation. Cross-repo, harness-first, mirror verified byte-identical.
+- **t3** corrected all six sentences, each in the shape its destination requires — established per
+  destination, not assumed — and filed five rows for what the round deferred.
+- **t4** discharged m5's deferred `mix dialyzer` gate (clean), performed §7's ritual, disposed all
+  nine candidates and carried-in items, and promoted four entries into harness `CLAUDE.md`.
+
+### What the close found
+
+- **The deferred gate passes.** `mix dialyzer`: 0 errors. m5 deferred it on a trigger that could
+  fire; it fired here and cost one command.
+- **§7's own instrument produced a false negative, and the finding that predicted it was in the
+  round's inbox.** The prior-claims census, run as an exact-string search, reported 2 of 7
+  promotions absent; both were present with drifted headlines. That is §Carried in item 4's claim,
+  demonstrated on the close's own instrument, and it is why item 4 was promoted.
+- **Four rulings arrived from the arbiter** and none of them lives in this document — see **D7**.
+  One of them, **R22**, resolved something this round had been relying on without authority: hc's
+  §Ratified decisions is a live registry a later round's reviewer may amend.
+
+### What stays open, and why that is correct
+
+**BL-145 – BL-150**, all six, by construction — five questions this round surfaced and did not
+settle, and one standing row that does not close on any single item. **D6's write-back question** —
+whether decision 10's interpretation belongs in hc's own file — is now *answerable* under R22 and is
+deliberately not answered: R22 landed hours before this close, and writing an interpretation back
+into another round's registry on the same day it became permissible is the kind of speed this round
+exists to slow down.
+
+### Open for the next cycle
+
+**Five §Promotion candidates, all first carry.** Under **R24** each is promoted or dropped at the
+next close and cannot be carried a third time. They are the subsection the next round opens.
+
+**One standing obligation, and it is not a candidate.** BL-150 is append-only; a documentation-system
+finding in the next round appends there rather than opening a row.
+
+**Nothing sequences after this round.** This round has no t5 and opens no successor. The one thing
+it learned that belongs outside it is in harness `CLAUDE.md`, and the sequencing rule it promoted
+says where the next thing to do should be written: in one artifact, with the rest pointing at it.
+
+---

@@ -647,6 +647,20 @@ with no rule saying when they must be answered.`
 
 ---
 
+### R25 — a ruling is one dated line in the registry that owns it; it earns a section only when it changes code.
+
+A ruling that resolves an ambiguity gets no document, no section and no rationale block. It is one
+dated entry in the registry that owns what it rules on, and its ground is one clause. Load-bearing
+rather than stylistic: R23, R24 and R25 bind the three generators that compounded into a loop with
+no terminating condition — every finding owed a row, every round owed records, every ruling owed a
+section to live in. Relaxing any one restores the loop.
+
+`Source: the gc round — 2026-08-11 to 2026-08-12, ten commits (seven agents, three harness),
+derived from committed history. Ruled by the arbiter 2026-08-12 at the gc post-close review; the
+paragraph drafted for milestone-methodology.md was killed there as a second copy of R23+R24+R25.`
+
+---
+
 ### The m4 decisions, by reference
 
 `cloudcost/m4-consolidation.md` §Ratified decisions holds sixteen. They are **not**

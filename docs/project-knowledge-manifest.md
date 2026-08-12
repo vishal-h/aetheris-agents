@@ -46,7 +46,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `6bc49fc` | 2026-08-11 |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `66a9ca5` | 2026-08-12 |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `b400b12` | 2026-08-11 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 |
 
@@ -417,6 +417,12 @@ same six:
 | `aetheris-agents--CLAUDE.md` | aetheris-agents | `dcf1d42` | `d025971` | 2026-08-10 |
 | `cloudcost--milestone.md` | aetheris-agents | `eae14d4` | `8f36e45` | 2026-08-11 |
 | `backlog-2026-06.md` | aetheris-agents | `7dbdb7d` | `124707f` | 2026-08-12 |
+
+`[Re-pinned again 2026-08-12, after the export note above was written: `methodology--milestone-methodology.md`
+`6bc49fc`→`66a9ca5`, the §5 pointer at the ratified-decisions registry. **R25 itself moved no tracked
+row** — it lands in `docs/milestones/hc-consolidation.md`, which is `docs/milestones/` and out of the
+manifest by kind, so a ruling produced no re-pin and the absence is expected rather than an omission.
+Only the harness pointer that cites it is tracked.]`
 
 **Row count 25, derived by parsing the table rather than assumed** — unchanged from the hc
 boundary's 25; no row was added or removed, and the nineteen not listed above were each verified

@@ -8784,6 +8784,13 @@ list is empty.
 
 **Costs:** n/a to hold. The decision is S; the appended items carry their own costs.
 
+**Appended.**
+
+- `2026-08-12` — The three §Learning entries promoted from m5's carried candidates at the gc close
+  (round records; negative controls; §7's distillation) landed in harness `CLAUDE.md` because t4's
+  `Touches` named that file, while gc t1 established the packet-and-record family sits agents-side.
+  Recorded so it is findable; not triaged here.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

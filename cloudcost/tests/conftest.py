@@ -722,3 +722,66 @@ def full_linode_stub(linode_stub):
     )
     return linode_stub
     return aws_stub
+
+
+# =========================================================================== GitHub (m6 t2)
+
+
+class GitHubStub(DOStub):
+    """A local stand-in for the GitHub REST API.
+
+    Deliberately the DO stub with no version prefix: GitHub is plain JSON over HTTP with a
+    bearer token, so the machinery that serves recorded fixtures over real HTTP and records
+    what the adapter actually sent is identical, and `LinodeStub` already established that
+    subclassing is the way to say so. GitHub versions by the `X-GitHub-Api-Version` header
+    rather than by a path segment, so `api_base` is the bare origin — which is the only thing
+    that differs from `LinodeStub` beyond the value.
+
+    Pagination is `page`/`per_page` and the adapter stops on a short page, so the existing
+    `sequence()` covers it exactly as it does Linode's page-number walk.
+    """
+
+    @property
+    def api_base(self):
+        return self.base_url
+
+
+#: The organisation the recorded fixtures were pseudonymised onto. Every `github_*.json`
+#: fixture agrees on it, which is what makes the routes below match the adapter's own URLs.
+GITHUB_ORG = "example-org"
+
+#: The settled month the fixtures pin. Never the in-flight one — an in-flight month's figures
+#: change between runs, so the recorder refuses to capture it.
+GITHUB_PERIOD = "2026-07"
+
+#: A real month this organisation has no usage in, recorded rather than synthesised.
+GITHUB_EMPTY_PERIOD = "2025-01"
+
+#: Every endpoint the sweep touches, wired to its recorded fixture. The two billing endpoints
+#: differ only by the trailing `/summary`, and the stub routes on path alone — which is what
+#: lets the reconcile arm be exercised against a genuinely different body rather than against
+#: the same one served twice.
+GITHUB_FULL_ROUTES = {
+    "/user/orgs": "github_user_orgs",
+    f"/organizations/{GITHUB_ORG}/settings/billing/usage/summary": (
+        "github_billing_usage_summary"
+    ),
+    f"/organizations/{GITHUB_ORG}/settings/billing/usage": "github_billing_usage_detail",
+    f"/orgs/{GITHUB_ORG}/copilot/billing/seats": "github_copilot_seats",
+}
+
+
+@pytest.fixture
+def github_stub():
+    stub = GitHubStub().start()
+    try:
+        yield stub
+    finally:
+        stub.stop()
+
+
+@pytest.fixture
+def full_github_stub(github_stub):
+    """A stub wired for a complete successful sweep of the settled month."""
+    github_stub.route_fixtures(GITHUB_FULL_ROUTES)
+    return github_stub

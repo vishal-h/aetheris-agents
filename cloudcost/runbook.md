@@ -151,6 +151,83 @@ Then the selected provider's read-only credential — and only that one:
   **73×** margin. Per [Adding a provider](#adding-a-provider) the measurement is *recorded*, and
   the declared value changes only if the margin is inadequate. It is not.
 
+### GitHub
+
+- **`CLOUDCOST_GITHUB_TOKEN`** — a read-only fine-grained personal access token, scoped to the
+  organisation being billed. Two **Organization permissions**, and nothing else:
+
+  | Read-only | Why |
+  |---|---|
+  | Administration | the billing surface — `/organizations/{org}/settings/billing/usage` and its `/summary` sibling. There is no separate Billing permission |
+  | Copilot Business | `/orgs/{org}/copilot/billing/seats`, the whole inventory |
+
+  **Both were read off the API rather than inferred**: GitHub states the permission each
+  endpoint accepts in an `x-accepted-github-permissions` response header —
+  `organization_administration=read` on the billing endpoints, and
+  `organization_copilot_seat_management=read; organization_administration=read` on the seats
+  endpoint. Grant Copilot Business rather than leaning on Administration for both, so the
+  inventory keeps working if the billing grant is ever narrowed.
+
+  `fetch_github.py` authenticates with this variable and **only** this one. It builds the
+  `Authorization` header itself and there is no default-pickup arm to disable — unlike boto3's
+  credential chain, there is nothing to neutralise, only something never to consult.
+
+- **`CLOUDCOST_GITHUB_ORG`** *(optional)* — the organisation login. `--org` beats it, and if
+  neither is set the adapter reads `/user/orgs` and uses the token's **sole** membership. It
+  refuses to choose: no membership and more than one both raise, naming the flag. A token
+  belonging to two organisations would otherwise bill the wrong one silently.
+
+- **The credential file and the `set -a` load requirement.** The token lives in
+  `~/.secrets/github-cloudcost.env`. Load it **exported**:
+  ```
+  set -a; source ~/.secrets/github-cloudcost.env; set +a
+  ```
+  This is the same trap the AWS section records above, and it bites the same way.
+
+- **Shadowing — and this is the first provider where the shadowed names are normally PRESENT.**
+  `gh` is installed on developer workstations and CI runners alike and reads **`GH_TOKEN`** then
+  **`GITHUB_TOKEN`** for github.com, and **`GH_ENTERPRISE_TOKEN`** then
+  **`GITHUB_ENTERPRISE_TOKEN`** for a GitHub Enterprise Server host — its own precedence order,
+  from `gh help environment`. **`GITHUB_PERSONAL_ACCESS_TOKEN`** is read by none of them and is
+  warned about because it is a conventional spelling users export. The adapter reads none of the
+  five and warns when any is set. On a workstation with `gh` configured this warning is routine
+  rather than exceptional, and the shadowing token is typically a **broader-scoped write**
+  credential than the read-only one here — which is what makes the refusal load-bearing:
+  ```
+  warning: GITHUB_TOKEN is set in this environment and is IGNORED; cloudcost
+           authenticates with CLOUDCOST_GITHUB_TOKEN only.
+  ```
+  `GH_CONFIG_DIR` is deliberately **not** on that list: it redirects which *stored* credential
+  gh picks up, and this adapter reads no credential store.
+
+- **Endpoint redirection.** **`GH_HOST`** (gh's own — *"if this host was previously
+  authenticated with, the stored credentials will be used"*) and **`GITHUB_API_URL`** (read by
+  `@actions/github`, not by gh) redirect *where a credential is sent*. The adapter constructs
+  its own base URL and never reads them as configuration — it warns when they are set. Same
+  class as Linode's `LINODE_CLI_API_*`.
+
+- **The cost figure is checked against a second endpoint on every run.** The snapshot is built
+  from the billing usage *summary* endpoint and reconciled against the *detail* endpoint, which
+  must agree to within one hundredth (`m6-github.md` **D7**). A divergence **withholds the cost
+  snapshot** — the inventory is still written, the run is `partial` and exits 1. That is louder
+  than the Linode arm, which warns; the reason is that agreement between the two endpoints is
+  the whole ground on which the summary endpoint was chosen as the source.
+
+- **An empty month writes no cost file, and that is not a failure of the credential.** A month
+  the organisation predates returns HTTP 200 with the period correctly echoed and no usage rows.
+  The adapter refuses to write a `0.00` snapshot for it, because a bill of zero and no spend
+  recorded are different claims. The inventory is still written.
+
+- **GitHub is not wired into the pipeline yet (m6 t2b).** `CLOUDCOST_PROVIDER=github` selects
+  nothing, there is no `tools.json` entry and the sprint has no GitHub leg. Until t2b lands the
+  adapter is invoked directly:
+  ```
+  set -a; source ~/.secrets/github-cloudcost.env; set +a
+  cd ~/sandbox/elixirws/aetheris-agents
+  python3 cloudcost/scripts/fetch_github.py --period 2026-07 --output-dir cloudcost/output
+  ```
+  Recorded here so the absence reads as a stated boundary rather than as a defect.
+
 The credentials gate only the *live* steps; the offline test suite needs none of them.
 
 ## Run it

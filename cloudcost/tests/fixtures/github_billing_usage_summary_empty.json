@@ -1,0 +1,9 @@
+{
+  "_comment": "Recorded 2026-08-13 for 2025-01, a REAL month this organisation has no usage in. HTTP 200, the period correctly echoed, and usageItems empty: GitHub has the month and reports no spend in it. This is the fixture behind the rule that an empty month writes no cost snapshot at all - a bill of 0.00 and 'no spend recorded' are different claims, and only one of them is true here.",
+  "timePeriod": {
+    "year": 2025,
+    "month": 1
+  },
+  "organization": "example-org",
+  "usageItems": []
+}

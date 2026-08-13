@@ -1,0 +1,4 @@
+{
+  "_comment": "Recorded 2026-08-13 for the same empty month 2025-01. The detail endpoint answers HTTP 200 with an empty array and no timePeriod, so an empty month and an out-of-range one are indistinguishable here by status code alone - the asymmetry m6 D7 rests on. Recorded so the empty pair can be served together.",
+  "usageItems": []
+}

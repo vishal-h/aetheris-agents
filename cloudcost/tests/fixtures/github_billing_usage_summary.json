@@ -1,0 +1,70 @@
+{
+  "_comment": "Recorded 2026-08-13 from the live organisation for the SETTLED month 2026-07 and pseudonymised by tests/record_github_fixtures.py. The billing usage SUMMARY endpoint, which m6 D7 makes the cost snapshot's source: five SKU rows, and the only one of the two billing endpoints that echoes the period it served. Monetary figures, SKUs, units and quantities are REAL and load-bearing. Sum of netAmount is 133.99999817600002, which is what the reconcile test checks github_billing_usage_detail against; the copilot_for_business row (pricePerUnit 19.0, netQuantity 5.999999904) is what prices a seat at 19.00.",
+  "timePeriod": {
+    "year": 2026,
+    "month": 7
+  },
+  "organization": "example-org",
+  "usageItems": [
+    {
+      "product": "Actions",
+      "sku": "actions_linux",
+      "grossQuantity": 806.0,
+      "discountQuantity": 806.0,
+      "netQuantity": 0.0,
+      "grossAmount": 4.836,
+      "discountAmount": 4.836,
+      "netAmount": 0.0,
+      "pricePerUnit": 0.006,
+      "unitType": "minutes"
+    },
+    {
+      "product": "Actions",
+      "sku": "actions_storage",
+      "grossQuantity": 12.924950044,
+      "discountQuantity": 12.924950044,
+      "netQuantity": 0.0,
+      "grossAmount": 0.004341519,
+      "discountAmount": 0.004341519,
+      "netAmount": 0.0,
+      "pricePerUnit": 0.00033602,
+      "unitType": "gigabyte-hours"
+    },
+    {
+      "product": "Copilot",
+      "sku": "coding_agent_ai_unit",
+      "grossQuantity": 2711.61525,
+      "discountQuantity": 2664.695775,
+      "netQuantity": 46.919475,
+      "grossAmount": 27.1161525,
+      "discountAmount": 26.64695775,
+      "netAmount": 0.46919475,
+      "pricePerUnit": 0.01,
+      "unitType": "ai-units"
+    },
+    {
+      "product": "Copilot",
+      "sku": "copilot_ai_unit",
+      "grossQuantity": 17288.38475,
+      "discountQuantity": 15335.304225,
+      "netQuantity": 1953.080525,
+      "grossAmount": 172.8838475,
+      "discountAmount": 153.35304225,
+      "netAmount": 19.53080525,
+      "pricePerUnit": 0.01,
+      "unitType": "ai-units"
+    },
+    {
+      "product": "Copilot",
+      "sku": "copilot_for_business",
+      "grossQuantity": 5.999999904,
+      "discountQuantity": 0.0,
+      "netQuantity": 5.999999904,
+      "grossAmount": 113.999998176,
+      "discountAmount": 0.0,
+      "netAmount": 113.999998176,
+      "pricePerUnit": 19.0,
+      "unitType": "user-months"
+    }
+  ]
+}

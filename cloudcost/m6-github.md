@@ -68,9 +68,16 @@ R25 — a ruling earns a section only when it changes code.
   source.** `Ruled by the arbiter 2026-08-13. Ground: the two were verified
   equal to within floating-point summation noise across two closed months, at
   aggregate and per-SKU level, lossless in both directions. The summary
-  endpoint is natively monthly and is the only one of the two that echoes the
-  period it served — which matters because an out-of-range month is otherwise
-  indistinguishable from an empty one.`
+  endpoint is natively monthly, echoes the period it served, and rejects an
+  out-of-range one outright; the detail endpoint does none of the three and
+  answers 200 to an out-of-range month and to an empty one alike, so it is
+  there that the two are indistinguishable. That asymmetry is why the summary
+  endpoint is the source, not a property both share. Per-repo Actions
+  attribution was available and is declined: the detail endpoint carries a
+  repository the summary does not, Copilot spend is repo-attributable under
+  neither, and the field stays on the detail endpoint if it is ever wanted.`
+  `[Corrected 2026-08-13 at t2 r1: the indistinguishability sentence was wrong
+  as published at e4fabb7. The conclusion is unchanged.]`
 
 ## Ticket set
 

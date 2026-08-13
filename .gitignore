@@ -23,6 +23,9 @@ rig/node_modules/
 # Run logs (accumulate locally, not committed)
 payslip/output/runs.log
 
+# Adapter output landing at the repo root (--output-dir defaults to "output")
+/output/
+
 # Claude Code — local-only
 .claude/settings.local.json
 .claude/worktrees/

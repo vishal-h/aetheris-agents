@@ -3,6 +3,7 @@
 # m1-cloudcost t5 — the report pipeline orchestrator.
 # m2-cloudcost t3 — generalized over CLOUDCOST_PROVIDER.
 # m3-cloudcost t2 — Linode wired in as provider three.
+# m6-cloudcost t2b — GitHub wired in as provider four, the first consumption-class one.
 #
 # Linear, four stages, ONE provider per run (decision H): the provider is chosen at eval
 # time and the run fetches, detects, composes and renders for that provider alone. Two
@@ -14,8 +15,8 @@
 # Record-and-deliver: `run_command` is a :contained effect, so there is no verify
 # support here (D1). No spawn_agent/wait_for_all — a single provider needs no fan-out.
 # No write op, no scheduling. Credentials are env-only (D2): CLOUDCOST_DO_TOKEN,
-# CLOUDCOST_AWS_* and CLOUDCOST_LINODE_TOKEN are read by the adapter from the environment
-# and never appear in a prompt, an argument, or the trajectory.
+# CLOUDCOST_AWS_*, CLOUDCOST_LINODE_TOKEN and CLOUDCOST_GITHUB_TOKEN are read by the adapter
+# from the environment and never appear in a prompt, an argument, or the trajectory.
 #
 #   cd ~/sandbox/elixirws/aetheris
 #   # DigitalOcean (the default — unchanged from m1):
@@ -30,6 +31,11 @@
 #   # Linode (m3 t2) — the shadow names are Linode's own, not boto3's:
 #   CLOUDCOST_PROVIDER=linode \
 #   env -u LINODE_CLI_TOKEN -u LINODE_TOKEN \
+#       mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+#   # GitHub (m6 t2b) — CLOUDCOST_GITHUB_ORG is optional; unset, the adapter uses the
+#   # token's sole organisation membership and refuses to choose between two:
+#   CLOUDCOST_PROVIDER=github \
+#   env -u GH_TOKEN -u GITHUB_TOKEN -u GITHUB_PERSONAL_ACCESS_TOKEN \
 #       mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
 #
 # A Linode run's artifacts are named for the month the invoice COVERS, not the current
@@ -56,8 +62,9 @@ provider = System.get_env("CLOUDCOST_PROVIDER") || "digitalocean"
     "digitalocean" -> {"DigitalOcean", "DO", "digitalocean", "scripts/fetch_do.py"}
     "aws" -> {"AWS", "AWS", "aws", "scripts/fetch_aws.py"}
     "linode" -> {"Linode", "Linode", "linode", "scripts/fetch_linode.py"}
+    "github" -> {"GitHub", "GitHub", "github", "scripts/fetch_github.py"}
     other ->
-      raise ~s(CLOUDCOST_PROVIDER must be "digitalocean", "aws" or "linode", ) <>
+      raise ~s(CLOUDCOST_PROVIDER must be "digitalocean", "aws", "linode" or "github", ) <>
               "got: #{inspect(other)}"
   end
 
@@ -101,6 +108,18 @@ if provider == "linode" and System.get_env("CLOUDCOST_LINODE_TOKEN") in [nil, ""
   raise "CLOUDCOST_PROVIDER=linode requires CLOUDCOST_LINODE_TOKEN to be set. " <>
           "cloudcost authenticates with that read-only Linode PAT only and never reads " <>
           "LINODE_CLI_TOKEN or LINODE_TOKEN."
+end
+
+# And for GitHub (m6 t2b), on the same ground as Linode's: never the default, reachable only
+# by naming it. The shadow names it refuses are the reason the raise names the variable it
+# does want — `gh` is installed on most developer workstations and CI runners, so GH_TOKEN /
+# GITHUB_TOKEN are normally PRESENT here, and a run that fell back to one of them would
+# authenticate with a broader-scoped write credential than this pipeline is ever given.
+if provider == "github" and System.get_env("CLOUDCOST_GITHUB_TOKEN") in [nil, ""] do
+  raise "CLOUDCOST_PROVIDER=github requires CLOUDCOST_GITHUB_TOKEN to be set. " <>
+          "cloudcost authenticates with that read-only fine-grained PAT only and never " <>
+          "reads GH_TOKEN, GITHUB_TOKEN, GH_ENTERPRISE_TOKEN, GITHUB_ENTERPRISE_TOKEN " <>
+          "or GITHUB_PERSONAL_ACCESS_TOKEN."
 end
 
 # Per-provider output and history trees (decision H: one provider, one report, one run).

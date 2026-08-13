@@ -8806,3 +8806,158 @@ docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's o
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
 
 ---
+
+### BL-151 — standing: code findings, append-only (#TBD)
+**Kind:** standing · **Census items:** n/a · **Contract:** `docs/milestones/hc-consolidation.md` R26
+**Size:** n/a — does not close on any single item · **Priority:** medium
+**Section:** code / cloudcost and any use case (both repos)
+
+Created 2026-08-13 at m6 t2b, per **R26**. **This row collects; it does not settle.**
+
+**What it is.** The single home for **small code defects that break nothing today**. A private
+helper duplicating a shared one that the module already imports from; an unreachable statement
+after a return; two surfaces that must agree with nothing checking that they do. Each is a real
+defect with a real fix and no urgency, so each **appends here** rather than opening its own row.
+
+**Why a separate row from BL-150 and not a widening of it.** The two discharge differently. A
+documentation-system finding closes on a **decision about the system** — where such defects are
+collected, who rules on them, what retires one. A code finding closes by **being fixed**. One row
+cannot state both discharge conditions, so widening BL-150 would have given half its contents a
+`Done when:` that does not apply to them.
+
+**It is append-only and does not close on any single item.** Clearing the list is not the
+discharge. Fixing every entry here would leave the question this row asks unanswered.
+
+**Determine how these are swept and what retires one.** Whether an appended item is retired
+individually when fixed or only struck when the row as a whole is disposed; whether a sweep runs at
+a milestone close, at a cadence, or on demand; and who decides an item is too small to keep.
+
+**A finding with a natural home does not come here.** The row is for defects with nowhere else to
+go. A defect in a file the current ticket is already editing is fixed in that ticket — filing it
+here instead is the deferral R26 exists to discourage, not the collection it exists to enable.
+`CLOUDCOST_GITHUB_ORG`'s missing `KNOB_CONSTANTS` entry was found at t2b and fixed at t2b on
+exactly that ground; only the *unchecked-agreement* residue below is filed.
+
+**Done when:** the sweep-and-retirement question is answered in one named document with its scope —
+or declined, with the reason recorded and this row's fate stated either way. **Not** when the
+appended list is empty.
+
+**Costs:** n/a to hold. The decision is S; the appended items carry their own costs, all small.
+
+**Appended.**
+
+- `2026-08-13` — `cloudcost/scripts/fetch_aws.py:391` defines a private `money(value) -> float`
+  that duplicates `_normalized.money` (`:92–97`) — same `round(float(value), 2)`, same
+  `(TypeError, ValueError) → 0.0` — while the module **does** import from `_normalized`
+  (`:41–50`, eight `TYPE_*`/`STATE_*` names) without taking `money`. So C4's "every amount is
+  coerced through one function" guarantee has **two** implementations. Byte-equivalent in
+  behaviour today; **nothing enforces that**, and the two would diverge silently. Verified at
+  agents `0303597`. Recorded so it is findable; not triaged here.
+
+- `2026-08-13` — `cloudcost/tests/conftest.py:724` carries an unreachable `return aws_stub`,
+  after `full_linode_stub`'s own `return linode_stub` at `:723`. Dead on arrival and harmless;
+  the name it returns is a different fixture's, which is what makes it worth recording rather
+  than merely tidying. Verified at agents `0303597`. Recorded so it is findable; not triaged here.
+
+- `2026-08-13` — An adapter's operator **knob** must be declared in two unlinked places: a
+  `tools.json` `env` row (what an operator may configure, read by Rig) and `KNOB_CONSTANTS` in
+  `../aetheris/scripts/sprint.sh`'s adapter env bridge (what survives the default-deny prefix).
+  **Nothing checks that the two agree**, and m6 t2b found them disagreeing — `CLOUDCOST_GITHUB_ORG`
+  was declared on the adapter as `ORG_ENV` and absent from `KNOB_CONSTANTS`, so the prefix stripped
+  it. That instance was **fixed at t2b**; what is filed is the absence of a check, which lets the
+  next provider — or a later edit to either surface — diverge again. The absence was verified at
+  HEAD: `tests/test_tools_manifests.py` is the only reader of `cloudcost/tools.json` in either repo
+  and never mentions `sprint.sh` or `KNOB_CONSTANTS`; `sprint.sh` reads the adapter modules
+  directly and never opens `tools.json`; `drift_check.py`'s check 4 (`env_vars`) compares Rust
+  `env::var()` calls against `docs/rig/specs.md` §1 and `runbook.md`, touching neither surface. No
+  check is proposed here. Recorded so it is findable; not triaged here.
+
+**Deliberately not seeded: `fetch_linode.py`'s round-before-multiply.** The `PriceTable` rounds its
+unit rate at ingest (`:396`, `:402`) and multiplies at `:763`, which is the shape D4 rules on. It is
+**already dispositioned** as `cloudcost/m6-github.md` D4's recorded counter-example, and a second
+record of the same finding is the two-surfaces defect **BL-145** ruled on. The omission is a
+decision, not an oversight.
+
+`Source: R26, ruled by the arbiter 2026-08-13 at m6 t2b and recorded at
+docs/milestones/hc-consolidation.md. Row created in the same commit, per R26's own stamp. The
+ruling's ground is three code findings dropped across m6 t1 and t2 for want of a place to put
+them; two of those are seeded above, and the third entry is a finding of t2b's own rather than a
+recovered one — the dropped third is not reconstructed here, and this note says so instead of
+letting the seed count imply it was.`
+
+---
+
+### BL-152 — the repo-root `pytest` invocation cannot collect (#TBD)
+**Kind:** gate · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *every existing gate runs at ticket boundaries, even off-territory*
+**Size:** S · **Priority:** medium
+**Section:** test apparatus (agents)
+
+Filed 2026-08-13 at m6 t2b, **the day it was found**, by a ticket whose own done-check is the
+repo-root whole-suite command. Off-territory: t2b touches neither module below.
+
+**What is red.** `cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest -q` aborts during
+collection:
+
+```
+ERROR boxy-pipeline/tests/test_pipeline.py               ModuleNotFoundError: No module named 'main'
+ERROR provenance/mcp/corpus-search/tests/test_server.py  ModuleNotFoundError: No module named 'tests.test_server'
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+```
+
+Collection is *interrupted*, so **no test runs at all** — the command is not "mostly green with
+two errors", it is a command that executes nothing.
+
+**Not introduced by t2b.** Reproduced with t2b's changes stashed, at agents `0303597`.
+
+**Not broken product code.** Both modules import and their tests run when pytest is invoked
+against their own scope. This is a rootdir / `sys.path` collection defect — the repo has no
+`pytest.ini`, `setup.cfg` or `pyproject.toml`, so rootdir and `sys.path` are inferred per
+invocation, and each use case's `conftest.py` inserts its own `scripts/` only.
+
+**The two named modules are the visible edge of it, not the extent.** Scopes that collect
+cleanly alone fail when *combined*, which means the defect is not "two broken files":
+
+```
+python3 -m pytest cloudcost/tests/ -q --collect-only    → 440 tests collected
+python3 -m pytest tests/          -q --collect-only    → 136 tests collected
+python3 -m pytest cloudcost/tests/ tests/ -q --collect-only
+                                                        → 136 collected, 8 errors, Interrupted
+```
+
+So no single invocation covers even two scopes at once. Any fix must be verified by collecting
+the whole tree, not by making the two named modules import.
+
+**And collection is only the first obstacle.** With the two uncollectable modules `--ignore`d, the
+tree run reaches `boxy-pipeline` and blocks inside a live subprocess —
+`boxy-pipeline/scripts/plan_extractor.py` against two sample PDFs — still running at 8m42s with no
+output, and killed rather than waited out. So even a collection fix would leave the root command
+running live extraction work on every invocation. Whatever replaces it has to decide what the
+whole-suite gate *excludes*, not only what it can import; the `@pytest.mark.integration`
+convention already used elsewhere in the repo is the obvious lever and is not applied here.
+
+**Why it matters more than it looks.** Ticket done-checks are written as *the whole suite, not
+`<use_case>/tests/`* precisely when a change touches a root-level test — t2b's W3 is that case.
+A done-check whose literal command collects nothing cannot distinguish a green repo from a broken
+one, which is the **Silent-wrong-answer** class in the apparatus rather than the product. Sessions
+have been running scoped invocations and reporting whole-suite-shaped numbers (m6 t1's *"386
+passed"* is not reproducible from the root command), so the divergence has been invisible in both
+directions.
+
+**When it went red is unknown**, and nothing was watching in either direction — the same
+invisibility the standing gate rule exists to prevent.
+
+**Done when:** `python3 -m pytest -q` from the repo root collects every test module and its result
+is a real pass/fail over the whole suite — or the root-level invocation is declared not to be the
+gate, in one named document, with the gate that replaces it stated and the done-check wording in
+`CLAUDE.md` corrected to match. **Not** when the two modules are individually skipped.
+
+**Costs:** S. Likely one `pytest.ini`/`conftest.py` at the root fixing rootdir and `sys.path`;
+the risk is that pinning rootdir changes how every use case's existing `conftest.py` resolves, so
+it needs the whole suite run before and after rather than the two modules alone.
+
+`Source: m6 t2b, 2026-08-13. Found by running the ticket's own stage-1 done-check command
+verbatim, then reproduced with the ticket's changes stashed to establish it was inherited. Filed
+rather than left in the packet, per the standing rule that prose in a packet or notes files
+nothing.`
+
+---

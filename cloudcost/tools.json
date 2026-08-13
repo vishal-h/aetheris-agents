@@ -1,7 +1,7 @@
 {
   "manifest_version": "1",
   "use_case": "cloudcost",
-  "description": "Cloud cost and orphan-resource reporting — read-only AWS, DigitalOcean and Linode adapters, deterministic detection, and a self-contained HTML report",
+  "description": "Cloud cost and orphan-resource reporting — read-only AWS, DigitalOcean, Linode and GitHub adapters, deterministic detection, and a self-contained HTML report",
   "scripts": [
     {
       "name": "fetch_aws",
@@ -220,6 +220,87 @@
       ],
       "output": "json",
       "example": "python3 scripts/fetch_linode.py --output-dir output/linode"
+    },
+    {
+      "name": "fetch_github",
+      "file": "scripts/fetch_github.py",
+      "description": "GitHub read-only cost and inventory adapter that fetches the organisation's billing usage summary, reconciles it against the detail endpoint, enumerates Copilot seats as the consumption-class inventory, normalizes them, and emits JSON artifacts.",
+      "args": [
+        {
+          "name": "output_dir",
+          "flag": "--output-dir",
+          "type": "directory",
+          "required": false,
+          "default": "output",
+          "description": "Directory the normalized cost and inventory artifacts are written to; the pipeline convention is a per-provider tree (output/github)"
+        },
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "YYYY-MM (default: current UTC month). The billing usage summary endpoint is natively monthly and echoes the period it served, so the adapter reports the period rather than constructing it; a month the organisation predates returns no usage rows and writes no cost file, which is not a credential failure"
+        },
+        {
+          "name": "org",
+          "flag": "--org",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Organisation login. Beats CLOUDCOST_GITHUB_ORG; with neither set the adapter reads /user/orgs and uses the token's sole membership, refusing to choose when there are none or more than one"
+        },
+        {
+          "name": "api_base",
+          "flag": "--api-base",
+          "type": "string",
+          "required": false,
+          "default": "https://api.github.com",
+          "description": "GitHub API base URL. Constructed here and never taken from GH_HOST or GITHUB_API_URL, which redirect where a credential is sent"
+        },
+        {
+          "name": "timeout",
+          "flag": "--timeout",
+          "type": "integer",
+          "required": false,
+          "default": "30",
+          "description": "Per-request timeout in seconds"
+        },
+        {
+          "name": "max_retries",
+          "flag": "--max-retries",
+          "type": "integer",
+          "required": false,
+          "default": "4",
+          "description": "Retry attempts per API call"
+        },
+        {
+          "name": "retry_base_delay",
+          "flag": "--retry-base-delay",
+          "type": "float",
+          "required": false,
+          "default": "1.0",
+          "description": "Base delay in seconds for exponential retry backoff"
+        }
+      ],
+      "env": [
+        {
+          "key":         "CLOUDCOST_GITHUB_TOKEN",
+          "label":       "GitHub API token (read-only fine-grained PAT)",
+          "group":       "cloudcost",
+          "masked":      true,
+          "placeholder": ""
+        },
+        {
+          "key":         "CLOUDCOST_GITHUB_ORG",
+          "label":       "GitHub organisation login (optional; unset, the token's sole membership is used)",
+          "group":       "cloudcost",
+          "masked":      false,
+          "placeholder": "my-org"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/fetch_github.py --output-dir output/github"
     },
     {
       "name": "detect_orphans",

@@ -661,6 +661,33 @@ paragraph drafted for milestone-methodology.md was killed there as a second copy
 
 ---
 
+### R26 — small code defects that break nothing today append to a standing row, as documentation-system findings do under R23.
+
+A **separate** row from BL-150, not a widening of it, because the two discharge differently: a
+documentation-system finding closes on a decision about the system, a code finding closes by being
+fixed, and one row cannot state both discharge conditions.
+
+`Recorded 2026-08-13 at m6 t2b. Ruled by the arbiter, authorised by R22. Ground: R23 gave
+documentation-system findings a home and left code findings without one, and three were dropped
+across m6 t1 and t2 for want of a place to put them. The standing row is BL-151, filed in the same
+commit.`
+
+---
+
+### R27 — in a cross-repo pair, the later commit's reference to the earlier one is written **last**, after the earlier commit's SHA is final.
+
+**This extends the standing landing order; it does not replace it.** Harness-first for a
+cross-citing pair, and a one-way pointer landing after its target, both stand unchanged. R27 says
+only *when the pointer's SHA is written*, not which commit lands first — the pointer text is the
+last edit of the pair, and until the target stops moving the reference is provisional.
+
+`Recorded 2026-08-13 at m6 t2b. Ruled by the arbiter, authorised by R22. Ground: any amendment to
+the target silently falsifies the reference, and this pair broke twice in one ticket — once when
+the agents commit was first amended, and again at its review amendment — each time leaving a
+harness commit message citing an agents SHA reachable only from the reflog and on no branch.`
+
+---
+
 ### The m4 decisions, by reference
 
 `cloudcost/m4-consolidation.md` §Ratified decisions holds sixteen. They are **not**

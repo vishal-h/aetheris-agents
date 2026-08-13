@@ -1,7 +1,7 @@
 # cloudcost — runbook
 
-Per-provider cost-report + orphan-detection agent, currently **DigitalOcean**, **AWS** and
-**Linode**.
+Per-provider cost-report + orphan-detection agent, currently **DigitalOcean**, **AWS**,
+**Linode** and **GitHub**.
 **Read-only, report-only:** it fetches the live bill and resource inventory, detects
 wasteful/orphaned resources, and renders a local HTML report. It never writes to the cloud
 account, mails, or uploads anything.
@@ -218,15 +218,19 @@ Then the selected provider's read-only credential — and only that one:
   The adapter refuses to write a `0.00` snapshot for it, because a bill of zero and no spend
   recorded are different claims. The inventory is still written.
 
-- **GitHub is not wired into the pipeline yet (m6 t2b).** `CLOUDCOST_PROVIDER=github` selects
-  nothing, there is no `tools.json` entry and the sprint has no GitHub leg. Until t2b lands the
-  adapter is invoked directly:
+- **GitHub is wired into the pipeline (m6 t2b).** `CLOUDCOST_PROVIDER=github` selects the
+  adapter, `tools.json` declares it, and the sprint's cloudcost case runs a GitHub leg. Run it
+  the same way as any other provider — see §Run it. The adapter can still be invoked directly,
+  which is how a period other than the current month is fetched:
   ```
   set -a; source ~/.secrets/github-cloudcost.env; set +a
   cd ~/sandbox/elixirws/aetheris-agents
   python3 cloudcost/scripts/fetch_github.py --period 2026-07 --output-dir cloudcost/output
   ```
-  Recorded here so the absence reads as a stated boundary rather than as a defect.
+  **No orphan rule keys on `seat` yet (m6 t3).** The rule catalog's rules are all keyed on
+  infrastructure types, so a GitHub run evaluates its seats against rules none of which can
+  match and reports zero orphan candidates. That is the catalog reading the inventory
+  correctly, not failing to — the rule-legibility arm is what distinguishes the two.
 
 The credentials gate only the *live* steps; the offline test suite needs none of them.
 
@@ -264,6 +268,23 @@ Selecting Linode without `CLOUDCOST_LINODE_TOKEN` raises at agent-eval time, bef
 call — same posture as AWS, and for the same reason. There is no credentials-file arm to point
 at `/dev/null`: Linode's shadowing surface is the two variables above and nothing else.
 
+**GitHub** (m6 t2b) — same shape again, and the one provider whose shadow names are normally
+*present* rather than exceptional, because `gh` is installed:
+```
+cd ~/sandbox/elixirws/aetheris
+set -a; source ~/.secrets/github-cloudcost.env; set +a
+CLOUDCOST_PROVIDER=github \
+env -u GH_TOKEN -u GITHUB_TOKEN -u GITHUB_PERSONAL_ACCESS_TOKEN \
+    mix aetheris run ../aetheris-agents/cloudcost/agents/cloudcost_orchestrator.exs
+```
+Selecting GitHub without `CLOUDCOST_GITHUB_TOKEN` raises at agent-eval time, same posture as
+AWS and Linode. **`CLOUDCOST_GITHUB_ORG` is optional and worth setting anyway** if the token
+could ever reach a second organisation: unset, the adapter discovers the organisation from the
+token's sole membership, and a token that later gains a second membership makes the run raise
+rather than guess — but a token whose *single* membership is not the organisation you meant
+bills the wrong one silently. Naming it is the cheap way to make that a configuration error
+rather than a wrong report.
+
 **AWS with the exploratory optimization spike** (m2 t4) — the same invocation with one more
 variable:
 ```
@@ -298,8 +319,10 @@ Sprint cases (same prereqs; each clears its own `output/{provider}/` first so it
 green on a stale run):
 ```
 cd ~/sandbox/elixirws/aetheris
-./scripts/sprint.sh cloudcost                          # DigitalOcean
-CLOUDCOST_PROVIDER=aws ./scripts/sprint.sh cloudcost   # AWS (applies the prefix itself)
+./scripts/sprint.sh cloudcost                            # DigitalOcean
+CLOUDCOST_PROVIDER=aws ./scripts/sprint.sh cloudcost     # AWS (applies the prefix itself)
+CLOUDCOST_PROVIDER=linode ./scripts/sprint.sh cloudcost  # Linode
+CLOUDCOST_PROVIDER=github ./scripts/sprint.sh cloudcost  # GitHub
 ```
 
 **What the sprint passes to the run — an allowlist, since m4 t3.** The prefix used to *unset named
@@ -313,19 +336,28 @@ receives only these, and anything else you have exported does **not** reach it.
 | `ANTHROPIC_API_KEY` | the run's LLM call |
 | `CLOUDCOST_OPTIMIZATION` | its fail-fast guard silently stops firing otherwise |
 | the selected provider's credential | read from the adapter itself, so this table cannot drift from it |
-| `CLOUDCOST_AWS_REGION`, `CLOUDCOST_AWS_REGIONS` | your documented region overrides, which would otherwise be stripped and ignored **without any error** |
+| `CLOUDCOST_AWS_REGION`, `CLOUDCOST_AWS_REGIONS`, `CLOUDCOST_GITHUB_ORG` | your documented operator knobs, which would otherwise be stripped and ignored **without any error** |
+
+The knob row is the one that *can* drift, and did: it is selected by a list of constant **names**
+in the bridge (`KNOB_CONSTANTS`), so an adapter declaring a knob under a name that list does not
+carry is stripped silently. `CLOUDCOST_GITHUB_ORG` was in exactly that position until m6 t2b.
 
 Plus two values the prefix *sets*: `CLOUDCOST_PROVIDER`, and `AWS_SHARED_CREDENTIALS_FILE=/dev/null`
 — the latter explicitly, because merely *removing* it would restore boto3's default
 `~/.aws/credentials` lookup rather than disabling it.
 
 **The practical consequence for you:** if you add a new `CLOUDCOST_*` knob and the sprint appears
-to ignore it, it is not being ignored — it is not reaching the run. Add it to `CC_ALLOW` in
-`../aetheris/scripts/sprint.sh`. Standalone invocations (below) are unaffected; they inherit your
-shell as they always did.
+to ignore it, it is not being ignored — it is not reaching the run. Declare it on the adapter
+under a constant name `KNOB_CONSTANTS` carries, in `../aetheris/scripts/sprint.sh`; adding the
+variable to `CC_ALLOW` by hand works too but re-introduces the hand-typed copy the selection
+exists to avoid. Standalone invocations (below) are unaffected; they inherit your shell as they
+always did.
 
 The four stages standalone (from `cloudcost/`, for debugging — the orchestrator just chains
-these). Substitute `fetch_aws.py` / `aws` for the AWS pipeline:
+these). Substitute the adapter and the provider slug for another pipeline — `fetch_aws.py` / `aws`,
+`fetch_linode.py` / `linode`, `fetch_github.py` / `github` — and read the artifact names the
+adapter prints rather than constructing them, since not every provider's period is the current
+month:
 ```
 P=$(date -u +%Y-%m)
 python3 scripts/fetch_do.py --output-dir output/digitalocean
@@ -647,13 +679,28 @@ A new provider is a new adapter emitting the two frozen normalized schemas (`mil
 §Normalized schemas) using the canonical `type`/`state` vocabulary from `scripts/_normalized.py`,
 plus recorded fixtures, plus a clause in the orchestrator's provider `case`.
 
-**The wiring is five places, and they are enumerated here because m3 t2 found them one at a
-time:** the provider `case` and the credential raise in `agents/cloudcost_orchestrator.exs`; a
-`scripts[]` entry with its `env` rows in `cloudcost/tools.json` (undeclared means an amber badge
-in Rig and no config row); the discovery count in `tests/test_tools_manifests.py`; the credential
-preflight `case` **and the `MODULES` map in the adapter env bridge** in
-`../aetheris/scripts/sprint.sh`; and a `### <Provider>` posture subsection in this file. Miss the
-sprint `case` and the run dies at its `*)` arm on a reason unrelated to the provider.
+**The wiring places are enumerated here because m3 t2 found them one at a time:** the provider
+`case` and the credential raise in `agents/cloudcost_orchestrator.exs`; a `scripts[]` entry with
+its `env` rows in `cloudcost/tools.json` (undeclared means an amber badge in Rig and no config
+row); the discovery count in `../tests/test_tools_manifests.py` — the **repo root** `tests/`, not
+`cloudcost/tests/`; the credential preflight `case`, **the `MODULES` map in the adapter env
+bridge and that bridge's `KNOB_CONSTANTS`** in `../aetheris/scripts/sprint.sh`; a
+`### <Provider>` posture subsection in this file; and **every prose enumeration of the provider
+set** — this file's opening sentence, `cloudcost/tools.json`'s top-level `description`, the
+orchestrator's header comment, and `sprint.sh`'s usage headers. Miss the sprint `case` and the run
+dies at its `*)` arm on a reason unrelated to the provider.
+
+> **Changed 2026-08-13 (m6 t2b), by the first ticket to follow this list since the defects were
+> recorded.** Two repairs and two additions. **Repaired:** the manifest-test path did not resolve
+> from this file's own directory (`cloudcost/tests/` holds no such file; it is at the repo root),
+> and the lead-in asserted a *count* of places that its own enumeration disagreed with — now
+> de-numeralised, because the list enumerates the places and a number in the prose is a second
+> surface that can drift from it (m6 t1's rule). **Added:** `KNOB_CONSTANTS`, and the prose
+> enumerations. The knob addition is the substantive one — GitHub's optional `CLOUDCOST_GITHUB_ORG`
+> is declared on the adapter as `ORG_ENV`, which the bridge's `KNOB_CONSTANTS` did not name, so the
+> default-deny prefix stripped it and the adapter fell through to sole-membership discovery. That
+> is not degraded operation: where discovery resolves to an organisation other than the configured
+> one, the run bills the wrong organisation and nothing downstream can tell.
 
 > **Changed 2026-08-06 (m4 t3).** This used to read *"the `CC_HERMETIC` strip list and its
 > poison-control arms"*, and warned that missing an entry there would leave the hermetic proof

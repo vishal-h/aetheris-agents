@@ -86,8 +86,43 @@ R25 — a ruling earns a section only when it changes code.
 - **t2 — the GitHub adapter.** Unscoped. Scoped from t1's packet. Carries D1,
   D3, D4 and D7, the five-place wiring, the credential convention including
   its refusal half, and the period echo assertion.
+- **t2c — the report's evaluation-coverage statement is false whenever a
+  canonical type has no rule keying on it.** Unscoped. Scoped from t2b's
+  packet. `compose_report_data` derives what the rule catalog did *not* cover
+  from membership of `CANONICAL_TYPES`, which stood in for *matched by some
+  rule* only while those two sets coincided — **t1 ended that coincidence** by
+  adding `seat` ahead of any rule keyed on it. **Live now, on every GitHub
+  run:** the report tells an operator that every type is one the catalog
+  evaluates and that the totals cover the whole inventory, over six resources
+  no rule can match. The claim it makes is one of **completeness**, which is
+  why it is worse than a report that reads as broken — a broken-looking report
+  gets investigated, and this one reports a clean zero. Detail, mechanism and
+  the exact sentences are in `docs/m6-t2b-implementation-notes.md`.
 - **t3 — the seat orphan rule.** Unscoped. Scoped from t2's packet. First rule
-  in the catalog to key on an activity timestamp rather than an age.
+  in the catalog to key on an activity timestamp rather than an age. It also
+  **decides what `monthly_cost_estimate` means for a consumption provider
+  rather than discovering it**: its saving figure comes from that field, and
+  for GitHub the field is month-to-date on an in-flight month rather than a
+  monthly rate — `fetch_github.seat_monthly_cost` returns
+  `pricePerUnit × (netQuantity / seat_count)` and `netQuantity` is user-months
+  consumed so far, so the same six seats estimate at **7.97** for the in-flight
+  `2026-08` against **19.00** for the settled `2026-07`, while `pricePerUnit`
+  is `19.00`/user-month in both — the monthly rate is in hand, and what varies
+  is the quantity it is multiplied by. DigitalOcean's
+  equivalent is a true monthly price, so a seat orphan's saving is understated
+  mid-month by a shrinking margin. Not an adapter defect — t2 reports consumed
+  spend faithfully; a question about the field's meaning.
+
+**t2c precedes t3** because t3 papers over the instance and leaves the
+mechanism.
+
+`[t2c added 2026-08-13 at the t2b review, by arbiter ruling, and t3's line
+gained its `monthly_cost_estimate` clause in the same edit. The two figures were verified
+against artifacts before being written: 2026-08 from t2b's own sprint run
+(cloudcost/output/github/github_inventory_2026-08.json), 2026-07 from t2's
+direct invocation (cloudcost/output/github_inventory_2026-07.json, generated
+2026-08-13T06:43:09Z) — six seats each, identical resource-id sets, and the
+arithmetic reproduced from the cost artifacts' own line items.]`
 
 Storage-class entities — Actions artifacts, Actions caches, and packages — are
 deferred as a group, on grounds that differ by entity and are recorded so a
@@ -170,5 +205,13 @@ provenance block) are recorded there with their grounds.
 
 Verify and record: t1, t2 and t3 landed with their done-checks clean; the
 sprint's cloudcost arms report the same verdicts as at m6's open or better;
-the runbook's provider list and wiring section include GitHub; and every
-decision above is either applied or carries a recorded reason it was not.
+the runbook's provider list and wiring section include GitHub; what this
+milestone **recovered** — spend eliminated or waste found — is recorded with
+its basis alongside what it built; and every decision above is either applied
+or carries a recorded reason it was not.
+
+`[Clause added 2026-08-13 at t2b, by arbiter ruling. Ground: m6's scout found
+unfilled paid seats before any adapter shipped, and a milestone whose subject
+is recoverable spend should state its own. The criterion is that the figure is
+recorded with its basis, not that any particular figure was achieved — a
+recorded zero with its basis satisfies it.]`

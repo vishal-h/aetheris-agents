@@ -143,10 +143,14 @@ def test_discovery_sweep_intact():
         "payslip",
         "provenance",
     ]
-    # The subject of BL-084: seven runnable CLIs plus the import-only `_normalized.py`.
-    # Six until m3-cloudcost t1 added `fetch_linode.py`; t2 declares it in the manifest and
-    # bumps this count in the same commit, so the two never disagree silently.
-    assert len(_flat_cli_scripts("cloudcost")) == 7
+    # The subject of BL-084: eight runnable CLIs plus the import-only `_normalized.py`.
+    # Six until m3-cloudcost t1 added `fetch_linode.py`, seven until m6-cloudcost t2 added
+    # `fetch_github.py`. The count is kept because this assertion's whole argument is that
+    # a new CLI and its manifest entry land together; it is the one place the number is the
+    # claim rather than decoration. The two DID disagree for one ticket — t2 landed the
+    # adapter without the manifest entry — and this arm going red is what said so, which is
+    # the whole reason it is a count and not a comment.
+    assert len(_flat_cli_scripts("cloudcost")) == 8
 
     # api's manifest is real, but its scripts live in `api/tenant/scripts/` and
     # `api/gateway/scripts/` — nested, so neither the walker nor this suite scans them.

@@ -845,7 +845,14 @@ def test_the_rules_key_only_on_canonical_type_values():
         "load_balancer",
         "database",
         "database_snapshot",
+        "seat",
     }
+    # m6 t1: the set spans two provider classes now, and `seat` is the first
+    # consumption-class member. Asserted by name and by size as well as by the
+    # equality above, so a member dropped from the frozenset without the literal
+    # set being touched cannot pass.
+    assert _normalized.TYPE_SEAT in _normalized.CANONICAL_TYPES
+    assert len(_normalized.CANONICAL_TYPES) == 8
     for name in ("TYPE_COMPUTE_INSTANCE", "TYPE_STATIC_IP", "TYPE_DATABASE"):
         assert getattr(detect_orphans, name) is getattr(_normalized, name)
     assert detect_orphans.SNAPSHOT_TYPES <= _normalized.CANONICAL_TYPES

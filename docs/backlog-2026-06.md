@@ -8791,6 +8791,16 @@ list is empty.
   `Touches` named that file, while gc t1 established the packet-and-record family sits agents-side.
   Recorded so it is findable; not triaged here.
 
+- `2026-08-13` — The five cloudcost milestone documents carry **two forms** of post-H1 provenance
+  block: `milestone.md`, `m2-milestone.md`, `m3-milestone.md` and `m4-consolidation.md` open with a
+  bolded `**Status:**` paragraph, while `m5-n1-compose.md` opens with a backtick-quoted stamp. m5's
+  departure from the preceding four is **unexplained by its own text** (which contains no occurrence
+  of the string "Status"), **by its opening commit** `eebd47c`, and **by its own provenance stamp**,
+  which cites R12 — a rule about when a ticket's anatomy is authored, not about header form.
+  **Intent was not established, in either direction**: nothing found says the change was deliberate,
+  and nothing says it was not. m6 t1 followed m5's form on recency grounds and left
+  `m5-n1-compose.md` unchanged. Recorded so it is findable; not triaged here.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

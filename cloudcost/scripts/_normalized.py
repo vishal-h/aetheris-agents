@@ -10,8 +10,9 @@ rather than duplicating it or cross-importing between CLIs).
 
 The same argument, more strongly, holds for the canonical `type` / `state` *values* below:
 they are the definition of the schema seam, so by construction they have exactly one home
-— this module — which every adapter (`fetch_do.py`, `fetch_aws.py`) and the shared rule
-engine imports from (m2 t2 a/a′).
+— this module — which all three adapters (`fetch_do.py`, `fetch_aws.py`,
+`fetch_linode.py`), the shared rule engine and `compose_report_data.py` import from
+(m2 t2 a/a′).
 
 Provider-agnostic by construction: every function here reads first-class fields of
 `cloudcost/milestone.md` §Normalized schemas and nothing else — no provider vocabulary,
@@ -43,6 +44,7 @@ TYPE_SNAPSHOT = "snapshot"  # EBS snapshot / DO snapshot
 TYPE_LOAD_BALANCER = "load_balancer"  # ELB/ALB/NLB / DO load balancer
 TYPE_DATABASE = "database"  # RDS instance
 TYPE_DATABASE_SNAPSHOT = "database_snapshot"  # RDS manual snapshot
+TYPE_SEAT = "seat"  # GitHub Copilot seat
 
 #: The closed set every adapter emits from. A `type` outside it is a contract violation.
 CANONICAL_TYPES = frozenset(
@@ -54,6 +56,7 @@ CANONICAL_TYPES = frozenset(
         TYPE_LOAD_BALANCER,
         TYPE_DATABASE,
         TYPE_DATABASE_SNAPSHOT,
+        TYPE_SEAT,
     }
 )
 

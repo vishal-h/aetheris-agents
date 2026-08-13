@@ -258,6 +258,15 @@ its provider lacks the concept — never by omission. Provider-specific payload 
   | `load_balancer` | load balancer | ELB / ALB / NLB |
   | `database` | — | RDS instance |
   | `database_snapshot` | — | RDS manual snapshot |
+  | `seat` | — | — |
+
+  `seat` is **GitHub's**, added at m6 t1 and emitted by nothing yet. It is named in prose
+  rather than given a column because this table's columns are not sparse — every row carries
+  a cell in each, and `—` means *this provider emits nothing for this type* — so a GitHub
+  column would assert what GitHub emits for every infrastructure row above, which is outside
+  the ticket that added the row. **A Linode column is absent for the same reason** and is
+  not added here: it would require the same assertion per row for Linode. Linode's one
+  recorded mapping lives in prose in §Contracts C1 instead.
 
   A provider lacking a concept simply emits no resource of that type; a provider with a
   concept the set does not name needs the set extended here first, never a local spelling.
@@ -318,13 +327,16 @@ authoritative catalog for m1 (no external doc).
 
 **Shared machinery guarantees** that `type` is drawn from a closed set, enumerated once in
 `_normalized.py` as `CANONICAL_TYPES` and in §Normalized schemas in prose. An out-of-vocabulary
-`type` is a **contract violation, not a pass-through**.
+`type` is a **contract violation, not a pass-through**. The set spans two provider classes —
+infrastructure resources, where a type names a provisioned thing, and consumption resources,
+where a type names an assigned entitlement — and it is extended across both rather than split
+into a per-class vocabulary (m6 t1).
 
 **An adapter must guarantee** that every resource it emits carries a `type` from that set, and must
 import the value rather than spell it locally. An adapter that declares its own vocabulary re-opens
 seam #1; an adapter importing from a *sibling adapter* is the cross-import anti-pattern.
 
-**The set has a declared public surface.** Today adapters import the seven `TYPE_*` constants
+**The set has a declared public surface.** Today adapters import the `TYPE_*` constants
 individually and never the set, so `CANONICAL_TYPES` is used without being declared as API (N1).
 **A cross-repo consumer imports it by name**: `../aetheris/scripts/sprint.sh` reads
 `CANONICAL_TYPES` from this module in its rule-legibility assertion, deliberately, so the vocabulary

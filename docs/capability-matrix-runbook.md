@@ -76,8 +76,10 @@ order. A section file whose key is not in `SECTIONS` is ignored with a stderr WA
 a missing section file yields "_Section not available._", a 0/0 Summary row, and
 exit 1 (partial matrix).
 
-Two runs over unchanged sections produce byte-identical output, so a matrix diff
-only ever shows a real change.
+Two runs of the **assembler** over unchanged sections produce byte-identical output. The
+section step above it does not share that property — it is an LLM, and regenerating a section
+rewords cells whose source has not changed — so a matrix diff carries rewordings as well as
+real changes, and needs reading rather than skimming.
 
 ---
 

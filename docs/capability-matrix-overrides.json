@@ -54,5 +54,12 @@
         "purpose": "Shared display formatter for cell values: currency → $1,234.56, number → thousands-separated with no trailing zeros. Used by the text renderers (generate_docx, _table_html)."
       }
     }
+  },
+  "cloudcost": {
+    "agents": {
+      "cloudcost_orchestrator.exs": {
+        "label": "Cloudcost"
+      }
+    }
   }
 }

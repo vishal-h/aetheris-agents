@@ -497,14 +497,15 @@ jq '.account, .totals.candidates' /tmp/live/linode_orphan_candidates_<period>.js
 ## Offline tests
 
 ```
-python3 -m pytest cloudcost/tests/ -v      # no credentials; recorded DO + AWS + Linode fixtures
+python3 -m pytest cloudcost/tests/ -v      # no credentials; recorded DO + AWS + Linode + GitHub fixtures
 ```
 
 ## Rig
 
 Runs appear in Harness → Runs automatically, one per provider — the run id carries the provider
-(`cloudcost-orch-aws-…`, `cloudcost-orch-digitalocean-…`, `cloudcost-orch-linode-…`), and so does
-the label (`Cloudcost · AWS`, `Cloudcost · DigitalOcean`, `Cloudcost · Linode`), which is what
+(`cloudcost-orch-aws-…`, `cloudcost-orch-digitalocean-…`, `cloudcost-orch-linode-…`,
+`cloudcost-orch-github-…`), and so does the label (`Cloudcost · AWS`, `Cloudcost · DigitalOcean`,
+`Cloudcost · Linode`, `Cloudcost · GitHub`), which is what
 `classifyRun` groups on. The use case shows in the
 capability-matrix view (Rig reads the regenerated `docs/capability-matrix.md` via
 `rig/src-tauri/src/commands/capability_matrix.rs`). There is no dedicated cloudcost panel, and
@@ -518,7 +519,7 @@ turn your request into a plan of agent files. For a four-stage deterministic pip
 detour, and it is deliberate interim scope — the direct door is **BL-094**. The CLI recipe under
 [Run it](#run-it) stays the deterministic path and is what sprint uses.
 
-**1 — Credentials, once.** Settings → Agent Config → **CLOUDCOST**. The seven rows come from
+**1 — Credentials, once.** Settings → Agent Config → **CLOUDCOST**. The rows below come from
 `cloudcost/tools.json` alone; no `agentConfigDefs.ts` entry exists or is needed (BL-085 confirmed
 the manifest path renders the group header and the masking by itself). Set:
 
@@ -531,6 +532,12 @@ the manifest path renders the group header and the masking by itself). Set:
 | `CLOUDCOST_AWS_REGIONS` | AWS, optional sweep override | no |
 | `CLOUDCOST_DO_TOKEN` | DigitalOcean | yes |
 | `CLOUDCOST_LINODE_TOKEN` | Linode | yes |
+| `CLOUDCOST_GITHUB_TOKEN` | GitHub | yes |
+| `CLOUDCOST_GITHUB_ORG` | GitHub, optional (unset ⇒ the token's sole org membership) | no |
+
+> Every row above renders under Rig's **"Required config"** heading, including the two marked
+> optional here — `EnvDep` has no optionality axis (`rig/src-tauri/src/commands/tools.rs:6-13`;
+> `ToolDetail.tsx:85`). Read this table's "Required for" column, not that heading. **BL-151.**
 
 Set the `CLOUDCOST_`-prefixed rows and **never** the bare `AWS_ACCESS_KEY_ID` /
 `AWS_SECRET_ACCESS_KEY` rows. Those belong to `api/tools.json` (group `aws`,
@@ -540,12 +547,12 @@ Set the `CLOUDCOST_`-prefixed rows and **never** the bare `AWS_ACCESS_KEY_ID` /
 above the Run button) → add a row:
 
 ```
-CLOUDCOST_PROVIDER = aws          # or: digitalocean, linode
+CLOUDCOST_PROVIDER = aws          # or: digitalocean, linode, github
 ```
 
 Exact literals, lowercase. Unset ⇒ `digitalocean`. Anything else raises *before* the run starts,
-at `cloudcost/agents/cloudcost_orchestrator.exs:53-62`. Selecting `aws` or `linode` without that
-provider's credential row set raises there too, for the same reason. These values are ephemeral: they are never
+at `cloudcost/agents/cloudcost_orchestrator.exs:60-69`. Selecting `aws`, `linode` or `github`
+without that provider's credential row set raises there too, for the same reason. These values are ephemeral: they are never
 written to `agent-config.json`, they override a stored key of the same name for that launch only
 (`rig/src-tauri/src/commands/orchestrate.rs:57-66`), and the rows clear themselves once the run
 reaches a terminal phase (`OrchestratorView.tsx:139-141`).
@@ -605,7 +612,7 @@ claim demonstrated, not asserted.
 key there is the same trust level as the GitHub PAT already stored there. **A write-capable key
 must never go in it.**
 
-**Export gap.** The six `CLOUDCOST_*` keys are editable and persisted, but `exportConfig()`
+**Export gap.** The `CLOUDCOST_*` keys are editable and persisted, but `exportConfig()`
 iterates the static defs only (`rig/src/hooks/useAgentConfig.ts:33-41`), so they are silently
 omitted from Export until **BL-091**. Import is unaffected.
 
@@ -696,10 +703,30 @@ its `env` rows in `cloudcost/tools.json` (undeclared means an amber badge in Rig
 row); the discovery count in `../tests/test_tools_manifests.py` — the **repo root** `tests/`, not
 `cloudcost/tests/`; the credential preflight `case`, **the `MODULES` map in the adapter env
 bridge and that bridge's `KNOB_CONSTANTS`** in `../aetheris/scripts/sprint.sh`; a
-`### <Provider>` posture subsection in this file; and **every prose enumeration of the provider
-set** — this file's opening sentence, `cloudcost/tools.json`'s top-level `description`, the
-orchestrator's header comment, and `sprint.sh`'s usage headers. Miss the sprint `case` and the run
-dies at its `*)` arm on a reason unrelated to the provider.
+`### <Provider>` posture subsection in this file; **a regeneration of
+`docs/capability-matrix.md`** — a generated artefact with three consumers (Rig's Agents
+catalogue, Rig's launch prefill, and the planner LLM's system prompt), which BL-090 closed for
+provider three without adding the regen to this list, and which was therefore stale again at
+provider four; and **every prose enumeration of the provider set** — this file's opening
+sentence, `cloudcost/tools.json`'s top-level `description`, the orchestrator's header comment,
+`sprint.sh`'s usage headers, §Rig's credential table, §Rig's `CLOUDCOST_PROVIDER` literal list,
+§Rig's run-id and label enumeration, and §Offline tests' recorded-fixture comment. Miss the
+sprint `case` and the run dies at its `*)` arm on a reason unrelated to the provider.
+
+> **Changed 2026-08-14 (m6 t4), by the ticket that found the list short at provider four.** One
+> addition and one repair, both to places this ticket had to touch and the list did not name.
+> **Added — the matrix regen**, as a wiring place in its own right rather than a prose
+> enumeration: it is the only place on this list that is **LLM-generated rather than
+> hand-edited**, it has no drift check, and it is regenerated only by an explicit ritual
+> (`docs/capability-matrix-runbook.md`). BL-090 is both the precedent and the recurrence — it
+> closed this exact cell on 2026-08-05 by regenerating, without adding the regen here, so
+> provider four went nine days with `fetch_github.py` absent from the document the planner is
+> told its agent paths must match. Filed as **BL-155**. **Repaired — the prose-enumeration
+> clause**, whose four instances were four of eight: §Rig's credential table and its
+> `CLOUDCOST_PROVIDER` literal list were the two the ticket was scoped to, and §Rig's run-id and
+> label enumeration and §Offline tests' fixture comment were found beside them. The clause was
+> right and its enumeration was incomplete, which is a different defect from a missing clause
+> and is repaired as one.
 
 > **Changed 2026-08-13 (m6 t2b), by the first ticket to follow this list since the defects were
 > recorded.** Two repairs and two additions. **Repaired:** the manifest-test path did not resolve

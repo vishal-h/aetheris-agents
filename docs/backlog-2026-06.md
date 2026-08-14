@@ -3656,6 +3656,30 @@ there; a write key must never go in it.
 key and produces its report; `CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`;
 the operator can pick aws vs do per launch; the runbook records the posture above.
 
+**Annotated 2026-08-14 (m6 t4) — the planner has never been told the key exists, so Open question
+2 is open in a way the row does not yet say.** This row's answer to per-launch provider selection
+is Rig's "Additional env vars" box, and the mechanism ships and works
+(`orchestrate.rs:57-66`; `cloudcost/runbook.md` §Rig step 2). What was never wired is the *other*
+end of the same door. `agents/orchestrator.exs`'s **Known params** block (`:65-70`) — the only
+place the planner LLM is told which env keys it may emit — lists `PAYSLIP_MONTH` and
+`PAYSLIP_EMPLOYEE_ID` and **has never mentioned any cloudcost key**, at any commit. Verified at
+agents `97c61a0`. So the LLM standing between the operator and the agent cannot surface, confirm,
+or default the provider, and `cloudcost_orchestrator.exs:58` defaults to `digitalocean` when the
+key is absent. **Provider selection therefore depends entirely on an operator having read the
+runbook before each launch** — a run requested as GitHub and launched without that knowledge
+executes as DigitalOcean, produces a well-formed DigitalOcean report, and nothing in the plan
+card, the run, or the artifact says the request was not honoured. That is a **Silent-wrong-answer**
+(harness `CLAUDE.md`) sitting on this row's Open question 2, not on BL-094: BL-094 is the *direct,
+non-LLM* door — the path that removes the planner — and closing it would leave this defect intact
+for every launch that still goes through the planner. Recorded here, on the row that owns
+per-launch provider selection.
+
+**Also stale in this row's own Done-when, noted rather than edited:** *"the operator can pick aws
+vs do per launch"* is itself a two-provider enumeration, written 2026-08-03 before Linode (m3) and
+GitHub (m6). The criterion is right and its enumeration is short by two — the same defect m6 t4
+repaired in `cloudcost/runbook.md` §Adding a provider. Left as written because rewriting a
+Done-when is a disposition and this ticket files rather than disposes.
+
 `Source: m2-cloudcost close-out, 2026-08-03.`
 
 ### BL-086 — Trajectory: label steps by their `run_command` stage (#TBD)
@@ -8926,6 +8950,22 @@ appended list is empty.
   `env::var()` calls against `docs/rig/specs.md` §1 and `runbook.md`, touching neither surface. No
   check is proposed here. Recorded so it is findable; not triaged here.
 
+- `2026-08-14` — `EnvDep` has **no optionality axis**, so Rig renders every declared env row under
+  the heading **"Required config"** — including ones whose own text says they are not.
+  `EnvDep` (`rig/src-tauri/src/commands/tools.rs:6-13`, TS mirror `rig/src/hooks/types.ts:427-433`)
+  carries `key`/`label`/`group`/`masked`/`placeholder` and nothing else, while its sibling
+  `ManifestArg` (`tools.rs:15-24`) *does* carry `required: bool` — so the axis exists on the args
+  half of the same manifest and not on the env half. `ToolDetail.tsx:85` prints the heading over
+  `script.env` unconditionally. The live instance is `CLOUDCOST_GITHUB_ORG`, whose `label` reads
+  *"GitHub organisation login (optional; unset, the token's sole membership is used)"*
+  (`cloudcost/tools.json:295`): the row states optional underneath a heading that states required,
+  and an operator reading the screen cannot tell which is authoritative. Two surfaces that must
+  agree with nothing checking that they do — the same shape as the `KNOB_CONSTANTS` entry above,
+  except that here both surfaces are Rig's own and the disagreement is visible on screen rather
+  than latent. Verified at agents `97c61a0`. `cloudcost/runbook.md` §Rig's credential table gained
+  a pointer at m6 t4 so the operator has somewhere correct to read; that is a caption over the
+  defect, not a fix. No fix is proposed here. Recorded so it is findable; not triaged here.
+
 **Deliberately not seeded: `fetch_linode.py`'s round-before-multiply.** The `PriceTable` rounds its
 unit rate at ingest (`:396`, `:402`) and multiplies at `:763`, which is the shape D4 rules on. It is
 **already dispositioned** as `cloudcost/m6-github.md` D4's recorded counter-example, and a second
@@ -9086,6 +9126,34 @@ owes is still outstanding. Source: the m6 t2c session's own account, relayed in 
 prompt. Not reconstructible from the tree — the discarded run left no artifact and the notes
 file does not record it.]`
 
+`[Annotated 2026-08-14 at m6 t4 — a THIRD MECHANISM, and the one that says what this row is
+actually about. **A run killed from Rig's Cancel leaves its own partial prefix.**
+`orchestrate_cancel` (`rig/src-tauri/src/commands/orchestrate.rs:149-159`) SIGKILLs the direct
+child, so a pipeline killed between stages leaves whatever the completed stages wrote — a cost
+snapshot and inventory with no orphan candidates and no report, or a report over a half-written
+inventory — in the provider's output directory, where the next run's reader finds them.
+**Weaker than the first two as a silent-wrong-answer**, and the packet that found it said so:
+there is an observable cause, because a human pressed Cancel and knows they did. **Stronger as
+evidence about the row's subject.** Three mechanisms now reach one symptom — a credential gate
+skipping the guard, inputs changing under a run, and a run dying mid-flight — and they have no
+fix in common. Reordering the sprint's arms addresses the first and neither of the others;
+freezing the tree addresses the second and neither of the others. What all three would be caught
+by is the thing none of them has: **a binding from an artifact to the run that produced it.** No
+cloudcost artifact has ever carried one. Verified at agents `97c61a0` by grepping `run_id` across
+every artifact on disk: zero hits in all three current `report_data_*.json` (aws and github
+2026-08, linode 2026-07), zero in the per-provider `history/` snapshots, and zero in the oldest
+surviving output — `cloudcost/output/do_costs_2026-07.json` and `do_inventory_2026-07.json`,
+written 2026-07-29, so the gap is the whole life of the use case and not a recent regression.
+A partial output directory is therefore indistinguishable from a complete one by content alone,
+whichever way it got that way. That is
+the argument, not the instance: this row's **Owes** already lists a provenance stamp as its third
+shape and calls it *"the whole class rather than this arm"*, and the third mechanism is the case
+that makes the other two shapes visibly insufficient rather than merely narrower. **It does not
+widen this row's scope and proposes no fix**, and the ruling the row owes is still outstanding.
+The cancel path's own defects — no process-group kill, no status transition — are **BL-154**, a
+separate row because they are Rig-side and fire for any agent; this annotation is only about the
+artifacts such a kill leaves behind. Verified at agents `97c61a0`.]`
+
 **Owes:** a decision on arm ordering, which is a reviewer call rather than an obvious fix. At
 least three shapes are defensible and they are not equivalent: clear the directory **before** the
 credential preflight (a failed leg then leaves nothing, but a leg that fails for an unrelated
@@ -9102,5 +9170,249 @@ fix stays within one provider's directory.
 commit. Filed at the reviewer's direction rather than left as packet prose, per the standing rule
 that a deferred finding gets a backlog row in the round it is deferred — and filed as its own row
 rather than into BL-151, which is for defects that break nothing today.`
+
+---
+
+### BL-154 — Rig's Cancel kills the direct child only, and transitions nothing (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *a mechanism that returns a well-formed value where a gap exists*
+**Size:** M · **Priority:** medium
+**Section:** aetheris-agents (`rig/`) — Rig-side, pre-cloudcost, fires for any agent
+
+Filed 2026-08-14 at m6 t4, **the day it was found**, by a ticket that touches no Rig file.
+Off-territory: m6 t4 edits three markdown files and one JSON overrides file, so nothing here is
+attributable to the change under test. Found while establishing how the capability matrix reaches
+Rig, not by looking for it.
+
+**What the cancel path does.** `orchestrate_cancel`
+(`rig/src-tauri/src/commands/orchestrate.rs:149-159`) takes the jobs lock, `remove`s the job from
+state, and calls `job.child.lock().unwrap().kill()`. That is `std::process::Child::kill` — SIGKILL
+to the **direct child only**. There is no process-group kill, no `SIGTERM` first, and **no write to
+the protocol stream**: the agent is never told to stop, so it never emits
+`orchestration_cancelled`, which is the message the UI's own state machine listens for
+(`rig/src/hooks/useOrchestrator.ts:43-45`).
+
+**Two independent frozen states. A fix for one does not fix the other, which is why both are
+recorded here rather than one standing in for the pair.**
+
+1. **The DB row.** The cancel path performs **no status transition at all**. It does not touch
+   `runs.status`, and because the child is SIGKILLed it cannot run its own finalisation either, so
+   any run the killed process had started stays `running`. This is not permanent — and the row
+   says so rather than overstating it. `Aetheris.Sweep`
+   (`../aetheris/lib/aetheris/sweep.ex`) cures orphaned `running` rows, and
+   `config :aetheris, :sweep_on_start` is `true` (`../aetheris/config/config.exs:15`), so
+   `Aetheris.Application` sweeps at every harness start
+   (`../aetheris/lib/aetheris/application.ex:79-89`) and `mix aetheris sweep` runs it on demand.
+   **The defect is what the cure then records.** With no terminal event in the trajectory the
+   sweep takes the `orphaned` branch: it emits a `run_orphaned` event and sets `runs.status` to
+   `failed`. So a run the operator deliberately cancelled is durably recorded as one that died
+   unattended — the history cannot distinguish an intentional stop from a crash, and the
+   distinction is not recoverable later because nothing wrote it down at the time. Until the next
+   harness start the row also simply reads `running` for a process that is gone.
+
+2. **The UI phase.** `cancel()` (`useOrchestrator.ts:107-110`) fires the invoke and then sets the
+   phase to `cancelled` locally, on the assumption the kill succeeded — it does not await or check
+   a result, and the invoke is `.catch(() => {})`, so a failed cancel is indistinguishable from a
+   successful one. The polling effect early-returns on terminal phases
+   (`useOrchestrator.ts:49-51`, `terminal = ['idle','done','cancelled','error']`), so the moment
+   the phase flips no further `orchestrate_poll` runs. Every `stepStatuses` entry keeps whatever
+   value it held, and the step that was executing renders its spinner **underneath the word
+   "Cancelled."** (`OrchestratorView.tsx:379`, `:387`) — indefinitely, because nothing will ever
+   update it. Fixing the DB half leaves this untouched; the view never reads `runs.status`.
+
+**Not established, and named as such rather than assumed.** Whether OS descendants of the killed
+child survive was **not** tested. The direct child is what `orchestrate_start` spawned; the
+exec-server sandbox worker is a separate OS process reached over a Port, and a SIGKILLed BEAM
+cannot run its normal port teardown, so an orphaned worker is *plausible* — but no run was killed
+and no process table was inspected, so this row asserts only what was read from source. Anyone
+disposing it should establish it before scoping a process-group fix around it.
+
+**Done when:** cancelling a run from Rig leaves a record that says it was cancelled — a terminal
+event and a `runs.status` distinguishable from both `running` and an unattended `failed` — and the
+UI reflects the actual end state of the steps rather than freezing them; **or** it is ruled that
+`failed`-by-sweep is the intended record for a cancel, in which case the sweep's own
+`run_orphaned` framing is corrected to say so and the UI half is still owed. **Not** when only one
+of the two frozen states is addressed.
+
+**Costs:** M. The terminal write is small; deciding the status vocabulary is the real work, and it
+is a harness question (`runs.status` and the trajectory's terminal event set are harness-owned)
+reached through a Rig defect, so it is **cross-repo by consequence** even though the broken code
+is Rig's. The UI half is S on its own.
+
+**Collides with:** **BL-153**, whose third mechanism is the artifacts a killed run leaves behind —
+annotated there, deliberately not folded in here, because that row is about artifact trust and
+this one is about the cancel path itself.
+
+`Source: m6 t4, 2026-08-14. Read at agents 97c61a0; every citation above is a line read, not a
+shape inferred from a neighbour. Originally surfaced in the m6 t4 read-and-report packet as one
+finding covering both frozen states; split into the two numbered items above because they have
+disjoint fixes. The packet's "permanently" is corrected here against the sweep, which the packet
+did not account for.`
+
+---
+
+### BL-155 — the capability matrix has three consumers, no gate, and is the one wiring place an LLM writes (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *"An LLM computing a value inside a generated artifact nobody recounts"* (the D3 / BL-067 carrier)
+**Size:** M · **Priority:** medium-high
+**Section:** aetheris-agents (`docs/`, `scripts/`, `rig/`)
+
+Filed 2026-08-14 at m6 t4, by the ticket that had to regenerate the matrix because provider four
+was missing from it. **BL-090 is both the precedent and the recurrence** — it was
+*"capability-matrix stale: cloudcost omits detect_optimization_signals"*, filed 2026-08-03 and
+closed 2026-08-05 by regenerating, without adding the regen to `cloudcost/runbook.md` §Adding a
+provider's wiring list. Provider four then landed 2026-08-13 and the document went stale in
+exactly the same cell. m6 t4 added the regen to that list; **this row is the part a list entry
+cannot fix.**
+
+**Three consumers, one artefact.**
+
+1. **Rig's Agents catalogue.** `rig/src/modules/registry.ts:11` labels the route "Agents";
+   `rig/src/App.tsx:67-69` routes it to `CapabilityMatrixView`, which loads via
+   `capability_matrix_load` (`rig/src-tauri/src/commands/capability_matrix.rs:29-42`) — a
+   hand-rolled markdown table parser (`:44-125`) over `docs/capability-matrix.md`.
+2. **Rig's launch prefill.** `CapabilityMatrixView.tsx:124` navigates to `/orchestrator` with
+   `prefill: \`${agent.label}: \``, so column 2 of a markdown table becomes the opening text of an
+   operator's request.
+3. **The planner LLM's system prompt.** `agents/orchestrator.exs:17-18` reads the file with
+   `File.read!` and `:34` interpolates it whole into the system prompt; `:54-55` then instructs
+   the planner that agent paths *"must match exactly the file paths listed in the capability
+   matrix"*. A script absent from the matrix is a script the planner cannot plan.
+
+**No gate.** `grep -n "capability" scripts/drift_check.py` returns nothing at agents `97c61a0` —
+none of checks 1–8 reads this file. Positive control for that negative: the same `grep -n` for
+`manifest` over the same file returns its `project_knowledge` check, so the pattern and the path
+are working and the zero is a real absence. There is no test either: `tests/test_assemble_matrix.py`
+covers the **assembler**, which is deterministic and was made trustworthy by BL-067, and asserts
+nothing about whether the sections it assembles describe the tree.
+
+**And it is the only wiring place that is LLM-generated rather than hand-edited.** Every other
+entry on the §Adding a provider list is a human editing a file. This one is nine
+`agents/capability_matrix_*.exs` section agents writing `docs/.sections/*.md`, which are
+gitignored scratch. That is not a stylistic difference — **the generator is not stable, and m6 t4
+measured it.** Three regenerations of the cloudcost section over an unchanged tree produced three
+different agent labels: `Cloudcost · {provider}` (committed, `4d98ec2`, m3 t3),
+`Cloudcost Orchestrator` (run `cap-matrix-cloudcost-fEUkDw`), and
+`Cloudcost · DigitalOcean, AWS, Linode, GitHub` (run `cap-matrix-cloudcost-vcUTlA`) — plus a full
+rewording of all nine script purposes on each run. The first of those three is the one that
+mattered: `{provider}` is not Elixir syntax, it is a section agent's paraphrase of
+`cloudcost_orchestrator.exs:336`'s `"Cloudcost · #{provider_name}"`, and it was rendered raw in
+consumer 1 and fed verbatim into consumers 2 and 3 for nine days. **So a regen is not only the
+cure for staleness; it is itself an uncontrolled write to all three consumers.** m6 t4 pinned that
+one cell through `docs/capability-matrix-overrides.json` (BL-068's mechanism, verified to survive
+a regen by observation rather than by reading), which fixes the cell and not the class.
+
+`docs/capability-matrix-runbook.md:79-80` **said** *"Two runs over unchanged sections produce
+byte-identical output, so a matrix diff only ever shows a real change."* That was true of the
+**assembler** and it was the sentence a reader would take as covering the ritual. It does not
+cover the section step, and the measurements above are the counter-example.
+`[Corrected 2026-08-14 at m6 t4's review, by a Touches widening the reviewer ruled: that sentence
+is what a reader consults before deciding whether a matrix diff needs scrutiny, and a backlog row
+does not reach someone who reads the guarantee and never the backlog. The file now states that the
+assembler is deterministic over unchanged sections and the section step is not. **This row is
+unaffected otherwise** — the false guarantee was corroboration, never the defect. The defect is
+the instability itself, and it is still open.]`
+
+**A drift check is the obvious candidate — this row does not design it, deliberately.** The
+question is not only *whether* to check but *what is checkable*: file existence and row counts
+are mechanical, prose purposes are not, and a check that only counts rows would have caught
+BL-090 and this recurrence while never touching the `{provider}` cell. That trade is the row's to
+decide, not this filing's.
+
+**A stated unknown, recorded because it is this row's subject and nobody has looked.** m6 t4
+regenerated **one** of nine sections, by ruling, for diff attributability. cloudcost's section was
+stale for nine days with no gate; the other eight — payslip, drive, email, api/tenant,
+api/gateway, provenance, docbuilder, eduloka — have the identical structural exposure and **have
+not been checked against their source trees**. The whole-file assembly was verified byte-identical
+to the committed matrix before the regen, which establishes that the on-disk sections match the
+committed document; it establishes nothing about whether either matches the code. Eight sections
+are therefore of unknown accuracy, and the last full regen was `4d98ec2`, 2026-08-05.
+
+**Done when:** a stale or wrong capability matrix is caught by something other than a person
+noticing — with the mechanism's own blind spots named, since a row-existence check and a
+cell-content check are different instruments and the first does not imply the second; **or** it is
+ruled that the matrix is not gate-worthy, with that ruling recorded and the three consumers
+documented as reading an unchecked artefact. **Not** when the current staleness is merely
+regenerated again — that is what BL-090 did.
+
+**Costs:** S for an existence/count check in `scripts/drift_check.py` (the file walk already
+exists for other checks). M–L for anything reaching cell content, and that is where the design
+question is.
+
+**Collides with:** the §Adding a provider wiring list (m6 t4 added the regen there, so the
+procedural half is closed and this row is the mechanical half); **BL-068**, whose overrides file is
+the only durable surface for a cell that must not be reworded, and which any content check must
+read before flagging a cell.
+
+`Source: m6 t4, 2026-08-14. Measured at agents 97c61a0. The three-way label divergence is this
+ticket's own observation from two live regens plus the committed baseline, not a reconstruction —
+the run ids are given so it is reproducible. BL-090's history read from
+docs/backlog-2026-06.md:3742-3794. Filed rather than left in the packet, per the standing rule
+that a deferred finding gets a backlog row in the round it is deferred.`
+
+---
+
+### BL-156 — the approval card's step text is written by the planner per run, and nothing checks it (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Every claim has a truth-maker**
+**Size:** M · **Priority:** medium
+**Section:** aetheris-agents (`rig/`, `agents/orchestrator.exs`) — generic to every planner-launched agent
+
+Filed 2026-08-14 at m6 t4. **Filed as its own row rather than appended to an existing one**, and
+the ground is stated because the ticket left the choice open. No row owns approval-surface
+*content*. **BL-094** owns the *door* — a direct, non-LLM launch path — and closing it removes the
+plan card for the agents that move to that path while leaving this defect untouched for every
+launch that still goes through the planner. **BL-085** owns credentials and per-launch provider
+selection. **BL-151** is for defects that break nothing today, and this one can mislead an
+operator into approving a run. So it belongs to none of them.
+
+**What the surface is.** The plan card an operator reads before pressing Approve renders two
+fields per step: `step.description` as the card's headline (`OrchestratorView.tsx:105`) and
+`step.context` beneath it in italics (`:107-108`). Both are authored by the planner LLM, per run,
+from the output contract at `agents/orchestrator.exs:44-47` — `description` is *"What this step
+does"* and `context` is *"One sentence with specific runtime details — what data, which month,
+where output goes"* (`:46`). The prompt asks the model to *"Use the request params and your
+knowledge of the agent to be specific"* (`:57-58`).
+
+**So the text an operator approves against exists in neither repo.** It is not in the agent file,
+not in `tools.json`, not in the capability matrix, not in any template. It is generated fresh on
+every run and never persisted anywhere a reviewer could inspect it. Grepping either repo for a
+phrase an operator saw on the card finds nothing, because the phrase was authored at request time.
+
+**No test covers it.** There is no assertion anywhere on plan-card content — not on the shape of
+`description`/`context`, not on their agreement with the agent they describe, not on the agent
+path in the same step being one the matrix lists. The only structural constraint is the JSON shape
+`orchestrator.exs:212-220` decodes, which is satisfied by any two strings.
+
+**And the observed instance was wrong in the way that matters.** The card asserted a **scope** the
+cloudcost design forbids: `cloudcost/m6-github.md` decision H fixes **one provider per run** — the
+provider is chosen at eval time and the run fetches, detects, composes and renders for that
+provider alone, so two providers are two runs and two reports. The step text asserted otherwise.
+Nothing downstream contradicted it: the run then did the correct, decision-H thing, and the
+operator's basis for approving was a sentence about a different pipeline. That is the failure
+shape — **the card is the only place a run is described in words before it is authorised, and it
+is the one place with no truth-maker.**
+
+**This is not a cloudcost defect.** cloudcost is where it was observed, because decision H is an
+unusually crisp constraint to contradict. Any agent whose real behaviour is narrower than a
+plausible-sounding description is exposed identically, and the more deterministic the pipeline the
+more confidently the planner will describe it.
+
+**Done when:** the text on the approval card is either derived from something checkable — the
+agent's own manifest description, its matrix row, a per-agent template — or it is labelled on the
+card as model-generated and unverified, so an operator knows what they are reading. **Not** when
+the prompt is merely told to be more careful; a prompt instruction has no truth-maker either.
+
+**Costs:** M. The cheap half is the label, which is XS and buys most of the safety. Deriving the
+text from a checkable source is the real work and overlaps **BL-094** — a direct door would render
+its own step text from the manifest and would want exactly this.
+
+**Collides with:** **BL-094** (a direct door renders a different card, so sequencing matters and
+neither should be designed without the other); **BL-085**, whose annotation records that the
+planner has never been told any cloudcost key exists — the same planner, the same prompt, the
+other end of the same gap.
+
+`Source: m6 t4, 2026-08-14. Read at agents 97c61a0; OrchestratorView.tsx and orchestrator.exs
+citations are lines read. The observed wrong-scope instance is reported from the m6 t4
+read-and-report packet's account of a live Rig run — it is **not reconstructible from the tree**,
+because plan-card text is not persisted, and that irreproducibility is itself the finding rather
+than a weakness in it.`
 
 ---

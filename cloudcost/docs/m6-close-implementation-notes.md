@@ -517,6 +517,32 @@ Summary: 8 PASS  0 FAIL  3 WARN  7 INFO                                  exit 0
 **Nothing is elided.** The output above is the run's own, complete; the only edit is the removal
 of ANSI colour codes.
 
+**One citation in it decayed while this file was being written, and it is re-run rather than
+patched.** The block above was produced at commit `e960db0`. Filling this section in and amending
+the commit moved HEAD to `924b049`, which changes the very hash the third WARN prints — so the
+transcript above became a true record of a run against a commit that no longer exists. Per the
+standing rule, the fix is to re-run and publish the re-run, never to edit a published figure into
+agreement:
+
+```
+$ python3 scripts/drift_check.py --strict          # at HEAD 924b049
+[WARN] project_knowledge: cloudcost/milestone.md stale — manifest=8f36e45 current=97c61a0
+[WARN] project_knowledge: docs/capability-matrix.md stale — manifest=4d98ec2 current=e0c1ee2
+[WARN] project_knowledge: docs/backlog-2026-06.md stale — manifest=124707f current=924b049
+Summary: 8 PASS  0 FAIL  3 WARN  7 INFO                                  exit 0
+```
+
+**Identical but for that one hash**, which is the check reporting the amend correctly. The amend
+touched only this file, which is not manifest-tracked, so the WARN *set* could not have moved —
+and that was predicted before the re-run rather than read off it.
+
+**And this paragraph lands as a second commit rather than a second amend, deliberately.** Amending
+again would move HEAD off `924b049` and falsify the re-run block the same way the first amend
+falsified the block above it — a loop with no terminating condition, since every amend invalidates
+the transcript recording the previous one. A separate commit leaves `924b049` a real commit, leaves
+`docs/backlog-2026-06.md`'s last-touching commit at `924b049` where the WARN prints it, and ends
+the regress. **The close is therefore two commits**, and this is the only reason.
+
 **All three WARNs are `project_knowledge` manifest staleness — the declared strict-mode exemption
 — and they are named, not chased.** Two predate this close (`cloudcost/milestone.md` stale since
 t3 at `97c61a0`; `docs/capability-matrix.md` since t4 at `e0c1ee2`). **The third is this commit's

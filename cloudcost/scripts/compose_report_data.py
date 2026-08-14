@@ -99,6 +99,11 @@ BANDS = (
 #: How many untagged resources the report ranks. Overridable: --top-untagged N.
 DEFAULT_TOP_UNTAGGED = 10
 
+#: Cap on the resource lists rendered INLINE inside the evaluation-coverage sentences.
+#: Ten by convention with the spenders table above, not by coupling: these are a different
+#: section with a different consumer, and a shared knob would tie two unrelated caps together.
+COVERAGE_LIST_CAP = 10
+
 #: Persisted monthly cost snapshots. Anchored to the use-case root rather than the cwd:
 #: history accumulates across runs and must land in the same place whichever directory the
 #: orchestrator invoked the script from. Overridable: --history-dir (tests point it at a
@@ -567,26 +572,115 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
     # complete evaluation. Derived from the inventories the bundles already carry — no
     # stage detects or validates anything new here, and nothing is skipped that was not
     # skipped before. Counting for display is not validation (BL-117 still owes that).
+    #
+    # m6 t2c: three states, not two. `uncatalogued` answers "is this type in the SCHEMA's
+    # closed set" — a contract violation when it is not. That is a different question from
+    # "does any RULE key on this type", and membership of `CANONICAL_TYPES` stood in for the
+    # second only while the two sets coincided. m6 t1 ended the coincidence, and over the
+    # divergence this block reported a completeness the catalog did not have.
+    #
+    # The rule-keyed set is not inferable here and is not imported: it belongs to the rule
+    # catalog, `detect_orphans.py` is a sibling CLI, and importing across CLIs is the repo's
+    # named anti-pattern (`_normalized.py`'s docstring). It travels as data on the artifact
+    # this stage already reads, per bundle, so it is always the catalog the run actually used.
+    #
+    # A bundle whose artifact does not declare it is UNKNOWN — a fourth reading, never a
+    # fallback into either of the others. Its resources are classified into neither
+    # `unevaluated` nor the evaluated remainder, because nothing here knows which they are.
     inventoried, uncatalogued, activity_bearing = 0, [], 0
+    unevaluated, contradictions, providers_without_rule_coverage = [], [], []
     for bundle in bundles:
         inventory = bundle.get("inventory")
         if not isinstance(inventory, dict):
             continue
+        provider = bundle["provider"]
+        orphans = bundle.get("orphans")
+        declared = orphans.get("rule_keyed_types") if isinstance(orphans, dict) else None
+        # A declared-but-malformed value is as unknown as an absent one: asserting over it
+        # would be asserting over whatever shape happened to arrive.
+        keyed = set(declared) if isinstance(declared, list) else None
+        if keyed is None:
+            providers_without_rule_coverage.append(provider)
+
         resources, _ = usable_resources(inventory)
         inventoried += len(resources)
         for resource in resources:
-            if resource.get("type") not in CANONICAL_TYPES:
+            resource_type = resource.get("type")
+            if resource_type not in CANONICAL_TYPES:
                 uncatalogued.append(
                     {
-                        "provider": bundle["provider"],
+                        "provider": provider,
                         "resource_id": resource.get("resource_id"),
-                        "type": resource.get("type"),
+                        "type": resource_type,
+                        "name": resource.get("name"),
+                    }
+                )
+            elif keyed is not None and resource_type not in keyed:
+                # Canonical, and no rule keys on it. NOT a violation — a canonical type
+                # introduced ahead of its rule is a stated boundary of the catalog.
+                unevaluated.append(
+                    {
+                        "provider": provider,
+                        "resource_id": resource.get("resource_id"),
+                        "type": resource_type,
                         "name": resource.get("name"),
                     }
                 )
             if resource.get("last_activity_at") is not None:
                 activity_bearing += 1
-    uncatalogued.sort(key=lambda row: (row["provider"], str(row["resource_id"])))
+
+        # The guard on the hand-maintained declaration (m6 t2c). A candidate whose type is
+        # absent from the declared set is a contradiction: some rule evidently keyed on it,
+        # so the declaration is stale. Surfaced as a contract violation rather than rendered
+        # around — the coverage claim is computed from a set now known to be wrong.
+        if keyed is not None:
+            for candidate in orphans.get("candidates") or []:
+                if not isinstance(candidate, dict):
+                    continue
+                candidate_type = candidate.get("type")
+                if candidate_type is not None and candidate_type not in keyed:
+                    contradictions.append(
+                        {
+                            "provider": provider,
+                            "resource_id": candidate.get("resource_id"),
+                            "type": candidate_type,
+                            "rule": candidate.get("rule"),
+                        }
+                    )
+                    warnings.append(
+                        {
+                            "provider": provider,
+                            "warning": f"rule {candidate.get('rule')!r} produced a candidate "
+                            f"of type {candidate_type!r}, which the artifact's "
+                            f"rule_keyed_types does not declare — the declaration is stale "
+                            f"and the evaluation-coverage figures are not trustworthy",
+                        }
+                    )
+
+    for rows in (uncatalogued, unevaluated, contradictions):
+        rows.sort(key=lambda row: (row["provider"], str(row["resource_id"])))
+    providers_without_rule_coverage.sort()
+
+    # C11 / BL-121: caps report their truncation. These lists render INLINE INSIDE A
+    # SENTENCE, so an uncapped one is worse than an uncapped table — a consumption-class
+    # provider is close to pure seats, and a few hundred unruled resources would render as
+    # a paragraph-length list mid-sentence. The counts above stay the FULL counts: the cap
+    # bounds what is shown, never what is claimed, so the sentence's arithmetic is unchanged.
+    # `*_not_shown` is emitted as an explicit zero rather than omitted, so "nothing was
+    # dropped" and "nobody counted" render differently (absent-is-unknown).
+    shown = {
+        "uncatalogued": uncatalogued[:COVERAGE_LIST_CAP],
+        "unevaluated": unevaluated[:COVERAGE_LIST_CAP],
+        "rule_keyed_contradictions": contradictions[:COVERAGE_LIST_CAP],
+    }
+    not_shown = {
+        f"{name}_not_shown": max(0, len(rows) - COVERAGE_LIST_CAP)
+        for name, rows in (
+            ("uncatalogued", uncatalogued),
+            ("unevaluated", unevaluated),
+            ("rule_keyed_contradictions", contradictions),
+        )
+    }
 
     return {
         "bands": list(BANDS),
@@ -596,14 +690,42 @@ def orphan_section(bundles: list, warnings: list, skipped: list) -> dict:
         # and an uncounted quantity look identical.
         "evaluation_coverage": {
             "inventoried": inventoried,
+            # The cap the three lists below are bounded by. Named once so the report can
+            # state it rather than the reader inferring it from a list that stops.
+            "coverage_list_cap": COVERAGE_LIST_CAP,
+            **not_shown,
             "uncatalogued_count": len(uncatalogued),
-            "uncatalogued": uncatalogued,
+            "uncatalogued": shown["uncatalogued"],
+            # m6 t2c: canonical, and keyed by no rule. Counted in every total and evaluated
+            # by nothing — like `uncatalogued` in its effect on the figures, and unlike it
+            # in kind: this is a boundary the catalog states, not a contract it breaks.
+            "unevaluated_count": len(unevaluated),
+            "unevaluated": shown["unevaluated"],
+            # False when any bundle's orphan artifact did not declare `rule_keyed_types`.
+            # The report then knows the schema question and not the rule question, and says
+            # so — it does not answer the second from the first, which is this ticket.
+            "rule_coverage_known": not providers_without_rule_coverage,
+            "providers_without_rule_coverage": providers_without_rule_coverage,
+            # The declaration's guard. Non-empty means the declaration is stale and every
+            # figure above that rests on it is unsafe to read.
+            "rule_keyed_contradictions": shown["rule_keyed_contradictions"],
             # X4 (BL-114): `modifier_recent_activity` keys on `last_activity_at` and nothing
             # else, so with no resource carrying one it cannot fire — which is a different
             # statement from "it was applied and did not match".
+            #
+            # m6 t2c: and both of those are different again from "no candidate fired". The
+            # modifiers run inside `score()`, which the engine reaches only for a resource a
+            # rule already fired on, so with zero candidates the modifier stage never ran at
+            # all — regardless of what the inventory carries. That state was previously
+            # reported as `applicable`, i.e. as "applied and did not match", over a set of
+            # candidates that was empty.
             "activity_bearing_resources": activity_bearing,
             "recent_activity_modifier": (
-                "applicable" if activity_bearing else "cannot_fire_no_last_activity_at"
+                "no_candidate_fired"
+                if not total
+                else "applicable"
+                if activity_bearing
+                else "cannot_fire_no_last_activity_at"
             ),
         },
         "evaluated_as_of": sorted(evaluated, key=lambda row: row["provider"]),

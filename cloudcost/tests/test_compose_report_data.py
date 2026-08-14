@@ -1356,6 +1356,192 @@ def test_several_uncatalogued_resources_are_all_listed():
     }
     ec = compose([bundle])["orphans"]["evaluation_coverage"]
     assert ec["uncatalogued_count"] == 3
-    assert [r["name"] for r in ec["uncatalogued"]] == sorted(["bucket-a", "bucket-b", "registry-c"],
-                                                            key=lambda n: str(n)) or True
+    # m6 t2c: was `== sorted(...) or True`, which is `(A == B) or True` — always true, so
+    # the list's contents were never asserted at all. The order is the composer's declared
+    # one, `(provider, resource_id)`, which is NOT the order the three were assigned in;
+    # the expectation is derived from the fixture rather than hand-typed, so it cannot go
+    # stale against a re-recorded inventory.
+    expected = [
+        resource["name"]
+        for resource in sorted(inventory["resources"][:3], key=lambda r: str(r["resource_id"]))
+    ]
+    assert expected != ["bucket-a", "bucket-b", "registry-c"]  # the id order really does differ
+    assert [r["name"] for r in ec["uncatalogued"]] == expected
     assert {r["type"] for r in ec["uncatalogued"]} == {"object_store"}
+
+
+# ----------------------------------------------------- m6 t2c — the third coverage state
+#
+# The rule-keyed type set travels as data on the orphan artifact, so every test below
+# synthesizes the divergence from two ORDINARY canonical types. None of them needs to know
+# which canonical type happens to lack a rule today, and none names one — that is the point
+# of the fix, and it is why these tests do not go stale when t3 adds the seat rule.
+
+
+def narrowed(orphans, keyed):
+    """The same artifact, declaring a narrower catalog than the inventory carries."""
+    out = json.loads(json.dumps(orphans))
+    out["rule_keyed_types"] = list(keyed)
+    return out
+
+
+def test_a_canonical_type_no_rule_keys_on_is_not_a_contract_violation():
+    """(b) is its own state: counted everywhere and evaluated by nothing, like (a) — and
+    unlike (a) in kind, because the type IS in the schema's closed set. Before t2c the
+    composer had only (a), so this case was reported as full coverage."""
+    inventory = load_fixture("inventory_rules_positive")
+    bundle = {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": narrowed(detect_orphans.detect(inventory, REF), ["volume"]),
+    }
+    ec = compose([bundle])["orphans"]["evaluation_coverage"]
+
+    assert ec["unevaluated_count"] > 0
+    assert {r["type"] for r in ec["unevaluated"]} <= compose_report_data.CANONICAL_TYPES
+    # Not a violation: `uncatalogued` is the contract-violation channel and stays empty.
+    assert ec["uncatalogued_count"] == 0
+    assert ec["uncatalogued"] == []
+    # And the two states are disjoint — no resource is counted under both.
+    both = {r["resource_id"] for r in ec["unevaluated"]} & {r["resource_id"] for r in ec["uncatalogued"]}
+    assert both == set()
+    assert ec["rule_coverage_known"] is True
+
+
+def test_the_two_states_are_reported_separately_when_both_are_present():
+    """A contract violation and a stated boundary in one inventory, each in its own field."""
+    inventory = load_fixture("inventory_rules_positive")
+    inventory["resources"][0]["type"] = "object_store"  # outside the schema — state (a)
+    bundle = {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": narrowed(detect_orphans.detect(inventory, REF), ["volume"]),
+    }
+    ec = compose([bundle])["orphans"]["evaluation_coverage"]
+    assert [r["type"] for r in ec["uncatalogued"]] == ["object_store"]
+    assert ec["unevaluated_count"] > 0
+    assert "object_store" not in {r["type"] for r in ec["unevaluated"]}
+
+
+def test_rule_coverage_is_unknown_when_the_artifact_does_not_declare_it():
+    """AE3's fourth reading. `orphans_soc_2026-07` was produced by the real t2 CLI before
+    this key existed, so it is a genuine instance rather than a constructed one: absent is
+    UNKNOWN, never a fallback into either of the other states."""
+    assert "rule_keyed_types" not in load_fixture("orphans_soc_2026-07")
+
+    ec = compose([do_bundle(), soc_bundle()])["orphans"]["evaluation_coverage"]
+    assert ec["rule_coverage_known"] is False
+    assert ec["providers_without_rule_coverage"] == ["someothercloud"]
+    # Nothing from the undeclared provider is classified as evaluated or as unevaluated —
+    # the report does not know, so it does not say.
+    assert "someothercloud" not in {r["provider"] for r in ec["unevaluated"]}
+
+    # A malformed declaration is as unknown as an absent one.
+    bundle = do_bundle()
+    bundle["orphans"] = narrowed(bundle["orphans"], [])
+    bundle["orphans"]["rule_keyed_types"] = "volume"  # a string, not a list
+    ec = compose([bundle])["orphans"]["evaluation_coverage"]
+    assert ec["rule_coverage_known"] is False
+
+    # And the ordinary case is known, so the assertions above are not passing vacuously.
+    assert compose([do_bundle()])["orphans"]["evaluation_coverage"]["rule_coverage_known"] is True
+
+
+def test_a_candidate_of_an_undeclared_type_is_reported_as_a_contradiction():
+    """AE4's guard on the hand-maintained declaration. A candidate whose type the artifact
+    does not declare means some rule keyed on it, so the declaration is stale — and every
+    coverage figure derived from it is unsafe."""
+    inventory = load_fixture("inventory_rules_positive")
+    bundle = {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": narrowed(detect_orphans.detect(inventory, REF), ["volume"]),
+    }
+    report = compose([bundle])
+    ec = report["orphans"]["evaluation_coverage"]
+
+    assert ec["rule_keyed_contradictions"] != []
+    for row in ec["rule_keyed_contradictions"]:
+        assert row["type"] not in {"volume"}
+        assert row["rule"]
+    # It reaches the report's own warnings channel, not only this block.
+    flagged = [w for w in report["warnings"] if "rule_keyed_types" in w.get("warning", "")]
+    assert len(flagged) == len(ec["rule_keyed_contradictions"])
+
+    # Positive control: the same inventory with an honest declaration raises none.
+    honest = do_bundle()
+    clean = compose([honest])["orphans"]["evaluation_coverage"]
+    assert clean["rule_keyed_contradictions"] == []
+    assert [w for w in compose([honest])["warnings"] if "rule_keyed_types" in w.get("warning", "")] == []
+
+
+def test_the_coverage_lists_are_capped_and_report_their_truncation():
+    """C11 / BL-121, applied to three lists that render INLINE inside a sentence rather
+    than in a table. The cap bounds what is SHOWN; the counts the sentence does arithmetic
+    with stay the full ones, so a capped list cannot make the report understate."""
+    cap = compose_report_data.COVERAGE_LIST_CAP
+    over = cap + 4
+    inventory = load_fixture("inventory_rules_positive")
+    volume = next(r for r in inventory["resources"] if r["type"] == "volume")
+
+    # All THREE lists over the cap in one inventory, so no list's cap is exercised by
+    # another's. The volumes fire `unattached_volume`; declaring a catalog that does not
+    # include their type makes them unevaluated AND makes their candidates contradictions.
+    inventory["resources"] = [
+        dict(volume, resource_id=f"vol-{i:03d}", name=f"disk-{i:03d}") for i in range(over)
+    ] + [
+        dict(volume, resource_id=f"obj-{i:03d}", name=f"bucket-{i:03d}", type="object_store")
+        for i in range(over)
+    ]
+    orphans = narrowed(detect_orphans.detect(inventory, REF), ["database"])
+    assert len(orphans["candidates"]) == over, "the volumes must fire for contradictions to exist"
+    bundle = {
+        "cost": load_fixture("cost_do_2026-07"),
+        "inventory": inventory,
+        "orphans": orphans,
+    }
+    ec = compose([bundle])["orphans"]["evaluation_coverage"]
+
+    for name in ("uncatalogued", "unevaluated", "rule_keyed_contradictions"):
+        assert len(ec[name]) == cap, f"{name} list is not capped"          # the LIST is bounded
+        assert ec[f"{name}_not_shown"] == over - cap, f"{name} truncation unreported"
+    # The CLAIMS stay the full counts — a capped list must not make the report understate.
+    assert ec["uncatalogued_count"] == over
+    assert ec["unevaluated_count"] == over
+    assert ec["coverage_list_cap"] == cap
+    # The sentence's arithmetic is over the full counts, not the shown ones.
+    assert ec["inventoried"] - ec["uncatalogued_count"] - ec["unevaluated_count"] == 0
+
+    # Under the cap the zero is EXPLICIT, never omitted — "nothing dropped" and "nobody
+    # counted" must render differently.
+    under = compose([do_bundle()])["orphans"]["evaluation_coverage"]
+    assert under["unevaluated_not_shown"] == 0
+    assert "unevaluated_not_shown" in under
+    assert under["uncatalogued_not_shown"] == 0
+    assert under["rule_keyed_contradictions_not_shown"] == 0
+
+
+def test_the_modifier_verdict_separates_never_ran_from_could_not_fire():
+    """α: MODIFIERS run inside `score()`, reached only for a resource a rule fired on. With
+    zero candidates the stage never ran — which the composer reported as `applicable`
+    whenever the inventory happened to carry `last_activity_at`."""
+    inventory = load_fixture("inventory_rules_positive")
+    orphans = detect_orphans.detect(inventory, REF)
+    assert orphans["candidates"], "fixture must fire at least one rule for this test to mean anything"
+
+    def verdict(candidates, activity):
+        inv = json.loads(json.dumps(inventory))
+        for resource in inv["resources"]:
+            resource["last_activity_at"] = "2026-07-20T00:00:00Z" if activity else None
+        payload = json.loads(json.dumps(orphans))
+        payload["candidates"] = candidates
+        return compose(
+            [{"cost": load_fixture("cost_do_2026-07"), "inventory": inv, "orphans": payload}]
+        )["orphans"]["evaluation_coverage"]["recent_activity_modifier"]
+
+    # The state this ticket exists for: activity present, but nothing fired.
+    assert verdict([], activity=True) == "no_candidate_fired"
+    assert verdict([], activity=False) == "no_candidate_fired"
+    # And the two pre-existing verdicts still turn on the inventory, once a rule has fired.
+    assert verdict(orphans["candidates"], activity=True) == "applicable"
+    assert verdict(orphans["candidates"], activity=False) == "cannot_fire_no_last_activity_at"

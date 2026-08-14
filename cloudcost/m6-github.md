@@ -87,8 +87,8 @@ R25 — a ruling earns a section only when it changes code.
   D3, D4 and D7, the five-place wiring, the credential convention including
   its refusal half, and the period echo assertion.
 - **t2c — the report's evaluation-coverage statement is false whenever a
-  canonical type has no rule keying on it.** Unscoped. Scoped from t2b's
-  packet. `compose_report_data` derives what the rule catalog did *not* cover
+  canonical type has no rule keying on it.** Scoped below.
+  `compose_report_data` derives what the rule catalog did *not* cover
   from membership of `CANONICAL_TYPES`, which stood in for *matched by some
   rule* only while those two sets coincided — **t1 ended that coincidence** by
   adding `seat` ahead of any rule keyed on it. **Live now, on every GitHub
@@ -200,6 +200,84 @@ of 2026-08-13 that landed this document, rather than copied here. Its record is
 `cloudcost/docs/m6-t1-implementation-notes.md`; the reviewer amendments it was
 executed under (the docstring edit's width, the count sweep, and this document's
 provenance block) are recorded there with their grounds.
+
+### t2c — the report's evaluation-coverage statement is false for a canonical type with no rule
+
+**Scope.** `compose_report_data` gains a third evaluation state and a fourth
+reading. It could previously distinguish only a type **outside** `CANONICAL_TYPES`
+(a contract violation) from everything else, and used the second as a proxy for
+*matched by some rule* — sound only while the canonical and rule-keyed sets
+coincided, which t1 ended. After this ticket the report separates a contract
+violation, a canonical type no rule keys on, and a canonical type some rule keys
+on; says so where it previously claimed completeness; and says it does **not
+know** where the orphan artifact declares nothing. `detect_orphans` gains a
+declaration of what its catalog keys on and emits it on every artifact, so the
+fact travels as data rather than being inferred across a CLI boundary. Ships no
+orphan rule — t3 would make these sentences true for one type while leaving the
+mechanism that reproduces them for the next.
+
+**Contract refs.** `cloudcost/milestone.md` §Contracts **C1** (resource type
+vocabulary) and **C5** (a figure shared across stages needs one home or one
+assertion). `cloudcost/scripts/_normalized.py`'s module docstring — the repo rule
+against cross-importing between CLIs, which decides where the rule-keyed set may
+live. `aetheris-agents/CLAUDE.md` §Learning — m2b-docbuilder (that rule's home)
+and `../aetheris/CLAUDE.md` **Silent-wrong-answer** (*absent is unknown, not
+zero*) and **Adjacent-case**. `cloudcost/docs/m6-t2b-implementation-notes.md` §10a,
+which established the defect. `../aetheris/docs/methodology/milestone-methodology.md`
+§6 and §11.
+
+**Touches.**
+- `cloudcost/scripts/detect_orphans.py` — the declaration and its one output key
+  **only**. No rule, no change to `RULES`, `MODIFIERS`, or any rule body.
+- `cloudcost/scripts/compose_report_data.py`
+- `cloudcost/templates/report.html.j2`
+- `cloudcost/tests/test_compose_report_data.py`
+- `cloudcost/tests/test_detect_orphans.py`
+- `cloudcost/tests/test_render_report.py`
+- `cloudcost/m6-github.md`
+- `cloudcost/docs/m6-t2c-implementation-notes.md` (new)
+
+Anything outside this list needs a note in the implementation notes.
+
+**Do not generate.** No orphan rule of any kind, and no seat rule — t3. No new
+canonical type, no schema change, no new first-class field on the normalized
+resource schema. No change to any adapter. No harness change: concluding one is
+needed is a stop condition. No backlog row — this ticket's originating finding
+has a ticket, which is this one; a **new** finding follows the standing rule. No
+new document beyond this ticket's implementation notes.
+
+**Runbook update rule.** No environment variable, startup step, configuration key
+or command semantic changes. The report's own wording changes, and no runbook
+section quotes it — verified by census rather than assumed — so no runbook entry
+is owed. Recorded explicitly rather than left as an unexplained absence.
+
+**Done-check.**
+```bash
+cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest cloudcost/tests/ -q
+cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest tests/ -q
+cd ~/sandbox/elixirws/aetheris && set -a && . ~/.secrets/github-cloudcost.env && set +a && CLOUDCOST_PROVIDER=github ./scripts/sprint.sh cloudcost
+cd ~/sandbox/elixirws/aetheris && set -a && . ~/.secrets/do-cloudcost.env && set +a && ./scripts/sprint.sh cloudcost
+```
+
+Both pytest scopes, because BL-152 means neither covers the other. **The third is
+the deliverable**: the corrected sentences quoted against the false ones from a
+run captured before the change, verbatim. A green suite is not the deliverable.
+The fourth proves DigitalOcean unregressed, where **unregressed means no
+unintended change rather than no change** — a sentence wrong on every provider is
+fixed on every provider. The coverage pair must be byte-identical there; any
+sentence that does change is quoted as its own intended before/after pair.
+
+`[The fourth command's credential prefix was absent from the ticket as issued and
+is recorded here as executed: without it the leg fails at the DO credential gate
+and leaves the previous run's artifacts in place, which read as a pass to anything
+that inspects the output directory rather than the exit. Found at t2c.]`
+
+**Claude-code prompt.** Carried by the ticket prompt of the claude-code session of
+2026-08-13 that landed this change, rather than copied here. Its record is
+`cloudcost/docs/m6-t2c-implementation-notes.md`; the two arbiter rulings it was
+executed under — the seam ruling with riders AE1–AE5, and the recent-activity
+ruling with riders AF1–AF4, including the adjacent-case sweep AF4 ordered before
+any edit — are recorded there with their grounds.
 
 ## Close criteria
 

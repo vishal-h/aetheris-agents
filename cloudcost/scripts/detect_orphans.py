@@ -357,6 +357,36 @@ RULES = (
     rule_stopped_database_with_storage,
 )
 
+#: The canonical `type` values some rule above keys on — the catalog's own account of what
+#: it is able to evaluate, emitted on every artifact so a downstream stage never has to
+#: infer it (m6 t2c).
+#:
+#: **This is NOT `CANONICAL_TYPES`, and the difference is the point.** `CANONICAL_TYPES` is
+#: the schema's closed set: a `type` outside it is a contract violation. This is the rule
+#: catalog's subset of it: a canonical type absent from here is **legitimate and permanent**
+#: — it is counted in every total and evaluated by nothing, which is a stated boundary
+#: rather than a fault. The two coincided until m6 t1 added a canonical type ahead of any
+#: rule keying on it, and `compose_report_data` had been using membership of the first as a
+#: proxy for the second; over the divergence it reported a completeness the catalog did not
+#: have.
+#:
+#: Hand-maintained, and deliberately not derived: each rule's keying lives inside its body
+#: as an early return, and introspecting that would couple this declaration to the rules'
+#: internal shape. **A rule added without updating this set is not caught here** — the
+#: composer's contradiction guard catches the other direction (a candidate whose type is
+#: absent from this set), and the uncaught direction errs conservatively, understating
+#: coverage rather than overstating it. Whoever adds the next rule updates this set.
+RULE_KEYED_TYPES = frozenset(
+    {
+        TYPE_VOLUME,  # rule_unattached_volume
+        TYPE_STATIC_IP,  # rule_unassociated_static_ip
+        *SNAPSHOT_TYPES,  # rule_aged_snapshot — snapshot + database_snapshot
+        TYPE_LOAD_BALANCER,  # rule_idle_load_balancer
+        TYPE_COMPUTE_INSTANCE,  # rule_stopped_compute_with_attached_storage
+        TYPE_DATABASE,  # rule_stopped_database_with_storage
+    }
+)
+
 
 # ---------------------------------------------------------------------------- modifiers
 
@@ -524,6 +554,10 @@ def detect(
         "period": inventory.get("period"),
         "reference_date": iso(reference_date),
         "inventory_generated_at": inventory.get("generated_at"),
+        # What the catalog can evaluate, travelling with the run that used it (m6 t2c).
+        # Top-level rather than inside `parameters`: a parameter is something a run can be
+        # configured with, and this is derived from the catalog and is not settable.
+        "rule_keyed_types": sorted(RULE_KEYED_TYPES),
         "parameters": {
             "snapshot_age_days": snapshot_age_days,
             "unattached_volume_min_age_days": UNATTACHED_VOLUME_MIN_AGE_DAYS,

@@ -858,6 +858,39 @@ def test_the_rules_key_only_on_canonical_type_values():
     assert detect_orphans.SNAPSHOT_TYPES <= _normalized.CANONICAL_TYPES
 
 
+def test_the_artifact_declares_which_types_the_catalog_keys_on():
+    """m6 t2c: the rule-keyed set travels with the run, so a downstream stage never has to
+    infer it or import across CLIs.
+
+    **A SEPARATE FUNCTION ON PURPOSE** — t1's recorded hazard is that
+    `test_the_rules_key_only_on_canonical_type_values` opens with an exact set-equality that
+    short-circuits everything appended after it, so an assertion added there can ship having
+    never run against a failing state. These assertions live where nothing precedes them.
+
+    Deliberately NOT asserted here: that `RULE_KEYED_TYPES` equals `CANONICAL_TYPES`. Their
+    divergence is legitimate and permanent — t1 added a canonical type ahead of its rule on
+    purpose — and pinning the equality would forbid exactly that.
+    """
+    import _normalized
+
+    # Every rule-keyed type must be canonical; the converse is not required and not asserted.
+    assert detect_orphans.RULE_KEYED_TYPES <= _normalized.CANONICAL_TYPES
+
+    result = detect_orphans.detect(load_fixture("inventory_rules_positive"), REF)
+    assert result["rule_keyed_types"] == sorted(detect_orphans.RULE_KEYED_TYPES)
+    # Top level, not a parameter: a parameter is something a run can be configured with.
+    assert "rule_keyed_types" not in result["parameters"]
+    # It survives the JSON round-trip the downstream stage actually reads.
+    assert json.loads(json.dumps(result))["rule_keyed_types"] == result["rule_keyed_types"]
+
+    # Every type a rule actually produced a candidate for is declared. This is the same
+    # invariant the composer's contradiction guard enforces at runtime, asserted here
+    # against the catalog's real output rather than against the declaration alone.
+    fired_types = {c["type"] for c in result["candidates"]}
+    assert fired_types, "fixture must fire at least one rule for this assertion to bite"
+    assert fired_types <= detect_orphans.RULE_KEYED_TYPES
+
+
 def test_compose_and_render_key_on_no_type_value():
     """§t2 (d), as an assertion rather than a claim: the downstream stages read the `type`
     field but must never special-case one of its *values* — that would be a third leak of

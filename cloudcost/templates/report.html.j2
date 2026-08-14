@@ -8,6 +8,17 @@
 
   Autoescaping is on: resource names, tags and evidence strings are data, not markup.
 -#}
+{#- C11 / BL-121, stated once for the three evaluation-coverage lists that render INLINE
+    inside a sentence. A cap reports its truncation, and a zero is rendered explicitly
+    rather than omitted, so "nothing was dropped" and "nobody counted" read differently.
+    A payload that carries no `*_not_shown` (one written before the cap existed) emits
+    NOTHING here — it cannot say what was dropped, so it does not claim a cap either. -#}
+{%- macro cap_note(not_shown, cap) -%}
+{%- if not_shown is not none and not_shown is not undefined %}
+{%- if not_shown %} &mdash; {{ not_shown }} further not shown, this list being capped at {{ cap }}
+{%- else %} &mdash; all shown, the cap of {{ cap }} dropping none{% endif %}
+{%- endif %}
+{%- endmacro -%}
 <!doctype html>
 <html lang="en">
 <head>
@@ -399,10 +410,17 @@
       DECLARED rather than assumed: `test_the_two_sections_walk_the_same_resource_set` asserts it.
       This is C5's shape (a figure shared across stages needs one home or one assertion), one
       payload down. #}
-  <p class="note">{% if orphans.evaluation_coverage.uncatalogued_count %}The
-    {{ tag_coverage.resources | nz }} resource(s) above include
-    {{ orphans.evaluation_coverage.uncatalogued_count }} carrying a type the rule catalog does not evaluate.
-    They count toward this coverage ratio and are evaluated by no rule &mdash; see Orphan
+  {%- set tc_ec = orphans.evaluation_coverage %}
+  <p class="note">{% if not tc_ec.rule_coverage_known %}Whether every resource in this denominator carries a
+    type the rule catalog evaluates is <strong>not known here</strong>: the orphan artifact for
+    {{ tc_ec.providers_without_rule_coverage | default([], true) | join(", ") | nz("one or more providers") }}
+    does not declare which types its catalog keys on. This denominator is a count of resources, not a claim
+    about what was evaluated &mdash; see Orphan candidates.{% elif tc_ec.uncatalogued_count or
+    tc_ec.unevaluated_count %}The {{ tag_coverage.resources | nz }} resource(s) above include
+    {% if tc_ec.uncatalogued_count %}{{ tc_ec.uncatalogued_count }} carrying a type the rule catalog does not
+    evaluate{% endif %}{% if tc_ec.uncatalogued_count and tc_ec.unevaluated_count %}, and {% endif %}{% if
+    tc_ec.unevaluated_count %}{{ tc_ec.unevaluated_count }} carrying a canonical type no rule keys on
+    yet{% endif %}. They count toward this coverage ratio and are evaluated by no rule &mdash; see Orphan
     candidates.{% else %}Every resource in this denominator carries a type the rule catalog evaluates; none is
     counted here and evaluated nowhere.{% endif %}</p>
   {%- endif %}
@@ -502,7 +520,10 @@
 
   {%- if orphans.bands %}
   <table>
-    <caption>Confidence bands &mdash; the cutoffs these candidates were grouped by</caption>
+    {#- m6 t2c sweep: present tense and no demonstrative. The table renders whatever the
+        candidate count is, and "these candidates were grouped" asserted a grouping that did
+        not happen on a zero-candidate inventory. #}
+    <caption>Confidence bands &mdash; the cutoffs candidates are grouped by</caption>
     <thead><tr><th>Band</th><th>Rule</th><th class="num">Min confidence</th><th class="num">Max confidence</th></tr></thead>
     <tbody>
       {%- for band in orphans.bands %}
@@ -519,17 +540,54 @@
 
   {%- if orphans.evaluation_coverage %}
   {%- set ec = orphans.evaluation_coverage %}
+  {%- if ec.rule_keyed_contradictions %}
+  {#- The declaration guarding the two sentences below is provably stale, so they are not
+      rendered at all: a coverage figure computed from a known-wrong set is worse than no
+      figure. This is a defect in the pipeline, not a property of the account. #}
+  <p class="note"><strong>Evaluation coverage is not reported for this run.</strong>
+    {{ ec.rule_keyed_contradictions | length }} candidate(s) below carry a type the orphan artifact does not
+    declare its catalog keys on &mdash;
+    {% for row in ec.rule_keyed_contradictions %}<span class="chip">{{ row.rule | nz }} ({{ row.type | nz }})</span>{% if
+    not loop.last %}, {% endif %}{% endfor %}{{ cap_note(ec.rule_keyed_contradictions_not_shown, ec.coverage_list_cap)
+    }}. A rule evidently keyed on
+    {% if ec.rule_keyed_contradictions | length == 1 %}it{% else %}them{% endif %}, so the declaration is out of
+    date and every coverage figure derived from it would be wrong. The candidate counts above are unaffected;
+    what cannot be stated is how much of the inventory they are a result over. See Data notes.</p>
+  {%- else %}
   <p class="note">Of {{ ec.inventoried | nz }} usable resource(s),
-    {% if ec.uncatalogued_count %}<strong>{{ ec.uncatalogued_count }} carr{{ "ies" if ec.uncatalogued_count == 1
-    else "y" }} a type the rule catalog does not evaluate</strong> &mdash; counted in the totals above and in
-    the tag-coverage denominator, matched by no rule &mdash;
+    {% if not ec.rule_coverage_known %}<strong>how many were evaluated is not known</strong> &mdash; the orphan
+    artifact for
+    {{ ec.providers_without_rule_coverage | default([], true) | join(", ") | nz("one or more providers") }}
+    does not declare which types its catalog keys on, so this report cannot say whether a candidate count of
+    {{ orphans.totals.candidates | nz }} is a result over all {{ ec.inventoried | nz }} or over fewer. That is
+    the report not knowing, and it is a different statement from a complete evaluation returning
+    nothing.{% elif ec.uncatalogued_count or ec.unevaluated_count %}{% if ec.uncatalogued_count %}<strong>{{
+    ec.uncatalogued_count }} carr{{ "ies" if ec.uncatalogued_count == 1 else "y" }} a type the rule catalog does
+    not evaluate</strong> &mdash; counted in the totals above and in the tag-coverage denominator, matched by no
+    rule &mdash;
     {% for row in ec.uncatalogued %}<span class="chip">{{ row.name | nz }} ({{ row.type | nz }})</span>{% if not
-    loop.last %}, {% endif %}{% endfor %}.
+    loop.last %}, {% endif %}{% endfor %}{{ cap_note(ec.uncatalogued_not_shown, ec.coverage_list_cap) }}.{% endif %}{%
+    if ec.unevaluated_count %}{% if ec.uncatalogued_count %}
+    {% endif %}<strong>{{ ec.unevaluated_count }} carr{{ "ies" if ec.unevaluated_count == 1 else "y" }} a
+    canonical type no rule keys on yet</strong> &mdash; also counted in the totals above and in the tag-coverage
+    denominator, and evaluated by nothing &mdash;
+    {% for row in ec.unevaluated %}<span class="chip">{{ row.name | nz }} ({{ row.type | nz }})</span>{% if not
+    loop.last %}, {% endif %}{% endfor %}{{ cap_note(ec.unevaluated_not_shown, ec.coverage_list_cap) }}. That is a
+    stated boundary of the catalog rather than a fault in this
+    inventory &mdash; a canonical type may exist before any rule keys on it, and until one does, its resources
+    are counted everywhere and evaluated nowhere.{% endif %}
     A candidate count of {{ orphans.totals.candidates | nz }} is therefore a result over
-    {{ ec.inventoried - ec.uncatalogued_count }} resource(s), not {{ ec.inventoried | nz }}.{% else %}every type
+    {{ ec.inventoried - ec.uncatalogued_count - ec.unevaluated_count }} resource(s), not
+    {{ ec.inventoried | nz }}.{% else %}every type
     is one the rule catalog evaluates &mdash; 0 carried a type outside it, so the totals above cover the whole
     inventory.{% endif %}</p>
-  <p class="note">{% if ec.recent_activity_modifier == "applicable" %}{{ ec.activity_bearing_resources | nz }}
+  {%- endif %}
+  <p class="note">{% if not orphans.totals.candidates %}<strong>No rule fired on this inventory</strong>, so the
+    recent-activity modifier <strong>never ran</strong>: modifiers adjust the confidence of a candidate, and
+    there is no candidate to adjust. This says nothing about whether the modifier would have matched &mdash; the
+    stage was not reached. {{ ec.activity_bearing_resources | nz }} of {{ ec.inventoried | nz }} resource(s)
+    carry <code>last_activity_at</code>, which is what it keys on.{% elif ec.recent_activity_modifier ==
+    "applicable" %}{{ ec.activity_bearing_resources | nz }}
     resource(s) carry <code>last_activity_at</code>, so the recent-activity modifier was applied; where it does
     not appear on a candidate it did not match.{% else %}<strong>No resource carries
     <code>last_activity_at</code></strong>, so the recent-activity modifier <strong>could not fire</strong> on
@@ -597,9 +655,11 @@
   {%- endfor %}
 
   <p class="note">
+    {#- m6 t2c sweep: "where present". The caveat renders on a zero-candidate inventory too,
+        where no saving figure is on the page to be judged. #}
     Saving figures are per-resource <em>estimates</em> derived from size/type, not billed cost
-    (the bill is service-level). They are shown so a candidate can be judged, and are never part
-    of the cost totals above.
+    (the bill is service-level). They are shown, where present, so a candidate can be judged, and
+    are never part of the cost totals above.
   </p>
   {%- endif %}
 </section>

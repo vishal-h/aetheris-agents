@@ -1257,6 +1257,15 @@ def test_several_uncatalogued_resources_render_as_a_punctuated_list(report):
         ],
         "activity_bearing_resources": 0,
         "recent_activity_modifier": "cannot_fire_no_last_activity_at",
+        # m6 t2c: this block is written whole rather than merged, so it has to carry the
+        # keys the composer now emits. Without `rule_coverage_known` the payload is one
+        # from before t2c, and the template correctly renders the *unknown* sentence
+        # instead of this list — which is the new behaviour, not a regression in it.
+        "unevaluated_count": 0,
+        "unevaluated": [],
+        "rule_coverage_known": True,
+        "providers_without_rule_coverage": [],
+        "rule_keyed_contradictions": [],
     }
     page = section(render(data), "orphan-candidates")
     body = text_of(page)
@@ -1270,3 +1279,178 @@ def test_several_uncatalogued_resources_render_as_a_punctuated_list(report):
     assert "(registry)</span>.\n" in page or "(registry)</span>." in page
     # And in the rendered text the sentence break survives tag-stripping.
     assert re.search(r"\(registry\)\s*\.\s*A candidate count", body)
+
+
+# ------------------------------------------------- m6 t2c — what the report says it knows
+#
+# Every state below is asserted against what a person reads, and the two that replace a
+# completeness claim are asserted in BOTH directions: the true sentence present, and the
+# false one absent. A branch that adds the right words while leaving the wrong ones on the
+# page has not fixed the report.
+
+
+def test_a_canonical_type_with_no_rule_reads_as_a_boundary_not_a_defect(report):
+    """The claim the ticket exists to retire. A canonical type no rule keys on is counted
+    everywhere and evaluated by nothing — a stated boundary of the catalog, and never the
+    completeness sentence that stood here before."""
+    data = _with_coverage(
+        report,
+        inventoried=6,
+        uncatalogued_count=0,
+        uncatalogued=[],
+        unevaluated_count=2,
+        unevaluated=[
+            {"provider": "p", "resource_id": "s-1", "type": "a_canonical_type", "name": "thing-one"},
+            {"provider": "p", "resource_id": "s-2", "type": "a_canonical_type", "name": "thing-two"},
+        ],
+        rule_coverage_known=True,
+    )
+    body = text_of(section(render(data), "orphan-candidates"))
+
+    assert "a canonical type no rule keys on yet" in body
+    assert "thing-one" in body and "thing-two" in body
+    assert "stated boundary of the catalog rather than a fault" in body
+    # The completeness claim is GONE, not merely joined.
+    assert "so the totals above cover the whole inventory" not in body
+    assert "every type is one the rule catalog evaluates" not in body
+    # And the candidate total is re-stated over the set actually evaluated.
+    assert "not 6" in body
+
+    # The tag section's denominator sentence follows it.
+    tag = text_of(section(render(data), "tag-coverage"))
+    assert "2 carrying a canonical type no rule keys on yet" in tag
+    assert "none is counted here and evaluated nowhere" not in tag
+
+
+def test_unknown_rule_coverage_is_its_own_sentence(report):
+    """AE3: absent is a fourth reading. The report says it does not know — not that
+    coverage is complete, and not anything that reads as a defect in the account."""
+    data = _with_coverage(
+        report,
+        inventoried=6,
+        uncatalogued_count=0,
+        uncatalogued=[],
+        unevaluated_count=0,
+        unevaluated=[],
+        rule_coverage_known=False,
+        providers_without_rule_coverage=["someprovider"],
+    )
+    body = text_of(section(render(data), "orphan-candidates"))
+
+    assert "how many were evaluated is not known" in body
+    assert "does not declare which types its catalog keys on" in body
+    assert "the report not knowing" in body
+    assert "so the totals above cover the whole inventory" not in body
+    assert "every type is one the rule catalog evaluates" not in body
+    # Not a defect: no fault is attributed to the inventory.
+    assert "a type the rule catalog does not evaluate" not in body
+
+    tag = text_of(section(render(data), "tag-coverage"))
+    assert "not known here" in tag
+    assert "none is counted here and evaluated nowhere" not in tag
+
+
+def test_a_contradiction_withholds_the_coverage_claim_entirely(report):
+    """AE4: the declaration is provably stale, so a figure derived from it is not printed.
+    A known-wrong figure is worse than no figure."""
+    data = _with_coverage(
+        report,
+        inventoried=6,
+        uncatalogued_count=0,
+        uncatalogued=[],
+        unevaluated_count=0,
+        unevaluated=[],
+        rule_coverage_known=True,
+        rule_keyed_contradictions=[
+            {"provider": "p", "resource_id": "r-1", "type": "a_canonical_type", "rule": "some_rule"},
+        ],
+    )
+    body = text_of(section(render(data), "orphan-candidates"))
+
+    assert "Evaluation coverage is not reported for this run" in body
+    assert "the declaration is out of date" in body
+    assert "some_rule" in body
+    assert "so the totals above cover the whole inventory" not in body
+    assert "every type is one the rule catalog evaluates" not in body
+
+
+def test_the_modifier_says_the_stage_never_ran_when_no_candidate_fired(report):
+    """α/AF1. `applied and did not match`, `could not fire`, and `never ran` are three
+    sentences. The third was previously rendered as the first, over zero candidates."""
+    data = _with_coverage(
+        report, activity_bearing_resources=6, recent_activity_modifier="no_candidate_fired"
+    )
+    data["orphans"]["totals"]["candidates"] = 0
+    body = text_of(section(render(data), "orphan-candidates"))
+
+    assert "No rule fired on this inventory" in body
+    assert "never ran" in body
+    assert "there is no candidate to adjust" in body
+    assert "the stage was not reached" in body
+    # Neither of the other two sentences may appear.
+    assert "was applied; where it does not appear on a candidate it did not match" not in body
+    assert "could not fire" not in body
+
+    # Positive control: with a candidate present the branch is not taken, so the assertions
+    # above are about this state rather than about the template always saying it.
+    with_candidates = _with_coverage(
+        report, activity_bearing_resources=6, recent_activity_modifier="applicable"
+    )
+    assert with_candidates["orphans"]["totals"]["candidates"] > 0
+    other = text_of(section(render(with_candidates), "orphan-candidates"))
+    assert "No rule fired on this inventory" not in other
+    assert "was applied; where it does not appear on a candidate it did not match" in other
+
+
+def test_the_inline_coverage_list_states_what_it_dropped(report):
+    """C11's house form, on a list that renders inside a sentence. Asserted in BOTH states
+    and in a third: a payload written before the cap existed says nothing about a cap
+    rather than claiming one."""
+    rows = [
+        {"provider": "p", "resource_id": f"r-{i}", "type": "a_canonical_type", "name": f"thing-{i}"}
+        for i in range(3)
+    ]
+    truncated = _with_coverage(
+        report, inventoried=9, uncatalogued_count=0, uncatalogued=[], unevaluated_count=7,
+        unevaluated=rows, unevaluated_not_shown=4, coverage_list_cap=3, rule_coverage_known=True,
+    )
+    body = text_of(section(render(truncated), "orphan-candidates"))
+    assert "4 further not shown, this list being capped at 3" in body
+    # The claim stays the full count even though three are shown.
+    assert "7 carry a canonical type no rule keys on yet" in body
+    assert "dropping none" not in body
+
+    complete = _with_coverage(
+        report, inventoried=9, uncatalogued_count=0, uncatalogued=[], unevaluated_count=3,
+        unevaluated=rows, unevaluated_not_shown=0, coverage_list_cap=3, rule_coverage_known=True,
+    )
+    body = text_of(section(render(complete), "orphan-candidates"))
+    assert "all shown, the cap of 3 dropping none" in body
+    assert "further not shown" not in body
+
+    # A payload from before the cap: no `*_not_shown` key. The report must not assert a cap
+    # it has no record of — absent is unknown, not "nothing was dropped".
+    silent = _with_coverage(
+        report, inventoried=9, uncatalogued_count=0, uncatalogued=[], unevaluated_count=3,
+        unevaluated=rows, rule_coverage_known=True,
+    )
+    silent["orphans"]["evaluation_coverage"].pop("unevaluated_not_shown", None)
+    silent["orphans"]["evaluation_coverage"].pop("coverage_list_cap", None)
+    body = text_of(section(render(silent), "orphan-candidates"))
+    assert "dropping none" not in body
+    assert "further not shown" not in body
+    assert "3 carry a canonical type no rule keys on yet" in body   # the sentence still renders
+
+
+def test_no_sentence_asserts_a_grouping_or_a_display_over_an_empty_set(report):
+    """The m6 t2c adjacent-case sweep's two other members. Both render on a zero-candidate
+    inventory, where nothing was grouped and no saving figure is on the page."""
+    data = json.loads(json.dumps(report))
+    data["orphans"]["totals"]["candidates"] = 0
+    for band in data["orphans"]["by_band"]:
+        band["candidates"] = []
+    body = text_of(section(render(data), "orphan-candidates"))
+
+    assert "the cutoffs candidates are grouped by" in body
+    assert "these candidates were grouped by" not in body
+    assert "They are shown, where present, so a candidate can be judged" in body

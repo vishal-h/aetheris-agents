@@ -6922,8 +6922,44 @@ stays"*. Documenting a thing is not deciding it. t5c made the situation legible;
 untaken, and closing the row would record a decision nobody made. **Closing it now would also be
 closing it because it became convenient**, which the ticket that surfaced it was told not to do.
 
+**Annotated 2026-08-13 (m6 t2c): the headline still holds; its stated cause is now incomplete,
+and two of the body's factual claims have gone stale. The row does NOT close.**
+
+*The headline holds.* The modifier still has never fired against a real inventory on any provider.
+
+*The stated cause no longer covers every provider.* This row's mechanism is that
+`last_activity_at` is universally null, so the modifier's own predicate can never match. **That
+is now false for provider four.** `fetch_github.py:634` emits
+`iso_utc(raw.get("last_activity_at"))` — a real value — and the live 2026-08 GitHub inventory
+carries **6 of 6** resources with the field populated. The modifier still does not fire there,
+but for a **second and different reason**: no rule keys on `seat`, so no candidate is produced,
+and `MODIFIERS` run only inside `score()`, which the engine reaches only for a resource a rule
+already fired on. So the row now has two causes — *field universally null* on DO/AWS/Linode, and
+*no candidate to adjust* on GitHub — where it records one.
+
+*Two stale claims in the body.* "all **three** adapters" is now four. And the AWS emission-site
+list gives seven sites (`:502, 530, 559, 602, 623, 651, 681`); there are now **eight** — `:706`
+was added after this row was written. Both read at agents `0b32f36`.
+
+*The m6 t5c annotation above quotes a report sentence that now renders in a narrower state.* The
+quoted *"No resource carries `last_activity_at`, so the recent-activity modifier could not fire
+… its absence from every candidate below means it was inapplicable"* was, when written, the
+sentence rendered whenever no resource carried the field — **including on a zero-candidate
+inventory, where it quantified over an empty set.** m6 t2c split that: with zero candidates the
+report now says the modifier *never ran* because the stage was not reached, and the quoted
+sentence renders only when a rule fired and no resource carries the field. The quotation is
+still in the template; it is no longer the sentence a reader sees in the case the annotation was
+describing.
+
+**What this does not change.** The Done-when is still *"a decision on whether a permanently-dead
+scoring path stays"*, and t2c took no such decision — it made the non-firing legible in a third
+state, which is the same kind of thing t5c did and was correctly held not to discharge the row.
+**But the decision is now harder in a useful way:** "remove it and the constant" was cheap while
+no adapter emitted the field, and provider four emits it, so the path is dead-in-practice rather
+than dead-by-construction. That belongs to whoever takes this row, not to t2c.
+
 `Source: m4 t4a census item X4; ruled schema-level at m4 t4b under C8. Emission sites read at
-agents 611feba.`
+agents 611feba; re-read and corrected at agents 0b32f36 (m6 t2c).`
 
 ---
 
@@ -8959,5 +8995,78 @@ it needs the whole suite run before and after rather than the two modules alone.
 verbatim, then reproduced with the ticket's changes stashed to establish it was inherited. Filed
 rather than left in the packet, per the standing rule that prose in a packet or notes files
 nothing.`
+
+---
+
+### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *stale/leftover artifacts from a prior run*; *bind an artifact to what produced it, never to its position in a listing*
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/scripts/sprint.sh`) — **cross-repo**
+
+Filed 2026-08-13 at m6 t2c, **the day it was found**, by a ticket whose deliverable is a
+before/after comparison of rendered report artifacts. Off-territory: t2c touches no harness file.
+**Sibling of BL-152** — both are verification mechanisms that can silently yield a wrong answer,
+and this one produced false evidence inside the session that found it.
+
+**The ordering.** The cloudcost case preflights the selected provider's credential at
+`sprint.sh:2894–2931` and `exit 1`s when it is absent. The stale-artifact guard —
+`find "$CLOUDCOST_OUT" -mindepth 1 -delete`, `sprint.sh:2934–2946` — runs **after** it, and is
+therefore never reached on that path. The previous run's report and JSON survive, under the
+right filenames, for the right period, with content that parses.
+
+**The guard's own comment names the case it cannot cover.** At `sprint.sh:2937–2940`:
+
+> a run whose orchestrator fails (expired credential, provider API down) greens on the
+> *previous* run's report and orphan count: a check that passes identically whether or not the
+> thing under test worked.
+
+*Expired credential* is the first example it gives. An **absent** credential exits before the
+guard, so the one failure mode the guard names first is the one the ordering excludes it from.
+
+**Established at HEAD** (agents `0b32f36`, harness `d19f4b6`), by running it:
+
+```
+$ env -u CLOUDCOST_DO_TOKEN ./scripts/sprint.sh cloudcost
+artifacts present before: 5 file(s)
+sprint exit code: 1
+artifacts present after:  5 file(s)
+report md5 unchanged: YES - the previous run survives
+guard ran? 0 (0 = it did not)
+[FAIL]  CLOUDCOST_DO_TOKEN is not set — the digitalocean pipeline needs the read-only DO PAT
+```
+
+**What is and is not at risk, stated precisely rather than overclaimed.** The sprint **does exit
+1**, so anything watching the exit code is safe, and no *sprint assertion* greens on the stale
+files — the run stops before any of them. The exposure is to **whatever reads the output
+directory afterwards**: a session, a reviewer, a packet, or a later tool inspecting artifacts to
+establish what a run produced. By content alone the survivors are indistinguishable from a live
+capture.
+
+**It fires for any provider whose credential is unsourced** — the preflight `case` has the same
+`fail`-then-`exit 1` shape for digitalocean, aws, linode and github, and the unknown-provider arm
+too. It is not DO-specific.
+
+**How it was caught, recorded because reading could not have caught it.** m6 t2c copied
+`cloudcost/output/digitalocean/` as a "live before-state" for its done-check-4 pairing. It was
+the previous run's output. What exposed it was checking the **exit code** and diffing against a
+baseline preserved earlier in the session — not inspection of the artifacts, which parse, carry
+the right period, and are internally consistent.
+
+**Owes:** a decision on arm ordering, which is a reviewer call rather than an obvious fix. At
+least three shapes are defensible and they are not equivalent: clear the directory **before** the
+credential preflight (a failed leg then leaves nothing, but a leg that fails for an unrelated
+reason destroys the last good artifacts); keep the ordering and have the preflight's failure path
+clear or stamp the directory (narrower, but duplicates the guard); or leave the ordering and make
+the *staleness* visible instead — e.g. a provenance stamp written per run that a reader can check,
+which addresses the whole class rather than this arm.
+**Costs:** XS to reorder, S to stamp. **Do not take it as a reordering without ruling on the
+destroy-the-last-good-artifact trade.**
+**Collides with:** nothing in-repo. The clear is already scoped per provider (decision H), so any
+fix stays within one provider's directory.
+
+`Source: m6 t2c, 2026-08-13. Ordering read at harness d19f4b6; the reproduction above run at that
+commit. Filed at the reviewer's direction rather than left as packet prose, per the standing rule
+that a deferred finding gets a backlog row in the round it is deferred — and filed as its own row
+rather than into BL-151, which is for defects that break nothing today.`
 
 ---

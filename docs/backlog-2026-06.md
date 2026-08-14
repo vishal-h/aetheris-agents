@@ -8879,6 +8879,25 @@ list is empty.
   and nothing says it was not. m6 t1 followed m5's form on recency grounds and left
   `m5-n1-compose.md` unchanged. Recorded so it is findable; not triaged here.
 
+- `2026-08-14` — **§7's closing test cannot be performed by a milestone that commits no review
+  file, and the absence is invisible from inside the close.** Methodology §7 ends with a success
+  test: *"the same finding class should not appear as `blocking` in two consecutive milestones."*
+  It is keyed on a **label that only a review file carries**. m6 committed none — `git log
+  --name-only e4fabb7..e0c1ee2` lists no review artefact, the cycle's packets being scratch — so
+  no finding in the milestone carries a label the close can read, and the test cannot be run on
+  its own terms. **What makes this a documentation-system finding rather than one milestone's
+  omission**: nothing in the close's own procedure surfaces the gap. Every other §7 step produced
+  an artefact whose absence would have been noticed; this one produces a judgement, and a
+  judgement over an empty population reads exactly like a judgement that found nothing. The m6
+  close reported it only because it went looking for the test's input and found the input did not
+  exist. **Not triaged and no fix proposed** — whether the remedy is committing review files,
+  re-keying the test on something the tree keeps, or accepting that the test binds only cycles
+  that commit them, is the collection question this row exists to hold rather than answer.
+  `[Recorded at the m6 close, 2026-08-14, by arbiter ruling. Source: the close's own §5, and
+  cloudcost/docs/m6-close-implementation-notes.md §4d, which carries what the surviving records
+  do show — no m6 notes file records a blocking finding at all, and the two defects that did stop
+  work were found by the tickets themselves rather than by a reviewer.]`
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

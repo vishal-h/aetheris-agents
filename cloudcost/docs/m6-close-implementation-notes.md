@@ -1,11 +1,21 @@
 # m6 close — implementation notes
 
-**A verification pass and a ritual. Nothing was built; two findings were reported and neither
-was fixed.**
+**A verification pass and a ritual. Nothing was built. Three findings; at r0 none was fixed, and
+at r1 the reviewer authorised fixing one of them.**
 
 Measured at agents `e0c1ee2`, harness `d19f4b6`, both clean and level with origin at the start
 of the session and unchanged in the harness at the end. Every figure below was derived in this
 session at those commits unless a line names a different one.
+
+**Two rounds, and this file records both.** **r0** ran the gate, the close criteria, §7's scan and
+census, and both sprint legs, disposing nothing — the ticket reserved the promotion and R24
+verdicts for the reviewer, and reported rather than fixed what it found. **r1** landed the review's
+rulings: the recovered-spend register's first entry rewritten on an established account (the two
+readings r0 left open were both wrong), three promotions and five declines, gc's five carried
+candidates dropped under R24, §Ticket set's two missing entries added under an explicit
+authorisation, and §7's closing-test finding carried to BL-150. **r0's text stands where it was
+superseded** and each supersession is a dated block at the position it occupied, per decision 7 —
+the searches and controls are load-bearing even where the inference drawn from them was not.
 
 ---
 
@@ -24,13 +34,17 @@ prompt rather than to §7 is the wrong artefact:
 |---|---|---|---|
 | 1 | step 4 ¶2 — **census the prior cycle's promotion claims** against both `CLAUDE.md` files; *"Two found by eye is not a census"* | absent | **RUN** — §4b |
 | 2 | step 5 — **run the drift checker** | the done-check omits it | **RUN**, post-commit — §7 |
-| 3 | step 4 ¶1 — verify a promoted entry **by opening the file**, quoting it with surrounding lines | absent | **N/A for m6's own candidates** (none promoted here, per Do-not-generate); it binds the census, and the census produced no promotion |
-| 4 | closing test — the same finding class should not appear as `blocking` in two consecutive milestones | absent | **ASSESSED** — §4d |
+| 3 | step 4 ¶1 — verify a promoted entry **by opening the file**, quoting it with surrounding lines | absent | **RUN** — §9. Three entries promoted at the close review and each quoted from `CLAUDE.md` after the edit, with line numbers, plus the candidate-comparison the census's own promoted rule requires |
+| 4 | closing test — the same finding class should not appear as `blocking` in two consecutive milestones | absent | **ASSESSED**, and it **cannot be run** — §4d |
 
-**And one deliberate deviation from §7, stated rather than glossed.** Step 3 says claude-code
-commits the promotion in its own PR. Nothing is promoted here: the prompt reserves the ruling on
-§4a's enumeration for the reviewer, and Do-not-generate forbids landing a promotion before it.
-So §7 is performed up to step 2 for m6's own candidates and completed for the census.
+**And one deviation from §7, which the close review closed.** Step 3 says claude-code commits the
+promotion in its own PR. As first written this close promoted nothing — the ticket reserved the
+ruling on §4a's enumeration for the reviewer, and Do-not-generate forbade landing one first — so
+§7 ran to step 2 for m6's own candidates and completed only for the census.
+`[Closed 2026-08-14 at the close review: the ruling landed, three candidates were promoted, five
+declined and gc's five dropped. §7 is now complete for this milestone, and the deviation was one
+of sequencing rather than of substance — the ritual's steps ran in the order the review process
+imposes, not in §7's own.]`
 
 **(iii) R24's bar** (`docs/milestones/hc-consolidation.md:627-636`), quoted:
 
@@ -88,9 +102,12 @@ What follows is the derivation behind the two clauses that needed work.
 
 ### 2a. Recovered spend — the register, and what the evidence actually supports
 
-**Two entries with different bases, as the criterion's own *verify and record* asks.** Entry 2
-is settled by measurement. **Entry 1 is not, and the close does not record the figure it was
-offered.** Ruled by the arbiter as AS1–AS4 at this ticket's gate; the shape below is AS3's.
+**Two entries with different bases, as the criterion's own *verify and record* asks.** Entry 2 is
+settled by measurement. **Entry 1 took three passes to settle and the first two were wrong in
+different directions** — run under arbiter ruling AS1–AS4 at this ticket's gate, then superseded
+at the close review by the established account in AS3 below. The searches, their controls and the
+live read are recorded as they ran, because what they established is load-bearing even where the
+inference drawn from them was not.
 
 **AS1 — the search for a before-state. Nothing, with both controls.**
 
@@ -133,38 +150,57 @@ plan.filled_seats : 16
 
 **Three unfilled organisation seats, today.**
 
-**AS3 — the shape, named. This is (c), and the present state does not corroborate a recovery.**
+**AS3 — as first written this close recorded shape (c) with both readings of the live number left
+open. Both are now closed, and neither was correct.**
 
-- **(a) is unreachable** — it requires a before-state, and AS1 found none.
-- **(b) is unreachable for the same reason**, though its *description* of the outcome is what
-  actually happened: the evidence does not resolve into a clean recovery.
-- **(c) is the shape.** The register records **"unfilled paid seats, count not established"**.
-  The reviewer's figure of *three* is **not carried into it** — AS3 forbids it, and AS1 and AS2
-  did not establish it.
+> **`[Superseded 2026-08-14 at the close review, by arbiter ruling and a correction to it. The
+> paragraphs this block replaces stood on an inference from the live read, which was sound and
+> incomplete: the read was taken before the operator acted. What follows is the established
+> account. AS3's shape (c) was the right disposition for the wrong reason — the figure was not
+> established *by this close's searches*, and it was establishable all along from the provider's
+> own billing page, which no search here reached.]`**
 
-**And the observation goes beside it, because it says something the absence alone does not.**
-`plan.seats - plan.filled_seats = 3` at 2026-08-14T09:01:53Z. That is the same count the
-attestation names, **still unfilled**. On GitHub Team `plan.seats` is the number of *purchased*
-seats: freeing a seat lowers `filled_seats`, and only reducing the subscription lowers `seats`.
-So a removal that eliminated spend would show as `seats` falling toward `filled_seats`, and the
-gap is three. **Two readings are open and this close establishes neither**: the removal did not
-reduce purchased seats (so no spend was eliminated), or it did and three further seats have
-since become unfilled. Distinguishing them needs billing history across the period, which is
-establishment work and out of scope.
+**What happened, established.** The operator had reached GitHub's Remove-seats confirmation page
+for a 19→16 reduction and **had not submitted it** at the time this close's live read was taken.
+After the read, the operator submitted it; the provider acknowledged — *"You have successfully
+downgraded to 16 licenses"* — and the organisation's People view reads **16 of 19 seats used**.
+So the live read's `plan.seats 19` is explained twice over, and **both explanations are true
+rather than one of them**: the read **predates the submission**, and **purchased seats do not
+fall until the effective date** in any case. Recording only one would leave a reader thinking the
+other had been ruled out.
 
-**What is recorded, precisely:** the **removal** is operator-attested and is recorded as such,
-dated to the attestation (2026-08-14, this ticket's prompt) rather than to an inferred action
-date, which is **not established**. The **recovery** — spend eliminated — is **not established**,
-and the live read is evidence against it rather than for it.
+**The register entry, in four parts** — `m6-github.md` §Milestone summary → *What m6 recovered*
+carries the same four and this is the derivation:
 
-**AS4 — this is the criterion working on its first run, not failing.** The clause was added at
-t2b so a milestone states what it recovered *with a basis*. Its first entry turns out to carry a
-figure that lives in a conversation and nowhere else, and the one live check available returns
-the same number still outstanding. A register reading *"count not established"* beside an
-observation that contradicts the claim is a better artefact than a confident three nobody can
-check — and it is the same shape as BL-156's own *"not reconstructible from the tree"* stamp,
-filed one day earlier. **No row is opened and nothing is fixed**: this is a finding about a
-figure, reported.
+1. **The waste, and it now has a basis it did not have before.** **Three unfilled purchased
+   seats**, **Team** plan, **4 USD per seat per month** — **12 USD per month**. Sourced from the
+   provider's own billing page rather than from anyone's recollection. **The figure three now
+   enters the register on that footing, and only on it**: AS1's searches did not establish it and
+   nothing in this repo does.
+2. **The action.** Downgrade **19 → 16 licences**, confirmed by the operator **2026-08-14** and
+   acknowledged by the provider. **Effective 2026-08-20**, the next billing cycle.
+3. **Why this close's own live read shows 19.** Both facts above, stated as two.
+4. **The check that closes the entry, with its date.** A read of `plan.seats` **on or after
+   2026-08-20** returning **16**. **Not performed by this close and not performable by it** — the
+   value cannot move before that date, so an earlier read would confirm nothing. **No row is
+   opened for it**: it is a dated line in the register with a stated condition, which is what the
+   criterion's *verify and record* means. Opening a row would convert a scheduled reading into
+   work, and there is no work.
+
+**AS4 — the criterion worked, and this is the strongest evidence it earns its place.** The clause
+was added at t2b so a milestone states what it recovered *with a basis*. **Its first exercise
+found the milestone's own headline recovery unperformed** — the seats still purchased, the figure
+with no source in any artefact, and the action staged but not submitted. **That it was then
+performed does not soften the finding.** The recovery existed as a belief for two days, from the
+scout to this close, and nothing checked it in between; what checked it was this criterion being
+run rather than asserted. A milestone whose subject is recoverable spend had, until the clause
+fired, not recovered the spend it opened by naming.
+
+**What the searches were still right about.** AS1's result stands unchanged and is not softened
+either: **no before-state was recorded in any committed file, fixture or scratchpad**, with a
+positive and a negative control. The figure was recoverable from the provider and from nothing
+this repo holds — which is a fact about the repo, and the reason the entry above names its source
+explicitly rather than stating a number.
 
 **Entry 2 is clean and needs no such work.** `cloudcost/docs/m6-t3-implementation-notes.md:200-222`:
 six Copilot seats, the stalest 8 days idle at reference date 2026-08-14, nothing firing at the
@@ -277,6 +313,48 @@ carries the `[OK]`/`[INFO]` prefixes the saved file writes without. **No line of
 capture is missing from the published one.** This is the inverse of t4's situation, where a
 `tail -60` of a 62-line capture had to be topped up from the saved file.
 
+### 3z. r1 — both pytest scopes re-run, and the sprint legs exempt with their truth-maker
+
+`Ruled at the close review (AT7): re-run both pytest scopes only. The sprint legs are exempt on
+t2's ground, and the ground is stated rather than assumed.`
+
+```
+$ cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest cloudcost/tests/ -q
+465 passed in 152.62s (0:02:32)                                          exit 0
+
+$ cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest tests/ -q
+129 passed, 7 xfailed in 1.34s                                           exit 0
+```
+
+**Both identical to r0's, which are identical to t4's.** Three consecutive measurements of the
+same figure across a close that changes no executable line — which is the only thing that would
+have caught an accidental edit while r1 rewrote four documents.
+
+**The exemption, with `git diff --stat` as its truth-maker** rather than an assertion:
+
+```
+$ git diff --stat                    # r1 working tree against 04ce9bc
+ CLAUDE.md                                       |  18 ++
+ cloudcost/docs/m6-close-implementation-notes.md | 285 ++++++++++++++++++------
+ cloudcost/m6-github.md                          | 148 +++++++++---
+ docs/backlog-2026-06.md                         |  19 ++
+ 4 files changed, 376 insertions(+), 94 deletions(-)
+
+$ git diff --name-only | grep -vE '\.md$'
+(no output)
+```
+
+**Every changed path is `.md`.** No executable, no agent file, no adapter, script, template,
+manifest, matrix, sprint script or harness file — so neither sprint leg can observe this round,
+and re-running them would re-derive r0's result at the cost of two live provider runs. **Nor is
+`drift_check` re-run**, on the separate ground stated in §7.
+
+**Leak check over the r1 diff**, since one round of this milestone already lapsed on U2: the
+organisation login, `ghp_`, `github_pat_` and `Bearer` each return **0**; positive control
+`plan.seats` returns **10**, so the search is live over the diff it claims to cover.
+
+---
+
 ### 3a. The rule-legibility arm, quoted against **m6's open**
 
 That arm is non-blocking by construction, so a green summary is not sufficient evidence and the
@@ -373,7 +451,15 @@ rules; nothing is proposed and nothing is landed.**
 | 8 | **A gate step done out of order, recorded rather than smoothed** | **t4** | `m6-t4:55-60` — `../aetheris/CLAUDE.md` read after W1–W3 had landed, not before the first edit. Nothing in it contradicted the work, so no rework followed, *"but the rule was not followed and the reason it exists is that this is not knowable in advance"* | **NOT MET — 1 ticket**, and the rule it violates is already promoted (agents `CLAUDE.md`, the Repos rule). An instance of an existing rule, not a new one | n/a |
 
 **Three clear the bar (1, 2, 4), one clears it as a pair whose independence is doubtful (6), and
-four do not.** No disposition is offered on any of them.
+four do not.** No disposition was offered on any of them at r0 — the ticket reserved that ruling.
+
+`[Disposed 2026-08-14 at the close review. **1, 2 and 4 promoted** into agents `CLAUDE.md`, quoted
+from the destination in §9. **6 declined** — one arc, t2c authoring and t3 exercising, not two
+independent recurrences, so the bar is not reached however the instances are counted; it may
+return as a fresh finding. **3 and 5 declined**, single-ticket, BL-155 owning both. **7 declined
+on the bar and explicitly not excepted upward on severity**, its mitigation already on BL-150.
+**8 declined** as an instance of a rule already in the file. Eight entries, eight dispositions;
+the table above is unchanged and this bracket carries the verdicts.]`
 
 ### 4b. The prior-claims census — §7 step 4 ¶2, which the prompt omits
 
@@ -423,8 +509,18 @@ time. They are the subsection the next round opens."*
 | 4 | a reverse pointer that restates the rule it points at is a second copy of that rule | one instance (gc t2) | **2** |
 | 5 | a discrimination required of one ticket is not required of its sibling unless the reviewer writes it twice | two instances, **neither a ticket recurrence** | **2** |
 
-**Reported, not disposed** — the prompt reserves the verdict for the reviewer, and R24 requires
-one on each at this close.
+**Reported, not disposed** at r0 — the ticket reserved the verdict for the reviewer, and R24
+requires one on each at this close.
+
+`[Disposed 2026-08-14 at the close review: **all five DROPPED.** Each is at carry count 2, none
+meets §7's ≥2-ticket bar on gc's own recorded evidence, and R24 forbids a third carry. Dropped on
+that evidence rather than on any re-derivation, **recorded once and not re-litigated**, and each
+free to return as a fresh finding from fresh evidence — what R24 forbids is the same entry carried
+a third time, not the subject being raised again by something new. **One distinction stated
+because the two are easy to conflate: dropping a promotion candidacy does not close a row that
+owns the same subject.** Entry 2's subject is owned by BL-149, which stays open on its own terms
+and is untouched by this drop — a row asks what to do, a candidate asks whether a rule should bind
+future work, and answering the second no leaves the first alone.]`
 
 **gc's §Carried in is clear and re-carries nothing.** All four items were disposed at gc t4
 (`:838-845`): three promoted, and item 1 — m5's deferred `mix dialyzer` obligation —
@@ -445,33 +541,55 @@ worth carrying**: a close whose milestone commits no review files cannot perform
 test, and the test's absence is invisible from inside the close. Reported here; **no row opened**,
 per Do-not-generate, and it is offered to the reviewer as material rather than filed.
 
+`[Carried 2026-08-14 at the close review, by arbiter ruling: **appended to BL-150** as one dated
+entry, in this section's own wording. R23's routing applies — it is an observation about how the
+documentation system works, not a unit of work — so it appends to the standing row rather than
+opening one, and BL-150 does not close on it. **No fix is proposed**, deliberately: whether the
+remedy is committing review files, re-keying the test on something the tree keeps, or accepting
+that the test binds only cycles that commit them, is the collection question that row exists to
+hold rather than answer.]`
+
 ---
 
 ## 5. What this close wrote
 
-| file | change |
-|---|---|
-| `cloudcost/m6-github.md` | §Dispositions, §Close criteria — the per-clause assessment, §Milestone summary (four subsections), appended last |
-| `cloudcost/docs/m6-t4-implementation-notes.md` | §9 — a dated discharge block appended; the section stands unrewritten |
-| `docs/backlog-2026-06.md` | **BL-156** — one appended instance. No row opened, none closed |
-| `cloudcost/docs/m6-close-implementation-notes.md` | this file |
+| file | change | round |
+|---|---|---|
+| `cloudcost/m6-github.md` | §Dispositions, §Close criteria — the per-clause assessment, §Milestone summary, appended last | r0 |
+| `cloudcost/docs/m6-t4-implementation-notes.md` | §9 — a dated discharge block appended; the section stands unrewritten | r0 |
+| `docs/backlog-2026-06.md` | **BL-156** — one appended instance. No row opened, none closed | r0 |
+| `cloudcost/docs/m6-close-implementation-notes.md` | this file | r0 |
+| `cloudcost/m6-github.md` | §Ticket set gains **t2b** and **t4**; the register's entry 1 rewritten; §Dispositions gains thirteen dispositions | **r1** |
+| `CLAUDE.md` *(agents)* | **`## Learning — m6-cloudcost`** — three promoted entries, §9 | **r1** |
+| `docs/backlog-2026-06.md` | **BL-150** — one dated entry, §7's closing test | **r1** |
 
-**No adapter, script, template, manifest, matrix, Rig file or harness file was touched**, and no
-executable line changed anywhere — which is why both pytest figures are identical to t4's.
+**No adapter, script, template, manifest, matrix, Rig file or harness file was touched in either
+round**, and no executable line changed anywhere — which is why both pytest figures are identical
+to t4's across both.
 
 ---
 
-## 6. Two findings, reported and not fixed
+## 6. What the close found, and what became of each
 
-1. **The recovered-spend register's first entry cannot be recorded as a recovery** — §2a. The
-   live read returns three unfilled organisation seats today, the same count the attestation
-   names as removed. Recorded as *count not established*, with the observation beside it.
-2. **§Ticket set names four of the six tickets that shipped.** `m6-github.md:82-116` lists t1,
-   t2, t2c and t3. **t2b and t4 have no entry** — t2b appears only in prose cross-references
-   (`:100`, `:120`, `:226`, `:315`), t4 nowhere in the document at all, though both shipped
-   (`bcb63e6`, `e0c1ee2`) and t4 is the ticket that discharged a close criterion. Reported;
-   **not added**, because adding a ticket entry after the fact is a scoping act and the document
-   is the reviewer's. Noted in §Milestone summary → *What the close found*.
+1. **The recovered-spend register's first entry.** As first written: the live read returned three
+   unfilled organisation seats, the same count attested as removed, and the entry recorded *count
+   not established* with both readings of that number left open. **Closed at the review, and
+   neither reading was correct** — the operator had reached the confirmation page without
+   submitting, then submitted after the read. Entry 1 now records the waste (three seats, 4
+   USD/seat/month, **12 USD/month**, from the provider's billing page), the action (19→16,
+   confirmed 2026-08-14, **effective 2026-08-20**), why the read shows 19 (two facts, not one),
+   and the closing check (a `plan.seats` read on or after 2026-08-20 returning 16 — **no row
+   opened**). §2a. **The finding stands and is not softened**: the criterion's first exercise
+   found the milestone's own headline recovery unperformed.
+2. **§Ticket set named four of the six tickets that shipped.** t2b appeared only in prose
+   cross-references, t4 nowhere, though both shipped (`bcb63e6`, `e0c1ee2`) and t4 discharged
+   close criterion 3. Reported at r0 and **not fixed**, on the ground that adding a ticket entry
+   is a scoping act and the document is the reviewer's. **Authorised and fixed at r1**: at a
+   close such an entry records what shipped rather than scoping anything, and a ticket set
+   omitting two of its own tickets is wrong on its face. Both written from the tickets' own notes,
+   matching the surrounding entries' form, with a dated bracket recording the ruling.
+3. **§7's closing test cannot be performed by a milestone that commits no review file** — §4d.
+   **Carried to BL-150** at r1 as a dated entry, per R23; no fix proposed.
 
 ---
 
@@ -543,6 +661,27 @@ the transcript recording the previous one. A separate commit leaves `924b049` a 
 `docs/backlog-2026-06.md`'s last-touching commit at `924b049` where the WARN prints it, and ends
 the regress. **The close is therefore two commits**, and this is the only reason.
 
+> **`[Terminated 2026-08-14 at the close review, by arbiter ruling. The two transcripts above
+> stand as published and no further run was made. The paragraph above got the mechanism right and
+> the remedy wrong: a separate commit does not end the regress, it only delays it one commit —
+> the amendment round landing after this one touches `docs/backlog-2026-06.md` again and moves the
+> hash again. What ends it is the invariant, stated once.]`**
+>
+> **Both transcripts are stamped with the commit they ran at — `e960db0` and `924b049` — and that
+> is all a transcript of this check can be.** The third WARN **is** the staleness indicator, and
+> its `current=` column is `git log -1 --format=%h -- <file>` — a function of the commit being
+> made. So **any commit touching a manifest-tracked file re-stales it by construction**: a run
+> before the commit cannot see that commit's staleness, and a run after it is falsified by the
+> next commit touching the same file, **including the commit that publishes the run itself**.
+> There is no fixed point to converge on, which is why three rounds of re-running produced three
+> transcripts and no additional information.
+>
+> **What the two runs establish, and it is not currency:** the check is green at both commits it
+> was taken at — **8 PASS · 0 FAIL · 3 WARN · 7 INFO, exit 0**, twice — and all three WARNs are
+> the declared `project_knowledge` strict-mode exemption on both. Zero FAIL and no *unexplained*
+> WARN is what `--strict` asserts, and that holds at both. **A later reader wanting currency runs
+> it at their own HEAD**; this record is evidence about the export boundary, not a claim about now.
+
 **All three WARNs are `project_knowledge` manifest staleness — the declared strict-mode exemption
 — and they are named, not chased.** Two predate this close (`cloudcost/milestone.md` stale since
 t3 at `97c61a0`; `docs/capability-matrix.md` since t4 at `e0c1ee2`). **The third is this commit's
@@ -569,3 +708,103 @@ per-row check against **row bodies**, which BL-145's ruling made the authoritati
 closure markers, with a positive control on four rows known closed (BL-069, BL-074, BL-131,
 BL-132 — 1, 3, 1 and 1 markers respectively). A close that lists a row as open when it is closed
 is the defect BL-145 ruled on, and a zero without a control is an observation about the command.
+
+---
+
+## 9. The three promotions, read back out of the destination — §7 step 4 ¶1
+
+`Landed 2026-08-14 at the close review, by arbiter ruling on §4a's enumeration. Candidates 1, 2 and
+4. §7 step 4 requires the entry be readable out of the file rather than claimed from the commit, so
+each is quoted below from` `CLAUDE.md` `after the edit, with its surrounding lines and its line
+number. The commit is not the evidence; the file is.`
+
+**Destination: agents `CLAUDE.md`, a new `## Learning — m6-cloudcost` section at `:519`**, placed
+last in the file after `## Learning — BL-007`. All three land agents-side because **destination
+follows which family an entry joins, not which file the ticket's `Touches` named** — 1 and 2 join
+the doc-sync family whose population is this repo's prose, and 4 joins the family about what a
+done-check establishes over this pipeline. That is the correction gc's close owes, recorded on
+BL-150 and applied rather than restated.
+
+**The section header and preamble, `:517-524`:**
+
+```
+517  ---
+518
+519  ## Learning — m6-cloudcost (GitHub: provider four, the first consumption-class adapter)
+520
+521  Findings that recurred across ≥2 tickets in the m6 milestone, promoted per methodology §7 and
+522  ruled at the close, 2026-08-14. All three land here rather than harness-side because destination
+523  follows **which family an entry joins**, not which file a ticket's `Touches` happened to name —
+524  the correction gc's close owes, recorded on BL-150.
+```
+
+**Candidate 1 → `:526-527`**, headline and `Source:` (body elided at the ellipsis, which is marked
+rather than silent):
+
+```
+526  **A count in prose about a growing set is de-numeralised, not corrected — correcting *seven*
+     to *eight* re-arms the same trap for the next member.** … **Distinguish three shapes before
+     editing**: a *count claim* whose argument the number does not carry (de-numeralise), a *data
+     enumeration* such as a table row or a literal set (extend it; it is not a count), and a count
+     whose argument genuinely needs the figure (keep it, and say why).
+527  `Source: m6-cloudcost t1 (the sweep that minted the rule, and two count-bearing lines the
+     ticket had just written, de-numeralised before the edit landed), t2b (*"Correcting five to
+     seven would have re-armed the same trap for provider five"*), t4 (fired on both units the
+     ticket named and found two more of the class beside them).`
+```
+
+**Candidate 2 → `:529-530`:**
+
+```
+529  **A wiring list's clause can be right while its enumeration is short — repair it as an
+     incomplete enumeration, not as a missing clause.** … **And a generated artefact with consumers
+     is a wiring place in its own right**: a document read by a program is not documentation, and
+     the one place a list of this kind reliably forgets.
+530  `Source: m6-cloudcost t2b (followed the list, found `KNOB_CONSTANTS` and *every prose
+     enumeration of the provider set* unnamed), t4 (found the same clause four instances short,
+     took it to eight, and added the capability-matrix regeneration as a place — … BL-090 closed
+     exactly this for provider three without adding the regen to the list, and it was stale again
+     nine days into provider four).`
+```
+
+**Candidate 4 → `:532-533`:**
+
+```
+532  **A live run exercises only the arm its data happens to be in; every other arm needs a named
+     owner or a stated closing condition — never silence.** … **And a hand-invoked demonstration
+     discharges the render half only**: run it with a control at the real inputs reproducing the
+     live result, label it as not-a-sprint, and split the obligation rather than declaring it
+     closed.
+533  `Source: m6-cloudcost t2c (enumerated what neither of its live legs rendered and named t3 as
+     the inheriting ticket rather than leaving a gap belonging to nobody), t3 (discharged the
+     render half by a labelled hand-invoked chain whose control at the real date reproduced the
+     sprint's zero exactly, and split the rest: *"That closes on its own the first time a seat on
+     this account crosses 30 days idle. No ticket owns it and none should."*).`
+```
+
+**Each is compared against the candidate it came from, not only against the file** — the
+distillation check gc promoted at its own close, applied here to its first successors. All three
+headlines are wider than §4a's one-line statements and none loses a clause: candidate 1's entry
+adds the three-shapes discrimination that t1's sweep produced and §4a compressed away; candidate
+2's adds the generated-artefact clause, **which is candidate 3's subject folded in as a clause
+rather than promoted as an entry** — recorded here because that is a substantive choice and not a
+wording one; candidate 4's adds the hand-invoked-demonstration clause that t3's control produced.
+**Nothing in the promoted wording is absent from the candidate's evidence**, which is the direction
+the check runs.
+
+**The five declines, each recorded once with its ground**, in `m6-github.md` §Dispositions:
+**3** and **5** single-ticket, BL-155 owning both; **6** two instances but **one arc** — t2c
+authoring and t3 exercising — so the bar is not reached however they are counted, and it may
+return as a fresh finding; **7** single-ticket, **declined on the bar and explicitly not excepted
+upward on severity**, its mitigation already on BL-150; **8** an instance of a rule already in the
+file. Eight entries, eight dispositions.
+
+**And gc's five carried candidates are dropped, all of them**, at carry count 2 under R24 — none
+meeting §7's bar on gc's own recorded evidence, recorded once and not re-litigated, each free to
+return as a fresh finding from fresh evidence. **One distinction stated in the section itself
+because the two are easy to conflate: dropping a promotion candidacy does not close a row that
+owns the same subject.** Entry 2's subject is owned by **BL-149**, which stays open on its own
+terms. Thirteen entries, thirteen dispositions.
+
+---
+

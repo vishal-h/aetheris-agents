@@ -86,6 +86,15 @@ R25 — a ruling earns a section only when it changes code.
 - **t2 — the GitHub adapter.** Unscoped. Scoped from t1's packet. Carries D1,
   D3, D4 and D7, the five-place wiring, the credential convention including
   its refusal half, and the period echo assertion.
+- **t2b — wire the GitHub adapter into the pipeline.** Unscoped. Scoped from
+  t2's packet. Provider four becomes selectable: `CLOUDCOST_PROVIDER=github`
+  runs the four stages end to end, `tools.json` declares it, and the sprint
+  gains a GitHub leg. Two commits, agents first — the harness's `MODULES` map
+  and credential preflight are one-way pointers at an agents module, and a
+  one-way pointer lands after its target. It also establishes that the ambient
+  shadow/redirect arm **warns rather than fails**, so the next member of this
+  class does not re-derive it, and it adds the §Close criteria clause on
+  recovered spend.
 - **t2c — the report's evaluation-coverage statement is false whenever a
   canonical type has no rule keying on it.** Scoped below.
   `compose_report_data` derives what the rule catalog did *not* cover
@@ -113,9 +122,30 @@ R25 — a ruling earns a section only when it changes code.
   mid-month by a shrinking margin. Not an adapter defect — t2 reports consumed
   spend faithfully; a question about the field's meaning. **Ruled at t3's gate:
   the adapter emits the rate.** Ground and blast radius in §t3 below.
+- **t4 — the provider-set enumerations m6 was short, and the wiring list that
+  did not name them.** Unscoped. Scoped from t3's packet. Three places that
+  enumerate the provider set were never updated when provider four shipped at
+  t2b, and one of them is functional rather than documentary:
+  `docs/capability-matrix.md` is read whole into the planner's system prompt,
+  so a script absent from it is a script the planner cannot plan. Regenerates
+  the matrix (cloudcost section only, for attributability), repairs §Rig's
+  enumerations, extends the wiring list from four instances to eight, and files
+  BL-154, BL-155 and BL-156. **This is the ticket that discharged close
+  criterion 3.** Fixes no code and designs no drift check.
 
 **t2c precedes t3** because t3 papers over the instance and leaves the
 mechanism.
+
+`[t2b and t4 added 2026-08-14 at the close, by arbiter ruling on the close's
+own finding that this section named four of the six tickets that shipped —
+t2b in prose cross-references only, t4 nowhere. Both had shipped (`bcb63e6`,
+`e0c1ee2`) before this list mentioned them. The close reported the gap and
+declined to fix it, on the ground that adding a ticket entry is a scoping act
+and this document is the reviewer's; the ruling authorises it, on the ground
+that at a close such an entry records what shipped rather than scoping
+anything, and a ticket set omitting two of its own tickets is wrong on its
+face. Both entries are written from the tickets' own implementation notes and
+match the surrounding entries' form. No other entry is touched.]`
 
 `[t2c added 2026-08-13 at the t2b review, by arbiter ruling, and t3's line
 gained its `monthly_cost_estimate` clause in the same edit. The two figures were verified
@@ -396,12 +426,17 @@ recorded zero with its basis satisfies it.]`
 ## Dispositions — every candidate and every carried-in item
 
 `Written at the close, 2026-08-14. Thirteen entries: eight promotion candidates this milestone
-produced, and five carried in from gc's close. Every entry carries a state; the eight are
-enumerated with their evidence and are the reviewer's to rule on, and the five are reported at
-their carry count under R24 rather than disposed here — the close ticket reserves both verdicts.
-Derivation in` `cloudcost/docs/m6-close-implementation-notes.md` `§4.`
+produced, and five carried in from gc's close. Derivation in`
+`cloudcost/docs/m6-close-implementation-notes.md` `§4.`
 
-### §Promotion candidates — eight entries, enumerated, none disposed
+`[Dispositions landed 2026-08-14 at the close review, by arbiter ruling. The section as first
+written enumerated the eight with their evidence and reported the five at their carry count,
+disposing neither — the close ticket having reserved both verdicts for the reviewer. The ruling
+supplies them: three promoted, five m6 candidates declined, five gc candidates dropped under R24.
+Thirteen entries, thirteen dispositions. The enumerations and the evidence below are unchanged;
+what is added is a disposition column and its ground.]`
+
+### §Promotion candidates — eight entries, three promoted and five declined
 
 **The population is derived, not inherited.** m6 committed no review file and this document
 carries no §Promotion candidates section, so §7 step 1's scan ran over the six
@@ -411,35 +446,53 @@ incomplete but absent. **The bar is ≥2 tickets**, and per the precedent m5 and
 instances inside one ticket or in reviewer-directed edits are not ticket recurrences however
 many there are.
 
-| # | candidate | tickets | bar | repo if promoted |
+| # | candidate | tickets | bar | disposition |
 |---|---|---|---|---|
-| 1 | a count in prose about a growing set is **de-numeralised, not corrected** | t1, t2b, t4 | **MET — 3** | **agents** — doc-sync family; its whole population is this repo's prose |
-| 2 | a wiring list's **clause can be right while its enumeration is short**; repair it as an incomplete enumeration, not a missing clause | t2b, t4 | **MET — 2** | **agents** — the artefact is `cloudcost/runbook.md` §Adding a provider |
-| 3 | a **generated artefact with consumers is itself a wiring place** | t4 | not met — 1 ticket; the second data point is a prior milestone | agents |
-| 4 | a live run exercises **only the arm its data happens to be in**; the others need a named owner or a stated condition | t2c, t3 | **MET — 2** | **agents** — what a done-check can and cannot establish over this pipeline |
-| 5 | an **LLM-written cell is unstable, not stale** | t4 | not met — 1 ticket; **BL-155 owns it** | agents |
-| 6 | a report sentence true in one state and false in another **must say which state it is in** | t2c, t3 | met as a pair, but both instances are **one arc** — t2c authoring, t3 exercising — rather than an independent recurrence. The reviewer's call | agents |
-| 7 | the **U2 discipline held for two packets and lapsed on the third**, with nothing detecting it | t3 | not met — 1 ticket. Recorded rather than excepted on severity | agents |
-| 8 | a gate step **done out of order, recorded rather than smoothed** | t4 | not met — 1 ticket, and an instance of an already-promoted rule | n/a |
+| 1 | a count in prose about a growing set is **de-numeralised, not corrected** | t1, t2b, t4 | **MET — 3** | **PROMOTED** → agents `CLAUDE.md` |
+| 2 | a wiring list's **clause can be right while its enumeration is short**; repair it as an incomplete enumeration, not a missing clause | t2b, t4 | **MET — 2** | **PROMOTED** → agents `CLAUDE.md` |
+| 3 | a **generated artefact with consumers is itself a wiring place** | t4 | not met — 1 ticket; the second data point is a prior milestone | **DECLINED** — single-ticket; **BL-155 owns it** |
+| 4 | a live run exercises **only the arm its data happens to be in**; the others need a named owner or a stated condition | t2c, t3 | **MET — 2** | **PROMOTED** → agents `CLAUDE.md` |
+| 5 | an **LLM-written cell is unstable, not stale** | t4 | not met — 1 ticket | **DECLINED** — single-ticket; **BL-155 owns it** |
+| 6 | a report sentence true in one state and false in another **must say which state it is in** | t2c, t3 | two instances, **one arc** — t2c authoring, t3 exercising | **DECLINED** — not two independent recurrences, so the bar is not reached however the instances are counted. **May return as a fresh finding** from fresh evidence |
+| 7 | the **U2 discipline held for two packets and lapsed on the third**, with nothing detecting it | t3 | not met — 1 ticket | **DECLINED on the bar, and explicitly not excepted upward on severity.** The mitigation is already on **BL-150** |
+| 8 | a gate step **done out of order, recorded rather than smoothed** | t4 | not met — 1 ticket | **DECLINED** — an instance of a rule already in the file (agents `CLAUDE.md`, the Repos rule), not a new one |
 
-**Repo placement is decided by which family an entry joins, not by which file a ticket happens
-to touch.** That is the correction gc's close owes: three of its entries landed harness-side
-because t4's `Touches` named that file, while the packet-and-record family sits agents-side —
-recorded on **BL-150**, and not repeated here.
+**All three promotions land agents-side, and the placement rule is why.** Destination is decided
+by **which family an entry joins**, not by which file the ticket happens to touch: 1 and 2 join
+the doc-sync family, whose whole population is this repo's prose and whose artefact is
+`cloudcost/runbook.md` §Adding a provider; 4 joins the family about what a done-check can and
+cannot establish over this pipeline. That is the correction gc's close owes — three of its
+entries landed harness-side because t4's `Touches` named that file, while the packet-and-record
+family sits agents-side — **recorded on BL-150**, and not repeated here.
 
-### §Carried in from gc — five entries, all at carry count 2 under R24
+**Verified by opening the destination**, per §7 step 4 ¶1: each promoted entry is quoted with its
+surrounding lines in `cloudcost/docs/m6-close-implementation-notes.md` §9, read out of
+`CLAUDE.md` rather than out of the commit.
+
+### §Carried in from gc — five entries, **all five dropped** under R24
 
 `docs/milestones/gc-stale-claims.md:847-860` marks all five **first carry** and `:932-935`
-forwards them to this close. **R24 forbids a third carry**, so each needs a verdict here; the
-close ticket reserves that verdict for the reviewer, so they are reported rather than disposed.
+forwards them to this close. **This is their second consecutive close without promotion, and R24
+forbids a third carry.** Ruled at the close review: **dropped, all five** — none meets §7's bar on
+gc's own recorded evidence, and each is dropped on that evidence rather than on any re-derivation.
 
-| # | entry | gc's recorded bar | carry |
-|---|---|---|---|
-| 1 | a round whose first ticket runs in the session that creates the round document has no reviewable ticket anatomy | one instance (gc t1), ratified as a one-off at gc D3 | **2** |
-| 2 | two documents can use one word in incompatible senses and neither is wrong | one instance; ruled at gc D2, owned by **BL-149** | **2** |
-| 3 | a five-instance positive control caught a defect suppressing a fifth of the class | one instance (gc t1) | **2** |
-| 4 | a reverse pointer that restates the rule it points at is a second copy of that rule | one instance (gc t2) | **2** |
-| 5 | a discrimination required of one ticket is not required of its sibling unless the reviewer writes it twice | two instances, neither a ticket recurrence | **2** |
+| # | entry | gc's recorded bar | carry | disposition |
+|---|---|---|---|---|
+| 1 | a round whose first ticket runs in the session that creates the round document has no reviewable ticket anatomy | one instance (gc t1), ratified as a one-off at gc D3 | **2** | **DROPPED** |
+| 2 | two documents can use one word in incompatible senses and neither is wrong | one instance; ruled at gc D2, owned by **BL-149** | **2** | **DROPPED** |
+| 3 | a five-instance positive control caught a defect suppressing a fifth of the class | one instance (gc t1) | **2** | **DROPPED** |
+| 4 | a reverse pointer that restates the rule it points at is a second copy of that rule | one instance (gc t2) | **2** | **DROPPED** |
+| 5 | a discrimination required of one ticket is not required of its sibling unless the reviewer writes it twice | two instances, neither a ticket recurrence | **2** | **DROPPED** |
+
+**Recorded once and not re-litigated**, which is R24's own instruction. **Any may return as a
+fresh finding from fresh evidence** — what R24 forbids is the same entry carried a third time,
+not the subject being raised again by something new.
+
+**One distinction, stated because the two are easy to conflate: dropping a promotion candidacy
+does not close a row that owns the same subject.** Entry 2's subject is owned by **BL-149**, which
+**stays open on its own terms**; this drop says nothing about it, and settles only whether that
+observation becomes a standing instruction in a `CLAUDE.md`. A row asks what to do; a candidate
+asks whether a rule should bind future work. Answering the second no leaves the first untouched.
 
 **gc's own §Carried in re-carries nothing.** All four of its items were disposed at gc t4 —
 three promoted, and m5's deferred `mix dialyzer` obligation **discharged by running the gate**
@@ -469,7 +522,7 @@ satisfies it. A clause satisfied by nothing is stated unmet, not omitted.`
 | 1 | t1, t2 and t3 landed with their done-checks clean | **MET** | Each ticket's own record: t1 `docs/m6-t1-implementation-notes.md` §Done-check; t2 `docs/m6-t2-implementation-notes.md`; t3 `docs/m6-t3-implementation-notes.md:380-381` (465 passed after the full mutation matrix, *"which is where the tree is restored is actually discharged"*). Re-confirmed at this close: **465 passed** and **129 passed, 7 xfailed**, both exit 0 and both identical to t4's figures — the number that would have caught an accidental edit in a close that changes no executable line |
 | 2 | the sprint's cloudcost arms report the same verdicts as at m6's open or better | **MET, and the two legs are met differently** | **DigitalOcean: byte-identical to m6's open.** `18 resources evaluated, 0 skipped; types [compute_instance, load_balancer, volume]` — the same line as `docs/m6-t1-implementation-notes.md:316`, the r0-before reading. **GitHub: *better*, and it has no like-for-like baseline** — the leg did not exist at m6's open, arriving at t2b (`bcb63e6`); it reads `6 resources evaluated, 0 skipped; types [seat]`, unchanged against its within-m6 baseline at t3. Both legs exit 0, 76 lines, zero `[FAIL]`; the GitHub leg's single WARN is the ambient credential-shadow notice, non-blocking and unchanged since t2c. Offering a comparison against a baseline that never existed is what this clause exists to prevent, so it is not offered |
 | 3 | the runbook's provider list and wiring section include GitHub | **MET** | `cloudcost/runbook.md:4` (provider list), `:154` §GitHub, `:221-231` (wired into the pipeline, with its invocation), `:271-280` §Run it, `:325` sprint cases, `:535-536` credential rows, `:550-554` the selector and its `case` citation. Landed by t2b and completed by t4, which is the ticket this criterion had been failing against for nine days |
-| 4 | what this milestone **recovered** is recorded with its basis | **MET as to the record; one of its two entries records a *non-*recovery** | §Milestone summary → *What m6 recovered*. **Entry 2 is a measured zero with its basis** — six seats, stalest 8 days idle, threshold 30 untouched — which the clause's own ground says satisfies it, re-confirmed live at this close (`totals.candidates 0` over `totals.resources 6`). **Entry 1 records that the figure is not established**: no before-state exists anywhere, and a live read at 2026-08-14T09:01:53Z returns three unfilled organisation seats — the same count the attestation names as removed. The removal is operator-attested; the recovery is not established. Derivation and controls: `docs/m6-close-implementation-notes.md` §2a |
+| 4 | what this milestone **recovered** is recorded with its basis | **MET, and its first exercise found the milestone's own headline recovery unperformed** | §Milestone summary → *What m6 recovered*. **Entry 2 is a measured zero with its basis** — six seats, stalest 8 days idle, threshold 30 untouched — which the clause's own ground says satisfies it, re-confirmed live at this close (`totals.candidates 0` over `totals.resources 6`). **Entry 1 is three unfilled purchased seats, Team plan at 4 USD/seat/month = 12 USD/month**, sourced from the provider's own billing page rather than from recollection — the close's search having established that no before-state was recorded anywhere. The downgrade 19→16 was confirmed by the operator **2026-08-14** and acknowledged by the provider, **effective 2026-08-20**; this close's live read shows `plan.seats 19` because it predates the submission **and** because purchased seats do not fall until the effective date. **The closing check is a read of `plan.seats` on or after 2026-08-20 returning 16** — dated here with its condition, not filed as a row. Derivation and controls: `docs/m6-close-implementation-notes.md` §2a |
 | 5 | every decision above is either applied or carries a recorded reason it was not | **MET — seven of seven, none unapplied** | **D1** `scripts/fetch_github.py:97-111`, `:503`, `:537-540`, and the staleness guard at `:790-795`. **D2** `--period YYYY-MM` only (`:864`, validated `:391`); no daily, hourly or per-SKU emission. **D3** `money()` = `round(float(v), 2)` (`_normalized.py:92`), its sum site taking full precision and rounding once after (`fetch_github.py:497`), pinned at `tests/test_fetch_github.py:396`. **D4** applied at t2 and pinned by mutation row M4 — and it **stopped binding at t3**, whose ruling removed the multiplication that was its only site in this adapter; the function's docstring states that rather than leaving it an absence, and replaces the pin with the opposite property (`tests/test_fetch_github.py:738`, `:812`). D4's entry above stands unamended while §t3 carries the change. **D5** is **not applicable yet, with its reason**: it governs *"BL-136's report, when built"*, and BL-136 is unbuilt and was never in m6's scope — this is the clause's *carries a recorded reason it was not* arm, not a gap. **D6** t1's `TYPE_SEAT` and `CANONICAL_TYPES`, t2's seat resources, and the three-part bound applied against `seat_breakdown` and organisation members, both refused for failing two of three legs. **D7** `fetch_github.py:4-5`, `:29-34`, `:144`, the period echo at `:706-711` and `reconcile_detail` at `:717-745`; its published ground was corrected at t2 r1 with the conclusion unchanged |
 | — | *(the operator gate — not a close criterion, and discharged here)* | **DISCHARGED 2026-08-14, by the operator** | Rig's Agents view lists `fetch_github.py` with the label `Cloudcost`; an Orchestrator run with `CLOUDCOST_PROVIDER=github` in *Additional env vars* planned `cloudcost_orchestrator.exs` as a GitHub run and produced a report. Both legs of `docs/m6-t4-implementation-notes.md` §9, which carries a dated discharge block appended at this close. Observed by the operator rather than by a session, which is §9's own point |
 
@@ -519,8 +572,39 @@ Two entries, with different bases, per §Close criteria clause 4.
 
 | # | figure | basis |
 |---|---|---|
-| 1 | **unfilled paid seats — count not established** | Found by inspection during m6's scout, before any adapter existed; the operator's removal is **attested**, dated to the attestation (2026-08-14) rather than to an inferred action date, which is not established. **No before-state exists in any committed file, fixture or scratchpad** — searched with a positive and a negative control. And the strongest check available **does not corroborate a recovery**: `GET /orgs/{org}` at 2026-08-14T09:01:53Z returns `plan.seats 19`, `plan.filled_seats 16` — three unfilled organisation seats, the same count the attestation names as removed, still unfilled. Two readings remain open and this close settles neither: the removal did not reduce purchased seats, or it did and three further seats have since become unfilled. **The offered figure is not carried into this register**, on the ruling that a figure entering it must be independently established |
+| 1 | **three unfilled purchased seats — 12 USD/month, and the downgrade that eliminates it** | See the four-part entry below. Found by inspection during m6's scout, before any adapter existed |
 | 2 | **zero recoverable Copilot seats — a measurement** | The rule t3 built, over live data. Six seats; the stalest 8 days idle at reference date 2026-08-14; nothing fires at the ruled threshold of 30 and nothing at 14 either, and no threshold was moved to produce a candidate. Re-confirmed by this close's own GitHub sprint leg: `totals.candidates 0`, `monthly_saving_estimate 0`, over `totals.resources 6`, `seat_inactive_days 30`. **This is a different statement from the same figure a day earlier**, when it meant no rule could evaluate those six resources at all — which is the whole of t2c and t3's arc |
+
+**Entry 1 in full**, because the criterion asks for the basis and this entry's basis has four
+parts that a single cell would compress into a claim.
+
+- **The waste, sourced from the provider's own billing page rather than from anyone's
+  recollection.** **Three unfilled purchased seats** on a **Team** plan at **4 USD per seat per
+  month** — **12 USD per month**. That figure has a basis, and until this close it did not: it
+  existed as a recollection, and the close's own search established that no before-state was
+  recorded in any committed file, fixture or scratchpad (with a positive and a negative control).
+- **The action.** A **downgrade from 19 to 16 licences**, confirmed by the operator on
+  **2026-08-14** and acknowledged by the provider — *"You have successfully downgraded to 16
+  licenses"* — with the organisation's People view reading **16 of 19 seats used**. **Effective
+  2026-08-20**, the next billing cycle.
+- **Why this close's own live read shows 19, and it is two facts rather than one.** `GET
+  /orgs/{org}` at **2026-08-14T09:01:53Z** returned `plan.seats 19`, `plan.filled_seats 16`. That
+  reading was taken **before the submission**, so it is stale; **and purchased seats do not fall
+  until the effective date in any case**, so it would have returned 19 regardless. Either fact
+  alone would explain the number, and recording only one would leave a reader thinking the other
+  had been ruled out.
+- **The check that closes this entry, with its date.** A read of `plan.seats` **on or after
+  2026-08-20** returning **16**. **Not performed by this close and not performable by it.** It is
+  a dated line here with a stated condition, which is what *verify and record* means — **no row is
+  opened for it**.
+
+**And the criterion caught this, which is the strongest evidence it earns its place.** The clause
+was added at t2b so a milestone states what it recovered *with a basis*. **Its first exercise
+found the milestone's own headline recovery unperformed** — the seats were still purchased, the
+figure had no source, and the operator had reached the confirmation page without submitting it.
+**That it was then performed does not soften the finding**: the recovery existed as a belief for
+two days before anything checked it, and what checked it was this criterion being run rather than
+asserted.
 
 **The pair is the better first exercise of this criterion than either half would have been**,
 because the two figures were established by different means — one by inspection, one by code —
@@ -528,21 +612,25 @@ and because the one established by inspection is the one that did not survive ch
 
 ### What the close found
 
-- **The recovered-spend clause worked on its first run by failing to confirm its own first
-  entry.** It was added so a milestone states what it recovered *with a basis*; its first entry
-  turned out to carry a figure that lives in a conversation and nowhere else, and the one live
-  check available returned the same number still outstanding. A register reading *count not
-  established*, beside an observation that contradicts the claim, is a better artefact than a
-  confident three nobody can check. Reported; nothing opened and nothing fixed.
-- **This §Ticket set names four of the six tickets that shipped.** t1, t2, t2c and t3 have
-  entries; **t2b and t4 do not** — t2b appears only in prose cross-references, t4 nowhere in
-  this document, though both shipped and t4 is the ticket that discharged close criterion 3.
-  Reported and **not added**: adding a ticket entry after the fact is a scoping act and this
-  document is the reviewer's.
+- **The recovered-spend clause worked on its first run by finding this milestone's own headline
+  recovery unperformed.** It was added so a milestone states what it recovered *with a basis*.
+  Its first entry turned out to carry a figure with no source in any artefact, and an action the
+  operator had staged and not submitted — the seats were still purchased. **The recovery had
+  existed as a belief for two days**, from the scout to this close, and nothing checked it in
+  between; what checked it was this criterion being run rather than asserted. The downgrade was
+  then confirmed, **which does not soften the finding**. Entry 1 above records all four parts.
+- **This §Ticket set named four of the six tickets that shipped, and now names six.** t1, t2,
+  t2c and t3 had entries; **t2b and t4 did not** — t2b in prose cross-references only, t4 nowhere
+  in this document, though both shipped and t4 is the ticket that discharged close criterion 3.
+  The close reported it and declined to fix it, on the ground that adding a ticket entry is a
+  scoping act and this document is the reviewer's. **Authorised at the close review and added**,
+  on the ground that at a close such an entry records what shipped rather than scoping anything.
+  The bracket under §Ticket set carries the ruling.
 - **§7's own success test cannot be run on this milestone.** The test is that a finding class
   should not appear as `blocking` in two consecutive milestones — and **m6 committed no review
   file**, so no finding here carries a label this close can read. Stated rather than answered
-  green. The two defects that did stop work were found by the tickets themselves.
+  green. The two defects that did stop work were found by the tickets themselves. **Carried to
+  BL-150** at the close review as a dated entry, per R23; no fix proposed.
 - **The harness-gate premise was checked rather than asserted, for the first time.** The
   harness *has* moved once since gc discharged `mix dialyzer` — `scripts/sprint.sh` at t2b, and
   nothing else. No Elixir gate reads that path, established with two positive controls, so no
@@ -553,9 +641,12 @@ and because the one established by inspection is the one that did not survive ch
 
 ### What stays open, and why that is correct
 
-- **Entry 1 of the recovered-spend register.** Open as a question about a figure, not as work.
-  Settling it needs billing history across the period, which is establishment work no row owns
-  and this close does not invent one for.
+- **Entry 1 of the recovered-spend register, until 2026-08-20.** The downgrade is confirmed and
+  acknowledged; **purchased seats do not fall until the effective date**, so nothing before that
+  date can confirm it and nothing needs to try. **The closing check is a read of `plan.seats` on
+  or after 2026-08-20 returning 16** — a dated line with a stated condition, which is what the
+  criterion's *verify and record* means. **No row is opened for it**, deliberately: opening one
+  would convert a scheduled reading into work, and there is no work.
 - **BL-153's arm-ordering ruling.** A reviewer call rather than an obvious fix, and t3
   deliberately prepended its second mechanism *before* the row's `**Owes:**` line so the
   question stayed visibly untouched.
@@ -577,14 +668,19 @@ and because the one established by inspection is the one that did not survive ch
 
 ### Open for the next cycle
 
-**Eight promotion candidates, first carry** — §Dispositions. Under **R24** each is promoted or
-dropped at the next close and cannot be carried a third time. Three clear §7's ≥2-ticket bar
-(1, 2, 4), one clears it as a pair whose independence is doubtful (6), and four do not.
+**Nothing carries.** §Dispositions holds thirteen entries and thirteen dispositions, so this
+section forwards no candidate to the next close — the first time in three cycles that is true.
+Three of m6's eight were promoted into agents `CLAUDE.md` (§Dispositions, and quoted from the
+destination in `docs/m6-close-implementation-notes.md` §9); five were declined, each on a stated
+ground; and **gc's five were dropped under R24 at their second carry**, recorded once and not to
+be re-litigated.
 
-**gc's five candidates, at carry count 2, awaiting a verdict that R24 requires at this close.**
-They are reported in §Dispositions and are not disposed there; the close ticket reserved that
-verdict for the reviewer, so **this entry is conditional on that ruling** and is the one line in
-this section that is.
+**Two of those dispositions leave something live, and neither is a carry.** A declined or dropped
+candidate **may return as a fresh finding from fresh evidence** — R24 forbids the same entry
+carried a third time, not the subject being raised again by something new; candidate 6 is the one
+most likely to, since an independent recurrence is all its bar wants. And **dropping a candidacy
+does not close a row that owns the same subject**: **BL-149** stays open on its own terms, and
+gc's entry 2 being dropped says nothing about it.
 
 **Six backlog rows, verified open at HEAD** against row bodies — the surface BL-145's ruling made
 authoritative — with a positive control on four rows known closed:

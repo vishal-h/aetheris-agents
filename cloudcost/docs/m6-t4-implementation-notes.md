@@ -394,6 +394,27 @@ and the second leg involves a live model whose behaviour no assertion here const
 board says the document now contains the right rows; it says nothing about whether Rig renders them
 or the planner acts on them. **State this as an outstanding gate.**
 
+> **`[Discharged 2026-08-14 at the m6 close. The section above stands unrewritten per decision 7;
+> this block records the outcome, which was not knowable when the section was written.]`**
+>
+> **Both legs were run by the operator and passed.** Leg 1 — Rig's **Agents** view lists
+> `fetch_github.py`, and the agent label reads **`Cloudcost`**, which is the override this ticket
+> added (§4b) surviving into the surface it was added for. Leg 2 — an **Orchestrator** run with
+> `CLOUDCOST_PROVIDER=github` in *Additional env vars* planned `cloudcost_orchestrator.exs` as a
+> GitHub run and produced a report.
+>
+> **Observed by the operator, not by a session**, which is exactly this section's point: nothing
+> in that session or this one could have performed it, and a green board still says nothing about
+> whether Rig renders the rows or the planner acts on them. Now something does.
+>
+> **And the click-through found something while passing.** The approval card claimed the run
+> *"detects orphans and optimization signals"*, where `detect_optimization_signals.py` is scoped
+> to AWS and — by decision G, recorded in its own docstring — is read by no provider's pipeline
+> at all. **Appended to BL-156 as a second instance; no row opened.** That row was filed by this
+> ticket (§7c) for this exact class, one day earlier.
+>
+> Recorded at the close, `cloudcost/docs/m6-close-implementation-notes.md` §2b.
+
 ---
 
 ## 10. Open items forwarded

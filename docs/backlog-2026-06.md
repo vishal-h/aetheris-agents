@@ -9415,4 +9415,28 @@ read-and-report packet's account of a live Rig run — it is **not reconstructib
 because plan-card text is not persisted, and that irreproducibility is itself the finding rather
 than a weakness in it.`
 
+**Appended 2026-08-14 at the m6 close — a second observed instance, on this row's first day, and
+this one has a tree-checkable half.** *(Appended below the row's own `Source:` stamp, not between
+it and the body it attributes.)* The operator's click-through discharging m6 t4's outstanding Rig
+gate passed both its legs and, while passing, read an approval card claiming the run *"detects
+orphans and optimization signals"* — on a **GitHub** run. The claim is wrong twice over, and the
+second half was checked at HEAD rather than relayed:
+`cloudcost/scripts/detect_optimization_signals.py:1-13` is scoped to *"AWS S3 / ECR / Secrets
+Manager"*, so it cannot run on GitHub at all; and its own docstring records **decision G** — *"the
+core pipeline never reads it"* — so **no provider's pipeline invokes it**, and the card would be
+wrong on an AWS run too. The card names a capability the pipeline does not have, rather than one
+it has for a different provider.
+
+**Why this strengthens the row rather than merely repeating it.** The first instance was recorded
+as not reconstructible from the tree, because plan-card text is not persisted — true of the card,
+and the honest limit. This instance shows the *other* end is reconstructible: the claim's falsity
+is a two-line read of a committed docstring. So a check does not need the card's history to exist.
+It needs the card's claims to be derivable from something that does — which is what the Done-when
+above already asks for.
+
+`Source: the m6 close, 2026-08-14. Read at agents e0c1ee2. The card text is the operator's account
+of a live Rig run and is not reconstructible from the tree, as above; the AWS scoping and the
+decision-G exclusion are lines read in this session. Appended per the standing rule that a live
+instance of an open row's class appends to that row rather than opening another.`
+
 ---

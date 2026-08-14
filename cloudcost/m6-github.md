@@ -390,3 +390,217 @@ unfilled paid seats before any adapter shipped, and a milestone whose subject
 is recoverable spend should state its own. The criterion is that the figure is
 recorded with its basis, not that any particular figure was achieved — a
 recorded zero with its basis satisfies it.]`
+
+---
+
+## Dispositions — every candidate and every carried-in item
+
+`Written at the close, 2026-08-14. Thirteen entries: eight promotion candidates this milestone
+produced, and five carried in from gc's close. Every entry carries a state; the eight are
+enumerated with their evidence and are the reviewer's to rule on, and the five are reported at
+their carry count under R24 rather than disposed here — the close ticket reserves both verdicts.
+Derivation in` `cloudcost/docs/m6-close-implementation-notes.md` `§4.`
+
+### §Promotion candidates — eight entries, enumerated, none disposed
+
+**The population is derived, not inherited.** m6 committed no review file and this document
+carries no §Promotion candidates section, so §7 step 1's scan ran over the six
+implementation-notes files and the runbook/`milestone.md` sweeps those tickets performed —
+step 1's second paragraph being the authority for a scan whose review files are not merely
+incomplete but absent. **The bar is ≥2 tickets**, and per the precedent m5 and gc both recorded,
+instances inside one ticket or in reviewer-directed edits are not ticket recurrences however
+many there are.
+
+| # | candidate | tickets | bar | repo if promoted |
+|---|---|---|---|---|
+| 1 | a count in prose about a growing set is **de-numeralised, not corrected** | t1, t2b, t4 | **MET — 3** | **agents** — doc-sync family; its whole population is this repo's prose |
+| 2 | a wiring list's **clause can be right while its enumeration is short**; repair it as an incomplete enumeration, not a missing clause | t2b, t4 | **MET — 2** | **agents** — the artefact is `cloudcost/runbook.md` §Adding a provider |
+| 3 | a **generated artefact with consumers is itself a wiring place** | t4 | not met — 1 ticket; the second data point is a prior milestone | agents |
+| 4 | a live run exercises **only the arm its data happens to be in**; the others need a named owner or a stated condition | t2c, t3 | **MET — 2** | **agents** — what a done-check can and cannot establish over this pipeline |
+| 5 | an **LLM-written cell is unstable, not stale** | t4 | not met — 1 ticket; **BL-155 owns it** | agents |
+| 6 | a report sentence true in one state and false in another **must say which state it is in** | t2c, t3 | met as a pair, but both instances are **one arc** — t2c authoring, t3 exercising — rather than an independent recurrence. The reviewer's call | agents |
+| 7 | the **U2 discipline held for two packets and lapsed on the third**, with nothing detecting it | t3 | not met — 1 ticket. Recorded rather than excepted on severity | agents |
+| 8 | a gate step **done out of order, recorded rather than smoothed** | t4 | not met — 1 ticket, and an instance of an already-promoted rule | n/a |
+
+**Repo placement is decided by which family an entry joins, not by which file a ticket happens
+to touch.** That is the correction gc's close owes: three of its entries landed harness-side
+because t4's `Touches` named that file, while the packet-and-record family sits agents-side —
+recorded on **BL-150**, and not repeated here.
+
+### §Carried in from gc — five entries, all at carry count 2 under R24
+
+`docs/milestones/gc-stale-claims.md:847-860` marks all five **first carry** and `:932-935`
+forwards them to this close. **R24 forbids a third carry**, so each needs a verdict here; the
+close ticket reserves that verdict for the reviewer, so they are reported rather than disposed.
+
+| # | entry | gc's recorded bar | carry |
+|---|---|---|---|
+| 1 | a round whose first ticket runs in the session that creates the round document has no reviewable ticket anatomy | one instance (gc t1), ratified as a one-off at gc D3 | **2** |
+| 2 | two documents can use one word in incompatible senses and neither is wrong | one instance; ruled at gc D2, owned by **BL-149** | **2** |
+| 3 | a five-instance positive control caught a defect suppressing a fifth of the class | one instance (gc t1) | **2** |
+| 4 | a reverse pointer that restates the rule it points at is a second copy of that rule | one instance (gc t2) | **2** |
+| 5 | a discrimination required of one ticket is not required of its sibling unless the reviewer writes it twice | two instances, neither a ticket recurrence | **2** |
+
+**gc's own §Carried in re-carries nothing.** All four of its items were disposed at gc t4 —
+three promoted, and m5's deferred `mix dialyzer` obligation **discharged by running the gate**
+(`Total errors: 0`, exit 0). It is not re-carried here.
+
+### The prior-claims census — §7 step 4, and it is owed every close
+
+gc's close claims four promotions, all into harness `CLAUDE.md`. Population derived from those
+records rather than chosen by eye; run whitespace-normalised and case-insensitive on both passes.
+**4 of 4 present. Nothing absent. No census promotion owed.** Negative control
+`qqx-census-control-m6close-9174` returned 0 in both repos, verified before use.
+
+**And the instrument reproduced the defect gc's own fourth entry describes** — the exact-string
+pass on gc's candidate wording reported 3 of 4 ABSENT, all three present with drifted headlines.
+Second consecutive demonstration on a close's own instrument. Recorded as a result; the rule that
+predicts it is already in the file.
+
+---
+
+## Close criteria — the per-clause assessment
+
+`Assessed at the close, 2026-08-14. Every clause individually, each pointed at the artifact that
+satisfies it. A clause satisfied by nothing is stated unmet, not omitted.`
+
+| # | clause | verdict | satisfied by |
+|---|---|---|---|
+| 1 | t1, t2 and t3 landed with their done-checks clean | **MET** | Each ticket's own record: t1 `docs/m6-t1-implementation-notes.md` §Done-check; t2 `docs/m6-t2-implementation-notes.md`; t3 `docs/m6-t3-implementation-notes.md:380-381` (465 passed after the full mutation matrix, *"which is where the tree is restored is actually discharged"*). Re-confirmed at this close: **465 passed** and **129 passed, 7 xfailed**, both exit 0 and both identical to t4's figures — the number that would have caught an accidental edit in a close that changes no executable line |
+| 2 | the sprint's cloudcost arms report the same verdicts as at m6's open or better | **MET, and the two legs are met differently** | **DigitalOcean: byte-identical to m6's open.** `18 resources evaluated, 0 skipped; types [compute_instance, load_balancer, volume]` — the same line as `docs/m6-t1-implementation-notes.md:316`, the r0-before reading. **GitHub: *better*, and it has no like-for-like baseline** — the leg did not exist at m6's open, arriving at t2b (`bcb63e6`); it reads `6 resources evaluated, 0 skipped; types [seat]`, unchanged against its within-m6 baseline at t3. Both legs exit 0, 76 lines, zero `[FAIL]`; the GitHub leg's single WARN is the ambient credential-shadow notice, non-blocking and unchanged since t2c. Offering a comparison against a baseline that never existed is what this clause exists to prevent, so it is not offered |
+| 3 | the runbook's provider list and wiring section include GitHub | **MET** | `cloudcost/runbook.md:4` (provider list), `:154` §GitHub, `:221-231` (wired into the pipeline, with its invocation), `:271-280` §Run it, `:325` sprint cases, `:535-536` credential rows, `:550-554` the selector and its `case` citation. Landed by t2b and completed by t4, which is the ticket this criterion had been failing against for nine days |
+| 4 | what this milestone **recovered** is recorded with its basis | **MET as to the record; one of its two entries records a *non-*recovery** | §Milestone summary → *What m6 recovered*. **Entry 2 is a measured zero with its basis** — six seats, stalest 8 days idle, threshold 30 untouched — which the clause's own ground says satisfies it, re-confirmed live at this close (`totals.candidates 0` over `totals.resources 6`). **Entry 1 records that the figure is not established**: no before-state exists anywhere, and a live read at 2026-08-14T09:01:53Z returns three unfilled organisation seats — the same count the attestation names as removed. The removal is operator-attested; the recovery is not established. Derivation and controls: `docs/m6-close-implementation-notes.md` §2a |
+| 5 | every decision above is either applied or carries a recorded reason it was not | **MET — seven of seven, none unapplied** | **D1** `scripts/fetch_github.py:97-111`, `:503`, `:537-540`, and the staleness guard at `:790-795`. **D2** `--period YYYY-MM` only (`:864`, validated `:391`); no daily, hourly or per-SKU emission. **D3** `money()` = `round(float(v), 2)` (`_normalized.py:92`), its sum site taking full precision and rounding once after (`fetch_github.py:497`), pinned at `tests/test_fetch_github.py:396`. **D4** applied at t2 and pinned by mutation row M4 — and it **stopped binding at t3**, whose ruling removed the multiplication that was its only site in this adapter; the function's docstring states that rather than leaving it an absence, and replaces the pin with the opposite property (`tests/test_fetch_github.py:738`, `:812`). D4's entry above stands unamended while §t3 carries the change. **D5** is **not applicable yet, with its reason**: it governs *"BL-136's report, when built"*, and BL-136 is unbuilt and was never in m6's scope — this is the clause's *carries a recorded reason it was not* arm, not a gap. **D6** t1's `TYPE_SEAT` and `CANONICAL_TYPES`, t2's seat resources, and the three-part bound applied against `seat_breakdown` and organisation members, both refused for failing two of three legs. **D7** `fetch_github.py:4-5`, `:29-34`, `:144`, the period echo at `:706-711` and `reconcile_detail` at `:717-745`; its published ground was corrected at t2 r1 with the conclusion unchanged |
+| — | *(the operator gate — not a close criterion, and discharged here)* | **DISCHARGED 2026-08-14, by the operator** | Rig's Agents view lists `fetch_github.py` with the label `Cloudcost`; an Orchestrator run with `CLOUDCOST_PROVIDER=github` in *Additional env vars* planned `cloudcost_orchestrator.exs` as a GitHub run and produced a report. Both legs of `docs/m6-t4-implementation-notes.md` §9, which carries a dated discharge block appended at this close. Observed by the operator rather than by a session, which is §9's own point |
+
+---
+
+## Milestone summary
+
+`Written at the close, 2026-08-14, per §7 step 5. Placement derived: last in the file, after the
+dispositions and the per-clause assessment, which is where` `docs/milestones/gc-stale-claims.md`
+`and` `cloudcost/m5-n1-compose.md` `both put theirs.`
+
+### What shipped
+
+**A class, not a provider.** m6's first paragraph says the decisions belong to the consumption
+class rather than to GitHub, and the milestone was built that way: an eighth canonical type, an
+adapter, a rule keyed on activity rather than age, and a cost-model ruling that will bind Google
+Workspace and AI spend before either has an adapter.
+
+- **t1** extended the canonical vocabulary by one member, `TYPE_SEAT`, and ran the count sweep
+  that found — and de-numeralised — prose stating the set's size, including two count-bearing
+  lines the ticket had itself just written.
+- **t2** shipped `fetch_github.py`: provider four, and the first consumption-class adapter.
+  D7's summary-endpoint choice was verified live against the detail endpoint across closed
+  months, and its published ground was corrected at r1 with the conclusion unchanged.
+- **t2b** made it selectable — `CLOUDCOST_PROVIDER=github` runs the four-stage pipeline end to
+  end, `tools.json` declares it, and the sprint gained a GitHub leg. It also established that
+  the ambient shadow arm warns rather than fails, so the next round in this class does not pay
+  to re-derive it.
+- **t2c** made a false claim true. The report told an operator that every type was one the rule
+  catalog evaluates, over six resources no rule could match, and it reported a clean zero — a
+  completeness claim, which is worse than a report that looks broken. Replaced with three
+  evaluation states and a fourth reading.
+- **t3** added the seat orphan rule, the first in the catalog to key on an activity timestamp,
+  and **decided what `monthly_cost_estimate` means for a consumption provider rather than
+  discovering it**: the adapter emits the rate. It also demonstrated the fired path over live
+  data with a control, and split the obligation rather than declaring it closed.
+- **t4** repaired the provider-set enumerations m6 was short — including the capability matrix,
+  which is read whole into the planner's system prompt, so a script absent from it is a script
+  the planner cannot plan — and extended the wiring list that had not named them.
+
+**Behaviour is unchanged by the close itself.** `465 passed` and `129 passed, 7 xfailed`, both
+identical to t4's figures; no executable line changed anywhere in this close.
+
+### What m6 recovered
+
+Two entries, with different bases, per §Close criteria clause 4.
+
+| # | figure | basis |
+|---|---|---|
+| 1 | **unfilled paid seats — count not established** | Found by inspection during m6's scout, before any adapter existed; the operator's removal is **attested**, dated to the attestation (2026-08-14) rather than to an inferred action date, which is not established. **No before-state exists in any committed file, fixture or scratchpad** — searched with a positive and a negative control. And the strongest check available **does not corroborate a recovery**: `GET /orgs/{org}` at 2026-08-14T09:01:53Z returns `plan.seats 19`, `plan.filled_seats 16` — three unfilled organisation seats, the same count the attestation names as removed, still unfilled. Two readings remain open and this close settles neither: the removal did not reduce purchased seats, or it did and three further seats have since become unfilled. **The offered figure is not carried into this register**, on the ruling that a figure entering it must be independently established |
+| 2 | **zero recoverable Copilot seats — a measurement** | The rule t3 built, over live data. Six seats; the stalest 8 days idle at reference date 2026-08-14; nothing fires at the ruled threshold of 30 and nothing at 14 either, and no threshold was moved to produce a candidate. Re-confirmed by this close's own GitHub sprint leg: `totals.candidates 0`, `monthly_saving_estimate 0`, over `totals.resources 6`, `seat_inactive_days 30`. **This is a different statement from the same figure a day earlier**, when it meant no rule could evaluate those six resources at all — which is the whole of t2c and t3's arc |
+
+**The pair is the better first exercise of this criterion than either half would have been**,
+because the two figures were established by different means — one by inspection, one by code —
+and because the one established by inspection is the one that did not survive checking.
+
+### What the close found
+
+- **The recovered-spend clause worked on its first run by failing to confirm its own first
+  entry.** It was added so a milestone states what it recovered *with a basis*; its first entry
+  turned out to carry a figure that lives in a conversation and nowhere else, and the one live
+  check available returned the same number still outstanding. A register reading *count not
+  established*, beside an observation that contradicts the claim, is a better artefact than a
+  confident three nobody can check. Reported; nothing opened and nothing fixed.
+- **This §Ticket set names four of the six tickets that shipped.** t1, t2, t2c and t3 have
+  entries; **t2b and t4 do not** — t2b appears only in prose cross-references, t4 nowhere in
+  this document, though both shipped and t4 is the ticket that discharged close criterion 3.
+  Reported and **not added**: adding a ticket entry after the fact is a scoping act and this
+  document is the reviewer's.
+- **§7's own success test cannot be run on this milestone.** The test is that a finding class
+  should not appear as `blocking` in two consecutive milestones — and **m6 committed no review
+  file**, so no finding here carries a label this close can read. Stated rather than answered
+  green. The two defects that did stop work were found by the tickets themselves.
+- **The harness-gate premise was checked rather than asserted, for the first time.** The
+  harness *has* moved once since gc discharged `mix dialyzer` — `scripts/sprint.sh` at t2b, and
+  nothing else. No Elixir gate reads that path, established with two positive controls, so no
+  gate is re-run. The next close inherits the check, not the conclusion.
+- **§7's prior-claims census returned 4 of 4 present** — and its exact-string pass returned 3 of
+  4 falsely absent, reproducing the defect gc promoted for exactly this, on this close's own
+  instrument.
+
+### What stays open, and why that is correct
+
+- **Entry 1 of the recovered-spend register.** Open as a question about a figure, not as work.
+  Settling it needs billing history across the period, which is establishment work no row owns
+  and this close does not invent one for.
+- **BL-153's arm-ordering ruling.** A reviewer call rather than an obvious fix, and t3
+  deliberately prepended its second mechanism *before* the row's `**Owes:**` line so the
+  question stayed visibly untouched.
+- **BL-155's stated unknown.** Eight of nine capability-matrix sections were not regenerated at
+  t4 and have not been checked against their source trees; the byte-identity t4 established says
+  the on-disk sections match the committed document and says nothing about whether either matches
+  the code. Last full regen `4d98ec2`, 2026-08-05.
+- **BL-114.** Its state moved in m6 — t3 rendered the modifier's *applied* arm for the first time
+  on any provider — but only through a labelled hand-invoked chain at a shifted reference date,
+  never a live sprint. The row's question, whether a permanently-dead scoring path stays, is
+  untouched by that.
+- **t2c's split obligation, and it has no owner by design.** What t3 discharged: the
+  fired-candidate arm, the modifier's applied arm and the coverage sentence for a now-ruled type
+  render correctly over real data. What it did not: that a live *sprint* run has exercised them.
+  **That closes on its own the first time a seat on this account crosses 30 days idle. No ticket
+  owns it and none should** — it is a condition, not a work item. This close's GitHub leg did not
+  close it: 0 candidates at reference date 2026-08-14T08:59:51Z, the stalest seat still 8 days
+  idle against a threshold of 30.
+
+### Open for the next cycle
+
+**Eight promotion candidates, first carry** — §Dispositions. Under **R24** each is promoted or
+dropped at the next close and cannot be carried a third time. Three clear §7's ≥2-ticket bar
+(1, 2, 4), one clears it as a pair whose independence is doubtful (6), and four do not.
+
+**gc's five candidates, at carry count 2, awaiting a verdict that R24 requires at this close.**
+They are reported in §Dispositions and are not disposed there; the close ticket reserved that
+verdict for the reviewer, so **this entry is conditional on that ruling** and is the one line in
+this section that is.
+
+**Six backlog rows, verified open at HEAD** against row bodies — the surface BL-145's ruling made
+authoritative — with a positive control on four rows known closed:
+
+- **BL-150** (documentation-system findings) and **BL-151** (code findings) are **standing and
+  append-only**; neither closes on any single item, and a finding of either kind in the next
+  round appends there rather than opening a row. m6 appended to both.
+- **BL-152** — the repo-root `pytest` invocation cannot collect, which is why every m6
+  done-check runs both scopes.
+- **BL-153**, **BL-154**, **BL-155**, **BL-156** — the four rows t4 filed or annotated. BL-156
+  gained a second observed instance at this close, from the same click-through that discharged
+  the operator gate; it does not close the row.
+
+**BL-114** carries forward with what m6 changed about it, above.
+
+**Nothing sequences after this milestone.** The next member of the consumption class is Google
+Workspace, named in this document's first paragraph and holding no ticket; the decisions it will
+meet are D1–D7 and C8's entry in `cloudcost/milestone.md`, which is where t3 put them precisely
+because a contract crosses arcs and an implementation-notes file does not.

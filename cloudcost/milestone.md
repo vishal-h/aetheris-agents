@@ -692,7 +692,33 @@ source is deleted (F3). Both are owed backlog rows by m4 t4c; neither is decided
 `modifier_recent_activity` and its fourteen-day window **have never fired against any real
 inventory on any provider**. The field stays — a provider exposing last-access would make it live —
 but the constant must not be read as tuned, and the modifier must not be read as exercised
-behaviour. Owed a row by t4c: whether a permanently-dead scoring path stays.
+behaviour. Owed a row by t4c: whether a permanently-dead scoring path stays. `[The three
+adapters that paragraph quantifies over are three of four since m6 t2: GitHub populates
+`last_activity_at` on every seat. The claim above is scoped as written and is not amended —
+recorded here so "all three adapters" is not read as "every adapter".]`
+
+**The consumption class carries one obligation of its own, and it is a billing assumption
+before it is a threshold** (m6 t3, the idle-seat rule). An adapter emitting a
+consumption-class entitlement must guarantee that **the entitlement bills for as long as it is
+assigned, regardless of whether anyone exercises it** — that is what makes an unexercised one
+recoverable spend rather than merely unused, and it is the assumption the rule rests on
+entirely. Stated here rather than in the rule's docstring for the reason F4 records: a new
+adapter in this class meets it as an obligation instead of discovering it. **The threshold is
+thirty days of inactivity, and both of its sources are named** so it does not join the two
+above whose rationale this contract records as unestablished: the provider that first exhibited
+the class publishes thirty for exactly this decision (GitHub's inactive-licence guidance and
+its revocation policy), and thirty is already in this catalog's register as the
+stopped-compute/stopped-database threshold and the snapshot default. It is **overridable**,
+unlike the two age thresholds and like the snapshot one — how long an assigned entitlement may
+sit unexercised is an organisation's policy rather than a property of the resource, which is
+the reason the snapshot flag never had. **The re-open trigger is a provider whose seats are not
+billed per seat** — and unlike C7's and C10's, this trigger is **not hypothetical and must not
+be read in that register**: `m6-github.md`'s opening names AI-provider spend as the third
+member of this class, and AI spend is metered rather than billed per seat. The trigger is
+waiting on a provider this milestone has already named, not on an unlikely one.
+`[Added 2026-08-14 at m6 t3. It POSTDATES BL-132's census (2026-08-11, stamped below), so its
+lack of a reachability verdict means it was never censused — not that it was censused and
+found unreachable. No verdict is offered here.]`
 
 **The declared parameter block covers the age thresholds and the coverage threshold, and nothing
 else** (D21). The six confidences, the two modifier deltas, the keep-tag spelling, the ephemeral

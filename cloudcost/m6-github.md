@@ -98,7 +98,7 @@ R25 — a ruling earns a section only when it changes code.
   why it is worse than a report that reads as broken — a broken-looking report
   gets investigated, and this one reports a clean zero. Detail, mechanism and
   the exact sentences are in `docs/m6-t2b-implementation-notes.md`.
-- **t3 — the seat orphan rule.** Unscoped. Scoped from t2's packet. First rule
+- **t3 — the seat orphan rule.** Scoped below. First rule
   in the catalog to key on an activity timestamp rather than an age. It also
   **decides what `monthly_cost_estimate` means for a consumption provider
   rather than discovering it**: its saving figure comes from that field, and
@@ -111,7 +111,8 @@ R25 — a ruling earns a section only when it changes code.
   is the quantity it is multiplied by. DigitalOcean's
   equivalent is a true monthly price, so a seat orphan's saving is understated
   mid-month by a shrinking margin. Not an adapter defect — t2 reports consumed
-  spend faithfully; a question about the field's meaning.
+  spend faithfully; a question about the field's meaning. **Ruled at t3's gate:
+  the adapter emits the rate.** Ground and blast radius in §t3 below.
 
 **t2c precedes t3** because t3 papers over the instance and leaves the
 mechanism.
@@ -278,6 +279,102 @@ that inspects the output directory rather than the exit. Found at t2c.]`
 executed under — the seam ruling with riders AE1–AE5, and the recent-activity
 ruling with riders AF1–AF4, including the adjacent-case sweep AF4 ordered before
 any edit — are recorded there with their grounds.
+
+### t3 — the seat orphan rule
+
+**Scope.** The orphan catalog gains a seventh rule, `rule_idle_seat`: an assigned seat whose
+last activity is older than a threshold is recoverable spend. It is the first rule in the
+catalog keyed on an **activity timestamp** rather than on an age, and the first whose notion of
+idleness is not C7's — `attached_to` is never null on a seat, so the universal unattached signal
+cannot reach the case at all. `RULE_KEYED_TYPES` gains `seat` in the same commit (t2c §5c's
+obligation), which makes the coverage sentences t2c corrected report the new state; after this
+ticket the rule-keyed set and `CANONICAL_TYPES` coincide again, and that is not asserted
+anywhere, deliberately. The ticket also **rules what `monthly_cost_estimate` means for a
+consumption provider** rather than discovering it, and lands the correction the ruling names.
+
+**The cost-model ruling (arbiter, 2026-08-14) — the adapter emits the rate.**
+`fetch_github.seat_monthly_cost` returned `pricePerUnit × (netQuantity / seat_count)`, which is
+month-to-date consumed spend; it now returns `pricePerUnit`. Ground: **a saving is
+forward-looking** — this field feeds an orphan's `monthly_saving_estimate`, and a saving is what
+stops being paid next month rather than what has already been spent this one; a seat reclaimed on
+the 14th saves the full monthly rate from then on. And this is a **correction, not a
+redefinition**: `milestone.md`'s §Normalized already defines the field as *"the provider's own
+price where given"*, GitHub gives one in the same row, and DigitalOcean takes `price_monthly` for
+exactly this reason. The alternatives were foreclosed by a constraint recorded at the gate:
+`detect_orphans` consumes the **inventory only**, and `pricePerUnit` lives in the *cost*
+artifact's `provider_extra`, which §Normalized forbids downstream from keying on generically — so
+no rule can derive a rate, and carrying one on the resource is the inventory-shape ticket §S2
+refused. The ruling authorises that one function, its tests and t2's §C14 notes, and nothing else.
+Nothing is lost: the consumed user-months are still carried, in the cost line item's `usage_qty`
+and in `provider_extra.usage_items`.
+
+**Contract refs.** `cloudcost/milestone.md` §Contracts **C8** (thresholds and the scoring model —
+what a new rule owes), **C7** (attachment, and the idle signal this rule is *not*), **C14**
+(adapter cost-model obligations) and §Normalized schemas' `monthly_cost_estimate` bullet.
+`docs/m6-t2-implementation-notes.md` §S2 (the seat lifecycle signal, carried nowhere, and its
+reopening condition) and §C14. `docs/m6-t2b-implementation-notes.md` §10b (the month-to-date
+finding this ticket rules on). `docs/m6-t2c-implementation-notes.md` §5c (the
+`RULE_KEYED_TYPES` obligation), §7a and §8 (the fired-path obligation).
+`../aetheris/docs/methodology/milestone-methodology.md` §6 and §11.
+
+**Touches.**
+- `cloudcost/scripts/detect_orphans.py`
+- `cloudcost/scripts/fetch_github.py` — **`seat_monthly_cost` only**, per the ruling.
+- `cloudcost/tests/test_detect_orphans.py`
+- `cloudcost/tests/test_fetch_github.py`
+- `cloudcost/tests/fixtures/inventory_seats_positive.json`, `…_negative.json` (new)
+- `cloudcost/milestone.md` — §C8 gains the class's obligation entry
+- `cloudcost/runbook.md` — the zero-orphan section, and the new knob
+- `cloudcost/m6-github.md`
+- `docs/backlog-2026-06.md` — BL-153 annotation, carried by this ticket's prompt and
+  independent of its scope
+- `cloudcost/docs/m6-t3-implementation-notes.md` (new)
+
+Anything outside this list needs a note in the implementation notes. `[The list as issued named
+neither this document, nor the backlog, nor `milestone.md`, nor the runbook; all four were
+reported at the gate and three admitted by ruling. Recorded as a reviewer defect rather than a
+deviation taken.]`
+
+**Do not generate.** No schema change, no new first-class field, no new canonical type, no
+canonical `state` value for seats. No adapter change beyond the one the cost ruling names —
+concluding another is needed is a stop condition. No harness change. No change to
+`compose_report_data.py` or the template: t2c made those sentences general, and a sentence that
+reads wrongly for a type that now has a rule is a t2c defect to report, not to fix here. No
+backlog row unless a genuinely new finding appears.
+
+**Runbook update rule.** This ticket adds a CLI flag (`--seat-inactive-days`), which is a
+command semantic, and it changes what a zero-candidate GitHub run *means* — from "nothing could
+be evaluated" to "nothing qualified". Both are operator-facing, so the runbook **is** owed an
+entry and gets one in §What a zero-orphan account means. Recorded explicitly rather than left as
+an unexplained absence.
+
+**Done-check.**
+```bash
+cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest cloudcost/tests/ -q
+cd ~/sandbox/elixirws/aetheris-agents && python3 -m pytest tests/ -q
+cd ~/sandbox/elixirws/aetheris && set -a && . ~/.secrets/github-cloudcost.env && set +a && CLOUDCOST_PROVIDER=github ./scripts/sprint.sh cloudcost
+cd ~/sandbox/elixirws/aetheris && set -a && . ~/.secrets/do-cloudcost.env && set +a && ./scripts/sprint.sh cloudcost
+```
+
+Both credentialed legs check the **exit code before reading any artifact** (BL-153). The third
+is where the report's coverage and modifier sentences are read against t2c's.
+
+**The live run produces no candidate, and that is a result rather than a gap.** The stalest of
+this organisation's six seats was last exercised 8 days before the run, against a 30-day
+threshold, so the fired path is not reachable from live data at any defensible threshold — and
+tuning one to reach it would be fabrication. Ruled at the gate: the sprint legs run as written
+and their zero is the primary evidence, and the fired path is additionally exercised by a
+**hand-invoked chain over the same live inventory with an explicit `--reference-date`**, in a
+scratch directory, labelled at every point it is quoted, with a control run at the real current
+date reproducing the sprint's zero. What that discharges is that the arm **renders correctly with
+real data**; that it has been exercised by a live *sprint* run is not discharged and closes on
+its own the first time a seat crosses the threshold. No ticket owns that, and none should.
+
+**Claude-code prompt.** Carried by the ticket prompt of the claude-code session of 2026-08-14
+that landed this change, rather than copied here. Its record is
+`cloudcost/docs/m6-t3-implementation-notes.md`; the three arbiter rulings it was executed under —
+the cost model with riders AI1–AI6, the fired-candidate exercise with AJ1–AJ4, and the C8 entry
+with AK1–AK5 — are recorded there with their grounds.
 
 ## Close criteria
 

@@ -431,8 +431,19 @@ calendar. Run it on the 2nd or later.
 ## What a zero-orphan account means, and what the sprint asserts instead
 
 **A zero is the desired state, not a gap.** Detection only surfaces what the account actually
-carries, and none of the three live accounts currently carries an orphan-shaped resource. That is
+carries, and none of the four live accounts currently carries an orphan-shaped resource. That is
 what a well-kept account looks like.
+
+**GitHub's zero is the first one that is a measurement rather than an absence of coverage**
+(m6 t3, 2026-08-14). Until t3 the catalog had no rule keying on `seat`, so a GitHub run reported
+zero candidates because nothing could evaluate its six resources. It now has one — a seat
+unexercised for more than **30 days** — and the run still reports zero: the stalest of the six
+seats was last used 8 days before the run. Read that as *this organisation's Copilot seats carry
+no recoverable spend today*, which is a different statement from the one the same figure made a
+day earlier. The threshold is tunable per run with `--seat-inactive-days N` on
+`detect_orphans.py` (default 30, GitHub's own published figure for an inactive licence); it is
+the only knob besides `--snapshot-age-days`, and lowering it to make a candidate appear tells you
+nothing the timestamps do not already say.
 
 **Do not create a resource to make a check fire.** Until 2026-08-06 the sprint asserted
 `orphan candidates ≥ 1`, and this section was a recipe for planting the billable resource that

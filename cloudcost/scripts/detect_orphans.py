@@ -20,7 +20,8 @@ explicit reference date, so age rules are deterministic and testable.
 
 Usage:
     python3 scripts/detect_orphans.py output/do_inventory_2026-07.json \\
-        [--output-dir output] [--reference-date YYYY-MM-DD] [--snapshot-age-days 30]
+        [--output-dir output] [--reference-date YYYY-MM-DD] [--snapshot-age-days 30] \\
+        [--seat-inactive-days 30]
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ from _normalized import (
     TYPE_DATABASE,
     TYPE_DATABASE_SNAPSHOT,
     TYPE_LOAD_BALANCER,
+    TYPE_SEAT,
     TYPE_SNAPSHOT,
     TYPE_STATIC_IP,
     TYPE_VOLUME,
@@ -60,6 +62,11 @@ CONFIDENCE_AGED_SNAPSHOT = 0.7
 CONFIDENCE_IDLE_LOAD_BALANCER = 0.85
 CONFIDENCE_STOPPED_COMPUTE_WITH_STORAGE = 0.6
 CONFIDENCE_STOPPED_DATABASE_WITH_STORAGE = 0.6
+#: m6 t3. MEDIUM by *equality* with the band cutoff, which C8 records as deliberate
+#: calibration rather than coincidence. Ground: like the aged snapshot — also 0.7 — elapsed
+#: time is the whole signal and the thing may still be wanted; unlike an unattached volume
+#: (0.9) the resource has a human owner who may come back to it.
+CONFIDENCE_IDLE_SEAT = 0.7
 
 #: Age thresholds, in days. A rule fires on age *strictly greater* than its threshold.
 UNATTACHED_VOLUME_MIN_AGE_DAYS = 14
@@ -67,6 +74,22 @@ UNATTACHED_VOLUME_MIN_AGE_DAYS = 14
 #: shape, and a per-type fork would be a provider assumption wearing a type's clothes.
 STOPPED_COMPUTE_MIN_AGE_DAYS = 30
 DEFAULT_SNAPSHOT_AGE_DAYS = 30  # overridable: --snapshot-age-days N
+#: Idle-seat threshold (m6 t3). Overridable: --seat-inactive-days N.
+#:
+#: **Configurable rather than constant, deliberately.** C8 records the existing
+#: override asymmetry as an accident of m1's wording with no rationale behind it; this
+#: threshold has the reason that one never had. How long an assigned-but-unexercised
+#: entitlement may sit before it counts as recoverable is an organisation's *policy*, not a
+#: property of the resource — unlike the age at which a detached disk becomes waste.
+#:
+#: **Thirty, and both sources agree.** GitHub publishes 30 for exactly this decision: its
+#: inactive-user guidance is written against "you haven't used your assigned license for
+#: GitHub Copilot in 30 days", and its licence policy revokes a seat inactive for 30 days
+#: plus a further 30. And 30 is already in this catalog's register — the shared
+#: stopped-compute/stopped-database threshold and the snapshot default — so no new number
+#: enters the model. Recorded with its ground because C8 names two thresholds whose
+#: rationale is *unestablished*, and a third would be a pattern.
+DEFAULT_SEAT_INACTIVE_DAYS = 30
 
 #: Additive modifiers; the final confidence is clamped to [0.0, 1.0].
 MODIFIER_RECENT_ACTIVITY = -0.2
@@ -116,9 +139,16 @@ class Context:
     """Everything a rule needs beyond the resource itself: the reference date, the tunable
     thresholds, and the intra-inventory join of volumes onto what they are attached to."""
 
-    def __init__(self, reference_date: datetime, snapshot_age_days: int, resources: list):
+    def __init__(
+        self,
+        reference_date: datetime,
+        snapshot_age_days: int,
+        resources: list,
+        seat_inactive_days: int = DEFAULT_SEAT_INACTIVE_DAYS,
+    ):
         self.reference_date = reference_date
         self.snapshot_age_days = snapshot_age_days
+        self.seat_inactive_days = seat_inactive_days
         self.volumes_by_attachment: dict = {}
         for resource in resources:
             if resource.get("type") != TYPE_VOLUME:
@@ -143,6 +173,20 @@ class Context:
         if threshold is not None:
             text += f"; threshold >{threshold}d"
         return text
+
+    def activity_phrase(self, label: str, timestamp_value, age: float, threshold) -> str:
+        """`age_phrase`'s sibling for a rule anchored on activity rather than on creation.
+
+        A separate method rather than a widened signature on `age_phrase`: that helper's
+        sentence hard-codes the word *created*, it has five call sites, and every one of them
+        is pinned by a mutation row. An idleness sentence is a different sentence, not a
+        parameterisation of that one.
+        """
+        seen = parse_timestamp(timestamp_value)
+        return (
+            f"{label} {day(seen)} — idle {int(age)}d at ref {day(self.reference_date)}; "
+            f"threshold >{threshold}d"
+        )
 
 
 def fired(rule: str, confidence: float, evidence: list, saving=None) -> dict:
@@ -347,6 +391,65 @@ def rule_stopped_database_with_storage(resource: dict, ctx: Context):
     )
 
 
+def rule_idle_seat(resource: dict, ctx: Context):
+    """Assigned seat unexercised for longer than N days (N is a parameter, default 30) — 0.7.
+
+    **The first rule in the catalog keyed on an activity timestamp rather than on an age**, and
+    the first whose notion of idleness is not C7's. C7 makes `attached_to is null` the universal
+    idle signal, keyed by four rules, where idle means *attached to nothing*. A seat is never
+    unattached — it is assigned to somebody, and the adapter says so — so that signal cannot
+    reach this case at all. The waste here is an entitlement that **has** an owner and still
+    produces nothing: assigned, billed, and unexercised. That distinction is what the
+    consumption class needed a rule for.
+
+    **A null `last_activity_at` is not an unknown here — it is the strongest form of the
+    signal, and the rule anchors on `created_at` instead.** For a seat the field is null in
+    exactly two situations: never exercised since it was assigned, or last exercised longer ago
+    than the provider retains (GitHub nulls it past a rolling 90 days). Both mean *at least* as
+    idle as any non-null value, so treating null as silence would hide the purest case of the
+    waste this rule exists to find. GitHub's own published inactive-user workflow resolves it
+    the same way, falling back to the assignment date. `created_at` is a sound anchor under
+    both readings: a seat whose activity has aged out of retention was necessarily created
+    before that.
+
+    The fallback is keyed on the value being **absent**, never on its being unparseable — an
+    unparseable timestamp leaves the rule silent, as it does every other rule, and is surfaced
+    by `timestamp_warnings` rather than guessed around.
+    """
+    if resource.get("type") != TYPE_SEAT:
+        return None
+
+    last_activity = resource.get("last_activity_at")
+    if last_activity is None:
+        label, anchor = "no activity recorded since assignment", resource.get("created_at")
+    else:
+        label, anchor = "last activity", last_activity
+
+    age = ctx.age_days(anchor)
+    if age is None or age <= ctx.seat_inactive_days:
+        return None
+
+    evidence = [ctx.activity_phrase(label, anchor, age, ctx.seat_inactive_days)]
+    if last_activity is None:
+        evidence.append(
+            "last_activity_at is null — for a seat that means never exercised since it was "
+            "assigned, or exercised longer ago than the provider retains; both are at least "
+            "this idle, so the age above is anchored on created_at"
+        )
+    if resource.get("attached_to") is not None:
+        evidence.append(
+            f"attached_to is {resource.get('attached_to')!r} — the seat is assigned, so it is "
+            f"not idle in the unattached sense the other rules key on; it is an entitlement "
+            f"nobody is exercising"
+        )
+    saving = money(resource.get("monthly_cost_estimate"))
+    evidence.append(
+        f"monthly_cost_estimate is ${saving:.2f}/mo and a seat bills for as long as it is "
+        f"assigned regardless of use — so reclaiming it saves that whole figure"
+    )
+    return fired("idle_seat", CONFIDENCE_IDLE_SEAT, evidence)
+
+
 #: Evaluated in order; each may contribute one candidate.
 RULES = (
     rule_unattached_volume,
@@ -355,6 +458,7 @@ RULES = (
     rule_idle_load_balancer,
     rule_stopped_compute_with_attached_storage,
     rule_stopped_database_with_storage,
+    rule_idle_seat,
 )
 
 #: The canonical `type` values some rule above keys on — the catalog's own account of what
@@ -376,6 +480,11 @@ RULES = (
 #: composer's contradiction guard catches the other direction (a candidate whose type is
 #: absent from this set), and the uncaught direction errs conservatively, understating
 #: coverage rather than overstating it. Whoever adds the next rule updates this set.
+#:
+#: m6 t3 added `seat` with `rule_idle_seat`, which makes the two sets **equal again** — every
+#: canonical type now has a rule keying on it. That is a fact about today's catalog and not a
+#: property to rely on: the equality is not asserted anywhere, deliberately, because the next
+#: canonical type introduced ahead of its rule reopens the divergence and must be allowed to.
 RULE_KEYED_TYPES = frozenset(
     {
         TYPE_VOLUME,  # rule_unattached_volume
@@ -384,6 +493,7 @@ RULE_KEYED_TYPES = frozenset(
         TYPE_LOAD_BALANCER,  # rule_idle_load_balancer
         TYPE_COMPUTE_INSTANCE,  # rule_stopped_compute_with_attached_storage
         TYPE_DATABASE,  # rule_stopped_database_with_storage
+        TYPE_SEAT,  # rule_idle_seat
     }
 )
 
@@ -504,14 +614,17 @@ def detect(
     inventory: dict,
     reference_date: datetime,
     snapshot_age_days: int = DEFAULT_SNAPSHOT_AGE_DAYS,
+    seat_inactive_days: int = DEFAULT_SEAT_INACTIVE_DAYS,
 ) -> dict:
     """Apply the rule catalog to a normalized inventory.
 
-    Pure and deterministic: the same (inventory, reference_date, snapshot_age_days)
-    always produces a byte-identical result. No wall clock is read.
+    Pure and deterministic: the same (inventory, reference_date, snapshot_age_days,
+    seat_inactive_days) always produces a byte-identical result. No wall clock is read.
     """
     resources, skipped = usable_resources(inventory)
-    ctx = Context(reference_date, snapshot_age_days, resources)
+    ctx = Context(
+        reference_date, snapshot_age_days, resources, seat_inactive_days=seat_inactive_days
+    )
 
     candidates, excluded = [], []
     for resource in resources:
@@ -560,6 +673,7 @@ def detect(
         "rule_keyed_types": sorted(RULE_KEYED_TYPES),
         "parameters": {
             "snapshot_age_days": snapshot_age_days,
+            "seat_inactive_days": seat_inactive_days,
             "unattached_volume_min_age_days": UNATTACHED_VOLUME_MIN_AGE_DAYS,
             "stopped_compute_min_age_days": STOPPED_COMPUTE_MIN_AGE_DAYS,
             "recent_activity_window_days": RECENT_ACTIVITY_WINDOW_DAYS,
@@ -637,6 +751,12 @@ def parse_args(argv=None):
         default=DEFAULT_SNAPSHOT_AGE_DAYS,
         help=f"snapshot orphan threshold N in days (default: {DEFAULT_SNAPSHOT_AGE_DAYS})",
     )
+    parser.add_argument(
+        "--seat-inactive-days",
+        type=int,
+        default=DEFAULT_SEAT_INACTIVE_DAYS,
+        help=f"idle-seat threshold N in days (default: {DEFAULT_SEAT_INACTIVE_DAYS})",
+    )
     return parser.parse_args(argv)
 
 
@@ -654,7 +774,12 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "error", "error": message}, indent=2))
         return 1
 
-    result = detect(inventory, reference_date, snapshot_age_days=args.snapshot_age_days)
+    result = detect(
+        inventory,
+        reference_date,
+        snapshot_age_days=args.snapshot_age_days,
+        seat_inactive_days=args.seat_inactive_days,
+    )
     period = result.get("period") or "unknown"
     # Provider-prefixed: each provider is its own solo run writing into the same output
     # directory (decision H), so an unprefixed name would have the second provider's

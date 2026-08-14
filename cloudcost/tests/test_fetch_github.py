@@ -701,14 +701,20 @@ def test_organization_members_are_not_emitted_as_resources(
 # ------------------------------------------------------------------------- C14 — cost model
 
 
-def test_a_seat_costs_what_the_organisations_own_bill_says_it_costs():
+def test_a_seat_costs_the_rate_the_organisations_own_bill_states():
     """C14 — each adapter guarantees its own cost model and asserts it in its own tests.
 
     GitHub's model is neither DO's (billed flat whatever its state) nor AWS's (a stopped
     instance bills no compute): a seat is an entitlement, it bills for as long as it is
     assigned, and its price is not derived from a rate table at all. It is read off the
-    organisation's own bill — the `copilot_for_business` row — and divided by the seats that
-    row is charged for. The figure is checked here against that billed line, not a constant.
+    organisation's own bill — the `copilot_for_business` row's `pricePerUnit`. The figure is
+    checked here against that billed row, not against a constant: `19.0` appears below only
+    as the value the fixture's own `pricePerUnit` carries.
+
+    **m6 t3 re-grounded this assertion** from *the derived figure times the seats it was
+    divided across reproduces the billed line* to *the estimate is the bill's own stated unit
+    price*. Both check against the organisation's bill; the first checked a product that was
+    month-to-date spend, which is not what `monthly_cost_estimate` means.
 
     The obligation C14 leaves standing is met trivially and it is worth saying why: *only
     separately-inventoried storage is summed*, and this adapter inventories no storage of any
@@ -718,34 +724,68 @@ def test_a_seat_costs_what_the_organisations_own_bill_says_it_costs():
     seats = seat_rows()
     row = seat_sku_row()
 
-    unit = fetch_github.seat_monthly_cost(summary, len(seats), [])
-    assert unit == 19.0
-    # The derived per-seat figure, times the seats it was divided across, IS the billed line.
-    assert round(unit * len(seats), 2) == _normalized.money(row["netAmount"]) == 114.0
+    unit = fetch_github.seat_monthly_cost(summary, [])
+    assert unit == _normalized.money(row["pricePerUnit"]) == 19.0
     assert row["unitType"] == fetch_github.SEAT_UNIT
+    # A settled month is the case where the retired formula and this one agree, so the
+    # assertion above cannot by itself tell them apart. The one below can, and does.
 
     # And it reaches the artifact, rather than only the helper.
     seat = fetch_github.normalize_seat(seats[0], ORG, unit)
     assert seat["monthly_cost_estimate"] == 19.0
 
 
+def test_the_seat_estimate_is_the_same_on_a_settled_month_and_an_in_flight_one():
+    """m6 t3, and the assertion the retired implementation could never have passed.
+
+    `monthly_cost_estimate` is a monthly *rate*, so it does not move with how much of the
+    month has elapsed. The two rows below are both real: the settled `2026-07` figures are the
+    committed summary fixture's own, and the in-flight `2026-08` ones were recorded from this
+    organisation's live bill on 2026-08-13 (`cloudcost/output/github/github_costs_2026-08.json`,
+    `provider_extra.usage_items`). Only the quantity fields differ — same SKU, same
+    `pricePerUnit`.
+
+    Under the retired `pricePerUnit × (netQuantity / seat_count)` the two gave 19.00 and 7.97.
+    """
+    settled = seat_sku_row()
+    assert settled["netQuantity"] == 5.999999904  # 2026-07, six seats held all month
+
+    in_flight = {
+        **settled,
+        "grossQuantity": 2.516128992,
+        "netQuantity": 2.516128992,
+        "grossAmount": 47.806450848,
+        "netAmount": 47.806450848,
+    }
+
+    settled_estimate = fetch_github.seat_monthly_cost({"usageItems": [settled]}, [])
+    in_flight_estimate = fetch_github.seat_monthly_cost({"usageItems": [in_flight]}, [])
+
+    assert settled_estimate == in_flight_estimate == 19.0
+    # Named explicitly so the regression this pins is legible: 7.97 is what the in-flight
+    # month produced while the estimate was scaled by consumed user-months.
+    assert in_flight_estimate != 7.97
+
+
 def test_an_absent_seat_sku_is_zero_plus_a_named_warning_never_a_borrowed_rate():
     """Never an invented figure. The plan tier is `business`, whose list price is public — and
     reaching for it here would be exactly the fabrication the milestone forbids."""
     warnings = []
-    assert fetch_github.seat_monthly_cost({"usageItems": []}, 6, warnings) == 0.0
+    assert fetch_github.seat_monthly_cost({"usageItems": []}, warnings) == 0.0
     assert len(warnings) == 1
     assert fetch_github.SEAT_SKU in warnings[0] and "unknown, not zero" in warnings[0]
 
     # Warned once per cause, not once per resource.
-    fetch_github.seat_monthly_cost({"usageItems": []}, 6, warnings)
+    fetch_github.seat_monthly_cost({"usageItems": []}, warnings)
     assert len(warnings) == 1
 
-    # A zero seat count and a price-less row are the other two ways it can be unknown.
-    assert fetch_github.seat_monthly_cost(summary_fixture(), 0, warnings) == 0.0
+    # A price-less row is the other way it can be unknown. **The zero-seat-count arm went at
+    # m6 t3 with the divisor it guarded**: there is no longer a count to divide by, and a run
+    # with no seats emits no resource for the estimate to reach, so warning that the figure is
+    # "unknown, not zero" over a rate the bill states plainly would have been a false note.
     priceless = {"usageItems": [{"sku": fetch_github.SEAT_SKU, "pricePerUnit": None}]}
-    assert fetch_github.seat_monthly_cost(priceless, 6, warnings) == 0.0
-    assert len(warnings) == 3
+    assert fetch_github.seat_monthly_cost(priceless, warnings) == 0.0
+    assert len(warnings) == 2
 
 
 def test_a_billing_failure_leaves_seats_priced_zero_and_says_so_rather_than_guessing(
@@ -769,20 +809,40 @@ def test_a_billing_failure_leaves_seats_priced_zero_and_says_so_rather_than_gues
     assert all(r["monthly_cost_estimate"] == 0.0 for r in inventory["resources"])
 
 
-def test_the_seat_estimate_multiplies_before_it_rounds():
-    """m6 D4, pinned with a rate whose two-decimal rounding is LOSSY, so the two orders give
-    genuinely different answers. Asserting only against the live 19.0 rate would pass under
-    either order and prove nothing — at a sub-cent unit price, rounding first does not lose
-    precision, it zeroes the estimate.
+def test_the_seat_estimate_does_not_move_with_the_quantity_consumed():
+    """**m6 D4 no longer binds this function, and this test records what replaced it.**
+
+    D4 governs an adapter that multiplies a unit price by a quantity; `seat_monthly_cost` was
+    this adapter's only such site and no longer multiplies, so D4's lossy-rate pin — which
+    asserted `money(rate × qty) == 50.40` against a round-first `0.00` — has nothing left to
+    hold. It was this test, and it is replaced rather than deleted, by the property that now
+    matters: **`netQuantity` is not read at all**.
+
+    Driven with the same sub-cent rate the retired assertion used, and a quantity large enough
+    that any scaling would be unmissable. Two consequences are pinned deliberately:
+
+    * the estimate is the rate, whatever the quantity says — so a run mid-month and the same
+      run at month end agree (the settled/in-flight test above is the real-data form of this);
+    * a sub-cent *monthly rate* rounds to `0.00`, silently and with no warning. That is C4/D3's
+      two-decimal contract applied at ingest, identical to what DO's `price_monthly` gets, and
+      not a choice this adapter makes — recorded here because it is the one property the
+      retired multiplication happened to mask. It is unreachable for a seat, whose price is a
+      per-user-month entitlement.
     """
     rate = 0.00033602  # a real GitHub unit price: the actions_storage gigabyte-hour rate
     summary = {"usageItems": [
         {"sku": fetch_github.SEAT_SKU, "pricePerUnit": rate, "netQuantity": 300_000.0}
     ]}
 
-    assert fetch_github.seat_monthly_cost(summary, 2, []) == 50.4  # money(rate * 150_000)
-    # What rounding the unit rate first would have produced — the counter-example D4 records.
-    assert _normalized.money(_normalized.money(rate) * 150_000) == 0.0
+    assert fetch_github.seat_monthly_cost(summary, []) == _normalized.money(rate) == 0.0
+    # What the retired implementation returned for this same row, named so the pin is legible.
+    assert _normalized.money(rate * 150_000) == 50.4
+
+    # And with a rate that survives rounding, the quantity still changes nothing.
+    priced = {"usageItems": [
+        {"sku": fetch_github.SEAT_SKU, "pricePerUnit": 19.0, "netQuantity": 300_000.0}
+    ]}
+    assert fetch_github.seat_monthly_cost(priced, []) == 19.0
 
 
 # -------------------------------------------------------------------------------- discovery

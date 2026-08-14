@@ -24,9 +24,12 @@ SHARED = USE_CASE_ROOT / "scripts" / "_normalized.py"
 REF = detect_orphans.parse_timestamp("2026-07-27T00:00:00Z")
 
 
-def run(fixture, ref=REF, snapshot_age_days=30):
+def run(fixture, ref=REF, snapshot_age_days=30, seat_inactive_days=30):
     return detect_orphans.detect(
-        load_fixture(fixture), ref, snapshot_age_days=snapshot_age_days
+        load_fixture(fixture),
+        ref,
+        snapshot_age_days=snapshot_age_days,
+        seat_inactive_days=seat_inactive_days,
     )
 
 
@@ -298,6 +301,139 @@ def test_the_aged_rule_shares_one_threshold_across_both_snapshot_types():
     assert "snap-db-manual-recent" not in rules_fired(run("inventory_rds_negative"))
 
 
+# ------------------------------------------------------------------------- rule: idle seat
+
+
+def test_idle_seat_fires_past_the_inactivity_threshold():
+    result = by_id(run("inventory_seats_positive"))
+    hit = result["seat-idle-1"]
+    assert hit["rule"] == "idle_seat"
+    assert hit["base_confidence"] == 0.7
+    assert hit["monthly_saving_estimate"] == 19.0
+
+
+def test_idle_seat_is_silent_when_recently_exercised_or_exactly_on_the_threshold():
+    """The near-miss half. `seat-boundary-1`'s last activity is EXACTLY 30 days before the
+    reference date, and the rule fires on strictly-greater — the same boundary every other age
+    rule in the catalog uses."""
+    result = run("inventory_seats_negative")
+    assert result["candidates"] == []
+    assert result["totals"]["monthly_saving_estimate"] == 0.0
+
+
+def test_a_seat_with_no_recorded_activity_is_anchored_on_its_assignment_date():
+    """A null `last_activity_at` is the strongest form of this signal, not an unknown: the seat
+    was either never exercised or was exercised longer ago than the provider retains, and both
+    are at least as idle as any value it could have carried. So it fires, off `created_at`, and
+    the evidence says which anchor it used and why."""
+    hit = by_id(run("inventory_seats_positive"))["seat-never-1"]
+    assert hit["rule"] == "idle_seat"
+    evidence = " | ".join(hit["evidence"])
+    assert "no activity recorded since assignment 2026-01-15" in evidence
+    assert "anchored on created_at" in evidence
+    # 2026-01-15 → 2026-07-27 is 193d, and it is the created_at that produced it.
+    assert "idle 193d" in evidence
+
+
+def test_a_seat_whose_activity_timestamp_is_unparseable_does_not_fall_back():
+    """The fallback is keyed on the value being ABSENT, never on `age_days` returning None.
+
+    An unparseable timestamp means the rule cannot tell how idle the seat is — which is a
+    different thing from knowing it has never been exercised — so it stays silent and the
+    warnings channel names it. `seat-broken-1` carries a two-year-old `created_at`, so a
+    fallback written on `age_days(...) is None` would have fired on it loudly.
+    """
+    result = run("inventory_seats_negative")
+    assert [c["resource_id"] for c in result["candidates"]] == []
+    warned = [w for w in result["warnings"] if w["resource_id"] == "seat-broken-1"]
+    assert len(warned) == 1
+    assert "unparseable last_activity_at" in warned[0]["warning"]
+
+
+def test_idle_seat_evidence_names_the_activity_date_the_threshold_and_the_saving():
+    """C8's obligation, in the form the ticket asks for: an operator judges this candidate on
+    when it was last used and on what reclaiming it saves, so the evidence carries both."""
+    hit = by_id(run("inventory_seats_positive"))["seat-idle-1"]
+    evidence = " | ".join(hit["evidence"])
+    assert "last activity 2026-05-01" in evidence
+    assert "idle 87d at ref 2026-07-27" in evidence
+    assert "threshold >30d" in evidence
+    assert "$19.00/mo" in evidence
+    assert "bills for as long as it is assigned regardless of use" in evidence
+
+
+def test_the_seat_rules_idleness_is_not_the_unattached_signal_the_other_rules_key_on():
+    """C7 makes `attached_to is null` the universal idle signal, keyed by four rules. Every
+    seat here is assigned — `attached_to` is non-null on all of them — so that signal cannot
+    reach this case, and the rule fires anyway. This is what makes it the first of its kind."""
+    inventory = load_fixture("inventory_seats_positive")
+    assert all(r["attached_to"] is not None for r in inventory["resources"])
+    result = run("inventory_seats_positive")
+    assert {c["rule"] for c in result["candidates"]} == {"idle_seat"}
+    evidence = " | ".join(by_id(result)["seat-idle-1"]["evidence"])
+    assert "not idle in the unattached sense the other rules key on" in evidence
+
+
+def test_the_seat_inactivity_threshold_is_a_parameter():
+    """Follows the configurable shape (`--snapshot-age-days`) rather than the hard-coded
+    constants: how long an assigned entitlement may sit unexercised is an organisation's
+    policy, which is the reason the snapshot flag never had."""
+    # At the default both fire (87d and 193d). At 100 the threshold separates them, and at
+    # 200 it silences both — three verdicts over one fixture, from the flag alone.
+    assert sorted(c["resource_id"] for c in run("inventory_seats_positive")["candidates"]) == [
+        "seat-idle-1",
+        "seat-never-1",
+    ]
+    split = run("inventory_seats_positive", snapshot_age_days=30, seat_inactive_days=100)
+    assert [c["resource_id"] for c in split["candidates"]] == ["seat-never-1"]  # 193d > 100d
+    assert split["parameters"]["seat_inactive_days"] == 100
+
+    quiet = run("inventory_seats_positive", snapshot_age_days=30, seat_inactive_days=200)
+    assert quiet["candidates"] == []
+
+    loud = run("inventory_seats_negative", snapshot_age_days=30, seat_inactive_days=5)
+    # seat-broken-1 stays silent even here: its timestamp is unparseable, not old.
+    assert sorted(c["resource_id"] for c in loud["candidates"]) == [
+        "seat-active-1",
+        "seat-boundary-1",
+        "seat-new-1",
+    ]
+
+
+def test_the_default_seat_inactivity_threshold_is_thirty_days():
+    """Both sources agree on 30 and the constant records why: GitHub publishes 30 for this
+    decision, and 30 is already in the catalog's register."""
+    assert detect_orphans.DEFAULT_SEAT_INACTIVE_DAYS == 30
+    assert run("inventory_seats_positive")["parameters"]["seat_inactive_days"] == 30
+
+
+def test_the_catalog_declares_seat_now_that_a_rule_keys_on_it():
+    """m6 t2c §5c's obligation, discharged. The composer's contradiction guard catches a
+    candidate whose type is undeclared — but only if a candidate fires, and no live inventory
+    produces one today, so this assertion is what actually holds the declaration in place."""
+    import _normalized
+
+    assert _normalized.TYPE_SEAT in detect_orphans.RULE_KEYED_TYPES
+    result = run("inventory_seats_positive")
+    assert "seat" in result["rule_keyed_types"]
+    assert {c["type"] for c in result["candidates"]} <= detect_orphans.RULE_KEYED_TYPES
+
+
+def test_the_seat_rule_and_the_recent_activity_modifier_cannot_both_apply():
+    """A property of the pair, pinned because it is invisible in either one alone: the rule
+    needs idle > 30d and the modifier matches idle <= 14d, so no seat candidate can ever carry
+    it while the threshold stays above the window. Not a defect — the report's modifier
+    sentence keys on how many resources carry `last_activity_at`, not on an applied modifier —
+    but it means the applied-to-a-candidate state is unreachable through this rule.
+    """
+    assert (
+        detect_orphans.DEFAULT_SEAT_INACTIVE_DAYS
+        >= detect_orphans.RECENT_ACTIVITY_WINDOW_DAYS
+    )
+    result = run("inventory_seats_positive")
+    assert all(m["modifier"] != "recent_activity" for c in result["candidates"] for m in c["modifiers"])
+
+
 # -------------------------------------------------------------- the negative fixture as a whole
 
 
@@ -322,13 +458,18 @@ def test_every_rule_in_the_catalog_fires_on_the_positive_fixture():
         "idle_load_balancer",
         "stopped_compute_with_attached_storage",
     }
-    # Six rules in the catalog, five fired: this DO-shaped fixture carries no database.
-    # The sixth fires on the RDS fixture — together the two cover the whole catalog.
+    # Seven rules in the catalog, five fired: this DO-shaped fixture carries no database and
+    # no seat. The sixth fires on the RDS fixture and the seventh on the seats fixture —
+    # together the three cover the whole catalog. **Extended at m6 t3 deliberately**: the seat
+    # rule got its own fixture pair rather than two more rows here, so this assertion is
+    # widened by a visible edit instead of silently satisfied by an edit to a shared fixture.
     assert len(result["candidates"]) == 5
-    assert len(detect_orphans.RULES) == 6
+    assert len(detect_orphans.RULES) == 7
     rds = set(c["rule"] for c in run("inventory_rds_positive")["candidates"])
     assert rds == {"stopped_database_with_storage", "aged_snapshot"}
-    assert set(c["rule"] for c in result["candidates"]) | rds == {
+    seats = set(c["rule"] for c in run("inventory_seats_positive")["candidates"])
+    assert seats == {"idle_seat"}
+    assert set(c["rule"] for c in result["candidates"]) | rds | seats == {
         rule.__name__.removeprefix("rule_") for rule in detect_orphans.RULES
     }
     # 4.38 + 10.00 + 12.00 + 1.20 + (24.00 own + 5.00 attached) = 56.58
@@ -649,6 +790,24 @@ def test_cli_snapshot_age_flag_changes_the_verdict(tmp_path):
     )
     assert "snap-aged-1" not in [c["resource_id"] for c in payload["candidates"]]
     assert payload["parameters"]["snapshot_age_days"] == 200
+
+
+def test_cli_seat_inactive_flag_changes_the_verdict(tmp_path):
+    """The flag reaches the rule through the CLI, not only through `detect()` — the same arm
+    `--snapshot-age-days` has, since t3 followed that shape rather than the constants'."""
+    args = [str(FIXTURES / "inventory_seats_positive.json"), "--output-dir", str(tmp_path)]
+    assert cli(args + ["--seat-inactive-days", "200"], tmp_path).returncode == 0
+    payload = json.loads((tmp_path / "seatco_orphan_candidates_2026-07.json").read_text())
+    assert payload["candidates"] == []
+    assert payload["parameters"]["seat_inactive_days"] == 200
+
+    assert cli(args, tmp_path).returncode == 0
+    payload = json.loads((tmp_path / "seatco_orphan_candidates_2026-07.json").read_text())
+    assert sorted(c["resource_id"] for c in payload["candidates"]) == [
+        "seat-idle-1",
+        "seat-never-1",
+    ]
+    assert payload["parameters"]["seat_inactive_days"] == 30
 
 
 def test_cli_missing_inventory_exits_with_an_error_envelope(tmp_path):

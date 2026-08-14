@@ -8827,6 +8827,24 @@ list is empty.
   `Touches` named that file, while gc t1 established the packet-and-record family sits agents-side.
   Recorded so it is findable; not triaged here.
 
+- `2026-08-14` — **The U2 leak check's scope excludes the review packet, which is the artifact
+  most likely to leave the repo.** m6 t2's packet ran a leak check over all tracked files and the
+  untracked implementation notes, and it **passed**. The packet itself was outside that scope. At
+  t3 six live Copilot seat logins and the organisation login went into the packet unredacted —
+  paired, in one table, with each person's Copilot last-activity timestamp to the second — and
+  into the committed implementation notes with them. **It was found by the leak reaching a review,
+  not by the check.** The check is repo-scoped and the packet is pasted into a review conversation
+  by design, so the one channel that carries content off the machine is the one nothing was
+  watching; and the check's passing at t2 was **not evidence about that round's packet**, though
+  it reads as though it were. Recorded here rather than as its own row because it is a fact about
+  how the record-keeping system verifies itself rather than a code defect. **No fix proposed** —
+  that is this row's to decide. `[One tension worth stating rather than resolving: BL-150 collects
+  by SUBJECT (the documentation system), and by that test this belongs here. By MECHANISM it is
+  BL-152/BL-153's class — a verification that can silently yield a wrong answer — and if the
+  collection question this row exists to answer is ever settled by routing on mechanism, this
+  entry moves. Source: m6 t3, `cloudcost/docs/m6-t3-implementation-notes.md` §8a–8b, which carries
+  the blast radius and the remediation.]`
+
 - `2026-08-13` — The five cloudcost milestone documents carry **two forms** of post-H1 provenance
   block: `milestone.md`, `m2-milestone.md`, `m3-milestone.md` and `m4-consolidation.md` open with a
   bolded `**Status:**` paragraph, while `m5-n1-compose.md` opens with a backtick-quoted stamp. m5's
@@ -9051,6 +9069,22 @@ too. It is not DO-specific.
 the previous run's output. What exposed it was checking the **exit code** and diffing against a
 baseline preserved earlier in the session — not inspection of the artifacts, which parse, carry
 the right period, and are internally consistent.
+
+`[Annotated 2026-08-14 at m6 t3 — a SECOND MECHANISM reaching this row's symptom, recorded
+here rather than as its own row because the symptom is the same one: sprint output that cannot
+be trusted from its own content. **Inputs changing under a run, rather than a credential gate
+skipping the guard.** m6 t2c's session discarded a sprint run because a template edit landed
+while that run was still rendering. **The run exited 0**, and its output was indistinguishable
+by content from the frozen-tree run that replaced it — so the exit-code check that catches the
+credential-gate arm does not catch this one, and neither does anything in the artifacts. What
+caught it was knowing an edit had happened. **The mitigation used was freezing the tree and
+recording source mtimes before the run, which is a discipline rather than an enforced check** —
+nothing in the sprint reads a source mtime or stamps the tree state a run was produced from.
+Recorded so the arm-ordering decision below is taken knowing the row has two mechanisms and
+not one; **it does not widen this row's scope and proposes no fix**, and the ruling the row
+owes is still outstanding. Source: the m6 t2c session's own account, relayed in m6 t3's ticket
+prompt. Not reconstructible from the tree — the discarded run left no artifact and the notes
+file does not record it.]`
 
 **Owes:** a decision on arm ordering, which is a reviewer call rather than an obvious fix. At
 least three shapes are defensible and they are not equivalent: clear the directory **before** the

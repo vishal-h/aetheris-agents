@@ -1,0 +1,65 @@
+{
+  "_comment": "Crafted near-miss companion to inventory_seats_positive: four seats that must leave rule_idle_seat silent at ref 2026-07-27, each missing by exactly one thing. seat-active-1 was exercised 7d ago. seat-boundary-1 sits EXACTLY on the 30d threshold, which the rule reads as strictly-greater and must not fire on. seat-new-1 has no activity but was assigned 17d ago, so its created_at anchor is inside the threshold. seat-broken-1 carries an UNPARSEABLE last_activity_at over a two-year-old created_at: the created_at fallback is keyed on the value being absent, never on its being unparseable, so this must stay silent and be surfaced through the warnings channel instead — it is the near-miss that would fire if the fallback were written on age_days returning None.",
+  "provider": "seatco",
+  "account": "seatco-org",
+  "period": "2026-07",
+  "generated_at": "2026-07-27T00:00:00Z",
+  "resources": [
+    {
+      "resource_id": "seat-active-1",
+      "type": "seat",
+      "name": "busy-user",
+      "region": null,
+      "size": "business",
+      "state": null,
+      "created_at": "2025-11-03T00:00:00Z",
+      "last_activity_at": "2026-07-20T00:00:00Z",
+      "attached_to": "user:busy-user",
+      "monthly_cost_estimate": 19.0,
+      "tags": [],
+      "raw_ref": "seatco://orgs/seatco-org/seats/seat-active-1"
+    },
+    {
+      "resource_id": "seat-boundary-1",
+      "type": "seat",
+      "name": "exactly-thirty-user",
+      "region": null,
+      "size": "business",
+      "state": null,
+      "created_at": "2025-11-03T00:00:00Z",
+      "last_activity_at": "2026-06-27T00:00:00Z",
+      "attached_to": "user:exactly-thirty-user",
+      "monthly_cost_estimate": 19.0,
+      "tags": [],
+      "raw_ref": "seatco://orgs/seatco-org/seats/seat-boundary-1"
+    },
+    {
+      "resource_id": "seat-new-1",
+      "type": "seat",
+      "name": "just-assigned-user",
+      "region": null,
+      "size": "business",
+      "state": null,
+      "created_at": "2026-07-10T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": "user:just-assigned-user",
+      "monthly_cost_estimate": 19.0,
+      "tags": [],
+      "raw_ref": "seatco://orgs/seatco-org/seats/seat-new-1"
+    },
+    {
+      "resource_id": "seat-broken-1",
+      "type": "seat",
+      "name": "unparseable-user",
+      "region": null,
+      "size": "business",
+      "state": null,
+      "created_at": "2024-06-01T00:00:00Z",
+      "last_activity_at": "last Tuesday",
+      "attached_to": "user:unparseable-user",
+      "monthly_cost_estimate": 19.0,
+      "tags": [],
+      "raw_ref": "seatco://orgs/seatco-org/seats/seat-broken-1"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "_comment": "Crafted (not recorded): the two ways rule_idle_seat fires at ref 2026-07-27, one resource each. seat-idle-1 carries a last_activity_at past the 30d threshold; seat-never-1 carries none and is anchored on created_at instead. Shaped like the GitHub adapter's real output — state null, attached_to 'user:<login>', no tags, no region — but with a generic provider, because the rule is provider-agnostic and a fixture naming GitHub would suggest otherwise. Tag coverage is 0, so the untagged governance rule declines to run and the assertions are about the rule alone.",
+  "provider": "seatco",
+  "account": "seatco-org",
+  "period": "2026-07",
+  "generated_at": "2026-07-27T00:00:00Z",
+  "resources": [
+    {
+      "resource_id": "seat-idle-1",
+      "type": "seat",
+      "name": "quiet-user",
+      "region": null,
+      "size": "business",
+      "state": null,
+      "created_at": "2025-11-03T00:00:00Z",
+      "last_activity_at": "2026-05-01T00:00:00Z",
+      "attached_to": "user:quiet-user",
+      "monthly_cost_estimate": 19.0,
+      "tags": [],
+      "raw_ref": "seatco://orgs/seatco-org/seats/seat-idle-1"
+    },
+    {
+      "resource_id": "seat-never-1",
+      "type": "seat",
+      "name": "unused-user",
+      "region": null,
+      "size": "business",
+      "state": null,
+      "created_at": "2026-01-15T00:00:00Z",
+      "last_activity_at": null,
+      "attached_to": "user:unused-user",
+      "monthly_cost_estimate": 19.0,
+      "tags": [],
+      "raw_ref": "seatco://orgs/seatco-org/seats/seat-never-1"
+    }
+  ]
+}

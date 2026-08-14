@@ -544,16 +544,37 @@ def normalize_cost(
     }
 
 
-def seat_monthly_cost(summary: dict, seat_count: int, warnings: list) -> float:
-    """The per-seat monthly estimate, derived from the summary's user-months SKU.
+def seat_monthly_cost(summary: dict, warnings: list) -> float:
+    """The per-seat monthly estimate: the SKU's own **rate**, `pricePerUnit`.
 
-    **m6 D4 — aggregate at full precision and round after.** The multiplication happens once,
-    on unrounded operands, and `money()` is applied to its result. Rounding `pricePerUnit`
-    first would be the counter-example D4 records (`fetch_linode.py:396/401/763`), and at a
-    sub-cent unit price it does not merely lose precision — it zeroes the estimate.
+    **m6 t3 — corrected from month-to-date spend to the monthly rate, by ruling.** This
+    returned `pricePerUnit × (netQuantity / seat_count)` until t3. `netQuantity` is
+    user-months *consumed so far*, so that product was the rate scaled by a ratio reaching
+    ~1.0 only on a settled month in which every seat was held throughout: the same six seats
+    estimated at 7.97 for the in-flight `2026-08` against 19.00 for the settled `2026-07`.
 
-    An absent SKU, an absent price and a zero seat count each yield 0.00 plus one named
-    warning, never a figure borrowed from the plan tier or from a neighbouring SKU.
+    Two things make the rate the right figure and the correction a correction rather than a
+    redefinition. **A saving is forward-looking** — this field feeds an orphan's
+    `monthly_saving_estimate`, and a saving is what stops being paid next month, not what has
+    already been spent this one; a seat reclaimed on the 14th saves the full monthly rate from
+    then on. And §Normalized already says what the field is: *"the per-resource dollar figure —
+    the provider's own price where given"*. GitHub gives one, in this very row, and
+    DigitalOcean takes `price_monthly` for exactly this reason. The month-to-date product was a
+    departure from that contract, not a permitted reading of it.
+
+    **Nothing is lost.** The consumed user-months the old figure encoded are still carried, in
+    the cost line item's `usage_qty` and in `provider_extra.usage_items` — where quantities
+    belong. This function reports a price.
+
+    **m6 D4 no longer binds here, and that is worth stating rather than leaving as an
+    absence.** D4 governs an adapter that *multiplies a unit price by a quantity*; this one no
+    longer multiplies, and `seat_monthly_cost` was its only such site in this adapter. What
+    replaces D4's lossy-rate pin is a pin of the opposite property — that the estimate does not
+    move with `netQuantity` — asserted in `test_fetch_github.py` across a settled month and an
+    in-flight one.
+
+    An absent SKU and an absent price each yield 0.00 plus one named warning, never a figure
+    borrowed from the plan tier or from a neighbouring SKU.
     """
     items = (summary or {}).get("usageItems") or []
     row = next((item for item in items if item.get("sku") == SEAT_SKU), None)
@@ -569,16 +590,12 @@ def seat_monthly_cost(summary: dict, seat_count: int, warnings: list) -> float:
 
     if row is None:
         return unknown(f"the billing summary carries no `{SEAT_SKU}` row")
-    if not seat_count:
-        return unknown("the organisation reports no assigned seats to divide the SKU across")
 
     price = row.get("pricePerUnit")
-    quantity = row.get("netQuantity")
-    if price is None or quantity is None:
-        return unknown(f"the `{SEAT_SKU}` row states no pricePerUnit/netQuantity pair")
+    if price is None:
+        return unknown(f"the `{SEAT_SKU}` row states no pricePerUnit")
 
-    # One multiplication, at full precision, rounded once at the end (D4).
-    return money(float(price) * (float(quantity) / seat_count))
+    return money(float(price))
 
 
 def normalize_seat(raw: dict, org: str, unit_cost: float) -> dict | None:
@@ -812,7 +829,7 @@ def fetch_inventory(
             surveyed,
         )
 
-    unit_cost = seat_monthly_cost(summary or {}, len(seats), warnings)
+    unit_cost = seat_monthly_cost(summary or {}, warnings)
     for raw in seats:
         seat = normalize_seat(raw, org, unit_cost)
         if seat is None:

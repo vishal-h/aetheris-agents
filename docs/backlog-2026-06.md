@@ -9034,7 +9034,7 @@ letting the seed count imply it was.`
 
 ### BL-152 — the repo-root `pytest` invocation cannot collect (#TBD)
 **Kind:** gate · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *every existing gate runs at ticket boundaries, even off-territory*
-**Size:** S · **Priority:** medium
+**Size:** S · **Priority:** medium — **CLOSED 2026-08-16**
 **Section:** test apparatus (agents)
 
 Filed 2026-08-13 at m6 t2b, **the day it was found**, by a ticket whose own done-check is the
@@ -9187,6 +9187,53 @@ as before. Every scoped invocation in every runbook, README and milestone doc in
 collects identically before and after, verified scope by scope in both the root-relative and
 cwd-relative forms, so none of them was edited.
 
+`[CLOSED 2026-08-16 by the arbiter, on the BL-152 packet and its amendment —
+agents 2868a3e and ace771c, both public. Closed on the row's FIRST branch: the
+root invocation collects the whole tree and yields a real result. With one
+qualification the row's own text demanded — the gate EXCLUDES tests, by two
+separately named markers, each carrying its own command, with both counts printed
+on every run that deselects anything. The row anticipated this in its "collection
+is only the first obstacle" paragraph. The exclusion policy is part of what closed
+it, not an escape from it.
+
+WHAT THE CLOSURE CLAIMS. The root command collects every test module with zero
+collection errors and its result is a real pass/fail over the set it runs.
+CLAUDE.md names the COMMAND rather than an outcome, so that sentence stays true on
+a day the suite is red. The per-scope census reconciles with the whole-tree total
+in both root-relative and cwd-relative forms, so no scope silently lost tests to
+the rootdir pin — which was this row's own stated Costs risk, and it did not
+materialise.
+
+WHAT IT DOES NOT CLAIM, recorded so no later reader mistakes a green gate for a
+trustworthy suite. The gate deselects tests on marks that are registered but not
+audited against the criterion the gate now uses (BL-158). The dormant set does not
+terminate usefully, holds one named red left deliberately red, and holds at least
+one further failure nobody has identified (BL-159). The bare name `conftest`
+remains a trap held open by an absence that nothing checks (BL-157). The gate
+reports truthfully about the population it runs; it certifies nothing about the
+population it does not.
+
+RULING 1 FIRED, IN A DIRECTION THE TICKET DID NOT PREDICT. The failures the fix
+exposed were not in the gate's population but in the dormant one. The ticket also
+introduced a red of its own — a root conftest.py breaking ten runtime
+`from conftest import …` sites — and recorded it against itself after two runs had
+reported a green gate that was not green. The positive control caught it. That is
+the first occasion in this project on which a control paid for itself inside the
+ticket that built it.
+
+TWO OF THIS ROW'S OWN CLAIMS RESOLVED. "Both modules import and their tests run
+when pytest is invoked against their own scope" was FALSE for boxy-pipeline, which
+collects only with cwd set to its own directory. And m6 t1's "386 passed" was
+never a root-command figure and was never presented as one — the mismatch was
+between the number and the phrase "full suite" standing beside it, not between two
+measurements. "When it went red is unknown" remains unknown, and is now moot.
+
+THE ARBITER'S `integration` CRITERION WAS WRONG AS FIRST WRITTEN and was corrected
+by the implementing session. Phrased as "would it pass in a fresh clone", it
+exempted every test that guards itself with a skip — which was all ten it had just
+been written to justify. The shipped criterion counts a silent skip. Recorded
+because the defect was in the ruling, not in the work.]`
+
 ---
 
 ### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place (#TBD)
@@ -9298,6 +9345,57 @@ which addresses the whole class rather than this arm.
 destroy-the-last-good-artifact trade.**
 **Collides with:** nothing in-repo. The clear is already scoped per provider (decision H), so any
 fix stays within one provider's directory.
+
+`[Ruled 2026-08-16 by the arbiter, on this row's Owes. THE ARM ORDERING IS NOT
+CHANGED. Of the three shapes the row offers, the third is the fix; the first is
+rejected; the second survives only in a form the third gives it.
+
+NOT THE FIRST (clear before the preflight). It addresses one of this row's three
+recorded mechanisms, and buys that with a destroy trade the row was right to
+flag. The trade may be narrower than the row states — if the clear already
+precedes the pipeline, every run that passes the preflight and dies later has
+already destroyed the previous artifacts, which would confine the reorder's
+marginal loss to preflight-stage failures. That is recorded here as an OPEN
+QUESTION for the scoping ticket, not as a fact, and the ruling does not rest on
+it in either direction: narrower is not zero.
+
+NOT THE SECOND AS WRITTEN (the preflight's failure path clears or stamps). As a
+duplicate clear it is what the row calls it — the same guard in two places, still
+reaching one mechanism.
+
+THE THIRD (bind an artifact to the run that produced it). It is the only shape all
+three mechanisms reach, and it is what this row's own Contract line already names.
+Reordering addresses the credential gate and neither of the others; freezing the
+tree addresses inputs-changing-under-a-run and neither of the others; nothing
+addresses a mid-flight kill except a directory that can state whether it is
+complete.
+
+WHAT THE RULING DOES NOT CLAIM. A provenance stamp does not by itself close the
+credential-gate arm. On that path the survivors carry the PREVIOUS run's stamp,
+which is internally coherent, so a reader with no independent handle on which run
+they are asking about still cannot tell. Closing that arm needs the second shape
+after all — but expressed in the stamp's vocabulary rather than as a second clear:
+the preflight's failure path marks the directory as not-the-current-run instead of
+deleting it. That is why the second shape is rejected in one form and retained in
+the other.
+
+TWO PROPERTIES THE IMPLEMENTATION OWES, both verification questions for the
+scoping ticket rather than assertions here. The stamp must be written after every
+artifact a run produces, so that an interrupted directory is UNSTAMPED rather than
+stamped-and-partial. And the reader's rule must be that an unstamped or mismatched
+directory is not a run, so that the ABSENCE of the stamp carries the meaning. A
+stamp that can be written early, or that a reader is free to ignore, restores the
+property it was added to remove.
+
+WHERE THE STAMP LIVES IS NOT RULED, because it turns on facts nobody had read when
+the ruling was made. If Rig's cancel path reaches cloudcost without going through
+the harness sprint script, a stamp written by that script does not cover the
+mechanism that made this row's subject visible. Scoping is blocked behind the
+read-and-report filed as the ticket carrying this annotation; its findings belong
+beside this ruling, not inside it.
+
+Costs: the row's S stands for the stamp; the invalidation is additional and
+unsized here. This is not licence to reorder.]`
 
 `Source: m6 t2c, 2026-08-13. Ordering read at harness d19f4b6; the reproduction above run at that
 commit. Filed at the reviewer's direction rather than left as packet prose, per the standing rule

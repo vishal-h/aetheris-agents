@@ -614,3 +614,20 @@ the correction gc's close owes, recorded on BL-150.
 
 **A live run exercises only the arm its data happens to be in; every other arm needs a named owner or a stated closing condition — never silence.** A green done-check over real data proves the branch the data selected, and says nothing about the branches it did not reach. So enumerate what the run did *not* render, and give each unexercised arm one of two things: **a ticket that inherits it**, or **a condition that closes it on its own, stated with what would satisfy it**. What is forbidden is the third option, leaving it unmentioned — that is how an arm reaches production having never run anywhere but a unit test. **And a hand-invoked demonstration discharges the render half only**: run it with a control at the real inputs reproducing the live result, label it as not-a-sprint, and split the obligation rather than declaring it closed.
 `Source: m6-cloudcost t2c (enumerated what neither of its live legs rendered and named t3 as the inheriting ticket rather than leaving a gap belonging to nobody), t3 (discharged the render half by a labelled hand-invoked chain whose control at the real date reproduced the sprint's zero exactly, and split the rest: *"That closes on its own the first time a seat on this account crosses 30 days idle. No ticket owns it and none should."*).`
+
+---
+
+## Learning — BL-152 (the repo-root `pytest` gate)
+
+Promoted 2026-08-16 by the arbiter at BL-152's closure, and keyed by the **backlog row**
+rather than a milestone because BL-152 belongs to none — the precedent is
+`## Learning — BL-007` above, which is keyed the same way for the same reason. Neither
+entry rests on §7's ≥2-ticket recurrence bar; both are arbiter-issued at a row's close, and
+the first of the two is a defect found **in the arbiter's own ruling**, which is not a shape
+recurrence can measure.
+
+**A criterion phrased as *"would it pass"* exempts every test that guards itself with a skip — and that is usually the exact population the criterion was written for. Phrase it as *"would it do its work"*.** A self-skipping test *passes* in the environment it was written to exclude itself from, so a pass-phrased criterion answers yes for precisely the tests that most need the marker; the criterion then reads as satisfied while classifying nothing. The failure is quiet in the way this repo's **Silent-wrong-answer** class is quiet — the criterion returns a well-formed verdict on every test, and the verdict is wrong only on the population that motivated it. When writing a classification rule, apply it out loud to the instances that prompted it **before** shipping it, and check that it separates them rather than sweeping them into one bucket. See the `integration` marker's shipped statement under §Definition of done, which counts a silent skip.
+`Source: BL-152, 2026-08-16 — the criterion was issued by the arbiter and corrected by the implementing session, which found that applied literally it would have unmarked all ten of the tests it had just been written to justify. Recorded because the defect was in the ruling, not in the work.`
+
+**A count recorded in prose carries the command that reproduces it, or it decays into a claim.** This is the operational half of the harness rule *a count names the commit it was derived at, or a pointer replaces it* — naming the commit tells a later reader the figure is stale; naming the **command** lets them replace it. The difference is not rhetorical: BL-152's integration- and dormant-population figures are true at one commit and move the moment anyone marks a test, and the ones that shipped beside a reproducing invocation can be refreshed in seconds while the ones that did not must be re-derived by hand. So write *`N`, from `<command>`* — never a bare *N* — for any figure over a population the repo will keep changing.
+`Source: BL-152, 2026-08-16. The contrast is inside one ticket: the gate's own deselection counts ship with the command that prints them (`CLAUDE.md` §Definition of done, and the gate's summary line), while several per-scope figures in the row body do not.`

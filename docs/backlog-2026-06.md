@@ -8985,6 +8985,38 @@ appended list is empty.
   a pointer at m6 t4 so the operator has somewhere correct to read; that is a caption over the
   defect, not a fix. No fix is proposed here. Recorded so it is findable; not triaged here.
 
+- `2026-08-16` — `ROADMAP.md:246` states *"pytest passes before sprint.sh runs"*. It names **no
+  command and no scope**, and BL-152 has since made the whole-suite gate a specific invocation
+  that **deselects 320 of 1714 tests** — so the sentence now reads as a claim about a suite no
+  command runs. The gate rule BL-152 landed in `CLAUDE.md` §Definition of done says the opposite:
+  *the gate is the command, not the outcome*. Breaks nothing; a reader following `ROADMAP.md`
+  simply learns nothing executable. Left uncorrected at BL-152 deliberately, because fixing it
+  means adjudicating a payslip-era document's intent, which was outside that ticket. Verified at
+  agents `2868a3e`. Recorded so it is findable; not triaged here.
+
+- `2026-08-16` — A `python3 -m pytest -q -m integration` run **outlived its own
+  `timeout 2700` SIGTERM**. Sampled at 52m21s elapsed: `timeout` still present as the parent,
+  the pytest process in state `Rl` at **4.1% CPU with no child process**, still emitting progress
+  characters. It was killed with `SIGKILL` rather than waited out. No explanation was established
+  and none is proposed — a plausible one is a long-running C-extension call deferring Python's
+  signal handler, but that was **not verified** and is recorded as a guess, not a finding. It
+  matters because a cap that does not actually cap is a cap a future session will trust wrongly.
+  Verified at agents `2868a3e` (the observation predates that commit; the code involved is
+  unchanged by it). Recorded so it is findable; not triaged here.
+
+**Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
+BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.
+`python3 -m` puts the repo root on `sys.path` (as `''`), and `email/` is the only top-level
+directory in this repo sharing a name with a stdlib module. It does **not** shadow: with the repo
+root at `sys.path[0]`, `import email` resolves to
+`…/python3.12/lib/python3.12/email/__init__.py`. A directory without `__init__.py` contributes
+only a *namespace portion*, which does not stop the path scan, and a regular package found later
+on the path wins. The conditional hazard is real — adding `email/__init__.py` would make the repo
+root's copy a regular package at `sys.path[0]` and shadow stdlib `email` repo-wide — but it is
+already governed by a documented convention (`CLAUDE.md` §Python script conventions;
+`docs/agent-creation-guide.md:307`), and a row asserting a defect that does not exist today would
+be a false entry. Verified at agents `2868a3e`. The omission is a decision, not an oversight.
+
 **Deliberately not seeded: `fetch_linode.py`'s round-before-multiply.** The `PriceTable` rounds its
 unit rate at ingest (`:396`, `:402`) and multiplies at `:763`, which is the shape D4 rules on. It is
 **already dispositioned** as `cloudcost/m6-github.md` D4's recorded counter-example, and a second
@@ -9539,5 +9571,205 @@ above already asks for.
 of a live Rig run and is not reconstructible from the tree, as above; the AWS scoping and the
 decision-G exclusion are lines read in this session. Appended per the standing rule that a live
 instance of an open row's class appends to that row rather than opening another.`
+
+---
+
+### BL-157 — the bare module name `conftest` is a standing trap, and it is held open by an absence (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer**; `CLAUDE.md` (agents) §Definition of done — *the Python whole-suite gate*
+**Size:** S · **Priority:** medium
+**Section:** test apparatus (agents)
+
+Filed 2026-08-16 at BL-152's amendment, **the day it fired**. Established at agents `2868a3e`.
+
+**What is there.** Ten lines across eight modules under `cloudcost/tests/` import the bare module
+name `conftest` at runtime — `from conftest import FIXTURES, USE_CASE_ROOT, load_fixture` and
+similar, two of them *inside test bodies* rather than at module level. These resolve through
+`sys.path` when the line executes, not through pytest's collection machinery, which is why
+**`--import-mode=importlib` does not cover them**: importlib mode changes how *pytest* names and
+imports test and conftest modules, and has no bearing on an `import` statement written in test
+code. The resolution works because `cloudcost/tests/conftest.py` inserts its own directory at
+`sys.path[0]`.
+
+**Why it is a trap rather than a wart.** It works today **only because no `conftest.py` exists at
+the repository root**. pytest imports a rootdir `conftest.py` under the bare module name
+`conftest`; the moment one exists, these ten lines can resolve to it instead. Nothing checks that
+absence. It is not documented as load-bearing anywhere except in `pytest.ini`'s comment block,
+added by the same ticket that discovered it, and a comment is not a check.
+
+**It is not hypothetical: BL-152 violated it for two runs.** That ticket's first implementation put
+the gate's deselection-reporting hooks in a new root `conftest.py`. The gate then reported a green
+suite twice while two tests were failing, and the failure was invisible in any scoped run —
+`cloudcost/tests` alone was 464 passed, and the two tests run alone passed. Only the whole-tree
+run showed it:
+
+```
+E       ImportError: cannot import name 'CLOUDCOST_ACCESS_KEY' from 'conftest' (~/sandbox/elixirws/aetheris-agents/conftest.py)
+cloudcost/tests/test_compose_report_data.py:888: ImportError
+cloudcost/tests/test_detect_orphans.py:898: ImportError
+```
+
+BL-152 resolved it for itself by deleting the root `conftest.py` and moving the hooks into
+`tests/conftest.py`. That removes the instance and leaves the trap.
+
+**The reachability is ordinary, not exotic.** A root `conftest.py` is the first thing anyone
+reaches for to add a repo-wide fixture, a session hook, a `pytest_addoption`, or reporting of the
+kind BL-152 needed. The next person to want one will not know this costs two cloudcost tests, and
+the symptom they will see is a green gate.
+
+**Done when:** the absence is either enforced or removed as a dependency, and which of those is
+**not decided here**. A test asserting no root `conftest.py` exists, a change to the ten call
+sites so they do not import a bare top-level name, a package-qualified import, a fixture-based
+replacement, and "document it and accept it" are all on the table; none is endorsed. What the row
+requires is that the decision be made and recorded, not that any particular one be taken.
+
+**Costs:** S to decide. The call-site change is mechanical but touches eight test modules; the
+guard-test option is minutes. Whoever takes it should check whether use cases other than
+`cloudcost` have the same pattern — **BL-152 established only that cloudcost does**, by a grep it
+ran for its own purposes, and did not sweep for near-variants.
+
+`Source: BL-152's amendment, 2026-08-16. The ImportError block above is transcribed from that
+ticket's own failing run and is the row's evidence; the ten call sites were enumerated by
+`grep -rn "^\s*\(from conftest import\|import conftest\)" --include=*.py .` at agents `2868a3e`.
+Filed rather than left in the packet, per the standing rule that prose in a packet or notes files
+nothing.`
+
+---
+
+### BL-158 — the pre-existing `integration` population has never been audited against the criterion the gate now uses (#TBD)
+**Kind:** gate · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *the Python whole-suite gate*; Ruling 2 of BL-152's ticket text
+**Size:** M · **Priority:** medium
+**Section:** test apparatus (agents)
+
+Filed 2026-08-16 at BL-152's amendment. Established at agents `2868a3e`.
+
+**The consequence, stated plainly.** BL-152 made `@pytest.mark.integration` load-bearing: it is now
+one of the two things that removes a test from the whole-suite gate. It also wrote down, for the
+first time, what the marker asserts. **The marks it applied that criterion to are the ten it added
+itself.** The other 159 predate the criterion by months and were applied under no stated rule at
+all. So the repo now **excludes tests from its gate on the strength of marks that were never
+checked against the reason the exclusion exists.**
+
+**The figures, verified rather than estimated** (agents `2868a3e`):
+
+| | count |
+|---|---:|
+| `@pytest.mark.integration` decorators in the tree | **169** |
+| of those, added by BL-152 and checked against the criterion | 10 |
+| of those, **pre-existing and unaudited** | **159** |
+| integration-marked tests the gate deselects (`integration and not dormant`) | 112 |
+| integration-marked tests the dormant set absorbs (boxy-pipeline) | 57 |
+
+The 169 reconciles with collection exactly: `-m integration --collect-only` reports
+`169/1714 tests collected`. A grep for the literal string returns 171; the two extra are prose
+mentions inside module docstrings at `eduloka/tests/test_upsert.py:3` and
+`tests/test_drift_check.py:5`, not decorators. **Of the 159 unaudited marks, 105 are deselected by
+the gate today and 54 are inside the dormant set**, so the dormant half is not urgent and the
+other half is what a gate currently skips on unexamined grounds.
+
+**The cheap half is already done and came back clean.** BL-152's amendment added
+`--strict-markers` to `pytest.ini`'s `addopts`. Whole-tree collection is clean under it —
+`1714 tests collected`, exit 0 — so **every mark in the tree is registered**; there is no typo'd
+or unknown marker anywhere. **That is a syntactic result and settles nothing here.** A mark can be
+perfectly registered and still be on a test that would run fine in a fresh clone. The audit this
+row names is semantic and no tool performs it.
+
+**The criterion to audit against**, as `pytest.ini` now states it: *the test's outcome depends on
+state that is not in this repository at the commit under test* — would it do its work and pass in
+a fresh clone at this commit, offline, with no sibling repository present? Fail, error or **silent
+skip** all mean yes. A subprocess against a tracked script in this repo does not, however many it
+spawns.
+
+**What is NOT known.** Whether any of the 159 fails the criterion; if so how many, and in which
+direction. **Both directions are open** and the row does not assume the interesting one is
+over-marking: a test that *should* carry the mark and does not is the worse defect, because it
+puts out-of-repo dependence inside the gate, and BL-152 found exactly three of those in
+`boxy-pipeline/tests/test_plan_extractor.py` — four siblings with an identical guard were marked
+and three were not. A whole-repo sweep for that shape has not been run.
+
+**Done when:** the 159 have been read against the criterion and the result recorded — each either
+confirmed, or reported as not meeting it — and the reverse sweep for unmarked tests that should
+carry it has been run once over the whole tree. **Not** when a tool passes; no tool decides this.
+Per Ruling 1, a mark found to be wrong is **reported**, not silently corrected, and a red test
+found by removing a mark stays red.
+
+**Costs:** M. 159 marks across roughly two dozen files, each a short read. The reverse sweep is the
+larger half and has no shortcut, though `pytest.skip(` and `shutil.which(` call sites are a
+reasonable starting population — that is how BL-152 found its three.
+
+`Source: BL-152's amendment, 2026-08-16, from that ticket's own §12 UNREAD — *"I did not audit the
+159 pre-existing marks against the criterion now written in pytest.ini; I checked the other
+direction"*. Figures re-verified here rather than carried from that packet. Filed rather than left
+in the packet, per the standing rule that prose in a packet or notes files nothing.`
+
+---
+
+### BL-159 — what the dormant set owes when boxy-pipeline resumes (#TBD)
+**Kind:** gate · **Census items:** n/a · **Contract:** `pytest.ini` — the `dormant` marker's stated condition for return; `CLAUDE.md` (agents) §Definition of done
+**Size:** M · **Priority:** low until boxy-pipeline resumes, then blocking
+**Section:** test apparatus (agents) — `boxy-pipeline/`
+
+Filed 2026-08-16 at BL-152's amendment. Established at agents `2868a3e`.
+
+**This row is the other half of a return condition.** `pytest.ini` says **how** to un-pause
+boxy-pipeline — *delete the `pytestmark = pytest.mark.dormant` lines from
+`boxy-pipeline/tests/test_*.py`; nothing else was changed for the pause*. It does not say what
+un-pausing will find, and a condition for return that hides its own cost is one somebody will
+satisfy by accident. This row is that cost. **The two must be read together**: the marker's
+comment block in `pytest.ini` points at the mechanism, this row points at the consequence.
+
+**208 tests are dormant**, all of `boxy-pipeline/tests/`, deselected from the gate since
+2026-08-16 while still collecting and still importing. Restoring them puts all 208 back into
+`python3 -m pytest -q -m "not integration and not dormant"`. Three things are known about what
+that costs, and one important thing is not.
+
+**1. It does not terminate usefully.** Two capped runs, both killed deliberately, neither
+finishing:
+
+| run | cap | outcome |
+|---|---|---|
+| `python3 -m pytest -q -m integration` (before the marker split; boxy is most of it) | 2700s | killed at **52m21s**, 37 of 169 results emitted |
+| `python3 -m pytest -m integration boxy-pipeline -v` | 2400s | killed at **10m17s**, 21 of 57 results emitted |
+
+Projected from the observed rate the boxy set needs **roughly four hours**. The projection is a
+projection and is labelled as one. The first run stalled at
+`boxy-pipeline/tests/test_pipeline.py::test_plan_path_produces_same_output_as_drawings_path`,
+which `subprocess.run`s `boxy-pipeline/scripts/plan_extractor.py` against two sample PDFs — the
+same shape BL-152's row described before any of this was fixed, so this is a **third independent
+observation** of it, not a new symptom.
+
+**2. At least one test is red, and was left red deliberately.**
+`boxy-pipeline/tests/test_catalog_resolver_refactor.py::test_real_jsonl_resolve_matches_excel_result`
+**FAILED**. Per Ruling 1 it was reported and not fixed, and it is **not** deselected for failing —
+it is deselected because the use case is dormant, and it will be red again the moment the
+`pytestmark` lines come out.
+
+**3. At least one further failure exists and is NOT identified.** The merged run's progress stream
+was `ssssssss................F....F......` — two failures. The verbose run that would have named
+the second was cap-killed before reaching it. Its position is consistent with
+`boxy-pipeline/tests/test_order_formatter.py`, and **that is an inference, deliberately not
+recorded as a fact and deliberately not resolved**: naming it by counting dots is exactly the kind
+of claim that later gets cited as established. Whoever resumes boxy-pipeline will find it by
+running the set.
+
+**And the whole set depends on data no clone carries.** `boxy-pipeline/data/samples/*.pdf` are
+gitignored client files (`boxy-pipeline/.gitignore:2`, `data/*`); `git ls-files
+boxy-pipeline/data/samples/` is empty. On a machine without them every sample-dependent test
+skips, so **the four-hour figure and both failures are only reachable where the client data is
+present.** A resumption on a fresh machine will look fast and green for the wrong reason.
+
+**Done when:** boxy-pipeline's work resumes and, before the `pytestmark` lines are removed, the
+set has been run to completion once under a cap large enough to finish, its true duration recorded,
+every failure identified by name, and a decision taken on whether the set can be part of the gate
+at that duration or needs splitting. If boxy-pipeline is retired rather than resumed, this row
+closes on that instead — and the 208 tests' fate is stated in the same decision.
+
+**Costs:** M, and mostly wall-clock rather than attention. Not payable until the use case is
+active; attempting it before then spends four hours to learn about a paused pipeline.
+
+`Source: BL-152, 2026-08-16, and its amendment. The two capped runs are that ticket's own,
+recorded per the cap correction that a cap-kill is a complete result rather than a check still
+owed. The named red and the unidentified second failure are transcribed from those runs. Filed
+rather than left in the packet, per the standing rule that prose in a packet or notes files
+nothing.`
 
 ---

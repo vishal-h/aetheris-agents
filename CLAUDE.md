@@ -343,15 +343,23 @@ set has its own command, so an exclusion is a deferral rather than a deletion:
 
 | marker | what it asserts | its own command |
 |---|---|---|
-| `integration` | **Test mechanics.** Depends on state outside this repo's tracked tree — a live external service or credential, an installed external binary, the sibling `../aetheris` harness, or gitignored local data files. | `python3 -m pytest -q -m "integration and not dormant"` |
+| `integration` | **Test mechanics.** The test's outcome depends on state that is not in this repository at the commit under test. | `python3 -m pytest -q -m "integration and not dormant"` |
 | `dormant` | **Business state.** The use case's work is paused, so its tests are deselected rather than gating. Carries a date and a stated condition for return. | `python3 -m pytest -q -m dormant` |
 
-Neither is ever applied because a test is slow, and neither because it fails: **a red test is
-reported red, not marked.** A test that spawns `python3` against this repo's own tracked scripts
-on hermetic inputs is the standard idiom here and stays in the gate. **Dormant tests still
-collect and still import** — a use case whose tests stop collecting is one nobody notices has
-rotted, which is the defect this gate exists to remove; deselect at run time, never at import.
-`pytest.ini` carries each marker's full statement, and `dormant`'s condition for return.
+**Apply `integration` by asking one question a reader who has never seen the test can answer:**
+would it do its work and pass in a **fresh clone at this commit, offline, with no sibling
+repository present**? If it would fail, error, or *silently skip* because the thing it needs is not
+there, it is `integration` — a silent skip counts, since "passed here, skipped in a fresh clone" is
+exactly outcome-depends-on-state-the-repo-does-not-carry. A subprocess against a script **tracked
+in this repo**, on inputs this repo carries, is **not** `integration` however many it spawns; that
+is the standard idiom here and it stays in the gate.
+
+Neither marker is ever applied because a test is slow, and neither because it fails: **a red test
+is reported red, not marked.** **Dormant tests still collect and still import** — a use case whose
+tests stop collecting is one nobody notices has rotted, which is the defect this gate exists to
+remove; deselect at run time, never at import. `pytest.ini` is the authority for both markers'
+full statements and for `dormant`'s condition for return; `addopts` carries `--strict-markers`, so
+an unregistered mark is a collection error rather than a silent selection of nothing.
 
 **Any run that can reach live subprocess work runs under an explicit wall-clock cap, and a
 cap-kill is a complete result.** Record the cap and record that the run hit it; do not retry with

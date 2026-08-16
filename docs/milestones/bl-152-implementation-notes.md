@@ -445,3 +445,104 @@ the same 119 collected as before. **The harness needs no change and its HEAD is 
 - I did not investigate why the merged integration run outlived its own `timeout 2700` SIGTERM.
 - `provenance/mcp/corpus-search/tests/` has no `conftest.py` and is the only test directory
   without one. It collects and passes; I did not investigate why it differs.
+
+---
+
+## 13. The amendment (2026-08-16, after approval of 2868a3e)
+
+Approved with amendments; `2868a3e` is not rewritten, because a review packet citing its
+done-checks had already been issued and amending would leave those citations pointing at a tree
+that never existed. Everything below is a second commit on top.
+
+### 13a. The `integration` criterion, restated (A1)
+
+The §8 judgement was upheld, but *"leaves this repository"* described the ten marks without
+explaining them. `pytest.ini` now states the property underneath all three cases:
+
+> **The criterion:** the test's outcome depends on state that is not in this repository at the
+> commit under test.
+>
+> **The test to apply:** would this test do its work and pass in a fresh clone of this repo at
+> this commit, offline, with no sibling repository present? If it would fail, error, or *silently
+> skip* because the thing it needs is not there — it is `integration`. A subprocess against a
+> script tracked in this repo is not, however many it spawns.
+
+**A silent skip counts, and that clause is doing real work here** — without it the criterion
+would exempt all ten marks, because every one of them guards itself with `pytest.skip` rather than
+failing. "Passed here, skipped in a fresh clone" is precisely an outcome that depends on state the
+repository does not carry.
+
+**All ten re-checked; none loses its justification, so nothing was re-marked.**
+
+- The three in `boxy-pipeline/tests/test_plan_extractor.py` read
+  `boxy-pipeline/data/samples/*.pdf`. `git ls-files boxy-pipeline/data/samples/` is **empty** —
+  the PDFs are gitignored client data (`boxy-pipeline/.gitignore:2`, `data/*`), so a fresh clone
+  has none of them, `SAMPLES_AVAILABLE` is False, and all three skip (guards at `:150`, `:163`,
+  `:431`).
+- The seven in `provenance/tests/` call
+  `subprocess.run(["mix","run","--eval",…], cwd=<repo>/../aetheris)` and each guards with
+  `pytest.skip("aetheris repo not found")` — `test_search_agent.py:20,38,57`,
+  `test_zip_archaeologist.py:21`, `test_zip_orchestrator.py:227`,
+  `test_migration_agent.py:197`, `test_classification_orchestrator.py:149`. A fresh clone with no
+  sibling checkout skips all seven.
+
+The criterion remains structural. A red test still does not become `integration`.
+
+### 13b. `--strict-markers` — KEPT (A2)
+
+Added to `addopts`. Whole-tree collection under it is clean:
+
+```
+$ python3 -m pytest -q --collect-only        # with --strict-markers
+1714 tests collected in 2.89s
+EXIT=0
+```
+
+and the gate is unaffected: `1384 passed, 3 skipped, 320 deselected, 7 xfailed in 179.65s`,
+exit 0. **Nothing to record as blocked, and no marker was added to make anything pass.**
+
+**What this settles and what it does not.** It proves every mark in the tree is *registered* — the
+cheap, syntactic half of the audit declined in §12, and it came back empty. It says nothing about
+whether a registered mark belongs on the test carrying it. That semantic audit is **BL-158**.
+
+`python3 -m pytest --markers` now shows exactly the intended registry and no accidental entries:
+the two from `pytest.ini`, plus the pre-existing per-conftest `integration` line
+(*"requires live repo files and optionally AETHERIS_DB_PATH"*, `tests/conftest.py:8`) and pytest's
+own nine builtins. The junk entries recorded in §10 (`@pytest.mark.so`, `.tests`, `.collecting`)
+are gone.
+
+### 13c. Rows filed (A3) — packet prose files nothing
+
+Next free numbers verified at HEAD: rows existed through **BL-156**, so:
+
+| row | what it owns |
+|---|---|
+| **BL-157** | The bare module name `conftest` is a standing trap held open by an absence. Ten runtime `from conftest import …` lines in eight cloudcost modules, which `--import-mode=importlib` does not cover; they work only because no root `conftest.py` exists, and nothing checks that. Carries §10's `ImportError` reproduction verbatim. Owes the choice between a guard test, a call-site change, or something else — **not decided**. |
+| **BL-158** | The 159 pre-existing `integration` marks have never been read against the criterion the gate now uses. Figures re-verified rather than carried: **169** marked tests (the grep's 171 includes two docstring mentions), 10 added here, **159 pre-existing**, of which 105 the gate deselects and 54 the dormant set absorbs. Names both directions — an unmarked test that *should* carry the mark is the worse defect, and this ticket found three. |
+| **BL-159** | What the dormant set owes when boxy-pipeline resumes: ~4h projected, did not finish under either cap, one named red left red, one failure unidentified and deliberately not inferred. **Cross-referenced both ways** with `pytest.ini`'s condition for return. |
+
+Two seeds appended to **BL-151**: `ROADMAP.md:246`'s command-less claim, now contradicted by a
+gate that deselects 320 of 1714; and the merged `-m integration` run outliving its own
+`timeout 2700` SIGTERM at 4.1% CPU with no live child, recorded with its guessed cause explicitly
+labelled a guess.
+
+**The third seed was investigated and deliberately not filed.** The top-level `email/` directory
+versus stdlib `email` is **inert today**, established by running it rather than by reasoning:
+with the repo root at `sys.path[0]`, `import email` resolves to
+`…/python3.12/lib/python3.12/email/__init__.py`. A directory without `__init__.py` contributes only
+a namespace *portion*, which does not stop the path scan, so the stdlib's regular package wins.
+`email/` is the only top-level directory in the repo sharing a name with a stdlib module. The
+conditional hazard is real — adding `email/__init__.py` would shadow stdlib `email` repo-wide —
+but it is already governed by a documented convention (`CLAUDE.md` §Python script conventions;
+`docs/agent-creation-guide.md:307`), and a row asserting a defect that does not exist would be a
+false entry. The **decision** not to file is recorded in BL-151's existing *"Deliberately not
+seeded"* convention, so it is auditable in the tree rather than only in a packet.
+
+### 13d. `CLAUDE.md` touched, beyond the three files the amendment predicted
+
+The amendment's done-check 2 expected `pytest.ini`, `docs/backlog-2026-06.md` and this file.
+`CLAUDE.md` is the fourth, and the reason is A1's own logic: its marker table stated the *old*
+criterion in its own words. Leaving it would have created two surfaces stating the criterion
+differently — the exact defect `CLAUDE.md` itself warns about — so the table row and the paragraph
+under it now carry the restated form and name `pytest.ini` as the authority rather than restating
+it a second time. No command in that file changed; done-check 6's byte-identity still holds.

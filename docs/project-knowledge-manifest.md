@@ -32,10 +32,10 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `4d33048` | 2026-08-14 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `900662f` | 2026-08-16 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `4d33048` | 2026-08-14 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `8bfa5f3` | 2026-08-16 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -535,3 +535,105 @@ history, so a run before this commit compares against pre-edit hashes and passes
 (BL-034/BL-025).
 
 Previous export: 2026-08-12 (the gc round's close — six rows advanced, uploaded as a diff).
+
+---
+
+**Export boundary — 2026-08-16, the BL-152 / BL-153-s0 / export-mechanism arc.** **Two rows
+advanced.** Each pin was derived twice, independently and by field: once by hand with
+`git log -1 --format=%h -- <path>` run in that row's **own** repo (`../aetheris` for the twelve
+harness rows), and once by `scripts/repin_manifest.py`, which is new this cycle and had never
+been run at a live boundary before. **The two derivations agree on all twenty-five rows** — same
+two movers, same was→now, same twenty-two current — which is the point of running both rather
+than trusting either.
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `4d33048` | `900662f` | 2026-08-16 |
+| `backlog-2026-06.md` | aetheris-agents | `4d33048` | `8bfa5f3` | 2026-08-16 |
+
+**Row count 25, derived by parsing the table** and not carried from the previous boundary's
+figure — none added, none dropped. The parse is bound to the export table by its header row
+rather than to any `|`-line in the file: a naive sweep over every pipe-delimited line returns
+**37**, because the 2026-08-12 and 2026-08-14 boundary sections each carry a movers table of
+their own. Twelve rows are harness, thirteen agents, one of the thirteen being the
+self-referential row. All twenty-five paths exist on disk in their owning repo.
+
+> **The `last changed` column was corrected by hand, and it is not something the re-pinner can
+> do.** `scripts/repin_manifest.py` has authority over the commit cell only — stated in its own
+> docstring — so it moved both movers' hashes and left both dates reading `2026-08-14`, the
+> previous boundary's. Both commits are dated 2026-08-16 (`git log -1 --format=%ad --date=short`).
+> Nothing checks this column: check 8 parses the commit cell and ignores the date, so a stale
+> date here is invisible to `drift_check` in exactly the way the mirror pair is. Recorded so the
+> next boundary knows the correction is owed by the operator rather than by the script.
+
+> **Mirror-pair check run first, per the BL-002 convention, and it is what establishes that the
+> harness takes no write at this boundary.** `diff -q` over `aetheris/docs/methodology/triad-loop.md`
+> (canonical) and `aetheris-agents/docs/triad-loop.md` (mirror) returned **byte-identical** — 199
+> lines and 9532 bytes each, sha256
+> `1b9cbf57c6864cdaecc3a07c431d51d34ee69f1ebc6afc1a664d8e167ea46f8a` on both sides, unchanged from
+> the 2026-08-14 boundary's recorded value. So no canonical sync was owed, and cross-citing pairs
+> landing harness-first did not arise. `drift_check` still has no byte-identity check between
+> mirrors; the `diff -q` remains the only thing covering that class, and at the 2026-08-03
+> boundary it is what caught canonical running 26 lines short of its mirror.
+
+> **The pinned content was read against what it should say, not merely confirmed current.** The
+> arc closed and ruled a good deal in two days, and a correct hash over a document missing any of
+> it would export the world as it was mid-flight. Verified present in `backlog-2026-06.md` at
+> `8bfa5f3`: BL-152's `CLOSED 2026-08-16` marker **and** its arbiter closure block; BL-153's two
+> rulings on its Owes — the arm-ordering ruling and the later placement ruling that closed what
+> the first left open; BL-157, BL-158 and BL-159 filed with their rows; BL-076's 2026-08-16
+> annotation; and BL-151's three seeded standing findings. Verified present in `CLAUDE.md` at
+> `900662f`: the `## Learning — BL-152` block with both promoted lessons, the whole-suite gate
+> restated **as a command**, and the two-marker table. Nothing closed or ruled in this window was
+> found missing from a tracked file, and the harness closed nothing — its only commit since its
+> last pin is `d19f4b6` (m6 t2b), which touches no manifest-tracked path.
+
+> **Nothing was added and nothing dropped, and the inclusion rule did the deciding.** The arc
+> produced no standing reference document. Out as milestone *working artifacts*, by kind rather
+> than by directory: `docs/milestones/bl-152-implementation-notes.md`,
+> `docs/milestones/bl-153-s0-implementation-notes.md`,
+> `docs/milestones/export-mechanism-implementation-notes.md`, and the edit to
+> `cloudcost/docs/m5-rescue-edit-implementation-notes.md`. Out as code and test apparatus, which
+> has never carried a row: `pytest.ini`, `scripts/_manifest.py`, `scripts/repin_manifest.py`,
+> `scripts/assemble_export_bundle.py`, `tests/test_export_bundle.py`,
+> `tests/test_repin_manifest.py`, `tests/conftest.py` and the per-use-case test edits. Out on its
+> own standing precedent: `prompts/bl-002-refresh-project-knowledge.md`, the operator procedure,
+> which has never carried a row and is not a reference doc. **`capability-matrix.md` needed no
+> regen and that was checked rather than assumed** — the matrix is generated per *use case*
+> (`agents/capability_matrix_*.exs` + `scripts/assemble_matrix.py`), and repo-root `scripts/` is
+> outside its population: `drift_check.py` and `assemble_matrix.py`, both long-standing, appear in
+> it nowhere either. This arc's specifications are the BL-0xx rows, already carried inside
+> `backlog-2026-06.md`.
+
+> **Store-side census, reported by claude-ui 2026-08-16 and not verifiable from this side.**
+> Recorded here as an observation with its author named, because this session has repo access only
+> and cannot see the store: *the store holds thirty documents; twenty-five are exactly this
+> table's export-name column, in both directions, with no name in one and not the other; the
+> remaining five are all `claude/`-namespaced.* If that holds, the population the 2026-08-12
+> deviation block says this manifest has no vocabulary for is precisely the `claude/` namespace,
+> and the namespace is the vocabulary.
+>
+> **This boundary does not rule on it, and the order is deliberate.** The 2026-08-12 and
+> 2026-08-14 deviation blocks are left exactly as they stand; BL-143 is **open**; and check 1
+> versus check 3 of `prompts/bl-002-refresh-project-knowledge.md` §Post-upload verification
+> remains the contradiction those blocks pose rather than settle. The ruling is the arbiter's and
+> lands **after** this boundary is performed, not before — a boundary that ruled on its own
+> deviation would be the artifact under review writing its own disposition, and the census above
+> is the input to that ruling rather than its conclusion. The prompt file is untouched for the
+> same reason: it is edited after the ruling, not during the boundary that supplies the evidence.
+
+**Ordering invariant held.** The manifest is this boundary's **only** tracked write and its last;
+the content sweep found nothing owed, so there was no earlier commit to make, and nothing
+manifest-tracked was edited after the table was regenerated. No row is born stale. This is also
+why the meaningful `drift_check --strict` is the **post-commit** one — check 8 reads committed
+history, so a run before this commit compares against pre-edit hashes and passes vacuously
+(BL-034/BL-025).
+
+**Repo push state.** Both repos were level with `origin/main` (`0 0` by
+`git rev-list --left-right --count`) at the exported content commits — aetheris-agents `8bfa5f3`,
+aetheris `d19f4b6` — when this boundary began, so both pinned hashes are already public and
+reproducible. The harness took no tracked write. **This boundary's manifest commit is held, not
+pushed**, by instruction. (Deliberately no self-hash: a line naming the manifest's own commit is
+stale the moment it is committed.)
+
+Previous export: 2026-08-14 (the m6-cloudcost close — four rows advanced, uploaded by path).

@@ -32,10 +32,10 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `ef651f9` | 2026-08-16 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `fd03bf3` | 2026-08-16 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `8653546` | 2026-08-16 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fd03bf3` | 2026-08-16 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -738,3 +738,71 @@ reproduce.
 
 Previous export: 2026-08-16, first pass (two rows advanced; bundle refused on a wider-than-class
 needle set, adjudicated at this pass as R-F1).
+
+---
+
+**Export boundary — 2026-08-16, second amendment.** Appended; nothing above is rewritten. **Two
+rows advanced**, both this pass's own single content commit:
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `ef651f9` | `fd03bf3` | 2026-08-16 |
+| `backlog-2026-06.md` | aetheris-agents | `8653546` | `fd03bf3` | 2026-08-16 |
+
+Row count **25**, re-derived by parsing the table bound to its header — 2 movers + 22 current on
+**both** cells + 1 self row, and **2 + 22 + 1 = 25**. Both derivations agree: by hand, by field, in
+each row's own repo, and `scripts/repin_manifest.py`. The mirror pair was checked again before
+anything was written and is still byte-identical (199 lines, sha256 `1b9cbf57…ea46f8a` both sides),
+so the harness took no write at this pass either.
+
+> **R-S1 — the three hits are CLEARED, ruled 2026-08-16.** The first amendment's pattern sweep hit
+> three addresses in **`rig--runbook.md`** (lines 568, 588, 651), all matched by the **`email
+> address`** pattern, all inside `DOCBUILDER_CONTEXT` example values: two at `acme.example` and one
+> at `northwind.example`, companies that runbook invents. **RFC 2606 §2** reserves the `.test`,
+> `.example`, `.invalid` and `.localhost` TLDs and the `example.com` / `example.net` /
+> `example.org` second-level names for documentation, and **RFC 6761 §6** gives three of them their
+> special-use registrations. An address at a reserved documentation domain is the standard's
+> **designated non-address** — definitionally nobody's — and so is not an email address in the
+> sense U2 means. All three cleared. **No file was edited to remove them.**
+>
+> **This is an adjudication of documented OVER-REACH, not a narrowing of the class.** The
+> over-reach was written down before it fired: the pattern file's own OVER-REACH paragraph already
+> said the email pattern *"likewise matches `someone@example.com`"*. The class is unchanged — email
+> addresses are still scrubbed — and what changed is the pattern's expression of it. **The test
+> that separates this from removing an inconvenient pattern is now carried in `CLAUDE.md` and in
+> `u2_patterns.txt`, so the record explains itself rather than resting on precedent:** *an
+> adjudication may change a gate ONLY when the change is derivable from the class definition, or
+> from a standard independent of the hit, such that you would have written it had you thought of it
+> first. The hit is the OCCASION, never the REASON.* The exclusion passes it — `@example.com` is
+> the canonical placeholder by a standard predating any hit here. It is scoped to exactly the
+> reserved list: a reserved name used as a *subdomain* of a real domain still matches, and so does
+> `examples.com`, both pinned by a test.
+>
+> Recorded because the order is the rule working: the session that found the hits **refused to
+> clear them and named the candidate fix without making it**, on the ground that at that moment the
+> only argument for the change was that it would turn the run green.
+
+> **The class statement moved to `CLAUDE.md`, and the reason is governance rather than tidiness.**
+> The first amendment established that U2 had **no committed standing definition** — it was written
+> at m6-cloudcost t2 and lived only in `cloudcost/docs/m6-t2-implementation-notes.md` §U2, a
+> milestone working artifact this manifest excludes **by kind**. So the rule governing what may
+> leave the machine was unreachable from the export it governs, which is the same defect as a
+> deferred finding living in a notes file, one level up. It was put into `scripts/u2_patterns.txt`
+> at that pass, which fixed **reachability and not governance**: a script's data file is not a
+> governing document. It now lives in `CLAUDE.md` §Definition of done — which **is** manifest-tracked
+> and exported — with `u2_patterns.txt` holding the patterns and the under/over-reach enumeration
+> and pointing back rather than restating. That is the split **BL-152** set for the `integration`
+> marker: the criterion in `CLAUDE.md`, the mechanism in the file that implements it. The notes file
+> is untouched and is now the historical record of how the class was reached.
+
+**Ordering invariant held.** `CLAUDE.md` and `docs/backlog-2026-06.md` moved together in one
+earlier content commit (`fd03bf3`); the manifest is this pass's **last** tracked write and commits
+**alone**. Nothing manifest-tracked was edited after the table was regenerated.
+
+**Repo push state.** Unchanged and still nothing pushed: `aetheris-agents` is ahead of
+`origin/main` by this boundary's commits, held by instruction, so every agents hash this table pins
+exists only locally until they are pushed; `aetheris` is level at `d19f4b6` and took no write at any
+of the three passes.
+
+Previous export: 2026-08-16, first amendment (two rows advanced; bundle refused on three
+documentation addresses, cleared here as R-S1).

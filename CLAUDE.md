@@ -327,6 +327,18 @@ Source: BL-016, BL-005 (×2); m2-cloudcost (BL-069 carried red to its close, BL-
 
 **Tests:** `python3 -m pytest tests/test_drift_check.py -v`
 
+**The export boundary has a mechanism, and it is two scripts.** `scripts/repin_manifest.py`
+re-pins the manifest's commit column (`git log -1 --format=%h -- <path>` per row in that row's
+own repo, nothing else in the file touched), and `scripts/assemble_export_bundle.py DEST`
+builds the bundle from the manifest's rows, reading each document out of `git show HEAD:<path>`
+rather than the working tree. The operator procedure they sit inside is
+`prompts/bl-002-refresh-project-knowledge.md`; the export set itself is data, and lives only in
+`docs/project-knowledge-manifest.md`'s table. Neither script uploads anything, and the bundle is
+written **unswept** with a marker saying so — the U2 scrub class cannot be checked by a committed
+script, because its needles are the identifiers themselves. Who owns the boundary and on what
+trigger is **BL-143**, open and untouched by this. Tests:
+`python3 -m pytest tests/test_export_bundle.py tests/test_repin_manifest.py -v`
+
 ---
 
 ## Key docs to read for each use case

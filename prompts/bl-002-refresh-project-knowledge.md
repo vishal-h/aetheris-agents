@@ -12,24 +12,38 @@ project-knowledge export and its manifest. You cannot upload to
 Claude.ai — your job is to assemble the bundle, write the manifest,
 and print upload instructions for the human.
 
-Step 1 — Verify the file set. Confirm each candidate exists; report
-any that don't and proceed without them:
-  Rig:    docs/rig/specs.md, docs/rig/architecture.md,
-          docs/rig/runbook.md, docs/rig/milestones/p3/protocol.md,
-          docs/rig/current-state-2026-06.md, rig/CLAUDE.md
-  Agents: CLAUDE.md (repo root), docs/agent-creation-guide.md,
-          docs/capability-matrix.md, docs/backlog-2026-06.md
-  Harness: ../aetheris/CLAUDE.md (verify it exists — if not, check for
-          an equivalent like ../aetheris/README.md and report; do not
-          substitute source files)
-Before including rig/CLAUDE.md, report its line count — if it's very
-large, flag it for a human include/exclude decision but include it in
-the bundle by default.
+Step 1 — The file set is the manifest's table, and only the manifest's
+table. `docs/project-knowledge-manifest.md` is the sole authority for
+which documents are exported, from which repo, and under what export
+name — some of those names are editorial and no path rule regenerates
+them. This prompt used to carry a second copy of that list and it went
+stale; the copy is gone rather than corrected, because two surfaces
+disagree at the next addition (BL-145's shape, and `CLAUDE.md`
+§Learning — m6-cloudcost on enumerations).
 
-Step 2 — Create docs/project-knowledge-manifest.md. A short header
-explaining purpose (drift detection for Claude.ai project knowledge;
-see BL-002), then one table with EXACT formatting (check 8 of
-drift_check.py parses this; deviation = FAIL on zero rows):
+Existence is verified by the assembler in Step 3, per row, by reading
+each source out of committed history: a row whose path is not in HEAD
+fails the run and no bundle is written. Nothing is silently dropped.
+
+Adding or removing a document is an edit to that table, made
+deliberately and with its reason recorded in the manifest's prose — not
+a change to this prompt.
+
+Step 2 — Re-pin the manifest's commit column:
+
+    python3 scripts/repin_manifest.py            # --dry-run to preview
+
+It runs `git log -1 --format=%h -- <path>` per row in that row's OWN
+repo (../aetheris for the harness rows) and rewrites the commit cell,
+touching nothing else — not the prose, not the `last changed` column,
+not the self-referential row. Run against a manifest already current it
+writes nothing at all.
+
+The manifest's narrative — what moved this boundary and why, what stayed
+out and on what rule — is still written by hand, in the same commit.
+
+The table's format is the contract (check 8 of drift_check.py parses it;
+deviation = FAIL on zero rows):
 
   | export name | repo path | repo | commit | last changed |
   |-------------|-----------|------|--------|--------------|
@@ -50,19 +64,33 @@ Formatting rules:
   Confirm PASS before proceeding to Step 3. If it FAILs on zero rows,
   the formatting is wrong — fix the table before continuing.
 
-Step 3 — Assemble the bundle at /tmp/claude-project-export/ (fresh
-directory, delete if exists). Copy each file with a FLATTENED,
-COLLISION-FREE name that preserves origin:
-  aetheris-agents--CLAUDE.md
-  aetheris--CLAUDE.md
-  rig--CLAUDE.md
-  rig--specs.md, rig--architecture.md, rig--runbook.md,
-  rig--protocol.md, rig--current-state-2026-06.md
-  agent-creation-guide.md, capability-matrix.md,
-  backlog-2026-06.md, project-knowledge-manifest.md
-The manifest's "export name" column must match these names exactly.
-Do NOT modify file contents — copies only. The manifest itself is
-part of the bundle (copy it in after writing it).
+Step 3 — Assemble the bundle:
+
+    python3 scripts/assemble_export_bundle.py /tmp/claude-project-export
+
+One file per manifest row, named by the table's export-name column, its
+content read from `git show HEAD:<path>` in the owning repo — never the
+working tree, so an uncommitted edit does not reach the store. The
+manifest is itself a row and lands in the bundle like any other
+document. Deterministic given the two HEADs: two runs into two
+directories are byte-identical.
+
+Two refusals, both deliberate:
+- A destination that already has content is REFUSED, not merged. The
+  2026-08-14 boundary found a complete bundle from the previous export
+  sitting at that path; merging would have produced correctly-named,
+  parseable files from two exports with nothing telling them apart.
+  `--replace` moves the existing directory aside to
+  `<dest>.superseded.<n>` — it is never deleted, being the only record
+  of what was last uploaded.
+- The bundle is written UNSWEPT and says so, in a
+  `_UNSWEPT-DO-NOT-UPLOAD.txt` file inside it, because the U2 scrub
+  class is what stands between it and a project and this script cannot
+  check it unaided (U2's needles are the real identifiers themselves;
+  a committed script carrying them would be the disclosure). Run the
+  sweep with `--replace --needles FILE` over an untracked needle file,
+  one per line — a clean sweep writes no marker. Delete the needle file
+  afterwards.
 
 Step 4 — Commit the manifest only if its content changed. Run:
   git diff --quiet docs/project-knowledge-manifest.md
@@ -73,6 +101,9 @@ skip the commit. The bundle in /tmp is ephemeral either way.
 
 Step 5 — Print for the human:
   - the bundle path and an ls of it
+  - whether the U2 marker is still present. If it is, the bundle is
+    unswept and the upload cannot proceed on it — say so rather than
+    printing upload instructions under it.
   - upload instructions: in the Claude.ai project, REMOVE the old
     knowledge files (stale handoff, old specs/architecture/runbook/
     protocol/README, old CLAUDE.md), then upload everything in

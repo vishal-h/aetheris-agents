@@ -51,8 +51,8 @@ census this project has run — `m4-t4a`'s 54-item structural census, the BL-132
 **Location proposed, not inherited:** `docs/measurements/2026-08-11-notes-readership/`. Reasons:
 (1) the report and its scripts travel as one unit, which is the whole of a measurement's re-run
 value, and splitting them across `docs/` and `scripts/` would break that; (2) repo-root `scripts/`
-holds exactly three curated standing tools (`assemble_matrix.py`, `check_run_classifier.py`,
-`drift_check.py`) and eleven one-off files named `q.py`, `ex.py`, `tab.py` would degrade it;
+holds curated standing tools and eleven one-off files named `q.py`, `ex.py`, `tab.py` would
+degrade it;
 (3) the date in the path matches the artifact's kind — a one-off snapshot, unlike the matrix, which
 is regenerated in place. **This is a proposal and BL-144 owns ratifying or replacing it.**
 

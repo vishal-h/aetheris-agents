@@ -3043,6 +3043,43 @@ cross-provider merge code — this row is the one piece of that code that is not
 actively wrong, so if BL-070 slips, do this alone. Fold in the duplicated `slug()`/`provider_slug()`
 convergence at the same time (t2 deferred it precisely to keep `compose` unedited).
 
+`[Annotated 2026-08-16 at BL-153 s0 — **this row's convention-only mitigation has now been
+observed failing in the tree, unprompted**, and the observation is recorded here rather than
+as a new row because this row already owns the mechanism and stays open. s0's read of
+`cloudcost/history/` found two directory shapes on disk. They are **not two composer
+layouts**: `persist_history` writes exactly one shape,
+`{history_dir}/{period}/{provider}_costs_{period}.json`
+(`cloudcost/scripts/compose_report_data.py:989`), and the two shapes are two values of
+`--history-dir`. The orchestrator passes `history/{provider_slug}`
+(`cloudcost/agents/cloudcost_orchestrator.exs:141`) — this row's mitigation — giving
+`history/{provider}/{period}/`, which is what four providers have. The odd one,
+`cloudcost/history/2026-08/github_costs_2026-08.json`, is the **default** path:
+`--history-dir` defaults to `DEFAULT_HISTORY_DIR`, the shared `cloudcost/history`
+(`:111`, `:1037`). **Not residue of a layout change** — the per-provider layout predates it
+and its mtime is `2026-08-14 08:18`, six hours *before* that same day's provider-scoped
+GitHub run at `14:29`. It is a direct `compose` invocation that omitted the flag, i.e. the
+very *"a direct `compose` invocation with the m1-shaped shared tree still produces the wrong
+figure"* this row's **Why it is not fixed here** paragraph names, firing in the tree twelve
+days after the row predicted it and noticed by nobody at the time.
+
+**The stray artifact itself is inert and needs no cleanup.** `cloudcost/history/` is
+gitignored (`cloudcost/.gitignore:10`, `history/*`; only `.gitkeep` is tracked), and
+`load_prior_snapshots` reads `history_dir / previous` (`:1002`), which under the
+orchestrator is `history/github/2026-07` — never the flat tree. Nothing an orchestrated run
+does can read it. What is *not* inert is the default that produced it, and that is this
+row's subject, not a new one. `cloudcost/tools.json:514` already documents the consequence
+in the operator-facing description, and `cloudcost/runbook.md:415` documents a migration
+command for the old shape — so the hazard is captioned in two places and guarded in none,
+which is what **Done when** above is for.
+
+**Also: two of this row's own citations have drifted.** `load_prior_snapshots` is at `:994`
+(the glob at `:1006`), not `:711`; the two `month_on_month` lines are `:352` and `:360`, not
+`:334`/`:342`. The code at those lines is unchanged in substance — the row's quoted
+`for path in sorted(directory.glob("*.json"))` and
+`prior_total = round(sum(prior_providers.values()), 2)` are both present verbatim. Verified
+at agents `900662f`. **No fix proposed and no scope widened**; the Done-when stands as
+written.]`
+
 `Source: m2-cloudcost t3, 2026-08-02 (aetheris-agents cbf3fbf). Verified by reading
 compose_report_data.py:711/:334/:342 and by the two-run demonstration above.`
 
@@ -9004,6 +9041,21 @@ appended list is empty.
   Verified at agents `2868a3e` (the observation predates that commit; the code involved is
   unchanged by it). Recorded so it is findable; not triaged here.
 
+- `2026-08-16` — `agents/orchestrator.exs` **validates the agent path the planner emits against
+  nothing.** The model's `step["agent"]` is joined to the agents root
+  (`agents/orchestrator.exs:267-268`) and handed straight to
+  `RunHelpers.load_agent_file/1` (`:287`) — no allowlist, no membership test against the
+  capability matrix the planner was given, no containment check on the joined path. The matrix is
+  read whole into the system prompt (`:17-18`) and the prompt *instructs* the model that paths
+  *"must match exactly the file paths listed in the capability matrix"*, so the constraint exists
+  only as prose addressed to the model. Breaks nothing today: the planner is a first-party prompt
+  over a first-party matrix, and a path that does not resolve simply fails the `with`. No fix is
+  proposed here. Distinct from **BL-156**, which owns the approval card's *step text*
+  (`description`/`context`), and from **BL-094**, which owns the absence of a direct non-LLM door
+  — this is the *path* field rather than the prose fields, and it is about validation rather than
+  about an alternative launch route. Verified at agents `900662f`. Recorded so it is findable; not
+  triaged here.
+
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.
 `python3 -m` puts the repo root on `sys.path` (as `''`), and `email/` is the only top-level
@@ -9234,6 +9286,13 @@ exempted every test that guards itself with a skip — which was all ten it had 
 been written to justify. The shipped criterion counts a silent skip. Recorded
 because the defect was in the ruling, not in the work.]`
 
+`[2026-08-16, appended after the closure. The earlier annotation in this row
+stating that the row is NOT closed was TRUE WHEN WRITTEN — it recorded the
+implementing session's correct refusal to close its own row — and is SUPERSEDED
+by the closure above. It is left standing because dated annotations in this file
+record what was believed at a date and are not rewritten. The row's status is the
+`CLOSED` marker on its Size/Priority line.]`
+
 ---
 
 ### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place (#TBD)
@@ -9396,6 +9455,107 @@ beside this ruling, not inside it.
 
 Costs: the row's S stands for the stamp; the invalidation is additional and
 unsized here. This is not licence to reorder.]`
+
+`[Annotated 2026-08-16 at BL-153 s0 — the read-and-report the ruling above was blocked
+behind. Its findings belong beside that ruling and are recorded here; the ruling block is
+left exactly as written, being a record of what was believed at its date. Every line
+below is verified at agents `900662f` / harness `d19f4b6` — the same harness commit this
+row's own ordering was read at, unchanged since.
+
+**R1 ANSWERED YES, and the ruling's OPEN QUESTION is closed.** The order is preflight
+(`sprint.sh:2895-2932`) → guard (`sprint.sh:2944-2946`) → first writer
+(`sprint.sh:3148-3151`, the orchestrator run), the guard roughly two hundred lines ahead
+of anything that writes into `$CLOUDCOST_OUT`. Established by exhausting every mention of
+that variable in the file: all of them after the guard are reads, and the four
+`mix run --eval` checks between guard and run evaluate the agent file without running a
+pipeline. So a run that passes the preflight and dies anywhere before the orchestrator has
+**already destroyed the previous artifacts**, and the reorder's marginal loss is confined
+to preflight-stage failures, exactly as the ruling conjectured. **This makes the reorder
+cheaper than this row feared and does not revive it** — R2 is why: most of the mechanisms
+never reach the sprint at all, so a cheaper sprint-side reorder still buys one of them.
+
+**R2 ANSWERED NO, AND FOUND A FOURTH MECHANISM.** Rig does not reach cloudcost through
+`sprint.sh`; the string appears nowhere in `rig/src` or `rig/src-tauri`. Two Rig paths
+write into the provider directory and neither passes through the sprint. **The
+Orchestrator**, whose child is what Cancel SIGKILLs: `mix run
+$AETHERIS_AGENTS_PATH/agents/orchestrator.exs`, assembled at
+`rig/src-tauri/src/commands/orchestrate.rs:45-50`, running an LLM planner whose agent
+vocabulary is `docs/capability-matrix.md` — which lists cloudcost at `:198` — and which
+loads the model's emitted path with no allowlist (`agents/orchestrator.exs:267-268, :287`)
+and runs it **in-process**, inside the very child `orchestrate_cancel`
+(`rig/src-tauri/src/commands/orchestrate.rs:149-159`) kills. **And the Tools panel**, which
+this row did not previously know about: `python3 $AETHERIS_AGENTS_PATH/cloudcost/<file>
+<args>`, assembled at `rig/src-tauri/src/commands/tools.rs:658-663`, running **one script**
+rather than a pipeline, via `cmd.output()` at `:666`, never registered in the job map — so
+it has **no cancel at all** and no pipeline ordering. A single stage run from that panel
+writes into a directory whose other artifacts came from some other run entirely. That is a
+fourth mechanism reaching this row's symptom, and unlike the third it needs no interruption
+to produce a mixed directory.
+
+**THE PLACEMENT QUESTION IS NOW RULED.** The ruling above left it open — *"WHERE THE STAMP
+LIVES IS NOT RULED, because it turns on facts nobody had read"* — naming this read as what
+it was waiting for. The read is done and the question is settled immediately below.
+
+**R3 ANSWERED.** Completion is a single point in **execution order** on the default
+configuration — STEP 4, `render_report.py` writing the HTML
+(`cloudcost/scripts/render_report.py:378, :381`) — and **no point at all in the artifacts**:
+nothing in the directory records that a STEP 4 was owed, so a directory missing the HTML is
+indistinguishable from one whose pipeline never had that step. The last writer also **moves
+with configuration** — with `--pdf` it is the PDF branch (`:261-285`), and STEP 2b's
+`optimization_signals_*` file exists only under `CLOUDCOST_OPTIMIZATION`. And a complete run
+writes **outside the guarded directory, at an earlier step**: `persist_history`
+(`cloudcost/scripts/compose_report_data.py:974-991`) writes
+`history/{provider}/{period}/` at STEP 3, a tree `sprint.sh:2944-2945`'s guard never clears
+because the guard is scoped to `$CLOUDCOST_OUT`.
+
+**R4 ANSWERED.** A per-run identifier exists upstream and reaches no script. The harness
+carries `config.run_id` through every trajectory event
+(`../aetheris/lib/aetheris/execution/loop.ex:183` and throughout) and it stops at the
+exec-server boundary: the generic entry point passes an **empty env slice** —
+`run_with_env(command, args, &[], working_dir, timeout_ms)`,
+`../aetheris/native/aetheris_exec_server/src/runner.rs:46-48` — and the `run_command` tool
+schema has **no env field** at all
+(`../aetheris/lib/aetheris/execution/tool_schema/registry.ex:44-68` declares `command`,
+`args`, `working_dir`, `timeout_ms`). Nor does it arrive by argv: the agent's arg arrays are
+literal but for paths a previous step printed. Rig's own `job_id` is minted at
+`rig/src-tauri/src/commands/orchestrate.rs:91-98`, **after** the child's environment is set
+at `:56-65`, so it could not reach the child even in principle. The sprint reads the
+harness's id at `sprint.sh:3401`, after the run has exited. This confirms the third
+annotation's *zero artifacts carry a run_id* from the other end: nothing could have put one
+there.
+
+Record: `docs/milestones/bl-153-s0-implementation-notes.md`. Two of this row's own pointers
+were imprecise and are corrected there rather than here.]`
+
+`[Ruled 2026-08-16 by the arbiter, on the point the earlier ruling left open.
+THE STAMP IS WRITTEN SCRIPT-SIDE, NOT BY THE SPRINT. R2 is the whole reason: two
+Rig paths write into the provider directory without passing through the sprint at
+all, so a sprint-written stamp is not merely absent on those paths — the previous
+sprint run's stamp is still sitting there, internally coherent, and under this
+ruling's own reader rule a Rig-written directory would read as a stale sprint
+directory rather than as something to flag. A stamp that makes a new failure mode
+indistinguishable from an old one is worse than no stamp.
+
+THE IDENTIFIER IS MINTED BY THE PIPELINE, NOT INHERITED. R4 establishes that no
+upstream identifier reaches a script, and that changing this means a harness
+change at the exec-server boundary. A pipeline-minted id threaded stage to stage,
+the way the period and the paths already are, needs no harness change. If a future
+design does feed one through the sprint's environment instead, the sprint's
+allow-list is default-deny and must name it, or the variable is stripped and the
+stamp is silently absent — the exact shape the allow-list was built to make
+impossible for credentials.
+
+TWO PROPERTIES THIS RULING ADDS TO THE TWO ALREADY OWED. The stamp's coverage is
+every artifact a run produces, INCLUDING the history tree written at an earlier
+step into a directory the guard never clears — a stamp scoped to the guarded
+directory alone would certify a subset while reading as certifying the run. And
+the stamp needs a writer that runs LAST UNCONDITIONALLY; R3 establishes that no
+current step is that, because the last writer moves with configuration. Whether
+that writer is a new final step, the orchestrating agent, or something else is
+NOT RULED.
+
+WHAT IS STILL NOT RULED: the stamp's format, its file, and its reader. Those are
+the scoping ticket's, and this row now has everything it was waiting for.]`
 
 `Source: m6 t2c, 2026-08-13. Ordering read at harness d19f4b6; the reproduction above run at that
 commit. Filed at the reviewer's direction rather than left as packet prose, per the standing rule

@@ -9072,6 +9072,25 @@ appended list is empty.
   fix is **not** verifiable at this commit, deliberately, and is stated as forward rather than
   asserted here. Recorded so it is findable; not triaged here.
 
+- `2026-08-16` — **nothing verifies arithmetic stated in prose.** The 2026-08-16 export boundary's
+  section asserted *"the same 23 rows current"* over a 25-row table carrying two movers and one
+  self row; 2 + 22 + 1 = 25, so the figure was 22. It was committed wrong and caught by
+  **re-reading the committed section**, not by any check — `drift_check`'s check 8 parses the
+  table's cells and never reads the prose around it, and no other instrument in either repo looks
+  at a number in a sentence. The class is wider than one manifest: every boundary record, review
+  packet and milestone summary in this repo states counts in prose, and each is a claim nothing
+  can test. **The cheap mitigation, already applied at the correcting commit** (`7cf1789`): print
+  the sum beside the figure — *"2 + 22 + 1 = 25"* — so the arithmetic is in public and a reader
+  checks it in a glance rather than reconstructing the population first. **Kinship, stated because
+  it is the same family and not the same rule:** `CLAUDE.md` §Learning — BL-152 holds that *a count
+  recorded in prose carries the command that reproduces it*. That covers a figure over a population
+  the repo will keep changing, and it does not reach this one — a row count is derivable, the
+  boundary section is a snapshot that will not be re-derived, and what was wrong here was not the
+  population but the addition. Showing the sum is to arithmetic what naming the command is to a
+  census. **No proposal beyond that**, and specifically no checker: a linter for prose arithmetic
+  would have to parse intent, and the failure is cheap to catch by the habit. Verified at agents
+  `7cf1789`. Recorded so it is findable; not triaged here.
+
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.
 `python3 -m` puts the repo root on `sys.path` (as `''`), and `email/` is the only top-level

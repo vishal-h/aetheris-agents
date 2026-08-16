@@ -1,38 +1,53 @@
 # U2 — the export scrub class, as patterns
 # ============================================================================
 #
-# WHY THIS FILE HOLDS THE DEFINITION AND NOT ONLY THE PATTERNS
+# THE CLASS IS NOT DEFINED HERE. It is defined in `CLAUDE.md` (agents),
+# §Definition of done — doc sync, under "The U2 scrub class". That paragraph is
+# the authority for what is in scope; this file is the authority for how the
+# sweep looks for it. Do not restate the class here — two surfaces stating one
+# rule is the defect this repo has a standing lesson about, and a script's data
+# file is not a governing document.
 #
-# The U2 class was defined at m6-cloudcost t2 and has lived, ever since, in
-# `cloudcost/docs/m6-t2-implementation-notes.md` §U2 — a milestone working
-# artifact, which the export manifest excludes by kind and which therefore
-# travels nowhere. Every other mention in either repo is a pointer at that
-# file: `CLAUDE.md`'s export paragraph, `prompts/bl-002-refresh-project-
-# knowledge.md`, `cloudcost/m6-github.md`, the assembler's own marker text.
-# A class that governs what may leave the machine had no committed standing
-# statement, which is the same defect as a deferred finding living in a notes
-# file, one level up. So the statement below is authoritative and the notes
-# file is now the historical record of how it was reached.
+# Why the split, and why it moved (2026-08-16). The class was written at
+# m6-cloudcost t2 and lived only in `cloudcost/docs/m6-t2-implementation-notes.md`
+# §U2 — a milestone working artifact, which the export manifest excludes BY KIND
+# and which therefore travels nowhere. A rule governing what may leave the machine
+# was unreachable from the thing it governs. It was briefly stated here instead,
+# which fixed reachability and not governance. It now lives in `CLAUDE.md` beside
+# the other rules a session must read, on the precedent BL-152 set for the
+# `integration` marker: the criterion in `CLAUDE.md`, the mechanism in the file
+# that implements it. The notes file is the historical record of how the class was
+# reached; it is not edited.
 #
-# (Note a name collision that will otherwise cost someone an afternoon:
+# (A name collision that will otherwise cost someone an afternoon:
 # `cloudcost/docs/m3-linode-scout.md` has its own "U2", an open question about
 # Linode reserved IPs. Unrelated.)
 #
 # ---------------------------------------------------------------------------
-# THE CLASS
+# ADJUDICATING A HIT — when a hit may change this file, and when it may not
 #
-# SCRUBBED — anything identifying the account, the people in it, or its
-# internal structure: organisation (`organization`, `organizationName`),
-# repositories (`repositoryName`), logins, display names, numeric user and
-# organisation ids, `node_id`, profile and avatar URLs, every one of the
-# fifteen `*_url` fields, email addresses, and any token-shaped string.
+# A pattern that fires goes to a human. That human may change the gate, but only
+# under this test:
 #
-# NOT SCRUBBED, because these carry the tests' meaning: monetary figures,
-# `product` / `sku` / `unitType` strings, quantities, timestamps, and the
-# period fields.
+#     An adjudication may change a gate ONLY when the change is derivable from
+#     the class definition, or from a standard independent of the hit, such that
+#     you would have written it had you thought of it first. The hit is the
+#     OCCASION, never the REASON.
 #
-# The class binds this file, the tests, the packet and the prose describing
-# them — not only the fixtures.
+# Removing a pattern because it caught something inconvenient FAILS this test.
+# Excluding reserved documentation domains from the email pattern PASSES it:
+# `@example.com` is the canonical placeholder, specified as such by a standard
+# that has nothing to do with any hit, and anyone writing the pattern from
+# scratch would have excluded it.
+#
+# The worked instance, recorded because a rule with a precedent beside it is
+# easier to apply than a rule alone: on 2026-08-16 this set's email pattern hit
+# three addresses in `rig--runbook.md`, all at RFC 2606 `.example` domains
+# belonging to companies that document invents. The session that found them
+# REFUSED to clear them and named the candidate fix without making it — correctly,
+# because at that moment the only argument for the change was that it would make
+# the run green. The arbiter then cleared them and authorised the exclusion on the
+# ground above. That order is the rule working.
 #
 # ---------------------------------------------------------------------------
 # WHAT A CLEAN SWEEP AGAINST THIS FILE CLAIMS
@@ -96,7 +111,15 @@
 
 # --- value-shaped: the identifier itself has a signature ---
 
-email address :: [A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,24}
+# RFC 2606 §2 reserves the .test, .example, .invalid and .localhost TLDs and the
+# example.com / example.net / example.org second-level names for documentation;
+# RFC 6761 §6 gives .invalid, .test and .localhost their special-use registrations.
+# An address at one of those is the standard's designated NON-address: definitionally
+# nobody's, so not an email address in the sense the class means. The exclusion is
+# exactly that list — no wildcards, no 'and similar', and nothing derived from what
+# happens to be in this bundle. A reserved name as a SUBDOMAIN of a real domain
+# (ops@test.company.com) is not reserved and still matches.
+email address :: [A-Za-z0-9._%+-]+@(?!(?:[A-Za-z0-9-]+\.)*(?:example|invalid|test|localhost|example\.com|example\.net|example\.org)(?![A-Za-z0-9.-]))[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,24}
 token-shaped (GitHub PAT/app/refresh) :: \bgh[pousr]_[A-Za-z0-9]{30,255}\b
 token-shaped (GitHub fine-grained PAT) :: \bgithub_pat_[A-Za-z0-9_]{40,}\b
 token-shaped (DigitalOcean PAT) :: \bdop_v1_[0-9a-f]{60,70}\b

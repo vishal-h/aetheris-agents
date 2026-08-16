@@ -412,6 +412,41 @@ def test_a_malformed_pattern_line_is_a_failure_not_a_skip(tmp_path):
         assemble_export_bundle.load_patterns(no_sep)
 
 
+def test_reserved_documentation_domains_are_excluded_and_only_those():
+    """RFC 2606 / RFC 6761 addresses are the standard's designated non-addresses.
+
+    The exclusion is scoped to exactly the reserved list, so the discriminating cases are
+    the ones that must STILL match: a reserved name used as a subdomain of a real domain,
+    and a name that merely resembles one. A wildcard would pass the first half of this
+    test and fail the second.
+    """
+    email = dict(
+        (label, rx)
+        for label, rx in assemble_export_bundle.load_patterns(
+            assemble_export_bundle.DEFAULT_PATTERNS
+        )
+    )["email address"]
+
+    for excluded in (
+        "ops@acme.example",              # RFC 2606 .example TLD — the live 2026-08-16 hit
+        "billing@northwind.example",     # RFC 2606 .example TLD — the live 2026-08-16 hit
+        "someone@example.com",
+        "a@sub.example.org",
+        "x@thing.invalid",
+        "x@thing.test",
+        "x@foo.localhost",
+    ):
+        assert not email.search(excluded), f"{excluded} should be excluded"
+
+    for still_matches in (
+        "real.person@bitloka.com",
+        "ops@test.company.com",          # 'test' as a SUBDOMAIN is not reserved
+        "ops@examples.com",              # 'examples' is not 'example'
+        "ops@example.company.com",       # 'example' as a subdomain of a real domain
+    ):
+        assert email.search(still_matches), f"{still_matches} should still match"
+
+
 def test_an_empty_pattern_file_is_refused_rather_than_read_as_a_clean_sweep(tmp_path):
     """Same vacuity the empty-needles test guards, one instrument over."""
     empty = tmp_path / "patterns.txt"

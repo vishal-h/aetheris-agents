@@ -398,21 +398,50 @@ lives only in `docs/project-knowledge-manifest.md`'s table. Neither script uploa
 owns the boundary and on what trigger is **BL-143**, open and untouched by this. Tests:
 `python3 -m pytest tests/test_export_bundle.py tests/test_repin_manifest.py -v`
 
-**The U2 scrub sweep runs by default, against a committed *pattern* set, and a clean sweep claims
-something narrower than it sounds.** `scripts/u2_patterns.txt` holds both the class's
-authoritative statement — it had none in any committed standing document until 2026-08-16, only a
-milestone notes file that travels nowhere — and one documented regex per class member. A clean
-sweep claims **no text in the bundle matches these patterns**, never *no identifying content*: the
-class members with no lexical signature (logins, display names, organisation and repository names,
-numeric ids **in prose**) are reachable only contextually, and that under-reach is enumerated in
-the file itself. Use the narrow words when reporting one. The earlier design — a *value* sweep over
-literal identifiers via `--needles` — could not be committed (a needle list is a deanonymisation
-key), so it had to be derived at run time from raw captures that no longer exist here and that
-nothing in either repo locates; it therefore never returned information in either direction, at any
-boundary, including one that uploaded. `--needles` survives as an additive sweep for an operator
-who does hold captures. **A pattern that fires is adjudicated by a human, never removed to get a
-green** — that is a gate quietly narrowed. What the pattern route does and does not buy is
-**BL-160**, open.
+**The U2 scrub class — what may not leave this machine.** **SCRUBBED:** anything identifying the
+account, the people in it, or its internal structure — organisation (`organization`,
+`organizationName`), repositories (`repositoryName`), logins, display names, numeric user and
+organisation ids, `node_id`, profile and avatar URLs, every one of the fifteen `*_url` fields,
+email addresses, and any token-shaped string. **NOT SCRUBBED, because these carry the tests'
+meaning:** monetary figures, `product` / `sku` / `unitType` strings, quantities, timestamps, and
+the period fields. The class binds the fixtures, the tests, the packet, **and the prose describing
+them** — a class covering committed recordings but not the sentences about them is not a boundary.
+An address at an RFC 2606 / RFC 6761 reserved documentation domain (`.example`, `example.com`,
+`.invalid`, `.test`, `.localhost`) is the standard's designated *non*-address and is **not** an
+email address in this sense. The mechanism that looks for the class is `scripts/u2_patterns.txt`,
+which holds the patterns and the enumeration of what they do and do not reach; it points back here
+and does not restate the class. `[The class statement lives here as of 2026-08-16. It was written
+at m6-cloudcost t2 and lived only in `cloudcost/docs/m6-t2-implementation-notes.md` §U2 — a
+milestone working artifact the export manifest excludes **by kind**, so the rule governing what may
+leave was unreachable from the thing it governs. It moved briefly into the pattern file, which
+fixed reachability and not governance, and then here, on the split BL-152 set for the `integration`
+marker: the criterion in `CLAUDE.md`, the mechanism in the file implementing it. The notes file is
+the historical record of how the class was reached and is not edited.]`
+
+**The U2 sweep runs by default, and a clean sweep claims something narrower than it sounds.** A
+clean sweep claims **no text in the bundle matches these patterns** — never *no identifying
+content*. The class members with no lexical signature (logins, display names, organisation and
+repository names, numeric ids **in prose**) are ordinary words and ordinary integers, reachable
+only contextually, beside a key that names them; that under-reach is enumerated in
+`u2_patterns.txt` itself. Use the narrow words when reporting one. The earlier design — a *value*
+sweep over literal identifiers via `--needles` — could not be committed (a needle list is a
+deanonymisation key), so it had to be derived at run time from raw captures that no longer exist
+here and that nothing in either repo locates; it therefore never returned information in either
+direction, at any boundary, including one that uploaded. `--needles` survives as an additive sweep
+for an operator who does hold captures. What the pattern route does and does not buy is **BL-160**,
+open.
+
+**A pattern that fires goes to a human, and the human may change the gate only under this test.**
+*An adjudication may change a gate ONLY when the change is derivable from the class definition, or
+from a standard independent of the hit, such that you would have written it had you thought of it
+first. The hit is the OCCASION, never the REASON.* Removing a pattern because it caught something
+inconvenient fails the test; excluding reserved documentation domains from an email pattern passes
+it, `@example.com` being the canonical placeholder by a standard that has nothing to do with any
+hit. The worked instance is recorded beside the test in `u2_patterns.txt`: the session that hit
+three `.example` addresses **refused to clear them and named the candidate fix without making
+it** — correctly, because at that moment the only argument for the change was that it would turn
+the run green — and the arbiter cleared them and authorised the exclusion on the ground above.
+That order is the rule working, and it is the reason the test can be stated at all.
 
 **The upload half is under two live instructions that contradict each other — the rule above
 this paragraph, and the manifest's 2026-08-14 ruling. Until BL-143 rules, follow the
@@ -646,3 +675,29 @@ recurrence can measure.
 
 **A count recorded in prose carries the command that reproduces it, or it decays into a claim.** This is the operational half of the harness rule *a count names the commit it was derived at, or a pointer replaces it* — naming the commit tells a later reader the figure is stale; naming the **command** lets them replace it. The difference is not rhetorical: BL-152's integration- and dormant-population figures are true at one commit and move the moment anyone marks a test, and the ones that shipped beside a reproducing invocation can be refreshed in seconds while the ones that did not must be re-derived by hand. So write *`N`, from `<command>`* — never a bare *N* — for any figure over a population the repo will keep changing.
 `Source: BL-152, 2026-08-16. The contrast is inside one ticket: the gate's own deselection counts ship with the command that prints them (`CLAUDE.md` §Definition of done, and the gate's summary line), while several per-scope figures in the row body do not.`
+
+---
+
+## Learning — the 2026-08-16 export boundary
+
+Keyed to the **boundary** rather than to a milestone or a single row, on the precedent of
+`## Learning — BL-007` and `## Learning — BL-152` above: both are keyed to the unit of work that
+produced them, and this boundary's three passes are that unit. Arbiter-issued at the close of the
+second amendment; §7's ≥2-ticket recurrence bar is not the basis and does not reach a defect found
+once, inside the instrument that found it.
+
+**Restore a mutation from a working-copy backup, never from git, when the file carries uncommitted
+work.** `git checkout -- <file>` restores to **HEAD**, so run against a file holding the very edit
+the mutation was testing it silently destroys that edit and leaves a file that looks restored. The
+two states are indistinguishable by the thing you are watching — the test goes green again either
+way, because the mutation is gone either way, and the uncommitted feature is gone too. Copy the
+file aside first and restore from the copy, then verify by sha against that copy.
+`Source: the 2026-08-16 export boundary, first amendment. A mutation on `scripts/repin_manifest.py`
+proved two new tests load-bearing; the restore was `git checkout --`, which reverted the file to
+HEAD and destroyed the uncommitted `git_commit_date` change the pass had just written. Caught only
+because the verification step counted occurrences and reported `0` — the tests themselves would
+have gone green on the reverted file and said nothing. The edit was re-applied and re-verified, and
+every later restore in the boundary used a working-copy backup checked by sha. This is the
+operational other half of the harness rule **the mutation test has two halves and the restore is
+the second one — verify it, never assume it**, which establishes that a restore needs its own
+control; this says what a restore must not be *made of* when the file is dirty.`

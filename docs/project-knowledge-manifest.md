@@ -31,11 +31,11 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `8f36e45` | 2026-08-11 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `d025971` | 2026-08-10 |
+| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `4d33048` | 2026-08-14 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `4d98ec2` | 2026-08-05 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `124707f` | 2026-08-12 |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `4d33048` | 2026-08-14 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -434,22 +434,104 @@ BL-002 convention: `diff -q` over `aetheris/docs/methodology/triad-loop.md` and 
 `1b9cbf57c6864cdaecc3a07c431d51d34ee69f1ebc6afc1a664d8e167ea46f8a` on both. `drift_check` cannot
 see that class; the `diff -q` is the only thing that catches it.
 
-> **DEVIATION, recorded and not absorbed. The upload was a diff of the six stale rows, not the
-> remove-all-then-upload-all this manifest requires.** The header paragraph above the table states
-> the procedure and states why: **check 8 detects the repo moving ahead of an export, and never a
-> file uploaded without a regen**, so a partial upload is invisible to the tooling by construction
-> and the procedure is the only thing covering it.
+> **DEVIATION, ruled 2026-08-14 — and the ruling is not the one this row was waiting for.** The
+> 2026-08-12 upload was a diff of the six stale rows rather than the remove-all-then-upload-all the
+> header paragraph above the table requires, and it stood OPEN against a stated condition: *the
+> next boundary either performs the full remove-all-upload-all or carries a ruling that the diff
+> form is permitted, with its bound*. The 2026-08-14 boundary performed a by-path rewrite again,
+> deliberately, and what it established **retires that condition rather than satisfying it**.
 >
-> **What is different here, stated as mitigation and not as a defence.** The six were identified by
-> **check 8 itself** — the `project_knowledge` WARNs standing at the gc close — rather than by eye,
-> so the *selection* was mechanical rather than a judgement about which files had changed. That
-> addresses the failure mode where a mover is missed; it does **not** address the one the procedure
-> is actually written for, which is a file present in the store that no longer belongs there, or one
-> whose stored content diverged without its commit moving. Against that, a full re-upload churns
-> every chat in the project.
+> **Remove-all-upload-all is not performed, and must not be.** The store holds documents this
+> manifest cannot describe — agent-written documents land under `claude/` and carry no row — so the
+> procedure's remove half would delete them, silently, with no record anywhere of what was lost. A
+> procedure whose first step destroys what the record cannot name is not one this manifest can
+> require of an operator.
 >
-> **The arbiter has not ruled on this deviation. It is recorded as OPEN.** The next boundary either
-> performs the full remove-all-upload-all or carries a ruling that the diff form is permitted, with
-> its bound.
+> **Check 1 and check 3 cannot both be applied, and this pass is what established it.**
+> `prompts/bl-002-refresh-project-knowledge.md` §Post-upload verification asks for both: **check 1**,
+> that the store's document set equals this table's export-name column *in both directions*, a name
+> in one and not the other being the finding; and **check 3**, that a document older than the upload
+> window is either an incremental-upload finding **or** a deliberate non-manifest document under
+> `claude/`, out of scope. Check 3's own escape clause names a document that check 1 reads as a
+> finding. They are not two checks with a hard case between them — they are two rules that
+> contradict on the documents that actually exist.
+>
+> **The condition is therefore replaced, not discharged.** It is no longer *perform the full
+> replace*. It is: **rule which of check 1 and check 3 governs, and give this manifest vocabulary
+> for a document that is in the store and out of the export set.** No such word exists here today,
+> which is why check 1 cannot simply be rewritten to permit one — the permission would have nothing
+> to name.
+>
+> **The cost the diff route accepts, stated once so it is not later restated as an argument.** A
+> by-path rewrite proves nothing about what else the store contains. That is precisely what check 1
+> was for, and this route does not buy it back by other means: what replaces check 1 is a ruling,
+> not a check. Until that ruling lands the store's completeness is **unverified**, not
+> verified-some-other-way.
+>
+> **Still OPEN, under the replaced condition.** The contradiction is posed here, not settled.
 
 Previous export: 2026-08-09 (the hc round's close — four rows advanced).
+
+---
+
+**Export boundary — 2026-08-14, the m6-cloudcost close (GitHub as provider four).** **Four rows
+advanced**, each pin derived by `git log -1 --format=%h -- <path>` run in that row's own repo and
+**re-derived against HEAD in the pass that wrote this section**, rather than carried from the
+staging file that proposed them — the proposal was written before the upload, so its hashes were
+claims about a tree that had had two days to move. It had not: the re-derivation produced the same
+four.
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `cloudcost--milestone.md` | aetheris-agents | `8f36e45` | `97c61a0` | 2026-08-14 |
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `d025971` | `4d33048` | 2026-08-14 |
+| `capability-matrix.md` | aetheris-agents | `4d98ec2` | `e0c1ee2` | 2026-08-14 |
+| `backlog-2026-06.md` | aetheris-agents | `124707f` | `4d33048` | 2026-08-14 |
+
+**Row count 25 — none added, none dropped.** The twenty unmoved rows were each verified current by
+field in the owning repo, the twelve harness rows read in `../aetheris` at `d19f4b6`. The harness
+took no tracked write this boundary.
+
+> **What the upload actually was, recorded as performed and not as the procedure above describes
+> it.** Four documents were **rewritten in place by path**. Twenty were **left untouched** as
+> unchanged. `project-knowledge-manifest.md` was **deliberately not uploaded in that pass**: the
+> bundle's copy of it was the pre-update one, which is what byte-identical-to-HEAD meant at
+> assembly time, and putting a manifest about to be superseded into the store would have set a
+> stale assertion beside twenty-four current documents while rewriting a project document
+> invalidates the cached context of every chat there. So the store keeps the previous manifest
+> until the next boundary re-exports this one. It **under-claims** — it says the documents are
+> older than they are — which is the right way to be wrong while a change is in flight.
+>
+> **This is not the remove-all-then-upload-all the header paragraph above the table requires, and
+> the divergence is ruled rather than carried.** See the 2026-08-12 deviation block above, whose
+> condition this boundary replaced: the store holds documents this manifest cannot describe, and
+> the remove half would delete them silently, so the full replace is not merely skipped here but
+> ruled out.
+>
+> **What is not recorded here, said rather than left as a silent gap.** Check 2 of
+> `prompts/bl-002-refresh-project-knowledge.md` §Post-upload verification — content on the movers
+> only, read the uploaded document rather than trust the name — was **not reported back to this
+> pass**, so this section makes no claim about it. The four rows above are pinned on the repo-side
+> derivation, which is a different thing from having read what the store now holds.
+
+**Mirror-pair check run per the BL-002 convention**, before this table was touched: `diff -q` over
+`aetheris/docs/methodology/triad-loop.md` (canonical) and its `aetheris-agents/docs/triad-loop.md`
+mirror returned **byte-identical** — 199 lines each, sha256
+`1b9cbf57c6864cdaecc3a07c431d51d34ee69f1ebc6afc1a664d8e167ea46f8a` on both — so no canonical sync
+was owed and that is the second reason the harness took no write. `drift_check` still has no
+byte-identity check between mirrors; the `diff -q` remains the only thing covering that class.
+
+**Why this section is dated two days before the commit that carries it.** The upload happened
+2026-08-14; this manifest commit lands 2026-08-16. The gap is the ordering rule working rather than
+lag — the manifest is a pointer at an export state, written last, after the state it points at has
+stopped moving, so it was **held** until the project side was confirmed written. A manifest
+committed on the 14th would have asserted an export that had not yet occurred. The
+self-referential row keeps its 2026-08-09 date and is **not** advanced in this pass.
+
+**Ordering invariant held.** The manifest is this boundary's only tracked write and its last;
+nothing manifest-tracked was edited after the table was updated, so no row is born stale. This is
+also why the meaningful `drift_check --strict` is the **post-commit** one — check 8 reads committed
+history, so a run before this commit compares against pre-edit hashes and passes vacuously
+(BL-034/BL-025).
+
+Previous export: 2026-08-12 (the gc round's close — six rows advanced, uploaded as a diff).

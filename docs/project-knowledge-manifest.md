@@ -806,3 +806,12 @@ of the three passes.
 
 Previous export: 2026-08-16, first amendment (two rows advanced; bundle refused on three
 documentation addresses, cleared here as R-S1).
+
+---
+
+**2026-08-16 — the replaced condition is DISCHARGED, by BL-143's ruling of the same date**
+(`docs/backlog-2026-06.md`, BL-143): check 1 and check 3 both govern and were never in conflict,
+the namespace divides their populations, and remove-all-upload-all is rehabilitated scoped to the
+manifest set. Neither deviation block is amended — the 2026-08-12 block set the condition, the
+2026-08-14 block replaced it, both are point-in-time records, and their reason was right at the
+scope either could establish. Standing form: `CLAUDE.md` §Definition of done.

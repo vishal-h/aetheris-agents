@@ -8532,6 +8532,59 @@ which is itself part of what the ruling has to say.
 **Collides with:** nothing. It does not reopen BL-002 or BL-009 and does not question the
 exemption's rationale, which four documents state consistently.
 
+`[Ruled 2026-08-16 by the arbiter, at the export boundary of the same date, on the
+condition the 2026-08-12 deviation block set and the 2026-08-14 boundary replaced:
+rule which of check 1 and check 3 governs, and give this manifest vocabulary for a
+document that is in the store and out of the export set.
+
+CHECK 1 AND CHECK 3 BOTH GOVERN. THEY WERE NEVER IN CONFLICT. They were written
+without a namespace boundary, and read without one they appear to contradict on
+the documents that actually exist. Check 1 — set equality between the store and
+the export-name column, in both directions — governs the MANIFEST NAMESPACE, which
+is every store path not under `claude/`. Check 3 governs `claude/`. A
+`claude/`-namespaced document is neither a check-1 finding nor a check-3
+exception: it is out of the export set BY CONSTRUCTION.
+
+THE VOCABULARY THIS MANIFEST SAYS IT LACKS IS THE NAMESPACE. A document that is in
+the store and out of the export set is a `claude/`-namespaced document. That is
+the word, and it already existed; what was missing was any statement that it
+carried this meaning.
+
+CONSEQUENTLY, REMOVE-ALL-UPLOAD-ALL IS REHABILITATED, SCOPED. `CLAUDE.md`'s
+standing rule is correct once *remove-all* is read as *all of the manifest set*
+rather than *everything in the store*. Scoped that way the procedure destroys
+nothing the record cannot name, and it buys precisely the guarantee check 1 was
+for: no hash-driven shortcut, every tracked document replaced wholesale.
+
+THE TWO DEVIATION BLOCKS WERE RIGHT FOR THE REASON THEY GAVE. The remove half, as
+they read it, would have deleted documents this manifest could not describe. Their
+reason simply had a narrower scope than either could establish — and neither could
+have established it, because the census that settles it can only be taken from the
+store, and no session that writes this manifest can see the store. Their condition
+is DISCHARGED, not defeated. They are point-in-time records and are not amended.
+
+PERFORMED, NOT ASSERTED. At this boundary all twenty-five manifest documents were
+rewritten wholesale rather than as a diff of the two movers; the five
+`claude/`-namespaced documents were not touched. Check 1 was run as set equality
+in both directions, parsed from the table bound to its header, with a control
+proving it detects a dropped row. Check 2 was run on both movers as a BYTE
+comparison — stronger than the procedure specifies, which asks for a read rather
+than a diff. Check 3 was run as an enumeration of the five.
+
+WHAT THIS RULING DOES NOT CLAIM. It says nothing about what the U2 sweep
+establishes; that claim stays as narrow as BL-160 records it. Check 2 was
+performed on the two movers, which is its own definition — the other twenty-three
+documents were written from the same bundle in the same pass and were not
+individually verified. And it does not reach who owns the boundary or on what
+trigger.
+
+WHAT FOLLOWS AND IS NOT DONE HERE. `prompts/bl-002-refresh-project-knowledge.md`
+§Post-upload verification still states check 1 and check 3 without the namespace
+boundary. Rewriting them is now unblocked and is deliberately not done in this
+commit: the ruling and the procedure it governs are separate landings, and a
+procedure edited in the same commit as the ruling that authorises it cannot be
+reviewed against it.]`
+
 `Source: filed by the reviewer at the obligation-landing edit, 2026-08-11, at agents 0587bf3,
 with each of the four claims below verified before it was written. **The trigger has fired, and
 what fired it:** docs/project-knowledge-manifest.md:13 states the trigger as "milestone end, or
@@ -9090,6 +9143,28 @@ appended list is empty.
   census. **No proposal beyond that**, and specifically no checker: a linter for prose arithmetic
   would have to parse intent, and the failure is cheap to catch by the habit. Verified at agents
   `7cf1789`. Recorded so it is findable; not triaged here.
+
+- `2026-08-16` — **push state does not belong in a point-in-time record.** Four `Repo push state`
+  paragraphs in `docs/project-knowledge-manifest.md` assert that a boundary's commits are held and
+  unpushed: the 2026-08-05 m3-cloudcost close (`:347–352`, *"held for review, not pushed"*), and
+  each of the three passes of the 2026-08-16 boundary (`:632–637`, `:732–737`, `:802–805`). **All
+  four are false, and none was ever discharged** — `git rev-list --left-right --count
+  HEAD...origin/main` returns `0 0`, and `git branch -r --contains <hash>` returns `origin/main`
+  for every commit those four paragraphs name (`de71e2b`, `29a51fa`, `a2df7b5`, `8653546`,
+  `ef651f9`, `fd03bf3`). So the manifest raises a condition nothing in it closes, and a reader
+  cannot tell from the document whether the hashes it pins are public — which is the one question
+  those paragraphs exist to answer. **Two of the four were written the same day they went false**,
+  at this boundary's own later passes: true when written, false when the commits were pushed, with
+  no edit to the file and nothing anywhere noting the change. That is the mechanism rather than a
+  detail — the claim decays without anyone touching the record, so a discipline of *"amend it when
+  you push"* would have to fire in a session that has no reason to open the file. **The shape of
+  the fix, not decided:** state what was pinned and leave push state to
+  `git branch -r --contains <hash>`, which answers it at any later moment, instead of asserting a
+  status the record cannot maintain. Kinship: `CLAUDE.md` §Learning — BL-152, *a count recorded in
+  prose carries the command that reproduces it*, applied to a **status** rather than a figure. The
+  two paragraphs at `:208` and `:263` are **not** instances — they claim synced, not held, and are
+  still true. Recorded as a recurrence, four instances, not one. Verified at agents `9741c4e`.
+  Recorded so it is findable; not triaged here.
 
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.

@@ -443,16 +443,15 @@ it** — correctly, because at that moment the only argument for the change was 
 the run green — and the arbiter cleared them and authorised the exclusion on the ground above.
 That order is the rule working, and it is the reason the test can be stated at all.
 
-**The upload half is under two live instructions that contradict each other — the rule above
-this paragraph, and the manifest's 2026-08-14 ruling. Until BL-143 rules, follow the
-manifest's.** Not because it is the more likely right: which one governs *is* BL-143's open
-question, and nothing here settles it. Because the two are asymmetric in consequence, and a
-pointer that left a reader to choose between them would treat an unrecoverable cost and a
-recoverable one as equivalent. Following the manifest's ruling forgoes a guarantee about the
-store's completeness, and forgone guarantees can be reclaimed by a later check. Following the
-other destroys documents this manifest has no vocabulary to name, silently, with nothing
-anywhere recording what was lost — and that is not reclaimable by anything. Name the asymmetry,
-not a precedence: when the ruling lands, this clause goes.
+**The manifest set is the scope of *remove-all*, and `claude/` is outside it.** *Remove-all* in
+this section's export rule above reads *all of the manifest set*, never *everything in the store*.
+A `claude/`-namespaced document carries no row, is out of the export set **by construction**, and
+is never removed by this procedure. That namespace is also the boundary between the two
+post-upload checks: check 1's set equality against the export-name column governs every store path
+not under `claude/`, and check 3 governs `claude/`. The reasoning is **BL-143**'s ruling of
+2026-08-16 in `docs/backlog-2026-06.md`; read it there rather than here. It settles this question
+only — the ownership-and-trigger pointer above still stands, and that half of the row is still
+open.
 
 ---
 

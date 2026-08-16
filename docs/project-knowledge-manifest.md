@@ -652,8 +652,9 @@ they are this pass's own two earlier commits rather than anything the world did:
 
 **Row count 25**, re-derived by parsing the table bound to its header row, not carried from the
 first pass. Both derivations — by hand, by field, in each row's own repo, and
-`scripts/repin_manifest.py` — agree on all 25: the same two movers, the same was→now, the same 23
-rows current, the self row untouched. The twelve harness rows were read in `../aetheris` at
+`scripts/repin_manifest.py` — agree on all 25: the same two movers, the same was→now, the same **22
+rows current** on both cells, the self row untouched. That is the whole table, and it adds up in
+public: **2 + 22 + 1 = 25.** The twelve harness rows were read in `../aetheris` at
 `d19f4b6`, and **the mirror pair was checked again before anything was written** and is still
 byte-identical (199 lines, sha256 `1b9cbf57…ea46f8a` both sides), so the harness took no write at
 this pass either.

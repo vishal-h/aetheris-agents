@@ -288,13 +288,32 @@ Both scopes, on BL-152's ground: the repo-root `python3 -m pytest -q` collects n
 whole-suite gate is these two invocations. The 7 xfails are pre-existing and strict
 (`test_tools_manifests.py` — BL-087, BL-089).
 
-**The reproduction, both comparisons.**
+**The reproduction, both comparisons, run against the committed assembler at `5dae22b`.**
 
 ```
-sources moved since 4d33048: ['docs/project-knowledge-manifest.md']
-unmoved: 24 byte-identical / 0 differ   |   moved: 1 match git show HEAD / 0 differ
-total accounted: 25 of 25
+bundle built at: agents 5dae22b / aetheris d19f4b6
+exported sources moved since agents 4d33048 / aetheris d19f4b6: 2
+   aetheris-agents--CLAUDE.md      (aetheris-agents:CLAUDE.md)
+   project-knowledge-manifest.md   (aetheris-agents:docs/project-knowledge-manifest.md)
+
+A. moved sources vs `git show HEAD:<path>`         : 2/2 identical
+B. unmoved sources vs the preserved 4d33048 bundle : 23/23 byte-identical
+   accounted: 25 of 25 rows; unchecked: 0
+   mismatches: none
 ```
+
+**The moved list is two here and was one at gate (iv), and the difference is this ticket's own
+commit.** At `e3cf24d` exactly one exported source had moved since `4d33048`
+(`docs/project-knowledge-manifest.md`); `5dae22b` adds `CLAUDE.md` (§1(ii)'s pointer paragraph).
+Both are stated rather than one of them quietly replacing the other.
+
+A first pass of this comparison keyed the moved set on the repo *path* alone and reported 3
+movers — `CLAUDE.md` is the path of **two** rows, the agents one and the harness one, and the
+harness row was swept into the moved bucket where it did not belong. It compared clean either
+way (that row is identical at `HEAD` and in the preserved bundle), so the arithmetic was right
+and the classification was wrong. Re-run keyed on `(repo, path)`, which is what the figures
+above are. Recorded because a check whose own classifier is loose is the shape that hides a real
+mismatch behind a passing total.
 
 Every one of the 25 rows is accounted for in one comparison or the other; nothing is left
 unchecked.
@@ -307,10 +326,18 @@ $ diff -rq <fresh-1> <fresh-2>
 no differences
 ```
 
-**`drift_check.py --strict` (pre-commit): 8 PASS / 0 FAIL / 1 WARN / 7 INFO, exit 0.** The WARN
-is `project_knowledge: CLAUDE.md has uncommitted working-tree changes` — strict-exempt, and
-expected: check 8 reads committed history, so the meaningful run is the post-commit one
-(BL-034/BL-025). The 7 INFO are the standing env-var and payload-field notes.
+**`drift_check.py --strict`, pre-commit: 8 PASS / 0 FAIL / 1 WARN / 7 INFO, exit 0**, the WARN
+being `CLAUDE.md has uncommitted working-tree changes` — the check saying it cannot answer yet.
+**Post-commit at `5dae22b`, which is the meaningful run (BL-034/BL-025): 8 PASS / 0 FAIL / 1
+WARN / 7 INFO, exit 0**, the WARN now
+`project_knowledge: CLAUDE.md stale — manifest=4d33048 current=5dae22b`. That is the
+strict-exempt manifest-staleness class, named rather than chased: mid-cycle staleness is
+expected truth and clears at an export boundary, which this ticket is not. The 7 INFO are the
+standing env-var and payload-field notes.
+
+**`repin_manifest.py --dry-run` post-commit** reports the same single row —
+`aetheris-agents--CLAUDE.md 4d33048 -> 5dae22b`, *would be re-pinned, nothing written* — and
+leaves the tree clean. The two independent derivations of what this commit staled agree.
 
 ---
 

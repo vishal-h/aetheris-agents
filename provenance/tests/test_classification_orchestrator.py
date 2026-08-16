@@ -140,6 +140,7 @@ def test_cli_bad_db_exits_1():
 # Agent eval check
 # ---------------------------------------------------------------------------
 
+@pytest.mark.integration
 def test_agent_evaluates_without_error(tmp_path):
     """classification_orchestrator.exs evaluates with mix run --eval."""
     agent = Path(__file__).parent.parent / "agents" / "classification_orchestrator.exs"

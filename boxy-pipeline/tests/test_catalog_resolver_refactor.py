@@ -14,6 +14,11 @@ import pytest
 from catalog_resolver import load_catalog_jsonl, resolve, parse_finish
 from schema import CatalogItem, PlanComponent
 
+# Dormant since 2026-08-16 (BL-152) — boxy-pipeline's work is paused pending the client.
+# These tests still collect and import; they are deselected from the whole-suite gate.
+# See the `dormant` marker in pytest.ini for the stated condition for return.
+pytestmark = pytest.mark.dormant
+
 USE_CASE_ROOT = Path(__file__).parent.parent
 CATALOG_JSONL  = USE_CASE_ROOT / "data" / "catalog.jsonl"
 SAMPLES_DIR    = USE_CASE_ROOT / "data" / "samples"

@@ -189,6 +189,7 @@ def test_cli_bad_db_exits_1():
 # Agent eval check
 # ---------------------------------------------------------------------------
 
+@pytest.mark.integration
 def test_agent_evaluates_without_error(tmp_path):
     agent = Path(__file__).parent.parent / "agents" / "migration_agent.exs"
     aetheris = Path(__file__).parent.parent.parent.parent / "aetheris"

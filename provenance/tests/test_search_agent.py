@@ -14,6 +14,7 @@ AGENT    = Path(__file__).parent.parent / "agents" / "search_agent.exs"
 AETHERIS = Path(__file__).parent.parent.parent.parent / "aetheris"
 
 
+@pytest.mark.integration
 def test_agent_evaluates_without_error(tmp_path):
     if not AETHERIS.exists():
         pytest.skip("aetheris repo not found")
@@ -30,6 +31,7 @@ def test_agent_evaluates_without_error(tmp_path):
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.integration
 def test_agent_evaluates_without_mcp_enabled(tmp_path):
     """Agent must evaluate cleanly even when CORPUS_SEARCH_MCP_ENABLED is unset."""
     if not AETHERIS.exists():
@@ -48,6 +50,7 @@ def test_agent_evaluates_without_mcp_enabled(tmp_path):
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.integration
 def test_agent_raises_without_db_path():
     """Agent must raise at eval time when PROVENANCE_DB_PATH is unset."""
     if not AETHERIS.exists():

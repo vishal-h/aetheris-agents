@@ -11,6 +11,11 @@ import pytest
 from so_extractor import _parse_money, _extract_sku, extract_so
 from schema import SalesOrder, SOLineItem
 
+# Dormant since 2026-08-16 (BL-152) — boxy-pipeline's work is paused pending the client.
+# These tests still collect and import; they are deselected from the whole-suite gate.
+# See the `dormant` marker in pytest.ini for the stated condition for return.
+pytestmark = pytest.mark.dormant
+
 USE_CASE_ROOT = Path(__file__).parent.parent
 SAMPLES_DIR   = USE_CASE_ROOT / "data" / "samples"
 SO_FILE       = SAMPLES_DIR / "SO86708_Aria_Joey.pdf"

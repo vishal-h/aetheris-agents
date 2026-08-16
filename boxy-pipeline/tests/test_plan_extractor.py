@@ -17,6 +17,11 @@ from plan_extractor import (
 )
 from schema import PlanComponent
 
+# Dormant since 2026-08-16 (BL-152) — boxy-pipeline's work is paused pending the client.
+# These tests still collect and import; they are deselected from the whole-suite gate.
+# See the `dormant` marker in pytest.ini for the stated condition for return.
+pytestmark = pytest.mark.dormant
+
 USE_CASE_ROOT = Path(__file__).parent.parent
 SAMPLES_DIR = USE_CASE_ROOT / "data" / "samples"
 
@@ -137,6 +142,7 @@ def test_drawing_label_unknown_for_unrecognised_footer():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.integration
 def test_deduplication_increments_qty_same_drawing(tmp_path):
     """Same code appearing twice on the same drawing → qty = 2."""
     # We test by running extract_pdfs and checking that duplicates in the
@@ -151,6 +157,7 @@ def test_deduplication_increments_qty_same_drawing(tmp_path):
     assert el3_blb[0].qty >= 2
 
 
+@pytest.mark.integration
 def test_deduplication_separate_records_across_drawings():
     """Same code on different drawings → separate PlanComponent records."""
     if not SAMPLES_AVAILABLE:
@@ -401,6 +408,7 @@ def test_vision_fallback_fires_and_cleans_garbled_tokens():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.integration
 def test_vision_codes_filtered_through_token_to_code(monkeypatch):
     """Vision-returned codes must pass _token_to_code validation.
 

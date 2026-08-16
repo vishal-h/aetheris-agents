@@ -9073,6 +9073,88 @@ verbatim, then reproduced with the ticket's changes stashed to establish it was 
 rather than left in the packet, per the standing rule that prose in a packet or notes files
 nothing.`
 
+**Annotated 2026-08-16 (BL-152's own ticket): the gate exists and is green; the row is NOT
+closed.** Established at agents `6ffcd76` / harness `d19f4b6`; record at
+`docs/milestones/bl-152-implementation-notes.md`.
+
+**The gate is now** `python3 -m pytest -q -m "not integration and not dormant"`, run from the
+`aetheris-agents/` repo root, stated as that command — not as an outcome — in `CLAUDE.md`
+§Definition of done, which also extends the standing gate enumeration to include it.
+`1384 passed, 3 skipped, 320 deselected, 7 xfailed in 178.56s`, exit 0.
+
+**Two exclusions, two markers, never merged, and the gate prints both counts** on its own summary
+line: `deselected by reason: integration=112, dormant=208 (total 320)`. `integration` asserts
+*test mechanics* — the test depends on state outside this repo's tracked tree. `dormant` asserts
+*business state* — boxy-pipeline's work is paused pending its client, dated, with the condition
+for return recorded in `pytest.ini` (*it runs again when boxy-pipeline work resumes*). Dormant
+tests **still collect and still import**; 208 of them, deselected at run time and never at import,
+because a use case whose tests stop collecting is the very rot this row exists to remove. Each set
+has its own command, so an exclusion is a deferral rather than a deletion:
+`python3 -m pytest -q -m "integration and not dormant"` and `python3 -m pytest -q -m dormant`.
+Neither marker is in `addopts`. Dormancy was applied to the test apparatus and nothing else — no
+sprint case, tools manifest, runbook or capability list was touched, and no boxy code, fixture or
+output was moved.
+
+**What fixed collection.** A root `pytest.ini` — pinning rootdir, and
+`addopts = --import-mode=importlib` — plus one `sys.path.insert` in
+`boxy-pipeline/tests/conftest.py` and the deletion of the empty `email/tests/__init__.py`. Not
+`--ignore`, not `skip`, not `xfail`, and no product code. The row's *"two named modules are the
+visible edge, not the extent"* is confirmed: three distinct module-name collisions under pytest's
+default `prepend` import mode, only one of which either named module shows —
+`tests/conftest.py` vs `cloudcost/tests/conftest.py` both claiming `conftest` (the row's 8
+errors); `email/tests/` vs `provenance/mcp/corpus-search/tests/` both claiming the package
+`tests`; and `boxy-pipeline/main.py` reachable only when the working directory *is*
+`boxy-pipeline/`, because `python3 -m` puts the cwd on `sys.path` and nothing else did.
+
+**The true whole-suite figure is 1714 collected, zero collection errors**, equal to the sum of all
+twelve per-scope collections, and the gate accounts for every one of them (1384 + 3 + 7 + 320).
+Only one scope's count moved — `boxy-pipeline/tests` 196+error → 208, the twelve tests in
+`test_pipeline.py` that could not previously be imported from the root — so the *Costs*
+paragraph's stated risk did not materialise. It reconciles with **no** figure previously recorded
+here, and should not: every *"full suite"* number in the notes — m6 t1's **386 passed** included —
+is printed beside `python3 -m pytest cloudcost/tests/`, a scope figure that was never a
+root-command figure. That scope runs 464 passed today. Neither number is adjusted.
+
+**Ten tests gained `@pytest.mark.integration`** — three in
+`boxy-pipeline/tests/test_plan_extractor.py` reading gitignored client PDFs (four siblings with
+the identical guard were already marked; these three were the inconsistency), seven in
+`provenance/tests/` spawning `mix run --eval` in the sibling `../aetheris`. **None was red**:
+the pre-marker tree run was 1545 passed / 0 failed and the post-marker run 1535, and 1545 − 1535
+is exactly the ten. **Where this ticket exercised judgement the row did not settle**: the line
+between those seven and the many tests that `subprocess.run` this repo's *own* tracked scripts is
+drawn at *leaves this repository*, and is the packet's question for the arbiter.
+
+**Reds found, reported, not fixed.**
+`boxy-pipeline/tests/test_catalog_resolver_refactor.py::test_real_jsonl_resolve_matches_excel_result`
+**FAILED** and is left red inside the dormant set — deselected for dormancy, never for failing. A
+second failure in the same set is **unidentified**: the verbose run was cap-killed before reaching
+it, and it is not named by inference. Separately, the ticket introduced and then removed a red of
+its own: a root `conftest.py` shadowed the bare module name `conftest` that ten cloudcost lines
+import at runtime, breaking two tests; the hooks moved to `tests/conftest.py`. That fragility
+remains latent and is offered as a candidate row rather than fixed here.
+
+**Every run that can reach live subprocess work ran under an explicit wall-clock cap, and a
+cap-kill is recorded as a result.** `-m "integration and not dormant"` completes in 25.27s. The
+dormant set is documented and **deliberately not run**: two capped runs made before the split were
+killed at 52m21s (cap 2700s, 37/169) and 10m17s (cap 2400s, 21/57), the first stalled at
+`test_plan_path_produces_same_output_as_drawings_path` — which spawns `plan_extractor.py` against
+the two sample PDFs, exactly as the row describes. **The row's "blocks inside a live subprocess"
+is confirmed, not refuted**; projected from the observed rate that set needs roughly four hours,
+and it is now behind a marker nothing runs by default.
+
+**Two of the row's other pointers were wrong at HEAD**, corrected in the notes rather than here:
+the scope counts have moved (`cloudcost/tests/` 440 → 465, `tests/` 136 → 164, the 8-error
+combination result exact); and *"their tests run when pytest is invoked against their own scope"*
+is false for `boxy-pipeline/tests` from the repo root, which is the mechanism rather than a
+detail.
+
+**The harness needs no change; its HEAD is unchanged at `d19f4b6`.** `sprint.sh`'s
+`python3 -m pytest ../aetheris-agents/api/{tenant,gateway}/tests/ -q` legs now find this
+`pytest.ini` by upward search and are unaffected — 108 passed, 11 skipped, the same 119 collected
+as before. Every scoped invocation in every runbook, README and milestone doc in both repos
+collects identically before and after, verified scope by scope in both the root-relative and
+cwd-relative forms, so none of them was edited.
+
 ---
 
 ### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place (#TBD)

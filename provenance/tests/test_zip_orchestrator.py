@@ -221,6 +221,7 @@ def test_cli_bad_db_exits_1():
 # Agent eval check
 # ---------------------------------------------------------------------------
 
+@pytest.mark.integration
 def test_agent_evaluates_without_error(tmp_path):
     if not AETHERIS.exists():
         pytest.skip("aetheris repo not found")

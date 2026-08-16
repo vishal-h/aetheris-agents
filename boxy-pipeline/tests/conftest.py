@@ -4,6 +4,9 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+# boxy-pipeline/main.py is imported by test_pipeline.py; the use-case root is only on
+# sys.path when pytest is invoked from inside boxy-pipeline/, so put it there explicitly.
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 _SAMPLES_DIR = Path(__file__).parent.parent / "data" / "samples"
 

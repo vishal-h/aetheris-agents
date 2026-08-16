@@ -44,6 +44,15 @@ be inferred from exactly the data points that went wrong. See
 
 ## Commands
 
+**Run the whole-suite gate**, then either deferred set (see §Definition of done for what the gate
+excludes and why the two exclusions are never merged):
+```bash
+# From the aetheris-agents/ root
+python3 -m pytest -q -m "not integration and not dormant"
+python3 -m pytest -q -m "integration and not dormant"
+python3 -m pytest -q -m dormant
+```
+
 **Run tests for a use case:**
 ```bash
 # From the aetheris-agents/ root
@@ -286,7 +295,8 @@ it was verified against; claude-code treats divergence between ticket text and r
 as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002.
 
 **Every existing gate runs at ticket boundaries, even off-territory** (`mix test`,
-`tsc -b`/`bun run build`, `bun run lint`, sprint, `drift_check --strict`). A red gate gets a
+`tsc -b`/`bun run build`, `bun run lint`, sprint, `drift_check --strict`, the Python
+whole-suite gate below). A red gate gets a
 tracked ticket the day it's found — never carried silently. Gates that only run when a ticket
 happens to touch their territory rot invisibly, and each rot normalizes the next: `mix test`
 was red before BL-003, `tsc -b`/`bun run build` red for three weeks (p9-t4), `bun run lint` red
@@ -312,6 +322,48 @@ ticket, with its own review and its own record, rather than an edit made to get 
 resource the assertion was always about" — **wrong when written, not superseded since**, and
 carried for three days as an endorsement of the practice. Established at
 cloudcost/docs/m4-t2-implementation-notes.md §4a.]`
+
+**The Python whole-suite gate is the command, not the outcome.** It is
+
+```bash
+# from the aetheris-agents/ repo root
+python3 -m pytest -q -m "not integration and not dormant"
+```
+
+Say *"the gate is `python3 -m pytest -q -m "not integration and not dormant"` from the repo
+root"*, never *"the whole suite passes"* — a done-check phrased as an outcome is still
+true-sounding on a day the suite is red, and phrased as a command it can be re-run by a reader.
+The exclusion is **not** in `addopts`: making it the default is how it would stop being visible.
+
+**Two exclusions, two markers, never merged — and the gate prints both counts.** Root
+`conftest.py` attributes every deselected test to exactly one reason and writes
+`deselected by reason: integration=112, dormant=208 (total 320)` into ordinary output, because a
+single merged figure is how an exclusion set becomes permanent and unexaminable. Each deferred
+set has its own command, so an exclusion is a deferral rather than a deletion:
+
+| marker | what it asserts | its own command |
+|---|---|---|
+| `integration` | **Test mechanics.** Depends on state outside this repo's tracked tree — a live external service or credential, an installed external binary, the sibling `../aetheris` harness, or gitignored local data files. | `python3 -m pytest -q -m "integration and not dormant"` |
+| `dormant` | **Business state.** The use case's work is paused, so its tests are deselected rather than gating. Carries a date and a stated condition for return. | `python3 -m pytest -q -m dormant` |
+
+Neither is ever applied because a test is slow, and neither because it fails: **a red test is
+reported red, not marked.** A test that spawns `python3` against this repo's own tracked scripts
+on hermetic inputs is the standard idiom here and stays in the gate. **Dormant tests still
+collect and still import** — a use case whose tests stop collecting is one nobody notices has
+rotted, which is the defect this gate exists to remove; deselect at run time, never at import.
+`pytest.ini` carries each marker's full statement, and `dormant`'s condition for return.
+
+**Any run that can reach live subprocess work runs under an explicit wall-clock cap, and a
+cap-kill is a complete result.** Record the cap and record that the run hit it; do not retry with
+a longer one. The dormant set is the standing example: the two capped runs covering it were killed
+deliberately at 52m21s (cap 2700s) and 10m17s (cap 2400s), neither finishing, and that is the
+recorded result rather than a check still owed.
+
+`Source: BL-152, 2026-08-16. Until then the wording was "the whole suite, not <use_case>/tests/",
+and the literal root command — `python3 -m pytest -q` — aborted during collection and ran nothing
+at all, so the gate could not distinguish a green repo from a broken one. Collection is fixed by
+the root `pytest.ini` (rootdir pin + `--import-mode=importlib`); see that file's header for the
+three module-name collisions it resolves.`
 
 **Before making a soft failure hard, enumerate what else that gate holds.** If flipping it turns
 *every* tracked known-red blocking at once, then the enforcement and the exempt/expected-fail

@@ -15,6 +15,7 @@ AGENT  = Path(__file__).parent.parent / "agents" / "zip_archaeologist.exs"
 AETHERIS = Path(__file__).parent.parent.parent.parent / "aetheris"
 
 
+@pytest.mark.integration
 def test_agent_evaluates_without_error(tmp_path):
     if not AETHERIS.exists():
         pytest.skip("aetheris repo not found")

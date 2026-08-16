@@ -339,6 +339,17 @@ script, because its needles are the identifiers themselves. Who owns the boundar
 trigger is **BL-143**, open and untouched by this. Tests:
 `python3 -m pytest tests/test_export_bundle.py tests/test_repin_manifest.py -v`
 
+**The upload half is under two live instructions that contradict each other — the rule above
+this paragraph, and the manifest's 2026-08-14 ruling. Until BL-143 rules, follow the
+manifest's.** Not because it is the more likely right: which one governs *is* BL-143's open
+question, and nothing here settles it. Because the two are asymmetric in consequence, and a
+pointer that left a reader to choose between them would treat an unrecoverable cost and a
+recoverable one as equivalent. Following the manifest's ruling forgoes a guarantee about the
+store's completeness, and forgone guarantees can be reclaimed by a later check. Following the
+other destroys documents this manifest has no vocabulary to name, silently, with nothing
+anywhere recording what was lost — and that is not reclaimable by anything. Name the asymmetry,
+not a precedence: when the ruling lands, this clause goes.
+
 ---
 
 ## Key docs to read for each use case

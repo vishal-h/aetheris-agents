@@ -365,6 +365,35 @@ manifest cannot describe, so the remove half would delete them silently. Both ar
 two exported documents. It is BL-143's ground (the replaced condition it poses is exactly this),
 and the pointer paragraph added to `CLAUDE.md` says so rather than restating either rule.
 
+`[Amended at the review, AX1. The pointer was neutral between the two, and neutrality is not`
+`available here: the instructions are asymmetric in consequence. The remove half of`
+`remove-all-upload-all destroys documents the manifest has no vocabulary to name, with nothing`
+`recording the loss; the manifest's ruling forgoes a guarantee, which a later check can reclaim.`
+`So the paragraph now says to follow the manifest's until BL-143 rules, and names that asymmetry`
+`as the ground rather than asserting a precedence — the open question stays open. **The`
+`reviewer's count of the affected documents is deliberately not carried into either file**: this`
+`session cannot see the store (§9), so a figure about its contents would be a claim it has no`
+`truth-maker for, and the argument does not need one.]`
+
+**The 2026-08-14 ruling was issued against a standing rule nobody had read.** Recorded on the
+reviewer's statement at this review: when the manifest's deviation block was ruled, `CLAUDE.md`'s
+*"Export is remove-all-upload-all…"* rule had not been read — by either session, on either side
+of that ruling. **This does not weaken the ruling**: its ground is the store's contents, which
+the rule's author had no way to know, and it holds unchanged. What is worth the record is the
+shape. A ruling was made about a procedure while the standing statement of that procedure went
+unlooked-for, and what surfaced the collision was **a later ticket opening the file for an
+unrelated reason** — this one, reading §Definition of done to find where a companion pointer
+should sit.
+
+That is the milestone's own recurring shape arriving once more: `CLAUDE.md`'s repos rule was
+widened to bind *every* session precisely because BL-031's never opened the sibling's learning
+sections; the standing-gate rule exists because three gates rotted and each surfaced only when
+an off-territory ticket happened to run it; and the m6 §7 close found a test it could not run
+because nothing in the close's own procedure surfaces a missing input. Every one of those was
+found by a reader who was there for something else. **No fix is proposed here** — what would
+make a ruling read the rules it rules on is not this ticket's to decide, and BL-143 is where the
+question already lives.
+
 **The assembler's own copy of the manifest can differ from the manifest that drove the run.**
 The table is read from the path given (working tree); the document is bundled from `HEAD`. That
 is right — a bundle carries committed documents — and it is precisely what the 2026-08-14

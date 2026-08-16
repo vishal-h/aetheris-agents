@@ -1,0 +1,120 @@
+# U2 — the export scrub class, as patterns
+# ============================================================================
+#
+# WHY THIS FILE HOLDS THE DEFINITION AND NOT ONLY THE PATTERNS
+#
+# The U2 class was defined at m6-cloudcost t2 and has lived, ever since, in
+# `cloudcost/docs/m6-t2-implementation-notes.md` §U2 — a milestone working
+# artifact, which the export manifest excludes by kind and which therefore
+# travels nowhere. Every other mention in either repo is a pointer at that
+# file: `CLAUDE.md`'s export paragraph, `prompts/bl-002-refresh-project-
+# knowledge.md`, `cloudcost/m6-github.md`, the assembler's own marker text.
+# A class that governs what may leave the machine had no committed standing
+# statement, which is the same defect as a deferred finding living in a notes
+# file, one level up. So the statement below is authoritative and the notes
+# file is now the historical record of how it was reached.
+#
+# (Note a name collision that will otherwise cost someone an afternoon:
+# `cloudcost/docs/m3-linode-scout.md` has its own "U2", an open question about
+# Linode reserved IPs. Unrelated.)
+#
+# ---------------------------------------------------------------------------
+# THE CLASS
+#
+# SCRUBBED — anything identifying the account, the people in it, or its
+# internal structure: organisation (`organization`, `organizationName`),
+# repositories (`repositoryName`), logins, display names, numeric user and
+# organisation ids, `node_id`, profile and avatar URLs, every one of the
+# fifteen `*_url` fields, email addresses, and any token-shaped string.
+#
+# NOT SCRUBBED, because these carry the tests' meaning: monetary figures,
+# `product` / `sku` / `unitType` strings, quantities, timestamps, and the
+# period fields.
+#
+# The class binds this file, the tests, the packet and the prose describing
+# them — not only the fixtures.
+#
+# ---------------------------------------------------------------------------
+# WHAT A CLEAN SWEEP AGAINST THIS FILE CLAIMS
+#
+# Exactly this: **no text in the bundle matches these patterns.** It does NOT
+# claim the bundle carries no identifying content. The two are different
+# claims and the gap between them is real — see UNDER-REACH. Anyone reporting
+# a clean sweep uses the narrow words.
+#
+# Why patterns rather than the literal identifiers: a needle list is a
+# deanonymisation key, so it cannot be committed, so it must be derived at run
+# time from raw captures — and no such corpus exists in this repo or is
+# located by it. That made the value sweep unrunnable in practice and its
+# green meaningless. A pattern set is not disclosure: it commits, it runs
+# anywhere, and it needs no corpus. `--needles FILE` still exists beside it
+# for an operator who does hold captures; the two are additive.
+#
+# ---------------------------------------------------------------------------
+# UNDER-REACH — class members no pattern here covers, enumerated not implied
+#
+#   * logins, display names, organisation names, repository names **in prose**.
+#     These have no lexical signature; they are ordinary words. They are
+#     reachable only in the contextual forms below, i.e. next to a key that
+#     names them, which is how pasted API output looks and is not how a
+#     sentence looks.
+#   * numeric user and organisation ids in prose, for the same reason: a user
+#     id is an ordinary integer.
+#   * bare `"name"` as a JSON key. Deliberately omitted — the normalized
+#     cost-adapter schema uses `name` for resources throughout, so a pattern
+#     on it would fire on the class's NOT-SCRUBBED half by construction.
+#     `display_name` and `full_name` are covered.
+#   * AWS secret access keys. 40 chars of base64 alphabet with no prefix; any
+#     pattern matching them matches ordinary hashes and identifiers too.
+#   * Linode PATs. 64 lowercase hex — the exact shape of a sha256, and this
+#     bundle legitimately carries sha256 digests in its boundary records, so
+#     such a pattern would fire on non-identifiers by construction rather than
+#     by accident.
+#
+# OVER-REACH — what these patterns match that the class does not name
+#
+#   The contextual patterns match a key/value pair by shape, so they fire on
+#   a *fictional or illustrative* JSON snippet exactly as on a real capture —
+#   documentation quoting an API response is a match. The email pattern
+#   likewise matches `someone@example.com`. This is deliberate: a sweep that
+#   tried to tell a real identifier from an illustrative one would need the
+#   values, which is the dependency this file removes. A hit is a thing for a
+#   human to adjudicate, never a thing for the script to excuse.
+#
+# ---------------------------------------------------------------------------
+# FORMAT
+#
+#   <label> :: <python re pattern>
+#
+# One pattern per line, `#` comments and blank lines ignored. Patterns are
+# matched case-insensitively over each bundled document's full text. The label
+# names the class member the pattern covers and is what the sweep reports, so
+# a reviewer can check coverage against THE CLASS above rather than against
+# the author's intent. Matches are reported redacted; `--show-matches` prints
+# them in full for local adjudication and must not be pasted into a packet.
+# ============================================================================
+
+# --- value-shaped: the identifier itself has a signature ---
+
+email address :: [A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,24}
+token-shaped (GitHub PAT/app/refresh) :: \bgh[pousr]_[A-Za-z0-9]{30,255}\b
+token-shaped (GitHub fine-grained PAT) :: \bgithub_pat_[A-Za-z0-9_]{40,}\b
+token-shaped (DigitalOcean PAT) :: \bdop_v1_[0-9a-f]{60,70}\b
+token-shaped (AWS access key id) :: \b(?:AKIA|ASIA|AIDA|AROA|ANPA)[0-9A-Z]{16}\b
+node_id (GitHub, modern prefixed) :: \b[A-Z]{1,2}_kg[A-Za-z0-9_-]{10,}\b
+node_id (GitHub, classic base64) :: \bMD[EGIQUYcgkow][0-9]?[A-Za-z0-9+/]{8,}={0,2}\b
+profile/avatar URL (githubusercontent) :: https?://avatars[0-9]*\.githubusercontent\.com/\S+
+profile/avatar URL (gravatar) :: https?://(?:[a-z0-9-]+\.)*gravatar\.com/avatar/\S+
+profile URL (github user page) :: https?://(?:www\.)?github\.com/[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})/?(?=[\s"'`,)\]]|$)
+
+# --- contextual: the key names the class member, the value follows ---
+
+organisation (json key) :: "organisation|organization(?:name)?"\s*:\s*"[^"]+"
+repository name (json key) :: "repository(?:_?name|_?full_?name)"\s*:\s*"[^"]+"
+login (json key) :: "(?:login|username|user_?login)"\s*:\s*"[^"]+"
+display name (json key) :: "(?:display_?name|full_?name|real_?name)"\s*:\s*"[^"]+"
+node_id (json key) :: "node_?id"\s*:\s*"[^"]+"
+one of the fifteen *_url fields (json key) :: "[a-z0-9_]*_url"\s*:\s*"https?://[^"]*"
+email address (json key) :: "(?:e?mail|email_?address)"\s*:\s*"[^"]+"
+numeric user/org id (json key) :: "(?:user_?id|owner_?id|organi[sz]ation_?id|org_?id|account_?id|actor_?id)"\s*:\s*[0-9]{4,}
+numeric id (json key, large) :: "id"\s*:\s*[0-9]{6,}

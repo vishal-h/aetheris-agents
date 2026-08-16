@@ -142,6 +142,28 @@ def git_last_commit(repo: Path, path: str) -> str | None:
     return result.stdout.strip() or None
 
 
+def git_commit_date(repo: Path, commit: str) -> str | None:
+    """`git log -1 --format=%ad --date=short <commit>` — the date OF a resolved commit.
+
+    Deliberately keyed on the commit rather than on the path. `git_last_commit` above
+    runs the exact command check 8 compares against; this takes that command's own
+    answer and asks when it landed, so the manifest's `commit` and `last changed` cells
+    are two readings of one object and cannot drift apart. Keying this on the path
+    instead would make them two independent derivations, which is the arrangement that
+    let them disagree in the first place (BL-151, 2026-08-16).
+    """
+    result = subprocess.run(
+        ["git", "log", "-1", "--format=%ad", "--date=short", commit],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
 def git_head(repo: Path) -> str | None:
     result = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"],

@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 import assemble_export_bundle
-from _manifest import HEADER, SELF_COMMIT
+from _manifest import HEADER, SELF_COMMIT, ManifestError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HARNESS_ROOT = REPO_ROOT.parent / "aetheris"
@@ -305,12 +305,16 @@ def test_an_empty_existing_destination_is_accepted(bundle_world, tmp_path):
 
 
 def test_an_unswept_bundle_says_so_in_the_bundle(bundle_world, tmp_path):
-    """Terminal output scrolls away; the directory is what the operator uploads."""
+    """Terminal output scrolls away; the directory is what the operator uploads.
+
+    Unswept now means both sweeps off — the pattern set is the default, so reaching this
+    state takes `--no-patterns` and no needles.
+    """
     dest = tmp_path / "out"
-    assert _assemble(bundle_world, dest) == 0
+    assert _assemble(bundle_world, dest, patterns_file=None) == 0
     marker = dest / assemble_export_bundle.MARKER_NAME
     assert marker.exists()
-    assert "NOT been swept" in marker.read_text(encoding="utf-8")
+    assert "NOT cleared for upload" in marker.read_text(encoding="utf-8")
 
 
 def test_a_clean_sweep_writes_no_marker(bundle_world, tmp_path):
@@ -319,6 +323,101 @@ def test_a_clean_sweep_writes_no_marker(bundle_world, tmp_path):
     dest = tmp_path / "out"
     assert _assemble(bundle_world, dest, needles_file=needles) == 0
     assert not (dest / assemble_export_bundle.MARKER_NAME).exists()
+
+
+# --------------------------------------------------------------------------- #
+# The pattern sweep (BL-160)                                                   #
+# --------------------------------------------------------------------------- #
+
+
+def test_the_pattern_sweep_runs_by_default_and_needs_no_corpus(bundle_world, tmp_path):
+    """The whole point of R-F2: a bare run sweeps, with no operator-supplied anything.
+
+    Before this, a bare run wrote the unswept marker, because the only sweep available
+    needed a needle corpus nothing in the repo locates.
+    """
+    dest = tmp_path / "out"
+    assert _assemble(bundle_world, dest) == 0
+    assert not (dest / assemble_export_bundle.MARKER_NAME).exists()
+
+
+def test_a_planted_in_class_string_fails_the_run_then_passes_when_removed(
+    bundle_world, tmp_path
+):
+    """The positive control, as a test rather than as a one-off.
+
+    A pattern set that has never fired is a pattern set nobody has tested. The planted
+    string is synthetic — a login key/value pair of the shape a pasted API response has,
+    with a value that is not anybody's login.
+    """
+    manifest, repo_dirs, _ = bundle_world
+    planted = '{"login": "not-a-real-login-planted-by-a-test"}'
+    target = repo_dirs["aetheris-agents"] / "CLAUDE.md"
+
+    target.write_text(f"agents claude, committed\n{planted}\n", encoding="utf-8")
+    _git(repo_dirs["aetheris-agents"], "add", "CLAUDE.md")
+    _git(repo_dirs["aetheris-agents"], "commit", "-q", "-m", "plant")
+
+    red = tmp_path / "red"
+    assert _assemble(bundle_world, red) == 1, "the pattern set did not fire on a planted hit"
+    assert (red / assemble_export_bundle.MARKER_NAME).exists()
+    assert "FOUND 1 hit" in (red / assemble_export_bundle.MARKER_NAME).read_text(
+        encoding="utf-8"
+    )
+
+    target.write_text("agents claude, committed\n", encoding="utf-8")
+    _git(repo_dirs["aetheris-agents"], "add", "CLAUDE.md")
+    _git(repo_dirs["aetheris-agents"], "commit", "-q", "-m", "unplant")
+
+    green = tmp_path / "green"
+    assert _assemble(bundle_world, green) == 0, "the restore did not restore"
+    assert not (green / assemble_export_bundle.MARKER_NAME).exists()
+
+
+def test_a_pattern_hit_is_redacted_unless_asked_for(bundle_world, tmp_path, capsys):
+    """A packet quoting the sweep must not republish what the sweep exists to catch."""
+    manifest, repo_dirs, _ = bundle_world
+    secret = "planted-value-nobody-should-see"
+    target = repo_dirs["aetheris-agents"] / "CLAUDE.md"
+    target.write_text(f'{{"login": "{secret}"}}\n', encoding="utf-8")
+    _git(repo_dirs["aetheris-agents"], "add", "CLAUDE.md")
+    _git(repo_dirs["aetheris-agents"], "commit", "-q", "-m", "plant")
+
+    assert _assemble(bundle_world, tmp_path / "redacted") == 1
+    assert secret not in capsys.readouterr().err
+
+    assert _assemble(bundle_world, tmp_path / "shown", show_matches=True) == 1
+    assert secret in capsys.readouterr().err
+
+
+def test_every_committed_pattern_compiles_and_carries_a_label():
+    """The shipped set is the thing under test, not a fixture standing in for it."""
+    patterns = assemble_export_bundle.load_patterns(assemble_export_bundle.DEFAULT_PATTERNS)
+    assert len(patterns) >= 10
+    for label, rx in patterns:
+        assert label and not label.startswith("#"), label
+        assert rx.pattern
+
+
+def test_a_malformed_pattern_line_is_a_failure_not_a_skip(tmp_path):
+    """A pattern set that silently drops a line is a gate that silently narrows."""
+    bad = tmp_path / "patterns.txt"
+    bad.write_text("label :: [unclosed\n", encoding="utf-8")
+    with pytest.raises(ManifestError):
+        assemble_export_bundle.load_patterns(bad)
+
+    no_sep = tmp_path / "nosep.txt"
+    no_sep.write_text("just a line with no separator\n", encoding="utf-8")
+    with pytest.raises(ManifestError):
+        assemble_export_bundle.load_patterns(no_sep)
+
+
+def test_an_empty_pattern_file_is_refused_rather_than_read_as_a_clean_sweep(tmp_path):
+    """Same vacuity the empty-needles test guards, one instrument over."""
+    empty = tmp_path / "patterns.txt"
+    empty.write_text("# only a comment\n", encoding="utf-8")
+    with pytest.raises(ManifestError):
+        assemble_export_bundle.load_patterns(empty)
 
 
 def test_a_needle_in_the_bundle_fails_the_run_and_marks_it(bundle_world, tmp_path):
@@ -366,11 +465,19 @@ def test_the_live_bundle_reproduces_every_manifest_row_at_head(tmp_path):
 
     Compared against the preserved 2026-08-14 bundle in the packet; here against
     `git show HEAD:` because a /tmp artifact cannot be a committed test's fixture.
+
+    **Swept off deliberately, and this is not the sweep being tuned.** This test's claim
+    is composition — every manifest row in, one document out, bytes from HEAD — and the
+    sweep's verdict is a different claim about the same directory. As of 2026-08-16 the
+    live sweep is NOT clean (three RFC-2606 documentation addresses in `rig--runbook.md`,
+    reported unadjudicated in that boundary's packet), so leaving the default on would
+    make this test red for a reason it does not assert. The sweep's live verdict belongs
+    to the boundary run and to whoever rules on those hits, not here.
     """
     from _manifest import REPO_DIRS, git_show, read_rows
 
     dest = tmp_path / "live"
-    assert assemble_export_bundle.assemble(dest) == 0
+    assert assemble_export_bundle.assemble(dest, patterns_file=None) == 0
 
     rows = read_rows()
     assert sorted(_bundle_docs(dest)) == sorted(r.export_name for r in rows)

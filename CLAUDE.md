@@ -388,16 +388,31 @@ Source: BL-016, BL-005 (×2); m2-cloudcost (BL-069 carried red to its close, BL-
 **Tests:** `python3 -m pytest tests/test_drift_check.py -v`
 
 **The export boundary has a mechanism, and it is two scripts.** `scripts/repin_manifest.py`
-re-pins the manifest's commit column (`git log -1 --format=%h -- <path>` per row in that row's
-own repo, nothing else in the file touched), and `scripts/assemble_export_bundle.py DEST`
-builds the bundle from the manifest's rows, reading each document out of `git show HEAD:<path>`
-rather than the working tree. The operator procedure they sit inside is
-`prompts/bl-002-refresh-project-knowledge.md`; the export set itself is data, and lives only in
-`docs/project-knowledge-manifest.md`'s table. Neither script uploads anything, and the bundle is
-written **unswept** with a marker saying so — the U2 scrub class cannot be checked by a committed
-script, because its needles are the identifiers themselves. Who owns the boundary and on what
-trigger is **BL-143**, open and untouched by this. Tests:
+re-pins the manifest's `commit` **and** `last changed` cells (`git log -1 --format=%h -- <path>`
+per row in that row's own repo, then the date **of that resolved commit** — two readings of one
+object, so they cannot drift; nothing else in the file touched), and
+`scripts/assemble_export_bundle.py DEST` builds the bundle from the manifest's rows, reading each
+document out of `git show HEAD:<path>` rather than the working tree. The operator procedure they
+sit inside is `prompts/bl-002-refresh-project-knowledge.md`; the export set itself is data, and
+lives only in `docs/project-knowledge-manifest.md`'s table. Neither script uploads anything. Who
+owns the boundary and on what trigger is **BL-143**, open and untouched by this. Tests:
 `python3 -m pytest tests/test_export_bundle.py tests/test_repin_manifest.py -v`
+
+**The U2 scrub sweep runs by default, against a committed *pattern* set, and a clean sweep claims
+something narrower than it sounds.** `scripts/u2_patterns.txt` holds both the class's
+authoritative statement — it had none in any committed standing document until 2026-08-16, only a
+milestone notes file that travels nowhere — and one documented regex per class member. A clean
+sweep claims **no text in the bundle matches these patterns**, never *no identifying content*: the
+class members with no lexical signature (logins, display names, organisation and repository names,
+numeric ids **in prose**) are reachable only contextually, and that under-reach is enumerated in
+the file itself. Use the narrow words when reporting one. The earlier design — a *value* sweep over
+literal identifiers via `--needles` — could not be committed (a needle list is a deanonymisation
+key), so it had to be derived at run time from raw captures that no longer exist here and that
+nothing in either repo locates; it therefore never returned information in either direction, at any
+boundary, including one that uploaded. `--needles` survives as an additive sweep for an operator
+who does hold captures. **A pattern that fires is adjudicated by a human, never removed to get a
+green** — that is a gate quietly narrowed. What the pattern route does and does not buy is
+**BL-160**, open.
 
 **The upload half is under two live instructions that contradict each other — the rule above
 this paragraph, and the manifest's 2026-08-14 ruling. Until BL-143 rules, follow the

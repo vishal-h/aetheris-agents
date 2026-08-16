@@ -192,8 +192,13 @@ def test_a_harness_row_is_read_in_the_harness_repo(repin_world):
     assert f"`{new_hash}`" in manifest.read_text(encoding="utf-8")
 
 
-def test_only_the_commit_cell_changes(repin_world):
-    """Whole-file containment: exactly one line differs, and only in its fourth cell."""
+def test_only_the_commit_and_date_cells_change(repin_world):
+    """Whole-file containment: one line differs, and only in the two cells this owns.
+
+    Cells 4 and 5 are `commit` and `last changed`. Before 2026-08-16 this asserted `[4]`
+    alone, which was true of the code and was the defect — the date cell was owned by
+    nobody and drifted (BL-151).
+    """
     manifest, repo_dirs, _ = repin_world
     before = manifest.read_text(encoding="utf-8").splitlines()
     _commit(repo_dirs["aetheris-agents"], "CLAUDE.md", "agents claude, moved\n")
@@ -206,7 +211,59 @@ def test_only_the_commit_cell_changes(repin_world):
     assert len(changed) == 1
     b_cells = before[changed[0]].split("|")
     a_cells = after[changed[0]].split("|")
-    assert [i for i, (b, a) in enumerate(zip(b_cells, a_cells)) if b != a] == [4]
+    assert set(i for i, (b, a) in enumerate(zip(b_cells, a_cells)) if b != a) <= {4, 5}
+
+
+def test_a_stale_date_beside_a_current_commit_is_repinned(repin_world):
+    """The case nothing could report before 2026-08-16: the pin is right, the date is not.
+
+    A row whose commit cell is current and whose date cell is wrong passed every check
+    the repo had — this script skipped it as `current`, and check 8 never reads the date.
+    """
+    manifest, _, _ = repin_world
+    text = manifest.read_text(encoding="utf-8")
+    staled = text.replace("| 2026-08-16 |", "| 2014-01-01 |", 1)
+    assert staled != text
+    manifest.write_text(staled, encoding="utf-8")
+
+    assert _repin(repin_world) == 0
+    assert "2014-01-01" not in manifest.read_text(encoding="utf-8")
+
+
+def test_the_date_is_derived_from_the_resolved_commit_not_from_the_path(repin_world):
+    """Two cells, one reading — so they cannot disagree.
+
+    The commit is dated well in the past; the row must take THAT date, which is only
+    obtainable from the commit the script already resolved.
+    """
+    manifest, repo_dirs, _ = repin_world
+    _git(
+        repo_dirs["aetheris-agents"],
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "unrelated",
+    )
+    target = repo_dirs["aetheris-agents"] / "CLAUDE.md"
+    target.write_text("agents claude, moved with an old date\n", encoding="utf-8")
+    _git(repo_dirs["aetheris-agents"], "add", "CLAUDE.md")
+    _git(
+        repo_dirs["aetheris-agents"],
+        "commit",
+        "-q",
+        "--date=2015-03-04T12:00:00",
+        "-m",
+        "moved, dated 2015",
+    )
+
+    assert _repin(repin_world) == 0
+    row = [
+        line
+        for line in manifest.read_text(encoding="utf-8").splitlines()
+        if line.startswith("| `agents--CLAUDE.md`")
+    ][0]
+    assert row.endswith("| 2015-03-04 |"), row
 
 
 def test_the_self_referential_row_keeps_its_placeholder(repin_world):

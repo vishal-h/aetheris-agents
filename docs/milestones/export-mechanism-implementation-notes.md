@@ -207,12 +207,13 @@ included.
 
 ## 6. W4 — the tests, and the mutation matrix
 
-**28 tests, 28 mutations, 28 RED.** Every assertion is in its own function; each was exercised
-individually under a mutation that should fail it; every restore is verified with a control on
-both sides — the mutant absent before the edit and present after, and each of the three source
-files' sha256 identical to its pristine snapshot at the end.
+**28 tests, 28 mutations, 28 RED**, the matrix re-run against the committed tree at `67b1127`
+with the working tree clean before and after. Every assertion is in its own function; each was
+exercised individually under a mutation that should fail it; every restore is verified with a
+control on both sides — the mutant absent before the edit and present after, and each of the
+three source files' sha256 identical to its pristine snapshot at the end.
 
-Green-side control, on pristine source, before any mutation: `28 passed in 2.47s`.
+Green-side control, on pristine source, before any mutation: `28 passed in 2.41s`.
 
 Pristine sha256 (first 12): `_manifest.py 22c4bc502dd0`, `assemble_export_bundle.py
 3e95d6cb17a5`, `repin_manifest.py 20237fa8d3cd` — all three identical after the last restore.
@@ -234,7 +235,7 @@ Pristine sha256 (first 12): `_manifest.py 22c4bc502dd0`, `assemble_export_bundle
 | E13 | sweep made case-sensitive | `…needle_in_the_bundle_fails_the_run_and_marks_it` | `assert _assemble(…, needles_file=needles) == 1` |
 | E14 | empty needle file accepted | `…empty_needles_file_is_refused…` | `assert _assemble(…, needles_file=needles) == 1` |
 | E15 | a timestamp added to the marker's head line | `…two_runs_into_two_directories_are_byte_identical` | `assert {p.name: p.read_bytes() for p in a.iterdir()} == {` |
-| E16 | sources read at `HEAD~1` | `…live_bundle_reproduces_every_manifest_row_at_head` | `assert (dest / row.export_name).read_bytes() == git_show(` |
+| E16 | last byte dropped from every source | `…live_bundle_reproduces_every_manifest_row_at_head` | `assert (dest / row.export_name).read_bytes() == git_show(` |
 | R1 | pin read from repo HEAD instead of the path's history | `…current_manifest_is_left_byte_identical` | `assert manifest.read_bytes() == before` |
 | R2 | rewritten cell padded with a second space | `…running_twice_changes_nothing_the_second_time` | `assert _repin(repin_world) == 0` |
 | R3 | the cell replacement made a no-op | `…stale_row_is_repinned_to_what_git_log_returns` | `assert f"\| \`agents--CLAUDE.md\` \| … \`{new…` |
@@ -261,6 +262,18 @@ needle. **The assertion had never once been executed against the thing it claime
 and it read as coverage. Narrowed to `"has uncommitted edits"`, which the path cannot supply;
 RED thereafter. This is m6 t2's M10 in another costume, and it was found only by running the
 mutation rather than by reading the test.
+
+**A second mutant survived when the matrix was re-run against the committed tree, and the
+reason is worth more than the fix.** E16's first mutant read the sources at `HEAD~1`. That was
+RED before the commit — `e3cf24d` had moved an exported document — and **went inert the moment
+the ticket's own second commit landed**, because that commit touches only an
+implementation-notes file, which is not in the export set: at that HEAD every exported document
+is identical at `HEAD` and `HEAD~1`, so the mutant changed nothing. A mutant whose bite depends
+on what the repo's last commit happened to contain is not a mutant, it is a coincidence, and it
+would have reported coverage forever after. Replaced with a code-intrinsic one — the assembler
+drops the last byte of each source — which cannot go quiet. Note also what did *not* work: a
+mutant inside `_manifest.git_show` is invisible here, because the test computes its expected
+value through the same helper and both sides move together.
 
 **One setup was refused by its own control**, correctly: R3's first mutant was
 `lines[…] = line`, which is a *prefix* of the original `lines[…] = line.replace(old_cell,

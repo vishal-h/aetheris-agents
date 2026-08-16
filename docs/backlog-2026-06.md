@@ -8585,6 +8585,14 @@ commit: the ruling and the procedure it governs are separate landings, and a
 procedure edited in the same commit as the ruling that authorises it cannot be
 reviewed against it.]`
 
+`[Scope note, 2026-08-16 — this records scope and adds none. Two questions were routed to this row
+by documents outside it: the check-1/check-3 contradiction and the vocabulary gap, ruled in the
+annotation above, and a deferred sprint arm, filed as **BL-161**. Neither appears anywhere in this
+row's own text. This row's Done-when — ownership and trigger — is **unchanged and open**, and
+nothing above or below narrows it. The finding about the routing itself is **BL-162**; the
+prompt-file rewrite the ruling above defers is **BL-163**, which is that deferral's executor and
+deliberately does not widen this row.]`
+
 `Source: filed by the reviewer at the obligation-landing edit, 2026-08-11, at agents 0587bf3,
 with each of the four claims below verified before it was written. **The trigger has fired, and
 what fired it:** docs/project-knowledge-manifest.md:13 states the trigger as "milestone end, or
@@ -10291,8 +10299,154 @@ pointer will meet it.
 know it. Closing this row's first branch is naturally part of BL-143's work; closing its second
 branch is not, and does not wait for it.
 
+`[Annotated 2026-08-16 at BL-143's close. The **Collides with** above states, in passing, a shape
+that is now filed as a finding in its own right: a document named BL-143 as the inheriting row and
+BL-143 *"does not know it."* That is one of **BL-162**'s two instances — the other is the
+check-1/check-3 contradiction, routed to the same row by two further documents and equally invisible
+from it — and BL-162 owns the question of what a citing document owes its target. **This row is
+unchanged by that filing:** the sprint arm is still owed here, both branches of its Done-when stand
+as written, and BL-162 closes neither.]`
+
 `Source: the export boundary of 2026-08-16, packet §F4, and the amendment pass that filed it. The
 quoted paragraph is transcribed from `docs/milestones/export-mechanism-implementation-notes.md`
 at agents `a2df7b5`. The attribution of the omission is the arbiter's own, given at the amendment.`
+
+---
+
+### BL-162 — an inbound pointer is not a scope change, and nothing tells the row (#TBD)
+**Kind:** decision · **Census items:** n/a · **Contract:** n/a
+**Size:** S to decide · **Priority:** medium
+**Section:** process / backlog discipline (`docs/backlog-2026-06.md`, and any document that cites a
+row)
+
+Filed 2026-08-16 at BL-143's close, in the round that surfaced it. Established at agents `84c24c7`.
+**This row poses the question; it does not settle it.**
+
+**What is established.** BL-143's text asks **one** question — who owns the export-boundary refresh
+and by what trigger — and the check-1/check-3 contradiction and the vocabulary gap appear nowhere in
+it. Measured over the row's own range at `9741c4e`, the commit before the ruling landed:
+
+```
+$ git show 9741c4e:docs/backlog-2026-06.md | sed -n '8494,8555p' | grep -cEi "check 1|check 3|vocabulary|namespace"
+0
+$ git show 9741c4e:docs/backlog-2026-06.md | grep -cEi "check 1|check 3|vocabulary|namespace"
+53
+```
+
+The whole-file count is the control: the regex finds those terms 53 times in the file and 0 times in
+the row, so the zero is absence rather than a broken search. The questions were routed to BL-143 by
+`docs/project-knowledge-manifest.md:721` — *"check 1 versus check 3 is BL-143's question"* — and by
+`docs/milestones/export-mechanism-implementation-notes.md:8` — *"**BL-143** owns all of those"*.
+
+**Two instances, both aimed at the same row.** The second is **BL-161**, which records that
+`docs/milestones/export-mechanism-implementation-notes.md` named BL-143 as the inheriting row for a
+deferred sprint arm — in BL-161's own words, a row *"which does not know it."* Both pointers were
+**invisible from the row**: a reader of BL-143 at any commit before `84c24c7` would have found no
+trace of either obligation in it.
+
+**Why this is a system finding and not one row's bad luck.** The two halves of a citation are not
+symmetric. **The citing document is satisfied the moment it names a row** — it has discharged its
+own duty to say where the question goes, and it is correct and complete as written, so nothing about
+it will ever prompt a second look. **The row acquires an obligation nobody wrote into it** — its
+text, its Done-when and its status are untouched by the naming, so the obligation exists only in a
+document the row does not reference and its next reader has no reason to open. Nothing in either
+repo closes that gap and nothing reports it, and the idiom that produces it — a document deferring a
+question to a row — is the standard one here.
+
+**NOT KNOWN, and what this row owes.** Which remedy, of at least three that are not equivalent and
+not merely different in cost: that a pointer **must amend its target** in the round it is written;
+that an **unamended pointer is not load-bearing**, so a row is never bound by a document it does not
+reference; or a **check**. This row picks none of them.
+
+**The adjacency, noted and not decided — with a caveat about its pointer.** A **BL-ID resolution
+check** would establish that a cited row *exists*, and **resolution is a weaker property than the
+row knowing**: a check can plausibly establish the first and probably not the second, knowing being
+a property of the target's own text rather than of the reference. That distinction is worth carrying
+into whichever remedy is chosen and does not decide between them. **The pointer that came with it
+does not resolve at HEAD.** It was given as drift-checker work queued for *m7 t1*, and no such queue
+is locatable in either repo: `git grep -inE "m7[ -]t1" -- '*.md'` returns four hits in
+`aetheris-agents`, all of them docbuilder's closed m7-offer-letter t1, and zero in `aetheris` — the
+control being that `drift_check` appears in 9 harness `.md` files, so that search is live — while
+`git grep -inE "BL-ID|BL id|resolution check"` returns nothing relevant in either repo. Recorded as
+the arbiter's and unlocated, so the next session does not spend the search again and so the
+adjacency is not mistaken for a repo fact.
+
+**Done when:** one of the three remedies is chosen and written into a named document with its scope,
+or the gap is accepted in writing with its reason — either way stating what a citing document owes
+its target, and where a reader of a row learns what has been routed to it.
+
+**Costs:** S to decide. Two of the three remedies are a paragraph in a standing document; the third
+is a check and is larger, and the adjacency above is the reason not to assume a check reaches the
+property that matters.
+
+**Collides with:** **BL-161**, which is one of this row's two instances and cross-references it from
+there. Neither closes the other: BL-161 owes a sprint arm, this row owes a rule about pointers, and
+discharging either leaves the other exactly as it stands. Adjacent to **BL-150**, the standing home
+for documentation-system findings — filed as its own row rather than appended there because it
+carries an open decision between three candidate remedies, which is a unit of work rather than an
+observation, and on the precedent of BL-160 and BL-161, both filed as rows on 2026-08-16.
+
+`Source: the BL-143 close of 2026-08-16, packet §DC3 and §4. The grep and its control are that
+packet's, re-run at `84c24c7` before this row was written. The two-instances framing and the
+citing-document/row asymmetry are the arbiter's, given at that close. BL-161's wording is
+transcribed from its **Collides with** at `84c24c7`.`
+
+---
+
+### BL-163 — `bl-002`'s post-upload checks state check 1 and check 3 without the namespace boundary (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `docs/backlog-2026-06.md` BL-143, the `[Ruled 2026-08-16 …]` annotation
+**Size:** S · **Priority:** medium
+**Section:** process / project knowledge (`prompts/bl-002-refresh-project-knowledge.md`)
+
+Filed 2026-08-16 at BL-143's close, in the round that deferred it. Established at agents `84c24c7`.
+**This row is the deferral's executor.**
+
+**What is stale.** `prompts/bl-002-refresh-project-knowledge.md` §Post-upload verification (`:139`)
+states the two checks in the form BL-143's ruling supersedes. Check 1 (`:150–152`): *"The store's
+document set equals the manifest's export-name column exactly — set comparison in both directions,
+not a count. A name in one and not the other is the finding."* Check 3 (`:156–162`) covers a
+document predating the upload window and offers *"either it is a deliberate non-manifest document
+(agent-written docs land under `claude/`), in which case the manifest should say such documents may
+coexist and are out of scope, or the upload was incremental."* Neither is scoped to a namespace, so
+check 1 reads a `claude/` document as a finding while check 3 reads it as out of scope — and check
+3's escape clause is written as a *condition on the manifest* that was unmet when the text was
+authored and is met now.
+
+**What the rewrite must say**, carried here so it is not re-derived: **check 1 governs every store
+path not under `claude/`**; **check 3 governs `claude/`**; and **neither treats the other's
+population as a finding** — a `claude/`-namespaced document is out of the export set by construction,
+neither a check-1 finding nor a check-3 exception. The reasoning is BL-143's and is not restated
+here; the standing form is `CLAUDE.md` §Definition of done.
+
+**NOT KNOWN, and this row's first step.** Whether anything else in that prompt assumes the unscoped
+reading — the remove half of the procedure, the ordering of the three checks, or any prose
+describing what the store contains. That sweep **was not run** at the close, and nothing here should
+be read as a claim that the two checks are the only affected text. Running it is this row's first
+step, before any edit.
+
+**Why this is its own row and not a widening of BL-143's Done-when.** BL-143 asks one question —
+ownership and trigger — and widening it to carry this rewrite would be **BL-162's defect committed
+in the act of recording it**: an obligation attached to a row from outside, silently changing what
+that row must satisfy. BL-143's Done-when can be discharged in full without this rewrite ever
+happening, which is precisely why the deferral needed an executor rather than a mention.
+
+**Why it was not done in the ruling's own commit**, in the ruling's own words: *"the ruling and the
+procedure it governs are separate landings, and a procedure edited in the same commit as the ruling
+that authorises it cannot be reviewed against it."*
+
+**Done when:** §Post-upload verification states the namespace boundary for check 1 and check 3, and
+the sweep above has been run with its result recorded — including the result that there is nothing
+else, if that is what it finds.
+
+**Costs:** S. The two checks are a paragraph each. The sweep is the unpriced half and is small.
+
+**Collides with:** nothing. It does not reopen BL-143's ruling and does not touch that row's open
+Done-when. **BL-161**'s second branch — whether the export mechanism owes a sprint case — concerns a
+different file and does not wait on this.
+
+`Source: the BL-143 close of 2026-08-16, packet §4, which established that the deferral recorded
+inside BL-143 had a record and no executor. The deferred text is quoted from BL-143's `[Ruled
+2026-08-16 …]` annotation at `84c24c7`. The prompt file was read at `84c24c7` to establish the
+quotations above and was **not** edited, then or by this filing.`
 
 ---

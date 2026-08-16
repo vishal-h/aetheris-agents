@@ -32,10 +32,10 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `900662f` | 2026-08-16 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `ef651f9` | 2026-08-16 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `8bfa5f3` | 2026-08-16 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `8653546` | 2026-08-16 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -637,3 +637,103 @@ pushed**, by instruction. (Deliberately no self-hash: a line naming the manifest
 stale the moment it is committed.)
 
 Previous export: 2026-08-14 (the m6-cloudcost close — four rows advanced, uploaded by path).
+
+---
+
+**Export boundary — 2026-08-16, amendment pass.** The section above stands and its commit
+`a2df7b5` is not rewritten; this is the second pass of the same boundary, in the sequence that
+pass's own packet named — file the rows, re-pin, re-assemble, re-sweep. **Two rows advanced**, and
+they are this pass's own two earlier commits rather than anything the world did:
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `backlog-2026-06.md` | aetheris-agents | `8bfa5f3` | `8653546` | 2026-08-16 |
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `900662f` | `ef651f9` | 2026-08-16 |
+
+**Row count 25**, re-derived by parsing the table bound to its header row, not carried from the
+first pass. Both derivations — by hand, by field, in each row's own repo, and
+`scripts/repin_manifest.py` — agree on all 25: the same two movers, the same was→now, the same 23
+rows current, the self row untouched. The twelve harness rows were read in `../aetheris` at
+`d19f4b6`, and **the mirror pair was checked again before anything was written** and is still
+byte-identical (199 lines, sha256 `1b9cbf57…ea46f8a` both sides), so the harness took no write at
+this pass either.
+
+> **R-F1 — the three strings the first pass's sweep hit are NOT in class, ruled 2026-08-16, and
+> they are named here so the next boundary spends seconds on them rather than a round.** They are
+> `168.144.13.150` (a reserved IP, NYC1), `2405879` (a NodeBalancer id) and
+> `aetheris-m3-bl069-plant` (the label this project invented for it) — the m3 BL-069 Linode plant,
+> deleted, its row retired at m4 t2. **U2 is a person-and-account identity class**; it exists
+> because per-person logins were paired with activity timestamps. A released reserved IP for a
+> deleted resource, an instance id and a label named after our own ticket identify no one. They
+> have been in eight tracked files since m2/m3 and shipped in the bundle that uploaded. **No
+> scrub, and no file was edited to remove them.**
+>
+> **This is not a gate being narrowed to pass, and the distinction is the whole of it.** The first
+> pass's needle set was *wider than the class by that pass's own statement*, so its three hits were
+> never evidence about U2 — the gate did not fire, a wider net did. Under the pattern set this
+> boundary commits they match nothing at all. **This paragraph is a record for a human, not an
+> exclusions file for a script**: nothing reads it, nothing applies it, and no exclusion mechanism
+> exists to grow — which is deliberate, because an exclusions list that can grow is how a gate
+> dies quietly.
+
+> **The sweep's basis changed at this boundary, from operator-derived values to a committed
+> pattern set.** `scripts/u2_patterns.txt` is new and holds both the class's authoritative
+> statement and one documented regex per class member; `assemble_export_bundle.py` reads it by
+> **default**, so a sweep no longer needs a raw-capture corpus that nothing in either repo
+> locates. The old `--needles` value sweep survives beside it, additive, for an operator who holds
+> captures.
+>
+> **What that buys and what it does not is owned by BL-160, which is open and is not answered
+> here.** Stated once so no later reader has to reconstruct it: a clean pattern sweep claims **no
+> text in the bundle matches these patterns** — never *no identifying content*. The class members
+> with no lexical signature (logins, display names, organisation and repository names, numeric ids
+> **in prose**) are reachable only next to a key that names them, and that under-reach is
+> enumerated in the pattern file itself. The reason the change was needed at all is BL-160's
+> finding: the value sweep **never returned information in either direction, at any boundary,
+> including the one that uploaded**, because the only corpus available to derive needles from is
+> normalized adapter output carrying none of the class's identity fields — and nothing detected
+> that, because a green from a sweep that cannot see the class is indistinguishable from a green.
+
+> **The bundle assembled at this pass is REFUSED, and the marker is in it.** The first run of the
+> committed pattern set over the live bundle returned **3 hits in `rig--runbook.md`**, all matched
+> by the `email address` pattern. They are reported and **not adjudicated here** — per this pass's
+> own bound, a pattern that fires is a thing for a human to rule on, and a pattern removed because
+> it fired is the move R-F1 has just said this is not. `_UNSWEPT-DO-NOT-UPLOAD.txt` is present in
+> the bundle and names the count.
+
+> **Also corrected at this pass, and it was invisible to everything.** `last changed` is now
+> `repin_manifest.py`'s, derived from the commit it has already resolved rather than independently
+> from the path, so the two cells are two readings of one object. Until 2026-08-16 the script owned
+> the commit cell and disclaimed the date, check 8 read the commit cell and ignored the date, and
+> the first pass of this boundary duly re-pinned two rows to 2026-08-16 commits while both rows
+> still read `2026-08-14` — corrected there by hand, and by the script from here on. Seeded to
+> **BL-151** as a class rather than a defect: *a column a script owns half of is a column nobody
+> owns.*
+
+**Two rows filed, before the re-pin because the backlog is tracked.** **BL-160** — the U2 export
+gate has never returned information in either direction; owns whether pattern-sweeping is
+sufficient, what it misses, and whether a raw-capture corpus should exist at all. **BL-161** — the
+export-mechanism round deferred a sprint arm and filed no row, recoverable only because its notes
+file is committed and attributed; the omission is the arbiter's. Both cross-reference **BL-143**,
+which remains open, remains the arbiter's, and is **not** ruled here. The 2026-08-12 and
+2026-08-14 deviation blocks are **untouched**, and
+`prompts/bl-002-refresh-project-knowledge.md` was not edited — check 1 versus check 3 is BL-143's
+question and the prompt is revised after that ruling, not during a boundary that supplies its
+evidence.
+
+**Ordering invariant held, twice over.** `docs/backlog-2026-06.md` (`8653546`) and the stage-2
+script and `CLAUDE.md` changes (`ef651f9`) landed in their own earlier commits; the manifest is
+this pass's **last** tracked write and commits **alone**. Nothing manifest-tracked was edited after
+the table was regenerated, so neither re-pinned row is born stale — and the meaningful
+`drift_check --strict` is again the post-commit one, check 8 reading committed history
+(BL-034/BL-025).
+
+**Repo push state.** Nothing is pushed. `aetheris-agents` is ahead of `origin/main` by this
+boundary's commits, held by instruction; `aetheris` is level at `d19f4b6` and took no write at
+either pass. Every hash this table pins for an agents row therefore exists **only locally** until
+those commits are pushed — stated plainly because the 2026-08-03 boundary's note is the standing
+rule here: a manifest pinning a hash nobody else has describes an export nobody else can
+reproduce.
+
+Previous export: 2026-08-16, first pass (two rows advanced; bundle refused on a wider-than-class
+needle set, adjudicated at this pass as R-F1).

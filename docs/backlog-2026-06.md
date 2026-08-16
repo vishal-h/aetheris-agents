@@ -9056,6 +9056,22 @@ appended list is empty.
   about an alternative launch route. Verified at agents `900662f`. Recorded so it is findable; not
   triaged here.
 
+- `2026-08-16` — **a column a script owns half of is a column nobody owns.** The manifest table's
+  `last changed` cell was maintained by neither the mechanism nor an operator.
+  `scripts/repin_manifest.py` re-derived the `commit` cell and, by its own docstring, claimed *"no
+  authority over … the `last changed` column"*; `drift_check.py`'s check 8 parses the commit cell
+  and never reads the date. So after the 2026-08-16 re-pin both movers carried commits dated
+  2026-08-16 beside a `last changed` reading 2026-08-14, and **nothing in either repo could have
+  said so** — the same blindness the mirror pair has, where a `diff -q` at the boundary is the only
+  instrument. The class, which is the reason this is seeded and not merely fixed: a script that
+  authoritatively owns *some* cells of a record makes the rest look owned too, and a half-owned
+  record decays faster than an unowned one because its green is partly earned. **The defect is
+  fixed in the next commit of this same pass** — `repin_manifest.py` derives `last changed` from
+  the commit it already resolved, so the two cells cannot disagree — which is why this entry
+  records the *class* rather than an open defect. The defect is verified at agents `a2df7b5`; the
+  fix is **not** verifiable at this commit, deliberately, and is stated as forward rather than
+  asserted here. Recorded so it is findable; not triaged here.
+
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.
 `python3 -m` puts the repo root on `sys.path` (as `''`), and `email/` is the only top-level
@@ -10029,5 +10045,160 @@ recorded per the cap correction that a cap-kill is a complete result rather than
 owed. The named red and the unidentified second failure are transcribed from those runs. Filed
 rather than left in the packet, per the standing rule that prose in a packet or notes files
 nothing.`
+
+---
+
+### BL-160 — the U2 export gate has never returned information in either direction (#TBD)
+**Kind:** gate · **Census items:** n/a · **Contract:** `cloudcost/docs/m6-t2-implementation-notes.md` §U2 — the scrub class, defined rather than enumerated; `CLAUDE.md` (agents) §Definition of done — the export mechanism
+**Size:** M · **Priority:** medium
+**Section:** process / project knowledge (`scripts/assemble_export_bundle.py`, `scripts/u2_patterns.txt`)
+
+Filed 2026-08-16 at the export boundary's amendment pass. Established at agents `a2df7b5`.
+
+**What is known, and it is the whole of the finding.** The U2 sweep is supposed to stand between
+the export bundle and the project store. Until this row it could not, and the reason is not a bug
+in the sweep — it is that **the sweep had no corpus from which its inputs could be derived**.
+
+`assemble_export_bundle.py --needles FILE` takes a list of literal identifiers and greps the
+bundle for them. It ships with none by design: a committed needle list is itself the
+deanonymisation key the sweep exists to protect against. So the needles must be derived at run
+time, and the only material on this machine to derive them from is
+`cloudcost/output|history|data`. **That material cannot yield them.** Its 27 JSON files are
+*normalized adapter output* — the two-schema contract's shape — whose key space is `amount`,
+`type`, `invoice_uuid`, `date`, `description`, `resource_id`, `region`, `tags`, `service`,
+`provider`, `name`, `account`, `created_at`, `last_activity_at`, and so on. **Not one** of the
+class's named identity fields appears anywhere in them: no `login`, no `organization`, no
+`organizationName`, no `repositoryName`, no `node_id`, no `avatar_url`, no `html_url`, no `email`.
+The raw unscrubbed captures that §U2's own verification drew twenty-one identifiers from are not
+in this repo and are not on this machine, and nothing in either repo says where they are or who
+holds them.
+
+**So a sweep derived from what is here cannot find the class it searches for, and its green is a
+statement about the derivation rather than about the bundle.** Demonstrated at the boundary that
+filed this row: needles restricted to the class as defined produced **one** needle over 27 files,
+swept, and returned `[PASS] 1 needle(s), no hit`. That PASS is worth nothing. A wider net over the
+same files produced 94 needles and three hits, all adjudicated **not in class** (R-F1 below) — so
+that run was not the gate firing either. **The gate has never returned information in either
+direction.**
+
+**And this was true at every prior boundary, including the one that uploaded.** The mechanism
+landed 2026-08-16; before it, the sweep was a step in
+`prompts/bl-002-refresh-project-knowledge.md` performed by hand from the same absent corpus. No
+boundary record claims a U2 sweep found anything, and none claims one was run against a corpus
+that could have. **Nothing detected this, and nothing could have**: a sweep that cannot see the
+class returns exactly what a clean bundle returns, which is the **Silent-wrong-answer** shape in
+its purest form — *a check that cannot observe the failure it stands in for returns green for the
+wrong reason* (`../aetheris/CLAUDE.md`). There was no positive control, because a positive control
+needs a corpus too.
+
+**The direction ruled, and what has already landed.** The arbiter ruled at this amendment that
+**the sweep searches the class by pattern, not by value.** A needle list is a deanonymisation key
+— which is why it cannot be committed, why the boundary's was shredded, and why the gate was
+runnable only by someone holding captures nothing locates. **A pattern set is not disclosure**: it
+commits, it runs anywhere, and it removes the raw-capture dependency entirely. **It lands in the
+next commit of this same pass**, not in this one — `scripts/u2_patterns.txt`, read by the assembler
+by default, one documented pattern per line naming the class member it covers, with `--needles`
+surviving beside it as an additive value sweep for an operator who *does* hold captures. Stated as
+forward here rather than asserted: at this row's commit the file does not exist yet.
+
+**What is NOT known, and this row owns all three.**
+
+1. **Whether pattern-sweeping is sufficient.** It is a different instrument, not a stronger one.
+   It answers *does this bundle carry text shaped like the class* — never *does this bundle carry
+   this account's identifiers*. Those questions have different answers and the second is the one
+   §U2 asks.
+2. **What it can miss, stated concretely rather than as a caveat.** The class's core members have
+   **no lexical signature at all**: a login, a display name, an organisation name and a repository
+   name are ordinary words, and a numeric user or organisation id is an ordinary number. A pattern
+   set reaches them only *contextually* — adjacent to a key that names them, as in pasted JSON —
+   so a leak in prose (*"the account belongs to …"*) is invisible to it and would have been visible
+   to a value sweep with real needles. The under-reach enumeration is in this cycle's packet and in
+   `scripts/u2_patterns.txt`'s header.
+3. **Whether a raw-capture corpus should exist at all.** Keeping unscrubbed captures on disk so a
+   value sweep can be derived from them creates the exposure the sweep exists to limit; not keeping
+   them means the value sweep can never run again. This row does not choose. Note the choice is not
+   free in either direction and that the status quo — no corpus, and a gate that reads as armed —
+   is the one option that has been ruled out by this row's existence.
+
+**Done when:** a decision is recorded on (3), and (1) and (2) are answered against whatever that
+decision makes possible — either the pattern set is ruled sufficient with its under-reach accepted
+in writing, or a corpus and its custody are defined and the value sweep is restored beside it.
+Either branch must state what the gate then claims, in the narrow words rather than the broad ones:
+a clean pattern sweep claims *no text matching these patterns*, never *no identifying content*.
+
+**Costs:** M. The implementation half is done. What remains is a decision with a security shape
+and no obviously right answer, which is why it is filed rather than settled here.
+
+**Collides with:** **BL-143**, which asks who owns the export boundary and on what trigger. This row
+is the same boundary's *other* unowned half — BL-143 asks whether the boundary runs, this asks
+whether its one safety check means anything when it does. Neither answers the other and both should
+be read by whoever takes either.
+
+`Source: the export boundary of 2026-08-16 and its amendment pass. The 27-file key-space
+enumeration, the one-needle result and the 94-needle result are that boundary's own, carried
+verbatim from its packet §F2 rather than re-derived. The direction in the fourth paragraph is the
+arbiter's ruling R-F2 at the amendment. Filed rather than left in the packet, per the standing rule
+that prose in a packet or notes files nothing — the same rule BL-161 records being breached.`
+
+---
+
+### BL-161 — the export-mechanism round deferred a sprint arm and filed no row (#TBD)
+**Kind:** process · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Learning — BL-007 — *a deferred finding gets a backlog row in the same round it's deferred*
+**Size:** S · **Priority:** medium
+**Section:** process / backlog discipline; the arm itself is harness (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-16 at the export boundary's amendment pass. Established at agents `a2df7b5`.
+
+**What happened.** The export-mechanism round (agents `5dae22b`, 2026-08-16) shipped
+`scripts/repin_manifest.py` and `scripts/assemble_export_bundle.py` with tests and a runbook
+pointer, and recorded in its notes that one companion could not land
+(`docs/milestones/export-mechanism-implementation-notes.md`):
+
+> **One companion is owed and cannot land here: a sprint case.** Both comparators have one
+> (`sprint.sh` `capability_matrix` and `drift_check`, `aetheris/scripts/sprint.sh:1533` and
+> `:1594`). `sprint.sh` lives in the harness, which this ticket's REPOS clause puts out of bounds,
+> so the export mechanism ships with tests and no sprint arm. Reported rather than quietly
+> dropped; it is a gap for whoever takes BL-143, not a defect this ticket may fix.
+
+The reasoning is sound and the deferral is correct. **The record is not.** That round's commits
+touched `CLAUDE.md` and never `docs/backlog-2026-06.md`, and **BL-143's row does not mention a
+sprint arm** — so the sentence *"it is a gap for whoever takes BL-143"* addresses a reader who has
+no way to receive it. Whoever takes BL-143 opens BL-143.
+
+**The rule it breaches** is `CLAUDE.md` §Learning — BL-007: *a deferred finding gets a backlog row
+in the same round it's deferred — prose in a packet or notes files nothing.* The same entry's
+closing clause is why naming BL-143 was not enough: a finding recorded somewhere that does not
+carry an executor *"has a record, not an executor"*.
+
+**The breach was recoverable only by accident, and that is the part worth keeping.** The notes file
+is committed and attributed, so the deferral survives in a readable form — that is the *only*
+reason this row can be written at all. But nothing was going to read it. It surfaced because the
+2026-08-16 export boundary's content sweep **wandered past its own scope**: that sweep was
+chartered to find closures and rulings missing from tracked files, a sprint arm is neither, and it
+was found by a session reading the round's notes for something else and noticing. A discipline that
+depends on the next session being curious about a file it had no reason to open is not a discipline.
+
+**Whose omission this is.** The arbiter's, stated so the record is not silently flattering: the
+export-mechanism packet was approved and its §8 ruled against, without noticing that a deferred
+companion had no row.
+
+**What is actually owed, kept small.** A `sprint.sh` case exercising the two export scripts, beside
+the `capability_matrix` and `drift_check` cases it would sit with. It is a harness write, so it
+needs a cross-repo ticket; nothing about it is difficult, and it has been unowned since 2026-08-16.
+
+**Done when:** either the sprint arm exists and is named in a boundary record, or a ruling is
+recorded that the export mechanism's tests are sufficient and no sprint case is owed — with the
+reason, in `CLAUDE.md` §Definition of done beside the mechanism's pointer, where a reader of that
+pointer will meet it.
+
+**Costs:** S. The arm is a few lines against two scripts that already exit non-zero on failure.
+
+**Collides with:** **BL-143**, which the notes file named as the inheriting row and which does not
+know it. Closing this row's first branch is naturally part of BL-143's work; closing its second
+branch is not, and does not wait for it.
+
+`Source: the export boundary of 2026-08-16, packet §F4, and the amendment pass that filed it. The
+quoted paragraph is transcribed from `docs/milestones/export-mechanism-implementation-notes.md`
+at agents `a2df7b5`. The attribution of the omission is the arbiter's own, given at the amendment.`
 
 ---

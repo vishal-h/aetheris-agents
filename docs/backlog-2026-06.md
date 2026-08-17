@@ -10364,12 +10364,28 @@ row knowing**: a check can plausibly establish the first and probably not the se
 a property of the target's own text rather than of the reference. That distinction is worth carrying
 into whichever remedy is chosen and does not decide between them. **The pointer that came with it
 does not resolve at HEAD.** It was given as drift-checker work queued for *m7 t1*, and no such queue
-is locatable in either repo: `git grep -inE "m7[ -]t1" -- '*.md'` returns four hits in
-`aetheris-agents`, all of them docbuilder's closed m7-offer-letter t1, and zero in `aetheris` — the
-control being that `drift_check` appears in 9 harness `.md` files, so that search is live — while
-`git grep -inE "BL-ID|BL id|resolution check"` returns nothing relevant in either repo. Recorded as
-the arbiter's and unlocated, so the next session does not spend the search again and so the
-adjacency is not mistaken for a repo fact.
+is locatable in either repo: `git grep -inE "m7[ -]t1" -- '*.md'` finds nothing in `aetheris-agents`
+but docbuilder's closed m7-offer-letter t1 and this row's own prose, and nothing at all in
+`aetheris` — the control being that `drift_check` appears in 9 harness `.md` files, so that search
+is live — while `git grep -inE "BL-ID|BL id|resolution check"` returns nothing relevant in either
+repo. Recorded as the arbiter's and unlocated, so the next session does not spend the search again
+and so the adjacency is not mistaken for a repo fact.
+
+`[De-numeralised 2026-08-17. The sentence above read *"returns four hits"*; run at `43e63e0` the
+command returned one more than that, and the extra one was this row's own sentence, which contains
+the string it counts. **A census recorded inside the document it censuses counts its own
+sentences** — the harness rule *a count names the commit it was derived at, or a pointer replaces
+it* (`../aetheris/CLAUDE.md` §Continuous learning) names exactly that as its worst case, and this
+row was written the day after that rule was last reaffirmed. The figure was true when derived at
+`84c24c7` and false from `d60c6df`, the commit that published it. Writing this note adds further
+self-hits, which is the mechanism demonstrating itself rather than an oversight, and is why the
+sentence above now names its population instead of sizing it. **Corrected by removing the number
+rather than by writing a bigger one**, per `CLAUDE.md` §Learning — m6-cloudcost: a corrected figure
+re-arms the same trap the next time anything in either repo mentions m7 t1. **The half worth
+keeping:** the decay was caught in seconds because the command shipped beside the number —
+`CLAUDE.md` §Learning — BL-152's second entry, *a count recorded in prose carries the command that
+reproduces it*, paying for itself inside a day. **The row's substance is untouched:** no m7-t1 queue
+is locatable in either repo, and nothing else in this row is edited.]`
 
 **Done when:** one of the three remedies is chosen and written into a named document with its scope,
 or the gap is accepted in writing with its reason — either way stating what a citing document owes
@@ -10448,5 +10464,85 @@ different file and does not wait on this.
 inside BL-143 had a record and no executor. The deferred text is quoted from BL-143's `[Ruled
 2026-08-16 …]` annotation at `84c24c7`. The prompt file was read at `84c24c7` to establish the
 quotations above and was **not** edited, then or by this filing.`
+
+---
+
+### BL-164 — a test that hard-codes a value the code derives goes red when the derivation moves, not when the code breaks (#TBD)
+**Kind:** defect (instance fixed) + decision (the class) · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *every existing gate runs at ticket boundaries*
+**Size:** S to decide the class; the instance is already done · **Priority:** medium
+**Section:** testing discipline (both repos' test suites)
+
+Filed 2026-08-17, in the round that fixed the instance. The instance is closed; **the class is what
+this row is for.**
+
+**The instance, as found.** `tests/test_repin_manifest.py` built its fixture manifest with the date
+column written as the literal `2026-08-16` (in `_manifest_text()`), over a fixture repo whose commits
+were made at run time. `scripts/repin_manifest.py` derives that cell from the commit it resolves
+(`git_commit_date`, BL-151's two-cells-one-reading change), so the two agreed for exactly one day.
+At the first midnight the derivation returned `2026-08-17`, the fixture still said `2026-08-16`, and
+the suite's two whole-file assertions —
+`test_a_current_manifest_is_left_byte_identical` (idempotence) and
+`test_only_the_commit_and_date_cells_change` (containment) — went red. **Nothing about the code had
+changed.** Found at `43e63e0` by an off-territory gate run, one day after the tests landed.
+
+**The two controls at discovery**, both in a throwaway detached worktree so no working copy was
+touched: the same two tests fail at `d60c6df` with no local edits at all (so the red was not the
+finding round's), and advancing the literal to that day's date turns all thirteen green (so the
+mechanism is the date and nothing else).
+
+**The two controls at the fix**, in the commit that files this row. **Load-bearing:** three
+mutations on `scripts/repin_manifest.py`, each restored from a sha-verified working-copy backup —
+reading the date off `HEAD` instead of off the resolved commit kills both repaired tests (and a
+third), while dropping the date from the currency check or from the cell rewrite is caught by the two
+date-specific tests instead. **Stable:** the repaired suite run under an injected future clock — a
+`git` shim on `PATH` stamping 2031 wherever the caller left the date to the system, faithful because
+the suite reaches the clock through git's commit stamping and through no other route — is green,
+with the pre-fix suite under the same shim red as the positive control that the shim bites.
+
+**And the finding that is worth more than the instance: a mutation test proves a test is
+LOAD-BEARING; it says nothing about whether it is STABLE.** These two assertions were mutation-proved
+when they landed, at the 2026-08-16 export boundary, and that is recorded in `CLAUDE.md` §Learning —
+the 2026-08-16 export boundary. The mutation passing is what stopped anyone looking further: it
+answers *does this test fail when the code is wrong?* and is silent on *does this test pass when the
+code is right, tomorrow?* Two properties, one control, and the second was never run — by the arbiter
+who issued the mutation requirement, on the round that wrote the tests. A suite can be fully
+mutation-proved and still be a set of time bombs.
+
+**Adjacency, stated and not collapsed.** `CLAUDE.md` §Python script conventions holds *bind to the
+value a library resolved, never the one it advertises* — a rule about **product code** reading a
+library's own resolved answer instead of re-deriving or re-typing it. This is the same family one
+step over: a **test** stating a value the code under test derives, instead of reading what was
+actually produced. They are not one rule and should not be merged — that one is about which of two
+fields to read at a live call site, this one is about a fixture's expectation decaying against a
+derivation — but the failure they share is a second surface holding a copy of something that has a
+single authoritative source, and the repair in both cases is to read the source rather than restate
+it.
+
+**NOT KNOWN, and this row owns it: whether any other test in either repo hard-codes a value its code
+derives.** That sweep **was not run** and nothing above should be read as if it were — no census, no
+population, no count. The date shape is the obvious member (any test asserting a `YYYY-MM-DD` its
+subject computes) but the class is wider: a commit hash, a version string, a resolved model id, a
+generated filename, a row count. Running it is this row's first step, before any rule is written.
+
+**Done when:** the class has a stated check — a rule in a standing document, a lint, or a sweep with
+a recorded result — **or** is accepted in writing with its reason, and either way the sweep above has
+been run and its result recorded, including the result that there is nothing else, if that is what it
+finds.
+
+**Costs:** S to decide. The sweep is the unpriced half; it is a substance search rather than a token
+search, since a hard-coded derived value has no lexical signature (a date literal, a hash literal and
+a count literal look like every other literal), which is the reason not to assume a lint reaches it.
+
+**Collides with:** nothing open. It does not touch BL-151 (which established the derivation) or
+BL-152 (which established the gate that found this). Adjacent to **BL-150**, the standing home for
+documentation-system findings, but filed as its own row on the precedent of BL-160, BL-161, BL-162
+and BL-163: it carries an open decision plus an unrun sweep, which is a unit of work rather than an
+observation.
+
+`Source: the handoff follow-up of 2026-08-17. The instance and both discovery controls are that
+round's predecessor packet §3 F1 (the gate run at `43e63e0`); the fix and both fix-side controls are
+this round's packet §1. The mutation-versus-stability finding is the arbiter's own, given at this
+round's opening and recorded here in its words: *"A mutation test proves a test is LOAD-BEARING; it
+says nothing about whether it is STABLE."*`
 
 ---

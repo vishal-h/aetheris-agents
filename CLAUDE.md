@@ -272,7 +272,21 @@ new commit hash against the manifest; then **name** the exempt `project_knowledg
 WARNs rather than chasing them (mid-cycle staleness is expected truth, cleared only at the export
 boundary — the strict-mode exemption above). Checks 1–7 (source-vs-doc) remain valid pre-commit;
 it is check 8's committed-history dependency that forces the ordering.
+**And that same dependency decides the WARN *set*, which is a function of the manifest's staleness
+backlog and not of the commit under test.** Check 8 compares each row's pinned hash against *that
+file's own* last-touching commit, so a file moved by an earlier commit that deliberately did not
+re-pin keeps its WARN regardless of what any later commit touches — which makes any prediction of
+the WARN count derived from the current commit's changed files wrong. It was: the BL-143 close
+predicted exactly one WARN on the ground that `CLAUDE.md` was untouched by that commit, and got two.
 `Source: BL-034 (fe8298c — the export-prompt self-staling ordering hazard, real but latent; its "628f15f production-fired" claim withdrawn as false after a clean check-8 sweep of all 38 committed manifests), BL-025 (8021a59/00ddd34 — the vacuity fired on the caveat's own author: pre-commit 1 WARN, post-commit 3).`
+`[The WARN-set sentences were added 2026-08-17 as a **correction of an incomplete passage**, not as
+a new entry: the text explained check 8's *ordering* and was silent on what determines its *set*,
+and that silence produced a wrong prediction at the BL-143 close of 2026-08-16 — exactly one WARN
+predicted, two observed. Folded in here rather than appended beside, because two entries about check
+8's semantics are two surfaces that will disagree at the next amendment. The instance is
+reproducible at `d60c6df`, which touches neither `CLAUDE.md` nor the manifest: `drift_check
+--strict` there reports `CLAUDE.md stale — manifest=fd03bf3 current=84c24c7` alongside the backlog's
+own WARN.]`
 
 **`drift_check` verifies a pin is current, never that it is complete — read the pinned content
 against what it should say, do not trust the green.** Check 8 compares the manifest's commit
@@ -293,6 +307,20 @@ is the only thing covering it.
 **Ticket text that quotes repo state** (counts, paths, expected outputs) cites the commit
 it was verified against; claude-code treats divergence between ticket text and repo reality
 as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002.
+
+**Amend a commit while it is private to the ticket and uncited; append once a packet has been
+issued against it.** A review packet cites its commit in its done-checks, so amending afterwards
+leaves those citations pointing at a tree that never existed — an unfalsifiable reference, which is
+the class the rules in this section exist to remove, and the reader cannot tell a stale hash from a
+fabricated one. The price of the alternative is one extra commit in the log. Applied three times on
+2026-08-16: the export-mechanism round landed its amendment as a fourth commit (`6ffcd76`, after
+`5dae22b`/`67b1127`/`907b3fa`) rather than an amend, on exactly this ground; BL-152's and BL-153
+s0's amendment rounds each landed as a second commit (`ace771c` after `2868a3e`; `8653546` after
+`900662f`) for the same reason.
+`Source: the cc:prompt preambles of 2026-08-16, promoted at the handoff of 2026-08-17. It lands
+beside the rule above because that one says a claim cites the commit it was verified against and
+this one says what a cited commit may then do. The six commits were resolved from `git log` at the
+promotion, not transcribed from the handoff.`
 
 **Every existing gate runs at ticket boundaries, even off-territory** (`mix test`,
 `tsc -b`/`bun run build`, `bun run lint`, sprint, `drift_check --strict`, the Python
@@ -372,6 +400,31 @@ and the literal root command — `python3 -m pytest -q` — aborted during colle
 at all, so the gate could not distinguish a green repo from a broken one. Collection is fixed by
 the root `pytest.ini` (rootdir pin + `--import-mode=importlib`); see that file's header for the
 three module-name collisions it resolves.`
+
+**And no session busy-waits on such a run. It goes in the FOREGROUND under an explicit `timeout`;
+if it must be backgrounded, wait on it ONCE, blocking — never an `until … sleep N` poll
+loop.** The cap rule above bounds the **run**; this bounds the **wait**. A poll
+iteration is not a cheap check: it is a full request that re-reads the entire context and performs
+no work, so the loop's cost scales with the window it re-reads rather than with the thing it is
+waiting for, and none of it appears in the timings of the run being waited on. Measured across one
+ticket: 19m58s of API time against 1h50m36s of wall clock — 82% of the session spent waiting, with
+the poll iterations a large share of roughly a hundred requests each re-reading the whole window.
+
+**And bulk output goes to the scratchpad, not into context.** A census, a two-repo sweep or a full
+command dump is written to a file and read back narrowly: cite it by path and quote only the
+deciding lines. This bounds the **context**, the third thing neither rule above reaches — carrying
+bulk inline is what pushes a session past the point where every later request re-reads it, and on
+the same ticket 63% of requests ran above 150k. The scratchpad is session-scoped and under `/tmp`,
+so it is the working copy and never the record: anything a later reader must be able to open is
+quoted into the packet or committed.
+`Source: the cc:prompt preambles of 2026-08-16, promoted at the handoff of 2026-08-17. Both rules
+were invented and applied in that day's work and written into prompt preambles only — the shape
+**BL-162** names, with the preamble as the citing document and no standing home knowing it. **The
+figures are the handoff's own, over a ticket it does not name, and are reproducible from neither
+repo**: `git grep -inE '82%|63%|1h50|19m58|150k' -- '*.md'` returns 0, and the positive control for
+that zero is the same command over the cap rule's own figures — `git grep -inE '52m21s|10m17s' --
+'*.md'` returns 8 lines across 4 files. They are carried as telemetry with a named holder, not as
+repo state.`
 
 **Before making a soft failure hard, enumerate what else that gate holds.** If flipping it turns
 *every* tracked known-red blocking at once, then the enforcement and the exempt/expected-fail
@@ -621,6 +674,17 @@ The first instance is hc-c r1, diagnosed by claude-code at hc-c r2 §8a correcti
 finding; the second is hc-e's opening edit, caught before publication. The 69/184 figures are
 claude-code's account from that packet's preamble — packets are not committed in either repo, so
 they are not reconstructible from the tree, and the rule does not depend on them.`
+
+**The packet is written as the ticket runs, not assembled at the end.** Open the packet file at the
+start and append each section at its stage boundary, before moving on. A packet reconstructed at
+the end from whatever the session still happens to be holding cannot be compacted around, and a
+crash costs the ticket rather than one stage. This is the assembly-side companion to the rules
+above it: they govern what travels and what it must be made of, this governs when it is written
+down — and it is what makes them cheap to obey, since a section appended at its own stage boundary
+is transcribed from a command that has just exited rather than recalled.
+`Source: the cc:prompt preambles of 2026-08-16, promoted at the handoff of 2026-08-17, whose own
+packet was written this way as its first application. It lands in this family rather than under
+§Definition of done because it is a rule about the packet, and the packet-rule family lives here.`
 
 **No action past a gate until that gate has run and its result is on the record** — covering doc-order gates, test gates, and publish/merge gates alike. Three instances in one milestone, same muscle, different artifact: a doc edited ahead of the gate that should have preceded it; a rider acted on before the milestone doc carried it; and both branches pushed on a "push both branches" instruction before the acceptance e2e was reported green, inverting the agreed reorder → gates → e2e → commit → push order. All three were recoverable only because the held-push discipline caught them — the rule is what makes the discipline unnecessary rather than load-bearing. A cross-repo change needs a cross-repo done-check — any gate that runs in one repo silently passes omissions in the sibling (repo-scoped `git add -A` + single-repo drift check let a one-repo edit push under a two-repo claim).
 `Source: BL-007 t2, t4 (×2); b1 post-push correction, 2026-07-21 (d831220)`

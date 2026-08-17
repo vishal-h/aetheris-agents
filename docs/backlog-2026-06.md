@@ -10508,6 +10508,21 @@ code is right, tomorrow?* Two properties, one control, and the second was never 
 who issued the mutation requirement, on the round that wrote the tests. A suite can be fully
 mutation-proved and still be a set of time bombs.
 
+**And the conclusion the instance forces, which is stronger than that: the two properties are not
+independent — stability gates what the mutation control can see.** An unstable fixture does not only
+go red on its own schedule. While it is still green it can make a real defect invisible to the
+mutation run against it, because the same coincidence that dates the fixture also supplies the wrong
+answer. Here that is measured rather than argued: against the pre-fix fixture, every commit stamped
+the same day, a rewriter reading the date off `HEAD` instead of off the resolved commit wrote the
+right date by coincidence and **passed all thirteen tests on the day they were green**; against the
+repaired fixture the identical mutation kills three. So a mutation run over an unstable fixture can
+return a clean *load-bearing* verdict about tests that could not have seen the defect it was probing
+for — the instability is not a second problem standing beside the mutation result, it is the thing
+that determined it. The order the two controls are owed in follows: establish the fixture is stable,
+then read the mutation as evidence about the tests rather than about the day it ran. This is the
+follow-up packet's §8, promoted into the row because it is the row's conclusion rather than one of
+its measurements.
+
 **Adjacency, stated and not collapsed.** `CLAUDE.md` §Python script conventions holds *bind to the
 value a library resolved, never the one it advertises* — a rule about **product code** reading a
 library's own resolved answer instead of re-deriving or re-typing it. This is the same family one
@@ -10543,6 +10558,9 @@ observation.
 round's predecessor packet §3 F1 (the gate run at `43e63e0`); the fix and both fix-side controls are
 this round's packet §1. The mutation-versus-stability finding is the arbiter's own, given at this
 round's opening and recorded here in its words: *"A mutation test proves a test is LOAD-BEARING; it
-says nothing about whether it is STABLE."*`
+says nothing about whether it is STABLE."* The stability-gates-the-mutation paragraph is that
+packet's §8, added to this row on 2026-08-17 at the arbiter's direction — as first filed, the row
+held the two properties apart and never said that one gates the other, and the measurement behind
+that claim appeared in the packet alone.`
 
 ---

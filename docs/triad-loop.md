@@ -76,8 +76,12 @@ The loop closes when the human approves and commits the milestone doc to the
 repo. Nothing moves to Phase 2 until that commit exists.
 
 **Key rule:** scope changes happen here, in the milestone doc. They never
-happen in issue comments or chat. The committed doc is the single source of
-truth.
+happen in a tracker comment or in chat. The committed doc is the single
+source of truth.
+`[Corrected 2026-08-17 at the ds cycle's open, with milestone-methodology.md
+§1 item 1, which carries the ground. "Tracker" replaces "issues" in this
+document's normative rows; a cycle names its own tracker or states that it
+uses none.]`
 
 ---
 
@@ -178,7 +182,7 @@ consecutive milestones. If it does, the promoted rule was too vague.
 | Artifact | Author | Reviewer |
 |---|---|---|
 | Milestone doc | claude-ui drafts, human approves | human |
-| GH milestone + issues | claude-code (generated from doc) | human (spot-check) |
+| Tracker entries, if the cycle uses a tracker | claude-code (generated from doc) | human (spot-check) |
 | Code + tests | claude-code | claude-ui (design), human (merge) |
 | Implementation notes | claude-code | claude-ui |
 | Done-check output | claude-code (must be in packet) | claude-ui |
@@ -193,7 +197,7 @@ consecutive milestones. If it does, the promoted rule was too vague.
 | Anti-pattern | What goes wrong |
 |---|---|
 | Human paraphrases findings before sending to claude-code | claude-code fixes the paraphrase, not the finding |
-| Scope change made in an issue comment | Milestone doc and issues diverge; next reader trusts the wrong one |
+| Scope change made in a tracker comment | Milestone doc and tracker diverge; next reader trusts the wrong one |
 | Review packet sent without done-check output | Review time spent on "does it run" instead of design |
 | Implementation notes omitted | Decisions exist only in chat; not recoverable from the diff |
 | Same finding raised on ≥2 tickets without promotion | Learning loop stays open; review effort rented, not invested |

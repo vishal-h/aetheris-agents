@@ -1,0 +1,326 @@
+# ds — declared status
+
+**Status:** OPEN. Opened 2026-08-17.
+
+> Canonical for this cycle. Scope changes are edited here first. This document is
+> AUTHORITY; the two `claude/`-namespaced briefs that produced it are demoted to
+> history and keep superseded-by pointers.
+
+`Measurement stamp: every claim in this document about repository state was
+resolved at agents df2600f. A claim here is a snapshot with no invalidation;
+re-verify at HEAD before relying on one. Where a figure would be needed, this
+document names the command instead. Stage 1 of this cycle's open re-resolved
+every claim in this document against the tree and found five wrong; those five
+are corrected here, and the corrections are the only content in this file not
+authored before the tree was read.`
+
+## What this cycle is
+
+Four places in this project infer status from shape rather than declaring it: a
+use case's dormancy from whether a directory scan still finds it, a backlog row's
+disposition from three different prose forms, an artifact's provenance from
+whatever ran last, and a cancelled run's state from a killed child process. Each
+inference is indistinguishable from the mechanism being broken. `ds` — declared
+status — replaces inference with a declared, checkable field in the first three.
+
+The key is deliberately not `m7`. That key is taken in this repo by docbuilder's
+closed offer-letter milestone, and the milestone namespace is use-case-keyed while
+this cycle spans no use case. The established form for a cycle of that kind is a
+short opaque key: `hc`, `gc`, both in this directory.
+
+## Authority and history
+
+Three documents in the project-knowledge store produced this one. **None of
+them resolves from either repository, and nothing in this document depends
+on reading them.** They are `claude/`-namespaced, which BL-143's ruling of
+2026-08-16 establishes is outside the export set by construction; the store
+is claude-ui's surface and the tree is claude-code's, and there is no path
+between them except a prompt. They are listed as provenance, not as
+contract refs — a normative pointer into a surface the reader cannot open
+is the unresolvable-reference defect BL-162 was filed for.
+
+- `claude/aetheris-agents--m7-shape-brief.md` — how this cycle's shape was
+  reached, including the rulings of 2026-08-16/17 and the amendments made
+  at the open. Superseded by this document; not deleted, demoted.
+- `claude/aetheris-agents--use-case-registry-brief.md` — the registry
+  ruling. **Its content is landed in t1a below rather than cited**, for the
+  reason above and because the brief itself ruled that its content lands in
+  t1a's section.
+- `claude/aetheris-agents--m7-scout-findings.md` — a read-only scout's
+  findings, recorded because a finding that exists only in a conversation
+  is the same defect class. Discharged by the appends to BL-150 and BL-151
+  in this cycle's opening commit; nothing in it is load-bearing after that.
+
+## How the cycle is run — the GitHub trial
+
+This cycle is the trial of the sprint model. It is not a ticket; it is how the
+cycle is run, and process changes get no round of their own.
+
+- **Issues for this cycle's ticket set only. Nothing historical is migrated.**
+- **A GitHub Project spanning both repos is the container.** No GitHub milestones
+  are used. Milestones are per-repo, and the first ticket that sections the
+  harness while another sections agents has no single milestone that can hold
+  both. A Project and a milestone both claiming to be the boundary would be two
+  surfaces that must agree.
+- **Issues are filed in the repo whose code changes.** Held for the trial rather
+  than consolidated into one repo. Consolidating them would make a single-repo
+  milestone sufficient, which dissolves the constraint the Project exists to
+  answer — a trial run in the arrangement you would fall back to says nothing
+  about the arrangement being tested. Whether to consolidate is decided AT THE
+  CLOSE, on the evidence of verdicts A and B. **Tiebreak for a ticket that
+  changes both repos:** the issue is filed in the repo carrying the ticket's
+  primary artifact, the ticket's Touches repo-qualifies every path in both, and
+  any commit in the other repo references the issue in the fully qualified
+  `owner/repo#N` form, because a bare `#N` does not resolve across
+  repositories. **t1b is the first live test of this tiebreak** — its primary
+  artifact is the backlog, in agents, while its breaking change is in the
+  harness. If the tiebreak proves unworkable there, that is evidence for verdict
+  A and it is recorded, not patched around.
+- **A Project is addressed as `@me`.** The two authenticated `gh` tokens have
+  disjoint gaps — one carries `project` without `read:org`, the other the
+  reverse — so an owner-qualified address fails. Verify and record.
+- **Keep the Project minimal.** Fields and automation are their own maintenance
+  surface and nothing yet justifies them.
+- **R23 is preserved, not relaxed.** GitHub Issues has no shape for a thing that
+  is true, filed, and deliberately not scheduled. Findings during this cycle land
+  on the standing rows — BL-150 for documentation-system findings (R23), BL-151
+  for code findings (R26) — and get an issue only if someone schedules them. If
+  the trial cannot hold that, the trial has failed and the finding is worth more
+  than the tooling.
+
+## Close criteria
+
+1. Every ticket passes its done-check.
+2. Zero unresolved blocking findings.
+3. `drift_check --strict` run POST-COMMIT for any manifest-tracked edit, with the
+   expected `project_knowledge` staleness WARNs named rather than chased.
+4. The §7 learning promotion committed and **verified by opening the file**,
+   including the census of prior cycles' promotion claims.
+5. **Trial verdict A — did anything read the Project?** At the close, name each
+   decision taken during this cycle by consulting the Project rather than this
+   document. If that list is empty while the list of acts taken solely to keep
+   the Project current is not, the Project is a second surface with no reader and
+   the trial has failed on this criterion.
+6. **Trial verdict B — did the mirror drift, and did anything catch it?** At the
+   close, diff each issue body against its ticket section at this document's
+   commit. Any divergence fails it. No executable in either repo invokes `gh` —
+   no script, test, CI workflow or agent file; the hits that exist are prose and
+   operator instructions — so this sync is by hand throughout, and a by-hand
+   mirror with no keeper is methodology §9's own anti-pattern.
+7. **The R23 verdict.** Count findings that landed on BL-150/BL-151 against
+   findings that became issues. A finding that became an issue only because the
+   tooling had no other shape for it fails this criterion.
+8. **The cross-repo arm.** Two tickets are harness-side: t3, whose whole
+   subject is a harness write, and t1b, which must edit harness `sprint.sh` or
+   break it. That is what exercises the Project's cross-repo claim. If neither
+   runs, the close states that the cross-repo arm was never exercised and that
+   the trial says nothing about it. Silence on it is forbidden.
+
+Criteria 5, 6 and 7 are decided by the arbiter at the close and recorded as dated
+lines in `docs/milestones/hc-consolidation.md`, per R25.
+
+## What is not checked, stated rather than worked around
+
+`drift_check.py`'s `milestone_status` check globs `docs/rig/milestones/` and only
+its subdirectories. This document is invisible to it. It is not relocated under a
+Rig tree to acquire a check it has no business passing. Nothing checks the Project
+either. Verdicts A and B are therefore human observations by construction, which
+is why they are written down before the cycle runs rather than after it.
+
+## Deviation from methodology §6, stated with its reason
+
+§6 requires each ticket section to carry the literal claude-code prompt. This
+document does not. Five prompts authored before any of the five sessions runs are
+five prompts written at maximum distance from their evidence, and §11's own
+finding is that a round's defects sit in the sentences its author stated flat.
+Each cc:prompt is authored at ticket time instead. A divergence is closed by
+changing the document or the practice and is never left standing — agents
+`CLAUDE.md` §Learning — m3-docbuilder, *"a divergence is closed by changing
+code *or* the doc, never left as a silent mismatch"* — so this is a candidate
+for disposition at the close. `[The pointer here read "§1.1" until stage 1
+resolved it: §1 item 1 states that the milestone doc is canonical and that
+scope changes are edited into it first. It does not state the divergence
+rule. Cited-means-read; the invariant held and the pointer did not.]`
+
+## Tickets
+
+### t0 — the backlog gets a status field
+
+**Scope.** Every `### BL-` row carries an explicit status field in its metadata
+block. The existing expressions — a heading suffix, an inline bold on the Priority
+line, and nothing at all — are normalised into it. Rows whose status cannot be
+derived unambiguously are adjudicated by the arbiter, never guessed. What exists
+after this ticket: a machine-readable predicate for *terminal*, which t1b
+requires and which does not exist today.
+
+**Why it is its own ticket.** t1b is specified as a purely mechanical
+open-versus-archive split. Two derivations over the current file bracket the open
+set rather than returning it, so the predicate the split turns on is undefined.
+Normalisation is a third kind of change — neither the structural rejig nor the
+triage pass — and folding it into the commit that must also carry the `BL-nnn`
+resolution check is how *"if the check cannot land with the split, do not split"*
+gets satisfied on paper while failing in substance. Labelled t0 rather than
+renumbering, on the precedent of BL-153 s0 and BL-007 t0, so no already-issued
+label changes what it refers to.
+
+**Contract refs.** `hc-consolidation.md` R23, R26. Agents `CLAUDE.md` §Learning —
+BL-152, the rule that a count in prose carries the command that reproduces it.
+
+**Touches.** `docs/backlog-2026-06.md`. Plus whatever parses that file — RESOLVE
+before editing, by kind of change and not by file class: scripts, tests, checks,
+sprint cases, docs that quote a command against it, and anything that depends on
+the row-heading shape. An unlisted toucher is the recurring defect here.
+
+**Do not generate.** No re-prioritising, no merging, no superseding, no re-reading
+of a row's merits. That is the triage pass and it runs after t1b. A row that moves
+in the same pass that re-judges it cannot later be told apart.
+
+**Done-check.** A committed script that (a) fails if any row lacks a status
+field, and (b) prints the open set as a single number with the command that
+reproduces it. The bracket collapsing to a number IS the done-check.
+
+### t1a — the use-case registry
+
+**Scope.** Five items: the registry file; the drift check that every use-case
+directory has a row and every row a directory; the doc-enumeration check, which
+CHECKS documents against the registry and never regenerates prose into them; gc
+t1's census carrying gc t3's discharge predicate; and boxy-pipeline's dormancy
+beyond the test apparatus as the registry's first consumer.
+
+**The ruling, landed here rather than cited.** *Declare status in a committed
+registry; do not encode it in the directory layout.* The identifier is the
+address and the path is never load-bearing — the same ruling already given for
+the backlog split, applied to a second object. A directory move makes the shape
+of the tree the declaration, and nothing checks the shape of the tree; it works
+by accident rather than by declaration, since anything that discovers use cases
+by scanning directories silently stops seeing a moved one, which is
+indistinguishable from the discovery being broken. Dormancy also ends, and a
+status flip is one line where a move back is a second wall of renames. **The
+move is demoted, not forbidden**: once status lives in the registry, relocating
+a dormant use case is cosmetics and can be taken on its own merits for the
+ergonomics of `ls`. It must never be taken as the mechanism.
+
+**What the registry carries.** One row per use case: status, the date the status
+was set, the reason stated as business state rather than test mechanics, and
+**the condition for return** — something a future reader can evaluate. Not
+"disabled"; "dormant since <date>, runs again when <x>."
+
+**Three constraints, binding.**
+
+1. **Dormant tests must still collect.** Deselect at run time; never stop
+   importing. A use case whose tests no longer collect is one nobody notices has
+   rotted. Collectability requires the code to stay somewhere `sys.path`
+   reaches, so any later directory move is designed against whatever BL-152
+   established about rootdir and `sys.path` resolution.
+2. **Check first; generate only what is wholly derived.** A purely derived
+   document — a use-case index — may be generated. A document mixing prose and
+   enumeration, such as a runbook or a `CLAUDE.md`, is **checked and failed**,
+   never rewritten by a script that has to locate a list inside paragraphs. The
+   precedent is the capability matrix, which as a generated artifact with
+   consumers and no gate went not merely stale but unstable.
+3. **Dormancy and test-mechanics exclusions do not share a mechanism.** The two
+   markers mean different things and have different re-entry conditions, and a
+   reader must be able to tell them apart without asking. The registry is the
+   dormancy marker's source, or at minimum the check proves the two agree.
+
+**The proof case is a reconciliation, not a sweep.** Of the surfaces originally
+named for boxy-pipeline's dormancy declaration, several do not name it at all —
+verify and record which. Its absence from the generated capability matrix means
+absence from the planner's system prompt and from Rig's matrix view. The
+registry brief's own argument therefore already holds without any directory move:
+*anything that discovers use cases by scanning directories silently stops seeing
+it, which is indistinguishable from the discovery being broken.* Enumerate the
+surfaces that carry a use-case list, verify and record how many disagree with
+each other, and reconcile against the registry.
+
+**Contract refs.** The registry brief. Agents `CLAUDE.md` §Definition of done, the
+two-markers rule and the `dormant` marker's registered statement in `pytest.ini`.
+Agents `CLAUDE.md` §Learning — m6-cloudcost, the incomplete-enumeration rule.
+
+**Touches.** The new registry file — RESOLVE its path; `scripts/drift_check.py`;
+`tests/test_drift_check.py`; the surfaces the doc-enumeration check names —
+RESOLVE which subset is in scope. Repo-qualify every path.
+
+**Do not generate.** No document is regenerated into prose; check and fail only,
+per the registry brief's constraint 2. No directory move. Dormant tests keep
+collecting — deselect at run time, never at import.
+
+**Done-check.** The new checks addressable via `--check`; the whole-suite gate
+command from `CLAUDE.md` §Definition of done; `drift_check --strict` post-commit
+with expected WARNs named.
+
+**RESOLVE at ticket time.** The registry's file, format and location. Which of the
+enumerating surfaces the doc-enumeration check covers, and on what criterion —
+apply the criterion out loud to the surfaces that prompted it before shipping it,
+and check that it separates them.
+
+### t1b — the backlog split
+
+**Blocked by t0.** Scope per the shape brief: the reorganisation, the tombstone at
+the old path, and the `BL-nnn` resolution check, in ONE commit — the check is the
+precondition, not a follow-up. If the check cannot land with the split, do not
+split. Terminal-only, one-way moves; the ID is the address and the path is never
+load-bearing. Inherits the check file's shape from t1a.
+
+**Touches.** `docs/backlog-2026-06.md`, the tombstone at the old path,
+`scripts/drift_check.py` and `tests/test_drift_check.py` for the `BL-nnn`
+resolution check — and **`../aetheris/scripts/sprint.sh`**. **t1b is
+cross-repo.** `sprint.sh` binds `SPRINT_BACKLOG` to a fixed relative path and
+consumes it as an anchored `grep` on the row heading; a split that relocates the
+backlog turns every `expected_fail` declaration into a blocking FAIL, and it
+fails on the arm that reports the backlog unreadable rather than on anything
+about the split. Verify the line numbers at HEAD; do not carry them from this
+document.
+
+**Do not generate.** No triage. See t0.
+
+**RESOLVE at ticket time.** Whether backlog issue references need repo-qualifying
+— the file spans both repos and its existing references are unqualified, so
+whether any already points across is unverified. Routed to BL-150 as a question.
+
+### t2 — the artifact/run stamp
+
+**Scope.** BL-153's Owes is discharged and the row is ready to scope: arm ordering
+NOT changed, the stamp written script-side, the identifier pipeline-minted,
+coverage including the history tree, and a writer that runs last unconditionally —
+which no current step is.
+
+**RESOLVE at ticket time.** Format, file and reader.
+
+### t3 — BL-161, the deferred sprint arm
+
+**Scope.** Per BL-161. **Its subject is entirely a harness write, so its issue
+is filed in the harness repo** — unlike t1b, which is cross-repo with an
+agents-side primary. Between them they exercise both sides of the Project's
+cross-repo claim and both arms of the filing tiebreak; close criterion 8 depends
+on at least one running.
+
+**It is in this cycle on its own merits.** BL-161 is an open row worth
+discharging independently; the trial is its occasion, not its reason. BL-153 was
+rejected for this slot precisely because taking it would have required reversing
+the not-changed ruling on its arm ordering, which would be a change made to get
+past a test.
+
+**Touches.** `../aetheris/scripts/sprint.sh` and whatever the arm needs. Every
+path repo-qualified.
+
+**RESOLVE at ticket time.** Everything below scope.
+
+## Open at open
+
+- The registry's file, format and location (t1a).
+- t2's format, file and reader.
+- Whether issues consolidate into one repo — decided at the close on verdicts A
+  and B, not before.
+- Whether this document earns a project-knowledge manifest row — decided AT THE
+  CLOSE on the standing specification test, the one that admitted
+  `cloudcost--milestone.md`. Deciding it now would pre-empt a test that needs the
+  finished document.
+- Whether §6's literal-prompt requirement or this document's practice changes.
+
+## Rows this cycle might promote, none scheduled
+
+BL-154 is the first candidate if there is room — Rig's Cancel kills the direct
+child and transitions nothing, it is the mechanism that made BL-153's subject
+visible, and it fires for every agent. Note that it does NOT serve close criterion
+8: Rig lives in the agents repo, so BL-154 is agents-side.

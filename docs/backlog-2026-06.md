@@ -8996,6 +8996,78 @@ list is empty.
   do show — no m6 notes file records a blocking finding at all, and the two defects that did stop
   work were found by the tickets themselves rather than by a reviewer.]`
 
+- `2026-08-17` — **`CLAUDE.md` instructs the creation of the file `pytest.ini` exists to keep
+  absent.** §Definition of done states that the root `conftest.py` attributes every deselected test
+  to exactly one reason. There is no root `conftest.py`; the hook is in `tests/conftest.py`, and the
+  root file's absence is deliberate and load-bearing — a `conftest.py` at the rootdir is imported
+  under the bare module name `conftest` and shadows the runtime `from conftest import …` lines in
+  `cloudcost/tests/`. `pytest.ini` says so and names **BL-157** as the row holding the trap open.
+  The two documents contradict each other and the exported one is the wrong one, so a session
+  following `CLAUDE.md` creates the file the ini exists to prevent. This is a live instruction to
+  break a gate, which is why it is recorded first. **A documentation-system finding and not a code
+  one** because the code is correct and only the sentence about it is wrong. Verified at agents
+  `df2600f`: `ls conftest.py` → No such file; the hook at `tests/conftest.py:51-55`; the rationale
+  and the BL-157 pointer at `pytest.ini:38-41`. No fix is proposed here.
+
+- `2026-08-17` — **The backlog has no uniform status field, and the open set can only be
+  bracketed.** Status is expressed four ways, and most rows express it not at all: as a word in the
+  `###` heading — 19 rows, from
+  `grep -cE '^### BL-[^—]*— *(DONE|CLOSED|SUPERSEDED|WONTFIX|OPEN)' docs/backlog-2026-06.md`; as a
+  standalone `**Status:**` line in the body — 26, from
+  `grep -cE '^\*\*Status:\*\*' docs/backlog-2026-06.md`; as a bold `**DONE …**` body paragraph —
+  11, from `grep -cE '^\*\*(DONE|CLOSED) ' docs/backlog-2026-06.md`; and bolded onto the
+  `**Size:** · **Priority:**` metadata line — 3, from
+  `grep -cE '^\*\*(Size|Kind):\*\*.*\*\*(DONE|CLOSED|OPEN)' docs/backlog-2026-06.md`. **122 of 181
+  rows carry none of the four**, by a per-row derivation over all four patterns. BL-024 (`:393`) is
+  the plain case: its whole metadata block is `**Size:** M · **Priority:** low`. Two derivations
+  over the same file therefore return a bracket rather than a number — a strict pass misses
+  closures recorded only in body prose, a loose pass over-counts rows whose body merely discusses
+  one. The consequence is scope rather than hygiene and it is already owned — the ds cycle's t0
+  exists to give every row the field — so what is recorded here is the class: a record whose status
+  is expressed four ways cannot be queried, and nothing in the file's own structure makes that
+  visible to a reader adding the next row. Figures derived at agents `df2600f`, each with the
+  command that reproduces it, per `CLAUDE.md` §Learning — BL-152.
+  `[Corrected at stage 2 of the ds open, before landing. As drafted this entry named three forms
+  and offered **BL-001** as a row carrying none. BL-001 carries one — `**Status:** Done 2026-07-15`
+  at `:120`, inside its own row (`:101`–`:124`) — and the enumeration omitted the two most common
+  forms after "nowhere". The clause was right and its enumeration short, which `CLAUDE.md`
+  §Learning — m6-cloudcost rules is repaired by extending the enumeration rather than by adding a
+  clause. Landing it as drafted would have committed a false claim about the backlog into the
+  backlog.]`
+
+- `2026-08-17` — **The packet-written-as-the-ticket-runs rule presumes a session that commits, and
+  has now been missed twice by sessions that do not.** Both the 2026-08-17 scout pass and the ds
+  stage-1 session disclosed non-compliance unprompted, with the same reason: instructed to commit
+  nothing and issue no packet, there was no packet file to open at the start and append to at each
+  boundary, so the prose was assembled at the end from evidence files that were written
+  incrementally. Both mitigated the same way, by regenerating rather than reconstructing. The
+  disclosure is the rule working; the wording is the finding. Either the rule names the artifact
+  that must be incremental — the evidence, not the prose — or a read-only pass is exempted
+  explicitly. Two instances, disclosed by the sessions themselves, neither a defect in the work.
+  Recorded so it is findable; not triaged here.
+
+- `2026-08-17` — **The off-territory gate rule names a gate it cannot reach.** *Every existing gate
+  runs at ticket boundaries, even off-territory* (`CLAUDE.md` §Definition of done) lists the sprint
+  among the gates it binds, and its ground is that a gate running only on its own territory rots
+  invisibly — three gates were found red exactly that way. But a bare `./scripts/sprint.sh`
+  resolves to `TARGET="${1:-all}"` (`../aetheris/scripts/sprint.sh:22`) and dispatches most of its
+  arms through live model calls with outward writes to Drive, email and GitHub, so no session can
+  run it routinely and none has. The rule therefore binds hardest on the one gate it is
+  structurally unable to reach, and that gate will rot in the way the rule exists to prevent, with
+  the rule's own text reading as though it were covered. Surfaced when a docs-only boundary was
+  instructed to run the full set and the instruction turned out to be unexecutable rather than
+  merely expensive. **What is NOT claimed:** that any arm is currently red, or that a cheap
+  hermetic subset does not exist — neither was established. **No fix proposed**; whether the remedy
+  is a hermetic sprint subset, a stated exemption with its own cadence, or re-keying the rule on
+  cost rather than territory is this row's to hold rather than answer. Verified at harness
+  `9ba6c8c`: `all` dispatches **18** arms, from
+  `grep -oE '"\$TARGET" == "[a-z0-9_]+" \|\| "\$TARGET" == "all"' scripts/sprint.sh | grep -oE '"[a-z0-9_]+"' | tr -d '"' | grep -v '^all$' | sort -u`;
+  the script guards **29** cases in total, from
+  `grep -oE '"\$TARGET" == "[a-z0-9_]+"' scripts/sprint.sh | grep -oE '"[a-z0-9_]+"' | tr -d '"' | grep -v '^all$' | sort -u`.
+  The two sets are not the same: **11** cases are guarded and outside `all` — `payslip`, `eduloka`,
+  `eval`, `m12`, `news`, and the six `uc_api_agent_t*` arms — so even a full `all` run is not a
+  full sweep. Re-derive both at HEAD rather than carrying these figures.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
@@ -9173,6 +9245,19 @@ appended list is empty.
   two paragraphs at `:208` and `:263` are **not** instances — they claim synced, not held, and are
   still true. Recorded as a recurrence, four instances, not one. Verified at agents `9741c4e`.
   Recorded so it is findable; not triaged here.
+
+- `2026-08-17` — **Two Rig surfaces enumerate use cases and disagree, and nothing checks either.**
+  `rig/src-tauri/src/commands/usage.rs`'s `USE_CASE_PREFIXES` carries seven entries and
+  `rig/src/components/modules/harness/RunList.tsx`'s carries eleven, so runs for the use cases
+  present in one and absent from the other group correctly in the run list and fall to
+  `"Unclassified"` in the usage view. Both are hand-written, neither is generated, and no test
+  compares them. Two surfaces that must agree with nothing checking that they do — the same shape
+  as the `KNOB_CONSTANTS` entry above, except both surfaces are Rig's own and the disagreement is
+  visible on screen. **It may be absorbed by the ds cycle's t1a**, whose doc-enumeration check has
+  an open slot for which enumerating surfaces are in scope; filed here because that slot is unruled
+  and an unowned finding is not left to a decision that may not reach it. Verified at agents
+  `df2600f`: `usage.rs:146-154`, seven entries; `RunList.tsx:126-141`, eleven. No fix is proposed
+  here.
 
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.

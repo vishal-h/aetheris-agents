@@ -10570,7 +10570,7 @@ transcribed from its **Collides with** at `84c24c7`.`
 
 ### BL-163 — `bl-002`'s post-upload checks state check 1 and check 3 without the namespace boundary (#TBD)
 **Kind:** defect · **Census items:** n/a · **Contract:** `docs/backlog-2026-06.md` BL-143, the `[Ruled 2026-08-16 …]` annotation
-**Size:** S · **Priority:** medium
+**Size:** S · **Priority:** medium — **CLOSED 2026-08-18**
 **Section:** process / project knowledge (`prompts/bl-002-refresh-project-knowledge.md`)
 
 Filed 2026-08-16 at BL-143's close, in the round that deferred it. Established at agents `84c24c7`.
@@ -10623,6 +10623,64 @@ different file and does not wait on this.
 inside BL-143 had a record and no executor. The deferred text is quoted from BL-143's `[Ruled
 2026-08-16 …]` annotation at `84c24c7`. The prompt file was read at `84c24c7` to establish the
 quotations above and was **not** edited, then or by this filing.`
+
+`[CLOSED 2026-08-18 at the ds cycle's export boundary, stage A. **The correction landed at agents
+`7e8602d`**, which touches `prompts/bl-002-refresh-project-knowledge.md` and nothing else: checks 1
+and 3 replaced unit by unit, quote-then-replace, with check 2, the section intro and the row's
+`Source:` line byte-unchanged.
+
+**The occasion is this boundary; the reason is that the checks are wrong independent of ds.** They
+were written without a namespace boundary, and read without one they contradict each other on the
+documents that actually exist — true on 2026-08-16 when this row was filed, and true at any later
+date with no boundary in sight. Nothing here is a change made to get a boundary green: these are
+post-*upload* checks. No gate in either repo runs them, `drift_check` does not read this file, and
+the correction could not have moved any result in the session that made it, in either direction.
+
+**Done-when, clause by clause.** *"§Post-upload verification states the namespace boundary for check
+1 and check 3"* — **check 1** now runs over *"every store path **not** under `claude/`"* and states
+that such a document *"carries no row and is out of the export set **by construction**: it is not a
+check-1 finding, and check 3 is where it is accounted for"*. **Check 3** now splits on the namespace
+— under `claude/` an enumeration with no condition on the manifest owed and no check-3 exception
+claimed, outside `claude/` an incremental upload and the finding — and the unmet subjunctive
+*"in which case the manifest should say such documents may coexist and are out of scope"*, whose
+condition BL-143's ruling discharged, is gone. A closing sentence points at BL-143 for the reasoning
+and `CLAUDE.md` §Definition of done for the standing form, and states that neither check treats the
+other's population as a finding. The rewrite says what this row said it must say and adds nothing to
+it.
+
+*"and the sweep above has been run with its result recorded — including the result that there is
+nothing else, if that is what it finds"* — **run, and it is not nothing.** Population: every line of
+the prompt file matching `store|remove|upload|project knowledge|knowledge file|claude/|namespace|document set|coexist|non-manifest`
+(case-insensitive), 28 lines, read one by one. Four sites cleared and one finding:
+
+- **`:148`, the ordering of the three checks** — *"Three checks, and the third is the one that
+  catches an incremental upload"*. **Survives the scoping and is unchanged.** Under the ruling check
+  3's `claude/` arm is an enumeration, but its other arm — a document outside `claude/` older than
+  the window — still means the remove was partial, so the sentence remains true of the rewritten
+  check.
+- **`:141–146`, the prose describing the store** — describes `drift_check`'s blindness and who runs
+  the verification. Names no population and assumes no namespace. **Unchanged.**
+- **`:73`, *"an uncommitted edit does not reach the store"*** — a statement about the assembler's
+  source, not about the store's contents. **Unchanged.**
+- **the section's `Source:` line** (`:164–165` before the correction, `:173–174` at `7e8602d`) —
+  *"the store-side check that found the manifest describing 25
+  documents while the store held 26"*. A point-in-time record of the m3 boundary of 2026-08-05, and
+  the 26th document's namespace is not recorded anywhere this session can reach. Point-in-time
+  records are not amended (BL-143's ruling, on the two deviation blocks). **Unchanged, deliberately.**
+- **`:107–110`, the remove half of the procedure — THE FINDING, and it is not this row's class.**
+  Step 5 tells the operator to *"REMOVE the old knowledge files (stale handoff, old
+  specs/architecture/runbook/protocol/README, old CLAUDE.md), then upload everything in
+  /tmp/claude-project-export/"*. That does **not** assume the unscoped reading — it names no
+  namespace at all, and errs the other way: it is a hand-written enumeration of document *kinds*
+  standing in for *all of the manifest set*, so an operator following it literally performs a
+  partial remove, which is the very thing check 3 exists to catch. Different class from this row's
+  (a short enumeration, not an unscoped rule), a different unit of the file, and outside the scope
+  this row states. Filed as **BL-165**, which is its executor; not closed here and not folded into
+  this row.
+
+**What this close does not touch.** BL-143's Done-when — who owns the boundary and on what trigger —
+is untouched and still open, exactly as this row's *Collides with* said. BL-161's second branch is
+untouched.]`
 
 ---
 
@@ -10721,5 +10779,64 @@ says nothing about whether it is STABLE."* The stability-gates-the-mutation para
 packet's §8, added to this row on 2026-08-17 at the arbiter's direction — as first filed, the row
 held the two properties apart and never said that one gates the other, and the measurement behind
 that claim appeared in the packet alone.`
+
+---
+
+### BL-165 — `bl-002` Step 5 states the remove half as a hand enumeration of document kinds, not as the manifest set (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *the manifest set is the scope of remove-all, and `claude/` is outside it*
+**Size:** S · **Priority:** medium
+**Section:** process / project knowledge (`prompts/bl-002-refresh-project-knowledge.md`)
+
+Filed 2026-08-18 at the ds cycle's export boundary, stage A, by BL-163's required sweep — which
+found it and could not close it, the two being different classes in different units of the file.
+Established at agents `7e8602d`, the commit that closed BL-163 and did not touch this text.
+
+**What is wrong.** Step 5 (`:102–113`) prints the operator's instructions, and its remove half reads:
+*"upload instructions: in the Claude.ai project, REMOVE the old knowledge files (stale handoff, old
+specs/architecture/runbook/protocol/README, old CLAUDE.md), then upload everything in
+/tmp/claude-project-export/"*. The standing rule is that the remove is **all of the manifest set** —
+`CLAUDE.md` §Definition of done, *"The manifest set is the scope of *remove-all*, and `claude/` is
+outside it"*, and the export rule above it, *"Export is remove-all-upload-all against the full
+manifest set, never a hash-driven diff"*. Step 5 states neither. It names a parenthetical list of
+document kinds — six of them, against a 25-row table — and an operator who follows it literally
+removes those and leaves the rest, which is a partial remove: precisely the state post-upload check
+3 exists to detect, produced by the procedure's own instruction.
+
+**Why it is not BL-163's defect.** BL-163's two checks were **unscoped** — they said *the store* and
+meant one namespace or the other. This says **too little**: it names no namespace, and it
+under-reaches rather than over-reaches, so the scoping ruling does not repair it. It is the
+enumeration class instead — `CLAUDE.md` §Learning — m6-cloudcost, *"A wiring list's clause can be
+right while its enumeration is short — repair it as an incomplete enumeration, not as a missing
+clause"* — with the twist that here there is **no clause at all**, only the enumeration, so the
+repair is to state the rule and let the export-name column be the list.
+
+**NOT KNOWN, and this row's first step.** Whether the enumeration was ever complete, and against
+which boundary. The six kinds named look like a 2026-06-era export set rather than the current 25
+rows, but nothing in the file dates them, and the sweep that found this did not chase the history.
+Establish that before rewriting, so the fix records what it is replacing.
+
+**Also open, and the reason this is S and not XS.** Whether Step 5 should state the remove as a rule
+(*"remove every document whose name appears in the manifest's export-name column, and nothing
+else"*) or point at `CLAUDE.md` §Definition of done and carry no restatement. The repo's standing
+preference is the pointer — two surfaces disagree at the next amendment — but Step 5 is read by a
+human performing an irreversible deletion in a UI, which is the one audience an indirection costs
+something. Decide it, do not default it.
+
+**Done when:** Step 5's remove half states the manifest set as its scope, by rule or by pointer with
+the choice recorded; the `claude/` namespace's exclusion from *remove-all* is legible to the
+operator at the point of the deletion; and the history question above is answered or recorded as
+unanswerable.
+
+**Costs:** S. One paragraph, plus the small history check.
+
+**Collides with:** nothing. BL-163 is CLOSED and this does not reopen it. It does not touch BL-143's
+open Done-when (ownership and trigger), and it does not touch BL-161.
+
+`Source: BL-163's Done-when sweep, run 2026-08-18 at the ds export boundary stage A over the whole
+of `prompts/bl-002-refresh-project-knowledge.md`; the sweep's population, its five examined sites and
+its four clears are recorded in BL-163's `[CLOSED 2026-08-18 …]` annotation. Filed as its own row
+rather than inside that annotation because a finding recorded inside a row the same commit closes has
+a record and no executor — `CLAUDE.md` §Learning — BL-007, the deferred-finding rule's closing
+clause.`
 
 ---

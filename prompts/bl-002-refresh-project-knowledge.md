@@ -147,19 +147,28 @@ handed back.
 
 Three checks, and the third is the one that catches an incremental upload:
 
-1. **Count and names.** The store's document set equals the manifest's export-name column
-   exactly — set comparison in both directions, not a count. A name in one and not the other is
-   the finding.
+1. **Count and names, over the manifest namespace.** The store's document set — every store
+   path **not** under `claude/` — equals the manifest's export-name column exactly: set
+   comparison in both directions, not a count. A name in one and not the other is the finding.
+   A `claude/`-namespaced document carries no row and is out of the export set **by
+   construction**: it is not a check-1 finding, and check 3 is where it is accounted for.
 2. **Content, on the movers only.** For each row re-pinned this boundary, read the uploaded doc
    and confirm it carries the new content rather than trusting the name. A stale file uploaded
    under a current name passes every other check here.
-3. **No document predates the upload window.** A genuine remove-all-upload-all leaves every
-   manifest doc created inside one narrow window. A doc with an older timestamp survived the
-   remove — either it is a deliberate non-manifest document (agent-written docs land under
-   `claude/`), in which case the manifest should say such documents may coexist and are out of
-   scope, or the upload was incremental and the store now under-describes itself.
+3. **No manifest-namespace document predates the upload window; `claude/` is enumerated, not
+   judged.** A genuine remove-all-upload-all — *remove-all* reading *all of the manifest set*,
+   never *everything in the store* — leaves every manifest doc created inside one narrow window.
+   A doc with an older timestamp survived the remove, and the namespace decides what that means.
+   **Under `claude/`**: an agent-written document, out of the export set **by construction** and
+   never removed by this procedure — enumerate those and move on. No condition on the manifest is
+   owed, and it is not a check-3 exception either. **Outside `claude/`**: the upload was
+   incremental and the store now under-describes itself, which is the finding.
    Same-window-among-themselves is not sufficient: a partial upload of four files shares a
    window too. The discriminator is that *nothing is older*.
+
+   The namespace boundary between checks 1 and 3 is **BL-143**'s ruling of 2026-08-16
+   (`docs/backlog-2026-06.md`); its standing form is `CLAUDE.md` §Definition of done. Neither
+   check treats the other's population as a finding.
 
 `Source: m3-cloudcost export boundary, 2026-08-05 — the store-side check that found the
 manifest describing 25 documents while the store held 26.`

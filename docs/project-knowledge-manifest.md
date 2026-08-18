@@ -32,10 +32,10 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `fd03bf3` | 2026-08-16 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `43e63e0` | 2026-08-17 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fd03bf3` | 2026-08-16 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `6436b25` | 2026-08-18 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -46,8 +46,8 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `66a9ca5` | 2026-08-12 |
-| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `b400b12` | 2026-08-11 |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `8eb960d` | 2026-08-18 |
+| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `9ba6c8c` | 2026-08-17 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
@@ -815,3 +815,12 @@ the namespace divides their populations, and remove-all-upload-all is rehabilita
 manifest set. Neither deviation block is amended — the 2026-08-12 block set the condition, the
 2026-08-14 block replaced it, both are point-in-time records, and their reason was right at the
 scope either could establish. Standing form: `CLAUDE.md` §Definition of done.
+
+`[2026-08-18 — the four Repo push state paragraphs above are point-in-time
+claims and are not maintained. Every commit they name is now on its repo's
+origin/main, so all four read false, and two of them went false the same day
+they were written with nothing anywhere noting the change. They are left as
+written because they are a record rather than an instruction. Push state is
+answerable at any later moment by `git branch -r --contains <sha>`, which is
+what a reader should use. No boundary record written from here on asserts push
+state. The class is BL-151's; this note is not a new filing.]`

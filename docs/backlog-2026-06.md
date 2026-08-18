@@ -9034,6 +9034,21 @@ list is empty.
   §Learning — m6-cloudcost rules is repaired by extending the enumeration rather than by adding a
   clause. Landing it as drafted would have committed a false claim about the backlog into the
   backlog.]`
+  `[Corrected by append 2026-08-18, not by rewrite — the entry above stands as landed at
+  `6bb81ef` and is the record of what was claimed. **"122 of 181" counted `### BL-` HEADING
+  OCCURRENCES, not distinct rows, and overstates the no-status population at both ends of the
+  ratio.** Eighteen ids carry a second heading, each an appended `— DONE <date>` closure section
+  on an already-counted row, so a row with no status in its original heading and a closure
+  section below is counted once in the numerator and twice in the denominator. Carry the
+  commands rather than the pair, this being an entry about counts: headings from
+  `grep -c '^### BL-' docs/backlog-2026-06.md`; distinct rows from
+  `grep -oE '^### BL-[0-9]+' docs/backlog-2026-06.md | sort -u | wc -l`; and the no-status
+  population only from a derivation that merges every section a row id owns and asks whether
+  ANY carries a status by any of the four forms — a per-heading pass cannot answer it. At agents
+  `6bb81ef` those return 181, 163, and **103 of 163**. The numerator falls by 19 rather than 18
+  because `### BL-050 + BL-055 + BL-056 — DONE 2026-07-25` is one heading resolving three rows.
+  The four per-form figures above are counts of occurrences of a form, never per-row claims, and
+  are unaffected.]`
 
 - `2026-08-17` — **The packet-written-as-the-ticket-runs rule presumes a session that commits, and
   has now been missed twice by sessions that do not.** Both the 2026-08-17 scout pass and the ds
@@ -9067,6 +9082,53 @@ list is empty.
   The two sets are not the same: **11** cases are guarded and outside `all` — `payslip`, `eduloka`,
   `eval`, `m12`, `news`, and the six `uc_api_agent_t*` arms — so even a full `all` run is not a
   full sweep. Re-derive both at HEAD rather than carrying these figures.
+
+- `2026-08-17` — **The export boundary ships one half of a byte-identical pair, and the asymmetry
+  is invisible to every instrument.** `docs/methodology/triad-loop.md` in the harness carries a
+  project-knowledge manifest row; the agents copy `docs/triad-loop.md` does not, though the two
+  are byte-identical and are maintained as a pair. Check 8 therefore reports staleness for one and
+  is silent about the other, so a divergence landing only in the agents copy raises no WARN
+  anywhere. Nothing syncs the pair and `drift_check` has no byte-identity check between mirrors: a
+  hand-run `diff -q` is the only instrument covering the class, so the covering instrument is one
+  a session must remember to run. Observed at the ds open, where both files were edited together
+  and the post-commit `--strict` raised a WARN for the harness path only. **What the boundary does
+  carry, stated so this entry is not read as stronger than it is:** the manifest's own note beside
+  that row (`docs/project-knowledge-manifest.md:53-55`) names the mirror, declares the harness
+  copy canonical, and says to edit that one; and a mirror-pair `diff -q` is recorded as having
+  been run at past export boundaries. So the gap is not that the pair is undocumented — it is that
+  the documented instrument is an **operator convention rather than a check**, and it lives beside
+  a manifest row the agents copy does not have, so the reader most likely to diverge the pair is
+  the one least likely to be reading the manifest. **Not the same as** the manifest's coverage
+  question generally: this is one document existing twice with one row, not a document missing a
+  row. **No fix proposed.** Verify the manifest rows, the note, and the pair's hashes at HEAD.
+
+- `2026-08-17` — **`sprint.sh all` is not all, and nothing says so.** The script guards on 29 case
+  names; `all` dispatches 18. Eleven guarded arms — `payslip` among them — are unreachable through
+  the aggregate mode and can only be run by name. A reader who runs `./scripts/sprint.sh`
+  reasonably believes they have run the suite, and the run reports no shortfall: the BL-077 exit
+  contract tallies the arms that ran, not the arms that exist, so a complete-looking green covers
+  a set the operator did not choose and cannot see. This is the **Silent-wrong-answer** shape
+  applied to coverage rather than to a value. **Distinct from the off-territory-gate entry** above:
+  that one is a gate too expensive to run, this one is a gate whose own definition of "everything"
+  is short. **No fix proposed**, and specifically it was NOT established whether any of the eleven
+  is excluded deliberately. Verify both arm sets at HEAD; do not carry the figures from this text.
+
+- `2026-08-17` — **The scrub class does not reach a session transcript, which is the second channel
+  it has missed.** A session instructed to report a variable's assignment site without its value
+  printed four unrelated credentials from neighbouring lines of the same file, one of them live and
+  uncommented. The redaction it built matched variable NAMES against a sensitive-word list — an
+  allowlist, where the constraint required deny-by-default — so the one whose name carried no such
+  word passed through. Nothing reached a committed file, a scratchpad file or a packet; each was
+  verified with a positive control, and the exposure is confined to the session transcript. **The
+  redactor is not the finding.** The U2 class binds the fixtures, the tests, the packet and the
+  prose describing them; a session transcript is none of those, and it is a channel that leaves the
+  machine. That is the same gap as the `2026-08-14` entry above, where the check was repo-scoped
+  and the packet was the unwatched channel — **second instance, different channel, and the
+  recurrence is the point.** A second observation, recorded because it generalises: an instruction
+  that forbids emitting a class of content without supplying the mechanism leaves the executor to
+  invent one, and an invented filter defaults to an allowlist. The deny-by-default form here was a
+  read that structurally cannot capture a value. **No fix proposed.** **This entry names no
+  variable, no file under any secrets directory, and no value; do not add one.**
 
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
@@ -9258,6 +9320,18 @@ appended list is empty.
   and an unowned finding is not left to a decision that may not reach it. Verified at agents
   `df2600f`: `usage.rs:146-154`, seven entries; `RunList.tsx:126-141`, eleven. No fix is proposed
   here.
+
+- `2026-08-17` — **A row's status can sit nineteen lines below its heading, and two derivations
+  written against the metadata block missed it.** BL-001 carries a `**Status:**` line inside its
+  own row, well past the `**Size:** · **Priority:**` block that both a scout pass and a review
+  prompt read as the row's whole metadata. Both concluded the row carried no status; both were
+  wrong, and the second nearly committed the claim into this file. The finding is not the wrong
+  conclusion — it is that **the row format admits the field at an unbounded offset**, so any
+  derivation over this file must scan the whole row, and no derivation reading a fixed prefix can
+  be trusted. This is the mechanical half of the no-uniform-status-field entry on BL-150; it is
+  filed here because what it constrains is any program that parses this file, and the ds cycle's
+  **t0** is the first such program. **No fix proposed** beyond the constraint on derivations.
+  Verify BL-001's row bounds and its status line at HEAD.
 
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.

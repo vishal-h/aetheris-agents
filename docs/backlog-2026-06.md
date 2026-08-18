@@ -9333,6 +9333,42 @@ appended list is empty.
   **t0** is the first such program. **No fix proposed** beyond the constraint on derivations.
   Verify BL-001's row bounds and its status line at HEAD.
 
+- `2026-08-18` — **THREE of the four, not two: the `2026-08-16` entry above understates its own
+  recurrence.** That entry's *"Two of the four were written the same day they went false, at this
+  boundary's own later passes"* is the one clause of it that does not survive measurement. All
+  **three** of the 2026-08-16 passes were written and went false on 2026-08-16, and they went false
+  in a **single push**. Derived, not eyeballed — the paragraph-authoring commit by
+  `git log -S` over the manifest, and the first push containing it by walking this clone's
+  `origin/main` reflog oldest-first for the earliest entry that contains the commit:
+
+  | paragraph | written by | committed | first push containing it |
+  |---|---|---|---|
+  | `:632–637` | `a2df7b5` | 2026-08-16 17:14:36 +0530 | `9741c4e` @ 2026-08-16 18:31:59 +0530 |
+  | `:732–737` | `f32516b` | 2026-08-16 17:39:14 +0530 | `9741c4e` @ 2026-08-16 18:31:59 +0530 |
+  | `:802–806` | `9741c4e` | 2026-08-16 18:11:12 +0530 | `9741c4e` @ 2026-08-16 18:31:59 +0530 |
+
+  The fourth, `:347–352`, is **UNKNOWN and not excluded**: it was written 2026-08-05 and this
+  clone's `origin/main` reflog does not reach back that far — its oldest entry is
+  `97c61a0 @ 2026-08-14 10:11:16`, so every pre-`2026-08-14` commit reads as "first push
+  2026-08-14" and that reading is an artefact of the reflog's depth, not a fact about the push. So
+  the true figure is *three, and possibly four*, and it is **not** the two the entry records.
+
+  **What this changes and what it does not.** The entry's finding is *strengthened*, not
+  weakened — the decay is faster and more uniform than recorded, and all three claims died to one
+  push nobody had reason to relate to the file. What it corrects is a **count**, and the count is
+  the entry's evidence of how the mechanism behaves. Recorded as a correction here rather than by
+  editing the `2026-08-16` entry, because that entry is a dated point-in-time record with a
+  `Verified at agents 9741c4e` stamp, and the two do different work.
+
+  **A second thing, and it is about the instrument.** The `2026-08-16` entry proposes leaving push
+  state to `git branch -r --contains <hash>`, and the manifest's `2026-08-18` note repeats it. That
+  command answers *is it public now* and cannot answer *when did it become public*, which is the
+  question the "same day" clause is about. The only local evidence for timing is the `origin/main`
+  reflog, which is **machine-local, depth-limited and not part of either repository** — so a timing
+  claim of this kind is not reproducible from a fresh clone at any commit. Anyone re-deriving the
+  figure above will need this clone, or a different instrument. **Not decided here.** Verified at
+  agents `e1c7386`; the manifest paragraphs are quoted at their line numbers as of that commit.
+
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.
 `python3 -m` puts the repo root on `sys.path` (as `''`), and `email/` is the only top-level

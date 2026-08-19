@@ -79,8 +79,11 @@ cycle is run, and process changes get no round of their own.
 - **A Project is addressed owner-qualified, `--owner vishal-h`. The constraint
   that forced `@me` is discharged.** It arose from two authenticated `gh` tokens
   with disjoint gaps — one carrying `project` without `read:org`, the other the
-  reverse — so no single token could both address the owner and read the org. The
-  token was re-minted on 2026-08-19 to carry both, and now holds `gist`,
+  reverse — so no single token could both address the owner and read the org.
+  What resolved it was not a new personal access token. `GITHUB_TOKEN` was
+  removed from the shell profile, so `gh` stopped being shadowed by it and fell
+  back to the keyring OAuth token; that token was then refreshed additively —
+  `gh auth refresh -h github.com -s project`, 2026-08-19 — and now holds `gist`,
   `project`, `read:org`, `repo`, `workflow`. Recorded rather than left to resolve:
   `gh project list --owner vishal-h` returns rows, where it previously returned
   `unknown owner type` and then, after a first partial re-mint, a `read:project`
@@ -117,12 +120,27 @@ cycle is run, and process changes get no round of their own.
    ticket runs and not reconstructed at the close; "not consulted" is a valid and
    expected value, and a ticket that omits the line leaves the criterion
    unanswerable rather than answered no.
-6. **Trial verdict B — did the mirror drift, and did anything catch it?** At the
-   close, diff each issue body against its ticket section at this document's
-   commit. Any divergence fails it. No executable in either repo invokes `gh` —
-   no script, test, CI workflow or agent file; the hits that exist are prose and
-   operator instructions — so this sync is by hand throughout, and a by-hand
-   mirror with no keeper is methodology §9's own anti-pattern.
+6. **Trial verdict B — did the mirror drift, and did anything catch it?** At
+   the close, compare each issue body against its ticket section **at HEAD**,
+   with one exclusion on each side: the body's trailing backlink block, and the
+   section's `**Issue.**` field. Both are the join between this document and
+   the tracker rather than ticket content, and excluding them symmetrically is
+   what makes the comparison answerable in both directions — an issue edited
+   away from the document fails it, and the document edited without re-syncing
+   the issue fails it too. Any other divergence fails it.
+   `[Defined this way at the container's landing, 2026-08-19, replacing "the
+   section at this document's commit". That earlier form was answerable only
+   against the commit each backlink pins, so it detects an issue-side edit and
+   is structurally blind to the document moving ahead — which is the drift
+   methodology §8's re-sync rule exists for, and the likelier of the two. The
+   five bodies were cut before the `**Issue.**` fields existed and cannot carry
+   their own numbers, so the exclusion is also what lets a pre-E1 body and a
+   post-E1 section compare clean without re-syncing five issues to say nothing
+   new.]`
+   No executable in either repo invokes `gh` — no script, test, CI workflow or
+   agent file; the hits that exist are prose and operator instructions — so
+   this sync is by hand throughout, and a by-hand mirror with no keeper is
+   methodology §9's own anti-pattern.
 7. **The R23 verdict.** Count findings that landed on BL-150/BL-151 against
    findings that became issues. A finding that became an issue only because the
    tooling had no other shape for it fails this criterion.

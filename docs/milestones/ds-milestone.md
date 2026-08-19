@@ -182,12 +182,55 @@ rule. Cited-means-read; the invariant held and the pointer did not.]`
 
 **Issue.** `vishal-h/aetheris-agents#75`
 
-**Scope.** Every `### BL-` row carries an explicit status field in its metadata
-block. The existing expressions — a heading suffix, an inline bold on the Priority
-line, and nothing at all — are normalised into it. Rows whose status cannot be
-derived unambiguously are adjudicated by the arbiter, never guessed. What exists
-after this ticket: a machine-readable predicate for *terminal*, which t1b
-requires and which does not exist today.
+**Scope.** Every `### BL-` row carries an explicit status field at a fixed
+position — its own line, immediately after the row's title heading. Rows whose
+status cannot be derived unambiguously are adjudicated by the arbiter, never
+guessed. What exists after this ticket: a machine-readable predicate for
+*terminal*, which t1b requires and which does not exist today.
+
+**The status expressions this file already has — five, and the enumeration is
+what was short.** An earlier draft of this section named three ("a heading
+suffix, an inline bold on the Priority line, and nothing at all"). The clause was
+right and its enumeration short, which agents `CLAUDE.md` §Learning —
+m6-cloudcost rules is repaired **by extending the enumeration, not by adding a
+second clause**. Four are in-row and the fifth is not in a row at all:
+
+1. a status word in the `###` heading, after the em dash;
+2. a standalone `**Status:**` line in the body, at an unbounded offset from the
+   heading (BL-151, `2026-08-17` — BL-001's sits nineteen lines below it);
+3. a bold `**DONE …**` / `**CLOSED …**` body paragraph;
+4. a status bolded onto the `**Size:** · **Priority:**` metadata line;
+5. the **`## Suggested order` ✔ table** — a second *surface*, not a fifth in-row
+   form. BL-145 filed it and the arbiter **ruled it retired on 2026-08-12**:
+   the row bodies are authoritative.
+
+And most rows express status none of these ways at all. Absence is the sixth
+thing a reader meets and the reason two derivations over this file return a
+bracket rather than a number.
+
+**ADD, never MOVE.** No legacy status expression is removed, reworded or
+relocated by this ticket. The field is the **declaration**; the body keeps the
+**record**. The ground is that the two do different work: a normalisation that
+rewrote the bodies would destroy the dated prose that says *how* a row closed, in
+the same commit that claims only to have made the file queryable — and a reader
+could not afterwards tell a lossless move from a lossy one. That is also why the
+field can be coarse. It answers *is this row terminal*, and nothing else; the body
+answers everything else and is not asked to.
+
+**The vocabulary, closed.** `OPEN`, `DONE`, `UNRULED`. **`DONE` is the only
+terminal value.** `CLOSED` merges into `DONE` — the file uses both for one state
+and a two-word vocabulary for one state is the trap this ticket exists to remove.
+`folded` maps to `DONE`. Absence of any legacy expression means `OPEN`.
+**`UNRULED` is for a row the arbiter has not settled, and it is NOT terminal** —
+a row with an open remainder must not archive at t1b, which is the whole reason
+the value exists rather than being rounded to either neighbour.
+**`OPEN` is adopted with zero precedent in this file**: at the commit this
+section is written against there is no `OPEN` in any heading and no
+`**Status:** Open` anywhere, from
+`grep -cE '^### BL-[^—]*— *OPEN' docs/backlog-2026-06.md` and
+`grep -cE '^\*\*Status:\*\* *Open' docs/backlog-2026-06.md`. It is a new word,
+and it is named as new so a later reader does not go looking for the convention
+it came from.
 
 **Why it is its own ticket.** t1b is specified as a purely mechanical
 open-versus-archive split. Two derivations over the current file bracket the open
@@ -201,6 +244,9 @@ label changes what it refers to.
 
 **Contract refs.** `hc-consolidation.md` R23, R26. Agents `CLAUDE.md` §Learning —
 BL-152, the rule that a count in prose carries the command that reproduces it.
+Agents `CLAUDE.md` §Learning — m6-cloudcost, the incomplete-enumeration rule this
+section's own first paragraph is an instance of. BL-145's ruling of 2026-08-12,
+BL-146, BL-150 and BL-151 for the parser constraints.
 
 **Touches.** `docs/backlog-2026-06.md`. Plus whatever parses that file — RESOLVE
 before editing, by kind of change and not by file class: scripts, tests, checks,
@@ -211,9 +257,53 @@ the row-heading shape. An unlisted toucher is the recurring defect here.
 of a row's merits. That is the triage pass and it runs after t1b. A row that moves
 in the same pass that re-judges it cannot later be told apart.
 
-**Done-check.** A committed script that (a) fails if any row lacks a status
-field, and (b) prints the open set as a single number with the command that
-reproduces it. The bracket collapsing to a number IS the done-check.
+**The ✔ table gets a retirement marker, not a removal.** This ticket adds one line
+at the head of `## Suggested order` pointing at BL-145's ruling and naming the
+row `**Status:**` field as authoritative. It does not touch the table. **Retiring
+the table is BL-145's execution and stays BL-145's** — that row also owes a
+decision about the sequencing opinion the table carries and the bodies do not,
+and a ticket that deleted the table here would take that decision by default
+while claiming to have taken none.
+
+**Done-check.** A **test under `tests/`**, not a standalone script. It (a) fails
+if any row id lacks the field or carries it more than once, (b) fails on a value
+outside the vocabulary rather than passing it silently, and (c) prints the open
+set as a single number with the command that reproduces it — derived by the same
+parser the test uses, never a hardcoded literal (BL-164's class). The bracket
+collapsing to a number IS the done-check. `[The wording here was "a committed
+script" until this commit — a third form beside this section's other two, closed
+in favour of the test. The ground is BL-150's `2026-08-17` off-territory-gate
+entry: a new standalone gate is one more thing *every existing gate runs at
+ticket boundaries* binds and that nothing routinely runs, whereas a test under
+`tests/` is inside the whole-suite gate — `python3 -m pytest -q -m "not
+integration and not dormant"` from the repo root — for free, and is not
+`integration` by `pytest.ini`'s own criterion, since it does its work in a fresh
+clone at this commit, offline, with no sibling repo present.]`
+
+**What this commit costs, stated rather than discovered later.** Inserting a line
+into every row shifts every absolute line-number citation **into**
+`docs/backlog-2026-06.md` below the first insertion — which is all of them. Two
+populations, and only one is mechanically derivable:
+
+- **External**, filename-anchored: **31** citation tokens on **30** lines across
+  **17** files, from
+  `grep -rInE 'backlog-2026-06\.md:[0-9]+' --include=*.md --include=*.py --include=*.sh --include=*.exs --include=*.ex --include=*.rs --include=*.ts --include=*.tsx . ../aetheris | grep -v '^docs/backlog-2026-06\.md:'`
+  (tokens from `| grep -oE 'backlog-2026-06\.md:[0-9]+' | wc -l`, files from
+  `| sed -E 's/:.*//' | sort -u | wc -l`), derived at agents `1deb832`.
+- **In-file, and NOT derivable by any command.** The file carries **169** bare
+  `` `:NNN` `` anchors (`` grep -oE '`:[0-9]+' docs/backlog-2026-06.md | wc -l ``)
+  plus **2** filename-qualified self-references, but a bare anchor binds to
+  whichever file was last named, which is frequently **not** this one — of 448
+  `:NNN`-shaped tokens in the file most target other sources. **154** bare
+  anchors sit on lines naming no other file, which is an upper bound on the
+  self-anchors and a loose one, since a continuation's antecedent can be on a
+  previous line. Stated as a bound rather than a count, per agents `CLAUDE.md`
+  §Learning — BL-007, *a count is a claim about a population*.
+
+**t1b's relocation will invalidate the path-based citations too**, so the cost is
+taken **once** here rather than twice: this ticket does not re-pin anything, and
+the re-pinning belongs to whichever ticket moves the file. Recorded so the next
+reader knows the staleness is expected rather than a regression.
 
 ### t1a — the use-case registry
 

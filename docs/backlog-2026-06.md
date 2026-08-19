@@ -13,6 +13,7 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 ---
 
 ### BL-135 — `run_helpers_timeout_test.exs:84` is timing-flaky: a 200 ms feeder against a 300 ms bound (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/test/aetheris/cli/commands/run_helpers_timeout_test.exs`)
 
 Filed 2026-08-09 from **hc-d r3's** ticket-boundary gate run — off-territory, the way the gate rule
@@ -99,6 +100,7 @@ observation; the non-reproduction is recorded above as part of the evidence, not
 ## Housekeeping (do first, near-zero effort)
 
 ### BL-001 — Capture clean drift baseline (#42)
+**Status:** DONE
 **Size:** S · **Priority:** now
 
 Every drift_check output recorded so far predates at least one parser fix
@@ -124,6 +126,7 @@ per review finding 1 (`docs/reviews/bl-001-review.md`).
 ---
 
 ### BL-015 — Promote nine observed payload_fields to specs §6 (#66)
+**Status:** DONE
 **Size:** S · **Priority:** now (before BL-002)
 
 > Numbered BL-015, not BL-010 as the review draft suggested — BL-010
@@ -172,6 +175,7 @@ stale and wants re-checking when BL-003 is scoped.)
 ---
 
 ### BL-002 — Refresh Claude project knowledge files (all three scopes) (#43)
+**Status:** DONE
 **Size:** S · **Priority:** now
 
 The Claude.ai project still carries the 2026-05-31 snapshot (superseded
@@ -229,6 +233,7 @@ the human step; export file list + hashes delivered in the packet.
 ## Harness (aetheris/)
 
 ### BL-003 — Startup sweep for orphaned `running` runs (watchdog, cure side) (#44)
+**Status:** DONE
 **Size:** M · **Priority:** high
 
 Rig's "stalled?" marker (commit `0eddf20`) is the *detector*; the DB still
@@ -314,6 +319,7 @@ per the approved promotion. Implementation notes + both censuses in
 ---
 
 ### BL-004 — Per-run token totals in RunSummary (#45)
+**Status:** DONE
 **Size:** S · **Priority:** low
 
 Gap A residual ("Rig-side addressed" note in current-state doc): cost
@@ -347,6 +353,7 @@ surface (review finding 3, `docs/reviews/bl-029-review.md`).
 ---
 
 ### BL-016 — Fix standing `payslip_orchestrator` test failure (#67)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 `test/aetheris/agents_test.exs:22` ("payslip_orchestrator.exs evaluates to a
@@ -391,6 +398,7 @@ as-built parallel design, not a current-state claim.
 ---
 
 ### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X") (#TBD)
+**Status:** OPEN
 **Size:** M · **Priority:** low
 
 BL-007 D4, deferred at that milestone with this entry as the record (README
@@ -424,6 +432,7 @@ provenance shapes, and has an e2e covering the null-`fork_step` case.
 ---
 
 ### BL-025 — Verify: effect classes / record-and-serve for effectful tools (#TBD)
+**Status:** DONE
 **Size:** M · **Priority:** medium — **DONE 2026-07-23**
 
 **Landed.** `Aetheris.Execution.EffectClass` declares `:pure` / `:contained` /
@@ -486,6 +495,7 @@ opt-in; `http_call` is covered by a test that asserts no egress during verify.
 ---
 
 ### BL-026 — Verify: divergence report names no first diverging event (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low — **PARKED ON TRIGGER**
 
 **This row activates on its trigger, and not before. Trigger: the first `verify`
@@ -506,6 +516,7 @@ and the trigger condition above has actually occurred.
 ---
 
 ### BL-027 — Verify: `KeyError` crash on paired in-process tools (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium — **DONE 2026-07-23 (folded into BL-025)**
 
 **Closed.** `Verifier.verify_step/2` now reads the recorded result through the same
@@ -598,6 +609,7 @@ trigger's wording stands as ratified; its reachability is wider than the row's
 ---
 
 ### BL-028 — Fork reconstruction drops `"result"`-keyed tool output (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 `event_to_messages(:tool_result)` reads `Map.get(payload, "output", "")`
@@ -628,6 +640,7 @@ annotated same round (`16de968`), not reopened. Review:
 ---
 
 ### BL-030 — Early-return `fork_run` (spawn without blocking to completion) (#TBD)
+**Status:** DONE
 **Size:** M · **Priority:** medium
 
 `mix aetheris fork` blocks until the forked run finishes: the CLI reveals the new
@@ -701,6 +714,7 @@ Carried out of this ticket as their own rows: **BL-062**, **BL-064**, **BL-065**
 ---
 
 ### BL-031 — `await_run` has no timeout or cap (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 `await_run` (`cli/commands/run_helpers.ex`) is a poll-forever loop —
@@ -730,6 +744,7 @@ event deserialization (compile-time type map) and filed BL-040. Review:
 ---
 
 ### BL-032 — WAL connection-lifecycle follow-ups (#TBD)
+**Status:** OPEN
 **Size:** M · **Priority:** low
 
 BL-007 t4 added `PRAGMA busy_timeout=5000` (load-bearing), `:busy` handling in
@@ -762,6 +777,7 @@ ratified as the permanent design and documented as such.
 ---
 
 ### BL-033 — Remove `:fork` from the `RunConfig` mode union (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low
 
 `@type mode :: :record | :replay | :verify | :explore | :fork`
@@ -788,6 +804,7 @@ recorded on this entry.
 ---
 
 ### BL-034 — `prompts/bl-002-refresh-project-knowledge.md` has a self-staling step order (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 The BL-002 prompt is **internally contradictory**, and has been since it was written.
@@ -862,6 +879,7 @@ manifest-tracked, so the fix stales nothing; this row's own edit stales
 ## Rig (aetheris-agents/rig/)
 
 ### BL-005 — TrajectoryView fallback for live runs (#46)
+**Status:** DONE
 **Size:** S–M · **Priority:** medium
 
 `trajectory.json` is written atomically at run end (`server.ex:673,944`
@@ -900,6 +918,7 @@ hidden in reconstructed mode. No new Tauri command (specs §4 unchanged).
 ---
 
 ### BL-006 — Document `stop_reason` when first observed (#47)
+**Status:** OPEN
 **Size:** S · **Priority:** tracked (event-triggered, not scheduled)
 
 Confirmed absent from all current DB events (count = 0). The trigger is
@@ -914,6 +933,7 @@ exists for the general case; this ticket just records the trigger.
 ---
 
 ### BL-017 — Resolve `react-hooks/set-state-in-effect` lint failures (#68)
+**Status:** DONE
 **Size:** S–M · **Priority:** after BL-016 (standing-red gate)
 
 `bun run lint` (`eslint .`) is red on `main`: **31** `react-hooks/set-state-in-effect`
@@ -955,6 +975,7 @@ without a net; revisit when a test runner exists. Lint went 31 → 3. The residu
 ---
 
 ### BL-018 — Resolve `react-refresh/only-export-components` lint failures (#69)
+**Status:** DONE
 **Size:** S · **Priority:** immediately after BL-017 (joint lint-green endpoint)
 
 The residual behind BL-017's rule disable: **3** `react-refresh/only-export-components`
@@ -991,6 +1012,7 @@ here so the carry stays honest.
 ---
 
 ### BL-019 — Harness runbook: sweep section + mirror convention (#70)
+**Status:** DONE
 **Size:** S · **Priority:** now (before BL-007 planning)
 
 BL-003's operational docs single-homed on the Rig side (`docs/rig/runbook.md`,
@@ -1048,6 +1070,7 @@ runbook enters project knowledge for the first time.
 ---
 
 ### BL-020 — Update HTTP-stack dependencies carrying security advisories (#71)
+**Status:** DONE
 **Size:** S–M · **Priority:** medium
 
 Surfaced by the clean-clone smoke test 2026-07-17. `mix deps.get` on a fresh clone
@@ -1174,6 +1197,7 @@ ticket the day it is found. Adopted knowingly with that tradeoff on record.
 ---
 
 ### BL-021 — Adapter socket-timeout terminality: test all four adapters (#72)
+**Status:** DONE
 **Size:** S · **Priority:** next (runnable standalone, harness-side)
 
 > **Re-scoped 2026-07-17 by its own verify step, before any code was changed.** As
@@ -1231,6 +1255,7 @@ became BL-023.
 ---
 
 ### BL-022 — Refresh harness architecture.md + manifest-track it (#73)
+**Status:** DONE
 **Size:** S–M · **Priority:** before BL-007 milestone docs (input to fork planning)
 
 `docs/aetheris/architecture.md` was last refreshed around m13 and predates the
@@ -1343,6 +1368,7 @@ reviewer-side `Cited-means-read` instance appended to CLAUDE.md. See
 ---
 
 ### BL-023 — Retry parity for hosted-provider adapters: 429 handling (#74)
+**Status:** OPEN
 **Size:** S · **Priority:** answered-and-parked (event-triggered, not scheduled)
 
 Surfaced by BL-021's verify step, which read every adapter's error path and found
@@ -1399,6 +1425,7 @@ anyone's attention.
 ---
 
 ### BL-029 — Rig reads the run label from the wrong place, for every run (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 Both Rig harness queries read the run label out of `config_json`:
@@ -1445,6 +1472,7 @@ restoring it is part of what BL-029 ships, not a separate fix (review finding 9)
 ---
 
 ### BL-035 — Extract `formatCost` / `formatTokens` to `src/lib/format.ts` (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low
 
 `rig/CLAUDE.md` ("React / Frontend patterns") sets the rule: these helpers are
@@ -1468,6 +1496,7 @@ them; no local copies remain; `bunx tsc -b && bun run lint` green.
 ---
 
 ### BL-036 — drift_check: field-level checking for specs §4 command structs (#TBD)
+**Status:** DONE
 **Size:** M · **Priority:** low
 
 `check_tauri_commands` (`scripts/drift_check.py:194-238`) compares command **names**
@@ -1540,6 +1569,7 @@ Review: `docs/reviews/bl-041b-bl-036-review.md`.
 ---
 
 ### BL-053 — DONE 2026-07-25 — verify makes no filesystem-hash claim (#TBD)
+**Status:** DONE
 **Size:** S · **Section:** Harness (aetheris/) · Closes the **fs_hash strand of BL-048**
 
 Landed at harness `915d582`, with the §3 contract edit ratified at `b4857eb` (r1). Diagnosis:
@@ -1605,6 +1635,7 @@ docs/reviews/bl-053-review.md (pending).`
 ---
 
 ### BL-054 — The twelfth `requires_worker` failure is a load-sensitive flake with no stable identity (#TBD)
+**Status:** OPEN
 **Size:** XS–S · **Priority:** low · **Section:** Harness (aetheris/)
 
 Filed 2026-07-25 during BL-053's done-check, per the standing rule that a red gate gets a tracked
@@ -1648,6 +1679,7 @@ rht_1..5.txt (isolation).`
 ---
 
 ### BL-052 — drift_check check 9: ghost-struct arm is scoped to `commands/*.rs` (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Trigger-fired**
 
 `check_command_fields` (check 9, BL-036, `11675cc`) resolves each §4-documented struct against
@@ -1685,6 +1717,7 @@ observation and promoted from prose to a row. Review: docs/reviews/bl-041b-bl-03
 ---
 
 ### BL-037 — Nullable `label` in RunSummary/RunDetail: backend distinguishes real from fallback (#TBD)
+**Status:** OPEN
 **Size:** XS–S · **Priority:** low
 
 BL-029 made both harness queries return `COALESCE(runs.label, run_id)`, so the wire
@@ -1721,6 +1754,7 @@ contract rather than inheriting the string-comparison guard.
 ---
 
 ### BL-038 — Run list: search/filter, and the LIMIT window hides old runs (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 Two faces of one gap, surfaced together during BL-029's merge-gate check (2026-07-20).
@@ -1797,6 +1831,7 @@ unchecked and already stale). Nothing pulled in from BL-037, BL-035, or BL-024.
 ---
 
 ### BL-058 — specs §5 (TypeScript Interfaces) is unchecked, and already stale (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low-medium · **Section:** Rig (`aetheris-agents/rig/` + `scripts/drift_check.py`)
 
 Found during BL-038 while adding `RunListResult` to both halves of the doc contract.
@@ -1829,6 +1864,7 @@ totality would fail on types nobody intended to document there.
 ---
 
 ### BL-039 — Fork continuation fails against real providers: reconstructed transcript carries a `"tool"` role (#TBD)
+**Status:** DONE
 **Size:** M (docs-first — the fix is a design choice with contract implications)
 · **Priority:** medium-high
 
@@ -1983,6 +2019,7 @@ non-blocking items dispositioned in r1 (`ebc3878`..`0e14500` plus the r1 commit)
 ---
 
 ### BL-062 — Fork provider/model overrides (#TBD)
+**Status:** OPEN
 **Size:** S–M · **Priority:** medium · **Section:** harness CLI + Rig fork dialog · **§8 edit required**
 
 Split out of BL-030 during its scoping so that ticket stayed §8-free (adjudicated
@@ -2013,6 +2050,7 @@ sentence is corrected and its ref repointed under §8 ratification; operator acc
 ---
 
 ### BL-064 — Fork with additional instructions (#TBD)
+**Status:** OPEN
 **Size:** TBD · **Priority:** TBD · **Section:** TBD
 
 Parked at BL-030 closure, 2026-07-26. **Scope not yet written** — this row exists
@@ -2038,6 +2076,7 @@ leads, not facts.
 ---
 
 ### BL-065 — A failed trajectory write still reports the run as `done` (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/agent/server.ex`)
 
 Raised by BL-030 r1 and carried through r2. Not introduced there — latent since
@@ -2080,6 +2119,7 @@ happy path.
 ---
 
 ### BL-067 — `capability_matrix_assemble.exs` computes its whole derived block in the LLM, so the Summary counts, the unique-tools line and the Overlap Report are unverified every regen (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** next · **Section:** aetheris-agents (`agents/capability_matrix_assemble.exs`)
 
 Steps 2 and 3 of the assembler's prompt ask the model to *detect overlaps*, *count agents and
@@ -2156,6 +2196,7 @@ of which had ever been checked. Notes: `docs/milestones/bl-067-implementation-no
 ---
 
 ### BL-068 — A full capability-matrix regen destroys hand-curated section content, because `docs/.sections/` is gitignored (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** next · **Section:** aetheris-agents (`agents/capability_matrix_{uc}.exs`, `docs/.sections/`)
 
 The section files are the only home for the matrix's curated prose, and they are gitignored.
@@ -2215,6 +2256,7 @@ matching the scaling the other agents already use (provenance 16 scripts → 30,
 ---
 
 ### BL-066 — Bump `bandit` to `~> 1.12` (hex.audit HIGH, EEF-CVE-2026-65623) (#TBD)
+**Status:** DONE
 **Size:** XS · **Priority:** now (security gate red) · **Section:** harness (`../aetheris/mix.exs` + `mix.lock`)
 
 Quadratic CPU blow-up reassembling fragmented WebSocket frames. Fix is a **version
@@ -2264,6 +2306,7 @@ playground_api` — the Bandit-served path — green end to end.
 ---
 
 ### BL-069 — DO ≥1-orphan assertion is armed: its planted reserved IP is deleted (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** now (live failure mode) · **Section:** aetheris-agents (cloudcost)
 
 > **Done-when superseded 2026-08-06 (m4 t2, step 0).** The row offers two ways to close and the
@@ -2412,6 +2455,7 @@ cloudcost-orch-digitalocean-OK48Sw).`
 ---
 
 ### BL-070 — Retire the dormant cross-provider merge code in `compose_report_data.py` (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** low · **Section:** aetheris-agents (cloudcost)
 
 m2 adopted per-provider reporting (decision H, no cross-provider roll-up), which makes the
@@ -2517,6 +2561,7 @@ count and byte-unchanged finding from m5 t1's E1 (cloudcost/docs/m5-t1-implement
 ---
 
 ### BL-071 — Resource-level AWS cost + the resource-rate spot-check (#TBD)
+**Status:** OPEN
 **Size:** M · **Priority:** low (deferred) · **Section:** aetheris-agents (cloudcost)
 
 m2 settled AWS cost at **service-level** (decision B) because current AWS usage is low, so
@@ -2539,6 +2584,7 @@ provider, and the rate spot-check compares them against the inventory estimates.
 ---
 
 ### BL-072 — Cost Optimization Hub / Compute Optimizer optimization milestone (#TBD)
+**Status:** OPEN
 **Size:** L · **Priority:** low · **Section:** Milestones
 
 m2's t4 is a **hand-rolled read-only spike** for S3/ECR/Secrets waste signals
@@ -2558,6 +2604,7 @@ gated behind its own IAM.
 ---
 
 ### BL-073 — Surface a run's report artifact in Rig ("View report"), minimal (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
 
 **Rescoped 2026-08-03** from the m2-filed generic row ("deferred; the delivery-side decision is
@@ -2669,6 +2716,7 @@ offer-the-set list. Doc-sync in the same commits: `specs.md` §4 carries both co
 ---
 
 ### BL-074 — Seam sweep: enumerate every provider-vocabulary / provider-assumption seam in shared machinery (#TBD)
+**Status:** DONE
 **Size:** S–M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/`)
 
 m1 closed calling `STOPPED_STATES` *"the one seam where a provider's own vocabulary reaches
@@ -2817,6 +2865,7 @@ this commit). Closed 2026-08-07.`
 ---
 
 ### BL-075 — `mix test` flakes on a fixed 300 ms inactivity window in `RunHelpersTimeoutTest` (#TBD)
+**Status:** OPEN
 **Size:** XS–S · **Priority:** low · **Section:** harness (`../aetheris/test/`)
 
 Filed 2026-08-02 at the m2-cloudcost **t2** boundary, per the gate rule (*a red gate gets a
@@ -3035,6 +3084,7 @@ account and one is this session's, as the annotation distinguishes.`
 ---
 
 ### BL-076 — `compose_report_data` sums *every* provider's prior snapshot into one `prior_total` (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
 
 Filed 2026-08-02 at the m2-cloudcost **t3** boundary. A **Silent-wrong-answer**: the month-on-month
@@ -3130,6 +3180,7 @@ compose_report_data.py:711/:334/:342 and by the two-run demonstration above.`
 ---
 
 ### BL-077 — `sprint.sh` assertion failures do not affect the sprint's exit code (#TBD)
+**Status:** DONE
 **Size:** S–M · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`)
 
 Filed 2026-08-02 from the m2-cloudcost **t3** review (claude-ui N1). Pre-existing and
@@ -3209,6 +3260,7 @@ cloudcost legs). Reported by claude-code in the t3 packet before the review rais
 ---
 
 ### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 
 Raised 2026-07-26 by BL-039's review (F1). **Not a demonstrated defect** — a reachable gap
@@ -3261,6 +3313,7 @@ instead.)
 ---
 
 ### BL-060 — `mix hex.audit` is red: bandit 1.11.1 carries EEF-CVE-2026-65623 (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/mix.exs`, `mix.lock`)
 
 Found 2026-07-26 by BL-039's ticket-boundary gate run — off-territory, exactly the way
@@ -3314,6 +3367,7 @@ any packet naming `hex.audit` red against BL-060 or BL-066 is out of date.
 ---
 
 ### BL-059 — Parallel tool calls are silently discarded: the adapter keeps the first `tool_use` block (#TBD)
+**Status:** OPEN
 **Size:** M · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
 
 Raised 2026-07-26 by BL-039's §8 contract adjudication, which was about to make this
@@ -3407,6 +3461,7 @@ block at a time and both turns take a list.
 ---
 
 ### BL-040 — Event-type list exists in three places; drift between them is silent (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low-medium
 
 The set of trajectory event types is written out three times:
@@ -3444,6 +3499,7 @@ mentioned the atom first (`docs/reviews/bl-031-review.md`).
 > interaction between the two rows. Sequence BL-040 on its own merits.
 
 ### BL-078 — Converge the AWS client plumbing into a shared `scripts/_aws.py` (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/`)
 
 Filed 2026-08-02 at the m2-cloudcost **t4** boundary, deferred deliberately rather than
@@ -3474,6 +3530,7 @@ and for the same duration.
 `Source: m2-cloudcost t4.`
 
 ### BL-079 — cloudcost holds no S3 storage rate for `ap-south-1`, where this account's buckets live (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
 
 Filed 2026-08-02 from the m2-cloudcost **t4 live read**. Not a defect — the designed
@@ -3505,6 +3562,7 @@ account-specific figures and would retire the static table rather than extend it
 `Source: m2-cloudcost t4 live read.`
 
 ### BL-080 — `detect_optimization_signals` reports `partial` for intentional honesty, not only for a read gap (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
 
 Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N1, non-blocking).
@@ -3544,6 +3602,7 @@ intentional omission), and a test asserts a run whose ONLY finding is an unrated
 `Source: m2-cloudcost t4 review N1.`
 
 ### BL-081 — `s3_no_lifecycle_policy` fires on an observably empty bucket (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
 
 Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N2, non-blocking).
@@ -3569,6 +3628,7 @@ observed to be 0; a test asserts an unknown-count bucket with no policy still ra
 `Source: m2-cloudcost t4 review N2.`
 
 ### BL-082 — no end-to-end orchestrated run of the `CLOUDCOST_OPTIMIZATION=1` path (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/agents/cloudcost_orchestrator.exs`, `../aetheris/scripts/sprint.sh`)
 
 Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N3, non-blocking). The row the
@@ -3598,6 +3658,7 @@ assertion, and adding a second assertion to a red case buries it.
 `Source: m2-cloudcost t4 review N3.`
 
 ### BL-083 — Run list: classify the four unclassified use cases; provider in the cloudcost label (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`, `cloudcost/agents/`)
 
 Filed 2026-08-03. **Scoped wider than the cloudcost symptom that surfaced it** — the open question
@@ -3670,6 +3731,7 @@ does not cover.
 `Source: m2-cloudcost close-out, 2026-08-03; closed 2026-08-04.`
 
 ### BL-084 — Tools manifests for the four use cases that have none (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`cloudcost/`, `docbuilder/`, …)
 
 Filed 2026-08-03. Cloudcost's six pipeline scripts show undeclared/amber in the Tools tree —
@@ -3696,6 +3758,7 @@ forms; descriptions match `capability-matrix.md`; the other three use cases are 
 `Source: m2-cloudcost close-out, 2026-08-03.`
 
 ### BL-085 — Cloudcost credentials + per-launch provider selection in Rig (#TBD)
+**Status:** OPEN
 **Size:** M · **Priority:** medium · **Section:** aetheris-agents (`rig/`, `cloudcost/runbook.md`)
 
 Filed 2026-08-03. Surface the read-only AWS key in Rig's Agent Config and let an operator launch
@@ -3764,6 +3827,7 @@ Done-when is a disposition and this ticket files rather than disposes.
 `Source: m2-cloudcost close-out, 2026-08-03.`
 
 ### BL-086 — Trajectory: label steps by their `run_command` stage (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-03. `TrajectoryView` shows a generic "Step N". For each step carrying a
@@ -3780,6 +3844,7 @@ stay "Step N".
 `Source: m2-cloudcost close-out, 2026-08-03.`
 
 ### BL-087 — `payslip/tools.json` omits a runnable CLI (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** aetheris-agents (`payslip/`)
 
 Filed 2026-08-03 by BL-084. `payslip/scripts/merge_employee_payslips.py` is a real CLI
@@ -3805,6 +3870,7 @@ manifest entry needs its arg forms read off `--help` rather than guessed.
 `Source: BL-084, 2026-08-03.`
 
 ### BL-088 — `ManifestScript.runnable`: mark a manifest entry describe-only (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-03 by BL-084. A `tools.json` entry cannot say "this is not a CLI". The Run
@@ -3830,6 +3896,7 @@ mirrors into `src/hooks/types.ts`, gates the Run button, and is rejected server-
 `Source: BL-084, 2026-08-03.`
 
 ### BL-089 — tools.json for the three use cases that still have none (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`docbuilder/`, `provenance/`, `boxy-pipeline/`)
 
 Filed 2026-08-03 by BL-084 (Decision A). `tools.json` is absent for docbuilder, provenance and
@@ -3845,6 +3912,7 @@ commit, or the strict xfail fails on the unexpected pass.
 `Source: BL-084, 2026-08-03.`
 
 ### BL-090 — capability-matrix stale: cloudcost omits detect_optimization_signals (#TBD)
+**Status:** DONE
 **Size:** XS · **Priority:** low · **Section:** aetheris-agents (`docs/`, matrix generator)
 
 Filed 2026-08-03 by BL-084. `docs/capability-matrix.md` §Cloudcost lists six scripts and its summary
@@ -3899,6 +3967,7 @@ carried script descriptions from current docstrings; that is regen output, not a
 m3-cloudcost t3 done-when 5, 2026-08-05.`
 
 ### BL-091 — exportConfig() drops every manifest-derived env key (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-03 by BL-084. `exportConfig()` (`rig/src/hooks/useAgentConfig.ts:33-41`) iterates
@@ -3911,6 +3980,7 @@ data loss on config transfer.
 `Source: BL-084, 2026-08-03.`
 
 ### BL-092 — tools.rs manifest-deserialization test coverage (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** low · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-03 by BL-084. `tools.rs` has zero `#[cfg(test)]`. BL-084 proved cloudcost/tools.json
@@ -3959,6 +4029,7 @@ pytest suite transcribes these structs, only this test runs serde. Seed was
 `Source: BL-084 (filed 2026-08-03), closed by m3-cloudcost t2 done-when 5, 2026-08-05.`
 
 ### BL-093 — runbook drift: PAYSLIP_MONTH described as non-persistent (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** aetheris-agents (`rig/docs/`)
 
 Filed 2026-08-04 by BL-085. `rig/docs/runbook.md:316-317` states "`PAYSLIP_MONTH` is injected
@@ -3977,6 +4048,7 @@ mechanism is intended.
 `Source: BL-085, 2026-08-04.`
 
 ### BL-095 — plan-card renders secret config values in clear (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-04 by BL-085. `StepCard` builds `` `${k}: ${configValues[k]}` `` for every
@@ -4018,6 +4090,7 @@ Settings dots the service-account path.
 `Source: BL-085 (filed), closed 2026-08-04.`
 
 ### BL-096 — `fetch_aws.py` exceeds the 60 s `run_command` default on every AWS run (#TBD)
+**Status:** DONE
 **Size:** XS · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/`)
 
 Filed 2026-08-04 by BL-085, found while diagnosing a Rig-launched run reported as "timed out".
@@ -4101,6 +4174,7 @@ prompt-adherence ever proves insufficient.
 cloudcost-orch-aws-3KU2NQ.`
 
 ### BL-097 — Orchestrator: selecting a Recent prompt covers Run and the env disclosure (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-04. On the Orchestrator idle view, clicking a **Recent** entry renders a card over the
@@ -4144,6 +4218,7 @@ into an unbreak.
 ## Milestones (L — issue docs first, per repo convention)
 
 ### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)
+**Status:** OPEN
 **Size:** L · **Priority:** medium
 
 Feasibility confirmed (report Gap C + §3.1): trajectory files store full
@@ -4194,6 +4269,7 @@ on them, per the p3 pattern (docs → mock/real split if useful → UI).
 ---
 
 ### BL-008 — Skills auto-extraction + Rig skills view (compounding) (#49)
+**Status:** OPEN
 **Size:** L · **Priority:** medium-low
 
 The "compounding/dreaming" idea from the Burr HN thread, grounded in what
@@ -4219,6 +4295,7 @@ Scope sketch:
 one skill row behind and Rig can show it.
 
 ### BL-094 — A direct, non-LLM launch door for config-style orchestrators (#TBD)
+**Status:** OPEN
 **Size:** M/L · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
 
 Filed 2026-08-04, peeled off BL-085 by its own pre-agreed trigger. BL-085 asked whether per-launch
@@ -4276,6 +4353,7 @@ the "interim" caveat.
 ## Drift apparatus (optional hardening)
 
 ### BL-009 — Promote sprint drift_check to `--strict` (#50)
+**Status:** DONE
 **Size:** S · **Priority:** after BL-001
 
 Zero standing WARNs was achieved (f2/provenance command tables added).
@@ -4309,6 +4387,7 @@ WARN → exit 0; a milestone_status WARN → `--strict` exit 1.
 ---
 
 ### BL-041 — Manifest-staleness done-checks are vacuous pre-commit; `drift_check` reads committed state only (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium
 
 Surfaced by BL-034's own verification (fe8298c, 2026-07-22), and caught by the executing
@@ -4459,6 +4538,7 @@ docs/rig/milestones/bl-041b-bl-036-drift-check-guards-implementation-notes.md.`
 ---
 
 ### BL-046 — Tool-result payload key is a convention, not a contract: `"output"` vs `"result"` (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
 
 Three tickets have now fixed the *same root cause* on the read side, one reader at a time:
@@ -4492,6 +4572,7 @@ share the convention.
 ---
 
 ### BL-042 — Capability-shaped containment for the verify worker (`CLONE_NEWNET`) (#TBD)
+**Status:** DONE
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 BL-025 classifies `run_command` `:contained` and record-and-serves only the purpose-network
@@ -4682,6 +4763,7 @@ re-executed and compared" claim. Lands only on human approval per §8.
 ---
 
 ### BL-043 — `http_call` is killed by seccomp (SIGSYS) in every mode: `setsockopt` missing from the allowlist (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** Harness (aetheris/)
 
 `http_call` does not work at all — not in verify, not in a normal **record** run. The worker's
@@ -4862,6 +4944,7 @@ appear in either run.
 
 ---
 ### BL-056 — `apply_seccomp_filter` fails open: any filter-build failure runs the worker fully unsandboxed (#TBD)
+**Status:** DONE
 **Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 Filed from BL-043's flagged observation at review r1, per the standing rule that a deferred
@@ -4911,6 +4994,7 @@ which primitive was unavailable. The refuse-vs-accept call is **§8/human**; thi
 ---
 
 ### BL-055 — MCP stdio servers cannot be spawned after the seccomp filter: `execve` is excluded by design (#TBD)
+**Status:** DONE
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 Surfaced by BL-043's done-check, which expected to clear all 8 of BL-048's SIGSYS failures and
@@ -4957,6 +5041,7 @@ removed rather than left as a call that always crashes the worker.
 ---
 
 ### BL-044 — `mix aetheris` discards every command's exit code (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
 
 `Mix.Tasks.Aetheris.run/1` is `_ = Aetheris.CLI.run(argv); :ok`
@@ -5053,6 +5138,7 @@ ratified + implemented 2026-07-24 at f41eb12.`
 <details><summary>Original ticket (pre-implementation)</summary>
 
 ### BL-047 — Verify never re-executes the `git_*` family: exec-server routing gap + a taxonomy decision (#TBD)
+**Status:** UNRULED
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 `Verifier` re-executes a recorded tool by sending it to the worker's own dispatch table
@@ -5117,6 +5203,7 @@ from BL-049 review r1, 2026-07-24.`
 ---
 
 ### BL-049 — A `run_command` step can essentially never verify: `duration_ms` is inside the compared payload (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium-high · **Section:** Harness (aetheris/)
 
 `Verifier.compare_status/4` compares recorded vs re-executed tool output by **value equality**
@@ -5295,6 +5382,7 @@ reddens on a runner's limits gets disabled, which is how this set rotted in the 
 ---
 
 ### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute (#TBD)
+**Status:** OPEN
 **Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 Found during the BL-048 closeout while diagnosing `OverlayAutonomousTest`, which is skipped
@@ -5341,6 +5429,7 @@ on the six files is walked, not assumed.
 ---
 
 ### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
+**Status:** UNRULED
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 `mix test --include requires_worker` reports **15 failures** on `main` at `8021a59`, with no
@@ -5433,6 +5522,7 @@ time (the BL-051 lesson).
 ---
 
 ### BL-050 — `RunOverlayTest` races the worker handshake: overlay dirs are created *after* `ready` (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium-low · **Section:** Harness (aetheris/)
 
 `run_overlay_test.exs:38` asserts `File.dir?(upper)` immediately after `Client.start_link`
@@ -5479,6 +5569,7 @@ at 9d994fd; non-causation demonstrated by a three-way run (clean / lib-only / fu
 ---
 
 ### BL-051 — One unidentified `mix test` failure, and the capture discipline that lost its name (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low (capture fix) / unknown (the flake itself) · **Section:** Harness (aetheris/)
 
 A single `mix test` run at `c80a8e4` (BL-049 r1) reported `921 tests, 1 failure, 122 excluded`.
@@ -5519,6 +5610,7 @@ capture.`
 ---
 
 ### BL-045 — `RunConfig mode: :verify` is a misnomer: no verification semantics (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
 
 After BL-025 routed `aetheris verify` through `Aetheris.Execution.Verifier`, nothing in the
@@ -5549,6 +5641,7 @@ decided, not left ambiguous.
 ## boxy-pipeline
 
 ### BL-010 — Clean order_formatter output: strip extra sheets and clear stale template formulas (#51)
+**Status:** OPEN
 **Size:** S · **Priority:** now
 
 Two output defects observed on first real run:
@@ -5630,6 +5723,7 @@ print('OK — one sheet, no #NAME? errors')
 > Python verification snippet result) in your review packet.
 
 ### BL-011 — Extract shared parsing helpers into `scripts/parsing_utils.py` (#52)
+**Status:** OPEN
 **Size:** S · **Priority:** before next catalog/resolver change
 
 `_parse_dimensions`, `_extract_cabinet_type`, `_parse_color_columns`, and
@@ -5668,6 +5762,7 @@ grep -rn "_parse_dimensions\|_extract_cabinet_type\|_parse_color_columns\|_color
 ---
 
 ### BL-012 — Catalog enrichment merge strategy (#53)
+**Status:** OPEN
 **Size:** S–M · **Priority:** before anyone enriches `catalog.jsonl`
 
 `catalog_extractor.py` currently overwrites `catalog.jsonl` on every run.
@@ -5706,6 +5801,7 @@ strategy` before handing to claude-code.
 ---
 
 ### BL-013 — Parameterise column x-boundaries in `so_extractor.py` (#54)
+**Status:** OPEN
 **Size:** S–M · **Priority:** before processing a second SO PDF
 
 `so_extractor.py` has four hardcoded x-boundary constants (`_QTY_X_MAX`,
@@ -5740,6 +5836,7 @@ python3 scripts/so_extractor.py \
 ---
 
 ### BL-014 — Parse Bill To and Ship To addresses separately in `_parse_header` (#55)
+**Status:** OPEN
 **Size:** S · **Priority:** low (before multi-customer use)
 
 `so_extractor._parse_header` currently sets both `bill_to` and `ship_to` to
@@ -5765,6 +5862,14 @@ multi-line street/city/state/zip.
 ---
 
 ## Suggested order
+
+> **RETIRED 2026-08-12 by the arbiter's ruling on BL-145, and left in place rather than
+> removed.** The row bodies are authoritative; each row's `**Status:**` field, added at ds
+> t0, is where the question *is this row terminal?* is answered. This table has not been
+> maintained since 2026-07-26 and its ✔ marks are a second surface that disagrees with the
+> bodies in both directions. **Do not add a ✔ here and do not read one as current.**
+> Executing the retirement — deleting the table, and deciding what becomes of the
+> *sequencing opinion* it carries and the bodies do not — is **BL-145**'s and stays BL-145's.
 
 | Order | Ticket | Why first |
 |-------|--------|-----------|
@@ -5837,6 +5942,7 @@ multi-line street/city/state/zip.
 | — | BL-095 | Live secret exposure in the payslip plan card today. Fix with the `masked` flag or the `ToolDetail` set/unset dots; pairs with BL-091 as the "masked-key policy" pair |
 
 ### BL-098 — The inventory envelope has no extras key, so adapter run-metadata dies at stdout (#TBD)
+**Status:** OPEN
 **Size:** M · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/`)
 
 Filed 2026-08-05, from m3-cloudcost t1 review r0 F3 / r1 F5. An adapter's run metadata —
@@ -5889,6 +5995,7 @@ the report surfaces "this class could not be assessed" distinctly from "this cla
 ---
 
 ### BL-099 — The sprint's D2 credential grep is AWS-only, so two providers' D2 posture is asserted rather than checked (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
 
 Filed 2026-08-05, from m3-cloudcost t3 review r0 F1. The cloudcost sprint case greps the run
@@ -5957,6 +6064,7 @@ asserted-rather-than-checked posture the row names.
 ---
 
 ### BL-100 — the sprint's `--json` reads fail unpredictably; the status line prints a fallback token when they do (#TBD)
+**Status:** DONE
 **Size:** S–M · **Priority:** low-medium · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
 
 > **Rescoped and corrected 2026-08-06 (t1a).** Three changes, each recorded rather than silently
@@ -6113,6 +6221,7 @@ cloudcost/docs/t1b-implementation-notes.md.`
 ---
 
 ### BL-101 — The report states tag coverage as a percentage and nothing else; surface the tags themselves (#TBD)
+**Status:** DONE
 **Size:** S–M · **Priority:** medium · **Section:** aetheris-agents (`cloudcost/scripts/compose_report_data.py`, `cloudcost/templates/report.html.j2`)
 
 Filed 2026-08-05 from the m3-cloudcost close. The report's Tag coverage section renders one
@@ -6201,6 +6310,7 @@ could not be implemented honestly without it.
 ---
 
 ### BL-102 — The complete-but-unmarked sweep runs at milestone closes only, so batch closes leave rows silently open (#TBD)
+**Status:** OPEN
 **Size:** XS–S · **Priority:** low-medium · **Section:** aetheris-agents (`docs/`, export procedure)
 
 Filed 2026-08-05 from the m3-cloudcost export boundary. `CLAUDE.md` §Definition of done — doc
@@ -6248,6 +6358,7 @@ pinned and reopened a WARN the boundary existed to close).`
 ---
 
 ### BL-103 — The store may hold documents the manifest does not describe, and "remove all" is undefined against them (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`docs/`, export procedure)
 
 Filed 2026-08-05 from the m3-cloudcost export boundary's post-upload check: the manifest
@@ -6290,6 +6401,7 @@ against a 25-row manifest; document identified by the human at filing.`
 ---
 
 ### BL-104 — sprint.sh's hermetic prefix is a denylist; invert it to an allowlist (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** harness (`scripts/sprint.sh`)
 
 Filed from the m3-cloudcost close. The `CC_HERMETIC=(env -u …)` array in the cloudcost case
@@ -6397,6 +6509,7 @@ drifted three times before it was filed.`
 ---
 
 ### BL-105 — `--json` mode's payload shares stdout with the harness's Logger output (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/cli/`)
 
 Filed 2026-08-06 from t1a. `mix aetheris --json <cmd>` writes its payload to stdout via
@@ -6525,6 +6638,7 @@ corrected in the same round. Citations verified at aetheris@aaf0f9a / aetheris-a
 ---
 
 ### BL-106 — `--json` emits no JSON document on a non-success run (#TBD)
+**Status:** DONE
 **Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/cli/`)
 
 Filed 2026-08-06 from t1a. **Sibling of BL-105 — one contract, two mechanisms.** BL-105 is why the
@@ -6607,6 +6721,7 @@ touched here. It is also why a real status word in the payload is worth having.
 ---
 
 ### BL-107 — the chaos-case gate has never evaluated its subject (#TBD)
+**Status:** DONE
 **Size:** XS–S · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`)
 
 Filed 2026-08-06 from t1a, per the gate rule — *a red gate gets a tracked ticket the day it's
@@ -6687,6 +6802,7 @@ cloudcost/docs/t1b-implementation-notes.md.`
 ---
 
 ### BL-108 — the eduloka sink gate parses a merged stream: same shape, different root cause (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** harness (`../aetheris/scripts/sprint.sh`), eduloka
 
 Filed 2026-08-06 from t1a's census. `../aetheris/scripts/sprint.sh:1657-1663` captures a script's
@@ -6728,6 +6844,7 @@ constructed stderr-contaminated run must still yield the right verdict or fail l
 ---
 
 ### BL-109 — two `milestone-reference.md` files, canonical by different measures (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** harness (`../aetheris/docs/aetheris/`)
 
 Exposed by t1a's census, 2026-08-06, and **not in that ticket's scope to resolve** — recorded so
@@ -6763,6 +6880,7 @@ at.
 ---
 
 ### BL-110 — the payslip case asserts a reference employee the run cannot produce (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** medium · **Section:** harness (`../aetheris/scripts/sprint.sh`), payslip
 
 Filed 2026-08-06 from t1b, per the gate rule — *every existing gate runs at ticket boundaries, even
@@ -6810,6 +6928,7 @@ aetheris@f6fbd82 / aetheris-agents@c5b63ae.`
 ---
 
 ### BL-111 — session memory is a durable instruction surface outside git, and no census, review or gate can reach it (#TBD)
+**Status:** OPEN
 **Size:** S to characterise · **Priority:** medium · **Section:** process (no repo owns it)
 
 Filed 2026-08-06 from m4 t2. **Characterisation first — the fix is deliberately not designed
@@ -6872,6 +6991,7 @@ are reads of this machine on that date, not claims about the tool in general.`
 ---
 
 ### BL-112 — the BEAM's latin1 fallback silently corrupts non-ASCII in `--json` payloads (#TBD)
+**Status:** OPEN
 **Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/cli/`)
 
 Filed 2026-08-06 from m4 t3. When the BEAM starts with no UTF-8 locale in its environment, it runs
@@ -6917,6 +7037,7 @@ inverted prefix's payload bytes against the archived captures. Verified at harne
 ---
 
 ### BL-113 — a missed *knob* or *optional* credential constant disappears from the sprint's adapter env bridge silently (#TBD)
+**Status:** OPEN
 **Size:** XS · **Priority:** low · **Section:** aetheris-agents (`../aetheris/scripts/sprint.sh`)
 
 Filed 2026-08-06 from m4 t3. **Re-characterised at t3 review r1, before the row was ever acted on
@@ -6982,6 +7103,7 @@ taken; the mutations behind the table were run at agents aabf546 / harness 7c248
 ---
 
 ### BL-114 — the recent-activity modifier has never fired against any real inventory, on any provider (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** X4 · **Contract:** C8
 **Size:** XS–S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
 
@@ -7069,6 +7191,7 @@ agents 611feba; re-read and corrected at agents 0b32f36 (m6 t2c).`
 ---
 
 ### BL-115 — a stopped instance with no attached storage and a non-zero own estimate yields no candidate (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** F2 · **Contract:** C8
 **Size:** S–M · **Priority:** **high** · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
 
@@ -7101,6 +7224,7 @@ C8. Predicates read at agents 611feba.`
 ---
 
 ### BL-116 — the aged-snapshot rule's docstring requires a gate its code does not apply (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** F3 · **Contract:** C8
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
 
@@ -7133,6 +7257,7 @@ that leaves a confidence calibrated for evidence the rule does not require.
 ---
 
 ### BL-117 — an out-of-vocabulary `type` is counted everywhere and evaluated by nothing (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** N8 · **Contract:** C1
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`) — **cross-repo**
 **Cross-repo:** `../aetheris/scripts/sprint.sh`
@@ -7194,6 +7319,7 @@ wiring the rule-legibility assertion; sprint arms read at harness e75f838.`
 ---
 
 ### BL-118 — five I/O sites decode adapter JSON under the platform default encoding (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** X5 · **Contract:** C12
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/`)
 **Sibling:** BL-112 — same root cause, different layer; **neither guards the other**
@@ -7245,6 +7371,7 @@ schema-level at m4 t4b under C12. BL-112 relationship ruled at m4 t4c G3. Read a
 ---
 
 ### BL-119 — a cost snapshot with a declared total and no line items is silently dropped from discovery (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** P8 · **Contract:** C10
 **Size:** S (the warning) / M (the document-type change) · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
 
@@ -7307,6 +7434,7 @@ BL-136's reader is a second consumer that would need the compatibility read step
 ---
 
 ### BL-120 — the idle-load-balancer rule rests on a `tag:` convention nothing enforces (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** D16 · **Contract:** C7
 **Size:** XS to check · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
 
@@ -7341,6 +7469,7 @@ fix is unscoped until the check runs.
 ---
 
 ### BL-121 — the untagged-spenders cap truncates across all providers and reports nothing (#TBD)
+**Status:** DONE
 **Kind:** defect · **Census item:** P2 · **Contract:** C11
 **Size:** XS · **Priority:** low–medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
 
@@ -7403,6 +7532,7 @@ in `cloudcost/milestone.md` §Contracts, where a reader meets it.
 ---
 
 ### BL-122 — `source_granularity` is carried into the report and validated nowhere (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** P11 · **Contract:** C10
 **Size:** XS–S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
 
@@ -7440,6 +7570,7 @@ service"* would block resource-level cost.
 ---
 
 ### BL-123 — `age_phrase` truncates, so the evidence sentence contradicts its own threshold (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census item:** D12 (display half) · **Contract:** C3
 **Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`)
 
@@ -7471,6 +7602,7 @@ under C3. Read at agents 611feba.`
 ---
 
 ### BL-124 — C3: reject a naive timestamp rather than assuming UTC (#TBD)
+**Status:** OPEN
 **Kind:** contract consequence · **Census item:** N3 · **Contract:** C3
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`)
 
@@ -7501,6 +7633,7 @@ parsed.replace(tzinfo=timezone.utc)`.`
 ---
 
 ### BL-125 — C3: name the timestamp field set once instead of hardcoding the pair (#TBD)
+**Status:** OPEN
 **Kind:** contract consequence · **Census item:** D20 · **Contract:** C3
 **Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_orphans.py`, `cloudcost/scripts/_normalized.py`)
 
@@ -7525,6 +7658,7 @@ two.
 ---
 
 ### BL-126 — C4: carry the currency's minor-unit exponent and round to it (#TBD)
+**Status:** OPEN
 **Kind:** contract consequence · **Census item:** N5 · **Contract:** C4
 **Size:** M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`, all three adapters)
 
@@ -7559,6 +7693,7 @@ because the line is the fragile half.`
 ---
 
 ### BL-127 — C6: a non-`str` tag element is a counted skip, not a silent drop (#TBD)
+**Status:** DONE
 **Kind:** contract consequence · **Census item:** N7 · **Contract:** C6
 **Size:** S · **Priority:** low–medium · **Section:** cloudcost (`cloudcost/scripts/_normalized.py`)
 
@@ -7600,6 +7735,7 @@ cannot regress silently.
 ---
 
 ### BL-128 — C6: the keep marker becomes a first-class field, not a tag spelling (#TBD)
+**Status:** OPEN
 **Kind:** contract consequence · **Census item:** D6 · **Contract:** C6
 **Size:** M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/`, all three adapters)
 
@@ -7636,6 +7772,7 @@ written days earlier — expected, and cheaper to know now than to meet as a sur
 ---
 
 ### BL-129 — C10: service identity needs a stable identifier beside the display name (#TBD)
+**Status:** OPEN
 **Kind:** contract consequence · **Census item:** P6 · **Contract:** C10
 **Size:** M–L · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`, all three adapters)
 
@@ -7666,6 +7803,7 @@ string), `:279-280` (the `(provider, service)` delta key), `fetch_linode.py:116`
 ---
 
 ### BL-130 — C11: promote `swept_regions` to a first-class optional envelope field (#TBD)
+**Status:** OPEN
 **Kind:** contract consequence · **Census item:** P7 · **Contract:** C11
 **Size:** S–M · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`, `cloudcost/scripts/fetch_aws.py`)
 
@@ -7702,6 +7840,7 @@ the `OPTIONAL_FIELDS` loop, confirming it reads the **report payload**, not the 
 ---
 
 ### BL-131 — decide whether the N>1 compose path is a supported surface (#TBD)
+**Status:** DONE
 **Kind:** decision · **Census items:** n/a (surfaced by the m4 t5b gate) · **Contract:** C4, C11
 **Size:** S to decide, M–L to implement either way · **Priority:** medium
 **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`, `cloudcost/milestone.md`)
@@ -7804,6 +7943,7 @@ the gate stop per R12; applied at m5 t2, 2026-08-10.`
 ---
 
 ### BL-132 — establish, per contract, whether the behaviour it states is reachable from the live pipeline (#TBD)
+**Status:** DONE
 **Kind:** method · **Census items:** n/a (surfaced by the m4 t5b gate) · **Contract:** all of C1–C15
 **Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
 
@@ -8029,6 +8169,7 @@ rather than left as prose, because prose owns nothing.
 ---
 
 ### BL-133 — the loop's evidence is not retained, so no past run's greenness is checkable after the fact (#TBD)
+**Status:** OPEN
 **Kind:** method · **Census items:** n/a (surfaced by the m4 close) · **Contract:** n/a
 **Size:** S to rule, S–M to implement · **Priority:** medium
 **Section:** process / harness (`../aetheris/sprint/`, `docs/reviews/`)
@@ -8122,6 +8263,7 @@ only the record was missing.`
 ---
 
 ### BL-134 — verify the seven comment-anchored census claims, and hand-classify the eight the sweep could not reach (#TBD)
+**Status:** OPEN
 **Kind:** verification · **Census items:** X3, D5, D9, D12, P3, P8, P10 (the seven); D13, D16, D21, F2, F3, R1, R2, R3 (the eight) · **Contract:** n/a
 **Size:** S · **Priority:** low–medium
 **Section:** cloudcost (`cloudcost/docs/m4-t4a-implementation-notes.md`)
@@ -8178,6 +8320,7 @@ itself read this as a row rather than a promotion candidate, and that read is ad
 ---
 
 ### BL-136 — decision H's consequent: a read-only cross-provider cost summary over the persisted per-provider snapshots (#TBD)
+**Status:** OPEN
 **Kind:** feature · **Census items:** n/a (surfaced by m5 t1's E7) · **Contract:** verify and record which of C1–C15 apply
 **Size:** S–M · **Priority:** medium · **Section:** cloudcost
 
@@ -8260,6 +8403,7 @@ ruling, where H's consequent was named as neither decided nor owned —
 ---
 
 ### BL-137 — a freshness census over `cloudcost/milestone.md` §Open items: items whose trigger has already fired, or whose framing predates adapters that have since shipped (#TBD)
+**Status:** OPEN
 **Kind:** method · **Census items:** n/a (surfaced by m5 t2 r1's second-claim sweep) · **Contract:** none — §Open items states no contract
 **Size:** S–M · **Priority:** medium · **Section:** cloudcost (`cloudcost/milestone.md` §Open items carried forward)
 
@@ -8332,6 +8476,7 @@ one row `cloudcost/m5-n1-compose.md` §t3 → `Touches` provides for. Read at ag
 ---
 
 ### BL-138 — C8's D21 clause enumerates the declared parameter block wrongly (#TBD)
+**Status:** OPEN
 **Kind:** accuracy · **Census items:** D21 · **Contract:** C8 (`cloudcost/milestone.md` §Contracts)
 **Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/milestone.md`)
 
@@ -8393,6 +8538,7 @@ recorded at cloudcost/docs/bl-132-implementation-notes.md §5 and declined there
 ---
 
 ### BL-139 — record the conditions under which a triad exchange may be looped without a human turn (#TBD)
+**Status:** OPEN
 **Kind:** method · **Census items:** n/a · **Contract:** n/a
 **Size:** S to rule · **Priority:** low
 **Section:** process / methodology (`docs/triad-loop.md` and its canonical harness copy
@@ -8424,6 +8570,7 @@ criterion for omitting one — so this row is opening the question, not restatin
 ---
 
 ### BL-140 — whether a correction owes a same-commit sweep for recurrences as a standing obligation (#TBD)
+**Status:** OPEN
 **Kind:** method · **Census items:** n/a · **Contract:** n/a
 **Size:** S to rule · **Priority:** medium
 **Section:** process / methodology (`../aetheris/docs/methodology/milestone-methodology.md`;
@@ -8463,6 +8610,7 @@ corrected one file over.`
 ---
 
 ### BL-141 — a Done-check that cannot fail, and whether a positional claim must carry path:line (#TBD)
+**Status:** OPEN
 **Kind:** method · **Census items:** n/a · **Contract:** n/a
 **Size:** S–M to rule (two questions, one document) · **Priority:** medium
 **Section:** process / methodology (`../aetheris/docs/methodology/milestone-methodology.md` §6)
@@ -8500,6 +8648,7 @@ should become standing.`
 ---
 
 ### BL-142 — whether §6 should require `Touches` to be derived from a search for the premise (#TBD)
+**Status:** OPEN
 **Kind:** method · **Census items:** n/a · **Contract:** n/a
 **Size:** S to rule · **Priority:** medium
 **Section:** process / methodology (`../aetheris/docs/methodology/milestone-methodology.md` §6,
@@ -8536,6 +8685,7 @@ items at r1), and a third was declined into BL-137.`
 ---
 
 ### BL-143 — the `project_knowledge` export boundary has no owner and no schedule (#TBD)
+**Status:** OPEN
 **Kind:** decision · **Census items:** n/a · **Contract:** n/a
 **Size:** S to decide · **Priority:** medium
 **Section:** process / project knowledge (`docs/project-knowledge-manifest.md`,
@@ -8661,6 +8811,7 @@ ground, reported without filing, is cloudcost/docs/bl-132-row-correction-impleme
 ---
 
 ### BL-144 — a round whose output is a derivation may leave it only in a scratch directory (#TBD)
+**Status:** OPEN
 **Kind:** decision · **Census items:** n/a · **Contract:** n/a
 **Size:** S to decide · **Priority:** medium
 **Section:** process / round records (`docs/milestones/hc-consolidation.md`,
@@ -8726,6 +8877,7 @@ the urgency was real but its stated mechanism was not.`
 ---
 
 ### BL-145 — the backlog has two status surfaces and says so nowhere (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a (surfaced by gc t1's row census) · **Contract:** none — the file states no status convention
 **Size:** S to decide, M to fix · **Priority:** medium
 **Section:** process / backlog hygiene (`docs/backlog-2026-06.md`)
@@ -8786,6 +8938,7 @@ because it is a fact about this file, and the round that surfaced it does not ow
 ---
 
 ### BL-146 — a row's status marker can be a quotation of a different row's disposition (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a (surfaced by gc t1's row census) · **Contract:** none
 **Size:** S · **Priority:** low–medium
 **Section:** process / backlog hygiene (`docs/backlog-2026-06.md`)
@@ -8828,6 +8981,7 @@ recorded at docs/milestones/gc-t1-implementation-notes.md §I. Filed gc t3, 2026
 ---
 
 ### BL-147 — the absence of a reachability stamp encodes three different dispositions (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** BL-132's census over C1–C15 · **Contract:** `cloudcost/milestone.md` §Contracts
 **Size:** S · **Priority:** medium
 **Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
@@ -8867,6 +9021,7 @@ dispositions. Ruled deferred at gc D5. Filed gc t3, 2026-08-12.`
 ---
 
 ### BL-148 — C7 and C13 state adapter obligations with no exemplar and no verdict in the contract (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** D15, D16 (C7); X2, D19 (C13) · **Contract:** `cloudcost/milestone.md` §Contracts C7, C13
 **Size:** S–M · **Priority:** medium — before provider four
 **Section:** cloudcost (`cloudcost/milestone.md` §Contracts)
@@ -8909,6 +9064,7 @@ to exist only at cloudcost/milestone.md:488 (C4) and :816 (C11). Filed gc t3, 20
 ---
 
 ### BL-149 — two live documents use "live" in incompatible senses (#TBD)
+**Status:** OPEN
 **Kind:** decision · **Census items:** n/a (surfaced by gc t1's census, ruled at gc D2) · **Contract:** `docs/milestones/hc-consolidation.md` decision 10
 **Size:** S to decide · **Priority:** medium
 **Section:** process / round vocabulary (`docs/milestones/hc-consolidation.md`, `cloudcost/m5-n1-compose.md`)
@@ -8948,6 +9104,7 @@ an equivocation at gc D2 and carried to gc §Promotion candidates. Filed gc t3, 
 ---
 
 ### BL-150 — standing: documentation-system findings, append-only (#TBD)
+**Status:** OPEN
 **Kind:** standing · **Census items:** n/a · **Contract:** `docs/milestones/hc-consolidation.md` R23
 **Size:** n/a — does not close on any single item · **Priority:** medium
 **Section:** process / documentation system (both repos)
@@ -9187,6 +9344,30 @@ list is empty.
   value **reports** it and does not triage it, and a report calling a value live is stating what it
   could not have checked. This clause names no variable, no secrets path and no value either.]`
 
+- `2026-08-19` — **ds t0 changed this list's own subject: the no-status population is now
+  zero by construction, and the four form-counts return different figures from the same
+  commands.** Recorded as a dated append rather than as an edit, because the
+  `2026-08-17` entry above is stamped and carries the command for every figure it
+  states — it is **refreshable, not wrong**, and rewriting it would destroy the record
+  of what the file looked like before the field existed. What changed: every one of the
+  165 row ids now carries a `**Status:**` field at a fixed position, one line below its
+  title heading, so *"most rows express it not at all"* is false at HEAD and the bracket
+  the entry describes has collapsed to a number — `python3 scripts/backlog_status.py
+  --census`, which prints the open set and the command that reproduces it. The four
+  legacy forms were **not** removed (ds t0's ADD-never-MOVE rule), so three of the four
+  commands return what they returned; the second does not, because the new field shares
+  its `**Status:**` prefix — `grep -cE '^\*\*Status:\*\*' docs/backlog-2026-06.md`
+  counted 26 at `df2600f` and counts 191 at this commit, of which 165 are the new field
+  and 26 are the legacy lines it did not touch. **A reader running that command for the
+  legacy population now gets a wrong answer, and the entry above cannot warn them**;
+  the form-aware derivation is `scripts/backlog_status.py --census`, whose legacy block
+  matches the legacy shape rather than the prefix. **This is the worked instance of a
+  census recorded inside the file it censuses** (harness `CLAUDE.md`, *a census recorded
+  inside the document it censuses is the worst case, because the sentences describing
+  the count are themselves counted*) — the entry did not go stale because time passed,
+  it went stale because a later commit to this same file changed what its commands
+  measure, and no instrument connects the two.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
@@ -9194,6 +9375,7 @@ findings that prompted it are BL-145–BL-149, which stand as separately filed.`
 ---
 
 ### BL-151 — standing: code findings, append-only (#TBD)
+**Status:** OPEN
 **Kind:** standing · **Census items:** n/a · **Contract:** `docs/milestones/hc-consolidation.md` R26
 **Size:** n/a — does not close on any single item · **Priority:** medium
 **Section:** code / cloudcost and any use case (both repos)
@@ -9445,6 +9627,79 @@ unit rate at ingest (`:396`, `:402`) and multiplies at `:763`, which is the shap
 record of the same finding is the two-surfaces defect **BL-145** ruled on. The omission is a
 decision, not an oversight.
 
+- `2026-08-19` — **Four constraints on any program that derives over
+  `docs/backlog-2026-06.md`, filed as one entry because they are one subject.** R23
+  rules against a row per facet and the same ground applies within a row: these four
+  are not four findings, they are the shape of one file stated four ways, and a
+  derivation that honours three of them is still wrong. Two are new here; two already
+  sit on this row and on BL-146 and are cross-referenced rather than restated, so the
+  set can be read in one place. Written at ds t0, which is the first program to derive
+  over this file, and each constraint is one its parser implements —
+  `scripts/backlog_status.py`, whose module docstring is the executable statement of
+  this entry.
+
+  - **Cardinality — a heading may name more than one row, so key on every `BL-\d+`.**
+    `### BL-050 + BL-055 + BL-056 — DONE 2026-07-25 (one reorder, three rows)` is one
+    heading and three rows, and a parser keyed on the first id credits BL-050 with a
+    closure BL-055 and BL-056 also own. **The FACT is recorded twice already** — on
+    BL-150's `2026-08-18` correction, which needed it to explain why a numerator fell
+    by nineteen rather than eighteen, and in `docs/milestones/hc-consolidation.md`.
+    **What is unfiled is the CONSTRAINT ON PARSERS**, and that distinction is this
+    entry: both prior records use the fact to *correct a count they had already got
+    wrong*, neither states it as a rule binding the next derivation, and a fact
+    recorded only inside a correction is reachable only by someone reading that
+    correction. Verify the heading and the id counts at HEAD.
+
+  - **The anchor — segment on `^### BL-`, never on `^### `.** Two `### ` headings in
+    this file are not row headings, and both sit **inside a row's body**: a
+    *Worked instance* heading in BL-041's, and a *Pre-implementation handoff* heading
+    in BL-042's. A segmenter splitting on `^### ` truncates both rows at those lines
+    and loses everything under them. **And the fix for one defeat creates another when
+    applied at the wrong anchor** — that is the point of filing this beside the
+    cardinality constraint rather than separately. The *Worked instance* heading names
+    a row id in its **text**; a cardinality rule applied at a `^### ` anchor therefore
+    mints a spurious section for that id out of BL-041's body, which then **merges into
+    the real row of that id** and hands it a status derived from a different row's
+    worked example. Correct cardinality plus wrong anchor is worse than neither: it
+    produces a well-formed wrong answer on a row that reads clean. Verify both headings'
+    positions and their containing rows at HEAD.
+
+  - **The unbounded offset** — already on this row, `2026-08-17`: the row format admits
+    a status expression at any distance from the heading, so a derivation must scan the
+    whole section and no fixed-prefix read can be trusted.
+
+  - **The quoted disposition** — **BL-146**: a row's body may quote another row's
+    disposition in the same form a row uses for its own status, and no pattern over this
+    file separates the two. ds t0's field is one structural answer to BL-146's open
+    question — a canonical whole-line form at a fixed offset, so a quotation elsewhere
+    raises the count to two and fails loudly instead of being silently chosen between —
+    but it answers it **for the new field only**. Every derivation over the LEGACY
+    expressions still inherits the hazard in full, and BL-146 stays open.
+
+  **No fix proposed beyond the constraint set.** What is claimed is that these four
+  bind together; what is not claimed is that they are exhaustive.
+
+- `2026-08-19` — **The backlog's one programmatic parser has never fired in anger, so
+  t1b's cross-repo claim rests on a gate with no live arms.** Harness `scripts/sprint.sh`
+  defines `expected_fail` and `known_red_healed` — the KNOWN_RED pairing that reads a
+  `BL-` reference and checks the row exists in this file (`SPRINT_BACKLOG`) — and
+  **both have zero call sites.** So the only executable in either repo that parses
+  `docs/backlog-2026-06.md` has never run against it outside its own definition, and its
+  behaviour under the row shapes above is unobserved rather than known-good. That matters
+  to **t1b and not to t0**: t1b must edit `sprint.sh` or break it, and it is the ticket
+  whose cross-repo arm the ds trial exists to exercise (ds-milestone §Close criteria,
+  criterion 8). Re-verified at harness `8eb960d`, with a positive control because a zero
+  is a claim about a command: non-comment, non-definition mentions of either helper —
+  `grep -nE '^[^#]*\b(expected_fail|known_red_healed)\b' scripts/sprint.sh | grep -vE
+  '(expected_fail|known_red_healed)\(\) *\{'` → **0**; the same shape over helpers that
+  do have call sites — `grep -cE '^[[:space:]]*fail '` → **94**, `ok` → **151**, `info`
+  → **137**. The script says so of itself at `scripts/sprint.sh:161` (*"There are zero
+  KNOWN_RED arms today (both helpers have zero call sites)"*), which is agreement and
+  not the evidence — a document quoting repo state is a snapshot with no invalidation,
+  so the count above is the derivation and the comment is the corroboration.
+  **No fix proposed**, and specifically it is NOT claimed that either helper is wrong or
+  that the row-existence check would fail; only that nothing has ever run it.
+
 `Source: R26, ruled by the arbiter 2026-08-13 at m6 t2b and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R26's own stamp. The
 ruling's ground is three code findings dropped across m6 t1 and t2 for want of a place to put
@@ -9455,6 +9710,7 @@ letting the seed count imply it was.`
 ---
 
 ### BL-152 — the repo-root `pytest` invocation cannot collect (#TBD)
+**Status:** DONE
 **Kind:** gate · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *every existing gate runs at ticket boundaries, even off-territory*
 **Size:** S · **Priority:** medium — **CLOSED 2026-08-16**
 **Section:** test apparatus (agents)
@@ -9666,6 +9922,7 @@ record what was believed at a date and are not rewritten. The row's status is th
 ---
 
 ### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *stale/leftover artifacts from a prior run*; *bind an artifact to what produced it, never to its position in a listing*
 **Size:** S · **Priority:** medium
 **Section:** harness (`../aetheris/scripts/sprint.sh`) — **cross-repo**
@@ -9935,6 +10192,7 @@ rather than into BL-151, which is for defects that break nothing today.`
 ---
 
 ### BL-154 — Rig's Cancel kills the direct child only, and transitions nothing (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *a mechanism that returns a well-formed value where a gap exists*
 **Size:** M · **Priority:** medium
 **Section:** aetheris-agents (`rig/`) — Rig-side, pre-cloudcost, fires for any agent
@@ -10012,6 +10270,7 @@ did not account for.`
 ---
 
 ### BL-155 — the capability matrix has three consumers, no gate, and is the one wiring place an LLM writes (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *"An LLM computing a value inside a generated artifact nobody recounts"* (the D3 / BL-067 carrier)
 **Size:** M · **Priority:** medium-high
 **Section:** aetheris-agents (`docs/`, `scripts/`, `rig/`)
@@ -10112,6 +10371,7 @@ that a deferred finding gets a backlog row in the round it is deferred.`
 ---
 
 ### BL-156 — the approval card's step text is written by the planner per run, and nothing checks it (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Every claim has a truth-maker**
 **Size:** M · **Priority:** medium
 **Section:** aetheris-agents (`rig/`, `agents/orchestrator.exs`) — generic to every planner-launched agent
@@ -10203,6 +10463,7 @@ instance of an open row's class appends to that row rather than opening another.
 ---
 
 ### BL-157 — the bare module name `conftest` is a standing trap, and it is held open by an absence (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer**; `CLAUDE.md` (agents) §Definition of done — *the Python whole-suite gate*
 **Size:** S · **Priority:** medium
 **Section:** test apparatus (agents)
@@ -10264,6 +10525,7 @@ nothing.`
 ---
 
 ### BL-158 — the pre-existing `integration` population has never been audited against the criterion the gate now uses (#TBD)
+**Status:** OPEN
 **Kind:** gate · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *the Python whole-suite gate*; Ruling 2 of BL-152's ticket text
 **Size:** M · **Priority:** medium
 **Section:** test apparatus (agents)
@@ -10332,6 +10594,7 @@ in the packet, per the standing rule that prose in a packet or notes files nothi
 ---
 
 ### BL-159 — what the dormant set owes when boxy-pipeline resumes (#TBD)
+**Status:** OPEN
 **Kind:** gate · **Census items:** n/a · **Contract:** `pytest.ini` — the `dormant` marker's stated condition for return; `CLAUDE.md` (agents) §Definition of done
 **Size:** M · **Priority:** low until boxy-pipeline resumes, then blocking
 **Section:** test apparatus (agents) — `boxy-pipeline/`
@@ -10403,6 +10666,7 @@ nothing.`
 ---
 
 ### BL-160 — the U2 export gate has never returned information in either direction (#TBD)
+**Status:** OPEN
 **Kind:** gate · **Census items:** n/a · **Contract:** `cloudcost/docs/m6-t2-implementation-notes.md` §U2 — the scrub class, defined rather than enumerated; `CLAUDE.md` (agents) §Definition of done — the export mechanism
 **Size:** M · **Priority:** medium
 **Section:** process / project knowledge (`scripts/assemble_export_bundle.py`, `scripts/u2_patterns.txt`)
@@ -10497,6 +10761,7 @@ that prose in a packet or notes files nothing — the same rule BL-161 records b
 ---
 
 ### BL-161 — the export-mechanism round deferred a sprint arm and filed no row (#TBD)
+**Status:** OPEN
 **Kind:** process · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Learning — BL-007 — *a deferred finding gets a backlog row in the same round it's deferred*
 **Size:** S · **Priority:** medium
 **Section:** process / backlog discipline; the arm itself is harness (`../aetheris/scripts/sprint.sh`)
@@ -10566,6 +10831,7 @@ at agents `a2df7b5`. The attribution of the omission is the arbiter's own, given
 ---
 
 ### BL-162 — an inbound pointer is not a scope change, and nothing tells the row (#TBD)
+**Status:** OPEN
 **Kind:** decision · **Census items:** n/a · **Contract:** n/a
 **Size:** S to decide · **Priority:** medium
 **Section:** process / backlog discipline (`docs/backlog-2026-06.md`, and any document that cites a
@@ -10662,6 +10928,7 @@ transcribed from its **Collides with** at `84c24c7`.`
 ---
 
 ### BL-163 — `bl-002`'s post-upload checks state check 1 and check 3 without the namespace boundary (#TBD)
+**Status:** DONE
 **Kind:** defect · **Census items:** n/a · **Contract:** `docs/backlog-2026-06.md` BL-143, the `[Ruled 2026-08-16 …]` annotation
 **Size:** S · **Priority:** medium — **CLOSED 2026-08-18**
 **Section:** process / project knowledge (`prompts/bl-002-refresh-project-knowledge.md`)
@@ -10778,6 +11045,7 @@ untouched.]`
 ---
 
 ### BL-164 — a test that hard-codes a value the code derives goes red when the derivation moves, not when the code breaks (#TBD)
+**Status:** OPEN
 **Kind:** defect (instance fixed) + decision (the class) · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *every existing gate runs at ticket boundaries*
 **Size:** S to decide the class; the instance is already done · **Priority:** medium
 **Section:** testing discipline (both repos' test suites)
@@ -10876,6 +11144,7 @@ that claim appeared in the packet alone.`
 ---
 
 ### BL-165 — `bl-002` Step 5 states the remove half as a hand enumeration of document kinds, not as the manifest set (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — *the manifest set is the scope of remove-all, and `claude/` is outside it*
 **Size:** S · **Priority:** medium
 **Section:** process / project knowledge (`prompts/bl-002-refresh-project-knowledge.md`)
@@ -10953,6 +11222,7 @@ clause.`
 ---
 
 ### BL-166 — `drift_check --strict` is green because of an untracked personal profile export (#TBD)
+**Status:** OPEN
 **Kind:** defect · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — the `drift_check` done-check and its `--strict` invariant
 **Size:** S _(proposed)_ · **Priority:** medium _(proposed)_
 **Section:** process / gates (`scripts/drift_check.py`, the `payload_fields` check)

@@ -76,9 +76,16 @@ cycle is run, and process changes get no round of their own.
   artifact is the backlog, in agents, while its breaking change is in the
   harness. If the tiebreak proves unworkable there, that is evidence for verdict
   A and it is recorded, not patched around.
-- **A Project is addressed as `@me`.** The two authenticated `gh` tokens have
-  disjoint gaps — one carries `project` without `read:org`, the other the
-  reverse — so an owner-qualified address fails. Verify and record.
+- **A Project is addressed owner-qualified, `--owner vishal-h`. The constraint
+  that forced `@me` is discharged.** It arose from two authenticated `gh` tokens
+  with disjoint gaps — one carrying `project` without `read:org`, the other the
+  reverse — so no single token could both address the owner and read the org. The
+  token was re-minted on 2026-08-19 to carry both, and now holds `gist`,
+  `project`, `read:org`, `repo`, `workflow`. Recorded rather than left to resolve:
+  `gh project list --owner vishal-h` returns rows, where it previously returned
+  `unknown owner type` and then, after a first partial re-mint, a `read:project`
+  scope error. `@me` resolves to the same owner and is no longer the required
+  form.
 - **Keep the Project minimal.** Fields and automation are their own maintenance
   surface and nothing yet justifies them.
 - **R23 is preserved, not relaxed.** GitHub Issues has no shape for a thing that
@@ -101,6 +108,15 @@ cycle is run, and process changes get no round of their own.
    document. If that list is empty while the list of acts taken solely to keep
    the Project current is not, the Project is a second surface with no reader and
    the trial has failed on this criterion.
+   **Its instrument:** each ds ticket's implementation notes carry one line
+   stating whether the Project was consulted and for what, and that line is this
+   criterion's evidence. The ground is that a criterion whose evidence is nobody's
+   recollection is answered "no finding" by default at the close — which is
+   precisely the failure this criterion exists to detect, so it would report clean
+   in the one state it was written to catch. One line per ticket, written when the
+   ticket runs and not reconstructed at the close; "not consulted" is a valid and
+   expected value, and a ticket that omits the line leaves the criterion
+   unanswerable rather than answered no.
 6. **Trial verdict B — did the mirror drift, and did anything catch it?** At the
    close, diff each issue body against its ticket section at this document's
    commit. Any divergence fails it. No executable in either repo invokes `gh` —
@@ -146,6 +162,8 @@ rule. Cited-means-read; the invariant held and the pointer did not.]`
 
 ### t0 — the backlog gets a status field
 
+**Issue.** `vishal-h/aetheris-agents#75`
+
 **Scope.** Every `### BL-` row carries an explicit status field in its metadata
 block. The existing expressions — a heading suffix, an inline bold on the Priority
 line, and nothing at all — are normalised into it. Rows whose status cannot be
@@ -180,6 +198,8 @@ field, and (b) prints the open set as a single number with the command that
 reproduces it. The bracket collapsing to a number IS the done-check.
 
 ### t1a — the use-case registry
+
+**Issue.** `vishal-h/aetheris-agents#76`
 
 **Scope.** Five items: the registry file; the drift check that every use-case
 directory has a row and every row a directory; the doc-enumeration check, which
@@ -256,6 +276,8 @@ and check that it separates them.
 
 ### t1b — the backlog split
 
+**Issue.** `vishal-h/aetheris-agents#77`
+
 **Blocked by t0.** Scope per the shape brief: the reorganisation, the tombstone at
 the old path, and the `BL-nnn` resolution check, in ONE commit — the check is the
 precondition, not a follow-up. If the check cannot land with the split, do not
@@ -280,6 +302,8 @@ whether any already points across is unverified. Routed to BL-150 as a question.
 
 ### t2 — the artifact/run stamp
 
+**Issue.** `vishal-h/aetheris-agents#78`
+
 **Scope.** BL-153's Owes is discharged and the row is ready to scope: arm ordering
 NOT changed, the stamp written script-side, the identifier pipeline-minted,
 coverage including the history tree, and a writer that runs last unconditionally —
@@ -288,6 +312,8 @@ which no current step is.
 **RESOLVE at ticket time.** Format, file and reader.
 
 ### t3 — BL-161, the deferred sprint arm
+
+**Issue.** `vishal-h/aetheris#85`
 
 **Scope.** Per BL-161. **Its subject is entirely a harness write, so its issue
 is filed in the harness repo** — unlike t1b, which is cross-repo with an

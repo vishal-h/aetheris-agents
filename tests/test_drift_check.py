@@ -912,6 +912,285 @@ def test_command_fields_section_anchor_missing_is_fail(monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
+# use_case_registry — ds t1a                                                   #
+# --------------------------------------------------------------------------- #
+# Every fixture below is SYNTHETIC and written to tmp_path. The broken states are
+# constructed here, never by editing a tracked file — per `../aetheris/CLAUDE.md`
+# **Silent-wrong-answer**, ***"construct the broken state and watch the check fail in it,
+# as part of writing the check"***, and per the 2026-08-16 export-boundary rule that a
+# mutation on a file carrying uncommitted work is restored from a working copy, which is
+# avoided entirely by never mutating a tracked file.
+
+_USE_CASES_SAMPLE = """# Use cases
+
+## Membership — what is a row
+
+Prose, with a table the parser must not read as data:
+
+| check | home |
+|---|---|
+| registry <-> directories | tests/ |
+
+## The registry
+
+| Use case | Status | Status set | Reason (business state) | Condition for return |
+|---|---|---|---|---|
+| `alpha` | active | 2026-01-01 | Work is not paused. | Nothing pending. |
+| `beta/one` | active | 2026-01-01 | Work is not paused. | Nothing pending. |
+| `beta/two` | dormant | 2026-01-02 | Paused pending a client. | It runs again when that work resumes. |
+
+## After the table
+
+| not | a row |
+|---|---|
+"""
+
+_KEY_DOCS_SAMPLE = """# CLAUDE.md
+
+## Key docs to read for each use case
+
+| Use case | Read first |
+|----------|-----------|
+| alpha | `alpha/runbook.md` |
+| beta/one | `beta/docs/design.md` |
+| beta/two | `beta/docs/design.md` |
+
+Trailing prose.
+
+## Next section
+"""
+
+_README_SAMPLE = """# readme
+
+## Use cases
+
+| Directory | What it does | Status |
+|-----------|-------------|--------|
+| [`alpha/`](alpha/) | does alpha | OK |
+| [`beta/one/`](beta/one/) | does beta one | OK |
+| [`beta/two/`](beta/two/) | does beta two | dormant |
+
+### Something else
+"""
+
+
+def _registry_env(tmp_path, monkeypatch, registry=None, key_docs=None, readme=None):
+    """Point every path the check reads at tmp_path, and stub the tree-derived arms.
+
+    The three arms that read the real tree (the section-agent glob, the tools.json glob and
+    the agent-bearing predicate) are given a synthetic layout under tmp_path rather than
+    being skipped, so the predicate itself is exercised.
+    """
+    root = tmp_path / "repo"
+    (root / "agents").mkdir(parents=True)
+    # alpha and beta/one carry agents; beta/two does not — the dormant, non-agent-bearing case.
+    for uc in ("alpha", "beta/one"):
+        (root / uc / "agents").mkdir(parents=True)
+        (root / uc / "agents" / "orch.exs").write_text("%Aetheris.RunConfig{}")
+        (root / "agents" / f"capability_matrix_{uc.replace('/', '_')}.exs").write_text("x")
+    (root / "beta" / "two").mkdir(parents=True)
+    (root / "alpha" / "tools.json").write_text("{}")
+
+    assemble = root / "assemble_matrix.py"
+    assemble.write_text('SECTIONS = [\n    ("alpha", "alpha"),\n    ("beta_one", "beta/one"),\n]\n')
+    overrides = root / "overrides.json"
+    overrides.write_text('{"_comment": "ignored", "alpha": {}}')
+    manifests = root / "test_tools_manifests.py"
+    manifests.write_text(
+        'assert SWEPT == [\n    "alpha",\n    "beta",\n]\n'
+        'NO_MANIFEST_YET = ("beta",)\n'
+    )
+    tools_rs = root / "tools.rs"
+    tools_rs.write_text('        vec!["alpha"],\n')
+
+    reg = root / "use-cases.md"
+    reg.write_text(registry if registry is not None else _USE_CASES_SAMPLE)
+    kd = root / "CLAUDE.md"
+    kd.write_text(key_docs if key_docs is not None else _KEY_DOCS_SAMPLE)
+    rm = root / "README.md"
+    rm.write_text(readme if readme is not None else _README_SAMPLE)
+
+    monkeypatch.setattr(drift_check, "REPO_ROOT", root)
+    monkeypatch.setattr(drift_check, "USE_CASES_MD", reg)
+    monkeypatch.setattr(drift_check, "AGENTS_CLAUDE_MD", kd)
+    monkeypatch.setattr(drift_check, "README_MD", rm)
+    monkeypatch.setattr(drift_check, "ASSEMBLE_PY", assemble)
+    monkeypatch.setattr(drift_check, "OVERRIDES_JSON", overrides)
+    monkeypatch.setattr(drift_check, "TOOLS_MANIFEST_TEST", manifests)
+    monkeypatch.setattr(drift_check, "TOOLS_RS", tools_rs)
+
+
+def test_use_case_registry_all_arms_green(tmp_path, monkeypatch):
+    """The positive control. Every mutation below is read against this."""
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    drift_check.check_use_case_registry()
+    assert not fails_of("use_case_registry"), fails_of("use_case_registry")
+    assert len(passes_of("use_case_registry")) == 9, passes_of("use_case_registry")
+
+
+def test_use_case_registry_names_the_agent_bearing_predicate(tmp_path, monkeypatch):
+    """A failure must say WHICH set it is comparing, not just that two sets differ."""
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    drift_check.check_use_case_registry()
+    infos = [m for l, c, m in drift_check.FINDINGS if l == "INFO" and c == "use_case_registry"]
+    assert any("agent-bearing: 2" in m and "beta/two" in m for m in infos), infos
+    assert any(
+        "AGENT-BEARING" in m for m in passes_of("use_case_registry")
+    ), "the SECTIONS arm must name the predicate it filters by"
+
+
+def test_use_case_registry_missing_file_is_fail(tmp_path, monkeypatch):
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    monkeypatch.setattr(drift_check, "USE_CASES_MD", tmp_path / "nope.md")
+    drift_check.check_use_case_registry()
+    assert any("file not found" in m for m in fails_of("use_case_registry"))
+
+
+def test_use_case_registry_anchor_missing_is_fail(tmp_path, monkeypatch):
+    reset()
+    _registry_env(
+        tmp_path, monkeypatch, registry=_USE_CASES_SAMPLE.replace("## The registry", "## Rows")
+    )
+    drift_check.check_use_case_registry()
+    assert any("anchor not found" in m for m in fails_of("use_case_registry"))
+
+
+def test_use_case_registry_zero_rows_is_fail(tmp_path, monkeypatch):
+    reset()
+    gutted = _USE_CASES_SAMPLE.replace("| `alpha`", "").replace("| `beta/one`", "").replace(
+        "| `beta/two`", ""
+    )
+    _registry_env(tmp_path, monkeypatch, registry=gutted)
+    drift_check.check_use_case_registry()
+    assert any("zero rows parsed" in m for m in fails_of("use_case_registry"))
+
+
+def test_use_case_registry_mutation_claude_md_row_dropped(tmp_path, monkeypatch):
+    """MUTATION — a use case is added to the registry and CLAUDE.md is not extended."""
+    reset()
+    _registry_env(
+        tmp_path,
+        monkeypatch,
+        key_docs=_KEY_DOCS_SAMPLE.replace("| beta/two | `beta/docs/design.md` |\n", ""),
+    )
+    drift_check.check_use_case_registry()
+    hits = [m for m in fails_of("use_case_registry") if "CLAUDE.md" in m]
+    assert hits and "'beta/two'" in hits[0], fails_of("use_case_registry")
+
+
+def test_use_case_registry_mutation_readme_row_orphaned(tmp_path, monkeypatch):
+    """MUTATION — README names a use case the registry does not declare."""
+    reset()
+    _registry_env(
+        tmp_path,
+        monkeypatch,
+        readme=_README_SAMPLE.replace(
+            "\n### Something else", "| [`ghost/`](ghost/) | not declared | ? |\n\n### Something else"
+        ),
+    )
+    drift_check.check_use_case_registry()
+    hits = [m for m in fails_of("use_case_registry") if "README.md" in m]
+    assert hits and "'ghost'" in hits[0], fails_of("use_case_registry")
+
+
+def test_use_case_registry_mutation_sections_drifts(tmp_path, monkeypatch):
+    """MUTATION — a section agent's key is dropped from SECTIONS."""
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    drift_check.ASSEMBLE_PY.write_text('SECTIONS = [\n    ("alpha", "alpha"),\n]\n')
+    drift_check.check_use_case_registry()
+    hits = [m for m in fails_of("use_case_registry") if "SECTIONS" in m]
+    assert hits and "'beta_one'" in hits[0], fails_of("use_case_registry")
+
+
+def test_use_case_registry_mutation_dormant_use_case_pulled_into_matrix(tmp_path, monkeypatch):
+    """MUTATION — the predicate is load-bearing, not decoration.
+
+    Add a section agent for the NON-agent-bearing use case and SECTIONS gains its key: the
+    arms must go red, because the matrix's declared scope is agent-bearing use cases and
+    `beta/two` has no agents. Without the predicate this mutation would pass.
+    """
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    (drift_check.REPO_ROOT / "agents" / "capability_matrix_beta_two.exs").write_text("x")
+    drift_check.ASSEMBLE_PY.write_text(
+        'SECTIONS = [\n    ("alpha", "alpha"),\n    ("beta_one", "beta/one"),\n'
+        '    ("beta_two", "beta/two"),\n]\n'
+    )
+    drift_check.check_use_case_registry()
+    hits = fails_of("use_case_registry")
+    assert len(hits) == 2, hits
+    assert all("beta_two" in m for m in hits), hits
+
+
+def test_use_case_registry_mutation_subset_arm_gains_an_outsider(tmp_path, monkeypatch):
+    """MUTATION — a subset arm fails on an EXTRA, never on a shortfall."""
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    drift_check.OVERRIDES_JSON.write_text('{"_comment": "x", "alpha": {}, "ghost": {}}')
+    drift_check.check_use_case_registry()
+    hits = [m for m in fails_of("use_case_registry") if "overrides" in m]
+    assert hits and "'ghost'" in hits[0], fails_of("use_case_registry")
+
+
+def test_use_case_registry_subset_arm_tolerates_a_shortfall(tmp_path, monkeypatch):
+    """The restore side of the arm above: a subset arm covering ONE row is still green."""
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    drift_check.OVERRIDES_JSON.write_text('{"_comment": "x"}')
+    drift_check.check_use_case_registry()
+    assert not fails_of("use_case_registry"), fails_of("use_case_registry")
+
+
+def test_use_case_registry_mutation_swept_uses_sweep_keying(tmp_path, monkeypatch):
+    """MUTATION — SWEPT is compared on the TOP-LEVEL keying, so `beta/one` presents as `beta`."""
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    drift_check.TOOLS_MANIFEST_TEST.write_text(
+        'assert SWEPT == [\n    "alpha",\n    "beta",\n    "gamma",\n]\n'
+        'NO_MANIFEST_YET = ("beta",)\n'
+    )
+    drift_check.check_use_case_registry()
+    hits = [m for m in fails_of("use_case_registry") if "SWEPT" in m]
+    assert hits and "'gamma'" in hits[0], fails_of("use_case_registry")
+
+
+def test_use_case_registry_takes_no_strict_exemption(tmp_path, monkeypatch):
+    """Under --strict this check has no exempt findings: a WARN would become a FAIL.
+
+    It emits none today; the assertion is that nothing it records is marked strict_exempt,
+    which is what would silently neuter it later.
+    """
+    reset()
+    _registry_env(tmp_path, monkeypatch)
+    recorded = []
+    orig = drift_check.record
+
+    def spy(level, check, message, strict_exempt=False):
+        recorded.append((level, check, strict_exempt))
+        orig(level, check, message, strict_exempt)
+
+    monkeypatch.setattr(drift_check, "record", spy)
+    monkeypatch.setattr(drift_check, "_fail", lambda c, m: spy("FAIL", c, m))
+    monkeypatch.setattr(drift_check, "_warn", lambda c, m, e=False: spy("WARN", c, m, e))
+    monkeypatch.setattr(drift_check, "_info", lambda c, m: spy("INFO", c, m))
+    monkeypatch.setattr(drift_check, "_ok", lambda c, m: spy("PASS", c, m))
+    drift_check.check_use_case_registry()
+    assert recorded, "check recorded nothing"
+    assert not any(exempt for _, _, exempt in recorded), recorded
+
+
+def test_use_case_registry_is_check_addressable():
+    """--check use_case_registry resolves; the ticket's Done-check requires it."""
+    assert "use_case_registry" in drift_check._CHECK_NAMES
+    assert drift_check._CHECK_NAMES["use_case_registry"] is drift_check.check_use_case_registry
+    assert drift_check.check_use_case_registry in drift_check.CHECKS
+
+
+# --------------------------------------------------------------------------- #
 # Integration — run all checks against live repo                               #
 # --------------------------------------------------------------------------- #
 

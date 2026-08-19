@@ -20,6 +20,11 @@ Checks:
   project_knowledge   — project-knowledge-manifest.md commit hashes vs git HEAD (WARN if stale),
                         plus a WARN when a tracked path has uncommitted edits (BL-041b)
   command_fields      — specs.md §4 ```rust struct fields vs commands/*.rs (BL-036)
+  use_case_registry   — docs/use-cases.md vs every machine-separable enumeration of use
+                        cases: the two doc tables, assemble_matrix.SECTIONS and the section
+                        agents (both under the agent-bearing predicate), the overrides keys,
+                        SWEPT / NO_MANIFEST_YET, the tools.json set and tools.rs's vec!
+                        (ds t1a). No strict exemption.
 
 --strict promotes WARN to FAIL, with one exemption: project_knowledge
 manifest-STALENESS WARNs stay WARN and do not affect the exit code (mid-cycle
@@ -31,6 +36,7 @@ So under --strict the invariant is "zero UNEXPLAINED WARNs", not "zero WARNs".
 """
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -824,6 +830,235 @@ def check_command_fields() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Check 10: use_case_registry                                                  #
+# --------------------------------------------------------------------------- #
+# docs/use-cases.md is the declaration of what the use cases are and which are dormant
+# (ds t1a). This check compares it against every OTHER enumeration of use cases whose
+# content a parser can extract WITHOUT DECIDING WHAT A SENTENCE MEANS — a markdown table
+# column, a Python/Rust literal, a set of file paths, a JSON key set. That criterion is
+# ds t1a's, and it is constraint 2 made decidable: a document mixing prose and enumeration
+# is checked and failed, never rewritten by a script that has to locate a list inside
+# paragraphs. Surfaces whose enumeration lives in prose (pytest.ini's dormancy comment and
+# its `markers = dormant: …` sentence, ROADMAP.md, the manifest's runbook prose,
+# orchestrator.exs's few-shot examples) are OUT OF SCOPE and are fixed by a human edit or
+# de-numeralised — never by this check.
+#
+# It also inherits gc t3's discharge predicate structurally rather than by implementing one:
+# a markdown table row and a Rust literal cannot be confused with an enumeration quoted
+# inside a dated correction block, and prose is out of scope, so there is no live-vs-quoted
+# distinction left for this check to get wrong.
+#
+# NOT re-checked here: docs/capability-matrix.md's `## ` headings, which are DERIVED from
+# assemble_matrix.SECTIONS and are already asserted against it by
+# tests/test_assemble_matrix.py. Checking the generated output and calling the input verified
+# is the seam ds t1a exists to close, so this check reads SECTIONS itself.
+
+USE_CASES_MD  = REPO_ROOT / "docs" / "use-cases.md"
+ASSEMBLE_PY   = REPO_ROOT / "scripts" / "assemble_matrix.py"
+OVERRIDES_JSON = REPO_ROOT / "docs" / "capability-matrix-overrides.json"
+TOOLS_MANIFEST_TEST = REPO_ROOT / "tests" / "test_tools_manifests.py"
+TOOLS_RS      = RIG_ROOT / "src-tauri" / "src" / "commands" / "tools.rs"
+README_MD     = REPO_ROOT / "README.md"
+AGENTS_CLAUDE_MD = REPO_ROOT / "CLAUDE.md"
+
+_REGISTRY_ROW_RE = re.compile(
+    r"^\|\s*`([a-z0-9/_-]+)`\s*\|\s*(\w+)\s*\|", re.M
+)
+# A doc table's identifier column is read STRUCTURALLY, not lexically: take the contiguous
+# pipe-row block, drop its header row and its `---` separator, and read cell 1 of the rest.
+# A lexical rule ("cells that look like identifiers") would have to decide what a heading
+# means, which is the thing this whole check is defined to never do.
+_TABLE_SEP_RE = re.compile(r"^\|[\s:|-]+\|$")
+
+
+def _first_column(section: str) -> list[str]:
+    rows = [ln.strip() for ln in section.splitlines() if ln.strip().startswith("|")]
+    sep = next((i for i, ln in enumerate(rows) if _TABLE_SEP_RE.match(ln)), None)
+    if sep is None:
+        return []
+    cells = [ln.split("|")[1].strip() for ln in rows[sep + 1:] if ln.count("|") >= 2]
+    out = []
+    for c in cells:
+        c = re.sub(r"^\[(.*)\]\(.*\)$", r"\1", c)   # [`payslip/`](payslip/) -> `payslip/`
+        out.append(c.strip("`").rstrip("/"))
+    return [c for c in out if c]
+
+
+def _parse_registry(check: str) -> list[tuple[str, str]] | None:
+    text = _require_file(USE_CASES_MD, check)
+    if text is None:
+        return None
+    m = _require_section(text, r"\n## The registry\n(.*?)(?=\n## |\Z)", check, "## The registry")
+    if not m:
+        return None
+    rows = _REGISTRY_ROW_RE.findall(m.group(1))
+    if not rows:
+        _fail(check, "zero rows parsed from docs/use-cases.md '## The registry' table")
+        return None
+    return rows
+
+
+def _table_ids(path: Path, section_pattern: str, anchor: str, check: str) -> set[str] | None:
+    """First-cell identifiers of the pipe table inside a named section."""
+    text = _require_file(path, check)
+    if text is None:
+        return None
+    m = _require_section(text, section_pattern, check, f"{path.name} {anchor}")
+    if not m:
+        return None
+    ids = set(_first_column(m.group(1)))
+    if not ids:
+        _fail(check, f"zero identifiers parsed from {path.name} {anchor}")
+        return None
+    return ids
+
+
+def _compare(check: str, label: str, expected: set[str], actual: set[str], subset: bool) -> None:
+    """One arm. `subset` arms legitimately cover part of the registry, by design."""
+    extra = sorted(actual - expected)
+    missing = sorted(expected - actual)
+    if subset:
+        if extra:
+            _fail(check, f"{label}: {extra} not in the registry (subset arm — extras are the failure)")
+        else:
+            _ok(check, f"{label}: {len(actual)} entr(ies), all in the registry (subset arm)")
+        return
+    if extra or missing:
+        _fail(
+            check,
+            f"{label} disagrees with docs/use-cases.md — "
+            f"absent from the registry: {extra}; missing from this surface: {missing}",
+        )
+    else:
+        _ok(check, f"{label}: {len(actual)} entr(ies) == the registry")
+
+
+def check_use_case_registry() -> None:
+    check = "use_case_registry"
+
+    rows = _parse_registry(check)
+    if rows is None:
+        return
+    registry = {rid for rid, _ in rows}
+
+    # Two derived keyings, both stated in the messages that use them:
+    #   matrix key   api/tenant -> api_tenant   (the capability matrix's identifier shape)
+    #   sweep key    api/tenant -> api          (surfaces keyed on the parent manifest dir)
+    sweep_keys = {rid.split("/")[0] for rid in registry}
+
+    # The agent-bearing predicate. The capability matrix's unit is an AGENT: each section is
+    # produced by an agents/capability_matrix_<key>.exs run, and the assembled document is read
+    # whole into the planner's system prompt. Comparing SECTIONS to the FULL registry would
+    # oblige us to author a section agent for a dormant use case — adding planner capability for
+    # paused work, and asserting a capability nothing can currently exercise. So SECTIONS is
+    # compared to the registry FILTERED to use cases that have agents, and boxy-pipeline's
+    # omission from the matrix becomes DECLARED rather than accidental. The predicate is named
+    # in the message below so a failure says which set it is comparing.
+    agent_bearing = {
+        rid for rid in registry if list((REPO_ROOT / rid / "agents").glob("*.exs"))
+    }
+    matrix_keys = {rid.replace("/", "_") for rid in agent_bearing}
+
+    _info(
+        check,
+        f"registry: {len(registry)} use case(s); agent-bearing: {len(agent_bearing)}; "
+        f"non-agent-bearing (excluded from capability-matrix arms): "
+        f"{sorted(registry - agent_bearing)}",
+    )
+
+    # --- Arm 1: agents CLAUDE.md §Key docs table --------------------------------------
+    ids = _table_ids(
+        AGENTS_CLAUDE_MD,
+        r"\n## Key docs to read for each use case\n(.*?)(?=\n## |\Z)",
+        "§Key docs to read for each use case",
+        check,
+    )
+    if ids is not None:
+        _compare(check, "CLAUDE.md §Key docs table", registry, ids, subset=False)
+
+    # --- Arm 2: README.md §Use cases table ---------------------------------------------
+    ids = _table_ids(
+        README_MD, r"\n## Use cases\n(.*?)(?=\n## |\n### |\Z)", "§Use cases", check
+    )
+    if ids is not None:
+        _compare(check, "README.md §Use cases table", registry, ids, subset=False)
+
+    # --- Arm 3: assemble_matrix.SECTIONS ------------------------------------------------
+    text = _require_file(ASSEMBLE_PY, check)
+    if text is not None:
+        m = _require_section(text, r"\bSECTIONS = \[(.*?)\n\]", check, "assemble_matrix.py SECTIONS")
+        if m:
+            keys = set(re.findall(r'\(\s*"([a-z0-9_]+)"\s*,', m.group(1)))
+            _compare(
+                check,
+                "assemble_matrix.SECTIONS vs the registry filtered to AGENT-BEARING use cases",
+                matrix_keys,
+                keys,
+                subset=False,
+            )
+
+    # --- Arm 4: the capability-matrix section agents ------------------------------------
+    exs = {
+        p.stem.replace("capability_matrix_", "")
+        for p in (REPO_ROOT / "agents").glob("capability_matrix_*.exs")
+    }
+    if exs:
+        _compare(
+            check,
+            "agents/capability_matrix_*.exs vs the registry filtered to AGENT-BEARING use cases",
+            matrix_keys,
+            exs,
+            subset=False,
+        )
+    else:
+        _fail(check, "zero agents/capability_matrix_*.exs files found")
+
+    # --- Arm 5: capability-matrix-overrides.json keys (subset by design) -----------------
+    text = _require_file(OVERRIDES_JSON, check)
+    if text is not None:
+        try:
+            keys = {k for k in json.loads(text) if not k.startswith("_")}
+        except json.JSONDecodeError as exc:
+            _fail(check, f"capability-matrix-overrides.json is not valid JSON: {exc}")
+        else:
+            _compare(check, "capability-matrix-overrides.json keys", matrix_keys, keys, subset=True)
+
+    # --- Arms 6+7: tests/test_tools_manifests.py SWEPT and NO_MANIFEST_YET ---------------
+    # Keyed on the SWEEP keying: these surfaces walk top-level dirs, so api/tenant and
+    # api/gateway present as one `api`.
+    text = _require_file(TOOLS_MANIFEST_TEST, check)
+    if text is not None:
+        m = _require_section(text, r"assert SWEPT == \[(.*?)\]", check, "assert SWEPT == [")
+        if m:
+            swept = set(re.findall(r'"([a-z0-9/_-]+)"', m.group(1)))
+            _compare(
+                check,
+                "test_tools_manifests SWEPT literal (registry keyed by top-level dir)",
+                sweep_keys,
+                swept,
+                subset=False,
+            )
+        m = _require_section(text, r"NO_MANIFEST_YET = \((.*?)\)", check, "NO_MANIFEST_YET = (")
+        if m:
+            nmy = set(re.findall(r'"([a-z0-9/_-]+)"', m.group(1)))
+            _compare(check, "test_tools_manifests NO_MANIFEST_YET", sweep_keys, nmy, subset=True)
+
+    # --- Arm 8: the committed tools.json file set (subset by design) ---------------------
+    manifests = {p.parent.name for p in REPO_ROOT.glob("*/tools.json")}
+    _compare(check, "committed <use_case>/tools.json set", sweep_keys, manifests, subset=True)
+
+    # --- Arm 9: Rig tools.rs's hardcoded manifest list (subset by design) ----------------
+    text = _require_file(TOOLS_RS, check)
+    if text is not None:
+        m = re.search(r"vec!\[((?:\s*\"[a-z0-9/_-]+\"\s*,?)+)\]", text)
+        if not m:
+            _fail(check, "anchor not found: tools.rs committed-manifest vec![...]")
+        else:
+            names = set(re.findall(r'"([a-z0-9/_-]+)"', m.group(1)))
+            _compare(check, "tools.rs discovery_finds_every_committed_manifest vec!", sweep_keys, names, subset=True)
+
+
+# --------------------------------------------------------------------------- #
 # Main                                                                         #
 # --------------------------------------------------------------------------- #
 
@@ -837,6 +1072,7 @@ CHECKS = [
     check_milestone_status,
     check_project_knowledge,
     check_command_fields,
+    check_use_case_registry,
 ]
 
 _CHECK_NAMES = {fn.__name__.replace("check_", ""): fn for fn in CHECKS}

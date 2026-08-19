@@ -131,7 +131,15 @@ Each use case follows:
   output/           # gitignored; .gitkeep committed
 ```
 
-Current use cases: `payslip`, `drive`, `email`, `api` (uc-api-agent / TAP protocol), `boxy-pipeline` (pure Python; no Aetheris agent — includes data layer scripts for catalog and sales order extraction).
+**The current use cases are the rows of `docs/use-cases.md`** — the committed registry, which
+also carries each one's status, the date it was set, and its condition for return. Read the
+table rather than a sentence here: at `7841060` this line named `payslip`, `drive`, `email`,
+`api` and `boxy-pipeline`, omitting `cloudcost`, `docbuilder`, `eduloka` and `provenance`
+outright and collapsing `api` to one — and nothing noticed, which is exactly why the registry
+exists. (That enumeration is quoted as the historical fact it is, not maintained.) It is out of scope for
+`drift_check.py`'s `use_case_registry` check by that check's own criterion — an enumeration
+inside a sentence cannot be extracted without deciding what the sentence means — so it is
+de-numeralised into a pointer instead of being kept in step by hand.
 
 ### Agent files
 
@@ -515,11 +523,19 @@ open.
 | payslip | `payslip/docs/t3c-implementation-notes.md` |
 | drive | `drive/docs/t3-implementation-notes.md` |
 | email | `email/docs/t3-implementation-notes.md` |
-| api (TAP) | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
+| api/tenant | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
+| api/gateway | `docs/uc-api-agent-design.md`, `api/docs/t1-implementation-notes.md` |
 | boxy-pipeline | `boxy-pipeline/docs/m-boxy-pipeline.md`, `boxy-pipeline/docs/m-boxy-pipeline-1a.md`, `boxy-pipeline/docs/runbook.md` |
 | eduloka | `eduloka/runbook.md`, `docs/milestones/m-eduloka-discovery-summary.md` |
 | docbuilder | `docbuilder/runbook.md`, `docbuilder/milestone.md` |
 | cloudcost | `cloudcost/runbook.md`, `cloudcost/milestone.md`, `cloudcost/m2-milestone.md` |
+| provenance | `docs/provenance/runbook.md`, `docs/provenance/overview.md`, `docs/provenance/milestones/` |
+
+The first column is the registry identifier from `docs/use-cases.md`, and
+`drift_check.py`'s `use_case_registry` check compares this column against that table — so the
+row set here is a checked enumeration, not a reading list someone remembered to extend. `api`
+is two rows because the registry splits it; both cite the same design doc, which covers the
+protocol both halves implement.
 
 The `docs/agent-creation-guide.md` is the authoritative reference for building new agents.
 

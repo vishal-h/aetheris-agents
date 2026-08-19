@@ -11,12 +11,23 @@ evaluates. All sprint and agent commands run from `../aetheris/`.
 
 ## Use cases
 
+**`docs/use-cases.md` is the registry** — the committed declaration of what the use cases are
+and which are dormant. This table's first column is checked against it by `drift_check.py`'s
+`use_case_registry` check; the Status column below is a reader's summary of progress, not the
+status the registry declares.
+
 | Directory | What it does | Status |
 |-----------|-------------|--------|
 | [`payslip/`](payslip/) | Generate monthly payslips from payroll CSV; parallel sub-agents per employee | ✅ |
 | [`drive/`](drive/) | Download payroll CSV from Google Drive; upload generated PDFs back | ✅ |
 | [`email/`](email/) | Email each employee their payslip PDF | ✅ |
-| [`api/`](api/) | TAP protocol — agent-to-agent enrollment via ct.stu API | ✅ T1–T4 |
+| [`api/tenant/`](api/tenant/) | TAP protocol, tenant side — agent-to-agent enrollment via ct.stu API | ✅ T1–T4 |
+| [`api/gateway/`](api/gateway/) | TAP protocol, gateway side — intent execution against ct.stu | ✅ T1–T4 |
+| [`boxy-pipeline/`](boxy-pipeline/) | Catalog and sales-order extraction; pure Python, no Aetheris agent | ⏸ dormant since 2026-08-16 |
+| [`cloudcost/`](cloudcost/) | Multi-provider cloud spend collection and reporting | ✅ |
+| [`docbuilder/`](docbuilder/) | Branded document generation — invoices, offer letters (PDF + DOCX) | ✅ |
+| [`eduloka/`](eduloka/) | Discovery milestone | ✅ |
+| [`provenance/`](provenance/) | Corpus classification, migration and search over client documents | ✅ |
 
 ### Payslip pipeline
 

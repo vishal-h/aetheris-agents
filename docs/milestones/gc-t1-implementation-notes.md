@@ -432,4 +432,36 @@ second status surface docs/backlog-2026-06.md  `## Suggested order`  :5662
 the class rule        aetheris/CLAUDE.md:760-777  Adjacent-case, and the "the one X" tell
 control rule          aetheris/CLAUDE.md:599-607  a negative needs a positive control
 carried-in source     cloudcost/m5-n1-compose.md:1035-1227  §Open for the next cycle
+discharge predicate   docs/milestones/gc-stale-claims.md  §t3 done-check arm 3 (:591-595),
+                      ratified at :618-622 — REQUIRED BY ANY re-run of this census
 ```
+
+**The discharge predicate, carried here because a mechanical check over this class needs it and
+this is where the census is.** It was authored at gc t3, *after* this census, and lived only in
+the round document: `grep -c "discharg" docs/milestones/gc-t1-implementation-notes.md` returned
+**0** at agents `7841060`, against **12** in `gc-stale-claims.md` as the positive control. A rule
+declared load-bearing beyond its own ticket, unreachable from the instrument it governs, is the
+harness rule *a learning exists only where a session will read it* in miniature. Verbatim from
+`gc-stale-claims.md:591-595`:
+
+> ```
+> # 3. Re-run t1's census over the six corrected destinations. Each must return
+> #    zero UNDISCHARGED stale gate claims. A hit is discharged if it is inside
+> #    a dated correction block, is the corrected text itself, or is superseded
+> #    text with a dated block adjacent. Publish the pattern and a positive
+> #    control proving it still fires elsewhere. A zero without a control is an
+> #    observation about the command.
+> ```
+
+and its ratification at `:618-622`:
+
+> **The discharge predicate is load-bearing beyond this ticket.** Any future mechanical check over
+> this class needs it — without it every decision-7 superseding block, and every dated correction
+> that quotes the wording it replaced, reads as a live defect forever, and the correction machinery
+> becomes indistinguishable from the thing it corrects.
+
+`Carried in by ds t1a, 2026-08-19, per that ticket's scope item "gc t1's census carrying gc t3's
+discharge predicate". The census above is NOT re-run by that ticket — the scope item says
+*carrying*, and this pointer is the whole of its discharge. Appended below §M's anchor block, so
+no claim above is separated from its own attribution. The predicate's text is quoted from
+gc-stale-claims.md at agents 7841060; the two line ranges are lines read, not inferred.`

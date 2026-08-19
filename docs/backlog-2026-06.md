@@ -9368,6 +9368,49 @@ list is empty.
   it went stale because a later commit to this same file changed what its commands
   measure, and no instrument connects the two.
 
+- `2026-08-19` — **The project-knowledge manifest's own growth compounds on every boundary,
+  because the manifest is a row in its own table.**
+  `docs/project-knowledge-manifest.md:51` carries `| \`project-knowledge-manifest.md\` |
+  \`docs/project-knowledge-manifest.md\` | aetheris-agents | _(this export)_ |`, so each export
+  ships a document whose narrative describes the previous exports, and the next boundary's
+  narrative is appended to it. Growth derived from the file's own history, not asserted:
+  **30 lines at its first commit (`a5a0e12`, 2026-06-11) to 939 at `61b02e1` (2026-08-19)**,
+  with boundary-to-boundary jumps around 100 in the 2026-08-16 run alone (537 → 639 → 739 →
+  740 → 808 → 817). The table itself is roughly 50 of those lines; the rest is boundary
+  narrative. Reproducing command, from the agents repo root:
+  `git log --reverse --format='%h %ad' --date=short -- docs/project-knowledge-manifest.md | while
+  read h d; do echo "$d $h $(git show $h:docs/project-knowledge-manifest.md | wc -l)"; done`
+  **One correction to the wording this was carried in as:** the growth is **near-monotonic, not
+  monotonic** — there is exactly **one decrease in the whole history**, 119 → 110 on 2026-07-25
+  (`7fa5c16` → `f72f096`). Stated because "monotonic" is falsifiable by one row and the claim
+  does not need it. **No fix proposed**; what is claimed is that the artefact's size is a
+  function of how many boundaries have run, and that nothing bounds it.
+
+- `2026-08-19` — **The store's manifest can never contain the boundary that produced it, and
+  this is structural rather than an oversight.** `scripts/assemble_export_bundle.py:5-9` reads
+  each document's content from `git show HEAD:<path>` — *"no timestamps, no working-tree reads"*
+  — so the manifest that ships in bundle *N* is HEAD's copy, written **before** the upload it
+  would have to describe. It is not fixable by re-uploading one file after the fact: the
+  narrative of boundary *N* can only exist at a commit after *N*'s upload, which is by
+  construction after *N*'s bundle was assembled. So the store always describes *N-1*. **No fix
+  proposed** — recorded because the document most likely to be read as the export's own record
+  is the one document that cannot carry it.
+
+- `2026-08-19` — **"the hits that exist are prose and operator instructions" is narrower than
+  the census supports, and there is a third kind nobody named.** The operative half **holds**:
+  no executable in either repo invokes `gh` — 0 hits for invocation shapes across
+  `.py .sh .exs .ex .rs .ts .tsx .yml .yaml`, read against a positive control of 8 subprocess
+  invocations of `python3`/`sys.executable` found by the same shape. What the characterisation
+  misses is that non-prose `gh`-shaped text does exist, in three kinds and not two:
+  **decoy token constants** (`cloudcost/tests/test_fetch_github.py:29-30`,
+  `DECOY_TOKEN = "gh-write-DECOY-9b2f4d81"` and `DECOY_TOKEN_2`); **token-shaped regexes**
+  (`cloudcost/tests/record_github_fixtures.py:69`, and the same constant name over a different
+  pattern at `cloudcost/tests/record_linode_fixtures.py:96`); and **a UI placeholder string** —
+  `rig/src/components/modules/settings/agentConfigDefs.ts:59`, `placeholder: 'ghp_...'` — which
+  is neither prose nor an operator instruction nor a test constant, and which the two-kind
+  characterisation has no slot for. **No fix proposed.** It matters because a sweep written
+  against "prose and operator instructions" will not look in a React config file.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
@@ -9699,6 +9742,25 @@ decision, not an oversight.
   so the count above is the derivation and the comment is the corroboration.
   **No fix proposed**, and specifically it is NOT claimed that either helper is wrong or
   that the row-existence check would fail; only that nothing has ever run it.
+
+- `2026-08-19` — **Correction to the `2026-08-17` Rig entry above: `RunList.tsx` carries TEN
+  entries, not eleven. The finding it states is unaffected; the mechanism of the miscount is
+  worth more than the digit.** The entry records *"seven entries and … eleven"*, verified at
+  `df2600f`. `git diff df2600f..HEAD -- rig/src/components/modules/harness/RunList.tsx` is
+  **empty**, so this is a miscount rather than drift. The eleventh occurrence is the
+  **TypeScript type annotation on the declaration line** — `RunList.tsx:126`,
+  `const USE_CASE_PREFIXES: Array<{ prefixes: string[]; label: string }> = [` — which contains
+  the token `prefixes:` and is not an entry. `grep -c "prefixes:"` returns **11**;
+  `grep -n "prefixes:"` shows line 126 is the declaration. **The repo's own instrument
+  disagreed with the append and nobody read it**: `python3 scripts/check_run_classifier.py`
+  prints `Rig run-classifier guard — 10 groups`, and has done so since BL-083 built it. The
+  `seven` is correct. Recorded as a dated append rather than an edit, because the entry above
+  is stamped at the commit it was verified at and is the record of what was believed then.
+  *(This is the class the harness rule* **a count is a claim about a population — name the
+  population and show the enumeration** *exists for: the population here is "entries", the
+  enumeration was a token grep, and the two differ by exactly the declaration line.)*
+  **Fixed under ds t1a**, which is the ticket the entry above nominated: `usage.rs` is
+  repointed and `check_run_classifier.py` now parses **both** constants and compares them.
 
 `Source: R26, ruled by the arbiter 2026-08-13 at m6 t2b and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R26's own stamp. The
@@ -10367,6 +10429,42 @@ ticket's own observation from two live regens plus the committed baseline, not a
 the run ids are given so it is reproducible. BL-090's history read from
 docs/backlog-2026-06.md:3742-3794. Filed rather than left in the packet, per the standing rule
 that a deferred finding gets a backlog row in the round it is deferred.`
+
+**Appended 2026-08-19 at ds t1a — the matrix serves two consumers with different needs, and a
+use case with runnable scripts and no agent is invisible to one and correctly absent from the
+other.** *(Appended below the row's own `Source:` stamp, not between it and the body it
+attributes.)* This row enumerates three consumers of one artefact; t1a's registry work found
+that **two of them do not want the same set**, which bears on any gate this row eventually
+proposes.
+
+- **The planner's system prompt** reads `docs/capability-matrix.md` whole. Its unit is an
+  **agent**: a section exists because `agents/capability_matrix_<key>.exs` produced it, and a
+  section for a use case with no agent would advertise a capability the planner cannot dispatch
+  to. For this consumer, `boxy-pipeline`'s absence is **correct**.
+- **Rig's Agents catalogue view** shows a human what this repo can do. For this consumer,
+  `boxy-pipeline` — six runnable CLIs under `boxy-pipeline/scripts/`, no `agents/` directory at
+  all — is a real capability that the view does not show, and its absence reads as "this use
+  case does not exist" rather than "this use case has no agent".
+
+So the artefact's scope is unambiguous only once you say **whose** question it answers, and the
+two answers differ by exactly the non-agent-bearing use cases. ds t1a **declared** the planner's
+reading — `assemble_matrix.SECTIONS` is checked against `docs/use-cases.md` filtered to
+agent-bearing use cases, and the predicate is named in the check's failure message — which turns
+`boxy-pipeline`'s omission from accidental into declared. **That closes nothing here.** It makes
+the omission legible; it does not give the second consumer what it lacks, and it does not answer
+this row's question of whether the matrix is gate-worthy.
+
+**No fix proposed.** Specifically it is NOT claimed that the matrix should gain a
+`boxy-pipeline` section, nor that Rig's view should read a different artefact. What is claimed is
+that a gate designed for one consumer's set will be wrong for the other's, and that the design
+question this row holds open now has a second axis.
+
+`Source: ds t1a, 2026-08-19. The three-consumer enumeration is this row's own, above, and is not
+re-derived here. What is new is read at agents 7841060: `assemble_matrix.SECTIONS` (9 keys) and
+`agents/capability_matrix_*.exs` (9 files) against the ten-row registry; `boxy-pipeline` has no
+`agents/` directory (`git ls-files 'boxy-pipeline/agents/*.exs'` -> 0) and six scripts under
+`boxy-pipeline/scripts/`. Filed as an append rather than a new row because it sharpens this
+row's open question rather than stating a separate one.`
 
 ---
 

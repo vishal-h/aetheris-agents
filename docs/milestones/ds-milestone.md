@@ -346,10 +346,31 @@ was set, the reason stated as business state rather than test mechanics, and
    never rewritten by a script that has to locate a list inside paragraphs. The
    precedent is the capability matrix, which as a generated artifact with
    consumers and no gate went not merely stale but unstable.
+   **The precedent has moved, and only half of it is still live.** `BL-067` (the
+   derived block computed in the LLM) and `BL-068` (a full regen destroying
+   hand-curated sections) are both **DONE** — the arithmetic and destructive-regen
+   halves are fixed, and citing the precedent whole would cite a fixed defect. What
+   remains is the **ungated input**: nothing compares `assemble_matrix.SECTIONS`
+   against the tree, so the matrix can be internally consistent and enumerate the
+   wrong set. That half is what t1a closes, and it is the only half constraint 2
+   should be read as resting on.
 3. **Dormancy and test-mechanics exclusions do not share a mechanism.** The two
    markers mean different things and have different re-entry conditions, and a
    reader must be able to tell them apart without asking. The registry is the
    dormancy marker's source, or at minimum the check proves the two agree.
+
+**The `SECTIONS` predicate, ruled.** `assemble_matrix.SECTIONS` is compared against the
+registry **filtered to agent-bearing use cases** — those with at least one `<uc>/agents/*.exs` —
+not against the registry whole. **The ground, and it is not convenience:** the capability
+matrix's unit is an *agent*. Each section is produced by an `agents/capability_matrix_<key>.exs`
+run, and the assembled document is read whole into the planner's system prompt. Comparing
+`SECTIONS` to the full registry would oblige someone to author a section agent for a **dormant**
+use case — adding planner capability for paused work, and asserting a capability nothing can
+currently exercise. Under the predicate, `boxy-pipeline`'s omission from the matrix becomes
+**declared rather than accidental**, which is the whole point of a registry. The predicate is
+named in the check's failure message so a red arm says which set it is comparing. Authoring
+`agents/capability_matrix_boxy_pipeline.exs` is not forbidden — it is a different ticket, and it
+would be a matrix ticket, not this one.
 
 **The proof case is a reconciliation, not a sweep.** Of the surfaces originally
 named for boxy-pipeline's dormancy declaration, several do not name it at all —
@@ -361,9 +382,17 @@ it, which is indistinguishable from the discovery being broken.* Enumerate the
 surfaces that carry a use-case list, verify and record how many disagree with
 each other, and reconcile against the registry.
 
-**Contract refs.** The registry brief. Agents `CLAUDE.md` §Definition of done, the
-two-markers rule and the `dormant` marker's registered statement in `pytest.ini`.
+**Contract refs.** **This section's constraints 1–3**, above. Agents `CLAUDE.md` §Definition
+of done, the two-markers rule and the `dormant` marker's registered statement in `pytest.ini`.
 Agents `CLAUDE.md` §Learning — m6-cloudcost, the incomplete-enumeration rule.
+
+`Provenance, not a contract ref: the ruling and the three constraints above were drafted in
+claude/aetheris-agents--use-case-registry-brief.md, which §Authority and history records as not
+resolving from either repository. Its content is landed in this section rather than cited, so the
+contract is the section. Corrected at t1a stage 2, 2026-08-19: this line previously read "The
+registry brief.", a normative pointer into a surface the reader cannot open — the
+unresolvable-reference defect BL-162 was filed for, and the thing §Authority and history forbids
+in this document in terms.`
 
 **Touches.** The new registry file — RESOLVE its path; `scripts/drift_check.py`;
 `tests/test_drift_check.py`; the surfaces the doc-enumeration check names —
@@ -377,10 +406,26 @@ collecting — deselect at run time, never at import.
 command from `CLAUDE.md` §Definition of done; `drift_check --strict` post-commit
 with expected WARNs named.
 
-**RESOLVE at ticket time.** The registry's file, format and location. Which of the
-enumerating surfaces the doc-enumeration check covers, and on what criterion —
-apply the criterion out loud to the surfaces that prompted it before shipping it,
-and check that it separates them.
+**RESOLVED at ticket time, t1a stage 1 → stage 2, 2026-08-19.** *(This block was two open
+resolvers; both are discharged and it is kept, with its answers, rather than deleted — a resolver
+that vanishes leaves the next reader unable to tell a decided question from one nobody asked.)*
+
+- **The registry's file, format and location.** `docs/use-cases.md`, a markdown table under the
+  anchor `## The registry`. Options B (JSON), C (`pytest.ini` as the source) and D (a
+  per-use-case declaration) were considered and rejected — C because it makes dormancy and
+  test-mechanics share a mechanism, which constraint 3 forbids in terms; D because a use case
+  with no file would then be indistinguishable from one nobody declared, which is
+  inference-from-shape, the defect the ruling above exists to remove. **No manifest row**, which
+  is decided at the cycle's close on the standing specification test, as this document's own row
+  is.
+- **Which enumerating surfaces the check covers, and on what criterion.** *A surface is in scope
+  iff its enumeration can be extracted by a parser that never has to decide what a sentence
+  means.* Applied out loud to twenty-six surfaces before it was argued; it separates the two
+  disagreeing lists inside agents `CLAUDE.md` — the §Key docs **table** in, the "current use
+  cases" **sentence** out — which is the discrimination it was written for, and it does not
+  exempt them both. It also discharges gc t3's predicate **structurally**: a table row and a Rust
+  literal cannot be confused with an enumeration quoted inside a dated correction block, and
+  prose is out of scope, so no live-vs-quoted distinction is left for the check to get wrong.
 
 ### t1b — the backlog split
 

@@ -809,6 +809,114 @@ documentation addresses, cleared here as R-S1).
 
 ---
 
+**Export boundary — 2026-08-18, the ds boundary.** Appended; nothing above is rewritten. **Four
+rows advanced:**
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `fd03bf3` | `43e63e0` | 2026-08-17 |
+| `backlog-2026-06.md` | aetheris-agents | `fd03bf3` | `6436b25` | 2026-08-18 |
+| `methodology--milestone-methodology.md` | aetheris | `66a9ca5` | `8eb960d` | 2026-08-18 |
+| `methodology--triad-loop.md` | aetheris | `b400b12` | `9ba6c8c` | 2026-08-17 |
+
+Every one moved **both** cells, and none moved a date without its commit — the date is
+`repin_manifest.py`'s from the 2026-08-16 second amendment on, derived from the commit it has
+already resolved rather than independently from the path. The other twenty rows reported current.
+Row count **25**, re-derived by parsing the table bound to its header row rather than carried from
+the previous boundary: 4 movers + 20 current + 1 self row, and **4 + 20 + 1 = 25**; thirteen agents
+rows, twelve harness. The naive pipe-line sweep the 2026-08-16 section warns about now returns
+**53** where that section recorded **37** — the figure moves with the movers table every boundary
+adds, which is exactly why the parse is bound to the header row and not to the pipe character.
+
+> **The re-pin's changed-row set was compared against check 8's WARN set, and the two instruments
+> had never been run against each other.** Stage A read check 8's WARNs at `559199b`, before
+> anything was edited, and `scripts/repin_manifest.py` then moved four rows: **the same four**, in
+> the same direction, with no row in one set and not the other. The comparison is worth recording
+> because the two answer one question by different routes and neither was written as a control on
+> the other — check 8 compares each row's pinned hash against that file's own last-touching commit
+> and *reports*; the re-pinner resolves the same commit and *writes*. Their agreement is the first
+> evidence either is sound against the other, and a disagreement would have been a defect in one of
+> them rather than in the manifest.
+
+> **The bundle.** Twenty-five documents, assembled by `scripts/assemble_export_bundle.py` from
+> `git show HEAD:<path>` and not from the working tree, at aetheris `8eb960d` and aetheris-agents
+> `9b9b274`. Manifest ↔ bundle set equality was checked **in both directions** with **both control
+> arms fired**, and the U2 sweep returned clean. In the narrow words the standing rule requires:
+> **no text in the bundle matched the patterns in `scripts/u2_patterns.txt`** — never *no
+> identifying content*, the class members with no lexical signature being reachable only beside a
+> key that names them (`CLAUDE.md` §Definition of done; BL-160, open). These are **stage A's
+> figures, carried on attribution rather than re-derived here**: this stage is under a standing
+> prohibition on re-running the assembler, because re-running it would restart a boundary whose
+> store side is already verified.
+
+> **Who performed the upload, and that the first attempt failed.** claude-ui attempted the
+> remove-all-upload-all against the store and **could not complete it.** It removed all twenty-five
+> documents and was then unable to write any of them back: its Projects tool forces a **new bare
+> filename into the `claude/` namespace**, so deleting a top-level document destroys the only
+> handle that permits writing to that path. The store was left empty of the manifest set, and **the
+> human uploaded the bundle by hand.** Recorded plainly because it is how this boundary actually
+> ran, and because it is evidence BL-143's ownership question needs: the actor the procedure
+> addresses cannot perform the procedure's first half, which is a fact about the tool rather than
+> about the operator. The finding is BL-165's and is appended there in the same commit as this
+> section.
+
+> **The three post-upload checks, run by claude-ui against the store on 2026-08-18 and reported —
+> attributed, not asserted.** Nothing in this repository can see the store, and a packet reporting
+> a store is not the store; what follows is claude-ui's report with its author named, on the idiom
+> the 2026-08-16 store-side census established for exactly this reason.
+> **Check 1** — twenty-five names, set equality against the manifest's export-name column in both
+> directions, with both controls fired. **Check 2** — all **five** movers carry new content,
+> verified by one full read and by targeted content checks, the bundle having been verified
+> byte-exactly beforehand at **25/25 sha256** with a negative control. **Check 3** — all twenty-five
+> created inside a **3.6-second** window, the only older documents `claude/`-namespaced.
+>
+> **Check 2's five against this table's four is not a discrepancy, and it is derivable from this
+> side.** The manifest's own row carries `_(this export)_` and can therefore never appear as a mover
+> in a movers table, while the document itself is in the bundle and its content did change.
+> Derived here rather than taken on the report's word: comparing the blob of each of the twenty-five
+> tracked paths between the previous export's endpoints (agents `84c24c7`, harness `d19f4b6`) and
+> this one's (`9b9b274`, `8eb960d`) returns exactly **five** — the four rows above plus
+> `project-knowledge-manifest.md`. Four rows advanced; five documents changed; the two figures count
+> different things and both are right.
+
+> **Two firsts, and they are why this section runs longer than its movers table warrants.** This is
+> the first boundary whose **three post-upload checks were performed by an instrument rather than by
+> convention** — every previous boundary either recorded them as done on the operator's word, or
+> recorded (2026-08-12, 2026-08-14) that they could not be applied at all; the nearest precedent is
+> the 2026-08-16 store-side census, which is where the attribution idiom above comes from and which
+> was a census rather than the checks. And it is the **first run of BL-163's corrected check 3**,
+> with its namespace clause stated, so *"the only older documents are `claude/`-namespaced"* is a
+> verdict the check can express rather than an exception a reader has to supply. BL-163 closed at
+> `7e8602d`; the ruling it implements is BL-143's of 2026-08-16.
+
+> **Mirror-pair check, per the BL-002 convention.** `diff -q` over
+> `aetheris/docs/methodology/triad-loop.md` (canonical) and `aetheris-agents/docs/triad-loop.md`
+> (mirror) → **byte-identical**: **203 lines** and sha256
+> `847b107e4063db61a2510b2b174d8adf36ae1670d053dc33366cb2f8353dcb5a` on both sides. Both figures
+> **moved** from the 2026-08-16 boundary's 199 lines and `1b9cbf57…ea46f8a`, canonical having
+> changed at `9ba6c8c` — and they moved **together**, which is the whole of what this check buys.
+> Re-derived at this stage rather than carried from stage A: neither repo has taken a write to
+> either copy since, both being clean at the commits named above. `drift_check` still has no
+> byte-identity check between mirrors, and the `diff -q` remains the only thing covering that class.
+
+**Ordering invariant held at stage A, and this commit deliberately breaks the pin.** The manifest
+was stage A's **only** tracked write and its last, landing alone at `9b9b274`; two of the four
+values it pins are that session's own earlier commits (`7e8602d`, `6436b25`), which is why it had
+to. **The commit carrying this section is post-boundary work and re-stales one row on purpose** —
+`docs/backlog-2026-06.md` moves again for the filings it lands — and it is **not** re-pinned.
+Re-pinning to chase the WARN would silently restart a boundary whose store side is already
+verified, and the store would then describe a commit the manifest no longer pins. The resulting
+`project_knowledge` staleness WARN is the one the strict-mode exemption exists for (`CLAUDE.md`
+§Definition of done), and it is expected truth until the next export, not a regression.
+
+No **Repo push state** paragraph, and the omission is deliberate: per the standing note below, no
+boundary record written from here on asserts push state.
+
+Previous export: 2026-08-16, second amendment (two rows advanced; the three documentation addresses
+cleared as R-S1).
+
+---
+
 **2026-08-16 — the replaced condition is DISCHARGED, by BL-143's ruling of the same date**
 (`docs/backlog-2026-06.md`, BL-143): check 1 and check 3 both govern and were never in conflict,
 the namespace divides their populations, and remove-all-upload-all is rehabilitated scoped to the
@@ -816,11 +924,16 @@ manifest set. Neither deviation block is amended — the 2026-08-12 block set th
 2026-08-14 block replaced it, both are point-in-time records, and their reason was right at the
 scope either could establish. Standing form: `CLAUDE.md` §Definition of done.
 
-`[2026-08-18 — the four Repo push state paragraphs above are point-in-time
-claims and are not maintained. Every commit they name is now on its repo's
-origin/main, so all four read false, and two of them went false the same day
-they were written with nothing anywhere noting the change. They are left as
-written because they are a record rather than an instruction. Push state is
-answerable at any later moment by `git branch -r --contains <sha>`, which is
-what a reader should use. No boundary record written from here on asserts push
-state. The class is BL-151's; this note is not a new filing.]`
+`[2026-08-18 — the Repo push state paragraphs in this file are point-in-time
+claims and are not maintained. Every one that asserts a boundary's commits are
+held and unpushed now reads false: each commit they name is on its repo's
+origin/main. Some went false the same day they were written, with nothing
+noting the change — the measured figure is on BL-151 and is deliberately not
+restated here, both to keep one surface for it and because it is not
+re-derivable from a clone: `git branch -r --contains <sha>` answers whether a
+commit is public now and never when it became public, and the only local
+evidence of timing is a reflog that is machine-local and depth-limited. The
+paragraphs are left as written because they are a record rather than an
+instruction. A reader asking whether a named commit is public runs
+`git branch -r --contains <sha>`. No boundary record written from here on
+asserts push state. The class is BL-151's; this note is not a new filing.]`

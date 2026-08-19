@@ -2816,7 +2816,7 @@ this commit). Closed 2026-08-07.`
 
 ---
 
-### BL-075 — `mix test` failed once then passed three times, identity uncaptured (#TBD)
+### BL-075 — `mix test` flakes on a fixed 300 ms inactivity window in `RunHelpersTimeoutTest` (#TBD)
 **Size:** XS–S · **Priority:** low · **Section:** harness (`../aetheris/test/`)
 
 Filed 2026-08-02 at the m2-cloudcost **t2** boundary, per the gate rule (*a red gate gets a
@@ -2982,11 +2982,55 @@ wrong; its stated rationale reached one step further than the mechanism does.
 
 **Arm 2 is not started here.** E4's whole scope was establishing the blocker's status.
 
+**Annotated 2026-08-19 (ds cycle, stage B) — a fourth observation, and it is the first pair that
+pins the flake to an *unchanged tree in both directions*.** Three runs come from the ds cycle's
+stage A of 2026-08-18 and the fourth is this session's own boundary gate:
+
+```
+2026-08-18, ds stage A    harness 9ba6c8c    green
+2026-08-18, ds stage A    harness 8eb960d    green
+2026-08-18, ds stage A    harness 8eb960d    RED
+2026-08-19, ds stage B    harness 8eb960d    972 tests, 0 failures, 133 excluded (90.8 s)
+```
+
+**What is new is the second and third rows: the same tree, opposite outcomes.** Every earlier
+observation on this row compared runs across *different* trees — m2 t2, m4 close-b, hc-d r3 — and
+had to argue from the diff that the tree was irrelevant; hc-c's annotation says so in as many
+words, *"that is reasoning from the diff, not a measurement."* This is the measurement. At
+`8eb960d`, clean and unchanged, `mix test` has now returned both red and green, and this session's
+fourth run is a third pass over that same tree. The failure is **intermittent at a fixed tree and
+not deterministic in the tree**, which removes the last reading under which it could have been a
+tree-dependent failure rather than a flake.
+
+**One of the three stage-A data points is not in either repository and is the reviewer's account.**
+The red was reported, not captured here: no output of it exists in this repo, in the harness, or in
+any committed artifact, and this session did not observe it. It is carried on attribution, and it
+is **not** evidence about the failing test's identity — nothing establishes that it hit
+`…run_helpers_timeout_test.exs:84` rather than something else, which is the same gap the
+2026-08-02 run left and for the same reason. The two stage-A greens are that session's account on
+the same terms. The fourth run is this session's own with its full output retained — in a session
+scratchpad, which is **BL-133** arriving on this row for the fourth time.
+
+**Neither Done-when arm moves, and neither is amended.** Arm 1 wants the flake reproduced *with its
+name captured*; the red above has no name. Arm 2 wants three further full-output runs come back
+clean **retained somewhere durable**; this session's green is retained nowhere durable, so E4's
+finding stands exactly as written — the place exists, the routing does not.
+
+**The row's heading was corrected in the same commit, and it is a label rather than a record.** It
+read *"`mix test` failed once then passed three times, identity uncaptured"* — a heading its own
+body has falsified since 2026-08-08, when the m4 close-b annotation captured the identity. The
+filing narrative it described is intact in the body and is not edited. One transcription of the old
+heading survives at `cloudcost/docs/m5-scoping-landing-notes.md:272`; that is a milestone working
+artifact and a point-in-time record, and it is deliberately left.
+
 `Source: m2-cloudcost t2 done-check, 2026-08-02 (aetheris-agents 7a7b7ec; aetheris fd9ac48,
 untouched). Annotated at m4-cloudcost close-b, 2026-08-08 — close-a Part 5 for the retention
 finding; the reproduction and the failing test's identity are this close's own four runs, at agents
 2806305 / aetheris 288c8ef, neither of which touches harness code. Annotated again 2026-08-09 at
-hc-e's opening edit (E3 fold, E4 blocker status), at agents f8ed90f / aetheris 48f59e7.`
+hc-e's opening edit (E3 fold, E4 blocker status), at agents f8ed90f / aetheris 48f59e7.
+Annotated again 2026-08-19 at the ds cycle's stage B, at agents `9b9b274` / aetheris `8eb960d`,
+the harness untouched by that commit; three of the four runs recorded there are the ds cycle's own
+account and one is this session's, as the annotation distinguishes.`
 
 ---
 
@@ -9130,6 +9174,19 @@ list is empty.
   read that structurally cannot capture a value. **No fix proposed.** **This entry names no
   variable, no file under any secrets directory, and no value; do not add one.**
 
+  `[Corrected by append 2026-08-18, not by rewrite — the entry above stands as landed and is the
+  record of what could be established at the time. **The credential characterised as live was a
+  DUMMY**, used for random testing; established by the arbiter on 2026-08-18 and derivable from
+  nothing on the machine. (Landed 2026-08-19.) **The finding is unchanged**, because it is about the
+  channel and the redactor's shape rather than about the value: the scrub class still does not reach
+  a session transcript, and a name-matching filter still defaults to an allowlist. What is corrected
+  is the **severity**, which was overstated. **And the reason it was overstated is itself part of
+  the class.** No instrument present could distinguish a dummy from a live credential — the redactor
+  would have leaked either identically, and a deny-by-default read would have withheld either
+  identically. Severity in this class is therefore not machine-derivable, so a session that hits a
+  value **reports** it and does not triage it, and a report calling a value live is stating what it
+  could not have checked. This clause names no variable, no secrets path and no value either.]`
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
@@ -10868,11 +10925,103 @@ unanswerable.
 **Collides with:** nothing. BL-163 is CLOSED and this does not reopen it. It does not touch BL-143's
 open Done-when (ownership and trigger), and it does not touch BL-161.
 
+`[Appended 2026-08-19 at the ds boundary's stage B — **the remove half is not performable by the
+tool it now has an actor for.** A second defect in the same Step 5, and it was found by *performing*
+the step rather than by reading it. Step 5 states the remove-all-upload-all as an instruction to an
+actor with UI-equivalent capabilities; claude-ui's Projects tool **cannot execute it in that
+order.** Deleting a top-level document destroys the only handle that permits writing to its path: a
+new bare filename is forced into the `claude/` namespace, `./name` normalises to the same, and
+`/name` creates a distinct path rather than the original. So remove-then-upload leaves the store
+unrecoverable **by that actor** — and upload-over-existing-then-prune, the only order that works,
+cannot create a document the store does not already have. Measured 2026-08-18, when the order was
+followed literally: all twenty-five documents were removed and none could be written back, and the
+human restored them by hand. The boundary record is
+`docs/project-knowledge-manifest.md`, §Export boundary — 2026-08-18. **No fix proposed.** Whether
+Step 5 gains an actor-conditional procedure, or the upload half is declared the human's, belongs to
+**BL-143** and to this row's own open question above, and is not decided here. Note that this
+interacts with that question rather than with the enumeration defect this row was filed for: the
+enumeration under-reaches, and this says the instruction is unexecutable in its stated order — they
+are repaired in the same paragraph and are not the same defect.]`
+
 `Source: BL-163's Done-when sweep, run 2026-08-18 at the ds export boundary stage A over the whole
 of `prompts/bl-002-refresh-project-knowledge.md`; the sweep's population, its five examined sites and
 its four clears are recorded in BL-163's `[CLOSED 2026-08-18 …]` annotation. Filed as its own row
 rather than inside that annotation because a finding recorded inside a row the same commit closes has
 a record and no executor — `CLAUDE.md` §Learning — BL-007, the deferred-finding rule's closing
 clause.`
+
+---
+
+### BL-166 — `drift_check --strict` is green because of an untracked personal profile export (#TBD)
+**Kind:** defect · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Definition of done — the `drift_check` done-check and its `--strict` invariant
+**Size:** S _(proposed)_ · **Priority:** medium _(proposed)_
+**Section:** process / gates (`scripts/drift_check.py`, the `payload_fields` check)
+
+Filed 2026-08-19 at the ds cycle's stage B. **Its own row rather than an append to BL-151**, which
+is for code findings with no natural home and no discharge condition: this has both. It closes when
+the gate resolves the path itself or the repo declares it, and closing it makes the gate
+reproducible in a fresh clone and in CI.
+
+**What is wrong.** The `payload_fields` check reads the live harness SQLite database at
+`os.environ.get("AETHERIS_DB_PATH")` (`scripts/drift_check.py:492`). On this machine that variable
+is exported from `~/.profile:156` — a personal shell profile tracked in neither repository. The
+gate is green because of untracked machine state, and **every `drift_check --strict` green
+published in this cycle's packets was produced under it.**
+
+**Measured, four arms, all at agents `9b9b274` / harness `8eb960d`:**
+
+| invocation | environment | result | exit |
+|---|---|---|---|
+| `python3 scripts/drift_check.py --strict` | as inherited | `9 PASS  0 FAIL  0 WARN  7 INFO` | 0 |
+| `env -u AETHERIS_DB_PATH python3 scripts/drift_check.py --strict` | variable absent | `8 PASS  1 FAIL  0 WARN  4 INFO` | 1 |
+| `AETHERIS_DB_PATH=/nonexistent/aetheris.db python3 scripts/drift_check.py --strict` | set, file absent | `8 PASS  1 FAIL  0 WARN  4 INFO` | 1 |
+| `env -u AETHERIS_DB_PATH python3 scripts/drift_check.py` | variable absent, no `--strict` | `8 PASS  0 FAIL  1 WARN  4 INFO` | **0** |
+
+The line is `payload_fields: AETHERIS_DB_PATH not set — skipping live payload sampling`, emitted by
+`_warn` (`:494`; `:499` for the set-but-missing form) and promoted to FAIL by `--strict`.
+
+**The Silent-wrong-answer shape, stated as measured rather than as commissioned.** This row was
+asked for on the claim that *a bare published green cannot be told apart from one produced without
+the variable.* **That is false of `--strict`** — without the variable `--strict` is red, so no
+`--strict` green can have been produced without it. It is **true of the bare, non-strict
+invocation**, arm 4: with the variable absent it exits **0**, and a done-check publishing only an
+exit code cannot tell that from a real pass. The defect that does hold for `--strict` sits one step
+over. The green asserts `payload_fields` was validated, and what it was validated against is a
+database **outside both repositories** that nothing else can see; two machines running the identical
+published command can legitimately disagree, and the summary line names neither the database nor
+the fact that one was read. The only signal in the output is the INFO count — **7 against 4** —
+which is a figure no reader has a baseline for. So the published green is not a wrong answer; it is
+an answer about a different subject than a reader will take it for, and nothing in it says so.
+
+**And the gate is not reproducible where it matters.** Put through the `integration` marker's own
+question (`CLAUDE.md` §Definition of done): in a fresh clone at this commit, offline, with no
+sibling repository present, `drift_check --strict` **fails**. The `drift_check` sprint case runs
+`--strict`, so this reaches CI the first time anything runs it there.
+
+**Two candidate directions, and this row chooses neither.** *(i) The check resolves the path
+itself* — derive it from the sibling harness checkout the way the rest of this repo locates
+`../aetheris`, so the gate depends on repo layout rather than on environment. *(ii) The repo
+declares it where a fresh clone can read it* — `mise.toml`, a tracked env file, or the sprint case
+— so the dependency is visible and settable rather than inherited. They differ in what should
+happen when the harness DB is genuinely absent, and that is the question that decides between them.
+
+**Done when:** `drift_check --strict` is green in a fresh clone at HEAD with no untracked
+environment, **or** the dependency is declared in a tracked file the gate reads and a run without it
+is a stated, legible skip rather than a machine-dependent pass — and, either way, a published
+`drift_check` done-check says what `payload_fields` sampled.
+
+**Costs:** S. One resolution site plus a test for the absent case.
+
+**Size and priority are proposed, not ruled.** Medium over low on the ground that the row is not
+about a wrong answer today but about whether a published green means something a reader can
+reproduce, which is the property the whole done-check discipline rests on. Low is defensible if the
+gate is held to be operator-local by design; that reading is not taken here.
+
+**Collides with:** nothing. It is not **BL-133** — that row is about where a run's output goes, this
+is about whether the run's greenness depends on the machine.
+
+`Source: measured at the ds cycle's stage B, 2026-08-19, at agents `9b9b274` / harness `8eb960d`;
+the four arms are this session's own runs. The profile export is cited by path and line only — the
+row names no value and needs none, the dependency being the finding.`
 
 ---

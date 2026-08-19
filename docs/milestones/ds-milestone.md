@@ -293,12 +293,36 @@ populations, and only one is mechanically derivable:
 - **In-file, and NOT derivable by any command.** The file carries **169** bare
   `` `:NNN` `` anchors (`` grep -oE '`:[0-9]+' docs/backlog-2026-06.md | wc -l ``)
   plus **2** filename-qualified self-references, but a bare anchor binds to
-  whichever file was last named, which is frequently **not** this one — of 448
-  `:NNN`-shaped tokens in the file most target other sources. **154** bare
+  whichever file was last named, which is frequently **not** this one — **most
+  `:NNN`-shaped tokens in the file point at some other source**, so a count of
+  colon-number tokens bounds the self-anchor population from above and does not
+  measure it (`` grep -oE ':[0-9]+' <file> | wc -l `` against the backticked form
+  above, for whatever the two return today). **154** bare
   anchors sit on lines naming no other file, which is an upper bound on the
   self-anchors and a loose one, since a continuation's antecedent can be on a
   previous line. Stated as a bound rather than a count, per agents `CLAUDE.md`
   §Learning — BL-007, *a count is a claim about a population*.
+
+  `[De-numeralised at ds t1b, 2026-08-19. This clause read "— of **448**
+  `:NNN`-shaped tokens in the file most target other sources", and **448 does not
+  reproduce**: at t0's own stamped commit `1deb832` the eight nearest patterns return
+  520 / 520 / 517 / 509 / 503 / 499 / 169 / 120 / 8 and none of them 448. The
+  argument never needed the figure — it is that a token count over-counts — so the
+  figure is replaced by the argument, per BL-152's **a count recorded in prose
+  carries the command that reproduces it, or it decays into a claim**. The
+  demonstration sits inside this one paragraph: the neighbouring **169** shipped with
+  its command and reproduces exactly at both `1deb832` and `b98be4d`; **448** shipped
+  without one and cannot be recovered. **Not a claim that 448 was wrong** — only that
+  nothing published makes it checkable.]`
+
+  `[Superseded as a measurement at ds t1b, 2026-08-19, and t0's stamped figures are
+  kept rather than restated. t1b split the backlog, so the command above addresses
+  the OPEN file alone and the population now lives across two files. Over the union
+  at this commit it returns **132** for `backlog-2026-06.md`, **59** for
+  `backlog-2026-06-closed.md` and **191** concatenated — more than 169 because this
+  same commit's BL-150 and BL-133 appends added anchors of their own. That is *a
+  census recorded inside the document it censuses*, live. Re-derive over the union
+  rather than reading any of these three.]`
 
 **t1b's relocation will invalidate the path-based citations too**, so the cost is
 taken **once** here rather than twice: this ticket does not re-pin anything, and
@@ -452,6 +476,49 @@ document.
 **RESOLVE at ticket time.** Whether backlog issue references need repo-qualifying
 — the file spans both repos and its existing references are unqualified, so
 whether any already points across is unverified. Routed to BL-150 as a question.
+
+**RESOLVED at ticket time — ds t1b, 2026-08-19, harness `a6464f4` and this commit.**
+*(The agents sha is not named here: a commit cannot cite itself, and a hash written
+into the commit that would make it true is self-falsifying when written.)*
+The four resolvers above are answered here and their original wording is kept, not
+edited, so a later reader can see what was open and what settled it.
+
+- **"the tombstone at the old path" — there is none, and none is owed.** The
+  ratified layout keeps `docs/backlog-2026-06.md` as the OPEN file and moves terminal
+  rows to a new `docs/backlog-2026-06-closed.md`. The old path never dies, so a
+  tombstone would mark a grave that does not exist. What the scope brief was reaching
+  for is supplied instead by a **header on the open file** naming the archive, stating
+  that the id is the address, and stating that the export set carries the open file
+  only — so the manifest gap is a documented property rather than a silence.
+- **"turns every `expected_fail` declaration into a blocking FAIL" — the conditional
+  is sound and the quantifier is empty.** There are **zero** `expected_fail` and
+  `known_red_healed` call sites at harness `8eb960d`; both helpers have never fired.
+  So the split turned nothing into a FAIL on the day it landed, and the breakage this
+  clause names would first have appeared whenever someone wrote the first KNOWN_RED
+  arm, with the split long merged. That is a **sharper** statement of the risk, not a
+  softer one, and it is why the harness edit shipped with a hermetic exercise of all
+  four arms — the positive control the gate had never had.
+- **"Verify the line numbers at HEAD" — done, and they held.** `SPRINT_BACKLOG` at
+  `:104`, the readability arm at `:122`, the anchored `grep` at `:127`, and the
+  reservation block at `:161-167`, all at harness `8eb960d`.
+- **"whether backlog issue references need repo-qualifying" — no, and the reason is
+  that the backlog names issues almost nowhere.** Answered on **BL-150**, where the
+  ticket routed it. The `(#nnn)` heading suffixes are `vishal-h/aetheris-agents` issue
+  refs and `(#TBD)` is much the commonest value; the file carries no `owner/repo#n`
+  form and no bare `#n` naming a harness issue, so nothing in it resolves to the wrong
+  object. What is **not** settled is the rule itself — a bare `#77` written in a
+  *harness* artifact resolves to `vishal-h/aetheris#77`, which is why the harness
+  commit spells the ref in full.
+
+**One ruling the ticket did not anticipate, recorded because it was taken.** After the
+split, does `sprint.sh` resolve a KNOWN_RED ref against the open file or the **union**?
+It resolves against the union, preserving current behaviour. Open-file-only is arguably
+better — a known-red tracked by a row already archived as terminal is by definition a
+stale carry, and resolving against the open file alone would make that a loud failure
+for free — but it is a behaviour change riding on a path edit, and `sprint.sh:161-167`
+reserves adjacent design questions to the first KNOWN_RED arm. The alternative is
+recorded **inside that reservation block**, next to the question already there, rather
+than in this document, so whoever writes that arm finds it.
 
 ### t2 — the artifact/run stamp
 

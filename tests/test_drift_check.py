@@ -1205,3 +1205,150 @@ def test_integration_no_fail():
     failed = [(c, msg) for l, c, msg in drift_check.FINDINGS if l == "FAIL"]
     report = "\n".join(f"  [{c}] {msg}" for c, msg in failed)
     assert not failed, f"drift_check found FAIL findings:\n{report}"
+
+
+# --------------------------------------------------------------------------- #
+# backlog_resolution — every BL-nnn in the scoped corpus names a real row       #
+# (ds t1b)                                                                      #
+# --------------------------------------------------------------------------- #
+
+_OPEN_SAMPLE = """# Backlog — fixture
+
+### BL-204 — an open row (#TBD)
+**Status:** OPEN
+
+body text
+"""
+
+_CLOSED_SAMPLE = """# Backlog — fixture (closed)
+
+### BL-205 — a terminal row (#TBD)
+**Status:** DONE
+
+body text
+"""
+
+
+def _wire_backlog(monkeypatch, tmp_path, scope_text, open_md=None, closed_md=None):
+    """Point the check at fixture backlogs and a one-file fixture corpus."""
+    open_p = tmp_path / "backlog-2026-06.md"
+    closed_p = tmp_path / "backlog-2026-06-closed.md"
+    open_p.write_text(_OPEN_SAMPLE if open_md is None else open_md)
+    closed_p.write_text(_CLOSED_SAMPLE if closed_md is None else closed_md)
+    scope_p = tmp_path / "scoped.py"
+    scope_p.write_text(scope_text)
+    monkeypatch.setattr(drift_check, "BACKLOG_FILES", (open_p, closed_p))
+    monkeypatch.setattr(
+        drift_check, "_backlog_scope_files",
+        lambda: [(open_p, "docs/backlog-2026-06.md"),
+                 (closed_p, "docs/backlog-2026-06-closed.md"),
+                 (scope_p, "scripts/scoped.py")],
+    )
+
+
+def test_backlog_resolution_resolves_across_the_union(tmp_path, monkeypatch):
+    """The point of the check: a row in EITHER file resolves.
+
+    BL-205 lives only in the archive. Reading the open file alone would report it
+    as dangling — a well-formed answer to the wrong question.
+    """
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-204 and BL-205\n")
+    drift_check.check_backlog_resolution()
+    assert not fails_of("backlog_resolution")
+    assert passes_of("backlog_resolution")
+
+
+def test_backlog_resolution_open_file_alone_would_miss_the_archive(tmp_path, monkeypatch):
+    """The union is load-bearing, not decorative — drop the archive and BL-205 dangles."""
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-205\n")
+    monkeypatch.setattr(drift_check, "BACKLOG_FILES",
+                        (tmp_path / "backlog-2026-06.md",))
+    drift_check.check_backlog_resolution()
+    assert any("BL-205" in m for m in fails_of("backlog_resolution"))
+
+
+def test_backlog_resolution_dangling_id_is_fail_not_warn(tmp_path, monkeypatch):
+    """FAIL, never WARN: a WARN would be indistinguishable from the two exempt
+    project_knowledge staleness WARNs and would inherit their expected-truth reading."""
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-998\n")
+    drift_check.check_backlog_resolution()
+    assert any("BL-998" in m for m in fails_of("backlog_resolution"))
+    assert not warns_of("backlog_resolution")
+    assert not passes_of("backlog_resolution")
+
+
+def test_backlog_resolution_allowlist_is_keyed_by_id_AND_file(tmp_path, monkeypatch):
+    """An id excused in one file is NOT excused in another."""
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-998\n")
+    monkeypatch.setitem(drift_check.BACKLOG_REF_ALLOW,
+                        ("BL-998", "some/other/file.py"), "excused elsewhere")
+    drift_check.check_backlog_resolution()
+    assert any("BL-998" in m for m in fails_of("backlog_resolution")), \
+        "an allowlist entry for a DIFFERENT file must not excuse this one"
+
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-998\n")
+    monkeypatch.setitem(drift_check.BACKLOG_REF_ALLOW,
+                        ("BL-998", "scripts/scoped.py"), "excused here, with a reason")
+    drift_check.check_backlog_resolution()
+    assert not fails_of("backlog_resolution")
+    assert passes_of("backlog_resolution")
+
+
+@pytest.mark.parametrize("token", ["BL-0xx", "BL-0NN", "BL-1xx", "BL-09[02]"])
+def test_backlog_resolution_placeholders_do_not_match(tmp_path, monkeypatch, token):
+    """The boundary is the point. A bare `BL-\\d+` truncates these to BL-0 / BL-1 /
+    BL-09 and reports each as dangling; the three-digit-with-boundary form removes
+    them structurally rather than by allowlist."""
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, f"# a placeholder: {token}\n")
+    drift_check.check_backlog_resolution()
+    assert not fails_of("backlog_resolution"), f"{token} should not match"
+
+
+@pytest.mark.parametrize("token,should_match", [
+    ("BL-204", True),      # exact three digits
+    ("BL-2040", False),    # four digits — right boundary
+    ("xBL-204", False),    # left boundary: part of a longer word
+    ("BL-10", False),      # two digits
+])
+def test_backlog_resolution_pattern_boundaries(token, should_match):
+    got = bool(drift_check.BACKLOG_REF_RE.search(token))
+    assert got is should_match, f"{token}: expected match={should_match}, got {got}"
+
+
+def test_backlog_resolution_multi_id_heading_yields_every_owner(tmp_path, monkeypatch):
+    """`### BL-050 + BL-055 + BL-056 — …` registers all three as real rows."""
+    reset()
+    closed = _CLOSED_SAMPLE + (
+        "\n### BL-201 + BL-202 + BL-203 — DONE 2026-01-01 (one reorder, three rows)\n"
+        "\nshared closure body\n"
+    )
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-201 BL-202 BL-203\n", closed_md=closed)
+    drift_check.check_backlog_resolution()
+    assert not fails_of("backlog_resolution")
+
+
+def test_backlog_resolution_missing_backlog_is_fail(tmp_path, monkeypatch):
+    """Absent is unknown, not zero: with no rows parsed the check must not report
+    that everything resolves against an empty set."""
+    reset()
+    _wire_backlog(monkeypatch, tmp_path, "# refs BL-204\n")
+    monkeypatch.setattr(drift_check, "BACKLOG_FILES", (tmp_path / "nope.md",))
+    drift_check.check_backlog_resolution()
+    assert fails_of("backlog_resolution")
+    assert not passes_of("backlog_resolution")
+
+
+@pytest.mark.integration
+def test_backlog_resolution_live_repo_passes():
+    """Against the real corpus at this commit. `integration`: it reads the sibling
+    harness repo, so its outcome depends on state a fresh clone does not carry."""
+    reset()
+    drift_check.check_backlog_resolution()
+    assert not fails_of("backlog_resolution"), fails_of("backlog_resolution")
+    assert passes_of("backlog_resolution")

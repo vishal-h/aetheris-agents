@@ -25,6 +25,10 @@ Checks:
                         agents (both under the agent-bearing predicate), the overrides keys,
                         SWEPT / NO_MANIFEST_YET, the tools.json set and tools.rs's vec!
                         (ds t1a). No strict exemption.
+  backlog_resolution  — every strict-form `BL-nnn` in the scoped corpus (the two backlog
+                        files plus every *.py/*.sh in both repos) names a row in the
+                        UNION of the open file and the closed archive. FAIL, never WARN;
+                        allowlist keyed by (id, file), each entry with its reason (ds t1b).
 
 --strict promotes WARN to FAIL, with one exemption: project_knowledge
 manifest-STALENESS WARNs stay WARN and do not affect the exit code (mid-cycle
@@ -1062,6 +1066,161 @@ def check_use_case_registry() -> None:
 # Main                                                                         #
 # --------------------------------------------------------------------------- #
 
+
+# --------------------------------------------------------------------------- #
+# 11. backlog_resolution — every BL-nnn in the scoped corpus names a real row   #
+# --------------------------------------------------------------------------- #
+
+# The backlog is two files since ds t1b, and the row set is their UNION. The id is
+# the address and the path is never load-bearing, so this check is what makes that
+# claim testable rather than aspirational: a reference resolves, or it FAILS.
+BACKLOG_FILES = (
+    REPO_ROOT / "docs" / "backlog-2026-06.md",
+    REPO_ROOT / "docs" / "backlog-2026-06-closed.md",
+)
+
+# Strict three-digit form WITH A BOUNDARY on both sides. The boundary is the point:
+# a bare `BL-\d+` truncates the metasyntactic placeholders the docs use — `BL-0xx`,
+# `BL-0NN`, `BL-1xx`, and the quoted grep pattern `BL-09[02]` — into `BL-0`, `BL-1`
+# and `BL-09`, and would report each as a dangling reference. Removing them
+# structurally is cheaper and more honest than allowlisting them one by one.
+BACKLOG_REF_RE = re.compile(r"(?<![0-9A-Za-z])BL-(\d{3})(?![0-9])")
+BACKLOG_ROW_RE = re.compile(r"^### ((?:BL-\d+)(?:\s*\+\s*BL-\d+)*)\s*—", re.M)
+
+# Scope: the backlog files themselves, plus every executable in both repos. NOT all
+# committed prose — a July review packet naming a row folded before it was filed is
+# a true historical statement, not a defect this split creates. "Executable" is by
+# extension, not by the mode bit: `git ls-files -s` records ZERO files as 100755 in
+# aetheris-agents, so the bit would exclude every script the check exists to cover.
+BACKLOG_SCOPE_GLOBS = ("*.py", "*.sh")
+
+# An unresolvable reference FAILS. It is deliberately NOT a WARN: the two standing
+# `project_knowledge` staleness WARNs are strict-exempt and read as expected truth,
+# and a dangling-id WARN sitting beside them would inherit that reading — which is
+# the one thing this check must not do.
+#
+# The allowlist is keyed by (id, repo-relative path) and every entry carries its
+# reason. Keyed by BOTH so that an id excused in one file is not silently excused
+# everywhere it might later appear.
+BACKLOG_REF_ALLOW: dict[tuple[str, str], str] = {
+    ("BL-063", "docs/backlog-2026-06.md"):
+        "historical: folded into BL-030 r1 (agents 4bf0fd6) before it acquired a "
+        "section. The prose is a true statement about what r1 did; minting a row "
+        "or deleting the sentence would both destroy the record. This occurrence is "
+        "the retired `## Suggested order` table's BL-030 line.",
+    ("BL-063", "docs/backlog-2026-06-closed.md"):
+        "the same historical statement, inside BL-030's own body — which is DONE and "
+        "so travelled to the archive at ds t1b. Two occurrences, one per file, is a "
+        "consequence of the split and is why the allowlist is keyed by (id, FILE): "
+        "before the split both sat in one file and one key covered them.",
+    # This file is in its own corpus, and its allowlist names ids in order to excuse
+    # them — so the reason strings above are themselves scanned. That is `CLAUDE.md`'s
+    # *a census recorded inside the document it censuses*, and the honest remedy is an
+    # explicit entry rather than excluding the checker from its own scope, which would
+    # blind it to a real dangling id written into it later.
+    ("BL-063", "scripts/drift_check.py"):
+        "self-reference: this allowlist's own key and reason text.",
+    ("BL-999", "scripts/drift_check.py"):
+        "self-reference: this allowlist's own key and reason text.",
+    ("BL-998", "scripts/drift_check.py"):
+        "self-reference, as above — naming the canonical nonexistent id in a reason "
+        "string is itself a reference to it. Every id excused below adds one of these; "
+        "that is the cost of keeping the checker inside its own corpus, and it is the "
+        "cheaper side of the trade.",
+    **{
+        (f"BL-{n}", "tests/test_drift_check.py"):
+            "synthetic fixture id for THIS check's own tests. Deliberately in a range "
+            "no real row uses: an earlier draft used BL-101/BL-102, which happen to be "
+            "real rows, so the live arm passed on a coincidence rather than on the "
+            "fixture being sound."
+        for n in ("201", "202", "203", "204", "205")
+    },
+    ("BL-998", "tests/test_drift_check.py"):
+        "the canonical NONEXISTENT id, used by the dangling-reference tests and by "
+        "the mutation probe. It must never become a real row.",
+    ("BL-999", "../aetheris/scripts/sprint.sh"):
+        "documentation sentinel: sprint.sh's own comment uses BL-999 as the "
+        "canonical well-formed-but-dangling reference. Not resolving IS the point.",
+    **{
+        (f"BL-{n}", "tests/test_backlog_status.py"):
+            "synthetic fixture id for the parser's own tests; never a real row."
+        for n in ("900", "901", "902", "910", "911", "912", "920", "930", "940", "950")
+    },
+}
+
+
+def _backlog_row_ids() -> set[str]:
+    ids: set[str] = set()
+    for path in BACKLOG_FILES:
+        if not path.exists():
+            return set()
+        for group in BACKLOG_ROW_RE.findall(path.read_text()):
+            ids.update(re.findall(r"BL-\d+", group))
+    return ids
+
+
+def _backlog_scope_files() -> list[tuple[Path, str]]:
+    """(absolute path, label) for every file in scope, from git's own file list."""
+    out: list[tuple[Path, str]] = []
+    for path in BACKLOG_FILES:
+        out.append((path, str(path.relative_to(REPO_ROOT))))
+    for root, prefix in ((REPO_ROOT, ""), (HARNESS_ROOT, "../aetheris/")):
+        try:
+            listed = subprocess.run(
+                ["git", "-C", str(root), "ls-files", "-z", *BACKLOG_SCOPE_GLOBS],
+                capture_output=True, text=True, check=True,
+            ).stdout
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return []
+        for rel in filter(None, listed.split("\0")):
+            out.append((root / rel, prefix + rel))
+    return out
+
+
+def check_backlog_resolution():
+    check = "backlog_resolution"
+    rows = _backlog_row_ids()
+    if not rows:
+        _fail(check, f"zero backlog rows parsed from {[str(p) for p in BACKLOG_FILES]}")
+        return
+    files = _backlog_scope_files()
+    if not files:
+        _fail(check, "could not list the scoped corpus from git")
+        return
+
+    unresolved: list[tuple[str, str, int]] = []
+    allowed = 0
+    scanned = 0
+    for path, label in files:
+        try:
+            text = path.read_text(errors="replace")
+        except OSError:
+            _fail(check, f"scoped file not readable: {label}")
+            return
+        scanned += 1
+        hits: dict[str, int] = {}
+        for m in BACKLOG_REF_RE.finditer(text):
+            ref = "BL-" + m.group(1)
+            if ref in rows:
+                continue
+            hits[ref] = hits.get(ref, 0) + 1
+        for ref, n in sorted(hits.items()):
+            if (ref, label) in BACKLOG_REF_ALLOW:
+                allowed += n
+            else:
+                unresolved.append((ref, label, n))
+
+    for ref, label, n in unresolved:
+        _fail(check, f"{ref} referenced {n}x in {label} but names no row in the "
+                     f"backlog union — add a row, or allowlist it by (id, file) "
+                     f"with a reason in BACKLOG_REF_ALLOW")
+    if unresolved:
+        return
+    _ok(check, f"{len(rows)} rows over the union; {scanned} scoped files; every "
+                 f"BL-nnn reference resolves ({allowed} allowlisted occurrence(s), "
+                 f"{len(BACKLOG_REF_ALLOW)} allowlist entr(ies))")
+
+
 CHECKS = [
     check_event_types,
     check_tauri_commands,
@@ -1073,6 +1232,7 @@ CHECKS = [
     check_project_knowledge,
     check_command_fields,
     check_use_case_registry,
+    check_backlog_resolution,
 ]
 
 _CHECK_NAMES = {fn.__name__.replace("check_", ""): fn for fn in CHECKS}

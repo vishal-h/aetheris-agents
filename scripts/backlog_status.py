@@ -76,8 +76,14 @@ from typing import NamedTuple
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent
 
-# ONE constant for the file's location. t1b relocates it; this is the one-line change.
+# The row set is the UNION of these two files. t1b split the backlog: terminal rows
+# (`**Status:** DONE`) moved to the archive and everything else stayed. **The id is
+# the address and the path is never load-bearing**, so every consumer resolves against
+# the union and no caller needs to know which side a row is on. Reading only the open
+# file would report a real row as absent — a well-formed answer to the wrong question.
 BACKLOG_MD = REPO_ROOT / "docs" / "backlog-2026-06.md"
+BACKLOG_ARCHIVE_MD = REPO_ROOT / "docs" / "backlog-2026-06-closed.md"
+BACKLOG_FILES = (BACKLOG_MD, BACKLOG_ARCHIVE_MD)
 
 # The closed vocabulary. DONE is the only terminal value; UNRULED is deliberately
 # NOT terminal — a row the arbiter has not settled has an open remainder and must
@@ -200,8 +206,18 @@ def resolve(sections: list[Section]) -> list[RowStatus]:
     return rows
 
 
-def load(path: Path = BACKLOG_MD) -> list[RowStatus]:
-    return resolve(parse_sections(path.read_text()))
+def parse_files(paths) -> list[Section]:
+    """Sections from every file in the union, concatenated in the given order."""
+    out = []
+    for path in paths:
+        out.extend(parse_sections(path.read_text()))
+    return out
+
+
+def load(paths=BACKLOG_FILES) -> list[RowStatus]:
+    if isinstance(paths, Path):
+        paths = (paths,)
+    return resolve(parse_files(paths))
 
 
 def census(rows: list[RowStatus]) -> dict[str, int]:
@@ -212,11 +228,14 @@ def census(rows: list[RowStatus]) -> dict[str, int]:
     return counts
 
 
-def _cmd_check(path: Path) -> int:
-    sections = parse_sections(path.read_text())
+def _cmd_check(paths) -> int:
+    sections = parse_files(paths)
     rows = resolve(sections)
     bad = [r for r in rows if r.problems]
-    print(f"{path}: {len(sections)} sections, {len(rows)} row ids")
+    for path in paths:
+        n = len(parse_sections(path.read_text()))
+        print(f"{path}: {n} sections")
+    print(f"union: {len(sections)} sections, {len(rows)} row ids")
     for row in bad:
         for problem in row.problems:
             print(f"  FAIL  {row.row_id}: {problem}")
@@ -227,9 +246,9 @@ def _cmd_check(path: Path) -> int:
     return 0
 
 
-def _cmd_census(path: Path) -> int:
-    text = path.read_text()
-    sections = parse_sections(text)
+def _cmd_census(paths) -> int:
+    text = "\n".join(p.read_text() for p in paths)
+    sections = parse_files(paths)
     rows = resolve(sections)
     counts = census(rows)
     open_n = counts["OPEN"]
@@ -256,11 +275,14 @@ def main(argv=None) -> int:
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--check", action="store_true", help="exactly-one-field assertion")
     mode.add_argument("--census", action="store_true", help="the open set, as a number")
-    ap.add_argument("--file", type=Path, default=BACKLOG_MD)
+    # Repeatable, and defaulting to the UNION. A single `--file` still works for
+    # testing one side in isolation; the default is never one side.
+    ap.add_argument("--file", type=Path, action="append", dest="files")
     args = ap.parse_args(argv)
+    paths = tuple(args.files) if args.files else BACKLOG_FILES
     if args.check:
-        return _cmd_check(args.file)
-    return _cmd_census(args.file)
+        return _cmd_check(paths)
+    return _cmd_census(paths)
 
 
 if __name__ == "__main__":

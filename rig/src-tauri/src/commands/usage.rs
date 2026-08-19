@@ -143,14 +143,35 @@ pub fn usage_stats_load(state: State<'_, HarnessState>) -> Result<UsageStats, St
 
 // ── Use case prefix aggregation ───────────────────────────────────────────────
 
+// Matched against a run's label, lowercased, `starts_with` — the same shape as
+// classifyRun() in rig/src/components/modules/harness/RunList.tsx, which groups the run
+// list. THE TWO MUST AGREE, and until ds t1a nothing checked that they did: BL-083 fixed
+// the run list's copy and left this one, so `api-tenant` / `api-gateway` sat here matching
+// zero labels while every cloudcost, docbuilder, eduloka and api run fell to
+// "Unclassified" in the usage view and grouped correctly one screen away.
+//
+// This list is derived from the DECLARED AGENT LABELS (`label:` fields in **/agents/*.exs),
+// never copied from RunList.tsx — copying one hand-written list into another is what
+// produced the defect it replaces. `scripts/check_run_classifier.py` now parses BOTH
+// constants and compares them, and runs its dead-entry and unclassified checks against
+// each; it is wrapped by tests/test_run_classifier.py and so runs in the whole-suite gate.
+//
+// The api agents are labelled by their agent id (at1cmd / at1qry / cot1), not by use-case
+// directory name. The legacy "Capability Matrix -- ..." labels predate the `cap-matrix: `
+// convention and share no prefix with it, so both are carried.
 const USE_CASE_PREFIXES: &[(&str, &str)] = &[
-    ("payslip",     "Payslip"),
-    ("drive",       "Drive"),
-    ("email",       "Email"),
-    ("api-tenant",  "API / Tenant"),
-    ("api-gateway", "API / Gateway"),
-    ("provenance",  "Provenance"),
-    ("cap-matrix",  "Capability Matrix"),
+    ("payslip",           "Payslip"),
+    ("drive",             "Drive"),
+    ("email",             "Email"),
+    ("cloudcost",         "Cloudcost"),
+    ("docbuilder",        "Docbuilder"),
+    ("eduloka",           "Eduloka"),
+    ("at1cmd",            "API / Tenant"),
+    ("at1qry",            "API / Tenant"),
+    ("cot1",              "API / Gateway"),
+    ("provenance",        "Provenance"),
+    ("cap-matrix",        "Capability Matrix"),
+    ("capability matrix", "Capability Matrix"),
 ];
 
 fn classify_label(label: &str) -> &'static str {

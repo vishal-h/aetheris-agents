@@ -399,15 +399,38 @@ an unregistered mark is a collection error rather than a silent selection of not
 
 **Any run that can reach live subprocess work runs under an explicit wall-clock cap, and a
 cap-kill is a complete result.** Record the cap and record that the run hit it; do not retry with
-a longer one. The dormant set is the standing example: the two capped runs covering it were killed
-deliberately at 52m21s (cap 2700s) and 10m17s (cap 2400s), neither finishing, and that is the
-recorded result rather than a check still owed.
+a longer one. The two long runs of `2026-08-16` are the standing example, and the thing to carry
+from them is that **neither was killed by its cap**: a merged `python3 -m pytest -q -m integration`
+run under `timeout 2700` was ended deliberately with `SIGKILL` at 52m21s — 3141s, so it had
+**outlived** its own SIGTERM, which is filed on **BL-151** — and a `-m integration boxy-pipeline`
+run under `timeout 2400` was ended deliberately at 10m17s, 617s, well inside its cap. Neither
+finished, and that is the recorded result rather than a check still owed. **A cap that does not
+actually cap is a cap a future session will trust wrongly**, so record what ended the run, not
+only the number you set.
 
 `Source: BL-152, 2026-08-16. Until then the wording was "the whole suite, not <use_case>/tests/",
 and the literal root command — `python3 -m pytest -q` — aborted during collection and ran nothing
 at all, so the gate could not distinguish a green repo from a broken one. Collection is fixed by
 the root `pytest.ini` (rootdir pin + `--import-mode=importlib`); see that file's header for the
 three module-name collisions it resolves.`
+`[Corrected 2026-08-20 at ds t2 stage 4. The example previously read: "The dormant set is the
+standing example: the two capped runs covering it were killed deliberately at 52m21s (cap 2700s)
+and 10m17s (cap 2400s), neither finishing, and that is the recorded result rather than a check
+still owed." **The rule is unchanged and was never wrong; only the example is replaced**, because
+that sentence asserted two things that are false. (1) It called them *capped runs* — neither was
+cap-killed; both were killed by hand, and the first outlived its 2700s SIGTERM, which is the
+opposite of a cap working and is the most useful fact either run produced. (2) It called them runs
+*covering the dormant set* — both are `-m integration` runs, the first explicitly "(merged set,
+before the split)", and both **predate the `dormant` marker**, created by BL-152 at `2868a3e`.
+There was no dormant set to cover. Sources, read at agents `c8aa4e3`:
+`docs/milestones/bl-152-implementation-notes.md:306-311` for both runs, and
+`docs/backlog-2026-06.md:4874-4882` for the SIGTERM survival. That the dormant set does not
+terminate usefully is still true and is **BL-159**'s claim, resting on its own runs rather than on
+these two. **Why this landed as its own commit:** the correction was first made at ds t1b and lived
+only in a session scratchpad, so ds t2 read this passage, inherited the wrong framing verbatim, and
+published it in a review packet — one error, corrected once, made twice. A correction that does not
+reach the surface a later session reads has not been made, which is **BL-133**'s class and this is
+a worked instance of it.]`
 
 **And no session busy-waits on such a run. It goes in the FOREGROUND under an explicit `timeout`;
 if it must be backgrounded, wait on it ONCE, blocking — never an `until … sleep N` poll

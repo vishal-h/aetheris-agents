@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
-from run_record import run_record  # noqa: E402
+from run_record import run_record, use_case_root_for  # noqa: E402
 
 _USE_CASE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
@@ -59,7 +59,7 @@ def main() -> None:
     try:
         # The step name carries the stem, which under the orchestrator is the term slug —
         # eduloka's unit of work is the term, and its sub-agents run concurrently.
-        with run_record(_USE_CASE_ROOT, args.run_id, f"map:{stem}") as rec:
+        with run_record(use_case_root_for(__file__), args.run_id, f"map:{stem}") as rec:
             result = _run(in_path, out_path)
             rec.add(out_path)
         status = "partial" if result["skipped"] else "ok"

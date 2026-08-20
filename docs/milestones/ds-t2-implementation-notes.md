@@ -1,9 +1,18 @@
 # ds t2 — the run/artifact record — implementation notes
 
-Two commits, agents repo only, not pushed. Baseline agents `f9328aa`, harness `a6464f4`.
+Three commits, agents repo only, not pushed. Baseline agents `f9328aa`, harness `a6464f4`.
 
 - commit 1 — `0e5e0d2` — the module, its tests, the docbuilder generalisation
-- commit 2 — the five remaining adopters, the six filings, the doc edits
+- commit 2 — `c8aa4e3` — the five remaining adopters, the filings, the doc edits
+- commit 3 — stage 4 — the seam honoured at every call site, the census arm that would have
+  caught the bypass, `CLAUDE.md`'s cap-rule example corrected at source, and stage 3's
+  corrections written into this file
+
+`[Header corrected 2026-08-20 at stage 4. It read "Two commits" and described commit 2 as
+carrying "the six filings". Both are now false: there are three commits, and **ten** entries
+landed across five rows — see §Stage 4 item 2, which carries the derivation. The count is
+replaced by a pointer rather than by a better number, per the de-numeralisation rule: the set
+grew after the message was written and would grow again.]`
 
 ---
 
@@ -204,9 +213,9 @@ and still passes.
 | `docbuilder` | `rename_output.py`, `upload_output.py` | `rename_output`, `upload_output` | agent, threaded | CLI subprocess tests |
 | `cloudcost` | `compose_report_data.py`, `render_report.py` | `compose_report_data`, `render_report` | agent, hoisted + threaded | its own 465-test suite drives both stages |
 | `payslip` | `generate_employee_payslips.py` | `generate_employee_payslips:{emp_id}` | agent, hoisted + threaded | its suite drives the loop |
-| `eduloka` | `fetch.py`, `map.py`, `enrich.py` | `fetch:{slug}`, `map:{slug}`, `enrich:{slug}` | agent, threaded to 3 sub-agent stages | structural — stages need a live search provider |
-| `provenance` | `inventory_report.py` | `inventory_report` | `--run-id`, nothing passes it yet | structural — needs a populated DuckDB |
-| `boxy-pipeline` | `order_formatter.py` | `order_formatter` | **null** — no route exists | dormant test, run targeted under `-m dormant` |
+| `eduloka` | `fetch.py`, `map.py`, `enrich.py` | `fetch:{slug}`, `map:{slug}`, `enrich:{slug}` | agent, threaded to 3 sub-agent stages | its own suite drives `map` and `enrich` as CLIs; only `fetch` needs a live provider — see §Stage 4 |
+| `provenance` | `inventory_report.py` | `inventory_report` | `--run-id`, nothing passes it yet | the AST census alone; its tests never reach `main()` — see §Stage 4 |
+| `boxy-pipeline` | `order_formatter.py` | `order_formatter` | **null** — no route exists | end to end by 7 CLI tests, but only under `-m dormant` — see §Stage 4 |
 
 **cloudcost.** `compose_report_data` records **both** its writes — the report data under
 `--output-dir` and the snapshot under `--history-dir` — which is ruling 2's coverage clause
@@ -269,3 +278,116 @@ currently observe; and a link from a step entry to the run-level completion BL-1
 
 `run-records.json` is gitignored in all six, so **no record file is committed** and none can
 be inspected from a fresh clone. Anyone verifying the format must run a producer.
+
+---
+
+## Stage 4 — corrections to this ticket's own claims
+
+`[Added 2026-08-20 at ds t2 stage 4, commit 3. Everything below was established in stage 3 and
+existed **only in a session scratchpad**. That is precisely the failure §Stage 4's `CLAUDE.md`
+edit was cut to fix — a correction that does not reach a tracked surface has not been made — so
+leaving these in the addendum would have repeated, inside one ticket, the mistake the ticket was
+correcting. The producers table above is edited in place to match; a table cell and a section
+disagreeing is two surfaces that will diverge at the next reader.]`
+
+**1. The concurrency guard is sound but incomplete, and the packet's "3/3" is withdrawn.**
+The stage-2 packet §7 said the lock mutation "fires 3/3 with the final subprocess-based test and
+fired 2/3 with the earlier `multiprocessing` one". **The 3/3 was a three-sample run**, and three
+samples cannot distinguish a deterministic detector from a probabilistic one. Twenty samples each
+way, at `c8aa4e3`:
+
+| condition | result |
+|---|---|
+| lock disabled, 20 × `pytest …::test_concurrent_writers_do_not_lose_entries` | detector caught it in **15 of 20** |
+| lock restored, same 20 runs | **20 of 20** pass — no false alarms |
+
+So the guard **never produces a false red**, and **misses the defect about a quarter of the time**.
+The `multiprocessing`→subprocess rewrite was made for an unrelated reason — `spawn` cannot pickle a
+target out of a module imported under `--import-mode=importlib`, which broke the whole-suite gate —
+and **did not make the detector deterministic**; the packet implies it did and that implication is
+withdrawn. **A single green is not evidence the lock is present.** A deterministic version needs the
+child processes synchronised on a barrier so their read-modify-write windows are forced to overlap.
+**Proposed, not built** — no ticket owns it.
+
+**2. Commit 2's subject undercounts the filings: ten, not six.** `c8aa4e3`'s subject says
+*"six findings are filed"*. Derived from the commit itself:
+
+```
+$ git diff 0e5e0d2..c8aa4e3 -- docs/backlog-2026-06.md | grep -c '^+- `2026-08-20`'                   → 4
+$ git diff 0e5e0d2..c8aa4e3 -- docs/backlog-2026-06.md | grep -c '^+`\[Amended 2026-08-20 at ds t2'   → 3
+$ git diff 0e5e0d2..c8aa4e3 -- docs/backlog-2026-06.md | grep -c '^+`\[Answered 2026-08-20 at ds t2'  → 1
+$ git diff 0e5e0d2..c8aa4e3 -- docs/backlog-2026-06.md | grep -c '^+### BL-1'                          → 2
+```
+
+**Ten discrete entries across five rows** — BL-151, BL-153, BL-159, BL-167, BL-168. The "six" omits
+the three BL-153 amendments and the BL-159 answer. The subject is immutable (`c8aa4e3` carries a
+review packet and is cited by #78's backlink), so the correction lives here. Per the
+de-numeralisation rule the subject should have carried **no figure at all** — the set was still
+growing when the message was written, since the BL-159 answer landed in a later amend, and that is
+exactly the growth a number cannot survive.
+
+**3. boxy-pipeline's adoption is exercised end to end, not "structural only".**
+`boxy-pipeline/tests/test_order_formatter.py` drives `order_formatter.py` as a real CLI subprocess
+at four sites (`:327`, `:357`, `:396`, `:438`), each asserting `returncode == 0`, and `main()`'s
+`with run_record(...)` is unconditional. Observed directly rather than inferred:
+
+```
+$ python3 -m pytest boxy-pipeline/tests/test_order_formatter.py -q -m dormant \
+    -k "cli or writes or output" --basetemp=/tmp/pytest-of-it/pytest-boxyprobe
+7 passed, 17 deselected in 390.55s (0:06:30)
+  /tmp/pytest-of-it/pytest-boxyprobe/run-records3/data/run-records.json
+  entries=1 steps=['order_formatter'] run_id_null=True attested=True
+```
+
+A real order form is written, hashed and attested. **What remains true** is that this runs only
+under `-m dormant`, which the whole-suite gate deselects, and only where the gitignored
+`boxy-pipeline/data/samples/*.pdf` exist. **It first reaches the gate when boxy's dormancy ends**
+(BL-159). Nothing appears in the checkout because the isolation fixture redirects it — the fixture
+working, not the adoption failing.
+
+**4. eduloka is exercised for `map` and `enrich`; and the isolation fixture that was supposed to
+cover it guarded nothing.** The table's "stages need a live search provider" is true of `fetch.py`
+and **false of `map.py` and `enrich.py`**, which eduloka's own suite drives as CLI subprocesses (3
+and 6 call sites). Its suite alone produces `entries: 6 — enrich×4, map×2`, all attested.
+
+**The defect that finding exposed, and its fix.** Those records landed in
+**`eduloka/data/run-records.json` inside the checkout**, with artifact paths under
+`/tmp/pytest-of-it/…`. Cause: `AETHERIS_RUN_RECORD_ROOT` is read in exactly one place —
+`run_record.use_case_root_for` — and eduloka's three scripts passed `_USE_CASE_ROOT` directly, so
+the autouse `_isolate_run_records` fixture was **inert for exactly the scripts it was added to
+isolate**. Seven of ten instrumented sites went through the seam; three did not. Bounded — the file
+is gitignored, so nothing was committable and `git status` stayed empty — but that is also why
+nothing caught it: **a guard returning a clean result while guarding nothing**, the
+Silent-wrong-answer shape.
+
+Fixed at stage 4: all three now call `use_case_root_for(__file__)`. `_USE_CASE_ROOT` is **not**
+dead and stays — it still resolves each script's default output path. Proven by the failure it
+removes: before, the record appears in the checkout after `pytest eduloka/tests/`; after, it lands
+under the fixture's redirect and the checkout is clean.
+
+**The census test is why this survived commit 2**, and that hole is closed too.
+`tests/test_run_record_adoption.py` asserted that `run_record` is **called** and never how its root
+is obtained — the same defect one level up. `test_every_call_site_obtains_its_root_through_the_seam`
+now derives every `run_record(...)` call in every producer's `scripts/` from the tree (never a
+hardcoded list, which would pass unchanged on the day a new script bypasses the seam) and requires
+each to pass `use_case_root_for(__file__)`, with
+`test_the_discovered_call_sites_cover_every_declared_producer_script` as its positive control
+against vacuous discovery.
+
+**5. provenance's adoption is verified by the AST census alone, and for a sharper reason than
+"needs a populated DuckDB".** Its tests **have** a populated DuckDB; that is not what is missing.
+`provenance/tests/test_inventory_report.py` imports and calls `build_report(conn)` directly (`:9`,
+`:20`), while the record lives in `main()`, which no test reaches. Confirmed by absence with the
+other producers as control:
+
+```
+$ python3 -m pytest eduloka/tests/ provenance/tests/ -q      → 258 passed, 3 skipped
+  eduloka     run-records.json after its suite: PRESENT   (before the stage-4 fix)
+  provenance  run-records.json after its suite: absent
+```
+
+So what verifies it today is `tests/test_run_record_adoption.py` only: that the script imports
+`run_record`, calls it, obtains its root through the seam, and accepts `--run-id` — all by AST
+parse, and it is **never run**. It first executes the moment anything invokes the CLI: an operator,
+Rig's Tools panel, or a test calling `main()` instead of `build_report()`. **Nothing schedules
+that, and no ticket owns it.**

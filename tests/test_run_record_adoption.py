@@ -171,3 +171,93 @@ def test_the_record_relpath_is_outside_output(tmp_path):
     import shutil
     shutil.rmtree(tmp_path / "output")          # what the sprint's guard does
     assert (tmp_path / RECORD_RELPATH).is_file(), "the record must survive the guard"
+
+
+# ------------------------------------------------------- the seam, at every call site
+
+
+def _discovered_call_sites():
+    """Every `run_record(...)` call in every producer's `scripts/`, derived from the tree.
+
+    Derived rather than listed. A hardcoded site list is the defect class this cycle already
+    carries — it would pass unchanged on the day a new producer script bypasses the seam,
+    which is exactly the failure this arm exists to catch. Walking the tree means a site that
+    did not exist when this test was written is still covered.
+
+    Returns `[(relpath, lineno, root_expr)]`, where `root_expr` is a short description of the
+    first positional argument: `"use_case_root_for(__file__)"` when it is that call, else the
+    source text of whatever was passed.
+    """
+    sites = []
+    for use_case in sorted(PRODUCERS):
+        for path in sorted((REPO_ROOT / use_case / "scripts").glob("*.py")):
+            source = path.read_text()
+            tree = ast.parse(source)
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Name)
+                        and node.func.id == "run_record"):
+                    continue
+                if not node.args:
+                    expr = "<no positional argument>"
+                else:
+                    arg = node.args[0]
+                    if (isinstance(arg, ast.Call)
+                            and isinstance(arg.func, ast.Name)
+                            and arg.func.id == "use_case_root_for"
+                            and len(arg.args) == 1
+                            and isinstance(arg.args[0], ast.Name)
+                            and arg.args[0].id == "__file__"):
+                        expr = "use_case_root_for(__file__)"
+                    else:
+                        expr = ast.get_source_segment(source, arg) or "<unparsed>"
+                sites.append((str(path.relative_to(REPO_ROOT)), node.lineno, expr))
+    return sites
+
+
+def test_every_call_site_obtains_its_root_through_the_seam():
+    """THE BROKEN STATE: a call site passing its own root constant instead of the seam.
+
+    `AETHERIS_RUN_RECORD_ROOT` is read in exactly one place — `run_record.use_case_root_for`
+    — so a site that passes any other expression is invisible to it. The consequence is not
+    a wrong record but a **silent** one: each use case's autouse `_isolate_run_records`
+    fixture goes inert for that site, its tests write into the checked-out tree, and because
+    the record file is gitignored `git status` cannot see it. A guard returning a clean
+    result while guarding nothing.
+
+    Found in ds t2 stage 3: eduloka's `fetch.py`, `map.py` and `enrich.py` all passed
+    `_USE_CASE_ROOT`, and every test in this file passed anyway — because they asserted that
+    `run_record` is CALLED and never how its root is obtained. Fixed at stage 4.
+    """
+    bypassing = [(f, ln, expr) for f, ln, expr in _discovered_call_sites()
+                 if expr != "use_case_root_for(__file__)"]
+    assert bypassing == [], (
+        "these call sites bypass the AETHERIS_RUN_RECORD_ROOT seam, so their use case's "
+        "isolation fixture is inert for them:\n"
+        + "\n".join(f"  {f}:{ln} passes {expr}" for f, ln, expr in bypassing)
+    )
+
+
+def test_the_discovered_call_sites_cover_every_declared_producer_script():
+    """The derived set is checked against the census the other tests derive.
+
+    Discovery walking the tree could silently find nothing — a wrong glob, a renamed
+    directory — and `test_every_call_site_obtains_its_root_through_the_seam` would then pass
+    vacuously over an empty list. This is that test's positive control, and it is a real
+    assertion rather than a smoke check: every script `PRODUCERS` declares must appear among
+    the discovered sites, and `PRODUCERS` is itself checked against the registry by
+    `test_the_producer_set_partitions_the_registry`.
+    """
+    sites = _discovered_call_sites()
+    assert sites, "discovery found no call sites at all — the walk is broken, not the tree"
+
+    files_with_sites = {f for f, _ln, _expr in sites}
+    declared = {f"{uc}/{rel}" for uc, rels in PRODUCERS.items() for rel in rels}
+    assert declared <= files_with_sites, (
+        f"declared instrumented scripts with no discovered run_record call: "
+        f"{sorted(declared - files_with_sites)}"
+    )
+    # Every declared script contributes at least one site, so the count is at least the
+    # census size. Stated as an inequality, not an equality: a script legitimately carries
+    # more than one call site (payslip's loop would, if it were ever split per month).
+    assert len(sites) >= len(declared)

@@ -24,7 +24,7 @@ from list_terms import slug_term  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
-from run_record import run_record  # noqa: E402
+from run_record import run_record, use_case_root_for  # noqa: E402
 
 _USE_CASE_ROOT = Path(__file__).parent.parent
 
@@ -84,7 +84,7 @@ def main() -> None:
     # The step name carries the slug because eduloka's unit of work is the TERM: the
     # orchestrator spawns one sub-agent per term and joins them only at `wait_for_all`, so
     # a step name without the slug would have N concurrent writers replacing one entry.
-    with run_record(_USE_CASE_ROOT, args.run_id,
+    with run_record(use_case_root_for(__file__), args.run_id,
                     f"fetch:{slug_term(args.term)}") as rec:
         with open(out_path, "a") as f:
             for item in items:

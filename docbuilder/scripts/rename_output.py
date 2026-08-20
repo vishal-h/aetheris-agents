@@ -19,7 +19,17 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record, use_case_root_for  # noqa: E402
+
 KNOWN_EXTS = ("xlsx", "docx", "pdf", "csv", "json", "xml", "md")
+
+#: This script writes the run's deliverable files, so it is the step that attests them.
+#: The record is written HERE rather than by a later orchestrator prompt step: a writer an
+#: LLM is free to skip is the same defect as a reader free to ignore the stamp, one step
+#: earlier (BL-153 ruling 1, and ds t2 §A2).
+STEP = "rename_output"
 
 
 def slugify(name):
@@ -78,21 +88,26 @@ def main():
     parser.add_argument("--context", required=True, help="inline JSON of context fields")
     parser.add_argument("--output", default=None,
                         help="write the JSON result to FILE and print only the path")
+    parser.add_argument("--run-id", default=None,
+                        help="harness run id; omitted when no run reaches this script, in "
+                             "which case the record carries run_id null")
     args = parser.parse_args()
 
     try:
-        context = json.loads(args.context)
-        pairs = rename_outputs(args.output_dir, args.filename_prefix, context)
+        with run_record(use_case_root_for(__file__), args.run_id, STEP) as rec:
+            context = json.loads(args.context)
+            pairs = rename_outputs(args.output_dir, args.filename_prefix, context)
+            rec.add(*(pair["renamed"] for pair in pairs))
+
+            result = json.dumps(pairs)
+            if args.output:
+                Path(args.output).write_text(result, encoding="utf-8")
+                rec.add(args.output)
     except Exception as e:
         print(json.dumps({"status": "error", "error": str(e)}), file=sys.stderr)
         sys.exit(1)
 
-    result = json.dumps(pairs)
-    if args.output:
-        Path(args.output).write_text(result, encoding="utf-8")
-        print(args.output)
-    else:
-        print(result)
+    print(args.output if args.output else result)
 
 
 if __name__ == "__main__":

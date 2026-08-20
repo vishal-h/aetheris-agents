@@ -224,7 +224,7 @@ render_steps =
 
 rename_args =
   ["scripts/rename_output.py", "--output-dir", "output", "--filename-prefix", prefix,
-   "--context", "<CONTEXT>", "--output", "output/renamed.json"]
+   "--context", "<CONTEXT>", "--output", "output/renamed.json", "--run-id", run_id]
 
 run_log_args =
   ["scripts/run_log_writer.py", "--tenant", tenant, "--doc-type", resolved_doc_type,
@@ -236,7 +236,7 @@ upload_phase =
   if deliver_upload? do
     upload_args =
       ["scripts/upload_output.py", "--tenant", tenant, "--files"] ++
-        renamed_files ++ ["--output", "output/uploaded.json"]
+        renamed_files ++ ["--output", "output/uploaded.json", "--run-id", run_id]
 
     """
     PHASE E — Upload the renamed outputs to Drive.

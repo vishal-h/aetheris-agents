@@ -67,10 +67,27 @@ def test_load_existing_array(tmp_path):
 
 
 def test_load_malformed_raises(tmp_path):
+    """A malformed log raises rather than reading as empty, so it is never overwritten.
+
+    Pinned as the invariant rather than as an exception class. Until ds t2 this asserted
+    `json.JSONDecodeError`, which was an incidental consequence of `json.loads` being
+    inline; the loader now lives in `scripts/run_record.load_json_array` and raises
+    `RunRecordError`. What the CLI's exit-1 contract actually depends on is that the raise
+    is caught by `main`'s `except (json.JSONDecodeError, ValueError)`, which is asserted
+    below rather than left implied — a `ValueError` subclass is what makes the move
+    behaviour-preserving, and nothing else here would notice if that stopped being true.
+    """
     p = tmp_path / "log.json"
     p.write_text("{not json")
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(ValueError):
         _load_log(p)
+
+    try:
+        _load_log(p)
+    except (json.JSONDecodeError, ValueError):
+        pass  # main()'s clause catches it → exit 1, message, history untouched
+    else:
+        pytest.fail("_load_log did not raise; main() would silently overwrite history")
 
 
 def test_load_non_array_raises(tmp_path):

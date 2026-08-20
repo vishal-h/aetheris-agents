@@ -19,6 +19,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+# The loader raises `run_record.RunRecordError`, which subclasses `ValueError` — so
+# `main`'s existing `except (json.JSONDecodeError, ValueError)` still catches it and this
+# module's exit codes are unchanged.
+from run_record import load_json_array, write_json_array  # noqa: E402
+
 
 def _read_outputs(renamed_path):
     """Return the renamed output paths from a rename_output.py result file.
@@ -49,17 +56,13 @@ def _read_outputs(renamed_path):
 def _load_log(log_path):
     """Load the existing run log as a list. Missing/empty → []. A malformed or
     non-array existing log raises (hard error at the CLI) so run history is never
-    silently overwritten."""
-    p = Path(log_path)
-    if not p.exists():
-        return []
-    text = p.read_text().strip()
-    if not text:
-        return []
-    data = json.loads(text)  # raises json.JSONDecodeError on malformed JSON
-    if not isinstance(data, list):
-        raise ValueError(f"run log '{log_path}' is not a JSON array")
-    return data
+    silently overwritten.
+
+    Since ds t2 this delegates to `scripts/run_record.load_json_array`, which is the same
+    loader the per-step run record uses — one definition of "malformed" for both history
+    files rather than two that can drift. `resolve_last_run.py` imports this function, so
+    the two docbuilder scripts still share one loader exactly as before."""
+    return load_json_array(log_path)
 
 
 def append_run(log, entry):
@@ -116,9 +119,9 @@ def main():
                         args.run_id, context, outputs)
     log = append_run(log, entry)
 
-    out = Path(args.log_file)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(log, indent=2) + "\n", encoding="utf-8")
+    # Atomic: temp file then replace. Until ds t2 this was a whole-file `write_text`, so a
+    # kill mid-write truncated the entire run history rather than losing one entry.
+    out = write_json_array(args.log_file, log)
     print(str(out))
 
 

@@ -15,7 +15,16 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
 import _drive
+from run_record import run_record, use_case_root_for  # noqa: E402
+
+#: The upload is its own step with its own entry, rather than being folded into the render
+#: step's. Until ds t2 the docbuilder run log was written at PHASE D2 and PHASE E wrote
+#: `output/uploaded.json` afterwards, so the record predated an artifact it implied
+#: (BL-151, filed by ds t2). One entry per step is what makes that expressible.
+STEP = "upload_output"
 
 
 def upload_outputs(tenant, files, drive_id):
@@ -48,6 +57,9 @@ def main():
                         help="Drive Shared Drive root id (falls back to DRIVE_DOCBUILDER_ID)")
     parser.add_argument("--output", default=None,
                         help="write the JSON result to FILE and print only the path")
+    parser.add_argument("--run-id", default=None,
+                        help="harness run id; omitted when no run reaches this script, in "
+                             "which case the record carries run_id null")
     args = parser.parse_args()
 
     drive_id = args.drive_id or os.environ.get("DRIVE_DOCBUILDER_ID")
@@ -58,17 +70,18 @@ def main():
         sys.exit(1)
 
     try:
-        results = upload_outputs(args.tenant, args.files, drive_id)
+        with run_record(use_case_root_for(__file__), args.run_id, STEP) as rec:
+            results = upload_outputs(args.tenant, args.files, drive_id)
+
+            out = json.dumps(results)
+            if args.output:
+                Path(args.output).write_text(out, encoding="utf-8")
+                rec.add(args.output)
     except Exception as e:
         print(json.dumps({"status": "error", "error": str(e)}), file=sys.stderr)
         sys.exit(1)
 
-    out = json.dumps(results)
-    if args.output:
-        Path(args.output).write_text(out, encoding="utf-8")
-        print(args.output)
-    else:
-        print(out)
+    print(args.output if args.output else out)
 
 
 if __name__ == "__main__":

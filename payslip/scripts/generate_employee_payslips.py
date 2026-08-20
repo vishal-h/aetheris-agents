@@ -7,6 +7,17 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record, use_case_root_for  # noqa: E402
+
+#: One record entry per EMPLOYEE, because that is the unit that can be complete: the
+#: script loops employees and each iteration writes a whole directory of deliverables.
+#: A per-invocation entry could not say which employees finished when a run dies
+#: mid-loop, which is precisely what the record exists to state.
+STEP_PREFIX = "generate_employee_payslips"
 
 
 def run_compute(csv_path, employee_id_safe=None):
@@ -145,28 +156,33 @@ def convert_to_pdf(html_path, pdf_path):
         sys.exit(result.returncode)
 
 
-def generate_for_employee(employee, template, output_dir):
+def generate_for_employee(employee, template, output_dir, run_id=None):
     emp_id = employee["employee_id_safe"]
     emp_dir = os.path.join(output_dir, emp_id)
     os.makedirs(emp_dir, exist_ok=True)
 
     months_written = []
     month_files = []
-    for month_data in employee["months"]:
-        stem = f"{month_data['month_file']}-Payslip"
-        html_path = os.path.join(emp_dir, f"{stem}.html")
-        pdf_path  = os.path.join(emp_dir, f"{stem}.pdf")
-        csv_path  = os.path.join(emp_dir, f"{stem}.csv")
+    with run_record(use_case_root_for(__file__), run_id,
+                    f"{STEP_PREFIX}:{emp_id}") as rec:
+        for month_data in employee["months"]:
+            stem = f"{month_data['month_file']}-Payslip"
+            html_path = os.path.join(emp_dir, f"{stem}.html")
+            pdf_path  = os.path.join(emp_dir, f"{stem}.pdf")
+            csv_path  = os.path.join(emp_dir, f"{stem}.csv")
 
-        html = generate_html(template, employee, month_data)
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html)
+            html = generate_html(template, employee, month_data)
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(html)
 
-        convert_to_pdf(html_path, pdf_path)
-        write_csv(csv_path, employee, month_data)
+            convert_to_pdf(html_path, pdf_path)
+            write_csv(csv_path, employee, month_data)
+            # Named after each month's three writes return, so an employee whose run dies
+            # part-way still records the months that did land.
+            rec.add(html_path, pdf_path, csv_path)
 
-        months_written.append(stem)
-        month_files.append(month_data["month_file"])
+            months_written.append(stem)
+            month_files.append(month_data["month_file"])
 
     if months_written:
         timestamp  = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -203,6 +219,9 @@ def main():
                         help="Base output directory (default: output)")
     parser.add_argument("--csv", dest="csv_path", default="data/sample_payroll.csv",
                         help="Path to payroll CSV (default: data/sample_payroll.csv)")
+    parser.add_argument("--run-id", dest="run_id", default=None,
+                        help="Harness run id; omitted when no run reaches this script, in "
+                             "which case the run record carries run_id null")
     args = parser.parse_args()
 
     if args.employee_id_safe is None:
@@ -222,7 +241,8 @@ def main():
     total_months = 0
 
     for employee in employees:
-        total_months += generate_for_employee(employee, template, args.output_dir)
+        total_months += generate_for_employee(employee, template, args.output_dir,
+                                              run_id=args.run_id)
 
     print(f"\nDone: {len(employees)} employee(s), {total_months} payslip(s) generated.")
 

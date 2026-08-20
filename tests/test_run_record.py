@@ -319,3 +319,44 @@ def test_naming_a_missing_artifact_raises_inside_the_step(root):
 
     entry, = _records(root)
     assert "attested_at" not in entry
+
+
+# ---------------------------------------------------------------------------- concurrency
+
+
+def test_concurrent_writers_do_not_lose_entries(root):
+    """THE BROKEN STATE: N processes read-modify-write one file; the last write wins.
+
+    `os.replace` makes the write atomic and does nothing for the read-modify-write around
+    it. eduloka spawns one sub-agent per search term and joins them only at
+    `wait_for_all`, so this is its live shape, not a hypothetical.
+
+    Real subprocesses rather than `multiprocessing`: each producer genuinely is a separate
+    `python3` invocation, and under `--import-mode=importlib` this test module has no
+    importable dotted name for `spawn` to pickle a target out of.
+    """
+    import subprocess
+
+    scripts = str(Path(__file__).resolve().parents[1] / "scripts")
+    child = (
+        "import sys; sys.path.insert(0, %r)\n"
+        "from run_record import run_record\n"
+        "with run_record(sys.argv[1], 'run-' + sys.argv[2], 'fetch'):\n"
+        "    pass\n" % scripts
+    )
+
+    procs = [
+        subprocess.Popen([sys.executable, "-c", child, str(root), str(i)],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        for i in range(12)
+    ]
+    for p in procs:
+        p.wait(timeout=60)
+
+    assert all(p.returncode == 0 for p in procs), [
+        (p.returncode, p.stderr.read().decode()[-300:]) for p in procs if p.returncode
+    ]
+    got = sorted(e["run_id"] for e in _records(root))
+    assert got == sorted(f"run-{i}" for i in range(12)), (
+        f"{len(got)} of 12 entries survived — concurrent writers lost entries"
+    )

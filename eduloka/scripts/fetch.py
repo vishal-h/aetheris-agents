@@ -22,6 +22,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 from fetch_base import PROVIDERS, SearchError, get_fetcher
 from list_terms import slug_term  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record  # noqa: E402
+
 _USE_CASE_ROOT = Path(__file__).parent.parent
 
 
@@ -46,6 +50,9 @@ def main() -> None:
                         help="ISO country code (default: IN)")
     parser.add_argument("--output-dir", default=None, type=Path, metavar="DIR",
                         help="Output directory (default: data/raw/ under use-case root)")
+    parser.add_argument("--run-id", default=None,
+                        help="Harness run id; omitted when no run reaches this script, in "
+                             "which case the run record carries run_id null")
     parser.add_argument("--partition", action="store_true",
                         help="Write to Hive-partitioned path provider=P/dt=YYYY-MM-DD/")
     args = parser.parse_args()
@@ -74,15 +81,21 @@ def main() -> None:
     out_path = _make_output_path(base, provider, args.term, dt_partition, partition=args.partition)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(out_path, "a") as f:
-        for item in items:
-            envelope = {
-                "provider": provider,
-                "term": args.term,
-                "fetched_at": fetched_at,
-                "raw": item,
-            }
-            f.write(json.dumps(envelope) + "\n")
+    # The step name carries the slug because eduloka's unit of work is the TERM: the
+    # orchestrator spawns one sub-agent per term and joins them only at `wait_for_all`, so
+    # a step name without the slug would have N concurrent writers replacing one entry.
+    with run_record(_USE_CASE_ROOT, args.run_id,
+                    f"fetch:{slug_term(args.term)}") as rec:
+        with open(out_path, "a") as f:
+            for item in items:
+                envelope = {
+                    "provider": provider,
+                    "term": args.term,
+                    "fetched_at": fetched_at,
+                    "raw": item,
+                }
+                f.write(json.dumps(envelope) + "\n")
+        rec.add(out_path)
 
     print(json.dumps({
         "status": "ok",

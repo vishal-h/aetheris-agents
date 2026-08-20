@@ -3,8 +3,13 @@ agent_root = Path.expand(Path.join(Path.dirname(__ENV__.file), ".."))
 model    = System.get_env("PAYSLIP_MODEL") || System.get_env("AETHERIS_MODEL") || "claude-haiku-4-5-20251001"
 provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
+# Pre-established so the SAME string is both the harness run_id and the --run-id the
+# generator stamps into its run record (ds t2). Minting it inline in the struct field left
+# no binding the prompt could reference, so no artifact could name the run that made it.
+run_id = "payslip-orch-#{Aetheris.ID.generate()}"
+
 %Aetheris.RunConfig{
-  run_id:           "payslip-orch-#{Aetheris.ID.generate()}",
+  run_id:           run_id,
   mode:             :record,
   provider:         provider,
   model:            model,
@@ -20,7 +25,7 @@ provider = System.get_env("AETHERIS_PROVIDER") || "anthropic"
   Run this command exactly once:
 
     command: "python3"
-    args: ["scripts/generate_employee_payslips.py", "--csv", "data/payroll.csv"]
+    args: ["scripts/generate_employee_payslips.py", "--csv", "data/payroll.csv", "--run-id", "#{run_id}"]
     timeout_ms: 300000
 
   The script reads PAYSLIP_EMPLOYEE_ID from the environment automatically.

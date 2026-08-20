@@ -5014,6 +5014,108 @@ appended list is empty.
   figure above will need this clone, or a different instrument. **Not decided here.** Verified at
   agents `e1c7386`; the manifest paragraphs are quoted at their line numbers as of that commit.
 
+- `2026-08-20` — **`resolve_last_run.py` selects "most recent" by a LEXICOGRAPHIC sort over
+  local-offset timestamps, so it can return the earlier instant.** `find_last_match`
+  (`docbuilder/scripts/resolve_last_run.py:83`) takes `max(matches, key=lambda ie:
+  ((ie[1].get("timestamp") or ""), ie[0]))` — a **string** comparison — over the stamps
+  `run_log_writer.build_entry` writes at `:80`,
+  `datetime.now().astimezone().isoformat(timespec="seconds")`, which carry a **local UTC
+  offset**. Two entries written under different offsets therefore sort by printed digits
+  rather than by instant. Worked instance: `2026-06-30T14:30:00+05:30` (09:00Z) sorts
+  ABOVE `2026-06-30T12:00:00+00:00` (12:00Z), so "same as last month" copies forward the
+  context of the run that happened three hours *earlier*. It breaks nothing today because
+  every entry in the one surviving log was written in one zone — which is exactly the
+  condition that makes it invisible. **Deliberately NOT fixed at ds t2**, whose subject was
+  the writer: fixing the reader would have changed the live consumer's selection under
+  cover of a refactor. It is pinned as a defect instead, by
+  `docbuilder/tests/test_resolve_last_run_characterisation.py::test_lexicographic_sort_is_the_pinned_defect`,
+  whose failure message says to retire it and close this entry when the fix lands. The new
+  `data/run-records.json` does not reproduce it: `run_record.utc_now` emits UTC with a `Z`
+  suffix, under which a lexicographic sort **is** chronological. **A sibling site, filed not
+  fixed for the same scope reason:** `provenance/scripts/inventory_report.py:49` names its
+  report `inventory_{datetime.now().strftime("%Y%m%d_%H%M%S")}.md` — local time with no
+  offset marker at all, so two reports from different zones cannot be ordered from their
+  names. Verified at agents `0e5e0d2`.
+
+- `2026-08-20` — **`cloudcost/history/` carries two incompatible layouts for the same
+  provider and period, and `load_prior_snapshots` can never read one of them.** The cause is
+  ONE code layout under TWO roots, not two code paths. `persist_history`
+  (`cloudcost/scripts/compose_report_data.py:989`) always writes
+  `{history_dir}/{period}/{provider}_costs_{period}.json`; what differs is `history_dir`.
+  The orchestrator passes `--history-dir history/#{provider_slug}`
+  (`cloudcost/agents/cloudcost_orchestrator.exs:141`, used at `:277` and `:282`) → a
+  **provider-first** tree. The flag is **optional** and defaults to `DEFAULT_HISTORY_DIR`,
+  the shared `<use-case root>/history` (`:111`), so any invoker omitting it writes a
+  **period-first** tree — and `cloudcost/tools.json:509-514` exposes it as an optional Tools
+  panel field whose own help text says *"left blank the script falls back to the shared
+  cloudcost/history"*. Both are on disk now, for github/2026-08, six hours apart and
+  differing in content:
+
+  | path | md5 | bytes | mtime (UTC) |
+  |---|---|---|---|
+  | `cloudcost/history/2026-08/github_costs_2026-08.json` | `15167b93df3415a685a6f86c12677cda` | 3788 | `2026-08-14T02:48:27Z` |
+  | `cloudcost/history/github/2026-08/github_costs_2026-08.json` | `3361b436a87e6b732cec0727db89595d` | 3790 | `2026-08-14T08:59:55Z` |
+
+  `load_prior_snapshots` reads `history_dir / previous` (`:1002`), so under the
+  orchestrator's root the period-first file is **unreachable by every orchestrator-driven
+  run** — a month-on-month delta silently computed against the wrong snapshot, or against
+  none. Not fixed at ds t2, which recorded the history writes rather than relocating them;
+  the record now names the history files as `compose_report_data`'s artifacts, so a reader
+  can at least tell which tree a given run wrote. **The shape is why ds t2's own test seam is
+  an env var and not a flag** (`run_record.RUN_RECORD_ROOT_ENV`): an optional flag whose
+  default differs from what the orchestrator passes is what produced this. Verified at agents
+  `0e5e0d2`.
+
+- `2026-08-20` — **docbuilder's PHASE D2 writes the run log before PHASE E writes
+  `output/uploaded.json`, so the record predates an artifact of the run it describes.** D2
+  invokes `run_log_writer.py` at PHASE D (`docbuilder/agents/docbuilder_orchestrator.exs`
+  §PHASE D, step D2); PHASE E then runs `upload_output.py --output output/uploaded.json`
+  whenever `DRIVE_DOCBUILDER_ID` is set. That violates BL-153 ruling 1's first owed
+  property — *the stamp must be written after every artifact a run produces* — and it is
+  the **writer** side of the same defect the ruling names on the reader side: a writer free
+  to skip the stamp is a reader free to ignore it, one step earlier, and D2 is a prompt line
+  an LLM may skip.
+  **The sweep asked for, and its result.** Across all **31** `docbuilder-orch-*` directories
+  under `../aetheris/priv/runs/` (`ls -d priv/runs/docbuilder-orch-* | wc -l` → 31; the
+  earlier figure of fifteen is wrong), each trajectory parsed and its `run_command` calls
+  counted by `args[0]`: `rename_output.py` fired in **25**, `run_log_writer.py` in **20**,
+  and `upload_output.py` in **0**. Cross-tabulating prompt-mention against tool-fired gives
+  `no/no: 11` and `yes/yes: 20` with nothing off-diagonal — a clean temporal split, the 11
+  runs of 2026-06-19..22 predating D2 and all 20 of 2026-06-23..27 firing it. So **D2 fired
+  in 20 of 20 runs that instructed it**, and PHASE E has never run at all, meaning the
+  ordering defect has never been *exercised*. That changes nothing: a prompt-invoked writer
+  is the forbidden shape whether or not it happens to fire. (`docbuilder/data/run_log.json`
+  holds one entry, but it is gitignored and three sprint legs truncate it to `[]`
+  — `../aetheris/scripts/sprint.sh:2235`, `:2317`, `:2553` — so the file is not evidence of
+  the ratio; the sweep is.)
+  **Partly addressed at ds t2, and only partly.** The new per-step record is written by
+  `rename_output.py` and `upload_output.py` themselves, each attesting its own step, so the
+  upload no longer sits outside the thing that describes it. D2 itself is **left where it
+  is**: `run_log.json` feeds `resolve_last_run.py`'s "same as last month" and moving it to a
+  later prompt phase would relocate the defect rather than remove it. Verified at agents
+  `0e5e0d2`.
+
+- `2026-08-20` — **the sprint's `email` and `drive` legs read `payslip/output/` across a
+  use-case boundary, and under `all` the payslip leg cannot have run.** The email leg's
+  precondition is `find "../aetheris-agents/payslip/output" -name "*-Payslip.pdf" -quit`,
+  failing with *"No Payslip PDFs found in payslip/output/ — run the payslip orchestrator
+  first"* and otherwise `ok "Payslip PDFs found in payslip/output/"`
+  (`../aetheris/scripts/sprint.sh:1129-1133`). The drive leg reports another use case's
+  leftovers as its own summary: `PAYSLIP_OUTPUT="../aetheris-agents/payslip/output"`, then
+  `TOTAL_EMP` and `TOTAL_PDF` counted from it and printed as `Employees processed` and
+  `PDFs generated` (`:1085-1092`).
+  **The target guards make it structural rather than merely possible.** `payslip` is
+  `if [[ "$TARGET" == "payslip" ]]` (`:973`) — **not in `all`** — while drive (`:1049`) and
+  email (`:1104`) both are. So `./scripts/sprint.sh all` never runs the payslip leg, and the
+  email precondition is **guaranteed** to be greening on PDFs from some earlier invocation,
+  of any age, with no guard and no staleness check. The payslip leg's own
+  `rm -rf "${PAYSLIP_DIR}/output"` (`:1006`) is unreachable on that path. This is
+  **Silent-wrong-answer**'s *stale/leftover artifacts from a prior run* carrier, crossing a
+  use-case boundary. **Neighbour, not a duplicate:** BL-110 is also about
+  `payslip/output/`, but its subject is an assertion about `BTL_999` inside the payslip leg;
+  this is the cross-boundary read by two other legs. Not fixed here — ds t2 changed no
+  harness file. Verified at harness `a6464f4`.
+
 **Deliberately not seeded: the top-level `email/` directory versus stdlib `email`.** Raised at
 BL-152's amendment and **established inert by reading and by running it**, so nothing is filed.
 `python3 -m` puts the repo root on `sys.path` (as `''`), and `email/` is the only top-level
@@ -5396,6 +5498,69 @@ NOT RULED.
 
 WHAT IS STILL NOT RULED: the stamp's format, its file, and its reader. Those are
 the scoping ticket's, and this row now has everything it was waiting for.]`
+
+`[Amended 2026-08-20 at ds t2, the scoping ticket. THE ATTESTABLE UNIT IS THE STEP,
+NOT THE DIRECTORY. The two rulings above are inconsistent and this settles it in the
+direction the second already points. Ruling 1 owes that "the reader's rule must be that
+an unstamped or mismatched DIRECTORY is not a run"; ruling 2 owes that "the stamp's
+coverage is every artifact a run produces, INCLUDING the history tree written at an
+earlier step into a directory the guard never clears". A directory-level stamp cannot
+express the second — cloudcost's `history/` is a *different* directory from the guarded
+one, and one run writes into both — so a stamp that certified a directory would certify a
+subset while reading as certifying the run, which is the failure ruling 2 names in terms.
+
+The record therefore ENUMERATES ARTIFACTS and attests the STEP that wrote them. Restated
+as the reader's rule, replacing ruling 1's directory form: **an artifact not named in an
+attested step record is not that step's output.** Ruling 1's substance is preserved
+whole — absence still carries the meaning, and an interrupted step is UNSTAMPED rather
+than stamped-and-partial — because `attested_at` is written only after every artifact
+write for that step has returned. What changes is only the unit the rule quantifies over.
+
+Landed at `scripts/run_record.py`, adopted by all six producers. Format, file and reader
+are now ruled and this row's outstanding question is answered: `<use_case>/data/run-records.json`,
+a JSON array, one entry per step, `{run_id, step, started_at, attested_at?, artifacts[]}`
+with each artifact `{path, sha256, bytes}`. NOT under `output/`: payslip's `output/runs.log`
+sits inside the tree `../aetheris/scripts/sprint.sh:1006` `rm -rf`s, so it dies with the
+artifacts it attests.]`
+
+`[Amended 2026-08-20 at ds t2. R3'S CONCLUSION HOLDS; ITS STATED REASON DOES NOT. R3
+records that the last writer "moves with configuration — with `--pdf` it is the PDF branch".
+**The orchestrator never passes `--pdf`.** The flag occurs in `cloudcost/tools.json:582`
+and in `cloudcost/scripts/render_report.py` (3 occurrences, which is this search's positive
+control) and in **no** cloudcost `.exs` file and **not** in `../aetheris/scripts/sprint.sh`.
+So on every orchestrator-driven and every sprint-driven run the last writer is fixed, and
+what actually moves it is **which invoker ran** — the orchestrator, or Rig's Tools panel
+where an operator may tick the flag. That is the same fourth mechanism R2 found, reaching
+R3: the panel is not merely an alternative caller, it is the only route by which the
+configuration R3 describes can vary. The conclusion R3 was cited for — that no current step
+is a last-writer position — is unaffected and remains true for a stronger reason: it is not
+that the position moves with a flag, it is that the position is a property of the invoker,
+which no script can observe. Verified at agents `0e5e0d2`.]`
+
+`[Amended 2026-08-20 at ds t2. R4'S GENERALISATION IS FALSE, AND RULING 2 STANDS ON A
+BETTER PREMISE THAN ITS OWN CITATION. R4 states that "a per-run identifier exists upstream
+and reaches no script", and the second ruling rests its identifier decision on it: *"R4
+establishes that no upstream identifier reaches a script, and that changing this means a
+harness change at the exec-server boundary."* **docbuilder is a standing counter-example
+and predates both rulings.** `docbuilder/agents/docbuilder_orchestrator.exs` mints
+`run_id = "docbuilder-orch-#{Aetheris.ID.generate()}"` at `:146`, threads that binding into
+argv as `--run-id` at `:231`, and uses the SAME binding as the harness `run_id:` at `:351` —
+so the id a script receives resolves under `../aetheris/priv/runs/`, and no harness change
+was needed for any of it. R4's reading is correct about every route it examined (the
+exec-server env slice, the `run_command` schema, Rig's `job_id`) and wrong in its
+quantifier: it concluded from "no route CARRIES one" that none ARRIVES, when the agent file
+can simply write one into the argv it was already constructing.
+
+**This makes ruling 2 cheaper, not wrong.** "THE IDENTIFIER IS MINTED BY THE PIPELINE, NOT
+INHERITED" is the right call and its real ground is better than the one cited: an id minted
+at agent-eval time and threaded into argv needs no harness change AND is the same string as
+the harness run id, so it is simultaneously pipeline-minted and resolvable — which the
+ruling treated as alternatives. ds t2 applied the docbuilder pattern to `payslip` and
+`cloudcost`, each of which minted inline in the struct field and needed only a hoisted
+binding plus two argv elements, and to `eduloka`, whose three sub-agent stages now carry the
+orchestrating run's id. `boxy-pipeline` keeps `run_id: null` because it has no agent file,
+no sprint leg and no `tools.json` — no route at all, which is R4's claim holding for the one
+producer it is true of. Verified at agents `0e5e0d2`.]`
 
 `Source: m6 t2c, 2026-08-13. Ordering read at harness d19f4b6; the reproduction above run at that
 commit. Filed at the reviewer's direction rather than left as packet prose, per the standing rule
@@ -5890,6 +6055,30 @@ the second was cap-killed before reaching it. Its position is consistent with
 recorded as a fact and deliberately not resolved**: naming it by counting dots is exactly the kind
 of claim that later gets cited as established. Whoever resumes boxy-pipeline will find it by
 running the set.
+
+`[Answered 2026-08-20 at ds t2. THE INFERENCE WAS CORRECT AND IS NOW A FACT — the second
+failure is `boxy-pipeline/tests/test_order_formatter.py::test_no_stale_formulas_beyond_used_rows`.
+Found off-territory: ds t2 instruments `boxy-pipeline/scripts/order_formatter.py` for the run
+record and ran that file to establish whether its own change had broken anything. Reproducing
+command, cap and result:
+
+```
+$ timeout 580 python3 -m pytest boxy-pipeline/tests/test_order_formatter.py -q -m dormant
+FAILED boxy-pipeline/tests/test_order_formatter.py::test_no_stale_formulas_beyond_used_rows
+1 failed, 23 passed in 474.34s (0:07:54)          # AssertionError at :494
+```
+
+**Not caused by ds t2, established by control rather than argued.** Re-run with that file's
+pre-t2 content restored from a working-copy backup (sha `c1947c0d…`, `grep -c run_record` → 0),
+the same single test fails identically in 96s; the working copy was then restored to the t2
+version (sha `70d6c645…`, `grep -c run_record` → 2) and `git status --porcelain boxy-pipeline/`
+is empty. So the failure predates the instrumentation and is independent of it.
+
+**Item 3's caution was right and is left standing** — the position-counting inference is still
+not how this was settled; it was settled by running the file. **This narrows the row and does
+not close it**: both failures are now named, the four-hour figure and the
+`data/samples/*.pdf` dependency are untouched, and neither failure is diagnosed or fixed.
+Established at agents `c73b649`, on a machine that has the client data.]`
 
 **And the whole set depends on data no clone carries.** `boxy-pipeline/data/samples/*.pdf` are
 gitignored client files (`boxy-pipeline/.gitignore:2`, `data/*`); `git ls-files
@@ -6427,3 +6616,138 @@ the four arms are this session's own runs. The profile export is cited by path a
 row names no value and needs none, the dependency being the finding.`
 
 ---
+
+### BL-167 — run-level completion needs a harness post-run hook; it is not satisfiable agents-side (#TBD)
+**Status:** OPEN
+**Kind:** gap · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *stale/leftover artifacts from a prior run*
+**Size:** M _(proposed)_ · **Priority:** medium _(proposed)_
+**Section:** harness (`../aetheris/`) — **cross-repo**, with an agents-side consumer
+
+Filed 2026-08-20 at ds t2, **the day it was established**, by the ticket that implemented
+BL-153's stamp and found the run-level half of it unbuildable where it stood. **A new row
+rather than an append to BL-153**, which is now discharged of everything it was waiting for:
+its format, file and reader are ruled and landed. This is the one property those rulings
+name that ds t2 did **not** build, did not stub, and does not pretend to.
+
+**What is owed and what exists.** BL-153's second ruling requires *"a writer that runs LAST
+UNCONDITIONALLY"*, so that a directory can state whether a **run** — not merely a step — is
+complete. ds t2 delivers per-step attestation: every producing step writes
+`<use_case>/data/run-records.json` with an `attested_at` set only after that step's writes
+have returned, so an interrupted step is legible. What no reader can yet ask is *"did this
+run finish?"*, because nothing knows the set of steps a run intended.
+
+**Why it cannot be done agents-side, which is the whole content of this row.** Under an LLM
+orchestrator **every step is prompt-invoked**, so a "final step" is a line the model may
+skip, reorder, or never reach — and a writer free to skip the stamp is the same defect as a
+reader free to ignore it, one step earlier. That alone disqualifies the prompt route. Two of
+the six producers have no last-writer position at all, by construction rather than by
+oversight:
+
+* **`eduloka`** — its writers are N concurrent sub-agents, one per search term, joined only
+  at `wait_for_all` (`eduloka/agents/eduloka_orchestrator.exs:53`, `:105-106`, `:137`). No
+  sub-agent is last, and the join is itself a prompt step in the parent.
+* **`boxy-pipeline`** — has no agent file, no sprint leg and no `tools.json`. **No program
+  knows a run occurred**, so there is nothing that could hold a post-run position. Its
+  records carry `run_id: null` for the same reason.
+
+A third consideration rules out the remaining candidate: a writer placed in the *sprint*
+does not cover the two Rig paths that reach a use case without passing through it — BL-153's
+own R2 established that `sprint.sh` appears nowhere in `rig/src` or `rig/src-tauri`, and
+that the Orchestrator and the Tools panel both write into a provider directory directly.
+
+**So the position has to be held by something that observes the run rather than participates
+in it** — a harness post-run hook, which would know the run id, the fact that the run ended,
+and how it ended, none of which any script in this repo can observe. That is a harness
+change and is why this row is filed cross-repo.
+
+**Not established, and named as such.** No design is proposed here. Whether such a hook
+should write a run-level record, seal the per-step records, or merely emit an event for a
+reader to join against is **not ruled** — nor is what it should do for a run that is
+cancelled (see **BL-154**) as against one that fails. Anyone scoping it should also decide
+whether the hook fires for sub-agent runs, since eduloka's N sub-agents each have their own
+harness run id.
+
+**Done when:** a reader can distinguish a complete run from an interrupted one **for all six
+producers**, by a mechanism no prompt line can skip — or it is ruled that per-step
+attestation is sufficient and the run-level property is retired, in which case BL-153's
+"writer that runs LAST UNCONDITIONALLY" clause is corrected to say so rather than left
+standing unmet. **Not** when only the producers that happen to have an agent are covered.
+
+**Costs:** M. The hook is small; deciding its semantics against the cancel path and against
+sub-agent runs is the work.
+
+**Collides with:** **BL-153**, which owes the property and is otherwise discharged —
+annotated there. **BL-154**, whose cancel path is one of the run endings such a hook would
+have to classify, and which is where the status vocabulary question already sits.
+
+`Source: ds t2, 2026-08-20. Established at agents `0e5e0d2` / harness `a6464f4`; the two
+producers with no last-writer position were read, not inferred from a neighbour.`
+
+---
+
+### BL-168 — `aetheris_run_id` is declared in five DDL sites across two languages, written by nothing and read by nothing (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** 5 code sites + 4 doc lines · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — a column that reads as a provenance link and is always null
+**Size:** S _(proposed)_ · **Priority:** low _(proposed)_
+**Section:** aetheris-agents (`provenance/`)
+
+Filed 2026-08-20 at ds t2, off-territory: t2 instruments `provenance/scripts/inventory_report.py`
+and touches neither the schema nor the scanner. Found while establishing how a run id reaches a
+provenance script — the answer being that a column exists for exactly that and nothing fills it.
+
+**The five sites, enumerated rather than counted** (`grep -rn 'aetheris_run_id'` across both
+repos, excluding `__pycache__`, `target/`, `node_modules` and `.git`):
+
+| # | site | table |
+|---|---|---|
+| 1 | `provenance/scripts/init_db.py:31` | `f2_file_index` |
+| 2 | `provenance/scripts/init_db.py:47` | `classifications` |
+| 3 | `provenance/scripts/init_db.py:60` | `zip_inventory` |
+| 4 | `provenance/scripts/init_db.py:74` | `scan_runs` |
+| 5 | `provenance/scanner/src/migrations.rs:39` | the scanner's own DDL |
+
+All five are `TEXT` column declarations. **Non-DDL references: zero** — no `INSERT` names it,
+no `UPDATE` sets it, no `SELECT` reads it. The positive control for that zero, run with the
+same flags over the same tree: `status`, a column that *is* written, returns 11 `INSERT`/
+`UPDATE`/`SET`/`VALUES` hits. So the zero is a fact about the column rather than about the
+search.
+
+**Four further sites are documentation, and are listed because a fix that touches only code
+leaves the docs describing a column that no longer exists**: `docs/provenance/specs.md:30`,
+`:46`, `:59`, `:73` mirror the four `init_db.py` declarations, `:30` annotating it
+`-- trajectory reference`. (`docs/reviews/provenance-scout-2026-08-03.md` also discusses it
+in eight places; that is a dated review record and is **not** to be edited.)
+
+**Already known, and that is part of the finding.** The provenance scout of 2026-08-03
+recorded it — *"`aetheris_run_id` written by nothing (Q6). Four tables, zero writes, no
+error"* (`:557`), with `SELECT count(aetheris_run_id)` → **0 in all 8** across both DBs
+(`:673`), and warned *"Either wire `aetheris_run_id` or soften the claim first"* (`:631`).
+It has been unfiled and unfixed since, which is the deferred-finding-with-no-executor shape:
+prose in a review record has no owner.
+
+**Why it is worth a row now.** ds t2 gives it a use it did not have. Five tables carry a
+column whose name promises a link to a harness trajectory; `provenance/scripts/inventory_report.py`
+now takes `--run-id` and stamps it into `provenance/data/run-records.json`, so the identifier
+this column was declared for is finally available at the point provenance writes. Either the
+column gets wired to it or it should go — what it must not stay is a schema field that reads,
+to anyone inspecting the DB, as a provenance link that is simply always null.
+
+**Note the scanner's ids are NOT this.** `scan_runs.id` is the scanner's own run id, written
+at `provenance/scanner/src/scan.rs:457` and completed at `:502`; it works and is not in
+question. `aetheris_run_id` is a separate column intended for the *harness* run, and it is
+the empty one.
+
+**Done when:** either the five sites are written and something reads them, **or** all five
+are dropped and `docs/provenance/specs.md`'s four lines go with them. **Not** when only the
+code half is done.
+
+**Costs:** S either way. Dropping is XS plus a migration question for existing DBs; wiring is
+S and needs the run id threaded to `init_db.py`'s and the scanner's write paths, which is the
+same seam `--run-id` opened for the report step.
+
+**Collides with:** nothing. It is independent of **BL-167**, which is about run *completion*;
+this is about a run *identifier* that already has a declared home.
+
+`Source: ds t2, 2026-08-20. Enumerated at agents `0e5e0d2`; every line above was opened. The
+count of five is this ticket's own derivation and is not carried from the prompt that
+requested it, which named the same five.`

@@ -8,11 +8,25 @@ from pathlib import Path
 
 import duckdb
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record, use_case_root_for  # noqa: E402
+
+#: The report step. provenance ALREADY attests its scan step in the database — `scan_runs`
+#: goes `'running'` (scan.rs:457) → `'complete'` (scan.rs:502) — and that is not duplicated
+#: here. The two compose rather than overlap: the DB row attests the SCAN, this record
+#: attests the REPORT, and the report is downstream of the scan because `_section_summary`
+#: selects `WHERE status = 'complete'`. Nothing in this file writes to `scan_runs`.
+STEP = "inventory_report"
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Provenance inventory report")
     parser.add_argument("--db", required=True, help="Path to DuckDB file")
     parser.add_argument("--out", required=True, help="Output directory for the report")
+    parser.add_argument("--run-id", default=None,
+                        help="Harness run id; omitted when no run reaches this script, in "
+                             "which case the run record carries run_id null")
     args = parser.parse_args()
 
     out_dir = Path(args.out)
@@ -32,9 +46,14 @@ def main() -> None:
     finally:
         conn.close()
 
+    # Local time, no offset marker — unchanged by ds t2 deliberately. It is a site of the
+    # same class as the run-log stamp this ticket files under BL-151, but changing an
+    # artifact filename convention is not this ticket's scope, so it is filed, not fixed.
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = out_dir / f"inventory_{timestamp}.md"
-    out_path.write_text(report)
+    with run_record(use_case_root_for(__file__), args.run_id, STEP) as rec:
+        out_path.write_text(report)
+        rec.add(out_path)
     print(str(out_path))
 
 

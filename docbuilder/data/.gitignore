@@ -32,3 +32,4 @@ templates/*/
 # Per-step run/artifact record (ds t2) — names artifacts and their hashes, so it
 # describes client deliverables; gitignored on the same ground as the artifacts
 run-records.json
+run-records.json.lock

@@ -526,10 +526,52 @@ than in this document, so whoever writes that arm finds it.
 
 **Scope.** BL-153's Owes is discharged and the row is ready to scope: arm ordering
 NOT changed, the stamp written script-side, the identifier pipeline-minted,
-coverage including the history tree, and a writer that runs last unconditionally —
-which no current step is.
+coverage including the history tree, and ~~a writer that runs last unconditionally —
+which no current step is~~ **per-step attestation across all six producers**.
 
-**RESOLVE at ticket time.** Format, file and reader.
+`[Amended 2026-08-20 at ticket time. The struck clause is kept rather than deleted,
+on t1b's precedent: it is what the cycle believed when the section was written, and
+the reason it moved is the ticket's main finding. **Run-level completion is not
+satisfiable agents-side and is now BL-167.** Under an LLM orchestrator every step is
+prompt-invoked, so a "final step" is a line the model may skip — and two of the six
+producers have no last-writer position at all: eduloka's writers are N concurrent
+sub-agents joined only at `wait_for_all`, and boxy-pipeline has no program that knows
+a run occurred. It needs a harness post-run hook. **t2 did not build it, did not stub
+it, and does not pretend to it.** The other four scope items stand as written and all
+four landed.]`
+
+**The unit correction, landed here rather than cited.** BL-153's two rulings are
+inconsistent: ruling 1 speaks of "an unstamped or mismatched DIRECTORY" while ruling
+2 requires coverage of an accumulating tree no guard clears. A directory-level stamp
+cannot express the second — cloudcost's `history/` is a *different* directory from
+the guarded one and one run writes into both — so **the attestable unit is the step,
+not the directory**: the record enumerates artifacts and attests the step that wrote
+them. Restated as the reader's rule, replacing ruling 1's directory form: *an artifact
+not named in an attested step record is not that step's output.* Ruling 1's substance
+is preserved whole — absence still carries the meaning — because `attested_at` is
+written only after every artifact write for that step has returned.
+
+**The writer is code, never a prompt line.** Ruling 1 forbids a reader free to ignore
+the stamp; a writer free to skip it is the same defect one step earlier. Docbuilder's
+own PHASE D2 was that shape and is filed (BL-151): D2 wrote the run log at PHASE D
+while PHASE E wrote `output/uploaded.json` afterwards.
+
+**RESOLVE at ticket time.** ~~Format, file and reader.~~ **Resolved:**
+`<use_case>/data/run-records.json` — gitignored, and never under `output/`, because
+payslip's `output/runs.log` dies with the tree the sprint `rm -rf`s. A JSON array,
+one entry per step: `{run_id, step, started_at, attested_at?, artifacts[]}`, each
+artifact `{path, sha256, bytes}` relative to the use-case root and **including
+artifacts outside `output/`**. Timestamps UTC with a `Z` suffix, so the lexicographic
+sort readers already perform is chronological. Idempotent replace by `(run_id, step)`;
+writes atomic; recording best-effort at the point of write, but a malformed record
+file never silently overwritten. The reader is specified and **deliberately not
+built** — no reader that refuses an unattested artifact, no `drift_check` arm, no
+`sprint.sh` change, no harness change.
+
+**Touches.** `scripts/run_record.py` and `tests/test_run_record.py`; the six
+producers' instrumented scripts, their agent files where one exists, their
+`.gitignore`s and their adoption tests; `docs/backlog-2026-06.md` for six filings;
+this section; and `docs/milestones/ds-t2-implementation-notes.md`. Agents repo only.
 
 ### t3 — BL-161, the deferred sprint arm
 

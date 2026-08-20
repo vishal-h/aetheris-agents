@@ -13,6 +13,10 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record  # noqa: E402
+
 _USE_CASE_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -39,6 +43,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="map raw JSONL to edux JSONL")
     parser.add_argument("--in", dest="in_path", required=True, help="input raw JSONL")
     parser.add_argument("--out", dest="out_path", help="output edux JSONL (default: data/edux/<stem>.jsonl)")
+    parser.add_argument("--run-id", default=None,
+                        help="Harness run id; omitted when no run reaches this "
+                             "script, in which case the record carries run_id null")
     args = parser.parse_args()
 
     in_path = Path(args.in_path)
@@ -50,7 +57,11 @@ def main() -> None:
     out_path = Path(args.out_path) if args.out_path else _USE_CASE_ROOT / "data" / "edux" / f"{stem}.jsonl"
 
     try:
-        result = _run(in_path, out_path)
+        # The step name carries the stem, which under the orchestrator is the term slug —
+        # eduloka's unit of work is the term, and its sub-agents run concurrently.
+        with run_record(_USE_CASE_ROOT, args.run_id, f"map:{stem}") as rec:
+            result = _run(in_path, out_path)
+            rec.add(out_path)
         status = "partial" if result["skipped"] else "ok"
         print(json.dumps({"status": status, **result}))
         if result["skipped"]:

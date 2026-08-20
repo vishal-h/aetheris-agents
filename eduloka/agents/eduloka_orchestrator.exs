@@ -33,6 +33,12 @@ sink_script =
 model         = System.get_env("AETHERIS_MODEL")    || "claude-haiku-4-5-20251001"
 provider_name = System.get_env("AETHERIS_PROVIDER") || "anthropic"
 
+# Pre-established so the SAME string is both the harness run_id and the --run-id every
+# sub-agent's stage stamps into its run record (ds t2). The sub-agents are spawned with
+# their own run ids; this one names the ORCHESTRATING run, which is the thing a reader
+# asking "what produced these files" wants to resolve.
+run_id = "eduloka-orch-#{Aetheris.ID.generate()}"
+
 system_prompt = """
 You are the eduloka discovery orchestrator. Drive the institute-data pipeline
 over the configured term list. Follow the workflow exactly.
@@ -70,7 +76,7 @@ Step 2 — Spawn one sub-agent per term.
     Call run_command with:
       command: "python3"
       args: ["scripts/fetch.py", "--provider", "#{provider}", "--term", "<TERM>",
-             "--output-dir", "data/raw/<SLUG>"]
+             "--output-dir", "data/raw/<SLUG>", "--run-id", "#{run_id}"]
     On success the raw file is: data/raw/<SLUG>/#{provider}.jsonl
     If status is "error", report the error and stop.
 
@@ -79,7 +85,7 @@ Step 2 — Spawn one sub-agent per term.
       command: "python3"
       args: ["scripts/map.py",
              "--in",  "data/raw/<SLUG>/#{provider}.jsonl",
-             "--out", "data/edux/<SLUG>.jsonl"]
+             "--out", "data/edux/<SLUG>.jsonl", "--run-id", "#{run_id}"]
     If status is "error" or "partial", report and stop.
 
   Step C — Enrich:
@@ -87,7 +93,7 @@ Step 2 — Spawn one sub-agent per term.
       command: "python3"
       args: ["scripts/enrich.py",
              "--in",  "data/edux/<SLUG>.jsonl",
-             "--out", "data/gold/<SLUG>.jsonl"]
+             "--out", "data/gold/<SLUG>.jsonl", "--run-id", "#{run_id}"]
     If status is "error" or "partial", report and stop.
 
   Step D — Sink:
@@ -124,7 +130,7 @@ Rules:
 # max_steps: list_terms(1) + spawn N(N) + wait_for_all(1) + report(1) + buffer(3).
 # Set to 50 to handle up to ~44 terms without hitting the ceiling.
 %Aetheris.RunConfig{
-  run_id:            "eduloka-orch-#{Aetheris.ID.generate()}",
+  run_id:            run_id,
   mode:              :record,
   provider:          provider_name,
   model:             model,

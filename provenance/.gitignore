@@ -9,3 +9,8 @@ output/*
 # Taxonomy — real taxonomy is local; example is committed
 agents/*.md
 !agents/taxonomy.md.example
+
+# Per-step run/artifact record (ds t2) — names artifacts and their hashes, so it
+# describes real output; gitignored on the same ground as the artifacts
+data/run-records.json
+data/run-records.json.lock

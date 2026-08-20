@@ -51,6 +51,7 @@ with a loud stderr warning — history is preserved and the producer is not fail
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
@@ -225,6 +226,30 @@ def _warn(message: str) -> None:
     print(json.dumps({"status": "warning", "warning": message}), file=sys.stderr)
 
 
+@contextmanager
+def _exclusive(use_case_root):
+    """Hold an exclusive lock for the duration of one read-modify-write.
+
+    `os.replace` makes the *write* atomic; it does nothing for the read-modify-write around
+    it. eduloka's orchestrator spawns **one sub-agent per search term** and joins them only
+    at `wait_for_all` (`eduloka/agents/eduloka_orchestrator.exs:53, :105-106`), so without
+    this every concurrent term reads the same array and the last writer silently drops the
+    others' entries — a record that under-reports exactly when the most work happened.
+
+    The lock is a sidecar rather than the record file itself: the record's inode is
+    replaced on every write, so a lock held on it would not be held on its successor.
+    """
+    lock = record_path(use_case_root).with_name(
+        record_path(use_case_root).name + ".lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock, "w") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+
+
 def _save(use_case_root, entry: dict, *, strict: bool) -> None:
     """Upsert one entry and write it out, honouring the failure posture.
 
@@ -233,8 +258,9 @@ def _save(use_case_root, entry: dict, *, strict: bool) -> None:
     preserved and the producer is not failed, which is both halves of the posture at once.
     """
     try:
-        records = upsert(load_records(use_case_root), entry)
-        write_records(use_case_root, records)
+        with _exclusive(use_case_root):
+            records = upsert(load_records(use_case_root), entry)
+            write_records(use_case_root, records)
     except RunRecordError as exc:
         if strict:
             raise

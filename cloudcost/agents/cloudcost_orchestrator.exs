@@ -140,6 +140,14 @@ end
 output_dir = "output/#{provider_slug}"
 history_dir = "history/#{provider_slug}"
 
+# Pre-established so the SAME string is both the harness run_id and the --run-id STEP 3 and
+# STEP 4 stamp into their run records (ds t2). Minted inline in the struct field until then,
+# which left no binding the prompt could reference — so no cloudcost artifact could name the
+# run that produced it, which is BL-153's whole subject.
+# The provider is in the run id so Rig's run list tells the two solo runs apart at a glance
+# (decision H: one provider, one report, one run).
+run_id = "cloudcost-orch-#{provider_slug}-#{Aetheris.ID.generate()}"
+
 # --- fetch-step timeout, declared rather than defaulted (BL-096) ----------------------
 #
 # STEP 1 is the only step that calls a live cloud API, and it is the only one whose runtime
@@ -274,12 +282,12 @@ STEP 3 — Compose the report data (merges cost + inventory + orphans, adds the 
 
   If STEP 1 printed `files.costs`, use this form:
     run_command  command: "python3"
-                 args: ["scripts/compose_report_data.py", "--cost", "<COSTS>", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "#{output_dir}", "--history-dir", "#{history_dir}"]
+                 args: ["scripts/compose_report_data.py", "--cost", "<COSTS>", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "#{output_dir}", "--history-dir", "#{history_dir}", "--run-id", "#{run_id}"]
 
   If STEP 1 did NOT print `files.costs`, use this form instead — drop the flag and its
   value together, and change nothing else:
     run_command  command: "python3"
-                 args: ["scripts/compose_report_data.py", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "#{output_dir}", "--history-dir", "#{history_dir}"]
+                 args: ["scripts/compose_report_data.py", "--inventory", "<INVENTORY>", "--orphans", "<ORPHANS>", "--output-dir", "#{output_dir}", "--history-dir", "#{history_dir}", "--run-id", "#{run_id}"]
 
   Replace "<COSTS>" with `files.costs` from STEP 1, "<INVENTORY>" with `files.inventory`
   from STEP 1, and "<ORPHANS>" with the `file` path from STEP 2.
@@ -287,7 +295,7 @@ STEP 3 — Compose the report data (merges cost + inventory + orphans, adds the 
 
 STEP 4 — Render the HTML report.
   run_command  command: "python3"
-               args: ["scripts/render_report.py", "<REPORT_DATA>", "--output-dir", "#{output_dir}"#{render_optimization_arg}]
+               args: ["scripts/render_report.py", "<REPORT_DATA>", "--output-dir", "#{output_dir}", "--run-id", "#{run_id}"#{render_optimization_arg}]
 
   Replace "<REPORT_DATA>" with the `file` path from STEP 3.#{render_optimization_note}
   Parse the JSON on stdout and keep `file` (the HTML report) and
@@ -324,7 +332,7 @@ Rules:
 %Aetheris.RunConfig{
   # The provider is in the run id so Rig's run list tells the two solo runs apart at a
   # glance (decision H: one provider, one report, one run).
-  run_id:           "cloudcost-orch-#{provider_slug}-#{Aetheris.ID.generate()}",
+  run_id:           run_id,
   mode:             :record,
   provider:         "anthropic",
   model:            "claude-haiku-4-5-20251001",

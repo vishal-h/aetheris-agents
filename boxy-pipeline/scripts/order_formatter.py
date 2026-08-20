@@ -11,6 +11,16 @@ from pathlib import Path
 
 import openpyxl
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record, use_case_root_for  # noqa: E402
+
+#: boxy-pipeline has no agent file, no sprint leg and no tools.json, so NO harness run
+#: id reaches this script by any route. The record therefore carries `run_id: null` —
+#: a real value meaning "no run reached here", never a fabricated substitute. If the
+#: use case later acquires an agent, `--run-id` is the seam already in place.
+STEP = "order_formatter"
+
 SHEET_NAME = "2000 Order Form"
 FIRST_DATA_ROW = 12
 TEMPLATE_LAST_ROW = 67  # last pre-filled row in the template; rows beyond this are the SUM row
@@ -102,6 +112,9 @@ def main() -> None:
     parser.add_argument("--template", required=True, type=Path, metavar="XLSX")
     parser.add_argument("--project", required=True, metavar="NAME")
     parser.add_argument("--output-dir", default="output", type=Path, metavar="DIR")
+    parser.add_argument("--run-id", default=None, metavar="ID",
+                        help="Harness run id. boxy-pipeline has no agent, so nothing passes "
+                             "this today and the record carries run_id null.")
     args = parser.parse_args()
 
     if not args.template.exists():
@@ -120,7 +133,9 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        out_path = write_order_form(data, args.template, args.project, args.output_dir)
+        with run_record(use_case_root_for(__file__), args.run_id, STEP) as rec:
+            out_path = write_order_form(data, args.template, args.project, args.output_dir)
+            rec.add(out_path)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)

@@ -12,6 +12,7 @@ recomputed value and fail.
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -125,6 +126,16 @@ def candidates(data):
 
 
 def cli(args, cwd=USE_CASE_ROOT, env=None):
+    """Run the stage CLI.
+
+    An explicitly-passed `env` replaces the environment wholesale, which is the point for
+    the tests that strip PATH — but it also strips `AETHERIS_RUN_RECORD_ROOT`, and the
+    stage would then write its run record into the checked-out `cloudcost/data/` rather
+    than into `tmp_path` (ds t2). The variable is carried through so those tests stay
+    hermetic in both directions; nothing else about the passed env is altered.
+    """
+    if env is not None and "AETHERIS_RUN_RECORD_ROOT" in os.environ:
+        env = {**env, "AETHERIS_RUN_RECORD_ROOT": os.environ["AETHERIS_RUN_RECORD_ROOT"]}
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args], cwd=cwd, capture_output=True, text=True, env=env
     )

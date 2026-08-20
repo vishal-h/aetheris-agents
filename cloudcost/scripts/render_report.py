@@ -54,7 +54,16 @@ from pathlib import Path
 
 import jinja2
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record, use_case_root_for  # noqa: E402
+
 # ------------------------------------------------------------------------- constants
+
+#: This script writes the report deliverable (and, with --pdf, its companion), so it is the
+#: step that attests them. R3 held that the last writer "moves with --pdf"; what actually
+#: moves it is which invoker ran, since the orchestrator never passes --pdf (BL-153, ds t2).
+STEP = "render_report"
 
 #: The custom cloudcost layout. Anchored to the use-case root rather than the cwd, for the
 #: same reason t3 anchors its history directory: the orchestrator may invoke this script
@@ -313,6 +322,12 @@ def parse_args(argv=None):
         action="store_true",
         help=f"also write a PDF beside the HTML (needs {PDF_BINARY}; the HTML never does)",
     )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="harness run id; omitted when no run reaches this script, in which case the "
+             "run record carries run_id null",
+    )
     return parser.parse_args(argv)
 
 
@@ -376,18 +391,26 @@ def main(argv=None) -> int:
 
     period = data.get("period") or "unknown"
     path = Path(args.output) if args.output else Path(args.output_dir) / f"cloudcost_report_{period}.html"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(html, encoding="utf-8")
-    tmp.replace(path)
-
-    # The PDF is an optional companion, so its absence is a note on stdout and nothing more:
-    # it must not flip the stage's status, because the HTML — the deliverable — was written
-    # before this ran. It is kept out of `render_warnings` for that reason, and because that
-    # list is rendered *into* the HTML, which by now exists on disk.
+    # The record spans BOTH writes, so `attested_at` lands only once every artifact this
+    # step produces has returned. An absent PDF is a note rather than a failure, so it does
+    # not withhold the attestation: the record states that the step finished, and its
+    # artifact list says what it actually produced.
     pdf_path = pdf_note = None
-    if args.pdf:
-        pdf_path, pdf_note = write_pdf(path)
+    with run_record(use_case_root_for(__file__), args.run_id, STEP) as rec:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(html, encoding="utf-8")
+        tmp.replace(path)
+        rec.add(path)
+
+        # The PDF is an optional companion, so its absence is a note on stdout and nothing
+        # more: it must not flip the stage's status, because the HTML — the deliverable —
+        # was written before this ran. It is kept out of `render_warnings` for that reason,
+        # and because that list is rendered *into* the HTML, which by now exists on disk.
+        if args.pdf:
+            pdf_path, pdf_note = write_pdf(path)
+            if pdf_path is not None:
+                rec.add(pdf_path)
 
     orphans = data.get("orphans") if isinstance(data.get("orphans"), dict) else {}
     orphan_totals = orphans.get("totals") if isinstance(orphans.get("totals"), dict) else {}

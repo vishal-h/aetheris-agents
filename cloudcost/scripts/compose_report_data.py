@@ -56,6 +56,10 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+from run_record import run_record, use_case_root_for  # noqa: E402
+
 from _normalized import (
     CANONICAL_TYPES,
     iso,
@@ -109,6 +113,11 @@ COVERAGE_LIST_CAP = 10
 #: orchestrator invoked the script from. Overridable: --history-dir (tests point it at a
 #: tmp_path; the t5 sprint seeds a known prior month there).
 DEFAULT_HISTORY_DIR = Path(__file__).resolve().parent.parent / "history"
+
+#: This script's step name in the run record (ds t2). It writes two things — the report
+#: data under --output-dir and the monthly snapshot under --history-dir — and both are this
+#: step's artifacts.
+STEP = "compose_report_data"
 
 #: A provider's declared period total and the sum of its line items may differ by at most
 #: this much before the mismatch is reported as a warning.
@@ -1038,6 +1047,12 @@ def parse_args(argv=None):
         help=f"persisted monthly cost snapshots (default: {DEFAULT_HISTORY_DIR})",
     )
     parser.add_argument("--period", default=None, help="YYYY-MM (default: from the inputs)")
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="harness run id; omitted when no run reaches this script, in which case the "
+             "run record carries run_id null",
+    )
     parser.add_argument("--top-untagged", type=int, default=DEFAULT_TOP_UNTAGGED)
     return parser.parse_args(argv)
 
@@ -1112,10 +1127,19 @@ def main(argv=None) -> int:
     report["warnings"].extend(warnings)
 
     period = report["period"] or "unknown"
-    path = write_json(Path(args.output_dir) / f"report_data_{period}.json", report)
-    history = persist_history(
-        [{**bundle, "provider": provider_of(bundle)} for bundle in bundles], history_dir, period
-    )
+    # The record covers BOTH writes. `history/` is written at this step into a tree the
+    # sprint's guard never clears (it is scoped to $CLOUDCOST_OUT), so a record scoped to
+    # the guarded directory would certify a subset while reading as certifying the run —
+    # BL-153 ruling 2's coverage clause, which is why the record enumerates artifacts.
+    with run_record(use_case_root_for(__file__), args.run_id, STEP) as rec:
+        path = write_json(Path(args.output_dir) / f"report_data_{period}.json", report)
+        rec.add(path)
+        history = persist_history(
+            [{**bundle, "provider": provider_of(bundle)} for bundle in bundles],
+            history_dir,
+            period,
+        )
+        rec.add(*history)
 
     degraded = bool(report["warnings"] or report["skipped"])
     summary = {

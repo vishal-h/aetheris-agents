@@ -6118,6 +6118,16 @@ ended BY HAND rather than by that cap, neither finishing:
 | `python3 -m pytest -q -m integration` (before the marker split; boxy is most of it) | 2700s | killed at **52m21s**, 37 of 169 results emitted |
 | `python3 -m pytest -m integration boxy-pipeline -v` | 2400s | killed at **10m17s**, 21 of 57 results emitted |
 
+`[Observed again 2026-08-21 at ds t3, agents `df659e8`, and it adds a third run to the two
+below without settling anything. `timeout 2400 python3 -m pytest -q -m dormant` was **killed by the
+session harness at 1470s — inside its cap, not by it**, which is a third distinct way these runs
+have ended and the reason this row now says *long runs* rather than *capped runs*. It emitted **155
+of 211 results (roughly 73%): 153 passes and 2 failures**, and **named neither failure** — `-q`
+names a failing test only in the summary, and the summary never printed. So the count of failures
+matches this row's *"one red plus one unidentified"* and the identification this row owes is
+**still owed**. The collected total is from `python3 -m pytest -q -m dormant --collect-only`, which
+reports `211/1876 tests collected` in 3.28s.]`
+
 Projected from the observed rate the boxy set needs **roughly four hours**. The projection is a
 projection and is labelled as one. The first run stalled at
 `boxy-pipeline/tests/test_pipeline.py::test_plan_path_produces_same_output_as_drawings_path`,
@@ -6862,3 +6872,71 @@ detector from a probabilistic one, which is the error this row descends from.
 owner in their own words; quoted above and re-read at agents `3129521`. Filed at ds t3 under the
 standing rule that a deferred finding gets a row in the round it is deferred — late by one ticket,
 and ds t3 is the last ticket in this cycle, so it was this or nothing.`
+
+---
+
+### BL-171 — `mix hex.audit` is red: bandit 1.12.4 carries two advisories, and 1.12.5 is out (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract, `### mix hex.audit — supply-chain gate`
+**Size:** S · **Priority:** high
+**Section:** harness (`../aetheris/mix.exs`, `../aetheris/mix.lock`)
+
+Found 2026-08-21 by **ds t3**'s ticket-boundary gate run — off-territory, exactly the way the gate
+rule intends, on a ticket whose subject is a sprint arm and not the dependency tree. Filed the day
+it was found, not carried.
+
+```
+$ cd ~/sandbox/elixirws/aetheris && mix hex.audit          # exit 1
+Advisories:
+  bandit 1.12.4 - EEF-CVE-2026-75484 (MEDIUM)
+    aka: CVE-2026-75484, GHSA-x3gh-xhj4-3vq8
+    HTTP/2 header field values containing CR, LF or NUL are passed to the application unvalidated in Bandit
+    https://osv.dev/vulnerability/EEF-CVE-2026-75484
+
+  bandit 1.12.4 - EEF-CVE-2026-74836 (HIGH)
+    aka: CVE-2026-74836, GHSA-xj8g-532w-jv94
+    HTTP/2 connection-window starvation pins Plug processes indefinitely in Bandit
+    https://osv.dev/vulnerability/EEF-CVE-2026-74836
+
+Found packages with security advisories
+```
+
+**This is NOT BL-060 recurring, and the distinction is the whole reason a new row was needed.**
+BL-060 is DONE and its subject was **bandit 1.11.1 / EEF-CVE-2026-65623**, a different package
+version and a different advisory. These two are new. No open row named `bandit` or `hex.audit`
+before this one.
+
+**Upstream-triggered, not commit-triggered.** ds t3's two commits touch `../aetheris/scripts/sprint.sh`
+and eight agents-side documents; neither goes near `mix.exs` or `mix.lock`. The advisories were
+published under a lock nobody moved. Harness `CLAUDE.md`'s own supply-chain section says this is the
+gate working rather than a defect — *"An advisory published upstream turns it red through nobody's
+commit. That is the gate reporting that the world changed under us."*
+
+**A patched release appears to exist and was NOT taken here.** `mix hex.info bandit` reports
+**1.12.5 (2026-08-20)** against a locked **1.12.4 (2026-07-27)**, and `mix.exs:30` declares
+`{:bandit, "~> 1.12"}`, so the constraint already admits it. Whether 1.12.5 actually carries the
+fixes for both CVEs is **not established here** — it was inferred from the release date, and this
+row does not assert it. ds t3 did not bump: a dependency change belongs to a ticket that can run the
+full harness gate set against it and read the changelog, not to a sprint-arm ticket that happened to
+find the red.
+
+**This row is why BL-169 matters, arriving as an instance rather than an argument.** BL-169 records
+that `mix hex.audit` is a declared merge gate no workflow runs. This red was found only because a
+human-directed ticket-boundary run typed the command. Nothing in CI would have reported it, and
+nothing will report the next one.
+
+**Done when:** either `bandit` is on a version `mix hex.audit` reports clean — with the changelog
+read and the fix for **both** advisory ids confirmed rather than inferred from a version number —
+or, if no patched version covers one of them, that advisory is accepted in writing with its
+rationale here and the gate runs **expected-red, named with this row's ref** per the tracked-carry
+clause. Not relaxed, not re-pointed, and not downgraded to a warning.
+
+**Costs:** S if 1.12.5 is the fix — a lock bump and the harness gate set. Larger only if it is not.
+
+**Collides with:** **BL-169**, which owns the question of what runs `hex.audit` and what its red does
+to a pull request. Neither closes the other: BL-169 owes a decision about the gate, this row owes a
+clean audit.
+
+`Source: ds t3's ticket-boundary gate run, 2026-08-21, at harness `d648aa8` / agents `f003e4a`. The
+audit output is transcribed complete rather than excerpted. The `1.12.5` figure is from
+`mix hex.info bandit` run the same day and is a claim about Hex, not about this repository.`

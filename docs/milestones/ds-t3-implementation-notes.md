@@ -165,7 +165,11 @@ so it reproduces no container heading, matching the archive's own tail.
 | **BL-169** (new) | `mix hex.audit` is a declared merge gate that no workflow runs. Out of ds scope; filed, not fixed. |
 | **BL-170** (new) | The concurrency detector is probabilistic — 15/20 with the lock disabled — so a single green is not evidence the lock is present. |
 
-Six, not the five the ticket named. The extra is the second BL-151 append: it is the same
+**A seventh landed in commit 3**, after the gate run: **BL-171**, `mix hex.audit` red on two
+bandit advisories. It is not in the table above because it is not commit 2's, and §8 below
+is its record.
+
+Six in commit 2, not the five the ticket named. The extra is the second BL-151 append: it is the same
 class as BL-170 and it names its own missing executor in the same file, so leaving it
 would have reproduced this ticket's own subject one document over. It went to BL-151
 rather than to a row of its own because it is a coverage gap with a small fix, which is
@@ -259,7 +263,80 @@ it. The two commands above are the check, and they are written here so a reader 
 
 ---
 
-## 8. Gates and the WARN prediction
+## 8. A third commit, and why
+
+**The ticket said two commits. There are three, and the third is `BL-171`.**
+
+The ticket-boundary gate run found `mix hex.audit` **red**: bandit 1.12.4 carries
+EEF-CVE-2026-75484 (MEDIUM) and EEF-CVE-2026-74836 (HIGH). Neither is BL-060's advisory —
+that row is DONE and its subject was bandit 1.11.1 / EEF-CVE-2026-65623 — and no open row
+named `bandit` or `hex.audit` before this one. `CLAUDE.md` §Definition of done is explicit:
+*"A red gate gets a tracked ticket the day it's found — never carried silently"*, and
+§Learning — BL-007 is equally explicit that *"prose in a packet or notes files nothing"*.
+So the red had to become a row, and a row is a commit.
+
+**Why not an amendment to commit 2.** By the time the gate ran, the verdict-B re-sync had
+already published `f003e4a` to `vishal-h/aetheris#85` as that issue's backlink. `CLAUDE.md`
+§Definition of done: amend while a commit is private and uncited, **append** once something
+cites it. Amending would have left a published backlink pointing at a tree that never
+existed. The backlink is excluded from verdict B by construction, and commit 3 does not
+touch `ds-milestone.md`, so the comparison is unaffected.
+
+**The deviation is the arbiter's to accept.** The two-commit instruction is a ticket-shape
+instruction; the red-gate rule is standing. Where they conflicted, the standing rule was
+followed and the conflict is named here rather than resolved silently.
+
+**It is also BL-169 arriving as an instance rather than an argument.** BL-169 was filed
+earlier the same day from a static census: `mix hex.audit` is a declared merge gate that no
+workflow runs. This red was found only because a human-directed ticket-boundary run typed
+the command; nothing in CI would have reported it.
+
+**No bump was made.** `mix hex.info bandit` reports 1.12.5 (2026-08-20) against a locked
+1.12.4, and `mix.exs:30` already admits it — but whether 1.12.5 fixes both CVEs was
+inferred from a release date, not read, and a dependency change belongs to a ticket that
+can run the full harness gate set against it.
+
+---
+
+## 9. The dormant set was run, and something other than its cap ended it
+
+Recorded here and not only in the packet, because **what ended a run is the fact the cap
+rule says a later session will otherwise trust wrongly.**
+
+```
+$ timeout 2400 python3 -m pytest -q -m dormant          # agents df659e8
+................................................................F....... [ 34%]
+................F....................................................... [ 68%]
+...........
+```
+
+**It did not hit its cap.** The cap was 2400s; the run was **killed by the session harness
+at 1470s**, well inside it, and reported `[killed]` rather than a `timeout` exit. So this
+is not a cap-kill and must not be recorded as one — it is the same distinction the cap
+rule's own example was corrected for at ds t2 stage 4, arriving as a fresh instance in the
+opposite direction: there a run *outlived* its SIGTERM, here a run was ended *before* its
+cap by something the cap does not describe.
+
+**What it did emit.** `python3 -m pytest -q -m dormant --collect-only` reports **211**
+tests collected. The partial output above carries **155 results — 153 passes and 2
+failures** — so the run reached roughly 73% and stopped. **Neither failure is identified**:
+`-q` names a failing test only in the summary, and the summary never printed.
+
+**This corroborates BL-159 and identifies nothing.** That row already states that one test
+is red deliberately and that a second failure exists and is not identified; two `F` marks
+at 73% is consistent with exactly that and adds no name to either. A dated observation is
+appended to BL-159 rather than kept here alone, so a reader of that row meets it.
+
+**It also sharpens the BL-150 filing made earlier the same day.** That entry says the
+dormant set is off-territory by **cost**. This run is the demonstration: 24.5 minutes of
+wall clock bought 73% of a set and zero identified failures, and no session cap in use here
+reaches the roughly four hours BL-159 projects.
+
+**Not retried with a longer cap**, per the standing rule. The result above is the result.
+
+---
+
+## 10. Gates and the WARN prediction
 
 In the packet, with exit codes. The WARN prediction was derived as a **set** before the run
 and is reproduced there: the manifest was read by `(repo, path)`, intersected with both

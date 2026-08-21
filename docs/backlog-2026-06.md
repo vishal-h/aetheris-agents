@@ -4864,6 +4864,36 @@ list is empty.
   to-the-wrong-target class this row already collects, and because the census that found it runs
   once per cycle and would not have found it any sooner.
 
+- `2026-08-21` (ds close, after the close commits) — **The retired Project was not inert: six
+  built-in workflows were enabled on it the whole time, and one of them closed four issues during
+  this close.** Found by the retirement acts themselves, which is why it is not in either close
+  commit — §D's tracker acts run after them by construction. `ds-milestone.md` §How the cycle is run
+  says *"Keep the Project minimal. Fields and automation are their own maintenance surface and
+  nothing yet justifies them"*, and the cycle proceeded on that. It is true of automation anyone
+  **configured** and false of the automation that was **running**:
+  `gh api graphql -f query='query{ node(id:"<project-node-id>"){ ... on ProjectV2 { workflows(first:20){ nodes{ name enabled } } } } }'`
+  returns six enabled — `Auto-add sub-issues to project`, **`Auto-close issue`**, `Item added to
+  project`, `Item closed`, `Pull request linked to issue`, `Pull request merged`.
+  **What it did.** Setting the four `Todo` items to `Done` closed `#75`–`#78` as COMPLETED, one per
+  `item-edit` call: `closedAt` 16:45:11, :12, :11, :13 on 2026-08-21, matching the four calls, with
+  no push having happened and the close commits' `Closes #nn` trailers therefore unseen by GitHub.
+  The subsequent explicit `gh issue close --reason completed` commands all returned *"is already
+  closed"* — so a reader of this close who saw only those commands would credit them with an effect
+  they did not have.
+  **Why it is a documentation-system finding.** The defect is not the workflow, which did the right
+  thing. It is that a sentence about the **configured** state was read for a whole cycle as a
+  sentence about the **effective** state, by everyone including the document's author, and nothing
+  anywhere recorded that GitHub enables these by default on project creation. That is exactly the
+  sub-class promoted at this close under `CLAUDE.md` §`## Learning — ds` — a name that resolves in
+  one frame used as if it resolved in another — arriving on the cycle that promoted it, hours later.
+  **It does not weaken verdict A; it sharpens it.** R28 retires the Project for being a surface with
+  no reader. An unread surface holding live automation that acts on both repositories is worse than
+  an unread inert one, and no one would have found this by reading the board. R28 is **not amended**:
+  it is committed, its evidence is unaffected, and a ruling is not rewritten to absorb a fact found
+  after it. **No fix** — the Project is closed, so nothing is owed operationally; what is owed is
+  that the next cycle using any tracker enumerates the automation it is enabling by default rather
+  than the automation it chose.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

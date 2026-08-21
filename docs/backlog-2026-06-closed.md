@@ -5213,5 +5213,28 @@ belongs to ds t3. BL-143 is untouched by this disposition and stays open on its 
 routing itself is **BL-162**'s subject, and this is one of its two instances working out in
 practice.]`
 
+`[Amended 2026-08-21 at ds t3 stage 3, after the arbiter ruled on stage 2's packet.
+
+**The substitution is ruled, and by whom.** Branch 1's second clause — *"named in a boundary
+record"* — was **discharged by substitution of surface**, and the arbiter ruled that substitution
+accepted. The reason, in one sentence: a boundary record here is a dated entry in
+`docs/project-knowledge-manifest.md`'s export-boundary log, ds t3 runs no export boundary, and so
+the naming landed in `CLAUDE.md` §Definition of done beside the mechanism's pointer — the surface
+branch 2 was told to use, for the same reason it was told to use it, that a reader of that pointer
+will meet it.
+
+**And the naming now has an executor, which is what stage 2 left owing.**
+`prompts/bl-002-refresh-project-knowledge.md` — the operator procedure, and the document that
+actually causes a boundary record to be written — gains a **Step 0** that runs
+`./scripts/sprint.sh export_mechanism` before anything is written, and its Step 2 now requires the
+boundary record's narrative to name that arm and the verdict it returned. So the next boundary
+record carries the naming **by construction** rather than because someone remembered. A naming no
+procedure causes is a promise, and a deferral with no executor is this row's own subject; that is
+why the amendment exists and why the row did not close honestly without it.
+
+**This row stays DONE.** Nothing above is reopened. The arm existed at the disposition and exists
+now; what changed is that the second half of branch 1 is now performed by a procedure instead of
+asserted by a document.]`
+
 ---
 

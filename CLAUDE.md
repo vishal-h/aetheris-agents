@@ -502,6 +502,18 @@ removes), and it is **not promoted**: every assertion uses `fail`, so it is coun
 non-blocking. Promotion is a later ticket's act under R7, with that ticket's own red-by-mutation
 evidence.
 
+**WHICH BRANCH RAN, said here so no reader has to infer it.** BL-161's Done-when was a
+disjunction, and **both branches place their outcome at this site** — branch 1 the arm's
+existence, branch 2 a ruling that the tests suffice and *no sprint arm is owed*. Those say
+opposite things, so the paragraph above is ambiguous about its own provenance unless it states it.
+**Branch 1 was taken. Branch 2 was not taken and is not reachable from here.** BL-161 is **closed
+on branch 1** and lives in `docs/backlog-2026-06-closed.md`. Nothing at this site should ever be
+read as a ruling that the mechanism's tests were sufficient — they were not, which is why the arm
+exists. Branch 1's second clause, *"named in a boundary record"*, was discharged by substitution of
+surface (this paragraph, ruled by the arbiter at ds t3) and its executor is **Step 0 of
+`prompts/bl-002-refresh-project-knowledge.md`**, which runs the arm before a boundary writes
+anything and requires the boundary record's narrative to name it and its verdict.
+
 **The U2 scrub class — what may not leave this machine.** **SCRUBBED:** anything identifying the
 account, the people in it, or its internal structure — organisation (`organization`,
 `organizationName`), repositories (`repositoryName`), logins, display names, numeric user and

@@ -26,6 +26,9 @@ accumulation is the evidence verdict A asks for: an empty consulted-list beside 
 non-empty kept-current list. A consultation staged for the record would destroy the
 answer rather than improve it.
 
+**Stage 3 (2026-08-21, this commit): the Project was NOT consulted.** No `gh project`
+command was run; `gh issue view 85` was run once for verdict B, which reads an issue.
+
 ---
 
 ## 2. Criterion 8 is a disjunction over what was built as a conjunction
@@ -336,7 +339,68 @@ reaches the roughly four hours BL-159 projects.
 
 ---
 
-## 10. Gates and the WARN prediction
+## 10. Stage 3 — two disclosures the packet must not be the only home for
+
+### (a) Commit 3 carries three shas, and the licence that permitted it has now lapsed
+
+`df659e8` → `8b3ecc9` → `ecbaa2f`. Read in order of creation the sequence is
+**`8b3ecc9`, then `df659e8`, then `ecbaa2f`**: the row-filing commit landed as `8b3ecc9`,
+was amended once to make §5's filings table name BL-171 as commit 3's rather than commit
+2's (`df659e8`), and was amended a second time to carry the dormant run's outcome and its
+BL-159 observation (`ecbaa2f`).
+
+**Two amends.** The licence was `CLAUDE.md` §Definition of done: *amend a commit while it is
+private to the ticket and uncited; append once a packet has been issued against it.* At both
+moments the commit was private and uncited — no packet had been issued, and the only sha
+published anywhere was `f003e4a`, in `vishal-h/aetheris#85`'s backlink, which names commit 2
+and not commit 3.
+
+**That licence has lapsed.** A packet has been issued against `d648aa8`, `f003e4a` and
+`ecbaa2f`. All three are **append-only** from here. This stage is a fourth commit on top,
+which is what the rule requires.
+
+**Why the shas are disclosed rather than left tidy.** `8b3ecc9` appears in this repository's
+own record — the stage-2 packet's whole-suite gate row cites a run made at it — and a reader
+meeting a sha that resolves to nothing has no way to tell a stale hash from a fabricated
+one. The two superseded shas are named here so that reader can.
+
+### (b) The dormant capture ran at `df659e8`, which is not final HEAD
+
+`timeout 2400 python3 -m pytest -q -m dormant` was launched against the tree at `df659e8`
+and killed by the session harness at 1470s, inside its cap. Final HEAD for stage 2 was
+`ecbaa2f`. **A gate covers the tree it ran against, so that result does not cover
+`ecbaa2f`** — and saying so is cheaper than the alternative, which is a reader assuming it
+does.
+
+**What ran at `ecbaa2f` and what did not:**
+
+| gate | ran at `ecbaa2f`? |
+|---|---|
+| `python3 -m pytest -q -m "not integration and not dormant"` | **yes** — `1542 passed … in 206.96s`, exit 0 |
+| `python3 scripts/drift_check.py --strict` | **yes** — `18 PASS 0 FAIL 2 WARN 8 INFO`, exit 0 |
+| verdict B against the fetched-back issue body | **yes** — PASS, 2967 bytes |
+| `python3 -m pytest -q -m "integration and not dormant"` | no — ran at `f003e4a` |
+| `python3 -m pytest -q -m dormant` | no — ran at `df659e8` |
+| the harness seven | no — ran at harness `d648aa8`, which is unchanged by any agents commit |
+| `bun run build`, `bun run lint`, `cargo check` | no — ran at `f003e4a` |
+
+**Why the difference cannot change the dormant result.** The dormant set is
+`boxy-pipeline/tests/`, deselected by `pytestmark = pytest.mark.dormant`. The three commits
+`df659e8`, `8b3ecc9` and `ecbaa2f` differ from one another **only in
+`docs/milestones/ds-t3-implementation-notes.md` and `docs/backlog-2026-06.md`** — two
+markdown files. Nothing under `boxy-pipeline/`, nothing under `scripts/`, no `conftest.py`,
+no `pytest.ini`. So the tree the dormant set executed is byte-identical, on every path it
+can reach, to the tree at `ecbaa2f`. The claim is checkable:
+`git diff --name-only df659e8 ecbaa2f`.
+
+**The same reasoning covers the other rows and is not stronger than it looks.** The
+integration set and the Rig gates ran at `f003e4a`; `f003e4a..ecbaa2f` touches only those
+same two markdown files. The harness seven ran at harness `d648aa8`, which no agents commit
+can move.
+
+---
+
+## 11. Gates and the WARN prediction
 
 In the packet, with exit codes. The WARN prediction was derived as a **set** before the run
 and is reproduced there: the manifest was read by `(repo, path)`, intersected with both

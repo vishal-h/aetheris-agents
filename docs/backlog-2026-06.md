@@ -5310,6 +5310,41 @@ decision, not an oversight.
   ds t3 filed as its own row for the concurrency detector (**BL-170**) — this one is a coverage gap
   with a small fix, which is BL-151's class, not a row's.
 
+- `2026-08-21` (ds t3 stage 3) — **`./scripts/sprint.sh all` rewrites a tracked file in the OTHER
+  repository, and nothing says so.** The `capability_matrix` arm invokes the matrix assembler with
+  no `--output`, and the assembler's default is the tracked matrix. Re-derived at harness
+  `d648aa8` / agents `ecbaa2f`:
+  - `grep -n "assemble_matrix.py" ../aetheris/scripts/sprint.sh` → `:1599`,
+    `if python3 ../aetheris-agents/scripts/assemble_matrix.py; then` — **no `--output` argument**.
+  - `grep -n 'TARGET" == "capability_matrix"' ../aetheris/scripts/sprint.sh` → `:1553`,
+    `if [[ "$TARGET" == "capability_matrix" || "$TARGET" == "all" ]]; then` — **the arm is in `all`**.
+  - `grep -n '"--output"' scripts/assemble_matrix.py` → `:493`,
+    `parser.add_argument("--output", type=Path, default=OUTPUT_MD, …)`, and
+    `grep -n "OUTPUT_MD *=" scripts/assemble_matrix.py` → `:49`,
+    `OUTPUT_MD = REPO_ROOT / "docs" / "capability-matrix.md"`.
+  - Resolved without writing anything:
+    `python3 -c "import sys; sys.path.insert(0,'scripts'); import assemble_matrix as a; print(a.OUTPUT_MD)"`
+    → `/home/it/sandbox/elixirws/aetheris-agents/docs/capability-matrix.md`.
+  - `git ls-files docs/capability-matrix.md` returns it — **tracked**.
+  **What a reader loses.** Two things, and the second is the one that costs. (1) A sprint run
+  **dirties the repository under test**: the sprint is invoked from `aetheris/`, and the file it
+  writes is in `aetheris-agents/`, so an operator watching the repo they ran the command in sees
+  nothing. (2) **A `git diff` taken after `./scripts/sprint.sh all` cannot be attributed without
+  knowing this.** A changed `docs/capability-matrix.md` may be the assembler regenerating from
+  `docs/.sections/`, or it may be a real content change someone made; the diff looks the same
+  either way. `docs/.sections/` is gitignored (`.gitignore:10`), so the inputs that produced the
+  regeneration are not in history and the question cannot be settled after the fact.
+  **No fix, and the choice is live in both directions.** Either the arm should pass an `--output`
+  to a temp path and assert on that — making the sprint a *check* of the assembler — or writing
+  the tracked file **is** the arm's purpose, in which case the sprint is a *regeneration step* and
+  should say so where an operator reads it. Nothing in `sprint.sh` or `assemble_matrix.py` states
+  which it is. This row holds that question.
+  **How it surfaced**, because it is the more useful half: it was found at ds t3 stage 2 while
+  checking a *carried claim that no sprint arm writes a tracked file* — the claim was offered as
+  the justification for a design rule, the rule was right, and the justification was false. The
+  new `export_mechanism` arm does write no tracked file, and asserts it by sha256 rather than by
+  assumption; the general claim was never true of the arm sitting three lines above it.
+
 `Source: R26, ruled by the arbiter 2026-08-13 at m6 t2b and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R26's own stamp. The
 ruling's ground is three code findings dropped across m6 t1 and t2 for want of a place to put

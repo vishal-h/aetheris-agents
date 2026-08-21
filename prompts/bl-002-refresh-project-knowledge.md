@@ -12,6 +12,40 @@ project-knowledge export and its manifest. You cannot upload to
 Claude.ai — your job is to assemble the bundle, write the manifest,
 and print upload instructions for the human.
 
+Step 0 — Pre-flight. Prove the two scripts this procedure runs still
+work, before anything is written:
+
+    (cd ../aetheris && ./scripts/sprint.sh export_mechanism)
+
+Six assertions, every one through a command line. `repin_manifest.py
+--dry-run` exits 0 and leaves the tracked manifest byte-identical, with
+its sha256 compared across the run rather than assumed;
+`repin_manifest.py` against an unreadable `--manifest` exits 1;
+`assemble_export_bundle.py DEST` exits 0 and writes a bundle carrying
+the manifest's own row and no `_UNSWEPT-DO-NOT-UPLOAD.txt`; a non-empty
+destination without `--replace` exits 1; the temp destination is
+removed. Hermetic — no credential, no network — and it writes no
+tracked file, `--dry-run` and a `mktemp` destination being why.
+
+It exists because the two scripts' 37 tests reach neither script's
+`main()`. The entry point, the argument parser, the flag translation
+and the propagation of `main()`'s return into a process exit code were
+exercised by nothing until this arm. That is **BL-161**, closed on its
+Done-when branch 1 at harness `d648aa8`.
+
+If any assertion is red, STOP and fix the mechanism before proceeding.
+That is an operator instruction and NOT a promotion of the arm: inside
+`sprint.sh` every assertion uses `fail` and is non-blocking, because
+R7 makes promotion per-arm and this arm is not promoted. The judgement
+here is different from the sprint's — a boundary run on a mechanism
+that does not work is a boundary whose result means nothing.
+
+**Record the run and its verdict in the boundary record written at
+Step 2.** That is what makes the arm *named in a boundary record*
+rather than merely existing, and it is why BL-161's branch 1 has an
+executor rather than a promise: the next boundary record carries the
+naming by construction, without anyone remembering to write it.
+
 Step 1 — The file set is the manifest's table, and only the manifest's
 table. `docs/project-knowledge-manifest.md` is the sole authority for
 which documents are exported, from which repo, and under what export
@@ -40,7 +74,9 @@ not the self-referential row. Run against a manifest already current it
 writes nothing at all.
 
 The manifest's narrative — what moved this boundary and why, what stayed
-out and on what rule — is still written by hand, in the same commit.
+out and on what rule — is still written by hand, in the same commit. It
+also names Step 0's arm and the verdict it returned; that sentence is
+this procedure's discharge of BL-161's branch 1 and is not optional.
 
 The table's format is the contract (check 8 of drift_check.py parses it;
 deviation = FAIL on zero rows):

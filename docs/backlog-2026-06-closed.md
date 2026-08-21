@@ -5105,3 +5105,113 @@ is untouched and still open, exactly as this row's *Collides with* said. BL-161'
 untouched.]`
 
 ---
+
+### BL-161 — the export-mechanism round deferred a sprint arm and filed no row (#TBD)
+**Status:** DONE
+**Kind:** process · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Learning — BL-007 — *a deferred finding gets a backlog row in the same round it's deferred*
+**Size:** S · **Priority:** medium
+**Section:** process / backlog discipline; the arm itself is harness (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-08-16 at the export boundary's amendment pass. Established at agents `a2df7b5`.
+
+**What happened.** The export-mechanism round (agents `5dae22b`, 2026-08-16) shipped
+`scripts/repin_manifest.py` and `scripts/assemble_export_bundle.py` with tests and a runbook
+pointer, and recorded in its notes that one companion could not land
+(`docs/milestones/export-mechanism-implementation-notes.md`):
+
+> **One companion is owed and cannot land here: a sprint case.** Both comparators have one
+> (`sprint.sh` `capability_matrix` and `drift_check`, `aetheris/scripts/sprint.sh:1533` and
+> `:1594`). `sprint.sh` lives in the harness, which this ticket's REPOS clause puts out of bounds,
+> so the export mechanism ships with tests and no sprint arm. Reported rather than quietly
+> dropped; it is a gap for whoever takes BL-143, not a defect this ticket may fix.
+
+The reasoning is sound and the deferral is correct. **The record is not.** That round's commits
+touched `CLAUDE.md` and never `docs/backlog-2026-06.md`, and **BL-143's row does not mention a
+sprint arm** — so the sentence *"it is a gap for whoever takes BL-143"* addresses a reader who has
+no way to receive it. Whoever takes BL-143 opens BL-143.
+
+**The rule it breaches** is `CLAUDE.md` §Learning — BL-007: *a deferred finding gets a backlog row
+in the same round it's deferred — prose in a packet or notes files nothing.* The same entry's
+closing clause is why naming BL-143 was not enough: a finding recorded somewhere that does not
+carry an executor *"has a record, not an executor"*.
+
+**The breach was recoverable only by accident, and that is the part worth keeping.** The notes file
+is committed and attributed, so the deferral survives in a readable form — that is the *only*
+reason this row can be written at all. But nothing was going to read it. It surfaced because the
+2026-08-16 export boundary's content sweep **wandered past its own scope**: that sweep was
+chartered to find closures and rulings missing from tracked files, a sprint arm is neither, and it
+was found by a session reading the round's notes for something else and noticing. A discipline that
+depends on the next session being curious about a file it had no reason to open is not a discipline.
+
+**Whose omission this is.** The arbiter's, stated so the record is not silently flattering: the
+export-mechanism packet was approved and its §8 ruled against, without noticing that a deferred
+companion had no row.
+
+**What is actually owed, kept small.** A `sprint.sh` case exercising the two export scripts, beside
+the `capability_matrix` and `drift_check` cases it would sit with. It is a harness write, so it
+needs a cross-repo ticket; nothing about it is difficult, and it has been unowned since 2026-08-16.
+
+**Done when:** either the sprint arm exists and is named in a boundary record, or a ruling is
+recorded that the export mechanism's tests are sufficient and no sprint case is owed — with the
+reason, in `CLAUDE.md` §Definition of done beside the mechanism's pointer, where a reader of that
+pointer will meet it.
+
+**Costs:** S. The arm is a few lines against two scripts that already exit non-zero on failure.
+
+**Collides with:** **BL-143**, which the notes file named as the inheriting row and which does not
+know it. Closing this row's first branch is naturally part of BL-143's work; closing its second
+branch is not, and does not wait for it.
+
+`[Annotated 2026-08-16 at BL-143's close. The **Collides with** above states, in passing, a shape
+that is now filed as a finding in its own right: a document named BL-143 as the inheriting row and
+BL-143 *"does not know it."* That is one of **BL-162**'s two instances — the other is the
+check-1/check-3 contradiction, routed to the same row by two further documents and equally invisible
+from it — and BL-162 owns the question of what a citing document owes its target. **This row is
+unchanged by that filing:** the sprint arm is still owed here, both branches of its Done-when stand
+as written, and BL-162 closes neither.]`
+
+`Source: the export boundary of 2026-08-16, packet §F4, and the amendment pass that filed it. The
+quoted paragraph is transcribed from `docs/milestones/export-mechanism-implementation-notes.md`
+at agents `a2df7b5`. The attribution of the omission is the arbiter's own, given at the amendment.`
+
+`[Disposed 2026-08-21 at ds t3, on Done-when branch 1. Branch 2 — a ruling that the tests suffice —
+is NOT taken and is not reachable from here.
+
+**WHAT LANDED.** A `sprint.sh` case, `export_mechanism`, at harness `d648aa8`, sitting immediately
+after `drift_check`'s `fi` — beside the two comparators this row names. Six assertions, every one
+through a command line: `repin_manifest.py --dry-run` exits 0 and leaves the tracked manifest
+byte-identical, asserted by sha256 across the run; `repin_manifest.py` against an unreadable
+`--manifest` exits 1; `assemble_export_bundle.py DEST` exits 0, writes a non-empty bundle and puts
+the manifest's own row in it, with no `_UNSWEPT-DO-NOT-UPLOAD.txt` marker; a non-empty destination
+without `--replace` exits 1; the temp destination is removed. It is in `all`, it is hermetic, and it
+writes no tracked file. It is **not promoted** — every assertion uses `fail` — because R7 makes
+promotion per-arm and requires the promoting ticket's own verification on the record.
+
+**WHY IT WAS WORTH BUILDING, re-derived at HEAD rather than assumed.** Both scripts end in
+`sys.exit(main())` and the 37 tests across `tests/test_export_bundle.py` and
+`tests/test_repin_manifest.py` contain zero occurrences of `main(`; their only subprocess helper
+runs `git`. Demonstrated rather than argued: mutating `sys.exit(main())` to `main()` in
+`repin_manifest.py` leaves those 37 tests reporting `37 passed` and makes the new arm report *"the
+CLI is not propagating main()'s exit code"*.
+
+**THE HALF OF BRANCH 1 THIS TICKET COULD NOT PERFORM AS WORDED, stated rather than glossed.**
+Branch 1 reads *"the sprint arm exists and is named in a boundary record"*. In this repository a
+**boundary record** is a dated entry in `docs/project-knowledge-manifest.md`'s export-boundary log,
+and ds t3 runs no export boundary, so no such entry can honestly be written here. The naming was
+landed instead in `CLAUDE.md` §Definition of done, in the paragraph that already carries the
+mechanism's pointer and its `Tests:` line — which is where branch 2 places *its* outcome, on the
+stated ground that a reader of that pointer will meet it, and it is the surface the next boundary
+record's author reads. **This is a substitution of surface and it is the arbiter's to accept or
+reverse.** The row is marked DONE rather than held open because what remained was a naming with no
+executor and no trigger, which is the precise failure this row was filed about.
+
+**THE `Collides with` CLAUSE ABOVE IS SUPERSEDED.** It says *"Closing this row's first branch is
+naturally part of BL-143's work"*. BL-143's scope note of 2026-08-16 refuses that routing in terms:
+the sprint arm *"[does not] appear anywhere in this row's own text"*, and BL-143's Done-when —
+ownership and trigger — is *"unchanged and open"*. Branch 1 belonged to no row but this one, and it
+belongs to ds t3. BL-143 is untouched by this disposition and stays open on its own question. The
+routing itself is **BL-162**'s subject, and this is one of its two instances working out in
+practice.]`
+
+---
+

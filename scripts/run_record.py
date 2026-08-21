@@ -4,6 +4,12 @@ Every use case that writes durable artifacts keeps a record at
 `<use_case>/data/run-records.json`: a JSON array in which each entry names one
 *step* of one run and enumerates the artifacts that step wrote.
 
+A rendered instance is committed at `payslip/data/run-records.json.example`: two entries,
+one attested and one opened-and-unfinished, produced by this module rather than typed. The
+real file is gitignored in every use case that writes one, so that example is the only
+readable specimen of this format in the repository — the schema was otherwise stated only
+in prose here and asserted only in `tests/test_run_record.py`.
+
 **The attestable unit is the step, not the directory.** BL-153's first ruling spoke of
 "an unstamped or mismatched DIRECTORY"; its second requires coverage of an accumulating
 tree no guard clears (cloudcost's `history/`, written at an earlier step into a directory

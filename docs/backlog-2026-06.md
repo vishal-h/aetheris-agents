@@ -4774,6 +4774,45 @@ list is empty.
   so bare refs are correct **in it** and would not be correct if quoted out of it. Kept as an
   observation about the system rather than closed as a task.
 
+- `2026-08-21` (ds t3) — **The dormant set is off-territory by COST, not by territory, and that is
+  a different mechanism from every other case the gate rule carries.** `CLAUDE.md` §Definition of
+  done requires every existing gate to run at ticket boundaries *"even off-territory"*, and the
+  cases behind that rule are gates a ticket did not think to run — `mix test`, `tsc -b`,
+  `bun run lint`. Each was one command away. `python3 -m pytest -q -m dormant` is not: BL-159
+  projects roughly four hours for it, and no session cap in use here reaches that, so the rule's
+  remedy — *run it anyway* — is unavailable rather than neglected. **The set's contents are
+  reachable and only the whole-set run is not:** ds t2 identified BL-159's second failure by running
+  one file directly. So the gate is not opaque; it is unaffordable in one piece. Recorded as a
+  system observation because the rule states one obligation over gates that differ in kind, and a
+  reader cannot tell from it which of the two situations they are in. No remedy proposed.
+
+- `2026-08-21` (ds t3) — **Four surfaces declare the harness gate set and no two agree.** Derived at
+  harness `d648aa8` / agents `3129521`:
+  - harness `CLAUDE.md` §CI contract — *"Every change must pass all of these before merge"*, seven
+    commands: `mix deps.get`, `mix hex.audit`, `mix compile --warnings-as-errors`,
+    `mix format --check-formatted`, `mix credo --strict`, `mix dialyzer`, `mix test`.
+  - harness `CLAUDE.md` §Testing — *"before marking any ticket done"*, four: `mix test`,
+    `mix format --check-formatted`, `mix credo --strict`, `mix dialyzer`. No `deps.get`, no
+    `hex.audit`, no `compile --warnings-as-errors`.
+  - harness `.github/workflows/ci.yml` — the only workflow file, `pull_request`-triggered. Its main
+    job runs six: `mix deps.get`, `mix compile --warnings-as-errors`, `mix format --check-formatted`,
+    `mix credo --strict`, `mix dialyzer`, and `MIX_ENV=test mix test --exclude requires_worker
+    --exclude integration`. **No `mix hex.audit`.** A second job runs the sandbox set behind a
+    capability probe.
+  - agents `CLAUDE.md` §Commands, *"Aetheris checks (run from `aetheris/` repo, not here)"* — four:
+    `mix format --check-formatted`, `mix credo --strict`, `mix dialyzer`, `mix test`.
+  **The differences.** `mix hex.audit` is a declared merge gate that no workflow runs and no other
+  surface names — filed separately as **BL-169**, since that one is a defect with a fix rather
+  than a disagreement. `mix deps.get` and `mix compile --warnings-as-errors` appear in the contract and in
+  CI and in neither prose list. And `mix test`: three surfaces name it bare, while the gate CI
+  actually enforces excludes two tags — so the strongest declaration is prose and the weakest is the
+  one that blocks a merge. **What cannot be established from the tree:** which set any past ticket
+  actually ran. Review packets are, by default, sent to a session scratchpad and not committed —
+  five are committed under `docs/reviews/` in this repo and none in the harness, so the claim
+  *"packets are not committed in either repo"* is false as a general statement and true of the ones
+  that matter here. Any claim about what a packet ran is therefore unverifiable from the tree except
+  for those five.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
@@ -5226,6 +5265,50 @@ decision, not an oversight.
   enumeration was a token grep, and the two differ by exactly the declaration line.)*
   **Fixed under ds t1a**, which is the ticket the entry above nominated: `usage.rs` is
   repointed and `check_run_classifier.py` now parses **both** constants and compares them.
+
+- `2026-08-21` (ds t3) — **Two of the backlog split's published invariants have no keeper, and
+  `backlog_resolution` cannot acquire one without deciding what it is for.** The archive's own
+  header (`docs/backlog-2026-06-closed.md:3-10`) publishes four: (1) a row is here **iff** its title
+  section carries `**Status:** DONE`; (2) every section an id owns travelled with it; (3) the id is
+  the address and the path is never load-bearing; (4) `## ` container headings are the only
+  non-verbatim lines. (3) is kept — `drift_check.py`'s `backlog_resolution` resolves every `BL-nnn`
+  against the **union**, and `sprint.sh`'s `expected_fail` reads both files. **(1) and (2) are kept
+  by nothing**, and both broken states were derived rather than argued, at agents `3129521`:
+  - **(1), the `iff`'s uniqueness half.** Planting a second `### BL-152` title in the open file
+    while the real one sits in the archive leaves `python3 scripts/drift_check.py --check
+    backlog_resolution` reporting `167 rows over the union … every BL-nnn reference resolves` —
+    **byte-identical to the unbroken output**, `diff` clean, not one character changed. The cause is
+    in the parser: `_backlog_row_ids()` does `ids.update(...)` into a `set` over both files, so an
+    id present twice is indistinguishable from an id present once, including in the count it prints.
+    A full `--strict` run also passes; the only extra WARN it emits is the generic
+    *"has uncommitted working-tree changes"* one, which fires for any edit to that path and says
+    nothing about duplication.
+  - **(2), completeness.** Moving BL-132's disposition section out of the archive and into the open
+    file, leaving its title behind, likewise leaves the check byte-identical to baseline.
+  - **Positive control, same command and same flags:** appending one well-formed reference in the
+    `BL-9xx` sentinel range, naming no row, turns the same invocation into
+    `[FAIL] … names no row in the backlog union`. The check is live; it is simply blind in these two
+    directions. (The literal id is not written here: this file is inside the check's own corpus, so
+    quoting a strict-form dangling id would fail the check that the sentence is describing. That is
+    the same self-reference `drift_check.py`'s allowlist comment records about itself.)
+  Both mutations were restored from sha256-verified working-copy backups, never `git checkout --`,
+  and the restore was verified by sha, by `git status --porcelain` and by re-running the check.
+  **No fix is proposed here, deliberately.** Adding uniqueness and completeness arms to
+  `backlog_resolution` would widen a check whose stated subject is *reference resolution* into a
+  *split-integrity* check, and where that belongs — that check, a new one, or the split generator
+  that already knows both rules — is the question this entry holds. Related: the archive header's
+  `iff` is also stated in a literal form its own file does not satisfy — `grep -c '^\*\*Status:\*\* DONE$'`
+  returns 60 against 76 `### BL-` headings, the remainder carrying `**Status:** Done <date> — …`.
+  That is a third surface with no keeper and is recorded here rather than filed separately.
+
+- `2026-08-21` (ds t3) — **provenance's `run_record` adoption is verified only by AST parse, and
+  nothing schedules the execution that would verify it.** `docs/milestones/ds-t2-implementation-notes.md:393-394`
+  records it in its own words: the CLI path *"first executes the moment anything invokes the CLI: an
+  operator, Rig's Tools panel, or a test calling `main()` instead of `build_report()`. **Nothing
+  schedules that, and no ticket owns it.**"* Filed here because a deferral that names its own missing
+  executor is the shape the standing rule forbids, and because it is the same class as the entry
+  ds t3 filed as its own row for the concurrency detector (**BL-170**) — this one is a coverage gap
+  with a small fix, which is BL-151's class, not a row's.
 
 `Source: R26, ruled by the arbiter 2026-08-13 at m6 t2b and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R26's own stamp. The
@@ -6027,8 +6110,8 @@ comment block in `pytest.ini` points at the mechanism, this row points at the co
 `python3 -m pytest -q -m "not integration and not dormant"`. Three things are known about what
 that costs, and one important thing is not.
 
-**1. It does not terminate usefully.** Two capped runs, both killed deliberately, neither
-finishing:
+**1. It does not terminate usefully.** Two long runs, each started under a cap and each
+ended BY HAND rather than by that cap, neither finishing:
 
 | run | cap | outcome |
 |---|---|---|
@@ -6095,9 +6178,11 @@ closes on that instead — and the 208 tests' fate is stated in the same decisio
 **Costs:** M, and mostly wall-clock rather than attention. Not payable until the use case is
 active; attempting it before then spends four hours to learn about a paused pipeline.
 
-`Source: BL-152, 2026-08-16, and its amendment. The two capped runs are that ticket's own,
-recorded per the cap correction that a cap-kill is a complete result rather than a check still
-owed. The named red and the unidentified second failure are transcribed from those runs. Filed
+`Source: BL-152, 2026-08-16, and its amendment. The two long runs are that ticket's own. They
+are recorded here as complete results rather than checks still owed, but NOT under the cap-kill
+rule: neither was killed by its cap. Both were ended by hand, and the first outlived its own 2700s
+SIGTERM at 3141s — the opposite of a cap working, which is why that survival is itself filed, on
+BL-151. The named red and the unidentified second failure are transcribed from those runs. Filed
 rather than left in the packet, per the standing rule that prose in a packet or notes files
 nothing.`
 
@@ -6195,76 +6280,6 @@ enumeration, the one-needle result and the 94-needle result are that boundary's 
 verbatim from its packet §F2 rather than re-derived. The direction in the fourth paragraph is the
 arbiter's ruling R-F2 at the amendment. Filed rather than left in the packet, per the standing rule
 that prose in a packet or notes files nothing — the same rule BL-161 records being breached.`
-
----
-
-### BL-161 — the export-mechanism round deferred a sprint arm and filed no row (#TBD)
-**Status:** OPEN
-**Kind:** process · **Census items:** n/a · **Contract:** `CLAUDE.md` (agents) §Learning — BL-007 — *a deferred finding gets a backlog row in the same round it's deferred*
-**Size:** S · **Priority:** medium
-**Section:** process / backlog discipline; the arm itself is harness (`../aetheris/scripts/sprint.sh`)
-
-Filed 2026-08-16 at the export boundary's amendment pass. Established at agents `a2df7b5`.
-
-**What happened.** The export-mechanism round (agents `5dae22b`, 2026-08-16) shipped
-`scripts/repin_manifest.py` and `scripts/assemble_export_bundle.py` with tests and a runbook
-pointer, and recorded in its notes that one companion could not land
-(`docs/milestones/export-mechanism-implementation-notes.md`):
-
-> **One companion is owed and cannot land here: a sprint case.** Both comparators have one
-> (`sprint.sh` `capability_matrix` and `drift_check`, `aetheris/scripts/sprint.sh:1533` and
-> `:1594`). `sprint.sh` lives in the harness, which this ticket's REPOS clause puts out of bounds,
-> so the export mechanism ships with tests and no sprint arm. Reported rather than quietly
-> dropped; it is a gap for whoever takes BL-143, not a defect this ticket may fix.
-
-The reasoning is sound and the deferral is correct. **The record is not.** That round's commits
-touched `CLAUDE.md` and never `docs/backlog-2026-06.md`, and **BL-143's row does not mention a
-sprint arm** — so the sentence *"it is a gap for whoever takes BL-143"* addresses a reader who has
-no way to receive it. Whoever takes BL-143 opens BL-143.
-
-**The rule it breaches** is `CLAUDE.md` §Learning — BL-007: *a deferred finding gets a backlog row
-in the same round it's deferred — prose in a packet or notes files nothing.* The same entry's
-closing clause is why naming BL-143 was not enough: a finding recorded somewhere that does not
-carry an executor *"has a record, not an executor"*.
-
-**The breach was recoverable only by accident, and that is the part worth keeping.** The notes file
-is committed and attributed, so the deferral survives in a readable form — that is the *only*
-reason this row can be written at all. But nothing was going to read it. It surfaced because the
-2026-08-16 export boundary's content sweep **wandered past its own scope**: that sweep was
-chartered to find closures and rulings missing from tracked files, a sprint arm is neither, and it
-was found by a session reading the round's notes for something else and noticing. A discipline that
-depends on the next session being curious about a file it had no reason to open is not a discipline.
-
-**Whose omission this is.** The arbiter's, stated so the record is not silently flattering: the
-export-mechanism packet was approved and its §8 ruled against, without noticing that a deferred
-companion had no row.
-
-**What is actually owed, kept small.** A `sprint.sh` case exercising the two export scripts, beside
-the `capability_matrix` and `drift_check` cases it would sit with. It is a harness write, so it
-needs a cross-repo ticket; nothing about it is difficult, and it has been unowned since 2026-08-16.
-
-**Done when:** either the sprint arm exists and is named in a boundary record, or a ruling is
-recorded that the export mechanism's tests are sufficient and no sprint case is owed — with the
-reason, in `CLAUDE.md` §Definition of done beside the mechanism's pointer, where a reader of that
-pointer will meet it.
-
-**Costs:** S. The arm is a few lines against two scripts that already exit non-zero on failure.
-
-**Collides with:** **BL-143**, which the notes file named as the inheriting row and which does not
-know it. Closing this row's first branch is naturally part of BL-143's work; closing its second
-branch is not, and does not wait for it.
-
-`[Annotated 2026-08-16 at BL-143's close. The **Collides with** above states, in passing, a shape
-that is now filed as a finding in its own right: a document named BL-143 as the inheriting row and
-BL-143 *"does not know it."* That is one of **BL-162**'s two instances — the other is the
-check-1/check-3 contradiction, routed to the same row by two further documents and equally invisible
-from it — and BL-162 owns the question of what a citing document owes its target. **This row is
-unchanged by that filing:** the sprint arm is still owed here, both branches of its Done-when stand
-as written, and BL-162 closes neither.]`
-
-`Source: the export boundary of 2026-08-16, packet §F4, and the amendment pass that filed it. The
-quoted paragraph is transcribed from `docs/milestones/export-mechanism-implementation-notes.md`
-at agents `a2df7b5`. The attribution of the omission is the arbiter's own, given at the amendment.`
 
 ---
 
@@ -6751,3 +6766,99 @@ this is about a run *identifier* that already has a declared home.
 `Source: ds t2, 2026-08-20. Enumerated at agents `0e5e0d2`; every line above was opened. The
 count of five is this ticket's own derivation and is not carried from the prompt that
 requested it, which named the same five.`
+
+---
+
+### BL-169 — `mix hex.audit` is a declared merge gate that no workflow runs (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`, `../aetheris/CLAUDE.md` §CI contract)
+
+Filed 2026-08-21 at ds t3, from the gate-declaration census filed on **BL-150** the same day. Out
+of ds scope — this row is the executor, and ds t3 does not fix it.
+
+**The declaration.** Harness `CLAUDE.md` §CI contract lists seven commands under *"Every change must
+pass all of these before merge"*, and `mix hex.audit` is one of them. It is the only member of that
+set with a section of its own — `### `mix hex.audit` — supply-chain gate` — added 2026-07-17 on a
+human call, whose stated evidence is **BL-020**, where fifteen advisories across the HTTP stack were
+invisible to every other gate and surfaced only by a clean-clone spot-check. That section also
+states two properties that only make sense for a gate something runs: that an upstream-published
+advisory turning it red *"is the gate working, not a defect"*, and that advisories cannot be
+suppressed because the tool has no ignore mechanism.
+
+**Nothing runs it.** `../aetheris/.github/workflows/ci.yml` is the only workflow file in the
+repository (`git ls-files | grep -iE '\.github|\.gitlab|circleci'` returns it and
+`.github/copilot-instructions.md`). Its main job runs `deps.get`, `compile --warnings-as-errors`,
+`format --check-formatted`, `credo --strict`, `dialyzer` and a tag-excluded `mix test`; a second job
+runs the sandbox set behind a capability probe. `mix hex.audit` appears in neither. There is no mix
+alias wrapping it (`mix.exs` declares no `aliases`), no tracked git hook, and no Makefile or
+justfile. The whole-repo search for the string in the harness returns four hits: the contract entry,
+its own section heading, a line inside that section, and one implementation-notes file.
+
+**Why it matters more than the other three disagreements** on the BL-150 census. The others are
+declarations that under-state what CI does. This one is the reverse: a gate whose entire purpose is
+to catch a red **nobody's commit caused**, so no ticket-boundary run will encounter it by accident.
+An upstream advisory published today is invisible until someone types the command from memory. That
+is exactly the invisibility the standing gate rule exists to prevent, arriving through absence
+rather than through neglect.
+
+**Done when:** either `mix hex.audit` runs in CI — and, given that its red is upstream-triggered and
+unsuppressable, the decision of what a red does to a pull request is taken and recorded with it — or
+the §CI contract stops declaring it a merge gate and says what does run it and on what trigger. Not
+both silently.
+
+**Costs:** S to wire. The decision about upstream-triggered reds is the part with judgement in it,
+and the §CI contract's own section already argues one side of it.
+
+**Collides with:** nothing. **BL-150** carries the census this came from and settles nothing; this
+row is the only executor for this half of it.
+
+`Source: ds t3, 2026-08-21, derived at harness `d648aa8`. Every claim above was re-run rather than
+carried: the contract's seven, the workflow's steps, the absence of aliases and hooks, and the
+four-hit search.`
+
+---
+
+### BL-170 — the concurrency detector is probabilistic, and a single green is not evidence the lock is present (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** medium
+**Section:** aetheris-agents (`tests/test_run_record.py`)
+
+Filed 2026-08-21 at ds t3. This row exists because the finding named its own missing executor and
+nothing else was going to acquire one.
+
+**What was established, and by whom.** `docs/milestones/ds-t2-implementation-notes.md:293-310`, at
+agents `c8aa4e3`, withdraws that stage's packet claim of `3/3` and replaces it with twenty samples
+each way: with the file lock disabled, the concurrency guard caught the defect in **15 of 20** runs;
+with the lock restored, **20 of 20** passed. So the guard never produces a false red and misses the
+defect about a quarter of the time. The same passage records the fix and its status in one sentence:
+*"A deterministic version needs the child processes synchronised on a barrier so their
+read-modify-write windows are forced to overlap. **Proposed, not built** — no ticket owns it."*
+
+**Why this is a row and not a BL-151 append.** BL-151 collects *"small code defects that break
+nothing today"*. This one breaks something today, quietly: a green from this test is currently
+consistent with the lock being absent, so the test can certify the property it exists to check
+without holding it. That is a load-bearing defect with a named fix and a stateable Done-when, which
+is row-shaped.
+
+**The fix, as the notes describe it.** The children currently race by chance. Synchronising them on
+a barrier immediately before the read-modify-write window forces the overlap the detector depends
+on, rather than hoping the scheduler supplies it. Note that the `multiprocessing`→subprocess rewrite
+already made at ds t2 was for an unrelated reason — `spawn` cannot pickle a target out of a module
+imported under `--import-mode=importlib` — and did **not** make the detector deterministic.
+
+**Done when:** the mutation control is deterministic, evidenced the way the current figure was: N
+runs with the lock disabled all red, N runs with it restored all green, with N and the commands
+recorded. Twenty each way is the precedent; a smaller N does not distinguish a deterministic
+detector from a probabilistic one, which is the error this row descends from.
+
+**Costs:** S. One barrier in one test.
+
+**Collides with:** nothing.
+
+`Source: ds t2's implementation notes, 2026-08-20, which state the proposal and the absence of an
+owner in their own words; quoted above and re-read at agents `3129521`. Filed at ds t3 under the
+standing rule that a deferred finding gets a row in the round it is deferred — late by one ticket,
+and ds t3 is the last ticket in this cycle, so it was this or nothing.`

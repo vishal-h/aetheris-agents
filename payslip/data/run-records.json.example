@@ -1,0 +1,21 @@
+[
+  {
+    "run_id": "uc-payslip-orch-EXAMPLE01",
+    "step": "payslip_compute",
+    "started_at": "2026-08-21T02:06:33Z",
+    "attested_at": "2026-08-21T02:06:33Z",
+    "artifacts": [
+      {
+        "path": "data/sample_payroll.csv",
+        "sha256": "dc332309c31c544ce51fe79af0b26f0e34377483f8845cbfeb742f3b15c9afbc",
+        "bytes": 842
+      }
+    ]
+  },
+  {
+    "run_id": "uc-payslip-orch-EXAMPLE01",
+    "step": "generate_employee_payslips",
+    "started_at": "2026-08-21T02:06:33Z",
+    "artifacts": []
+  }
+]

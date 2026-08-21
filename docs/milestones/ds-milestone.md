@@ -594,6 +594,33 @@ path repo-qualified.
 
 **RESOLVE at ticket time.** Everything below scope.
 
+**RESOLVED at ticket time — ds t3, 2026-08-21, harness `d648aa8` and this commit.**
+*(The agents sha is not named here, on t1b's ground: a commit cannot cite itself.)*
+The original wording above is kept, not edited, so a later reader can see what was open
+and what settled it. Three units were below scope; each is answered.
+
+- **"whatever the arm needs" — it needed nothing outside `sprint.sh`.** No new script,
+  no fixture, no env var, no `mix` task. Both export scripts already carry the flags the
+  arm drives (`--dry-run`, `--manifest`, the positional `dest`, `--replace`), and the two
+  refusal paths that make the exit-code assertions possible already return 1. The arm is
+  116 lines of `sprint.sh` and one word added to the usage line at `:6`.
+- **"Per BL-161" — the row has two Done-when branches and this took the first.** Branch 1
+  is the arm; branch 2 is a ruling that the tests suffice. Branch 1's second clause,
+  *"named in a boundary record"*, could not be performed as worded — a boundary record here
+  is a dated entry in `docs/project-knowledge-manifest.md`'s export-boundary log, and this
+  ticket runs no export boundary. The naming landed in `CLAUDE.md` §Definition of done
+  beside the mechanism's pointer instead, which is where branch 2 places its own outcome
+  and what the next boundary record's author reads. **A substitution of surface, recorded
+  as one**, and the arbiter's to accept or reverse.
+- **"both arms of the filing tiebreak" — only one arm ran, and criterion 8 cannot see it.**
+  The Scope paragraph above says t3 and t1b between them exercise both arms and that
+  criterion 8 *"depends on at least one running"*. Both did run, so the criterion is
+  satisfied — but it is phrased *"If neither runs"*, a disjunction over what was built as a
+  conjunction, so it would also have reported satisfied on a cycle where only one arm ran.
+  **Recorded, not fixed:** editing a close criterion during the cycle it governs is the
+  change-made-to-get-past-a-test this section's own third paragraph refuses. Full statement
+  in `docs/milestones/ds-t3-implementation-notes.md`.
+
 ## Open at open
 
 - The registry's file, format and location (t1a).

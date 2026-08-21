@@ -451,11 +451,21 @@ quoted into the packet or committed.
 `Source: the cc:prompt preambles of 2026-08-16, promoted at the handoff of 2026-08-17. Both rules
 were invented and applied in that day's work and written into prompt preambles only — the shape
 **BL-162** names, with the preamble as the citing document and no standing home knowing it. **The
-figures are the handoff's own, over a ticket it does not name, and are reproducible from neither
-repo**: `git grep -inE '82%|63%|1h50|19m58|150k' -- '*.md'` returns 0, and the positive control for
-that zero is the same command over the cap rule's own figures — `git grep -inE '52m21s|10m17s' --
-'*.md'` returns 8 lines across 4 files. They are carried as telemetry with a named holder, not as
-repo state.`
+figures are the handoff's own, over a ticket it does not name, and no document in either repo
+records them except this paragraph**: `git grep -inE '82%|63%|1h50|19m58|150k' -- '*.md'` returns
+hits in this file alone, all of them these two paragraphs and the sentence you are reading. The
+positive control that the search is not simply blind is the same command with the same flags over
+the cap rule's own figures — `git grep -inE '52m21s|10m17s' -- '*.md'` — which returns hits in
+several files, this one included. They are carried as telemetry with a named holder, not as repo
+state.`
+`[Restated 2026-08-21 at ds t3. The claim was previously *"reproducible from neither repo"*,
+evidenced by a grep asserted to return 0 — which returned three hits at the moment it was written,
+every one of them inside this file, including the line making the claim. Self-falsifying in its own
+commit, and the ds t2 stage 4 class: a claim that never reached the surface a later reader checks
+it against. The search is NOT narrowed to hide this file; the claim is narrowed to what the search
+actually establishes. The positive control's *"8 lines across 4 files"* is de-numeralised rather
+than re-counted — the population grows every time a document quotes those figures, so a corrected
+number re-arms the same trap for the next quoter.]`
 
 **Before making a soft failure hard, enumerate what else that gate holds.** If flipping it turns
 *every* tracked known-red blocking at once, then the enforcement and the exempt/expected-fail
@@ -481,6 +491,16 @@ sit inside is `prompts/bl-002-refresh-project-knowledge.md`; the export set itse
 lives only in `docs/project-knowledge-manifest.md`'s table. Neither script uploads anything. Who
 owns the boundary and on what trigger is **BL-143**, open and untouched by this. Tests:
 `python3 -m pytest tests/test_export_bundle.py tests/test_repin_manifest.py -v`
+
+**And a sprint arm drives both through their command lines**, added at ds t3 (BL-161):
+`cd ~/sandbox/elixirws/aetheris && ./scripts/sprint.sh export_mechanism`, and it is in `all`. It
+exists because those tests reach neither script's `main()` — they call the library functions — so
+the entry point, the argument parser, the flag translation and the propagation of `main()`'s return
+into an exit code were exercised by nothing. It is hermetic, it writes no tracked file
+(`repin_manifest.py` runs under `--dry-run` and the bundle goes to a `mktemp` destination it
+removes), and it is **not promoted**: every assertion uses `fail`, so it is counted and
+non-blocking. Promotion is a later ticket's act under R7, with that ticket's own red-by-mutation
+evidence.
 
 **The U2 scrub class — what may not leave this machine.** **SCRUBBED:** anything identifying the
 account, the people in it, or its internal structure — organisation (`organization`,
@@ -711,8 +731,14 @@ on the assembly side — packets are generated, not retyped.
 "the packet is the artifact that travels, and packet assembly is itself a place claims are made".
 The first instance is hc-c r1, diagnosed by claude-code at hc-c r2 §8a correcting the reviewer's
 finding; the second is hc-e's opening edit, caught before publication. The 69/184 figures are
-claude-code's account from that packet's preamble — packets are not committed in either repo, so
-they are not reconstructible from the tree, and the rule does not depend on them.`
+claude-code's account from that packet's preamble — **those** packets are not committed, so they
+are not reconstructible from the tree, and the rule does not depend on them.`
+`[Narrowed 2026-08-21 at ds t3. It read *"packets are not committed in either repo"*, which is
+false: `git ls-files | grep -i packet` returns five committed packets in this repo, all under
+`docs/reviews/`, and none in the harness. The default is uncommitted — the standing loop sends a
+packet to a session scratchpad — but the general claim is not the one the argument needs, and the
+narrow one is true and checkable. `docs/reviews/` itself is tracked in both repos and holds many
+review files; a claim about *packets* is not a claim about that directory.]`
 
 **The packet is written as the ticket runs, not assembled at the end.** Open the packet file at the
 start and append each section at its stage boundary, before moving on. A packet reconstructed at

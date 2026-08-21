@@ -659,6 +659,19 @@ section to live in. Relaxing any one restores the loop.
 derived from committed history. Ruled by the arbiter 2026-08-12 at the gc post-close review; the
 paragraph drafted for milestone-methodology.md was killed there as a second copy of R23+R24+R25.`
 
+`2026-08-21, at the ds close — R25's "one dated line" form has NO INSTANCE in its own registry, and
+the three rulings landed at this close took sections rather than lines. Every ruling this section
+has ever carried is a `### R` section: twenty-seven of them at the commit before this one, and zero
+dated ruling lines standing outside a section (`grep -cE '^### R[0-9]'` over this file against a
+scan of §Ratified decisions for a dated bullet carrying "Ruled by the arbiter"). So the form R25
+prescribes has been described and never used, by R25's own author and by every ruling since. The
+ground for the three at this close is R25's own second clause read as it stands: a ruling earns a
+section when no existing entry owns what it rules on, and verdicts A, B and the R23 verdict rule on
+a trial none of R1–R27 is about. This is recorded, NOT resolved — whether R25's form should be
+amended, or whether "one dated line" was always the exception rather than the rule, is the next
+round's to settle. Recorded as a dated entry rather than as a section precisely because it rules on
+nothing.`
+
 ---
 
 ### R26 — small code defects that break nothing today append to a standing row, as documentation-system findings do under R23.
@@ -685,6 +698,120 @@ last edit of the pair, and until the target stops moving the reference is provis
 the target silently falsifies the reference, and this pair broke twice in one ticket — once when
 the agents commit was first amended, and again at its review amendment — each time leaving a
 harness commit message citing an agents SHA reachable only from the reflog and on no branch.`
+
+---
+
+### R28 — trial verdict A: nothing read the Project, so the Project is retired.
+
+**The consulted-list is empty across five of five tickets, and the keep-current list is not.** That
+is ds close criterion 5's stated failure condition, met exactly. Each ticket's implementation notes
+carry the criterion's instrument — one line, written when the ticket ran — and all five answer no:
+`ds-t0-implementation-notes.md` §Trial verdict A (*"No. It was not consulted, for anything."*),
+`ds-t1a` §1 (*"NO."*), `ds-t1b` §1 (*"NO."*), `ds-t2` §Criterion 5 (*"Not consulted."*), and `ds-t3`
+§1 (*"NO."*, and again for its stage 3). Verified by opening each of the five files at this close,
+not carried from t3's own roll-up.
+
+**The keep-current list is non-empty under either reading of "the Project", which is what closes the
+question rather than leaving it to turn on a definition.** Read NARROWLY — the Project board — it
+holds the board's creation and the addition of its five items. Read WIDELY — the tracker the board
+fronts — it also holds every issue cut, every issue body re-synced for criterion 6, and the closures
+performed at this close. Neither reading produces a decision taken *from* the Project.
+
+**The board's own state is the corroborating evidence, and it was worse than "unread".** At this
+close, before the closing acts, four of its five items read `Todo` while their tickets were
+complete, committed and pushed; only `vishal-h/aetheris#85` read `Done`. A surface that nobody reads
+does not merely fail to earn its maintenance — it drifts into stating things that are false, and
+then it is a liability rather than a neutral cost.
+
+**So the Project is retired.** Its items are moved to `Done` before it is closed, so the retired
+board's final state is truthful rather than frozen wrong; recording a surface as abandoned while
+leaving it asserting `Todo` about finished work would preserve the defect and add a second one. The
+issues are NOT retired with it — they are closed as completed, and whether issues consolidate into
+one repo dissolves with the board (R29's stamp names where that lands).
+
+`Recorded 2026-08-21 at the ds close. Ruled by the arbiter, authorised by R22. Ground: criterion 5
+was written with its own instrument because a criterion whose evidence is nobody's recollection
+reports clean in the one state it exists to catch; the instrument ran on all five tickets and
+returned a legible negative, so the criterion is answered on evidence rather than defaulted. The
+prompting instance is the criterion itself — the trial was run to be decidable, and it decided.`
+
+---
+
+### R29 — trial verdict B: the mirror did not drift, and criterion 6's comparison boundaries are ratified as its reading.
+
+**PASSED, five of five at HEAD.** Each issue body compared byte-for-byte against its
+`docs/milestones/ds-milestone.md` ticket section, with criterion 6's two symmetric exclusions — the
+body's trailing backlink block and the section's `**Issue.**` field. The comparison was run twice,
+before and after this close's tracker acts, and both runs pass: closing an issue does not change its
+body, demonstrated rather than assumed.
+
+**Two comparison-boundary decisions taken at stage 1 are RATIFIED as criterion 6's reading, because
+the criterion does not settle them and a comparison whose boundaries are chosen per-run is not a
+test.**
+
+- **The `### tN` heading line is section content and IS compared.** The criterion excludes the
+  `**Issue.**` field and nothing else on that side; a heading is what the section is *of*, and a
+  document that renamed a ticket without re-syncing its issue is exactly the drift this criterion
+  exists to catch.
+- **Runs of blank lines collapse on both sides.** This is forced by the criterion's own mandated
+  exclusion: removing the `**Issue.**` line leaves the blank that followed it adjacent to the blank
+  that preceded it, so a comparison that did not collapse blanks would fail every pair on a
+  difference the criterion itself created. Collapsing is symmetric and is applied to both sides.
+
+**The negative control separated three states, not two, and that is why it is worth recording.** A
+comparator that only distinguishes *identical* from *different* cannot show that its exclusions
+exclude — an exclusion that silently swallowed real content would look the same as one working. So
+the control ran three: (1) untouched — PASS 5/5; (2) two body backlink blocks and two section
+`**Issue.**` fields rewritten to differ — PASS 5/5, so the exclusions do exclude, and exclude only
+what they name; (3) one line of real content changed — FAIL on that pair alone and PASS on the other
+four, so the comparator can fail and does not fail collaterally. States 1 and 3 are the mutation
+test; state 2 is the one that tests the criterion's own boundaries, and it is the one a two-state
+control has no room for.
+
+`Recorded 2026-08-21 at the ds close. Ruled by the arbiter, authorised by R22. Ground: criterion 6
+specifies the two exclusions and is silent on heading lines and on whitespace, and its own exclusion
+manufactures a whitespace difference — so a reading had to be taken to run it at all, and a reading
+taken silently at each run is a boundary that moves to fit the result. The prompting instance is the
+stage-1 comparison, which could not proceed without both decisions.`
+
+---
+
+### R30 — the R23 verdict: no finding became an issue, and criterion 7 shares criterion 8's vacuous shape.
+
+**PASSED substantively.** Findings raised during the ds cycle appended to the standing rows and none
+of them became a GitHub issue. Derived at agents `b56a6b2`: thirty appends dated in the cycle's
+window across BL-150 and BL-151 —
+`awk 'NR>=4397 && NR<=4821' docs/backlog-2026-06.md | grep -cE '^- \`2026-08-(1[7-9]|2[01])\`'` → 17,
+the same over BL-151's range (`NR>=4822 && NR<=5356`) → 13, and the same pattern over the whole file
+→ 30, so the two ranges partition the population rather than overlapping it. Against that, every
+issue created in the window is a *ticket* issue:
+`gh issue list -R <repo> --state all --json number,title,createdAt --jq '.[] | select(.createdAt >= "2026-08-17")'`
+returns `#75`–`#78` in agents and `#85` in the harness, five in total, each one a ds ticket. **Zero
+findings became issues, so no finding became an issue only because the tooling had no other shape
+for it.** R23 held, and R26's carve-out did the work it was written for: eight findings that were
+defects with fixes took their own BL rows rather than being forced either into a standing row or
+into the tracker.
+
+**And criterion 7 could not have failed, which is recorded because a passing criterion that cannot
+fail is not evidence.** Its failure condition requires a finding that *became an issue*. No ticket in
+this cycle would ever have created one, so the criterion returns PASS whether R23 held under
+pressure or was never put under any — it cannot separate those two states. **That is the same shape
+as criterion 8**, recorded at `docs/milestones/ds-t3-implementation-notes.md` §2: a criterion that
+returns a well-formed verdict on every input and the wrong one on the population that motivated it,
+which is the `## Learning — BL-152` defect in agents `CLAUDE.md`. Two of the eight close criteria
+share it, and both were found from inside the cycle they governed rather than by anything checking
+them.
+
+**The verdict stands on the substance and not on the criterion.** The evidence above is a positive
+observation — thirty findings routed to standing rows, with the routing visible in the rows — rather
+than the absence the criterion tests for. Neither criterion is edited here: editing a close
+criterion is a change made to get past a test, and ds t3 declined the same move for the same reason.
+
+`Recorded 2026-08-21 at the ds close. Ruled by the arbiter, authorised by R22. Ground: criterion 7
+asks whether R23 survives contact with a tracker, and the answer is only worth recording if it can
+be told apart from the tracker never having applied pressure — so the verdict is stated on what the
+rows show and the criterion's vacuity is stated beside it. The prompting instance is ds t3's finding
+on criterion 8, which named the shape this criterion turned out to share.`
 
 ---
 

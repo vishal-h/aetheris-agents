@@ -36,6 +36,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `6436b25` | 2026-08-18 |
+| `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -923,6 +924,62 @@ the namespace divides their populations, and remove-all-upload-all is rehabilita
 manifest set. Neither deviation block is amended — the 2026-08-12 block set the condition, the
 2026-08-14 block replaced it, both are point-in-time records, and their reason was right at the
 scope either could establish. Standing form: `CLAUDE.md` §Definition of done.
+
+---
+
+**2026-08-21 — one row ADDED, one row REFUSED, and NO BOUNDARY WAS RUN.** This is not an export
+pass. Nothing was assembled, nothing was uploaded, no other row was re-pinned, and the three
+post-upload checks were not performed and are not owed. The commit carrying this section is the ds
+cycle's close.
+
+> **`docs/use-cases.md` EARNS a row.** It is the committed registry of the use cases — one row per
+> use case with its status, the date that status was set, and its condition for return — and
+> `drift_check.py`'s `use_case_registry` check compares `CLAUDE.md`'s key-docs table against it, so
+> it is a checked enumeration rather than a document about one. It meets the milestone-*specification*
+> test that admits `cloudcost--milestone.md`, `rig--protocol.md` and `rig--bl-007-milestone.md`:
+> what it carries is the thing other documents are written against, not derived reasoning about
+> something that lives elsewhere. It is also the document `CLAUDE.md` now points at instead of
+> naming the use cases in a sentence — the exported `CLAUDE.md` de-numeralised that enumeration into
+> a pointer, and a pointer whose target is outside the export set points out of the store.
+
+> **`docs/milestones/ds-milestone.md` gets NO row — on the `cloudcost/m3-milestone.md` reasoning,
+> applied at the close as that question was reserved for.** ds is a cycle document: it holds derived
+> reasoning *about* rules whose normative text lives elsewhere — methodology §6 and §11, R22–R27 in
+> `docs/milestones/hc-consolidation.md`, and the two `CLAUDE.md` files — and its own close records
+> that its outputs landed in those documents rather than in it. m3's file was refused on exactly
+> this: it reasons against a contract that is m1's, unchanged. m2's milestone doc set the precedent
+> by staying out on the same reading. The rulings this cycle produced are exported through the
+> documents that carry them, which is the correct shape; a row here would export the reasoning and
+> duplicate the conclusions. The question was deliberately deferred to the close on the ground that
+> deciding it earlier would pre-empt a test that needs the finished document — the document is now
+> finished, and the test says no.
+
+> **The new row is UNEXPORTED until the next boundary, and the consequence is stated rather than
+> left to be discovered.** `docs/use-cases.md` has never been uploaded. The store does not hold it.
+> The exported `aetheris-agents--CLAUDE.md` points a reader at it — *"The current use cases are the
+> rows of `docs/use-cases.md`"* — so **the store currently carries a pointer to a document the store
+> does not have**, and it will until the next export runs. That is the manifest's known-blind
+> direction, from the other side: the header paragraph above says check 8 detects the repo moving
+> ahead of an export and cannot detect a file uploaded without a regen; this is a row regenerated
+> without an upload, which check 8 also cannot see, and for the same structural reason — it compares
+> the manifest against git and never against the store.
+
+> **What check 8 does with this row, said plainly because a green here means less than it looks.**
+> The row is pinned at `9cf3689` / 2026-08-19, which is `git log -1 --format=%h -- docs/use-cases.md`
+> and that commit's own date — the two readings of one object that `repin_manifest.py` performs, done
+> by hand here because no re-pin was run. The file has not moved since. So check 8 compares pinned
+> against current, finds them equal, and the row is **born green and emits no WARN** — on its first
+> boundary as on every one after. A currency check cannot distinguish *"exported at this commit"*
+> from *"never exported, pinned at this commit"*, because both present as a pin equal to HEAD's last
+> touch of the file. The green is evidence about the pin. The paragraph above is the only thing in
+> either repo recording that the document behind it is not in the store.
+
+No **Repo push state** paragraph, per the standing note below.
+
+Previous export: **2026-08-18, the ds boundary** (four rows advanced; its two firsts recorded in
+that block). **This entry is not an export** and does not advance that line.
+
+---
 
 `[2026-08-18 — the Repo push state paragraphs in this file are point-in-time
 claims and are not maintained. Every one that asserts a boundary's commits are

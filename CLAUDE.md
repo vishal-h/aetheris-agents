@@ -766,6 +766,9 @@ packet was written this way as its first application. It lands in this family ra
 **No action past a gate until that gate has run and its result is on the record** — covering doc-order gates, test gates, and publish/merge gates alike. Three instances in one milestone, same muscle, different artifact: a doc edited ahead of the gate that should have preceded it; a rider acted on before the milestone doc carried it; and both branches pushed on a "push both branches" instruction before the acceptance e2e was reported green, inverting the agreed reorder → gates → e2e → commit → push order. All three were recoverable only because the held-push discipline caught them — the rule is what makes the discipline unnecessary rather than load-bearing. A cross-repo change needs a cross-repo done-check — any gate that runs in one repo silently passes omissions in the sibling (repo-scoped `git add -A` + single-repo drift check let a one-repo edit push under a two-repo claim).
 `Source: BL-007 t2, t4 (×2); b1 post-push correction, 2026-07-21 (d831220)`
 
+**A backlog row gets a GitHub issue when a cycle takes it, and not before; `(#TBD)` in a row's heading means there is no issue and none is owed.** Declared here because it has been transmitted by imitation since the file was created and stated nowhere: every row filed without an issue carries the marker, every reader has copied it, and no document says what it means — so a reader meeting it for the first time cannot tell *"no issue yet"* from *"issue number not yet transcribed"*, and only the second reads as a defect owing work. It is the first. A row is a unit of work that has been *recorded*; an issue is a unit of work that has been *scheduled*, and the backlog deliberately holds far more of the first than anything schedules — which is R23's whole ground. The existing headings are **not** edited to say so: the marker is already uniform, the change would touch every unscheduled row in both the open file and the archive, and the defect was never the marker but the absence of this sentence.
+`Source: declared 2026-08-21 at the ds close, on the ds cycle's own evidence — it ran the first tracker this methodology has used since the backlog was created, cut issues for its five tickets, and gave an issue to none of the findings it raised (`docs/milestones/hc-consolidation.md` R30). That is the rule operating; it had simply never been written down. Lands beside the row-filing rule below because that one says when a ROW is owed and this one says when an ISSUE is, and the two questions are adjacent and were being answered by different means — one by a standing instruction, the other by imitation.`
+
 **A deferred finding gets a backlog row in the same round it's deferred — prose in a packet or notes files nothing.** Three times this milestone a deferred item survived only because a later reviewer re-noticed it; prose has no executor. **And the row must be one that stays open: a finding recorded inside a row the same commit closes has a record, not an executor.** That satisfies the rule in letter and defeats it in substance, and the defeat is invisible precisely because the row it lives in is the row being closed — so name the row you are putting it in, and if that row is being disposed in this commit, file a new one.
 `Source: BL-007 t1, t2, t3; the closing clause is a precision on the same rule from m5-cloudcost t2, one recorded instance — r0 recorded a residue inside BL-070's disposition and the same commit marked BL-070 DONE, so the residue had no executor from the moment it was written, and it survived only because t2 r1 re-noticed it. Named as a failure mode of this rule rather than promoted as one of its own, because it is not derivable from the claim above: a session applying that claim correctly can still land here.`
 
@@ -841,3 +844,74 @@ every later restore in the boundary used a working-copy backup checked by sha. T
 operational other half of the harness rule **the mutation test has two halves and the restore is
 the second one — verify it, never assume it**, which establishes that a restore needs its own
 control; this says what a restore must not be *made of* when the file is dirty.`
+
+---
+
+## Learning — ds
+
+Promoted 2026-08-21 at the ds cycle's close. Keyed to the **cycle**, on the precedent of
+`## Learning — BL-007`, `## Learning — BL-152` and `## Learning — the 2026-08-16 export boundary`
+above — each keyed to the unit of work that produced it.
+
+**The single promotion is the existing de-numeralisation rule extended, not a new rule.** It lives
+under `## Learning — m6-cloudcost` — *"a count in prose about a growing set is de-numeralised, not
+corrected"* — and it is landed there in its own family; what follows says what this cycle found the
+same mechanism doing in two shapes that carry no number at all. Recorded here rather than folded
+into that entry because the entry is stated in terms of counts throughout, and rewriting it around
+a wider subject would destroy the worked instances that make it usable.
+
+**The mechanism is not the number. It is a second surface that states what another surface
+determines, and drifts from it silently.** A count is the commonest carrier because a count is the
+cheapest second surface to write. Two more, both found this cycle:
+
+- **A label or name that resolves in one document, used as if it resolved in another.** A `§`
+  reference, a marker, a status word or a row id is defined relative to *its own* document's
+  vocabulary; carried into a second document it still parses, still looks resolved, and now points
+  at whatever that document's vocabulary happens to make of it — or at nothing, which reads the
+  same. The ground: a name is a pointer whose target is supplied by context, so moving the name
+  without the context silently repoints it, and nothing at either site records that the two
+  vocabularies were ever different. Resolve a carried name against the document you are putting it
+  in, or repo-qualify it so it cannot be resolved against the wrong one.
+- **A negative asserted from session memory rather than from a search.** *"Nothing else says
+  this"*, *"this appears nowhere else"*, *"no other document carries it"* — each is a claim about a
+  population, and a session that has read part of that population feels entitled to it. The ground:
+  what a session remembers reading is not the set it read, still less the set that exists, and the
+  gap is invisible from inside — a remembered negative and a searched negative are written in the
+  same words. This is the **positive control** rule (harness `CLAUDE.md`, Silent-wrong-answer)
+  reached one step earlier: that rule governs a negative you *ran a command for*, this one governs
+  a negative you did not.
+
+Both are the de-numeralisation rule's subject with the number removed, so both take its remedy:
+where a pointer will do, carry no restatement at all.
+
+---
+
+**And four operational forms this cycle established, recorded because they worked and would
+otherwise travel by imitation, which is what the `(#TBD)` rule above exists to stop happening
+again.** No instance list: enumerating a cycle's occurrences of each is a count over a set, which
+is the rule this section promotes.
+
+- **Predict the manifest WARN **set**, not a count, and publish the prediction in the packet before
+  the run.** A set is falsifiable member-by-member against the run's own output; a count agrees with
+  the wrong set as readily as the right one, and check 8's WARN population is a function of the
+  manifest's staleness backlog rather than of the commit under test (§Definition of done carries
+  why). Publishing it *before* is what makes it a prediction rather than a description.
+- **A correction round writes into the committed implementation notes it is correcting, not into a
+  new document.** The notes file is what the next round in the arc opens; a correction living
+  anywhere else has been made and not delivered. The dated block goes at the corrected passage,
+  which keeps the superseded wording readable beside its replacement.
+- **Cite a packet by filename.** Packets are, by default, sent to a session scratchpad and are not
+  in either tree, so a citation into one is unresolvable by anybody but its author — naming the file
+  states that the source is a packet and lets a reader see that they cannot open it, which a
+  paraphrase presented as repo state does not.
+- **Open the packet with a six-item head.** A fixed head is a checklist the reader can run against
+  the packet rather than a shape the author chooses per round, and the items that most often go
+  missing — the baseline, the deviations, what is owed — are exactly the ones no reviewer can
+  discover is absent.
+
+`Source: the ds cycle, 2026-08-17 to 2026-08-21 — t0, t1a, t1b, t2, t3 and this close. The two
+sub-classes each recurred across more than two of them, meeting §7's bar; the four operational forms
+are promoted as forms rather than as recurrence findings, on the precedent of the packet rules under
+`## Learning — BL-007`, whose own Source records the same basis. The cycle's rulings are
+`docs/milestones/hc-consolidation.md` R28–R30 and the dated entry on R25; its close is
+`docs/milestones/ds-milestone.md` §The close.`

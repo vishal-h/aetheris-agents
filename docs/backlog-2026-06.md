@@ -4813,6 +4813,57 @@ list is empty.
   that matter here. Any claim about what a packet ran is therefore unverifiable from the tree except
   for those five.
 
+- `2026-08-21` (ds close) — **`prompts/bl-002-refresh-project-knowledge.md` contradicts itself
+  across Step 0 and Step 3, and Step 3 is the wrong one.** Ruled a BL-150 append at the ds close.
+  **No fix.** Step 0's sprint arm asserts that a plain
+  `python3 scripts/assemble_export_bundle.py DEST` writes *"a bundle carrying the manifest's own row
+  and no `_UNSWEPT-DO-NOT-UPLOAD.txt`"*. Step 3, on the same page, tells the operator the opposite.
+  Re-derived at agents `b56a6b2` against `scripts/assemble_export_bundle.py`, three false claims,
+  all in Step 3:
+  1. *"The bundle is written UNSWEPT and says so, in a `_UNSWEPT-DO-NOT-UPLOAD.txt` file inside
+     it"* — false as an unconditional claim. The pattern sweep runs BY DEFAULT and **only a clean
+     sweep leaves no marker**; the marker is written when the sweep RAN AND HIT, or when it was NOT
+     RUN (`--no-patterns` with no `--needles`). Demonstrated rather than cited: a plain run into a
+     `mktemp` destination at this commit printed
+     `[PASS] U2 sweep: 19 pattern(s) from …/scripts/u2_patterns.txt, no hit — no marker written.`,
+     exited 0, wrote 25 files and no marker; the destination was removed.
+  2. *"this script cannot check it unaided (U2's needles are the real identifiers themselves; a
+     committed script carrying them would be the disclosure)"* — false at HEAD. That is the reason
+     the **value** route was abandoned, stated as though it still prevents any sweep. BL-160's
+     ruling of 2026-08-16 replaced it with a committed **pattern** set, `scripts/u2_patterns.txt`,
+     which is exactly the script checking unaided.
+  3. *"Run the sweep with `--replace --needles FILE` over an untracked needle file, one per line"* —
+     false as an instruction, twice over. `--needles` is **additive** to a sweep that is already
+     running, not the thing that starts it; and `--replace` is the destination-collision flag and
+     has nothing to do with sweeping. The clause that follows it, *"a clean sweep writes no
+     marker"*, is true and is the only part of the sentence that survives.
+  **Why this row and not a code row.** The script is correct; the procedure that drives it
+  describes a version of it that BL-160 retired, and the two halves of one page disagree without
+  either being marked as superseded. That is a fact about how the documentation system carries a
+  ruling into the operator procedure downstream of it — the class this row collects. The operator
+  hazard is stated rather than left implicit: a reader who trusts Step 3 concludes the bundle is
+  unswept and looks for a marker that a clean run does not write, which is the wrong direction to
+  be wrong in for a check that stands between the bundle and a project.
+
+- `2026-08-21` (ds close) — **`CLAUDE.md` §Definition of done names a file that does not exist, and
+  `pytest.ini` records its non-existence as deliberate.** Found by close criterion 4's census of the
+  preceding cycles' promotion claims, which is the one instrument that reads these sentences against
+  the files they name. §Definition of done reads *"Root `conftest.py` attributes every deselected
+  test to exactly one reason and writes `deselected by reason: …` into ordinary output"*. There is
+  no root `conftest.py` — `git ls-files | grep -E '^conftest\.py$'` returns nothing — and the
+  mechanism is in `tests/conftest.py` (`pytest_deselected`, `pytest_terminal_summary`). `pytest.ini`
+  states the placement and its reason in its own header: the hook *"lives in tests/conftest.py
+  rather than a root conftest.py because a conftest.py at the rootdir is imported under the bare
+  module name `conftest`, which shadows it for the ten runtime `from conftest import …` lines in
+  cloudcost/tests/"*, and calls that absence deliberate. **BL-152's promotion is substantively
+  intact** — the counts do ship with the command that prints them, which is what the promotion
+  claimed — so this is a wrong path inside a true rule, not a failed promotion. **No fix**, and the
+  reason it is recorded rather than corrected in the close's own commit: the close is not a licence
+  to edit the standing rules it is auditing, and a one-word repair made in passing is how an audit
+  stops being separable from the thing it audits. Recorded here because it is the pointer-resolves-
+  to-the-wrong-target class this row already collects, and because the census that found it runs
+  once per cycle and would not have found it any sooner.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

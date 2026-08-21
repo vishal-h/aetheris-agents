@@ -1,6 +1,6 @@
 # ds — declared status
 
-**Status:** OPEN. Opened 2026-08-17.
+**Status:** CLOSED 2026-08-21. Opened 2026-08-17. The close is §The close, below.
 
 > Canonical for this cycle. Scope changes are edited here first. This document is
 > AUTHORITY; the two `claude/`-namespaced briefs that produced it are demoted to
@@ -621,17 +621,119 @@ and what settled it. Three units were below scope; each is answered.
   change-made-to-get-past-a-test this section's own third paragraph refuses. Full statement
   in `docs/milestones/ds-t3-implementation-notes.md`.
 
-## Open at open
+## Open at open — all five ANSWERED at the close
 
-- The registry's file, format and location (t1a).
-- t2's format, file and reader.
-- Whether issues consolidate into one repo — decided at the close on verdicts A
-  and B, not before.
-- Whether this document earns a project-knowledge manifest row — decided AT THE
-  CLOSE on the standing specification test, the one that admitted
-  `cloudcost--milestone.md`. Deciding it now would pre-empt a test that needs the
-  finished document.
-- Whether §6's literal-prompt requirement or this document's practice changes.
+The items as opened, each with where its answer landed. None is carried forward.
+
+- **The registry's file, format and location (t1a).** ANSWERED at ticket time.
+  `docs/use-cases.md`, a markdown table, with the membership rule and the
+  extraction criterion stated in the file itself. Landed in §t1a's `RESOLVED at
+  ticket time` block and in the file; `drift_check.py`'s `use_case_registry`
+  check reads it.
+- **t2's format, file and reader.** ANSWERED at ticket time, in §t2's `RESOLVE at
+  ticket time` block, which carries the resolution rather than the question.
+  `scripts/run_record.py` is the writer, the reader's rule is *an artifact not
+  named in an attested step record is not that step's output*, and the unit is
+  the step rather than the directory — see
+  `docs/milestones/ds-t2-implementation-notes.md` §A1.
+- **Whether issues consolidate into one repo.** DISSOLVED, not decided. It was
+  reserved for the close on verdicts A and B; verdict A retires the Project, and
+  the question was *"does the cross-repo container justify issues living in two
+  repos"*. With no container the question has no subject. `hc-consolidation.md`
+  R28 carries the retirement; the tiebreak ran in both directions before it did,
+  which is recorded at `docs/milestones/ds-t3-implementation-notes.md` §2, so the
+  arrangement was tested rather than abandoned untested.
+- **Whether this document earns a project-knowledge manifest row.** ANSWERED: it
+  does NOT, and `docs/use-cases.md` does. Both are recorded with their reasoning
+  in `docs/project-knowledge-manifest.md` §2026-08-21, beside that file's other
+  refusals — the ground is the one that refused `cloudcost/m3-milestone.md`, that
+  a cycle document holds derived reasoning about contracts living elsewhere. The
+  deferral to the close was honoured: the test needed the finished document, and
+  it was applied to it.
+- **Whether §6's literal-prompt requirement or this document's practice changes.**
+  ANSWERED: **§6 changes.** `**Contract refs.**`, `**Do not generate.**` and
+  `**Runbook update rule.**` are now optional and §6 permits the claude-code
+  prompt to be authored at ticket time; `**Done-check.**` stays required.
+  Harness `2050c04`, `docs/methodology/milestone-methodology.md` §6, which carries
+  the dated bracket. §Deviation from methodology §6 above is thereby discharged —
+  a divergence is closed by changing the document or the practice, and the
+  document changed.
+
+## The close
+
+`2026-08-21. Two commits, harness first: harness 2050c04 and the agents commit carrying this
+section. Every figure below carries the command that produced it; figures over the repositories
+were derived at agents b56a6b2 / harness d648aa8, the baseline both commits were cut from.`
+
+### The eight close criteria
+
+**1 — every ticket passes its done-check. NOT SATISFIED.** Three of the five ticket sections
+declare no `**Done-check.**` field at all — t1b, t2 and t3 — so for those three there is no
+declared done-condition to have passed. That breaches methodology §1 item 3, *every ticket has a
+machine-checkable done-condition*, and this document declared only its `**Claude-code prompt.**`
+divergence, so the other four dropped fields were an **undeclared divergence**. It is closed by the
+§6 amendment at harness `2050c04`: the three fields it makes optional are dropped without loss, and
+`**Done-check.**` is the one absence that was a real gap, which is why that field alone stays
+required. Recorded as NOT SATISFIED rather than repaired retroactively — the tickets did run checks,
+but a check run and a done-condition declared are different objects and only the second is what this
+criterion tests.
+
+**2 — zero unresolved blocking findings. SATISFIED.** The arbiter holds the five tickets' packets
+and no blocking finding is unresolved at this close.
+
+**3 — `drift_check --strict` run POST-COMMIT for any manifest-tracked edit, WARNs named not chased.
+SATISFIED per ticket, and for this close's own commit its subject is the post-commit strict run
+published in this close's packet.** Not a further commit: the ordering this criterion encodes is
+that check 8 reads committed history, so the run must follow the commit it audits — it does not
+require a commit to follow the run.
+
+**4 — the §7 promotion committed and verified by opening the file, including the census of prior
+cycles' promotion claims. SATISFIED.** The promotion is `## Learning — ds` in agents `CLAUDE.md`,
+verified by reading it out of the file rather than by asserting the edit landed. The census read the
+two preceding promotion sections — `## Learning — BL-152` and `## Learning — the 2026-08-16 export
+boundary` — against the files each claim names: three promotion entries, all three present and
+readable, and both harness counterparts they name present in harness `CLAUDE.md`. One defect found,
+and it is a wrong path inside a true rule rather than a failed promotion — §Definition of done names
+a root `conftest.py` that does not exist, where `pytest.ini` records the mechanism's placement in
+`tests/conftest.py` and calls the absence deliberate. Appended to **BL-150**, unfixed.
+
+**5 — trial verdict A. FAILED, and the Project is retired.** The consulted-list is empty across five
+of five tickets and the keep-current list is not, under either reading of *"the Project"*. Ruled at
+`docs/milestones/hc-consolidation.md` **R28**, which carries the evidence and the retirement.
+
+**6 — trial verdict B. PASSED, five of five at HEAD**, run before and after this close's tracker
+acts with the same result. Ruled at **R29**, which also ratifies the two comparison boundaries as
+criterion 6's reading and records the three-state negative control.
+
+**7 — the R23 verdict. PASSED substantively**, and the criterion is recorded as sharing criterion
+8's vacuous shape. Ruled at **R30**.
+
+**8 — the cross-repo arm. SATISFIED ON BOTH ARMS.** t3's primary artifact is a harness write and its
+issue is `vishal-h/aetheris#85`; t1b's primary artifact is the agents backlog while its breaking
+change is harness `sprint.sh`, and its issue is `vishal-h/aetheris-agents#77`. Both ran, so the
+criterion is not answered by its silence-is-forbidden clause. **The latent defect is stated and not
+fixed:** the pair was built as a conjunction — the filing tiebreak is exercised only if *both* arms
+run — while the criterion is a disjunction that fires only at zero, so a cycle in which exactly one
+arm ran would satisfy it with the tiebreak half-exercised. Full statement at
+`docs/milestones/ds-t3-implementation-notes.md` §2. Not fixed here: editing a close criterion at the
+close it governs is a change made to get past a test.
+
+### What the cycle produced
+
+Five tickets, all complete and pushed before this close. The cycle's durable outputs live in the
+documents that carry them rather than in this file: the backlog's status field and its open/closed
+split, `docs/use-cases.md` and its drift check, `scripts/run_record.py` and the artifact/step
+record, and the harness `export_mechanism` sprint arm. The rulings are `hc-consolidation.md`
+R28–R30 and the dated entry on R25; the §7 promotion is `## Learning — ds` in agents `CLAUDE.md`;
+the §6 amendment is harness `2050c04`.
+
+### What this close did NOT do
+
+No export boundary was run. `docs/project-knowledge-manifest.md` gains one row and loses none, no
+other row is re-pinned, nothing was assembled and nothing uploaded — so `docs/use-cases.md` is
+manifest-tracked and unexported, and the store holds a `CLAUDE.md` pointing at a document it does
+not have. Recorded in the manifest's own narrative. No close criterion was edited. Neither of the
+two vacuous-shaped criteria was repaired. Nothing was pushed.
 
 ## Rows this cycle might promote, none scheduled
 

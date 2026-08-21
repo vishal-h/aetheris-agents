@@ -67,8 +67,10 @@ sequenceDiagram
 
 **What happens:** The human brings an idea, problem statement, or rough scope.
 claude-ui drafts the milestone doc — goal, what is NOT in scope, design
-decisions, and the full ticket set with Scope / Contract refs / Touches /
-Do-not-generate / Done-check / Claude-code prompt sections per methodology §6.
+decisions, and the full ticket set with the sections methodology §6 specifies.
+The field list is not re-enumerated here: §6 marks some of its fields optional
+and permits the claude-code prompt to be authored at ticket time, so a copy of
+the list on this page is a second surface that disagrees at the next amendment.
 
 This goes back and forth — the human asks questions, challenges scope, adds
 constraints, resolves open questions. claude-ui updates the doc each round.

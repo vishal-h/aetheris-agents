@@ -4975,6 +4975,47 @@ list is empty.
   script's behaviour appear on one screen for the first time. Verified at agents `5c7a96a`,
   procedure line 72, script lines 15-20 and 88-107.
 
+- `2026-08-22` (export boundary) — **splitting a manifest-tracked file left its other half
+  outside the export set, and no instrument in either repo can see that.** `docs/backlog-2026-06.md`
+  carries a manifest row. At `f9328aa` (ds t1b, 2026-08-19) the backlog split and 80 closed rows
+  moved to `docs/backlog-2026-06-closed.md`, which carries **no row**, is named nowhere in
+  `docs/project-knowledge-manifest.md`, and was not considered when the ds close adjudicated the
+  export set two days later. That section rules on exactly two documents — *"one row ADDED, one row
+  REFUSED"*, `docs/use-cases.md` in and `docs/milestones/ds-milestone.md` out — and the file the
+  same cycle had just created is in neither list. **No decision was made; the file simply left.**
+  **What changed for a reader of the store.** Before the split the store held one backlog and
+  therefore every row, open and closed. From the next export it holds the open half only: 111 rows
+  in, 80 out — `grep -c '^### BL-'` returns 111 on the open file and 80 on the closed one at agents
+  `78c81a3`, and that is a heading count, not the row population `backlog_resolution` reports (173
+  over the union); the two count different things and the difference is not this finding's subject.
+  A store-side reader following a
+  closed row's id now resolves it to nothing, and the closed file is where several standing rules
+  send them — `CLAUDE.md` cites it, and `drift_check`'s `backlog_resolution` check reports over
+  *"the union"* of both files, so the repo-side instrument treats them as one document while the
+  export set treats them as one-and-a-half.
+  **Why it is this row's class rather than a manifest bug.** The manifest is a table of paths, so a
+  path that stops existing is loud and a path that stays valid while *half its content moves
+  elsewhere* is silent. Check 8 compares each existing row's pinned hash against that file's own
+  last-touching commit; a file with no row is not a row it can find missing, so this is invisible
+  to check 8 for the same structural reason the born-green case is — the check reads the manifest
+  against git and never asks what git holds that the manifest does not. It is the third direction
+  of one blindness: the header paragraph names the repo running ahead of an export and a file
+  uploaded without a regen; this is a **tracked document splitting in two, one half keeping the
+  row**.
+  **No fix, and deliberately not decided here.** Whether the closed half earns a row is an
+  export-set decision, and Step 1 of `prompts/bl-002-refresh-project-knowledge.md` reserves that:
+  *"Adding or removing a document is an edit to that table, made deliberately and with its reason
+  recorded in the manifest's prose."* A session executing the procedure is the wrong actor to widen
+  the set it is uploading, and it would put a 27th document in front of an operator who was told to
+  expect 26. **What is owed is a ruling**, either way, recorded in the manifest's prose: a row, or a
+  stated refusal on the reasoning that keeps `ds-milestone.md` out. The 2026-08-22 boundary record
+  names this and does not settle it.
+  **Found by** the boundary's own set-equality check, run field-bound on the manifest's `repo path`
+  column rather than by grepping the file for a substring — a substring search for `backlog` matches
+  the open file's row and answers a question about text while reading as an answer about the table.
+  Verified at agents `78c81a3`; split commit `f9328aa`; the ds close's export-set section is the
+  `2026-08-21` block in `docs/project-knowledge-manifest.md`.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

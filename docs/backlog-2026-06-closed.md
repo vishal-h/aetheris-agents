@@ -5707,3 +5707,125 @@ the step name, its ordinal and the shell line are from that run's `check` job lo
 quoted from this row's own text above.`
 
 ---
+
+### BL-173 — `ci.yml` caches two paths that do not exist, and the cache step reports nothing (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** low
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`)
+
+Filed 2026-08-22 at **BL-172**, which read the file line by line to add a trigger and found these
+beside the lines it was changing. **Reported, not fixed** — BL-172's ruling was that the trigger,
+the concurrency group and `hex.audit` land and nothing else does. This row exists because BL-172
+and **BL-169** both close their own questions and neither can hold this one: a finding recorded
+inside a row that is being disposed has a record and no executor. **Both of those rows are now
+DONE and live in `docs/backlog-2026-06-closed.md`** — BL-169 at the commit that filed this row,
+BL-172 at the one that closed it on run `32563924592`. The id is the address, so the references
+above resolve there and nothing here reopens either. This row is the executor that outlived them,
+which is the reason it was filed separately.
+
+**The two paths, at harness `203dec8`.**
+
+| path | cache step | state | command |
+|---|---|---|---|
+| `native/aetheris_nif/target` | `Cache Cargo` | the directory was deleted on 2026-05-20 | `git -C ../aetheris log -1 --format='%h %ad %s' --date=short -- native/aetheris_nif` → `e977af0 2026-05-20 Remove Rust NIF and replace with pure Elixir equivalents` |
+| `priv/plts` | `Cache Dialyzer PLTs` | never existed in the tree | `git -C ../aetheris ls-files priv/plts` → nothing; `ls ../aetheris/priv/` lists no `plts` |
+
+`e977af0` is **three days after** the last workflow run that could have exercised the file
+(`2026-05-17T14:10:29Z`, `gh run list`), which is the whole reason nothing noticed.
+
+**Neither is load-bearing, and that is the finding rather than a mitigation.** Both cache steps
+list other paths that do exist — `~/.cargo/registry` and `~/.cargo/git`, and
+`~/.mix/dialyxir_*.plt`, which is where dialyxir actually writes, `mix.exs` declaring
+`dialyzer: [plt_add_apps: [:mix]]` and no `plt_file`. `actions/cache@v4` skips a missing path
+silently, so the steps save and restore from the surviving paths and report nothing. Read from
+the run of 2026-08-22 (`gh run view --job=96984722921 --log`): `Post Cache Cargo` ends
+`Cache saved with key: Linux-cargo-e6bffd8c…` and `Post Cache Dialyzer PLTs` ends
+`Cache saved with key: plt-Linux-v1.17.2-otp-27-OTP-27.0.1-…`, with no warning in either about a
+path it could not find.
+
+**So the cost is not a broken cache. It is a declaration that has been wrong for three months
+with no instrument that could say so** — the same shape as the gate declarations collected on
+**BL-150**, one layer down: the file states what it caches, the statement is false, and the tool
+is designed to be quiet about exactly this.
+
+**Done when:** both paths are decided — removed, or replaced with the path that was meant — and
+the decision is recorded. Removing `native/aetheris_nif/target` is the obvious call and
+`priv/plts` needs a reading of whether a repo-local PLT directory was ever intended; if it was,
+the fix is `mix.exs`, not the workflow.
+
+**Costs:** S. Two lines, and one question about `priv/plts` that the workflow cannot answer alone.
+
+**Collides with:** **BL-174**, which owns `native/aetheris_nif` in the documentation. The cache
+path here is a member of that census and is disposed by this row rather than that one, because
+its failure mode is a silent cache miss and theirs is an operator following an instruction into a
+directory that is not there. The rows cross-reference; neither waits for the other.
+
+`Source: BL-172, 2026-08-22, derived at harness `203dec8` / agents at the commit carrying this
+row. Every figure above carries its command. The absence of a warning is read from the run's own
+log rather than inferred from `actions/cache`'s documentation.`
+
+**DONE 2026-08-22** at harness `7ccfc6a`, in one commit with **BL-174**'s instruction-surface
+sweep — the two rows share a census member (`native/aetheris_nif/target` is a cache path here and
+a census hit there) and both are harness documentation-and-config edits.
+
+**Done-when, quoted from this row above:** *"both paths are decided — removed, or replaced with
+the path that was meant — and the decision is recorded. Removing `native/aetheris_nif/target` is
+the obvious call and `priv/plts` needs a reading of whether a repo-local PLT directory was ever
+intended; if it was, the fix is `mix.exs`, not the workflow."* Both clauses are discharged below;
+the decisions are recorded **in `ci.yml` itself**, beside the steps they govern, rather than only
+here.
+
+**`priv/plts` — removed, and the reading the Done-when asked for is: never intended.** Not stale;
+never true. It has been in the file since its first commit (`0982a74`, 2026-05-15) and no commit
+on any branch has ever contained `plt_local_path` or `plt_file` —
+`git -C ../aetheris log --all -S'plt_local_path' -- .` and the same for `plt_file` both return
+nothing, against the positive control `git -C ../aetheris log --all -S'plt_add_apps' -- .` which
+returns `56a79ea 2026-05-11`. So it is the cache half of the standard dialyxir recipe whose
+`mix.exs` half was never written, and the Done-when's conditional — *"if it was, the fix is
+`mix.exs`"* — does not fire. Removing the path IS removing the intent, because no intent was ever
+recorded.
+
+**`native/aetheris_nif/target` — removed, and it went stale in two steps, not one.** This row's
+body reads the deletion (`e977af0`, 2026-05-20) as the staling event. It is the second one.
+`190eb39` (2026-05-17T14:43:52Z) made `native/` a cargo workspace, and a workspace member's build
+output goes to the shared `native/target`, so the path stopped naming cargo's output three days
+before the crate was deleted. That is **33 minutes after** the last workflow run before this month
+(`2026-05-17T14:10:29Z`, run `25993150988`, and `190eb39` is not an ancestor of that run's
+`80a846b`) — so no run ever executed against the workspace with this path in the file. The row's
+*"three days after the last CI run"* is correct about the deletion and understates how quickly the
+declaration went wrong.
+
+**`native/target` is deliberately NOT added in its place**, and the omission is recorded in
+`ci.yml` so it does not read as the same oversight repeated. Removing a path that names nothing
+and adding one that caches real build output are different changes with different justifications;
+the second is a performance change owing its own measurement, and this row is about declarations
+that are false.
+
+**The silence this row filed is confirmed, and more precisely than the body states.** Both paths
+appear in the logs of both 2026-08-22 runs exactly twice each — as the action echoing its own
+`with:` inputs (`path: priv/plts`, `native/aetheris_nif/target`), never as a warning. No line in
+either log names a path the action could not find. The body's quoted `Cache saved with key:` lines
+are from run `32553802996` (job `96984722921`, the `workflow_dispatch`), which was the cold-cache
+run; the push run `32563924592` reports `Cache hit occurred on the primary key …, not saving
+cache.` for both steps. Neither warns.
+
+**A check was built for this edit and mutation-tested.** It parses `ci.yml` and reports any
+`actions/cache` path that is neither a `~`-rooted runner path nor present in the tree. Against
+`203dec8` it reports both paths; against `7ccfc6a` it reports none; re-adding both to the working
+copy makes it fail naming both, and the restore was from a sha-verified working-copy backup with
+the mutation confirmed absent afterwards. It is a scratchpad instrument, not committed — wiring a
+standing gate for phantom workflow paths is not this row's, and is not filed as one.
+
+**What this row does NOT close.** The `check` job's own gate set still disagrees with every other
+surface that declares one; that is **BL-150**'s, and no row owns the reconciliation. And the first
+push-triggered run after this commit is the evidence that the workflow still parses and both cache
+steps still restore and save — the arbiter pushes, per the ticket's ruling.
+
+`Source: this ticket, 2026-08-22, at harness `7ccfc6a` / agents at the commit carrying this
+disposition. Every figure above carries the command that produced it. The two-step staling and the
+33-minute gap are new findings of this close, derived from `git log -1 --format='%h %aI %s'
+190eb39`, `git merge-base --is-ancestor`, and `gh run list`; they refine this row's body rather
+than contradict it.`
+
+---

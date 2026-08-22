@@ -7062,65 +7062,6 @@ and ds t3 is the last ticket in this cycle, so it was this or nothing.`
 
 ---
 
-### BL-173 — `ci.yml` caches two paths that do not exist, and the cache step reports nothing (#TBD)
-**Status:** OPEN
-**Kind:** bug · **Census items:** n/a · **Contract:** n/a
-**Size:** S · **Priority:** low
-**Section:** harness (`../aetheris/.github/workflows/ci.yml`)
-
-Filed 2026-08-22 at **BL-172**, which read the file line by line to add a trigger and found these
-beside the lines it was changing. **Reported, not fixed** — BL-172's ruling was that the trigger,
-the concurrency group and `hex.audit` land and nothing else does. This row exists because BL-172
-and **BL-169** both close their own questions and neither can hold this one: a finding recorded
-inside a row that is being disposed has a record and no executor. **Both of those rows are now
-DONE and live in `docs/backlog-2026-06-closed.md`** — BL-169 at the commit that filed this row,
-BL-172 at the one that closed it on run `32563924592`. The id is the address, so the references
-above resolve there and nothing here reopens either. This row is the executor that outlived them,
-which is the reason it was filed separately.
-
-**The two paths, at harness `203dec8`.**
-
-| path | cache step | state | command |
-|---|---|---|---|
-| `native/aetheris_nif/target` | `Cache Cargo` | the directory was deleted on 2026-05-20 | `git -C ../aetheris log -1 --format='%h %ad %s' --date=short -- native/aetheris_nif` → `e977af0 2026-05-20 Remove Rust NIF and replace with pure Elixir equivalents` |
-| `priv/plts` | `Cache Dialyzer PLTs` | never existed in the tree | `git -C ../aetheris ls-files priv/plts` → nothing; `ls ../aetheris/priv/` lists no `plts` |
-
-`e977af0` is **three days after** the last workflow run that could have exercised the file
-(`2026-05-17T14:10:29Z`, `gh run list`), which is the whole reason nothing noticed.
-
-**Neither is load-bearing, and that is the finding rather than a mitigation.** Both cache steps
-list other paths that do exist — `~/.cargo/registry` and `~/.cargo/git`, and
-`~/.mix/dialyxir_*.plt`, which is where dialyxir actually writes, `mix.exs` declaring
-`dialyzer: [plt_add_apps: [:mix]]` and no `plt_file`. `actions/cache@v4` skips a missing path
-silently, so the steps save and restore from the surviving paths and report nothing. Read from
-the run of 2026-08-22 (`gh run view --job=96984722921 --log`): `Post Cache Cargo` ends
-`Cache saved with key: Linux-cargo-e6bffd8c…` and `Post Cache Dialyzer PLTs` ends
-`Cache saved with key: plt-Linux-v1.17.2-otp-27-OTP-27.0.1-…`, with no warning in either about a
-path it could not find.
-
-**So the cost is not a broken cache. It is a declaration that has been wrong for three months
-with no instrument that could say so** — the same shape as the gate declarations collected on
-**BL-150**, one layer down: the file states what it caches, the statement is false, and the tool
-is designed to be quiet about exactly this.
-
-**Done when:** both paths are decided — removed, or replaced with the path that was meant — and
-the decision is recorded. Removing `native/aetheris_nif/target` is the obvious call and
-`priv/plts` needs a reading of whether a repo-local PLT directory was ever intended; if it was,
-the fix is `mix.exs`, not the workflow.
-
-**Costs:** S. Two lines, and one question about `priv/plts` that the workflow cannot answer alone.
-
-**Collides with:** **BL-174**, which owns `native/aetheris_nif` in the documentation. The cache
-path here is a member of that census and is disposed by this row rather than that one, because
-its failure mode is a silent cache miss and theirs is an operator following an instruction into a
-directory that is not there. The rows cross-reference; neither waits for the other.
-
-`Source: BL-172, 2026-08-22, derived at harness `203dec8` / agents at the commit carrying this
-row. Every figure above carries its command. The absence of a warning is read from the run's own
-log rather than inferred from `actions/cache`'s documentation.`
-
----
-
 ### BL-174 — the `aetheris_nif` removal was never swept out of the documentation, and one of the surfaces is read by an agent (#TBD)
 **Status:** OPEN
 **Kind:** bug · **Census items:** five surfaces, enumerated below · **Contract:** n/a
@@ -7182,3 +7123,87 @@ carries the gate-declaration append that found three of these surfaces, and sett
 above; the control that it is not blind is the same command for `aetheris_exec_server`, which
 returns hits in `.gitignore`, `CLAUDE.md` and `docs/aetheris/advanced-git-tools.md` among others.
 Line numbers are from that commit and are cited with their sections, which survive an insert.`
+
+---
+
+**PARTIAL 2026-08-22 at harness `7ccfc6a` — the three INSTRUCTION surfaces are corrected; this row
+stays OPEN because two surfaces are referred to the arbiter and its Done-when requires a choice
+recorded for *each*.**
+
+**The triage test, stated before it was applied.** Does the document address a reader in the
+present about what to do now, or does it describe what a past ticket asked for at its own time?
+Present-tense standing guidance whose audience is *whoever is working now* → INSTRUCTION, fixed.
+A dated unit of past work — a milestone ticket, its notes, its implementation record — whose
+audience is that unit's reader → RECORD, not edited. A compiled binary → ARTIFACT. A dated record
+carrying a present-tense instruction block → BOTH, referred.
+
+| surface | class | disposition |
+|---|---|---|
+| `.github/copilot-instructions.md` §Repository context, §Full check suite, §Rust standards | INSTRUCTION | **fixed** |
+| `README.md` §Project structure, §Running checks | INSTRUCTION | **fixed** |
+| `docs/aetheris/test-plan.md` §1 table, §2, §Commands | INSTRUCTION | **fixed** |
+| `.github/workflows/ci.yml` | INSTRUCTION (to a machine) | **fixed under BL-173**, closed |
+| `docs/aetheris/milestones/m01-core-harness.md` | RECORD | not edited |
+| `docs/aetheris/milestones/m03-replay-diff.md` | RECORD | not edited |
+| `docs/aetheris/milestones/remove-nif.md` | RECORD | not edited |
+| `docs/aetheris/milestones/remove-nif-implementation-notes.md` | RECORD | not edited |
+| `aetheris` (committed escript) | ARTIFACT | not editable; see below |
+| `docs/aetheris/notes-m09.md:91` | **BOTH** | **referred — not decided** |
+| `docs/aetheris/milestones/m10-autonomous-agent-tooling.md:868` | **BOTH** | **referred — not decided** |
+
+**Why the two are referred rather than ruled.** Both are dated records carrying a live-shaped
+instruction block. `m10` sits in the same directory as `m01` and `m03`, which this row rules
+correctly-left-alone, and this row's own Costs line already calls it *"the ambiguous one"*; ruling
+it INSTRUCTION would require a reason that does not also reach `m01` and `m03`, and none was found.
+`notes-m09.md` is the same shape one level down — a milestone's notes file, opening *"Architecture
+call:"* and *"Worth knowing ahead of T5"*, with one `cargo` chain inside it. The choice is
+available and cheap either way; what is not available is making it silently, so it is named here
+with an executor rather than left in a packet.
+
+**The escript, stated so it is not re-triaged.** `aetheris` is a committed escript — a zip archive
+whose entry table contains `aetheris_nif.so`, embedded when it was built at `f43c905`
+(2026-05-16), four days before the crate was deleted. It is not a document, carries no instruction,
+and no text edit reaches it. Separately: it is a build output committed to the tree and three
+months stale, which is a different defect from this row's and is **not** filed here.
+
+**The census is short — extended, not corrected.** Following this row's own vocabulary-sweep
+argument, the class is *the `e977af0` deletion*, and `aetheris_nif` is only one token that speaks
+it. `e977af0` also deleted `lib/aetheris/nif.ex` and removed the `rustler` dependency, so
+`git -C ../aetheris grep -niE 'rustler|rust nif|nif crate|nif\.ex|NifResult'` reaches surfaces the
+row's command cannot. Run at `7ccfc6a`, the ones **still standing and not covered above** are:
+
+- `docs/aetheris/specs.md` §10 *Rust NIF Interface* — a standing specification, present tense,
+  giving the full `defmodule Aetheris.NIF` signature block for a module deleted at `e977af0`, plus
+  two `**Constraint:**` lines about NIF scheduling. This is INSTRUCTION-class by the test above and
+  is the largest single surface the token census missed.
+- `.gitignore:22` — `# Rust build output (compiled by Rustler at mix compile time)`, and `:25`
+  `# Compiled NIF binaries (generated, not source)` over `/priv/native/`. The patterns still do
+  useful work; the comments describe a mechanism that no longer exists.
+- `docs/aetheris/milestones/milestone-reference.md:7` — RECORD (m03's row, what m03 built).
+- `mix.lock:23` still carries a `rustler` entry at `0.37.3` — a resolved dependency for a package
+  absent from `mix.exs` since `e977af0`, and `deps/rustler` exists in the working tree. **Not
+  documentation**, so out of this row's class entirely, and named here only so the finding has a
+  home; `mix deps.unlock --unused` is the shape of it.
+
+**Not swept, deliberately, and named so the omission is visible:** the gate-set enumerations on
+every page this ticket touched are left unreconciled. `README.md` §Running checks still declares
+four `mix` commands, `test-plan.md` two disagreeing sets on one page, `.github/copilot-instructions.md`
+five. That is **BL-150**'s standing subject and its 2026-08-22 append says in terms that reconciling
+them *"is not filed as a row here either"*. This ticket removed the `cargo` tails that were false
+and touched nothing else in those lists.
+
+**Done-when, restated against what is left.** *"each surface above is either corrected or marked as
+historical, with the choice recorded per surface"* — nine of eleven done, two referred.
+*"a re-run of the census command returns only the records deliberately left"* — at `7ccfc6a` the
+command returns the four records, the escript, the two referred surfaces, and one sentence in each
+of the four fixed files recording what was removed and why. Those sentences are a category the
+Done-when did not anticipate; they are deliberate, and removing them to satisfy the clause
+literally would delete the record the clause exists to produce.
+
+`Source: this ticket, 2026-08-22, at harness `7ccfc6a` / agents at the commit carrying this append.
+The triage test is stated above and was applied to all eleven hits. The extended census is
+reproducible by the command quoted in it; its positive control is the same command and flags for
+`aetheris_worker`, which returns hits across the tree rather than nothing. **No count is given
+here deliberately** — the first draft of this sentence said *45 files*, and this ticket's own
+commit made it 46 by adding one `aetheris_worker` mention to `README.md`. A control figure over a
+set the commit is editing is falsified by that commit; the command is the durable form.`

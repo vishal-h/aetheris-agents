@@ -4813,6 +4813,51 @@ list is empty.
   that matter here. Any claim about what a packet ran is therefore unverifiable from the tree except
   for those five.
 
+- `2026-08-22` (BL-172) — **The gate-declaration census of 2026-08-21 is short. More standing surfaces
+  declare a harness gate set, the ones below are those, and no two of the whole population
+  agree.** **No fix** —
+  reconciling them is not BL-172's, and it is not filed as a row here either; this append records
+  the population so the next reader is not working from four. The entry above stands: its four are
+  correctly read, and this extends its enumeration rather than correcting it. Derived at harness
+  `203dec8` / agents at the commit carrying this append, by
+  `git -C ../aetheris grep -ln -E 'mix (credo --strict|dialyzer|format --check-formatted|hex\.audit)'`,
+  which returns 29 files; the five below are the ones that **declare a set to run**, and the
+  remainder are milestone and ticket documents recording what a past ticket ran. That boundary is
+  a judgement and is stated so a later reader can widen it with the same command.
+  - harness `.github/copilot-instructions.md`, §*Full check suite — run before every commit*
+    — five:
+    `mix format --check-formatted`, `mix compile --warnings-as-errors`, `mix credo --strict`,
+    `mix dialyzer`, `mix test`. No `deps.get`, no `hex.audit`. **This one is read by a coding
+    agent rather than by a person**, which makes it the surface least likely to be corrected by
+    someone noticing it is wrong. It also carries a Rust block under `native/aetheris_nif/`, a
+    directory deleted at `e977af0` — filed as **BL-174**.
+  - harness `README.md`, §*Running checks* — four `mix` commands (`format --check-formatted`,
+    `credo --strict`, `dialyzer`, `test`) followed by `cd native/aetheris_nif` and three `cargo`
+    commands. Same deleted directory; also **BL-174**.
+  - harness `docs/aetheris/runbook.md`, §*Running checks before a merge* — six, as one `&&` chain:
+    `deps.get`, `compile --warnings-as-errors`, `format --check-formatted`, `credo --strict`,
+    `dialyzer`, `test`. This is the closest surface to `ci.yml`'s `check` job and still not equal
+    to it — CI's `mix test` excludes two tags and this one does not.
+  - harness `docs/aetheris/elixir-agent-instructions.md`, §*CI Contract* — five, numbered, under
+    *"Your code must pass all five"*: `deps.get`, `compile --warnings-as-errors`, `credo --strict`,
+    `dialyzer`, `MIX_ENV=test mix test --no-start`. **No `format --check-formatted`**, and a test
+    command no other surface names. A second §CI-contract-titled surface in the same repo as
+    `CLAUDE.md`'s.
+  - harness `docs/aetheris/test-plan.md` — **two sets, disagreeing with each other on one page**.
+    §*All checks (run before marking any ticket done)* gives three `mix` commands
+    (`format --check-formatted`, `credo --strict`, `test`) plus `cargo` under the deleted
+    directory — no `dialyzer`. §*CI (added separately)*, opening *"The CI pipeline runs the full
+    check suite on every PR"*, gives seven numbered items including `mix test --cover` and two
+    `cargo` commands, none of which `ci.yml` runs.
+  **What this changes about the entry above.** Its sentence *"`mix hex.audit` … no other surface
+  names"* survives: none of these five names it either, checked by
+  `git -C ../aetheris grep -n 'hex\.audit' -- README.md .github/copilot-instructions.md docs/aetheris/runbook.md docs/aetheris/elixir-agent-instructions.md docs/aetheris/test-plan.md`,
+  which returns nothing, against the positive control `git -C ../aetheris grep -c 'mix credo'` on
+  the same five, which returns a hit in each. What does change is the shape of the disagreement:
+  it is not four surfaces drifting from one contract but every declaration listed in this entry
+  and the one above it, spread across two repos, two of them titled *CI Contract*, three of them
+  still routing an operator or an agent into a directory that has not existed since 2026-05-20.
+
 - `2026-08-21` (ds close) — **`prompts/bl-002-refresh-project-knowledge.md` contradicts itself
   across Step 0 and Step 3, and Step 3 is the wrong one.** Ruled a BL-150 append at the ds close.
   **No fix.** Step 0's sprint arm asserts that a plain
@@ -6895,74 +6940,6 @@ requested it, which named the same five.`
 
 ---
 
-### BL-169 — `mix hex.audit` is a declared merge gate that no workflow runs (#TBD)
-**Status:** OPEN
-**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
-**Size:** S · **Priority:** medium
-**Section:** harness (`../aetheris/.github/workflows/ci.yml`, `../aetheris/CLAUDE.md` §CI contract)
-
-Filed 2026-08-21 at ds t3, from the gate-declaration census filed on **BL-150** the same day. Out
-of ds scope — this row is the executor, and ds t3 does not fix it.
-
-**The declaration.** Harness `CLAUDE.md` §CI contract lists seven commands under *"Every change must
-pass all of these before merge"*, and `mix hex.audit` is one of them. It is the only member of that
-set with a section of its own — `### `mix hex.audit` — supply-chain gate` — added 2026-07-17 on a
-human call, whose stated evidence is **BL-020**, where fifteen advisories across the HTTP stack were
-invisible to every other gate and surfaced only by a clean-clone spot-check. That section also
-states two properties that only make sense for a gate something runs: that an upstream-published
-advisory turning it red *"is the gate working, not a defect"*, and that advisories cannot be
-suppressed because the tool has no ignore mechanism.
-
-**Nothing runs it.** `../aetheris/.github/workflows/ci.yml` is the only workflow file in the
-repository (`git ls-files | grep -iE '\.github|\.gitlab|circleci'` returns it and
-`.github/copilot-instructions.md`). Its main job runs `deps.get`, `compile --warnings-as-errors`,
-`format --check-formatted`, `credo --strict`, `dialyzer` and a tag-excluded `mix test`; a second job
-runs the sandbox set behind a capability probe. `mix hex.audit` appears in neither. There is no mix
-alias wrapping it (`mix.exs` declares no `aliases`), no tracked git hook, and no Makefile or
-justfile. The whole-repo search for the string in the harness returns four hits: the contract entry,
-its own section heading, a line inside that section, and one implementation-notes file.
-
-**Why it matters more than the other three disagreements** on the BL-150 census. The others are
-declarations that under-state what CI does. This one is the reverse: a gate whose entire purpose is
-to catch a red **nobody's commit caused**, so no ticket-boundary run will encounter it by accident.
-An upstream advisory published today is invisible until someone types the command from memory. That
-is exactly the invisibility the standing gate rule exists to prevent, arriving through absence
-rather than through neglect.
-
-**First live instance, 2026-08-22 (BL-171).** `mix hex.audit` went red on two upstream `bandit`
-advisories — `EEF-CVE-2026-74836` and `EEF-CVE-2026-75484`, both published `2026-08-20T21:11Z`
-(`curl -sS https://api.osv.dev/v1/vulns/<id>`, field `published`) — under a lock nobody moved. It
-was found only because **ds t3's** ticket-boundary run typed the command, and it was cleared at
-BL-171 by a lock bump to `bandit 1.12.5`. That is this row's argument arriving as an event rather
-than as a prediction.
-
-**And the reason no workflow reported it is worse than this row states.** This row establishes that
-`ci.yml` does not contain `mix hex.audit`. It does not establish that `ci.yml` *runs* — and it does
-not: the most recent workflow run on `vishal-h/aetheris` is `2026-05-17T14:10:29Z` on branch
-`t2-write-file`, three months before these advisories existed
-(`gh run list --limit 1 --json createdAt,headBranch,conclusion`). So the counterfactual *"CI would
-not have caught it"* holds for two independent reasons, and wiring `hex.audit` into `ci.yml` would
-have closed neither. **That second reason is out of this row's scope and is filed as BL-172**; this
-row still owes only the decision about what runs the gate and what its red does to a pull request.
-BL-171 does not close it.
-
-**Done when:** either `mix hex.audit` runs in CI — and, given that its red is upstream-triggered and
-unsuppressable, the decision of what a red does to a pull request is taken and recorded with it — or
-the §CI contract stops declaring it a merge gate and says what does run it and on what trigger. Not
-both silently.
-
-**Costs:** S to wire. The decision about upstream-triggered reds is the part with judgement in it,
-and the §CI contract's own section already argues one side of it.
-
-**Collides with:** nothing. **BL-150** carries the census this came from and settles nothing; this
-row is the only executor for this half of it.
-
-`Source: ds t3, 2026-08-21, derived at harness `d648aa8`. Every claim above was re-run rather than
-carried: the contract's seven, the workflow's steps, the absence of aliases and hooks, and the
-four-hit search.`
-
----
-
 ### BL-170 — the concurrency detector is probabilistic, and a single green is not evidence the lock is present (#TBD)
 **Status:** OPEN
 **Kind:** bug · **Census items:** n/a · **Contract:** n/a
@@ -7080,3 +7057,159 @@ lands; this one does not close BL-169.
 rather than carried — the trigger block is quoted from the file, and the four figures each carry
 their command in the table. The `pull_request` trigger has a trailing space in the source file,
 preserved in neither the quote above nor this note because it is not load-bearing.`
+
+**2026-08-22 — the trigger lands at harness `203dec8`, and this row STAYS OPEN.** Read the
+Done-when as written: disjunct 1 is *"the workflow fires on the path work actually takes — a
+`push:` trigger on `main` … — **with one run on the record proving it fires**"*. The trigger half
+is done. The run half cannot be: the commit is held for review and nothing is pushed, so no
+push-triggered run exists and none can until it is. The row's closing sentence — *"the Done-when
+is about the trigger, not about a run"* — refuses a `workflow_dispatch` run staged to look like
+closure; it does not remove the proof this disjunct asks for, and reading it that way would close
+the row on the strength of a file nobody has run.
+
+**What landed.** `push: branches: [main]`, scoped to `main` rather than to every branch. `main`
+is the path work actually takes; a pull-request branch would otherwise run the whole workflow
+twice for one commit, once on `push` and once on `pull_request`; and a work-in-progress branch is
+not what a merge gate is for. The concurrency group landed with it, in the same commit, because
+shipping the trigger without it is a defect — `group: pr-${{ github.event.pull_request.number }}`
+yields `pr-` on every event that is not a pull request, so each push run would have joined one
+group and cancelled its predecessor whatever ref it was for. `cancel-in-progress` became
+conditional at the same time and this is the one judgement in the edit beyond what was asked:
+cancelling a superseded run is right for a pull request and wrong for a push to `main`, where two
+pushes seconds apart would otherwise leave the first commit with no completed run — the exact
+property this trigger exists to produce.
+
+**What the first push-triggered run has to show, so the reader is not left to infer it.** That run
+is this row's evidence, and it happens when the arbiter pushes. Look for: an entry in
+`gh run list` whose event column reads `push` and whose branch is `main`; two jobs, `check` and
+`sandbox`; `check` concluding `success` with a step named
+`mix hex.audit (advisory — visible, non-blocking)` between `mix deps.get` and
+`mix compile --warnings-as-errors`; that step's summary section on the run page reading
+`### Supply-chain audit: clean`, since the lock is green at `bandit 1.12.5`; and `sandbox`
+concluding `success` with its named skip, which is that job's design and not a defect.
+
+**What that run still will not show.** A *red* advisory's behaviour. The step is implemented
+non-blocking and was exercised in both arms locally, and no run on a green lock can demonstrate
+it — see the closing condition recorded on **BL-169**, which this commit closed.
+
+`Source of the 2026-08-22 block: BL-172 itself, at harness `203dec8` / agents at the commit
+carrying it. The Done-when is quoted from this row's own text above; the trigger, the group
+expression and the step name are quoted from `ci.yml` at `203dec8`. The filing Source above covers
+the filing only — it predates this block and does not vouch for it.`
+
+---
+
+### BL-173 — `ci.yml` caches two paths that do not exist, and the cache step reports nothing (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** low
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`)
+
+Filed 2026-08-22 at **BL-172**, which read the file line by line to add a trigger and found these
+beside the lines it was changing. **Reported, not fixed** — BL-172's ruling was that the trigger,
+the concurrency group and `hex.audit` land and nothing else does. This row exists because BL-172
+and **BL-169** both close their own questions and neither can hold this one: a finding recorded
+inside a row that is being disposed has a record and no executor.
+
+**The two paths, at harness `203dec8`.**
+
+| path | cache step | state | command |
+|---|---|---|---|
+| `native/aetheris_nif/target` | `Cache Cargo` | the directory was deleted on 2026-05-20 | `git -C ../aetheris log -1 --format='%h %ad %s' --date=short -- native/aetheris_nif` → `e977af0 2026-05-20 Remove Rust NIF and replace with pure Elixir equivalents` |
+| `priv/plts` | `Cache Dialyzer PLTs` | never existed in the tree | `git -C ../aetheris ls-files priv/plts` → nothing; `ls ../aetheris/priv/` lists no `plts` |
+
+`e977af0` is **three days after** the last workflow run that could have exercised the file
+(`2026-05-17T14:10:29Z`, `gh run list`), which is the whole reason nothing noticed.
+
+**Neither is load-bearing, and that is the finding rather than a mitigation.** Both cache steps
+list other paths that do exist — `~/.cargo/registry` and `~/.cargo/git`, and
+`~/.mix/dialyxir_*.plt`, which is where dialyxir actually writes, `mix.exs` declaring
+`dialyzer: [plt_add_apps: [:mix]]` and no `plt_file`. `actions/cache@v4` skips a missing path
+silently, so the steps save and restore from the surviving paths and report nothing. Read from
+the run of 2026-08-22 (`gh run view --job=96984722921 --log`): `Post Cache Cargo` ends
+`Cache saved with key: Linux-cargo-e6bffd8c…` and `Post Cache Dialyzer PLTs` ends
+`Cache saved with key: plt-Linux-v1.17.2-otp-27-OTP-27.0.1-…`, with no warning in either about a
+path it could not find.
+
+**So the cost is not a broken cache. It is a declaration that has been wrong for three months
+with no instrument that could say so** — the same shape as the gate declarations collected on
+**BL-150**, one layer down: the file states what it caches, the statement is false, and the tool
+is designed to be quiet about exactly this.
+
+**Done when:** both paths are decided — removed, or replaced with the path that was meant — and
+the decision is recorded. Removing `native/aetheris_nif/target` is the obvious call and
+`priv/plts` needs a reading of whether a repo-local PLT directory was ever intended; if it was,
+the fix is `mix.exs`, not the workflow.
+
+**Costs:** S. Two lines, and one question about `priv/plts` that the workflow cannot answer alone.
+
+**Collides with:** **BL-174**, which owns `native/aetheris_nif` in the documentation. The cache
+path here is a member of that census and is disposed by this row rather than that one, because
+its failure mode is a silent cache miss and theirs is an operator following an instruction into a
+directory that is not there. The rows cross-reference; neither waits for the other.
+
+`Source: BL-172, 2026-08-22, derived at harness `203dec8` / agents at the commit carrying this
+row. Every figure above carries its command. The absence of a warning is read from the run's own
+log rather than inferred from `actions/cache`'s documentation.`
+
+---
+
+### BL-174 — the `aetheris_nif` removal was never swept out of the documentation, and one of the surfaces is read by an agent (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** five surfaces, enumerated below · **Contract:** n/a
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/README.md`, `../aetheris/.github/copilot-instructions.md`, `../aetheris/docs/aetheris/test-plan.md`, `../aetheris/docs/aetheris/notes-m09.md`, `../aetheris/docs/aetheris/milestones/m10-autonomous-agent-tooling.md`)
+
+Filed 2026-08-22 at **BL-172**, from the same reading that produced **BL-173**. **Reported, not
+fixed.** `e977af0` (2026-05-20) deleted `native/aetheris_nif/` and removed the `rustler`
+dependency; `mix.exs` names neither and `lib/aetheris/nif.ex` is gone
+(`git -C ../aetheris ls-files lib/aetheris/nif.ex` returns nothing). The documentation was not
+swept with it.
+
+**The census**, at harness `203dec8`, from
+`git -C ../aetheris grep -c 'aetheris_nif' -- .` — which returns hits in eleven files, of which
+`docs/aetheris/milestones/remove-nif.md`, `remove-nif-implementation-notes.md`,
+`m01-core-harness.md` and `m03-replay-diff.md` are records of what a past ticket did and are
+**correctly** left alone, `.github/workflows/ci.yml` is **BL-173**'s, and one is not a document at
+all — `aetheris`, the committed escript binary, carries the string in compiled data and is out of
+scope here for that reason rather than by judgement. The remainder are standing surfaces that
+instruct a reader:
+
+| surface | what it says | who reads it |
+|---|---|---|
+| `README.md:143`, §*Running checks* | `cd native/aetheris_nif` then three `cargo` commands | anyone following the README's own check list |
+| `README.md:115`, §*Project structure* | lists `native/aetheris_nif/` and `nif.ex  Rustler NIF wrapper` | the same reader, one section earlier |
+| `.github/copilot-instructions.md:43-45` | *"For any change touching `native/aetheris_nif/`"* + the same `cargo` chain | **a coding agent**, not a person |
+| `.github/copilot-instructions.md:15` | describes the project as having a Rust NIF crate | the same agent, as orientation |
+| `docs/aetheris/test-plan.md:37,94,98` | a Rust unit-test section, a `cargo test` line, and an *"All checks"* chain ending in the deleted directory | a ticket author deciding what to run |
+| `docs/aetheris/notes-m09.md:91` | the same `cargo` chain | m09's reader |
+| `docs/aetheris/milestones/m10-autonomous-agent-tooling.md:868` | `cd ../aetheris_nif && cargo …` inside an instruction block | m10's reader |
+
+**Why this is worth a row when the failure is loud.** `cd` into a directory that does not exist
+fails immediately, so a human hits it and works around it. The `copilot-instructions.md` surface
+is the exception and is the reason for the **medium** rather than low: it is read by a coding
+agent as standing instruction, and an agent that cannot find the directory has no author to ask —
+it improvises, or it reports a check it did not run. **BL-150**'s standing subject is documents
+that say what the tree does not; this is that class with an agent as the reader.
+
+**And it is a worked instance of the vocabulary-sweep rule** in harness `CLAUDE.md` — *"a
+vocabulary change owes a sweep of everything that speaks it, in the same commit"*. `remove-nif.md`
+lists *"Remove the `native/aetheris_nif/` subtree from the Project structure section"* as a
+deliverable, so the sweep was scoped to the README's structure list and not to the class; the
+structure list still names it anyway.
+
+**Done when:** each surface above is either corrected or marked as historical, with the choice
+recorded per surface, and a re-run of the census command returns only the records deliberately
+left. `README.md` §Project structure also names `nif.ex`, which is a second deletion the same
+commit made and the same sweep missed — it is in scope.
+
+**Costs:** S. The judgement is per-surface: which of these are records and which are
+instructions, and `m10-autonomous-agent-tooling.md` is the ambiguous one.
+
+**Collides with:** **BL-173**, which holds the `ci.yml` cache path from the same census. **BL-150**
+carries the gate-declaration append that found three of these surfaces, and settles nothing.
+
+`Source: BL-172, 2026-08-22, derived at harness `203dec8`. The census command and its output are
+above; the control that it is not blind is the same command for `aetheris_exec_server`, which
+returns hits in `.gitignore`, `CLAUDE.md` and `docs/aetheris/advanced-git-tools.md` among others.
+Line numbers are from that commit and are cited with their sections, which survive an insert.`

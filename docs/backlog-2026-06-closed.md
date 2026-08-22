@@ -5393,3 +5393,125 @@ changelog block is quoted from `bandit.hexdocs.pm`. No figure above is carried f
 2026-08-21 capture — `mix hex.audit` was re-run at HEAD before any edit and reproduced it exactly.`
 
 ---
+
+### BL-169 — `mix hex.audit` is a declared merge gate that no workflow runs (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`, `../aetheris/CLAUDE.md` §CI contract)
+
+Filed 2026-08-21 at ds t3, from the gate-declaration census filed on **BL-150** the same day. Out
+of ds scope — this row is the executor, and ds t3 does not fix it.
+
+**The declaration.** Harness `CLAUDE.md` §CI contract lists seven commands under *"Every change must
+pass all of these before merge"*, and `mix hex.audit` is one of them. It is the only member of that
+set with a section of its own — `### `mix hex.audit` — supply-chain gate` — added 2026-07-17 on a
+human call, whose stated evidence is **BL-020**, where fifteen advisories across the HTTP stack were
+invisible to every other gate and surfaced only by a clean-clone spot-check. That section also
+states two properties that only make sense for a gate something runs: that an upstream-published
+advisory turning it red *"is the gate working, not a defect"*, and that advisories cannot be
+suppressed because the tool has no ignore mechanism.
+
+**Nothing runs it.** `../aetheris/.github/workflows/ci.yml` is the only workflow file in the
+repository (`git ls-files | grep -iE '\.github|\.gitlab|circleci'` returns it and
+`.github/copilot-instructions.md`). Its main job runs `deps.get`, `compile --warnings-as-errors`,
+`format --check-formatted`, `credo --strict`, `dialyzer` and a tag-excluded `mix test`; a second job
+runs the sandbox set behind a capability probe. `mix hex.audit` appears in neither. There is no mix
+alias wrapping it (`mix.exs` declares no `aliases`), no tracked git hook, and no Makefile or
+justfile. The whole-repo search for the string in the harness returns four hits: the contract entry,
+its own section heading, a line inside that section, and one implementation-notes file.
+
+**Why it matters more than the other three disagreements** on the BL-150 census. The others are
+declarations that under-state what CI does. This one is the reverse: a gate whose entire purpose is
+to catch a red **nobody's commit caused**, so no ticket-boundary run will encounter it by accident.
+An upstream advisory published today is invisible until someone types the command from memory. That
+is exactly the invisibility the standing gate rule exists to prevent, arriving through absence
+rather than through neglect.
+
+**First live instance, 2026-08-22 (BL-171).** `mix hex.audit` went red on two upstream `bandit`
+advisories — `EEF-CVE-2026-74836` and `EEF-CVE-2026-75484`, both published `2026-08-20T21:11Z`
+(`curl -sS https://api.osv.dev/v1/vulns/<id>`, field `published`) — under a lock nobody moved. It
+was found only because **ds t3's** ticket-boundary run typed the command, and it was cleared at
+BL-171 by a lock bump to `bandit 1.12.5`. That is this row's argument arriving as an event rather
+than as a prediction.
+
+**And the reason no workflow reported it is worse than this row states.** This row establishes that
+`ci.yml` does not contain `mix hex.audit`. It does not establish that `ci.yml` *runs* — and it does
+not: the most recent workflow run on `vishal-h/aetheris` is `2026-05-17T14:10:29Z` on branch
+`t2-write-file`, three months before these advisories existed
+(`gh run list --limit 1 --json createdAt,headBranch,conclusion`). So the counterfactual *"CI would
+not have caught it"* holds for two independent reasons, and wiring `hex.audit` into `ci.yml` would
+have closed neither. **That second reason is out of this row's scope and is filed as BL-172**; this
+row still owes only the decision about what runs the gate and what its red does to a pull request.
+BL-171 does not close it.
+
+**Done when:** either `mix hex.audit` runs in CI — and, given that its red is upstream-triggered and
+unsuppressable, the decision of what a red does to a pull request is taken and recorded with it — or
+the §CI contract stops declaring it a merge gate and says what does run it and on what trigger. Not
+both silently.
+
+**Costs:** S to wire. The decision about upstream-triggered reds is the part with judgement in it,
+and the §CI contract's own section already argues one side of it.
+
+**Collides with:** nothing. **BL-150** carries the census this came from and settles nothing; this
+row is the only executor for this half of it.
+
+`Source: ds t3, 2026-08-21, derived at harness `d648aa8`. Every claim above was re-run rather than
+carried: the contract's seven, the workflow's steps, the absence of aliases and hooks, and the
+four-hit search.`
+
+---
+
+**DONE 2026-08-22 at BL-172, on Done-when's FIRST disjunct.** The disjunction is *either*
+`mix hex.audit` runs in CI with the decision about its red taken and recorded *or* §CI contract
+stops declaring it a merge gate. The second disjunct is not taken: the contract is unchanged and
+still declares the seven. The first is taken in both its halves, and the row's own text says the
+halves are separable — *"S to wire. The decision about upstream-triggered reds is the part with
+judgement in it."*
+
+**THE WIRING.** Harness `203dec8` adds a step to `ci.yml`'s `check` job, between `mix deps.get`
+and `mix compile --warnings-as-errors`, named `mix hex.audit (advisory — visible, non-blocking)`.
+
+**THE JUDGEMENT, ruled 2026-08-22 and recorded here because the wiring does not carry it.** An
+advisory red is **VISIBLE and NON-BLOCKING**. Both properties bind at once, and inside one step
+they pull against each other: a step that fails makes the red visible and blocks, and a step that
+swallows its exit code makes it non-blocking and invisible in the run's conclusion. The step
+resolves it by splitting the two channels — the advisory text goes to `$GITHUB_STEP_SUMMARY`,
+which is where a reader meets the run, and the exit code is always 0, so the job's conclusion is
+never `failure` because of it. That form is not invented here: the `sandbox` job in the same file
+already solves the same shape for its named skip, and its comment states the reason — a job that
+reddens on something nobody's commit caused gets disabled, which is how the `requires_worker` set
+rotted the first time.
+
+**THE FAILURE MODE THIS ACCEPTS, stated rather than left for a later reader to find.** A
+non-blocking gate is one nobody is forced to look at. What makes it visible is the summary
+section on the run's own page; what would make it ignorable is habituation — nothing fails, no
+notification is sent, and a summary section can be scrolled past. The step's comment carries this
+same paragraph, so the ruling is legible at the place it governs. If advisories do start being
+ignored, the answer is an owner and a trigger, not a red X.
+
+**WHAT IS PROVEN AND WHAT IS NOT.** The step's two arms were run before the commit landed,
+against the step body **extracted from the committed YAML** rather than retyped, with a stub `mix`
+on `PATH` and `GITHUB_STEP_SUMMARY` pointed at a file: with the stub exiting 0 the summary reads
+`### Supply-chain audit: clean`; with the stub exiting 1 the summary carries the advisory text
+under `### Supply-chain audit: ADVISORIES FOUND — and this job did NOT fail` and **the step still
+exits 0**. That is a local exercise of the step's own shell, not a run on GitHub.
+
+**A red advisory's behaviour on a real runner is therefore UNVERIFIED by this row**, and it gets a
+stated closing condition rather than silence or a ticket: it closes the first time `mix hex.audit`
+goes red after this lands, because the standing gate rule already requires that red to get a
+tracked ticket the day it is found — and that ticket is written by someone looking at the run.
+No row owns it and none should; manufacturing a red to test it would mean faking an advisory in
+the lock.
+
+**WHAT THIS ROW DID NOT CLOSE.** **BL-172** stands. `mix hex.audit` is in a workflow that, at
+this commit, still has no run on the record triggered by the path work takes — the `push:` trigger
+lands in the same harness commit and is unverified until something is pushed. This row owed the
+decision about what runs the gate and what its red does; it did not owe the proof that the
+workflow fires, which is BL-172's and stays BL-172's.
+
+`Source: BL-172, 2026-08-22, at harness `203dec8` / agents at the commit carrying this
+disposition. The step is quoted from `ci.yml` at that commit; the two-arm exercise is this
+ticket's own and its transcript is in the review packet, which is not committed.`
+
+---

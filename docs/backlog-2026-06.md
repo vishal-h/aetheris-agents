@@ -4939,6 +4939,42 @@ list is empty.
   that the next cycle using any tracker enumerates the automation it is enabling by default rather
   than the automation it chose.
 
+- `2026-08-22` (export boundary) — **the `2026-08-21` append above is right in its clause and
+  short in its enumeration: `prompts/bl-002-refresh-project-knowledge.md` contradicts
+  `scripts/repin_manifest.py` in STEP 2 as well, and that append says the false claims are
+  *"all in Step 3"*.** **No fix**, on that append's own ground — the procedure is not this
+  boundary's to edit, and a repair made in passing by the session executing the procedure is how
+  the operator record stops being separable from the operator. Repaired here **as an incomplete
+  enumeration rather than as a missing clause**, per `CLAUDE.md` §Learning — m6-cloudcost: the
+  `2026-08-21` clause is correct and only its instance list is short, so a second entry stating
+  the same thing would create two surfaces to disagree at the next addition.
+  The fourth false claim, Step 2, line 72 of the procedure at agents `5c7a96a`:
+  4. *"It runs `git log -1 --format=%h -- <path>` per row in that row's OWN repo … and rewrites
+     the commit cell, touching nothing else — not the prose, not the `last changed` column, not
+     the self-referential row."* — **false in one of its three exclusions.** The script rewrites
+     `last changed` too, and has since 2026-08-16. Its own module docstring says so
+     (`scripts/repin_manifest.py:15-20`): *"**Two cells, one reading (BL-151, 2026-08-16).**
+     `last changed` is re-derived here too, from `git log -1 --format=%ad --date=short <commit>`
+     on the commit this script just resolved"*, and *"A row is now current only when both cells
+     are, and a date-only move is reported as one."* The code is `repin_manifest.py:88-107` —
+     `current_date = git_commit_date(...)`, the currency test `current == row.commit and
+     current_date == row.last_changed`, and `new_cell = f"| \`{current}\` | {current_date} |"`,
+     which writes the pair. Demonstrated rather than cited: this boundary's own Step 0 dry-run
+     printed date movement beside every commit movement — `aetheris-agents--CLAUDE.md
+     \`43e63e0\` -> \`38009fd\` (2026-08-17 -> 2026-08-21)` and three more.
+  **Why it matters more than a stale sentence usually does.** The excluded-cell list is what an
+  operator reads to decide whether the re-pin needs review, and it under-states the script's
+  write set — the opposite direction from Step 3's, which over-states what the operator must do.
+  It is also the *same ruling* arriving late in the *same page*: the `last changed` cell was
+  unowned until the `2026-08-16` append two entries up on this row called it out, and the fix
+  landed that day; the procedure describing the script was never swept. That append states the
+  class it belongs to — *"a script that authoritatively owns some cells of a record makes the
+  rest look owned too"* — and this is its documentation half.
+  **Found by** executing Step 0, which is the point: BL-161's arm drives `repin_manifest.py`
+  through its command line and prints the dry-run, so the procedure's description and the
+  script's behaviour appear on one screen for the first time. Verified at agents `5c7a96a`,
+  procedure line 72, script lines 15-20 and 88-107.
+
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`

@@ -5238,3 +5238,158 @@ asserted by a document.]`
 
 ---
 
+
+### BL-171 — `mix hex.audit` is red: bandit 1.12.4 carries two advisories, and 1.12.5 is out (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract, `### mix hex.audit — supply-chain gate`
+**Size:** S · **Priority:** high
+**Section:** harness (`../aetheris/mix.exs`, `../aetheris/mix.lock`)
+
+Found 2026-08-21 by **ds t3**'s ticket-boundary gate run — off-territory, exactly the way the gate
+rule intends, on a ticket whose subject is a sprint arm and not the dependency tree. Filed the day
+it was found, not carried.
+
+```
+$ cd ~/sandbox/elixirws/aetheris && mix hex.audit          # exit 1
+Advisories:
+  bandit 1.12.4 - EEF-CVE-2026-75484 (MEDIUM)
+    aka: CVE-2026-75484, GHSA-x3gh-xhj4-3vq8
+    HTTP/2 header field values containing CR, LF or NUL are passed to the application unvalidated in Bandit
+    https://osv.dev/vulnerability/EEF-CVE-2026-75484
+
+  bandit 1.12.4 - EEF-CVE-2026-74836 (HIGH)
+    aka: CVE-2026-74836, GHSA-xj8g-532w-jv94
+    HTTP/2 connection-window starvation pins Plug processes indefinitely in Bandit
+    https://osv.dev/vulnerability/EEF-CVE-2026-74836
+
+Found packages with security advisories
+```
+
+**This is NOT BL-060 recurring, and the distinction is the whole reason a new row was needed.**
+BL-060 is DONE and its subject was **bandit 1.11.1 / EEF-CVE-2026-65623**, a different package
+version and a different advisory. These two are new. No open row named `bandit` or `hex.audit`
+before this one.
+
+**Upstream-triggered, not commit-triggered.** ds t3's two commits touch `../aetheris/scripts/sprint.sh`
+and eight agents-side documents; neither goes near `mix.exs` or `mix.lock`. The advisories were
+published under a lock nobody moved. Harness `CLAUDE.md`'s own supply-chain section says this is the
+gate working rather than a defect — *"An advisory published upstream turns it red through nobody's
+commit. That is the gate reporting that the world changed under us."*
+
+**A patched release appears to exist and was NOT taken here.** `mix hex.info bandit` reports
+**1.12.5 (2026-08-20)** against a locked **1.12.4 (2026-07-27)**, and `mix.exs:30` declares
+`{:bandit, "~> 1.12"}`, so the constraint already admits it. Whether 1.12.5 actually carries the
+fixes for both CVEs is **not established here** — it was inferred from the release date, and this
+row does not assert it. ds t3 did not bump: a dependency change belongs to a ticket that can run the
+full harness gate set against it and read the changelog, not to a sprint-arm ticket that happened to
+find the red.
+
+**This row is why BL-169 matters, arriving as an instance rather than an argument.** BL-169 records
+that `mix hex.audit` is a declared merge gate no workflow runs. This red was found only because a
+human-directed ticket-boundary run typed the command. Nothing in CI would have reported it, and
+nothing will report the next one.
+
+**Done when:** either `bandit` is on a version `mix hex.audit` reports clean — with the changelog
+read and the fix for **both** advisory ids confirmed rather than inferred from a version number —
+or, if no patched version covers one of them, that advisory is accepted in writing with its
+rationale here and the gate runs **expected-red, named with this row's ref** per the tracked-carry
+clause. Not relaxed, not re-pointed, and not downgraded to a warning.
+
+**Costs:** S if 1.12.5 is the fix — a lock bump and the harness gate set. Larger only if it is not.
+
+**Collides with:** **BL-169**, which owns the question of what runs `hex.audit` and what its red does
+to a pull request. Neither closes the other: BL-169 owes a decision about the gate, this row owes a
+clean audit.
+
+`Source: ds t3's ticket-boundary gate run, 2026-08-21, at harness `d648aa8` / agents `f003e4a`. The
+audit output is transcribed complete rather than excerpted. The `1.12.5` figure is from
+`mix hex.info bandit` run the same day and is a claim about Hex, not about this repository.`
+
+`[Disposed 2026-08-22 at BL-171. Done-when branch 1 — *"`bandit` is on a version `mix hex.audit`
+reports clean, with the changelog read and the fix for **both** advisory ids confirmed rather than
+inferred from a version number"*. Branch 2 — an advisory accepted in writing with the gate carried
+expected-red — is NOT taken and is not reachable from here.
+
+**THE READ, WHICH IS WHAT THIS ROW ACTUALLY OWED.** The row was explicit that 1.12.5 carrying the
+fixes was *"not established here — it was inferred from the release date"*. Both advisories were
+resolved at their OSV records (`curl -sS https://api.osv.dev/v1/vulns/<id>`), not at a version
+number:
+
+| advisory | severity | affected range, as OSV states it | first fixed |
+|---|---|---|---|
+| `EEF-CVE-2026-74836` | HIGH, `CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N` = 8.7 | SEMVER, `{"introduced": "0.3.4"}` → `{"fixed": "1.12.5"}` | `1.12.5` |
+| `EEF-CVE-2026-75484` | MEDIUM, `CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N` = 6.9 | SEMVER, `{"introduced": "1.4.0"}` → `{"fixed": "1.12.5"}` | `1.12.5` |
+
+`74836` is allocation of resources without limits: when a response body exceeds the HTTP/2
+connection-level send window, Bandit queues the remainder with no timeout bound, so an
+unauthenticated client holding the connection window shut with periodic PINGs pins the stream
+process indefinitely. The stream-level path is bounded at 15 s; the connection-level path was not.
+`75484` is CRLF neutralisation: `Bandit.HTTP2.Stream.read_headers/1` validated pseudo-header
+placement, casing, connection-specific headers, `te` and `content-length`, but never field
+**values**, so HTTP/2 header values containing CR, LF or NUL reached the application unvalidated —
+a check the HTTP/1 path already performed.
+
+**The installed version is in both ranges and 1.12.5 is outside both**, checked against each
+record's own `versions` array rather than by reasoning about semver: `1.12.4` is present in both,
+`1.12.5` in neither.
+
+**The changelog confirms it independently, and names the advisories by id** — which is the
+difference between a read and a date inference. `bandit` 1.12.5 (20 Aug 2026,
+https://bandit.hexdocs.pm/changelog.html):
+
+> **Changes** — "Bound and cancel HTTP/2 sends blocked on the connection window
+> (GHSA-xj8g-532w-jv94) (#671)"
+>
+> **Fixes** — "Validate HTTP/2 header field values for CR/LF/NUL (GHSA-x3gh-xhj4-3vq8) (#670)"
+
+So this is **Case 1 — 1.12.5 fixes both**. Had it fixed one, the bump would not have been taken:
+a partial fix that turns the gate green removes the signal and leaves the defect.
+
+**ONE THING COULD NOT BE READ, and it is recorded rather than glossed.** The two GHSA identifiers
+do not resolve as records anywhere reachable from here. `GHSA-xj8g-532w-jv94` and
+`GHSA-x3gh-xhj4-3vq8` both return **404** from `gh api /advisories/<id>` and from
+`https://api.osv.dev/v1/vulns/<id>`, and `https://github.com/advisories/<id>` returns 404 to a
+fetch. The same command with the same flags resolves `GHSA-vv2x-vrpj-qqpq` and
+`GHSA-2c7c-3mj9-8fqh` normally, so the searches are not simply blind. These are Erlang Ecosystem
+Foundation advisories: the GHSA ids exist as **aliases** in the EEF-sourced OSV records and as
+citations in `bandit`'s changelog, and both of those were read. What could not be done is
+corroborating the EEF record against an independent GitHub record. The two sources actually read
+agree, and they are not fully independent of each other.
+
+**WHAT LANDED.** Harness `7ea1a3a`, `mix.lock` alone — one line, `bandit 1.12.4` → `1.12.5`, with
+its new hashes. No transitive dependency moved; `mix deps.get` afterwards reports every other
+package `Unchanged`.
+
+**`mix.exs` is deliberately unchanged, recorded as a decision rather than left as a silent
+non-choice.** `{:bandit, "~> 1.12"}` at `mix.exs:30` already admits 1.12.5, so the fix belongs in
+the lock alone. Pinning `~> 1.12.5` would narrow the constraint permanently in order to fix
+something already fixed, and would then be the obstacle at the next advisory.
+
+**THE GATE.** `mix hex.audit` now exits **0**: `No retired or security advisory packages found`.
+The full harness seven were run once at the boundary after the commit, each in the foreground
+under an explicit `timeout`, all exit 0: `deps.get` 1s, `hex.audit` 1s,
+`compile --warnings-as-errors` 3s, `format --check-formatted` 0s, `credo --strict` 4s
+(`2056 mods/funs, found no issues`), `dialyzer` 17s, `test` 94s.
+
+**The two load-bearing gates were baselined before the bump and compared after**, because `bandit`
+is the HTTP server and a dependency bump makes them evidence rather than routine. `mix test`:
+`972 tests, 0 failures, 133 excluded` both sides, wall 90.8 s → 91.7 s, and the single compiler
+warning (`module attribute @github_mcp_skip_reason was set but never used`) is byte-identical
+before and after — it is a pre-existing test-file warning and is not `bandit`'s. `mix dialyzer`:
+`Total errors: 0` both sides, and the application list under analysis is the same 29 apps. Its
+wall time moved 5 s → 17 s for a stated reason and not an unexplained one — the baseline reported
+`PLT is up to date!` while the post-bump run rebuilt the PLT over `1175 modules`, `bandit`'s beams
+having changed. Analysis time itself moved 4.24 s → 4.42 s.
+
+**WHAT THIS ROW DID NOT CLOSE.** **BL-169** stands. This red was found by a human typing the
+command at a ticket boundary, which is that row's argument arriving as an event; the instance is
+recorded on BL-169 and the row is not closed by it. Filing that instance turned up a second and
+larger fact — `ci.yml` fires on `pull_request` only and no pull request has been opened since
+2026-05-17 — which is **BL-172**, filed at this ticket.]`
+
+`Source: BL-171, 2026-08-22. Harness `7ea1a3a`, agents at the commit carrying this disposition. The
+advisory table and the version-membership check are from the OSV JSON captured at this ticket; the
+changelog block is quoted from `bandit.hexdocs.pm`. No figure above is carried from the row's own
+2026-08-21 capture — `mix hex.audit` was re-run at HEAD before any edit and reproduced it exactly.`
+
+---

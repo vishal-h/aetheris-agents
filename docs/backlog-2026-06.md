@@ -6929,6 +6929,23 @@ An upstream advisory published today is invisible until someone types the comman
 is exactly the invisibility the standing gate rule exists to prevent, arriving through absence
 rather than through neglect.
 
+**First live instance, 2026-08-22 (BL-171).** `mix hex.audit` went red on two upstream `bandit`
+advisories — `EEF-CVE-2026-74836` and `EEF-CVE-2026-75484`, both published `2026-08-20T21:11Z`
+(`curl -sS https://api.osv.dev/v1/vulns/<id>`, field `published`) — under a lock nobody moved. It
+was found only because **ds t3's** ticket-boundary run typed the command, and it was cleared at
+BL-171 by a lock bump to `bandit 1.12.5`. That is this row's argument arriving as an event rather
+than as a prediction.
+
+**And the reason no workflow reported it is worse than this row states.** This row establishes that
+`ci.yml` does not contain `mix hex.audit`. It does not establish that `ci.yml` *runs* — and it does
+not: the most recent workflow run on `vishal-h/aetheris` is `2026-05-17T14:10:29Z` on branch
+`t2-write-file`, three months before these advisories existed
+(`gh run list --limit 1 --json createdAt,headBranch,conclusion`). So the counterfactual *"CI would
+not have caught it"* holds for two independent reasons, and wiring `hex.audit` into `ci.yml` would
+have closed neither. **That second reason is out of this row's scope and is filed as BL-172**; this
+row still owes only the decision about what runs the gate and what its red does to a pull request.
+BL-171 does not close it.
+
 **Done when:** either `mix hex.audit` runs in CI — and, given that its red is upstream-triggered and
 unsuppressable, the decision of what a red does to a pull request is taken and recorded with it — or
 the §CI contract stops declaring it a merge gate and says what does run it and on what trigger. Not
@@ -6991,68 +7008,75 @@ and ds t3 is the last ticket in this cycle, so it was this or nothing.`
 
 ---
 
-### BL-171 — `mix hex.audit` is red: bandit 1.12.4 carries two advisories, and 1.12.5 is out (#TBD)
+### BL-172 — `ci.yml` fires on `pull_request` only, and no pull request has been opened since 2026-05-17 (#TBD)
 **Status:** OPEN
-**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract, `### mix hex.audit — supply-chain gate`
-**Size:** S · **Priority:** high
-**Section:** harness (`../aetheris/mix.exs`, `../aetheris/mix.lock`)
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`, `../aetheris/CLAUDE.md` §CI contract)
 
-Found 2026-08-21 by **ds t3**'s ticket-boundary gate run — off-territory, exactly the way the gate
-rule intends, on a ticket whose subject is a sprint arm and not the dependency tree. Filed the day
-it was found, not carried.
+Filed 2026-08-22 at **BL-171**, from a claim that ticket wrote into BL-169 and then could not
+support. The draft sentence read *"every CI run on this repository was green"*; checking it before
+it stood showed there had been no CI run at all. The row exists because the check was run, not
+because the defect was suspected.
 
-```
-$ cd ~/sandbox/elixirws/aetheris && mix hex.audit          # exit 1
-Advisories:
-  bandit 1.12.4 - EEF-CVE-2026-75484 (MEDIUM)
-    aka: CVE-2026-75484, GHSA-x3gh-xhj4-3vq8
-    HTTP/2 header field values containing CR, LF or NUL are passed to the application unvalidated in Bandit
-    https://osv.dev/vulnerability/EEF-CVE-2026-75484
+**BL-169 establishes that `ci.yml` does not contain `mix hex.audit`. This row is the larger fact
+underneath it: `ci.yml` does not run.** The two are independent, and neither closes the other —
+wiring `hex.audit` into a workflow nothing triggers changes nothing.
 
-  bandit 1.12.4 - EEF-CVE-2026-74836 (HIGH)
-    aka: CVE-2026-74836, GHSA-xj8g-532w-jv94
-    HTTP/2 connection-window starvation pins Plug processes indefinitely in Bandit
-    https://osv.dev/vulnerability/EEF-CVE-2026-74836
+**The mechanism, read from the file rather than inferred.** `../aetheris/.github/workflows/ci.yml`
+declares its triggers in full as:
 
-Found packages with security advisories
+```yaml
+on:
+  workflow_dispatch:
+  pull_request:
 ```
 
-**This is NOT BL-060 recurring, and the distinction is the whole reason a new row was needed.**
-BL-060 is DONE and its subject was **bandit 1.11.1 / EEF-CVE-2026-65623**, a different package
-version and a different advisory. These two are new. No open row named `bandit` or `hex.audit`
-before this one.
+There is no `push:`. So the workflow fires on a pull request, or when a human dispatches it by
+hand, and on nothing else.
 
-**Upstream-triggered, not commit-triggered.** ds t3's two commits touch `../aetheris/scripts/sprint.sh`
-and eight agents-side documents; neither goes near `mix.exs` or `mix.lock`. The advisories were
-published under a lock nobody moved. Harness `CLAUDE.md`'s own supply-chain section says this is the
-gate working rather than a defect — *"An advisory published upstream turns it red through nobody's
-commit. That is the gate reporting that the world changed under us."*
+**And the pull-request path has been unused for three months.** Every figure here carries the
+command that produced it, run at harness `7ea1a3a`:
 
-**A patched release appears to exist and was NOT taken here.** `mix hex.info bandit` reports
-**1.12.5 (2026-08-20)** against a locked **1.12.4 (2026-07-27)**, and `mix.exs:30` declares
-`{:bandit, "~> 1.12"}`, so the constraint already admits it. Whether 1.12.5 actually carries the
-fixes for both CVEs is **not established here** — it was inferred from the release date, and this
-row does not assert it. ds t3 did not bump: a dependency change belongs to a ticket that can run the
-full harness gate set against it and read the changelog, not to a sprint-arm ticket that happened to
-find the red.
+| what | figure | command |
+|---|---|---|
+| most recent workflow run | `2026-05-17T14:10:29Z`, branch `t2-write-file`, `success` | `gh run list --limit 1 --json createdAt,headBranch,conclusion` |
+| most recent pull request | `#70`, `2026-05-17T14:10:24Z` | `gh pr list --state all --limit 5 --json number,title,createdAt` |
+| commits on `main` since that date | `371` (`24` of them merges) | `git log --since=2026-05-17 main --oneline \| wc -l` |
+| last commit touching the workflow | `6e2fad8`, `2026-07-25` | `git log -1 --format='%h %ad %s' --date=short -- .github/workflows/ci.yml` |
 
-**This row is why BL-169 matters, arriving as an instance rather than an argument.** BL-169 records
-that `mix hex.audit` is a declared merge gate no workflow runs. This red was found only because a
-human-directed ticket-boundary run typed the command. Nothing in CI would have reported it, and
-nothing will report the next one.
+The last run and the last PR are five seconds apart, which is the same event: PR #70 opened, CI
+ran, and neither has happened since. The 24 merge commits are local merges, which `pull_request`
+does not observe. `6e2fad8` is the sharpest of the four — the workflow was **edited** on
+2026-07-25, two months after the last run that could have exercised the edit.
 
-**Done when:** either `bandit` is on a version `mix hex.audit` reports clean — with the changelog
-read and the fix for **both** advisory ids confirmed rather than inferred from a version number —
-or, if no patched version covers one of them, that advisory is accepted in writing with its
-rationale here and the gate runs **expected-red, named with this row's ref** per the tracked-carry
-clause. Not relaxed, not re-pointed, and not downgraded to a warning.
+**What this costs, stated rather than left to inference.** Harness `CLAUDE.md` §CI contract opens
+*"Every change must pass all of these before merge"* and lists seven commands. Six of the seven
+are in `ci.yml`; the seventh is BL-169. For 371 commits the enforcement of all six has been the
+ticket-boundary rule and nothing else — which is to say, a human typing them. That rule works, and
+this cycle is evidence that it works: BL-171's red was found by exactly that route. But the §CI
+contract describes a merge gate, and what exists is a discipline. **A discipline and a gate fail
+differently**, and the contract does not say which one a reader is being promised.
 
-**Costs:** S if 1.12.5 is the fix — a lock bump and the harness gate set. Larger only if it is not.
+**Not a regression, and not silently carried.** Nothing broke; the repository changed how it
+lands work — direct to `main` rather than through pull requests — and the workflow's trigger was
+never moved to match. That is the same shape as the standing gate rule's own examples, where a
+gate rots because nothing runs it off-territory.
 
-**Collides with:** **BL-169**, which owns the question of what runs `hex.audit` and what its red does
-to a pull request. Neither closes the other: BL-169 owes a decision about the gate, this row owes a
-clean audit.
+**Done when:** either the workflow fires on the path work actually takes — a `push:` trigger on
+`main`, or a stated requirement that changes land through pull requests — with one run on the
+record proving it fires, **or** the §CI contract stops calling these seven a merge gate and says
+what enforces them and on what trigger. Not both silently, and not a `workflow_dispatch` run
+performed once to make this row look closed: the Done-when is about the trigger, not about a run.
 
-`Source: ds t3's ticket-boundary gate run, 2026-08-21, at harness `d648aa8` / agents `f003e4a`. The
-audit output is transcribed complete rather than excerpted. The `1.12.5` figure is from
-`mix hex.info bandit` run the same day and is a claim about Hex, not about this repository.`
+**Costs:** M. Adding `push:` is a two-line edit; deciding whether this repository wants
+pull-request-gated merges is not, and the answer changes what BL-169 should do as well.
+
+**Collides with:** **BL-169**, which owes the decision about `mix hex.audit` specifically. This row
+owes the decision about whether the workflow runs at all. BL-169's fix is inert until this one
+lands; this one does not close BL-169.
+
+`Source: BL-171, 2026-08-22, at harness `7ea1a3a` / agents `001a2fe`. Every claim above was run
+rather than carried — the trigger block is quoted from the file, and the four figures each carry
+their command in the table. The `pull_request` trigger has a trailing space in the source file,
+preserved in neither the quote above nor this note because it is not load-bearing.`

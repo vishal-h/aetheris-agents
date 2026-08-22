@@ -32,10 +32,10 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `43e63e0` | 2026-08-17 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `38009fd` | 2026-08-21 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `6436b25` | 2026-08-18 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fa65516` | 2026-08-22 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
@@ -47,8 +47,8 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `8eb960d` | 2026-08-18 |
-| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `9ba6c8c` | 2026-08-17 |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `2050c04` | 2026-08-21 |
+| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `2050c04` | 2026-08-21 |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical

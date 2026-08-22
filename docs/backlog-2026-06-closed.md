@@ -5514,4 +5514,196 @@ workflow fires, which is BL-172's and stays BL-172's.
 disposition. The step is quoted from `ci.yml` at that commit; the two-arm exercise is this
 ticket's own and its transcript is in the review packet, which is not committed.`
 
+`[Added 2026-08-22 at BL-172's close, and it NARROWS the two paragraphs above rather than
+correcting them — both were true when written and stay unedited. The step has since executed on a
+GitHub runner: run `32563924592`, `check` job step 9, exit 0, log ending
+`No retired or security advisory packages found`. Two things follow. The runner reports
+`shell: /usr/bin/bash -e {0}` for that step — the same interpreter and flag the local two-arm
+exercise used — so the shell semantics the `set +e` / `status=$?` / `set -e` construction depends
+on are corroborated on the runner and are no longer an assumption. And what remains unverified is
+therefore **narrower than "a red advisory's behaviour"**: it is the `else` branch's own content,
+the text under `### Supply-chain audit: ADVISORIES FOUND`, which has executed nowhere but the local
+stub. **The closing condition itself is unchanged** — the first real red after this lands, read by
+whoever files the tracked ticket that red owes. BL-172's own disposition carries the same narrowing
+under its item (b).]`
+
+---
+
+### BL-172 — `ci.yml` fires on `pull_request` only, and no pull request has been opened since 2026-05-17 (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`, `../aetheris/CLAUDE.md` §CI contract)
+
+Filed 2026-08-22 at **BL-171**, from a claim that ticket wrote into BL-169 and then could not
+support. The draft sentence read *"every CI run on this repository was green"*; checking it before
+it stood showed there had been no CI run at all. The row exists because the check was run, not
+because the defect was suspected.
+
+**BL-169 establishes that `ci.yml` does not contain `mix hex.audit`. This row is the larger fact
+underneath it: `ci.yml` does not run.** The two are independent, and neither closes the other —
+wiring `hex.audit` into a workflow nothing triggers changes nothing.
+
+**The mechanism, read from the file rather than inferred.** `../aetheris/.github/workflows/ci.yml`
+declares its triggers in full as:
+
+```yaml
+on:
+  workflow_dispatch:
+  pull_request:
+```
+
+There is no `push:`. So the workflow fires on a pull request, or when a human dispatches it by
+hand, and on nothing else.
+
+**And the pull-request path has been unused for three months.** Every figure here carries the
+command that produced it, run at harness `7ea1a3a`:
+
+| what | figure | command |
+|---|---|---|
+| most recent workflow run | `2026-05-17T14:10:29Z`, branch `t2-write-file`, `success` | `gh run list --limit 1 --json createdAt,headBranch,conclusion` |
+| most recent pull request | `#70`, `2026-05-17T14:10:24Z` | `gh pr list --state all --limit 5 --json number,title,createdAt` |
+| commits on `main` since that date | `371` (`24` of them merges) | `git log --since=2026-05-17 main --oneline \| wc -l` |
+| last commit touching the workflow | `6e2fad8`, `2026-07-25` | `git log -1 --format='%h %ad %s' --date=short -- .github/workflows/ci.yml` |
+
+The last run and the last PR are five seconds apart, which is the same event: PR #70 opened, CI
+ran, and neither has happened since. The 24 merge commits are local merges, which `pull_request`
+does not observe. `6e2fad8` is the sharpest of the four — the workflow was **edited** on
+2026-07-25, two months after the last run that could have exercised the edit.
+
+**What this costs, stated rather than left to inference.** Harness `CLAUDE.md` §CI contract opens
+*"Every change must pass all of these before merge"* and lists seven commands. Six of the seven
+are in `ci.yml`; the seventh is BL-169. For 371 commits the enforcement of all six has been the
+ticket-boundary rule and nothing else — which is to say, a human typing them. That rule works, and
+this cycle is evidence that it works: BL-171's red was found by exactly that route. But the §CI
+contract describes a merge gate, and what exists is a discipline. **A discipline and a gate fail
+differently**, and the contract does not say which one a reader is being promised.
+
+**Not a regression, and not silently carried.** Nothing broke; the repository changed how it
+lands work — direct to `main` rather than through pull requests — and the workflow's trigger was
+never moved to match. That is the same shape as the standing gate rule's own examples, where a
+gate rots because nothing runs it off-territory.
+
+**Done when:** either the workflow fires on the path work actually takes — a `push:` trigger on
+`main`, or a stated requirement that changes land through pull requests — with one run on the
+record proving it fires, **or** the §CI contract stops calling these seven a merge gate and says
+what enforces them and on what trigger. Not both silently, and not a `workflow_dispatch` run
+performed once to make this row look closed: the Done-when is about the trigger, not about a run.
+
+**Costs:** M. Adding `push:` is a two-line edit; deciding whether this repository wants
+pull-request-gated merges is not, and the answer changes what BL-169 should do as well.
+
+**Collides with:** **BL-169**, which owes the decision about `mix hex.audit` specifically. This row
+owes the decision about whether the workflow runs at all. BL-169's fix is inert until this one
+lands; this one does not close BL-169.
+
+`Source: BL-171, 2026-08-22, at harness `7ea1a3a` / agents `001a2fe`. Every claim above was run
+rather than carried — the trigger block is quoted from the file, and the four figures each carry
+their command in the table. The `pull_request` trigger has a trailing space in the source file,
+preserved in neither the quote above nor this note because it is not load-bearing.`
+
+**2026-08-22 — the trigger lands at harness `203dec8`, and this row STAYS OPEN.** Read the
+Done-when as written: disjunct 1 is *"the workflow fires on the path work actually takes — a
+`push:` trigger on `main` … — **with one run on the record proving it fires**"*. The trigger half
+is done. The run half cannot be: the commit is held for review and nothing is pushed, so no
+push-triggered run exists and none can until it is. The row's closing sentence — *"the Done-when
+is about the trigger, not about a run"* — refuses a `workflow_dispatch` run staged to look like
+closure; it does not remove the proof this disjunct asks for, and reading it that way would close
+the row on the strength of a file nobody has run.
+
+**What landed.** `push: branches: [main]`, scoped to `main` rather than to every branch. `main`
+is the path work actually takes; a pull-request branch would otherwise run the whole workflow
+twice for one commit, once on `push` and once on `pull_request`; and a work-in-progress branch is
+not what a merge gate is for. The concurrency group landed with it, in the same commit, because
+shipping the trigger without it is a defect — `group: pr-${{ github.event.pull_request.number }}`
+yields `pr-` on every event that is not a pull request, so each push run would have joined one
+group and cancelled its predecessor whatever ref it was for. `cancel-in-progress` became
+conditional at the same time and this is the one judgement in the edit beyond what was asked:
+cancelling a superseded run is right for a pull request and wrong for a push to `main`, where two
+pushes seconds apart would otherwise leave the first commit with no completed run — the exact
+property this trigger exists to produce.
+
+**What the first push-triggered run has to show, so the reader is not left to infer it.** That run
+is this row's evidence, and it happens when the arbiter pushes. Look for: an entry in
+`gh run list` whose event column reads `push` and whose branch is `main`; two jobs, `check` and
+`sandbox`; `check` concluding `success` with a step named
+`mix hex.audit (advisory — visible, non-blocking)` between `mix deps.get` and
+`mix compile --warnings-as-errors`; that step's summary section on the run page reading
+`### Supply-chain audit: clean`, since the lock is green at `bandit 1.12.5`; and `sandbox`
+concluding `success` with its named skip, which is that job's design and not a defect.
+
+**What that run still will not show.** A *red* advisory's behaviour. The step is implemented
+non-blocking and was exercised in both arms locally, and no run on a green lock can demonstrate
+it — see the closing condition recorded on **BL-169**, which this commit closed.
+
+`Source of the 2026-08-22 block: BL-172 itself, at harness `203dec8` / agents at the commit
+carrying it. The Done-when is quoted from this row's own text above; the trigger, the group
+expression and the step name are quoted from `ci.yml` at `203dec8`. The filing Source above covers
+the filing only — it predates this block and does not vouch for it.`
+
+**DONE 2026-08-22, on Done-when's FIRST disjunct, both halves.** The disjunction is quoted whole
+above. The second disjunct is not taken: harness `CLAUDE.md` §CI contract is unchanged and still
+opens *"Every change must pass all of these before merge"* over the same seven commands. The first
+is taken, and it has two halves that closed a few hours apart.
+
+**Half one — the trigger.** Harness `203dec8` adds
+
+```yaml
+  push:
+    branches: [main]
+```
+
+scoped to `main` rather than to every branch, for the reasons recorded in the file's own comment
+and in the `2026-08-22` block above.
+
+**Half two — one run on the record proving it fires.** Run **`32563924592`**,
+<https://github.com/vishal-h/aetheris/actions/runs/32563924592>, created `2026-08-22T09:03:37Z`:
+**event `push`, branch `main`, sha `203dec8`, conclusion `success`**, both jobs green — `check`
+`09:03:41Z → 09:09:53Z`, `sandbox` 1m26s with its named skip. This is the first push-triggered run
+in the repository's history; the row was filed on the fact that the last run of any kind was
+`2026-05-17T14:10:29Z`.
+
+**It fired on the commit that added it, so no second push was needed.** GitHub reads the workflow
+file from the pushed head, so `203dec8` — the commit introducing `push:` — is itself the commit
+that triggered under it. The sha in the run record and the sha of the trigger commit are the same
+object, `203dec8ffdf4e550b1a0517a133f951e16d56a69`. A reader expecting the first run to come from
+the *next* commit will not find one, and that is not a gap.
+
+**The gate the row was really about is now enforced by a machine.** Six of the §CI contract's seven
+commands ran in that job, in order, all green; the seventh is `mix hex.audit`, which ran as step 9
+under the advisory ruling recorded on **BL-169**. For the 371 commits this row counted, enforcement
+was a human typing them.
+
+**TWO THINGS THIS DISPOSITION CARRIES, neither of them a Done-when item.**
+
+**(a) The conditional `cancel-in-progress` is EVALUATED, NOT DEMONSTRATED.** The concurrency block
+landed in the same commit because shipping the trigger without it was a defect —
+`group: pr-${{ github.event.pull_request.number }}` yields `pr-` on every non-pull-request event,
+so every push run would have joined one group. The replacement groups a push run per ref and sets
+`cancel-in-progress: ${{ github.event_name == 'pull_request' }}`. **One push happened, so no
+competing run ever existed and nothing has watched a second push queue behind a first.** The
+expression was evaluated against GitHub's documented semantics — its expressions reference lists
+`null` among the falsy values, and its workflow-syntax reference prescribes exactly this `||`
+fallback for a property defined only on some events — and the group value is not readable after the
+fact either: `gh api repos/vishal-h/aetheris/actions/runs/32563924592 --jq 'keys'` returns 35 keys
+and none is a concurrency or group field. **This does not hold the row open.** It is written here
+so that a later reader who sees two pushes both complete knows nobody has yet watched that happen,
+and does not mistake the absence of a report for a report of absence.
+
+**(b) The runner's shell is corroborated; the red arm's CONTENT is not.** The run's log records
+`shell: /usr/bin/bash -e {0}` for the `hex.audit` step — the same interpreter and the same `-e`
+flag the local two-arm exercise used. That is what the step's `set +e` / `status=$?` / `set -e`
+construction depends on, and it is no longer an assumption about the runner. **State precisely what
+remains: not the shell, and not the exit-code arithmetic — only the `else` branch's own content,
+which has never executed anywhere.** The lock is green at `bandit 1.12.5`, so on the runner and in
+the local exercise the `status -eq 0` arm ran, and the text under
+`### Supply-chain audit: ADVISORIES FOUND` has been read by no reader of a real run. That remainder
+belongs to **BL-169**'s stated closing condition — the first real red after this lands — and this
+narrowing refines that condition's subject without reopening it or contradicting it.
+
+`Source: BL-172's own close, 2026-08-22, at harness `203dec8` / agents at the commit carrying this
+disposition. The run's fields are from `gh run view 32563924592 --json event,headBranch,headSha,conclusion,url`;
+the step name, its ordinal and the shell line are from that run's `check` job log. The Done-when is
+quoted from this row's own text above.`
+
 ---

@@ -6985,120 +6985,6 @@ and ds t3 is the last ticket in this cycle, so it was this or nothing.`
 
 ---
 
-### BL-172 — `ci.yml` fires on `pull_request` only, and no pull request has been opened since 2026-05-17 (#TBD)
-**Status:** OPEN
-**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
-**Size:** M · **Priority:** high
-**Section:** harness (`../aetheris/.github/workflows/ci.yml`, `../aetheris/CLAUDE.md` §CI contract)
-
-Filed 2026-08-22 at **BL-171**, from a claim that ticket wrote into BL-169 and then could not
-support. The draft sentence read *"every CI run on this repository was green"*; checking it before
-it stood showed there had been no CI run at all. The row exists because the check was run, not
-because the defect was suspected.
-
-**BL-169 establishes that `ci.yml` does not contain `mix hex.audit`. This row is the larger fact
-underneath it: `ci.yml` does not run.** The two are independent, and neither closes the other —
-wiring `hex.audit` into a workflow nothing triggers changes nothing.
-
-**The mechanism, read from the file rather than inferred.** `../aetheris/.github/workflows/ci.yml`
-declares its triggers in full as:
-
-```yaml
-on:
-  workflow_dispatch:
-  pull_request:
-```
-
-There is no `push:`. So the workflow fires on a pull request, or when a human dispatches it by
-hand, and on nothing else.
-
-**And the pull-request path has been unused for three months.** Every figure here carries the
-command that produced it, run at harness `7ea1a3a`:
-
-| what | figure | command |
-|---|---|---|
-| most recent workflow run | `2026-05-17T14:10:29Z`, branch `t2-write-file`, `success` | `gh run list --limit 1 --json createdAt,headBranch,conclusion` |
-| most recent pull request | `#70`, `2026-05-17T14:10:24Z` | `gh pr list --state all --limit 5 --json number,title,createdAt` |
-| commits on `main` since that date | `371` (`24` of them merges) | `git log --since=2026-05-17 main --oneline \| wc -l` |
-| last commit touching the workflow | `6e2fad8`, `2026-07-25` | `git log -1 --format='%h %ad %s' --date=short -- .github/workflows/ci.yml` |
-
-The last run and the last PR are five seconds apart, which is the same event: PR #70 opened, CI
-ran, and neither has happened since. The 24 merge commits are local merges, which `pull_request`
-does not observe. `6e2fad8` is the sharpest of the four — the workflow was **edited** on
-2026-07-25, two months after the last run that could have exercised the edit.
-
-**What this costs, stated rather than left to inference.** Harness `CLAUDE.md` §CI contract opens
-*"Every change must pass all of these before merge"* and lists seven commands. Six of the seven
-are in `ci.yml`; the seventh is BL-169. For 371 commits the enforcement of all six has been the
-ticket-boundary rule and nothing else — which is to say, a human typing them. That rule works, and
-this cycle is evidence that it works: BL-171's red was found by exactly that route. But the §CI
-contract describes a merge gate, and what exists is a discipline. **A discipline and a gate fail
-differently**, and the contract does not say which one a reader is being promised.
-
-**Not a regression, and not silently carried.** Nothing broke; the repository changed how it
-lands work — direct to `main` rather than through pull requests — and the workflow's trigger was
-never moved to match. That is the same shape as the standing gate rule's own examples, where a
-gate rots because nothing runs it off-territory.
-
-**Done when:** either the workflow fires on the path work actually takes — a `push:` trigger on
-`main`, or a stated requirement that changes land through pull requests — with one run on the
-record proving it fires, **or** the §CI contract stops calling these seven a merge gate and says
-what enforces them and on what trigger. Not both silently, and not a `workflow_dispatch` run
-performed once to make this row look closed: the Done-when is about the trigger, not about a run.
-
-**Costs:** M. Adding `push:` is a two-line edit; deciding whether this repository wants
-pull-request-gated merges is not, and the answer changes what BL-169 should do as well.
-
-**Collides with:** **BL-169**, which owes the decision about `mix hex.audit` specifically. This row
-owes the decision about whether the workflow runs at all. BL-169's fix is inert until this one
-lands; this one does not close BL-169.
-
-`Source: BL-171, 2026-08-22, at harness `7ea1a3a` / agents `001a2fe`. Every claim above was run
-rather than carried — the trigger block is quoted from the file, and the four figures each carry
-their command in the table. The `pull_request` trigger has a trailing space in the source file,
-preserved in neither the quote above nor this note because it is not load-bearing.`
-
-**2026-08-22 — the trigger lands at harness `203dec8`, and this row STAYS OPEN.** Read the
-Done-when as written: disjunct 1 is *"the workflow fires on the path work actually takes — a
-`push:` trigger on `main` … — **with one run on the record proving it fires**"*. The trigger half
-is done. The run half cannot be: the commit is held for review and nothing is pushed, so no
-push-triggered run exists and none can until it is. The row's closing sentence — *"the Done-when
-is about the trigger, not about a run"* — refuses a `workflow_dispatch` run staged to look like
-closure; it does not remove the proof this disjunct asks for, and reading it that way would close
-the row on the strength of a file nobody has run.
-
-**What landed.** `push: branches: [main]`, scoped to `main` rather than to every branch. `main`
-is the path work actually takes; a pull-request branch would otherwise run the whole workflow
-twice for one commit, once on `push` and once on `pull_request`; and a work-in-progress branch is
-not what a merge gate is for. The concurrency group landed with it, in the same commit, because
-shipping the trigger without it is a defect — `group: pr-${{ github.event.pull_request.number }}`
-yields `pr-` on every event that is not a pull request, so each push run would have joined one
-group and cancelled its predecessor whatever ref it was for. `cancel-in-progress` became
-conditional at the same time and this is the one judgement in the edit beyond what was asked:
-cancelling a superseded run is right for a pull request and wrong for a push to `main`, where two
-pushes seconds apart would otherwise leave the first commit with no completed run — the exact
-property this trigger exists to produce.
-
-**What the first push-triggered run has to show, so the reader is not left to infer it.** That run
-is this row's evidence, and it happens when the arbiter pushes. Look for: an entry in
-`gh run list` whose event column reads `push` and whose branch is `main`; two jobs, `check` and
-`sandbox`; `check` concluding `success` with a step named
-`mix hex.audit (advisory — visible, non-blocking)` between `mix deps.get` and
-`mix compile --warnings-as-errors`; that step's summary section on the run page reading
-`### Supply-chain audit: clean`, since the lock is green at `bandit 1.12.5`; and `sandbox`
-concluding `success` with its named skip, which is that job's design and not a defect.
-
-**What that run still will not show.** A *red* advisory's behaviour. The step is implemented
-non-blocking and was exercised in both arms locally, and no run on a green lock can demonstrate
-it — see the closing condition recorded on **BL-169**, which this commit closed.
-
-`Source of the 2026-08-22 block: BL-172 itself, at harness `203dec8` / agents at the commit
-carrying it. The Done-when is quoted from this row's own text above; the trigger, the group
-expression and the step name are quoted from `ci.yml` at `203dec8`. The filing Source above covers
-the filing only — it predates this block and does not vouch for it.`
-
----
-
 ### BL-173 — `ci.yml` caches two paths that do not exist, and the cache step reports nothing (#TBD)
 **Status:** OPEN
 **Kind:** bug · **Census items:** n/a · **Contract:** n/a
@@ -7109,7 +6995,11 @@ Filed 2026-08-22 at **BL-172**, which read the file line by line to add a trigge
 beside the lines it was changing. **Reported, not fixed** — BL-172's ruling was that the trigger,
 the concurrency group and `hex.audit` land and nothing else does. This row exists because BL-172
 and **BL-169** both close their own questions and neither can hold this one: a finding recorded
-inside a row that is being disposed has a record and no executor.
+inside a row that is being disposed has a record and no executor. **Both of those rows are now
+DONE and live in `docs/backlog-2026-06-closed.md`** — BL-169 at the commit that filed this row,
+BL-172 at the one that closed it on run `32563924592`. The id is the address, so the references
+above resolve there and nothing here reopens either. This row is the executor that outlived them,
+which is the reason it was filed separately.
 
 **The two paths, at harness `203dec8`.**
 
@@ -7160,8 +7050,10 @@ log rather than inferred from `actions/cache`'s documentation.`
 **Size:** S · **Priority:** medium
 **Section:** harness (`../aetheris/README.md`, `../aetheris/.github/copilot-instructions.md`, `../aetheris/docs/aetheris/test-plan.md`, `../aetheris/docs/aetheris/notes-m09.md`, `../aetheris/docs/aetheris/milestones/m10-autonomous-agent-tooling.md`)
 
-Filed 2026-08-22 at **BL-172**, from the same reading that produced **BL-173**. **Reported, not
-fixed.** `e977af0` (2026-05-20) deleted `native/aetheris_nif/` and removed the `rustler`
+Filed 2026-08-22 at **BL-172**, from the same reading that produced **BL-173**. **BL-172 is now
+DONE and lives in `docs/backlog-2026-06-closed.md`**, closed on run `32563924592`; the id is the
+address, so that reference resolves there, and this row stays open on its own terms. **Reported,
+not fixed.** `e977af0` (2026-05-20) deleted `native/aetheris_nif/` and removed the `rustler`
 dependency; `mix.exs` names neither and `lib/aetheris/nif.ex` is gone
 (`git -C ../aetheris ls-files lib/aetheris/nif.ex` returns nothing). The documentation was not
 swept with it.

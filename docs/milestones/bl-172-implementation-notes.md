@@ -116,3 +116,61 @@ for the `sandbox` job's named skip and for the cache steps' silence.
 - `docs/backlog-2026-06.md` — BL-172's dated block, BL-150's append, BL-173 and BL-174.
 - The review packet, `bl-172-review.md`, is in a session scratchpad and is not committed; the two
   transcripts it carries (the step's two arms, the two mutation runs) exist nowhere else.
+
+---
+
+# Close round — 2026-08-22, after the push
+
+Written into this file rather than a new one: it is the record the next round in this arc opens,
+and a close recorded elsewhere would have to be found rather than read.
+
+## What changed between the two rounds
+
+Nothing in the repository except the push itself. Harness `203dec8` and agents `7792e19` went to
+`origin/main` in that order, harness first, and the push of `203dec8` triggered run
+`32563924592` — event `push`, branch `main`, sha `203dec8`, conclusion `success`, both jobs green.
+
+**The trigger fired on the commit that introduced it.** GitHub reads the workflow file from the
+pushed head, so no second commit was needed to exercise it. The first round's notes recorded the
+push trigger as unverified; that is now discharged and the sentence above is where the discharge is
+recorded.
+
+## What this round did
+
+- **BL-172 → DONE**, first disjunct, both halves — the trigger and the run. Moved to
+  `docs/backlog-2026-06-closed.md` under the split rule, which was re-read from the archive's own
+  header for this move rather than carried from the earlier one.
+- **BL-173 and BL-174** each gained a sentence saying BL-172 is now closed and where it lives. The
+  id is the address and the path is never load-bearing, so neither reference was broken; the
+  sentences exist so a reader is not left checking.
+- **BL-169** gained a dated block **narrowing** its unverified remainder. Its two existing
+  paragraphs are unedited and were true when written.
+
+## The narrowing, because it is the one substantive finding of this round
+
+The first round said *"a red advisory's behaviour on a real runner is UNVERIFIED"*. After the run
+that is too broad in one direction and correctly worried in another.
+
+- **No longer unverified: the shell.** The runner reports `shell: /usr/bin/bash -e {0}` for the
+  step, which is the interpreter and the flag the local two-arm exercise used. The step's
+  `set +e` / `status=$?` / `set -e` construction depends on exactly that, and it is now observed
+  rather than assumed.
+- **Still unverified: the `else` branch's content.** The text under
+  `### Supply-chain audit: ADVISORIES FOUND` has executed nowhere but against a stub. The lock is
+  green, so both the runner and the local exercise took the `status -eq 0` arm.
+
+The closing condition on BL-169 is unchanged by this: the first real red after this lands.
+
+## Not demonstrated, and it is not a Done-when item
+
+The conditional `cancel-in-progress`. One push happened, so no competing run existed. The group
+value is also unreadable after the fact — the run object carries no concurrency field. Recorded on
+BL-172's disposition under (a) so that a later reader seeing two pushes both complete knows nobody
+has yet watched that happen.
+
+## Anchors
+
+- Run `32563924592` — <https://github.com/vishal-h/aetheris/actions/runs/32563924592>.
+- `docs/backlog-2026-06-closed.md` — BL-169 (with its dated narrowing) and BL-172.
+- `docs/backlog-2026-06.md` — BL-173 and BL-174, both still open, both now pointing at the archive.
+- The close packet is `bl-172-close-review.md`, in a session scratchpad, not committed.

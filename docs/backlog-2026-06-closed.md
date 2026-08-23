@@ -6646,5 +6646,37 @@ discharge this row — that is the state it is already in.
 > name, which is the branch this ruling declined.
 > **]**
 
+> **[Residue tested and closed 2026-08-23 at harness `c171a78`. BL-176 stays DONE; this row is not
+> reopened.** Its implementation notes §8 reported, as an observation rather than a row, that this
+> removal made `docs/aetheris/runbook.md` §Option C the only route to an escript while the
+> `ERL_LIBS=_build/dev/lib` requirement that makes one start was recorded **only** in
+> `runbook-m11.md`, `runbook-m12.md` and `milestones/handoff-m07-m08.md` — all point-in-time
+> records. The notes could not settle whether a *freshly built* escript still needs it, because that
+> ticket was forbidden to rebuild. **The rebuild was authorised afterwards and the question is now
+> answered: it does.**
+>
+> ```
+> $ mix escript.build                            Generated escript aetheris with MIX_ENV=dev   EXIT=0
+> $ ./aetheris list --limit 1                    EXIT=1   Exqlite.Sqlite3NIF.open/2 is undefined
+> $ ./aetheris server --help                     EXIT=1   same failure, before any dispatch
+> $ ERL_LIBS="_build/dev/lib" ./aetheris list --limit 1    EXIT=0   run listed
+> ```
+>
+> **The requirement is a property of running an escript at all, not of a stale one**, which is the
+> finding — and the two binaries are provably different rather than assumed so: the removed one
+> raised at `store.ex:194` and answered `Error: unknown command: server`; this one raises at
+> `store.ex:568` and, under `ERL_LIBS`, **dispatches** `server`, starting a server and being
+> cap-killed at 120s (exit 124, recorded as the complete result it is and not retried longer).
+>
+> So the canonical instruction was missing the half that makes its own procedure work, and
+> `c171a78` adds it to §Option C with its reason. The frozen records were not edited and their
+> content is not repeated beyond the one requirement. **The observation in the notes is discharged
+> here rather than left standing as an open question for a later reader to re-investigate.**
+>
+> **And the removal's structural claim is confirmed by the same test:** the built escript is
+> 18,643,194 bytes in the working tree and `git status --porcelain` is empty —
+> `git check-ignore -v aetheris` reports `.gitignore:19:/aetheris`, the rule this row added. A
+> rebuild can no longer be committed by accident. **]**
+
 
 ---

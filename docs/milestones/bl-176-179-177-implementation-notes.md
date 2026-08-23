@@ -196,3 +196,10 @@ agents commit (check 8 reads committed history), and both hermetic sprint arms.
   committed binary makes §Option C the only path to an escript, so the canonical document is now
   the sole instruction for a procedure whose missing half is recorded only in files this repo says
   are not instructions.
+
+  `[Discharged 2026-08-23, same day. The rebuild this ticket was forbidden to perform was
+  authorised immediately afterwards; a fresh escript needs ERL_LIBS exactly as the stale one did,
+  so the gap was real. Closed at harness c171a78, which adds the requirement to §Option C. The
+  evidence and the two-binary comparison are on BL-176's row in docs/backlog-2026-06-closed.md —
+  read it there. This bullet is left standing rather than rewritten: it was true when written, and
+  what it reports is that the question was open, which it was.]`

@@ -400,7 +400,17 @@ Each with the command that caught it, per the ticket's §I7.
 
 ## 8. What this ticket did not do
 
-- **Not pushed.** Both commits are local. The corroborating workflow run is the arbiter's.
+`[Amended 2026-08-23, after the arbiter ratified and the push happened. The first bullet said
+"Not pushed", which was true when written and is now false; it is corrected in place per R32
+rather than rewritten, because a later reader should see that the notes were authored before the
+push and what changed when it came.]`
+
+- **~~Not pushed.~~ PUSHED at ratification** — harness `77ab709`, then agents `1130871`, in that
+  order. **The corroborating run is `32636070709`**: `push`, head `77ab709`, conclusion **success**,
+  both jobs green, test step `972 tests, 0 failures, 133 excluded` — the tally §6 predicted before
+  the push, matched exactly. **BL-181 closed on all four clauses** and moved to
+  `docs/backlog-2026-06-closed.md`. The wait on that run was a single blocking
+  `gh run watch --exit-status` under a 560 s cap; it **exited 0, so the cap did not end it**.
 - **The permitted single re-run of `32618789914` was not used**, and remains available.
 - **`ci.yml`, `mix.lock` and cache-key inputs untouched** — `git -C ../aetheris show --stat 77ab709`
   lists one file.

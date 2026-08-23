@@ -6329,3 +6329,226 @@ It did not survey which shells readers actually use. And of the four corpus disa
 established, it repaired two, by the scope stated above.
 
 ---
+
+### BL-181 — `coordinator_test.exs:127` failed on CI at harness `a4f93e1` and does not reproduce locally; `main` is red (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/test/aetheris/orb/coordinator_test.exs`, `../aetheris/lib/aetheris/orb/coordinator.ex`, and whatever the C4 census reaches)
+
+Filed 2026-08-23 the day it was found, per the standing rule that a red gate gets a tracked
+row the day it is found and is never carried silently. Found by the push-triggered run of the
+BL-174 arc's final harness commit — off-territory, the way the gate rule intends.
+
+**The run.** `32618789914`, `push`, head harness `a4f93e1`, conclusion **failure**. `sandbox`
+green; `check` red. `gh run view 32618789914 --json databaseId,headSha,conclusion,jobs`.
+
+**The failure, from the run's own log rather than a summary:**
+
+```
+  1) test step fix — :agent_message_received event carries receiver step from server state (Aetheris.Orb.CoordinatorTest)
+     test/aetheris/orb/coordinator_test.exs:127
+     Assertion with > failed, both sides are exactly equal
+     code: assert received_event.step > 0
+     left: 0
+     stacktrace:
+       test/aetheris/orb/coordinator_test.exs:168: (test)
+
+Finished in 95.1 seconds (6.9s async, 88.1s sync)
+972 tests, 1 failure, 133 excluded
+##[error]Process completed with exit code 2.
+```
+
+The suite total is the same 972/133 as every green run of this arc; one assertion moved.
+
+**NOT caused by the commit that triggered the run, and this is derived rather than assumed.**
+`git -C ../aetheris diff --name-only 7ccfc6a..a4f93e1` returns five files —
+`.github/copilot-instructions.md`, `.gitignore`, `CLAUDE.md`, `README.md`,
+`docs/aetheris/specs.md`. Filtering that list with
+`grep -E '^(lib|test|config|native)/|^mix\.(exs|lock)$'` returns **nothing**, exit 1. Neither
+the test nor the module under test has moved in three months:
+`git -C ../aetheris log -1 --format='%h %ad' --date=short -- test/aetheris/orb/coordinator_test.exs`
+gives `4f6a925 2026-05-16`, and the same for `lib/aetheris/orb/coordinator.ex` gives
+`4942312 2026-05-19`. The whole BL-174 arc is documentation and workflow configuration.
+
+**NOT REPRODUCED, and the attempts are not evidence.** 16 attempts, 0 reproductions: 10
+consecutive runs of `mix test test/aetheris/orb/coordinator_test.exs:127` on an idle machine,
+then 6 more under six CPU spin loops — the method BL-135 used. Three full-suite runs during the
+same arc reported `972 tests, 0 failures`.
+
+**Those sixteen passes establish nothing about the mechanism and the row says so plainly.** They
+are a negative with no positive control: nothing was done to make the failure *possible* in
+those runs, so their passing is equally consistent with "the race is rare", "the race cannot
+occur on this machine", and "the race is not what happened at all". Counting attempts reads as
+diligence and is not; the only thing that separates those three is C3's forced reproduction. Do
+not cite the attempt count as evidence of anything but the absence of an accidental repro.
+
+**The reading, offered as a hypothesis and labelled as one.** The assertion requires receiver B
+to have advanced past step 0 by the time A's message lands, and `left: 0` says the
+`:agent_message_received` event carried step 0 — so the message arrived while B was still in its
+first step. On a slower or more contended machine A reaches its `send_message` before B has
+advanced. **This is a reading of one line of output. It is not established.**
+
+**Done when — all four, and none of them alone:**
+
+1. **The failure has been produced DELIBERATELY.** Delay or hold receiver B so the message
+   provably arrives during step 0, and show the assertion fail on demand. Repetition is not a
+   substitute: the mechanism is either forced or unknown. **If forcing it does NOT reproduce the
+   failure, the reading above is wrong, and the row records that** — that outcome is worth as
+   much as a confirmation and must not be quietly dropped in favour of a second guess.
+2. **The census in the next clause has been run**, and the row does not close having repaired one
+   assertion while it is unrun.
+3. The assertion (or the coordination it tests) is made deterministic, with the fix argued from
+   the forced reproduction rather than from the green that follows it.
+4. The workflow is green on a commit that carries the fix, with the run id recorded.
+
+> **[Amended 2026-08-23.** Clause 4 as written is the unforced pass this row rejects everywhere
+> else in its own text. The row states that sixteen passes establish nothing about the mechanism,
+> and that a green re-run answers nothing because it is one more unforced pass — and then takes a
+> single green workflow run as its closing evidence. That is the same evidence it has already
+> refused, arriving under a different name. **The test of the fix is clause 1's forced
+> reproduction, re-run against the repaired code and no longer producing the failure.** A run
+> that cannot be made to fail before the repair proves nothing about the repair; one that could,
+> and then cannot, is the only thing here that does. **A green workflow run is corroboration
+> recorded after that check, with its run id, and is not the check.** Clause 4 is left as written
+> rather than rewritten, so a later reader sees both the contradiction and its correction — the
+> row's own argument was sound and its closing condition did not follow it, which is worth more
+> to that reader than a clause that was always right. **]**
+
+**Is this one test or a class? — the census, and it is a Done-when clause, not a suggestion.**
+Two timing-dependent assertions in this suite have now failed under load in three months, this
+one and **BL-135**'s. Two is either coincidence or a pattern and the row establishes which. The
+census: every assertion in the harness suite whose result depends on elapsed time, or on another
+process having advanced, **with nothing synchronising it** — sleeps against bounds, `assert
+x > 0` over a counter another process increments, `Process.sleep` followed by an assertion on
+state, receive-with-timeout used as a barrier. **Report the classes found, not a count.**
+
+**The census instrument owes a control, per R34.** Plant an assertion in a shape the census is
+most likely to miss — a timing dependency expressed without any of the census's search terms, for
+instance a bound computed into a variable and asserted several lines later — and show the census
+finds it. An instrument that under-reports here produces a clean-looking "one test, not a class"
+verdict, which is the answer that closes the row prematurely.
+
+**What this row FORBIDS, stated so a later session does not have to infer it:**
+
+- **No retry wrapper, no `@tag :flaky`, no exclusion, no relaxed bound.** The bound is the
+  behaviour under test. A change made to get past a test is what the ds milestone rejected on the
+  record, and the standing gate rule forbids a quiet downgrade in terms.
+- **No re-running the workflow until it goes green.** **ONE** re-run is permitted and only as an
+  experiment whose purpose is written down first: does it reproduce on a CI machine, which is not
+  the machine that failed to reproduce it? **Both run ids go in this row whichever way it lands**,
+  and a green re-run answers nothing — it is one more unforced pass, which this row has already
+  said is not evidence.
+- **The red is CARRIED and NAMED**, per the tracked-carry clause: named in packets with this
+  row's ref, not re-triaged, and not relaxed.
+
+**Why priority high, argued from the cost rather than asserted.** While `main` is red for a
+known reason, the next unknown red is indistinguishable from it — every future run's failure has
+to be diffed against this one before it can be read at all. That is the same alarm-fatigue
+mechanism the `--strict` drift rule and BL-048's rot both exist to prevent, and it is why the
+size is M and the priority is not low.
+
+**What is untouched by this row.** **BL-174**'s close cites run `32611562210`, green on
+`7ccfc6a`, as its evidence; that citation remains true and this row does not disturb it. What
+changed is that the newest harness run is red, so `main`'s badge no longer agrees with BL-174's
+cited evidence, and a reader who checks the badge rather than the row will draw the wrong
+conclusion. **BL-135** is the prior instance of this class in this suite —
+`run_helpers_timeout_test.exs:84`, a 200 ms feeder against a 300 ms bound, likewise real and
+likewise not reproduced (9 attempts). **It is DONE and lives in `docs/backlog-2026-06-closed.md`**,
+so it is a precedent and a method to copy, **not** a currently-carried red; this row is the only
+open red in the harness suite.
+
+> **[Worked 2026-08-23 at harness `77ab709`. The row's reading was RIGHT about where the message
+> lands and WRONG about what that means, and the difference is the whole ticket.**
+>
+> **The row stays OPEN, and the status field stays the bare vocabulary word `OPEN` because the
+> field takes one of three and nothing else.** What is outstanding is narrow and is stated here
+> rather than in the field: clauses 1, 2 and 3 are discharged, and clause 4's *check* as amended is
+> discharged; only the **corroborating run id** remains, and it is the arbiter's to record because
+> it comes from a push this session was forbidden to make.
+>
+> **The reading is confirmed on its facts.** The message does arrive while B is in its first step,
+> and that is what `left: 0` reported. Forced rather than repeated: `:sys.suspend/1` on B's stub LLM
+> adapter holds B inside its first loop iteration, and the assertion then fails **on demand, five
+> runs of five**, in 0.06 s. The hold is a real hold, not a starvation — at delivery B is `:running`
+> and has already appended its own `prompt_built` and `llm_called`, **both at step 0**. So the
+> message did not arrive *before B started*; it arrived while B was **working inside step 0**, which
+> is the fact that decides the repair.
+>
+> **But step 0 is a LEGAL receiver step, so the CODE is right and the EXPECTATION was wrong.**
+> Established from the code rather than from the test: `Loop.run/5` enters at
+> `do_run(opts, 0, ...)`, so a loop's first iteration **is** step 0 and every event it appends
+> carries step 0. `Agent.Server.handle_call({:deliver_message, ...})` records
+> `max(state_step, current_step(log_pid))`, and `Log.append/2` is a synchronous `GenServer.call`,
+> so that read returns B's true step — not a default standing in for a value the coordinator failed
+> to read. Both readings the ticket posed were therefore testable and the second is false: there is
+> no defect to repair in `coordinator.ex` or `server.ex`, and **synchronising the test would have
+> hidden real, correct behaviour behind a barrier.**
+>
+> **What `> 0` was actually asserting** is that B finished one whole iteration before A finished
+> two — a scheduling outcome, not a contract. On an idle machine B wins by a comfortable margin;
+> under CI contention it does not. The sibling assertion at `:124` is **not** the same shape and is
+> left alone: it reads the *sender*'s step, and A issues `send_message` as its second stub response,
+> so that step is 1 by construction.
+>
+> **The repair is stricter than what it replaces, and that is measured rather than claimed.** The
+> assertion now pins the step to B's own preceding event instead of admitting any positive number.
+> Under an injected off-by-one in `deliver_message` (`... + 1`), the OLD assertion reports
+> `10 tests, 0 failures` and the NEW one reports `10 tests, 1 failure`. So it is not a relaxed
+> bound in any sense this row forbids; it catches a defect the original missed.
+>
+> **Clause 4, as amended.** The amendment's check — the forced reproduction re-run against the
+> repaired code — is discharged: **fails before, five of five; passes after, five of five**, same
+> harness, same hold, same conditions. The forcing harness is **scratch and was not committed**: the
+> repaired assertion is scheduling-independent, so a permanent held-receiver test would add a
+> `:sys.suspend` dependency on an internal registry key for no coverage the mutation control does
+> not already establish. It is reproduced verbatim in
+> `docs/milestones/bl-181-implementation-notes.md` so a later session can re-run it.
+>
+> **The corroborating workflow run is NOT recorded here, and this row does not claim one.** It
+> requires a push, which this ticket forbade. What it should show when the arbiter pushes: the
+> `check` job green, `972 tests, 0 failures, 133 excluded` — the same totals as the red run
+> `32618789914`, which reported `972 tests, 1 failure, 133 excluded`. Locally at `77ab709` the CI
+> command `MIX_ENV=test mix test --exclude requires_worker --exclude integration` gives exactly
+> that, exit 0. **The permitted single re-run of `32618789914` was NOT used** and remains available.
+>
+> **The census ran, and its answer is "one assertion, but a real class".** Reported in full at
+> `docs/milestones/bl-181-implementation-notes.md` §Census. The instrument's R34 control passed;
+> it also **under-reported twice before it passed**, both times caught and both recorded there.
+> One member of the class it found is beyond this ticket's repair scope and is filed as **BL-183**.
+> **]**
+
+**Costs:** M. Forcing the race is the work; the repair may be small once the mechanism is known,
+and the census is the part whose size is genuinely unknown until it runs.
+
+**Collides with:** **BL-135** (closed — precedent and method, not a live dependency). **BL-048**,
+whose `requires_worker` set is excluded from this gate and is unaffected either way.
+
+`Source: this row's own filing, 2026-08-23, at harness a4f93e1 / agents at the commit carrying it. Every figure carries the command that produced it. The failure text is transcribed from gh run view 32618789914 --log, the causation from the commit range, and the non-reproduction from runs performed at this close and reported with their method rather than only their result.`
+
+> **[CLOSED 2026-08-23. Clause 4 discharged in full, and the row closes on all four.** The
+> corroborating workflow run is **`32636070709`** — `push`, head harness **`77ab709`**, conclusion
+> **success**, both jobs green (`sandbox`, `check`). Its test step reports
+> **`972 tests, 0 failures, 133 excluded`**, from the run's own log rather than a summary
+> (`gh run view 32636070709 --log`).
+>
+> **That is what this row predicted it would show, published before the push and matched exactly** —
+> the same `972` / `133` totals as the red run `32618789914`, which reported
+> `972 tests, 1 failure, 133 excluded`. One assertion moved and nothing else did.
+>
+> **The corroboration is recorded in the amendment's order, not the original clause's.** The check
+> was clause 1's forced reproduction, discharged before the push: fails before, five of five;
+> passes after, five of five, same harness and same hold. This run is corroboration recorded
+> **after** that check, which is exactly what the 2026-08-23 amendment says it is and all it is. A
+> reader should not read this run as the thing that established the repair.
+>
+> **Both run ids are in this row whichever way it landed**, as the row required: `32618789914` red
+> at `a4f93e1`, `32636070709` green at `77ab709`. **The permitted single re-run of `32618789914`
+> was never used.**
+>
+> **`main` is no longer red.** The condition that made this row priority-high — every future
+> failure having to be diffed against this one before it could be read — is gone.
+>
+> Pushed at the arbiter's ratification: harness `77ab709`, then agents `1130871`. **]**
+
+---

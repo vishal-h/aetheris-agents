@@ -7744,6 +7744,21 @@ stderr. The classes found: **agrees on all three**; **same result set, different
   on content**, both returning the same result set. The rest are **unsettled at the cap this round
   used**, and that is the recorded result rather than a check still owed.
 
+  > **[Corrected 2026-08-23, hours after this row was committed at `7d9cf69`.** The sentence above
+  > says *"the one member settled under a generous cap"*. That was false when written: **five**
+  > members of this class settled, not one, and **every one of them agreed on result set and exit
+  > code** — four at a 90-second cap (`grep -rhoE "BL-[0-9]{3}" . ../aetheris/ ...` at
+  > `cloudcost/docs/m5-obligation-landing-implementation-notes.md:244`, and three searches under
+  > `provenance/` at `docs/reviews/provenance-scout-2026-08-03.md:422`, `:475` and `:683`), plus
+  > `caused_by` at a 900-second one. **Six** remain unsettled, not the rest. The correction
+  > **strengthens** the claim the paragraph is making rather than weakening it: wherever this class
+  > has been settled at all, it has been a latency difference and not a content one. **How the
+  > error was made, because it is this row's own subject in miniature:** the tally was read from a
+  > results file **while the job writing it was still running**, so a partial capture was taken for
+  > a complete one — the same defect the repo's packet rules name, and indistinguishable from a
+  > complete result by content alone. The full file was re-read after the job exited. Corrected in
+  > place per **R32**; the original sentence is not rewritten. **]**
+
 **Done when** — all three:
 
 1. Every affected recorded command has been run both ways and the result recorded, including the

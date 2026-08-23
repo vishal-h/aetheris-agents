@@ -7458,11 +7458,28 @@ question in kind. The property is **backtick parity across a block**; where a li
 evidence about it, so a line-prefix pattern can only ever approximate the population and its
 approximation fails silently. Two patterns were tried on one commit and both were short: one
 required the backtick at column one; its replacement allowed leading whitespace and is still blind
-to a wrapper opening after a list marker, which is this file's commonest shape. Reproduce with
-`grep -cE '^[[:space:]]*[-*+][[:space:]]+\x60' docs/backlog-2026-06.md` for the population, and the
-same lines piped through `grep -cE '^[[:space:]]*\x60'` for what the widened pattern would have seen,
-which is none of them. No figure is quoted here: both move with every append, and the pair of
+to a wrapper opening after a list marker, which is this file's commonest shape. Reproduce with:
+
+```
+grep -cE '^[[:space:]]*[-*+][[:space:]]+`' docs/backlog-2026-06.md
+grep -E  '^[[:space:]]*[-*+][[:space:]]+`' docs/backlog-2026-06.md | grep -cE '^[[:space:]]*`'
+```
+
+The first gives the population; the second gives what the widened pattern would have seen of it,
+which is none of it. No figure is quoted here: both move with every append, and the pair of
 commands is what a later reader can re-run.
+
+**These two were first written with `\x60` in place of the backtick, and that form reproduces
+nothing.** `\xHH` is a PCRE escape; these are ERE commands. GNU grep 3.7 reads `\x60` as a literal
+`x60`, so both commands returned `0` with **no warning on stderr and exit 1** — a broken pattern
+wearing an empty result, which is precisely the confusion clause 3 exists to forbid, committed
+inside clause 3. They were written that way to keep a literal backtick out of an inline code span,
+which is to say **the wrapper defect this row is about deformed the command that documents it.**
+The fence above is the fix: it holds literal backticks safely, as this row's own sweep established
+of fenced blocks. **The migration should weigh that this is not the first time avoiding the
+convention damaged the text avoiding it** — R31, R32 and BL-048's dated line all carry bare
+filenames for the same reason, and BL-180's own Source line does too. Those cost only expressiveness;
+this one cost correctness.
 
 So the check owed by clause 3 must **parse or render**, and must ship with a **positive control that
 plants an instance in every shape it could plausibly miss** — indented, after a list marker, inside

@@ -290,6 +290,28 @@ populations, and only one is mechanically derivable:
   `grep -rInE 'backlog-2026-06\.md:[0-9]+' --include=*.md --include=*.py --include=*.sh --include=*.exs --include=*.ex --include=*.rs --include=*.ts --include=*.tsx . ../aetheris | grep -v '^docs/backlog-2026-06\.md:'`
   (tokens from `| grep -oE 'backlog-2026-06\.md:[0-9]+' | wc -l`, files from
   `| sed -E 's/:.*//' | sort -u | wc -l`), derived at agents `1deb832`.
+
+  > **[Corrected 2026-08-23 at BL-182's close.** The command above was **wrong when written**;
+  > the figures it produced were **right**, and they stand. Its last stage removes
+  > self-references with `grep -v '^docs/backlog-2026-06\.md:'`, anchored at `^docs/`. A recursive
+  > search rooted at `.` emits matched paths **unprefixed** under ugrep and **`./`-prefixed** under
+  > GNU grep — so that filter removes the backlog file's own citations under one tool and silently
+  > removes nothing under the other. Re-run at this close it returns **31** lines under ugrep and
+  > **33** under GNU grep, **both exiting 0 with empty stderr**: a reader gets a different
+  > population than the author did, and nothing tells them. The recorded figures were derived
+  > under the tool where the filter worked, so they are not in question; the command's
+  > reproducibility is. **The corrected form, which returns byte-identical output under either
+  > tool because git's search engine is not reached through a shell name:**
+  >
+  > ```
+  > git grep -InE 'backlog-2026-06\.md:[0-9]+' -- '*.md' '*.py' '*.sh' '*.exs' '*.ex' '*.rs' '*.ts' '*.tsx' ':!docs/backlog-2026-06.md'
+  > git -C ../aetheris grep -InE 'backlog-2026-06\.md:[0-9]+' -- '*.md' '*.py' '*.sh' '*.exs' '*.ex' '*.rs' '*.ts' '*.tsx'
+  > ```
+  >
+  > The self-reference exclusion moves out of a fragile output filter and into git's own pathspec,
+  > so there is no path prefix left to anchor against. Verified both ways at this close:
+  > byte-identical stdout, identical md5, identical exit code. Recorded per **R32** — the original
+  > command is not rewritten. See **BL-182**. **]**
 - **In-file, and NOT derivable by any command.** The file carries **169** bare
   `` `:NNN` `` anchors (`` grep -oE '`:[0-9]+' docs/backlog-2026-06.md | wc -l ``)
   plus **2** filename-qualified self-references, but a bare anchor binds to

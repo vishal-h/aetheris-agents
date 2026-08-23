@@ -6067,3 +6067,265 @@ close. Every figure carries its command. The arrival set, the §10 dependents an
 `determinism-contract.md` negative were derived at this stage, not inherited.`
 
 ---
+
+### BL-182 — recorded commands name `grep`, and the shell decides what `grep` is (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Section:** both repos — every tracked document carrying a re-runnable command
+**Size:** M · **Priority:** medium
+
+Filed 2026-08-23 at **BL-181**'s filing round, under the standing rule that a deferred finding
+gets a row in the round it is deferred. **This row measures. It repairs nothing**, and it does not
+close on the disagreements it finds being repaired — that is a later row this one sizes.
+
+**The subject.** A recorded command is written into a tracked document as something a reader may
+re-run: a Source line, a Done-when clause, a census command, a positive control, a step in an
+operator procedure. Such a command names `grep`, and a shell resolves a bare name from ambient
+state. The verification its author ran therefore does not predict what its reader gets, and
+nothing in the command says so.
+
+**The instance is established and is not restated here: BL-180 clause 3.** Two commands written
+with a PCRE escape returned different results under the shell's `grep` and under
+`/usr/bin/grep` — silently, with empty stderr and no warning. Read that row for the evidence.
+
+**What this environment actually resolves, established at this filing rather than carried from a
+prior packet.** `type -a grep` reports a **shell function** shadowing `/usr/bin/grep`; the function
+dispatches to the Claude Code binary invoked as **ugrep** (`ugrep 7.8.4`), while `/usr/bin/grep` is
+**GNU grep 3.7**. `find` is shadowed the same way onto **bfs**. `sed`, `awk` and `git` are not
+shadowed. The full set of binary-shadowing functions is `grep`, `find` and `pkill`, from
+`declare -F` cross-checked against `type -a`. The functions are **injected into the Bash tool's own
+shell** — they appear in no dotfile and are not exported, so `bash -lc 'type -t grep'` reports
+`file`. Two readers of the same recorded command therefore get different programs depending on
+where they paste it, and neither is told.
+
+**Note that `grep --version` does not answer this question.** It reports whatever ran. Here it
+happens to print `ugrep`, which discloses the substitution by accident of that tool naming itself;
+a wrapper that forwarded `--version` would not. `type -a` is the question's actual instrument.
+
+**Scope of the measurement.** Every tracked `*.md` in both repositories — a superset of the named
+scope (both backlog files, the ruling registry, the manifest, both `CLAUDE.md`, the operator
+procedures under `prompts/`, and the harness documents the BL-174 arc touched), derived by one
+rule rather than assembled by hand, from `git ls-files '*.md'` in each repo.
+
+**The partition, reported as classes.** Occurrences of a shell-resolved tool name fall into
+**git-subcommand** (`git grep` — git's own engine, unaffected by a shell function),
+**absolute-path** (`/usr/bin/grep` — names the binary), **command-builtin** (`command grep` —
+bypasses the function), and **bare-name** (the affected class). Only bare-name is affected.
+**The absolute-path class is empty in the corpus** — no tracked document names the binary — and
+that negative is a searched one: the extractor's control proves the class would have been
+reported had a member existed.
+
+**What was run.** Every bare-name `grep`/`find` command that is self-contained — a real operand,
+balanced quoting, not a prose fragment, no destructive construct — was run **both ways** from its
+own document's repository root: once with the shim functions in force, once with the bare name
+resolving through `PATH` to the GNU binary. Comparison is over stdout as a set, exit code and
+stderr. The classes found: **agrees on all three**; **same result set, different exit code**;
+**different result set**; and **one side did not return within the cap**.
+
+**The disagreements that are properties of the corpus rather than of the extractor:**
+
+- **A census command whose filter silently stops working.** `docs/milestones/ds-milestone.md:290`
+  pipes a recursive search into `grep -v '^docs/backlog-2026-06\.md:'`. ugrep emits paths
+  unprefixed; GNU grep emits them `./`-prefixed, so the anchored filter matches under one and not
+  the other. The command returns **31 lines under the shim and 33 under the binary**, reproducibly,
+  **both exiting 0 with empty stderr**. A reader re-running the census gets a different population
+  and no signal that they have.
+- **An exit code that flips.** `cloudcost/docs/m5-obligation-landing-implementation-notes.md:124`
+  runs a recursive search across both repositories. Both tools return the same ten lines; the shim
+  exits **0** and the binary exits **2**, because GNU grep descends into `../aetheris/priv/runs/`
+  and hits `Permission denied` where ugrep does not. Anything keying on exit status reads success
+  under the author's shell and failure under a reader's.
+- **Traversal order.** `find -printf` at `cloudcost/docs/m5-t1-implementation-notes.md:635`
+  returns the same entries in a different order under bfs and under GNU find. A recorded command
+  whose result is taken from the head of the output is order-dependent and does not survive the
+  substitution.
+
+  > **[Corrected 2026-08-23 at this row's close.** This bullet is **wrong** and is withdrawn as a
+  > corpus finding. The tool difference is real — bfs and GNU find do walk in different orders — but
+  > the **site is not a recorded command.** `m5-t1-implementation-notes.md:635` reads *"A `find
+  > -printf '%T@ %s %p'` snapshot of both trees was taken before and after the run"*: it is prose
+  > describing a procedure, and the two tree operands it names were **dropped by this row's own
+  > extractor**, which then ran the operand-less remainder over the whole repository. That is the
+  > same over-capture already labelled for the two `m5-t3-implementation-notes.md` entries, and it
+  > should have carried the same label. Nothing in the corpus has been shown to depend on traversal
+  > order. **No recorded command is repaired on this ground**, and the withdrawal is recorded rather
+  > than deleted per **R32**. Found by re-reading the site during this round's check of the previous
+  > round's claims. **]**
+- **A latency class that is not a content class.** Path-less recursive searches return promptly
+  under the shim and can take minutes under the binary, which walks `_build`, `deps`, `.git` and
+  `node_modules` that the shim's ignore handling skips. The one member settled under a generous
+  cap — `grep -rn "caused_by"` at `docs/rig/milestones/bl-007/bl-007-t0-caused-by.md:6` — **agreed
+  on content**, both returning the same result set. The rest are **unsettled at the cap this round
+  used**, and that is the recorded result rather than a check still owed.
+
+  > **[Corrected 2026-08-23, hours after this row was committed at `7d9cf69`.** The sentence above
+  > says *"the one member settled under a generous cap"*. That was false when written: **five**
+  > members of this class settled, not one, and **every one of them agreed on result set and exit
+  > code** — four at a 90-second cap (`grep -rhoE "BL-[0-9]{3}" . ../aetheris/ ...` at
+  > `cloudcost/docs/m5-obligation-landing-implementation-notes.md:244`, and three searches under
+  > `provenance/` at `docs/reviews/provenance-scout-2026-08-03.md:422`, `:475` and `:683`), plus
+  > `caused_by` at a 900-second one. **Six** remain unsettled, not the rest. The correction
+  > **strengthens** the claim the paragraph is making rather than weakening it: wherever this class
+  > has been settled at all, it has been a latency difference and not a content one. **How the
+  > error was made, because it is this row's own subject in miniature:** the tally was read from a
+  > results file **while the job writing it was still running**, so a partial capture was taken for
+  > a complete one — the same defect the repo's packet rules name, and indistinguishable from a
+  > complete result by content alone. The full file was re-read after the job exited. Corrected in
+  > place per **R32**; the original sentence is not rewritten. **]**
+
+
+> **[Settled 2026-08-23 at this row's close, and the bullet above is partly wrong.** All six
+> members left unsettled were re-run both ways at a **900-second cap per side**, backgrounded with
+> incremental output. **All six settled; none hit the cap.** Four agree on result set and exit
+> code:
+>
+> ```
+> cloudcost/docs/t1b-implementation-notes.md:47         grep -rln 'aetheris --json'                    15 = 15 lines, rc 0 = 0
+> docs/backlog-2026-06.md:7028                          grep -rn 'aetheris_run_id'                      24 = 24 lines, rc 0 = 0
+> docs/reviews/bl-039-review.md:100                     grep -rni "thinking|budget_tokens"               1 =  1 line,  rc 0 = 0
+> docs/rig/milestones/bl-007/bl-007-t0-caused-by.md:6   grep -rn "caused_by"                            61 = 61 lines, rc 0 = 0
+> ```
+>
+> **Two disagree, on content**, so *"a latency class that is not a content class"* is **false as a
+> claim about the whole class** and is corrected here rather than rewritten:
+>
+> ```
+> cloudcost/docs/m6-t2c-implementation-notes.md:351     grep -rn "evaluation_coverage\|uncatalogued"   shim 113, binary 125, both rc 0
+> docs/reviews/provenance-scout-2026-08-03.md:494       grep -rn "tool_result\|payload_json"           shim 288, binary 352, both rc 0
+> ```
+>
+> **The mechanism is a third one, distinct from either repaired above.** In both cases the shim's
+> result is a strict subset — nothing is found only by the shim — and every extra line the binary
+> returns comes from a directory the shim's ignore handling skips and git does not track:
+> `cloudcost/.pytest_cache/`, `rig/dist/`, `rig/node_modules/`. So the divergence is not a broken
+> filter and not an unreadable directory; it is **which files the walk is willing to enter**. Both
+> sides exit 0 with empty stderr, so a reader is told nothing here either.
+>
+> **Neither is repaired**, and the reason is scope rather than judgement: this closing round was
+> scoped to the two repairs above and forbidden from filing further rows. They are recorded here
+> so that a later reader knows they exist and knows that nothing is tracking them. The discipline
+> below is what stops more of them being written. **]**
+
+**Done when** — all three:
+
+1. Every affected recorded command has been run both ways and the result recorded, including the
+   members left unsettled by this round's cap.
+2. The disagreements are listed with the document each lives in.
+3. A discipline is stated for commands written from here on.
+
+**It does NOT close on the disagreements being repaired.** Repair is a separate row, which this
+one exists to size.
+
+**The candidate disciplines, recorded without choosing among them:**
+
+- Verify each recorded command against the binary before committing it.
+- Prefer `git grep` in recorded commands, whose engine is unambiguous.
+- Remove the shadowing, so a bare name means one program.
+
+A fourth may be better than any of these. **The choice depends on a decision the arbiter owns
+about the environment** — whether the shadowing stays — and under **R35** this row reserves that
+choice rather than referring it as a decision for now: it is a choice the Done-when requires be
+made with evidence the row has not yet produced, and deciding it in prose is the close the
+Done-when refuses arriving by another route.
+
+**THE DISCIPLINE, CHOSEN AT THIS CLOSE. This supersedes the three candidates above, which stay
+as the record of what was weighed.** The evidence the Done-when required has now been produced,
+so the choice is made here rather than reserved:
+
+> **A recorded command must name the program it runs.**
+>
+> 1. **`git grep` where the search is over tracked files**, which is most of them. Git's search
+>    engine is not reached through a shell name, so the command means one thing for everybody.
+>    Both repairs in this round took this form, and both went from divergent to byte-identical.
+> 2. **Otherwise the binary by path** — `/usr/bin/grep` — or a form **verified** to behave
+>    identically under both tools, with that verification recorded beside it.
+>
+> **Neither assumption about the environment is available.** The shadowing is injected by the
+> tooling and not by a dotfile, so a reader cannot be assumed to have it, and cannot be assumed
+> to lack it either. That is precisely why the discipline binds the *command* rather than waiting
+> on a decision about the *environment*: it is correct under either answer, so it no longer
+> depends on one. The question the candidates deferred to the arbiter — whether the shadowing
+> stays — is not answered here and does not need to be.
+
+**And the third candidate is not adopted.** Removing the shadowing would fix this repository's
+authors and nothing else: a document leaving this machine is read wherever it is read, and a
+command that names its program survives that. Recorded so the option is not re-proposed as though
+it had been overlooked.
+
+**Costs:** M. The measurement is most of it and is largely done; the discipline is the part that
+needs the environment settled first.
+
+**Collides with:** **BL-180** (established the instance; its clause 3 is the evidence this row
+does not restate). Nothing else — the repair row this one sizes does not exist yet.
+
+`[Both lines above are pre-close statements and are kept unrewritten. The close below supersedes
+the second: no repair row follows, and the reason is given there.]`
+
+`Source: this row's own filing, 2026-08-23, at agents da34af1 / harness a4f93e1. The resolution facts are from type -a, declare -F and a bash -lc control run at this filing. The corpus scope is git ls-files in each repo. The disagreements were produced by running each command both ways from its document's repo root and comparing stdout as a set, exit code and stderr; the two named as reproducible were re-run to confirm.`
+
+---
+
+## The close — 2026-08-23
+
+**Done-when clause 1 — the corpus was measured, both ways.** Scope was every tracked `*.md` in
+both repositories, from `git ls-files '*.md'` in each — a superset of the named scope, derived by
+one rule. 334 distinct (repository, command) pairs were run twice: once with the shim functions in
+force, once with the bare name resolving through `PATH` to the GNU binary, each from its own
+document's repository root, compared on stdout as a set, exit code and stderr. The extractor
+carried an **R34 control** — commands planted inside a fence, inside a blockquote, after a list
+marker, split across two lines, and inside a table cell, plus two negative controls — and the
+control **caught a real defect in the extractor on its first run**, which was fixed before the
+measurement was believed.
+
+**Clause 1's residue is closed.** The six members unsettled at the previous round's cap were
+re-run at a 900-second cap per side; **all six settled and none hit the cap**. Nothing in this row
+is left unsettled.
+
+**Clause 2 — the partition, as classes.** Occurrences of a shell-resolved tool name fall into
+**git-subcommand** (git's own engine — unaffected), **absolute-path** (names the binary —
+unaffected), **command-builtin** (bypasses the function — unaffected), and **bare-name**, the
+affected class. The **absolute-path class is empty** in the corpus and that negative is a searched
+one, not a remembered one — the planted control proves the class would have been reported had a
+member existed.
+
+**Clause 2 — the disagreements, with their documents. Four are properties of the corpus, and
+three distinct mechanisms produce them.**
+
+| document | mechanism | shim | binary | repaired here |
+|---|---|---|---|---|
+| `docs/milestones/ds-milestone.md:290` | an output filter anchored at `^docs/`, defeated by GNU grep's `./` prefix | 31 lines, rc 0 | 33 lines, rc 0 | **yes** |
+| `cloudcost/docs/m5-obligation-landing-implementation-notes.md:124` | GNU grep descends into an unreadable run directory | 10 lines, rc 0 | 10 lines, **rc 2** | **yes** |
+| `cloudcost/docs/m6-t2c-implementation-notes.md:351` | the walk enters ignored, untracked build directories | 113 lines, rc 0 | 125 lines, rc 0 | no |
+| `docs/reviews/provenance-scout-2026-08-03.md:494` | the same | 288 lines, rc 0 | 352 lines, rc 0 | no |
+
+**Every one of the four exits 0 on at least one side with empty stderr on both, except the second,
+whose whole defect is that the status differs while the output does not.** That is the row's thesis
+in one line: nothing in the command, and nothing in the output, tells a reader which program ran.
+
+The remaining disagreements found by the sweep were **artefacts of this row's own extractor** —
+prose fragments over-captured as commands — and are labelled as such rather than counted. One of
+them, the traversal-order bullet, was published as a corpus finding in error and is withdrawn
+above.
+
+**Clause 2 — the repairs, in this commit and not in a row.** Both repaired commands were rewritten
+to the `git grep` form, run both ways three times, and returned **byte-identical stdout with
+identical md5 and identical exit code on every repeat**. The originals still diverge, which is the
+control that the repair is what changed the outcome. Each repair is recorded at its own site as a
+dated **R32** note that gives the corrected command and states why the original was wrong when
+written; **neither original is rewritten**, and in both cases the figures the original produced
+were correct — it was reproducibility that failed, not arithmetic.
+
+**Clause 3 — the discipline is stated above and is chosen, not proposed.**
+
+**No repair row follows, and that is the point rather than an omission.** Two commands in two
+documents were two edits, made here. A row to carry them would have been a row that outlived its
+own work. The two unrepaired commands are recorded in the settled-latency block above with their
+measurement, deliberately in the row's own text rather than in a new row, so that they are
+discoverable by anyone reading this one and are not mistaken for tracked work.
+
+**What this row does not claim.** It measured `grep` and `find`, the two shadowed names that
+appear in documents. It did not measure `pkill`, the third shadowed name, which appears in none.
+It did not survey which shells readers actually use. And of the four corpus disagreements it
+established, it repaired two, by the scope stated above.
+
+---

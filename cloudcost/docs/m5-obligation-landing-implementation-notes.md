@@ -129,6 +129,26 @@ cloudcost/docs/m5-t3-implementation-notes.md:485         ← the t3 record
 cloudcost/docs/bl-132-row-correction-implementation-notes.md:234   ← the verification
 ```
 
+> **[Corrected 2026-08-23 at BL-182's close.** The command in the block above was **wrong when
+> written**; the population it reports was **right**, and it stands. `grep -r` rooted at `.` and
+> `../aetheris/` descends into `../aetheris/priv/runs/*/overlay/work/work`, which is not readable.
+> GNU grep reports `Permission denied` on stderr and **exits 2**; ugrep never goes there and
+> **exits 0**. The matched lines are the same either way, so the difference is **invisible in the
+> output and visible only in the status** — anything keying on exit code reads success for the
+> author and failure for a reader. Re-run at this close: ten matching lines under both, `rc=0`
+> with empty stderr under ugrep, `rc=2` with 1201 bytes of stderr under GNU grep. **The corrected
+> form, byte-identical under either tool:**
+>
+> ```
+> git grep -nF 'deferred, not skipped' -- '*.md'
+> git -C ../aetheris grep -nF 'deferred, not skipped' -- '*.md'
+> ```
+>
+> `git grep` searches tracked files, so the unreadable run directory is never entered and there is
+> no error to swallow. Verified both ways at this close: byte-identical stdout, zero stderr on both
+> sides, identical exit code. Recorded per **R32** — neither the original command nor its recorded
+> output is rewritten. See **BL-182**. **]**
+
 Four before, five after. That the count moved by being written down is the same mechanism §B
 below is about, arriving on a different quantity.
 

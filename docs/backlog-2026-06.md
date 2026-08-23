@@ -7528,6 +7528,72 @@ homes and may share the plumbing.
 
 ---
 
+### BL-183 — `orb_blackboard_test.exs:73` reads a blackboard key one step after the other agent writes it, with nothing synchronising the two (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Section:** harness (`../aetheris/test/aetheris/integration/orb_blackboard_test.exs`)
+
+Filed 2026-08-23 from **BL-181**'s census, under the standing rule that a deferred finding gets a
+row in the round it is deferred. It is the **one** row that round was permitted to file, and it is
+filed because BL-181's repair scope reaches the failing assertion plus one-line changes sharing its
+identical mechanism, and this is neither.
+
+**The assertion.** `assert Map.fetch!(read_result.payload, "result") == "42"` — agent B's
+`read_blackboard` returned the value agent A wrote.
+
+**The mechanism, which is BL-181's shape with a different pair of operations.** A's stub responses
+are `write_blackboard` then `broadcast_message`, so A writes at **step 0**. B's are `echo` then
+`read_blackboard`, so B reads at **step 1**. Both agents are started by the same
+`register_agents_and_insert_result/2` loop and then run concurrently. Nothing makes A's write happen
+before B's read: the test's only barrier is `assert_orb_done/2`, which waits for the orb to
+*finish* and therefore cannot constrain an interleaving that has already happened. The margin is
+**one step** — the same margin BL-181 had, and BL-181's margin was the one that ran out on CI.
+
+**NOT FORCED, and that is stated rather than glossed.** This is a reading of the two stub queues
+and the startup path, exactly the kind of claim BL-181's own row labelled a hypothesis before its
+forcing turned it into a fact. It is filed on a mechanism, not on an observed failure: this
+assertion has not been seen to fail anywhere, and the census found it by structure rather than by
+symptom. **The row's first clause is therefore to force it or refute it**, and a refutation is
+worth as much as a confirmation — BL-181 established that its own reading was right about the
+arrival and wrong about the meaning, and the same split is available here.
+
+**Why BL-181 did not repair it.** Its repair scope was the failing assertion plus any census hit
+sharing the *identical* mechanism as a one-line change. This shares the *class* — an assertion on
+mid-run state behind a completion-only barrier — but not the mechanism, and it is not a one-line
+change: `> 0` was a wrong expectation over a correct value, whereas here the value B reads may
+genuinely be absent, so the fix is real synchronisation (B waiting on the key, e.g. a
+`wait_for_event`) rather than a corrected assertion.
+
+**Done when — all three:**
+
+1. The interleaving is **forced** — A's write held until after B's read — and the outcome recorded
+   whichever way it lands. If B's read is in fact ordered after A's write by something not visible
+   in the two stub queues, that is the answer and the row closes on it.
+2. If it is a real race, B's read is synchronised against A's write by a mechanism in the test or
+   the agent, **not** by a sleep, a retry or a relaxed assertion — the same prohibitions BL-181
+   carried, and for the same reason.
+3. The sibling assertions in that test named in BL-181's census output are ruled on rather than
+   left implied: `:82` and `:89` (payload identity) and `:87` (`sent.step > 0`, sender-side and
+   guaranteed by construction, like `coordinator_test.exs:124`) were all judged sound in that
+   census and this row either confirms that or corrects it.
+
+**What this row is NOT.** It is not a claim that the harness suite has a systemic timing problem.
+BL-181's census reported the classes it found and the population is small and mostly benign; this
+is the one member of the one interesting class that BL-181 could not reach. The census, its
+instrument, its two recorded under-reports and its R34 control are in
+`docs/milestones/bl-181-implementation-notes.md` §Census, and the classification of every member
+of this class is there rather than restated here.
+
+**Costs:** S. Forcing it is the work and the technique already exists — BL-181's harness suspends a
+stub adapter with `:sys.suspend/1` and is reproduced verbatim in those notes. The repair, if one is
+owed, is a synchronisation in one test.
+
+**Collides with:** **BL-181** (the parent census; resolved, awaiting corroboration). Nothing else.
+
+`Source: BL-181's census, 2026-08-23, at harness 77ab709. The mechanism is derived from the two stub response queues in orb_blackboard_test.exs and from Orb.Supervisor.register_agents_and_insert_result/2; no failure of this assertion has been observed and the row does not claim one.`
+
+---
+
 ### BL-181 — `coordinator_test.exs:127` failed on CI at harness `a4f93e1` and does not reproduce locally; `main` is red (#TBD)
 **Status:** OPEN
 **Kind:** bug · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
@@ -7655,6 +7721,66 @@ conclusion. **BL-135** is the prior instance of this class in this suite —
 likewise not reproduced (9 attempts). **It is DONE and lives in `docs/backlog-2026-06-closed.md`**,
 so it is a precedent and a method to copy, **not** a currently-carried red; this row is the only
 open red in the harness suite.
+
+> **[Worked 2026-08-23 at harness `77ab709`. The row's reading was RIGHT about where the message
+> lands and WRONG about what that means, and the difference is the whole ticket.**
+>
+> **The row stays OPEN, and the status field stays the bare vocabulary word `OPEN` because the
+> field takes one of three and nothing else.** What is outstanding is narrow and is stated here
+> rather than in the field: clauses 1, 2 and 3 are discharged, and clause 4's *check* as amended is
+> discharged; only the **corroborating run id** remains, and it is the arbiter's to record because
+> it comes from a push this session was forbidden to make.
+>
+> **The reading is confirmed on its facts.** The message does arrive while B is in its first step,
+> and that is what `left: 0` reported. Forced rather than repeated: `:sys.suspend/1` on B's stub LLM
+> adapter holds B inside its first loop iteration, and the assertion then fails **on demand, five
+> runs of five**, in 0.06 s. The hold is a real hold, not a starvation — at delivery B is `:running`
+> and has already appended its own `prompt_built` and `llm_called`, **both at step 0**. So the
+> message did not arrive *before B started*; it arrived while B was **working inside step 0**, which
+> is the fact that decides the repair.
+>
+> **But step 0 is a LEGAL receiver step, so the CODE is right and the EXPECTATION was wrong.**
+> Established from the code rather than from the test: `Loop.run/5` enters at
+> `do_run(opts, 0, ...)`, so a loop's first iteration **is** step 0 and every event it appends
+> carries step 0. `Agent.Server.handle_call({:deliver_message, ...})` records
+> `max(state_step, current_step(log_pid))`, and `Log.append/2` is a synchronous `GenServer.call`,
+> so that read returns B's true step — not a default standing in for a value the coordinator failed
+> to read. Both readings the ticket posed were therefore testable and the second is false: there is
+> no defect to repair in `coordinator.ex` or `server.ex`, and **synchronising the test would have
+> hidden real, correct behaviour behind a barrier.**
+>
+> **What `> 0` was actually asserting** is that B finished one whole iteration before A finished
+> two — a scheduling outcome, not a contract. On an idle machine B wins by a comfortable margin;
+> under CI contention it does not. The sibling assertion at `:124` is **not** the same shape and is
+> left alone: it reads the *sender*'s step, and A issues `send_message` as its second stub response,
+> so that step is 1 by construction.
+>
+> **The repair is stricter than what it replaces, and that is measured rather than claimed.** The
+> assertion now pins the step to B's own preceding event instead of admitting any positive number.
+> Under an injected off-by-one in `deliver_message` (`... + 1`), the OLD assertion reports
+> `10 tests, 0 failures` and the NEW one reports `10 tests, 1 failure`. So it is not a relaxed
+> bound in any sense this row forbids; it catches a defect the original missed.
+>
+> **Clause 4, as amended.** The amendment's check — the forced reproduction re-run against the
+> repaired code — is discharged: **fails before, five of five; passes after, five of five**, same
+> harness, same hold, same conditions. The forcing harness is **scratch and was not committed**: the
+> repaired assertion is scheduling-independent, so a permanent held-receiver test would add a
+> `:sys.suspend` dependency on an internal registry key for no coverage the mutation control does
+> not already establish. It is reproduced verbatim in
+> `docs/milestones/bl-181-implementation-notes.md` so a later session can re-run it.
+>
+> **The corroborating workflow run is NOT recorded here, and this row does not claim one.** It
+> requires a push, which this ticket forbade. What it should show when the arbiter pushes: the
+> `check` job green, `972 tests, 0 failures, 133 excluded` — the same totals as the red run
+> `32618789914`, which reported `972 tests, 1 failure, 133 excluded`. Locally at `77ab709` the CI
+> command `MIX_ENV=test mix test --exclude requires_worker --exclude integration` gives exactly
+> that, exit 0. **The permitted single re-run of `32618789914` was NOT used** and remains available.
+>
+> **The census ran, and its answer is "one assertion, but a real class".** Reported in full at
+> `docs/milestones/bl-181-implementation-notes.md` §Census. The instrument's R34 control passed;
+> it also **under-reported twice before it passed**, both times caught and both recorded there.
+> One member of the class it found is beyond this ticket's repair scope and is filed as **BL-183**.
+> **]**
 
 **Costs:** M. Forcing the race is the work; the repair may be small once the mechanism is known,
 and the census is the part whose size is genuinely unknown until it runs.

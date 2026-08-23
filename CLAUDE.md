@@ -752,6 +752,22 @@ packet to a session scratchpad — but the general claim is not the one the argu
 narrow one is true and checkable. `docs/reviews/` itself is tracked in both repos and holds many
 review files; a claim about *packets* is not a claim about that directory.]`
 
+**A background job's completion notification fires when the LAUNCHING SHELL exits, not when the
+job does — so `nohup … &` is reported done immediately while the job runs on, and the output read
+at that moment is a partial indistinguishable from a complete one.** This is the mechanism by
+which the rule above — *read only after that command exited* — gets broken by an author who
+believes they obeyed it: nothing in the notification, the exit status or the output says the job
+is still writing. Wait on the process itself, or confirm it is gone before reading.
+`Source: the BL-182 rounds, 2026-08-23. A tally was read from a results file while the job writing
+it was still running, and the row published *"the one member settled"* where five had; the same
+partial also carried the diagnosis *"a latency class that is not a content class"*, which the
+completed run falsified — two of the six then-unsettled members disagree on content. One partial
+read, one wrong figure and one wrong diagnosis, both in a row whose own subject is recorded
+commands that do not mean what their author verified. Both corrections are in that row in
+`docs/backlog-2026-06-closed.md`. The behaviour was re-established directly at BL-181 before this
+was written: a `nohup` job writing one line a second reported done at launch, and three successive
+reads of its file returned 4, 7 and 8 lines, every one of them well-formed.`
+
 **The packet is written as the ticket runs, not assembled at the end.** Open the packet file at the
 start and append each section at its stage boundary, before moving on. A packet reconstructed at
 the end from whatever the session still happens to be holding cannot be compacted around, and a

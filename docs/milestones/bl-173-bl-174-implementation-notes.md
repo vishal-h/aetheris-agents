@@ -135,3 +135,138 @@ than left in a packet.
   wrong, it is wrong at parse time — a malformed `path:` block fails the `actions/cache` step
   immediately and the job dies before `mix deps.get`. There is no failure mode here that is quiet,
   which is the one respect in which this edit is safer than the declaration it replaced.
+
+---
+
+# Stage 2 — BL-174 closes
+
+**Landed:** harness `a49d05a`, agents at the commit carrying this section.
+**Baseline:** harness `7ccfc6a`, agents `b3b6069`, **both on origin** — established by fetch,
+`merge-base --is-ancestor HEAD origin/main` (YES in both), `ls-remote` reading the remote directly,
+and `gh` as a system that does not share git's state. Two earlier stage 2 prompts asserted this
+push had happened when it had not; both were stopped at the baseline gate rather than acted on.
+
+## 7. BL-173's outstanding evidence, discharged
+
+Run **`32611562210`**, `push` on `7ccfc6a`, conclusion **success**. `check` 360s, `sandbox` 87s.
+Stage 1 §8 made four predictions. Three held; **one missed, and the miss is the useful part.**
+
+**MISSED — "both cache steps restore under the same keys as run `32563924592`, since neither
+lockfile was touched."** The *keys* were byte-identical, exactly as predicted. The *restore* missed:
+
+```
+32563924592   path: ~/.cargo/registry ~/.cargo/git native/aetheris_nif/target
+              key:  Linux-cargo-e6bffd8c9ec09bb283de1a8e49dbdc400fc7a6bca8ba1e0bd07a7cea4ae5431c
+              →     Cache hit for: Linux-cargo-e6bffd8c…  /  Cache restored from key: …
+
+32611562210   path: ~/.cargo/registry ~/.cargo/git            ← one line shorter
+              key:  Linux-cargo-e6bffd8c9ec09bb283de1a8e49dbdc400fc7a6bca8ba1e0bd07a7cea4ae5431c
+              →     Cache not found for input keys: Linux-cargo-e6bffd8c…, Linux-cargo-
+              →     Cache saved with key: Linux-cargo-e6bffd8c…
+```
+
+Same for `Cache Dialyzer PLTs`. **The mechanism:** `actions/cache` identifies an entry by key **and
+version**, where the version is derived from the path list and the compression tool. Stage 1
+reasoned about the key — which is `hashFiles('**/mix.lock')` / `hashFiles('**/Cargo.lock')` and
+genuinely unchanged — and did not know the path list participates. So *removing a phantom path
+invalidates the cache that phantom path was never in*. One cold run, self-healing, and it lands on
+the commit that does the removal.
+
+**Elapsed time cannot detect this, which is why it needed the log.** `check` took 360s here against
+372s at `32563924592` — *faster*, despite two cold caches, because the untouched `deps`/`_build`
+cache still hit and the two cold ones are 12 MB and 3 MB. A reader reasoning from duration would
+have concluded the caches hit. Filed as part of **BL-175**, and it is the reason **BL-177** states
+its own cold-run cost as measured rather than assumed.
+
+**HELD — both jobs reached.** `check` and `sandbox`, both `success`.
+
+**HELD — no step names a path it could not find.** `grep -icE 'no such file|cannot find|path does
+not exist|could not be found|ENOENT'` → 0, against a positive control of 2 on the same command form
+for `Cache not found for input keys`. And the two removed paths appear **zero** times in the log,
+where at `203dec8` they appeared twice each as the action echoing its own inputs.
+
+**HELD — the seven `run:` steps behave as at `203dec8`.** All seven present in the step list;
+`972 tests, 0 failures, 133 excluded` (identical to the local gate) and `No retired or security
+advisory packages found`.
+
+**BL-135 did not fire** in this run or in the local `mix test`.
+
+## 8. Two observations from that run — attributed, not fixed
+
+**The `sandbox` job passes without running the set, and has never run it.** `Run the deterministic
+sandbox set` is absent from the step list of **all three** runs — `32611562210`, `32563924592` and
+`32553802996` — and `Report skipped sandbox set` is present in all three. The probe's verdict is
+identical each time:
+
+```
+[sandbox] namespace entry failed: Permission denied (os error 13)
+  network namespace : false      seccomp filter : false      exec server : false
+  verdict: NOT CAPABLE
+  missing: seccomp, exec_server, network_namespace
+  worker refused to start: :containment_unavailable
+```
+
+**An existing row owns this: BL-048**, `**Status:** UNRULED`, in the open backlog. Its own DONE
+section states the pending question in terms — *"the attestation only reports on `ubuntu-latest`
+once a job runs there… If it reports capable, BL-048 closes as a CI job. If it reports *not*
+capable… the harness sprint is the standing home and **BL-048 still closes**, just wired there…
+which gate is what the first dispatch decides."* The first dispatch has now happened three times
+and the answer is **not capable**, so BL-048's question is answered and its disposition is
+available. **No new row filed; not edited either** — attributing is this ticket's job and deciding
+BL-048 is not.
+
+**Every job is forced off a deprecated Node runtime.** `actions/cache@v4` and `actions/checkout@v4`
+declare Node 20; the runner reports it is overriding them onto Node 24, 12 times per run, in
+`32563924592` as well as `32611562210`. **No row owned this.** The only apparent hit in the backlog
+was a substring collision — `li`**`node 20`**`26-07` in a cloudcost sentence — and the only
+`actions/cache@` mention is BL-173's own closed row, about missing-path silence rather than
+runtimes. Filed as **BL-179**.
+
+## 9. Stage 2's own work
+
+**C1a, the reach question, answered rather than assumed.** The sentence as committed said *"If you
+are reading a **milestone document**…"*. `notes-m09.md` is at `docs/aetheris/notes-m09.md`, not
+under `milestones/`. Semantically it is a milestone document; by location it is not. A reader
+resolving the phrase by location excludes precisely the file the ruling was about, so the sentence
+was widened to bind *any* document, to enumerate where records live, and to name `notes-m09.md`.
+
+**C1b, the arrival set, established not assumed.** `CLAUDE.md` (self-declared mandatory),
+`.github/copilot-instructions.md` (GitHub's convention), `README.md` (front door). Excluded with
+reasons: `AGENTS.md` does not exist; `elixir-agent-instructions.md` is titled `# AGENTS.md` but
+governs a `scheduler` service and nothing points at it; `playbook.md` is linked rather than
+mandatory and has no NIF content.
+
+**C2's dependency check, before the edit.** §5 and §14 of `specs.md` both still speak of NIFs —
+named in the repointed §10, not edited. `determinism-contract.md` does not depend on §10: 0 hits,
+positive controls 2 (`hash`) and 9 (`determinis`). Nothing in the harness reads `specs.md`; the
+`specs.md` `drift_check` reads is the **agents** repo's `docs/rig/specs.md`, a different file with
+the same basename — a substring collision of exactly the class this arc keeps producing.
+
+**C3's patterns, proved untouched** by diffing the comment-stripped `.gitignore` against `HEAD`.
+
+## 10. Corrections and defects, stage 2
+
+- **`remove-nif-implementation-notes.md` says "each of the four call-site modules" carries a private
+  `hash_content/1`. There were three, and there were three at `e977af0` itself** —
+  `git grep -c 'defp hash_content' e977af0 -- lib/` returns one hit in each of three files. Wrong
+  when written, not superseded. It is a **RECORD**, so it is not edited; recorded here.
+- **A `gh api` check bound to the wrong repository.** At the baseline I queried
+  `repos/:owner/:repo/commits/b3b6069` — an agents SHA — from the harness directory, where `:repo`
+  resolves to `vishal-h/aetheris`. The 422 was expected regardless of push state, so it was
+  evidence of nothing while reading exactly like evidence. Caught with
+  `gh repo view --json nameWithOwner`, re-run from the agents directory, and paired with a positive
+  control on `80de78e` that resolves. The command-binding class, in a tool where the binding is
+  implicit rather than a flag.
+- **A mislabelled line that never changed directory.** In the same block, a line printed as
+  `cwd aetheris-agents -> :repo` had no `cd` before it and ran in the harness; its output was
+  correct for where it ran and wrong for what it claimed. No conclusion rested on it.
+- **A wrong claim written into BL-178 and corrected before the commit.** Its Source line first said
+  `git grep -n cargo -- ci.yml sprint.sh` "returns only the toolchain action". It returns cache
+  paths, a cache key and a comment; `dtolnay/rust-toolchain` does not contain the string. Replaced
+  with the claim that is actually checkable —
+  `git grep -ln 'cargo fmt\|cargo clippy\|cargo test' -- scripts/ .github/ mix.exs lib/` returns
+  `.github/copilot-instructions.md` alone, a file that prescribes the commands and runs nothing.
+- **An exactly-once replacement refused, correctly.** The C6 append's first `old_str` omitted the
+  two-space indentation of the lines it matched and the helper reported `0 occurrences, need
+  exactly 1` rather than editing something adjacent. The guard did its job; recorded because a
+  refusal is evidence the instrument works.

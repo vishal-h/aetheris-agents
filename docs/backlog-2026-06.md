@@ -4909,6 +4909,31 @@ list is empty.
   to-the-wrong-target class this row already collects, and because the census that found it runs
   once per cycle and would not have found it any sooner.
 
+- `2026-08-23` (BL-174 stage 2) — **CORRECTION to this row's `2026-08-22` gate-declaration append:
+  its figures for `docs/aetheris/test-plan.md` §CI are wrong.** That entry describes the section as
+  *"seven numbered items including `mix test --cover` and two `cargo` commands"*. Both numbers are
+  wrong, and the line is **not rewritten** — this row is append-only, and a reader cannot tell a
+  stale number from a current one unless the correction is filed beside it. The commands are the
+  durable form and no replacement figure is stated here. From the harness root, with `S` bound to
+  the section's first line by `S=$(grep -n '^## CI (added separately)' docs/aetheris/test-plan.md | cut -d: -f1)`:
+
+  ```
+  sed -n "${S},+12p" docs/aetheris/test-plan.md | grep -cE '^[0-9]+\. '
+  sed -n "${S},+12p" docs/aetheris/test-plan.md | grep -cE '^[0-9]+\. `cargo'
+  ```
+
+  **The rest of that append stands.** Its surface enumeration, its claim that no listed surface
+  names `mix hex.audit`, and its ruling that reconciling the declarations is nobody's row are all
+  unaffected — only the two figures for one of the five surfaces are wrong. **Nothing was
+  reconciled by BL-174 either**, in stage 1 or stage 2: both stages removed `cargo` tails that ran
+  under a deleted directory and left every `mix` enumeration exactly as it stood, saying so on the
+  pages themselves.
+
+  `Source: BL-174 stage 2, 2026-08-23. Found at stage 1 while reading §CI to confirm the surface
+  was correctly enumerated, and recorded in that stage's implementation notes; filed here at stage
+  2 because a correction living only in a notes file has been made and not delivered, which is
+  BL-133's class.`
+
 - `2026-08-21` (ds close, after the close commits) — **The retired Project was not inert: six
   built-in workflows were enabled on it the whole time, and one of them closed four issues during
   this close.** Found by the retirement acts themselves, which is why it is not in either close
@@ -7062,148 +7087,241 @@ and ds t3 is the last ticket in this cycle, so it was this or nothing.`
 
 ---
 
-### BL-174 — the `aetheris_nif` removal was never swept out of the documentation, and one of the surfaces is read by an agent (#TBD)
+### BL-175 — nothing can report a workflow cache path that names nothing, and the instrument that can is uncommitted (#TBD)
 **Status:** OPEN
-**Kind:** bug · **Census items:** five surfaces, enumerated below · **Contract:** n/a
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
 **Size:** S · **Priority:** medium
-**Section:** harness (`../aetheris/README.md`, `../aetheris/.github/copilot-instructions.md`, `../aetheris/docs/aetheris/test-plan.md`, `../aetheris/docs/aetheris/notes-m09.md`, `../aetheris/docs/aetheris/milestones/m10-autonomous-agent-tooling.md`)
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`), and wherever the check is wired
 
-Filed 2026-08-22 at **BL-172**, from the same reading that produced **BL-173**. **BL-172 is now
-DONE and lives in `docs/backlog-2026-06-closed.md`**, closed on run `32563924592`; the id is the
-address, so that reference resolves there, and this row stays open on its own terms. **Reported,
-not fixed.** `e977af0` (2026-05-20) deleted `native/aetheris_nif/` and removed the `rustler`
-dependency; `mix.exs` names neither and `lib/aetheris/nif.ex` is gone
-(`git -C ../aetheris ls-files lib/aetheris/nif.ex` returns nothing). The documentation was not
-swept with it.
+Filed 2026-08-23 at **BL-174** stage 2, under the standing rule that a deferred finding gets a
+row in the round it is deferred. **BL-173** found two `actions/cache` paths that had named
+nothing for three months and closed by removing them; what it could not close is that **no
+instrument in either repo could have reported them**, which is why they survived. `actions/cache`
+skips a missing path silently by design, so the workflow is structurally incapable of complaining.
 
-**The census**, at harness `203dec8`, from
-`git -C ../aetheris grep -c 'aetheris_nif' -- .` — which returns hits in eleven files, of which
-`docs/aetheris/milestones/remove-nif.md`, `remove-nif-implementation-notes.md`,
-`m01-core-harness.md` and `m03-replay-diff.md` are records of what a past ticket did and are
-**correctly** left alone, `.github/workflows/ci.yml` is **BL-173**'s, and one is not a document at
-all — `aetheris`, the committed escript binary, carries the string in compiled data and is out of
-scope here for that reason rather than by judgement. The remainder are standing surfaces that
-instruct a reader:
+**The instrument exists and is carried here inline**, because a row describing a script whose only
+copy is in a session scratchpad is the promise this rule forbids. It parses `ci.yml` and flags any
+`actions/cache` path that is neither `~`-rooted (a runner-home path, unresolvable locally) nor
+present in the tree:
 
-| surface | what it says | who reads it |
-|---|---|---|
-| `README.md:143`, §*Running checks* | `cd native/aetheris_nif` then three `cargo` commands | anyone following the README's own check list |
-| `README.md:115`, §*Project structure* | lists `native/aetheris_nif/` and `nif.ex  Rustler NIF wrapper` | the same reader, one section earlier |
-| `.github/copilot-instructions.md:43-45` | *"For any change touching `native/aetheris_nif/`"* + the same `cargo` chain | **a coding agent**, not a person |
-| `.github/copilot-instructions.md:15` | describes the project as having a Rust NIF crate | the same agent, as orientation |
-| `docs/aetheris/test-plan.md:37,94,98` | a Rust unit-test section, a `cargo test` line, and an *"All checks"* chain ending in the deleted directory | a ticket author deciding what to run |
-| `docs/aetheris/notes-m09.md:91` | the same `cargo` chain | m09's reader |
-| `docs/aetheris/milestones/m10-autonomous-agent-tooling.md:868` | `cd ../aetheris_nif && cargo …` inside an instruction block | m10's reader |
+```python
+import yaml, pathlib, sys
+root = pathlib.Path('.')
+d = yaml.safe_load(open('.github/workflows/ci.yml'))
+bad = []
+for jn, j in d['jobs'].items():
+    for s in j['steps']:
+        if 'actions/cache' not in str(s.get('uses', '')): continue
+        for p in s['with']['path'].split('\n'):
+            p = p.strip()
+            if not p or p.startswith('~') or p.startswith('/'): continue   # runner-home paths
+            if '*' in p:
+                if not list(root.glob(p)): bad.append((jn, s.get('name'), p))
+            elif not (root / p).exists():
+                bad.append((jn, s.get('name'), p))
+for jn, sn, p in bad:
+    print(f"PHANTOM  {jn}/{sn}: {p}")
+print(f"result: {len(bad)} phantom cache path(s)")
+sys.exit(1 if bad else 0)
+```
 
-**Why this is worth a row when the failure is loud.** `cd` into a directory that does not exist
-fails immediately, so a human hits it and works around it. The `copilot-instructions.md` surface
-is the exception and is the reason for the **medium** rather than low: it is read by a coding
-agent as standing instruction, and an agent that cannot find the directory has no author to ask —
-it improvises, or it reports a check it did not run. **BL-150**'s standing subject is documents
-that say what the tree does not; this is that class with an agent as the reader.
+**What was established about it at BL-174 stage 1**, run from the harness root: **2 phantom paths
+at `203dec8`** (`priv/plts` and `native/aetheris_nif/target`, each named), **0 at `7ccfc6a`**. Both
+halves of the mutation test carried a control — re-adding both paths to the working copy made it
+fail naming both, and the restore was from a **sha-verified working-copy backup** rather than
+`git checkout --` (the file held uncommitted work), with the mutated string confirmed absent by
+count afterwards and the check re-run green.
 
-**And it is a worked instance of the vocabulary-sweep rule** in harness `CLAUDE.md` — *"a
-vocabulary change owes a sweep of everything that speaks it, in the same commit"*. `remove-nif.md`
-lists *"Remove the `native/aetheris_nif/` subtree from the Project structure section"* as a
-deliverable, so the sweep was scoped to the README's structure list and not to the class; the
-structure list still names it anyway.
+**A second finding the instrument does not cover, recorded so the wiring choice is made with it in
+view.** Removing a path from a cache step invalidates that cache. `actions/cache` looks an entry up
+by key **and version**, where the version is derived from the path list — so run `32611562210`
+presented a key byte-identical to run `32563924592`'s (`Linux-cargo-e6bffd8c…`,
+`plt-Linux-v1.17.2-otp-27-OTP-27.0.1-99d441ac…`), missed with `Cache not found for input keys`,
+and saved fresh. One cold run, self-healing, and it happened on the commit that removed the
+phantom paths. A check that runs **before** such an edit lands is therefore worth more than one
+that runs after.
 
-**Done when:** each surface above is either corrected or marked as historical, with the choice
-recorded per surface, and a re-run of the census command returns only the records deliberately
-left. `README.md` §Project structure also names `nif.ex`, which is a second deletion the same
-commit made and the same sweep missed — it is in scope.
+**Done when:** the check is committed at a named path in one of the two repos, is invoked by
+something that runs on its own (not by hand), and has been demonstrated red — by mutation, on the
+tree it guards, with the restore verified. **Where it wires in is deliberately open**: a
+`sprint.sh` arm, a `drift_check.py` check, or a step in `ci.yml` itself are all defensible and
+they differ in what they can see. A `ci.yml` step is the only one that runs where the paths are
+actually resolved and is also the only one that cannot report on the workflow before it is pushed.
+Choosing is this row's work, not its precondition.
 
-**Costs:** S. The judgement is per-surface: which of these are records and which are
-instructions, and `m10-autonomous-agent-tooling.md` is the ambiguous one.
+**Costs:** S for the check, which exists. The wiring choice is the row.
 
-**Collides with:** **BL-173**, which holds the `ci.yml` cache path from the same census. **BL-150**
-carries the gate-declaration append that found three of these surfaces, and settles nothing.
+**Collides with:** **BL-173** (closed), which found the defect and could not close this half.
 
-`Source: BL-172, 2026-08-22, derived at harness `203dec8`. The census command and its output are
-above; the control that it is not blind is the same command for `aetheris_exec_server`, which
-returns hits in `.gitignore`, `CLAUDE.md` and `docs/aetheris/advanced-git-tools.md` among others.
-Line numbers are from that commit and are cited with their sections, which survive an insert.`
+`Source: BL-174 stage 2, 2026-08-23. The instrument and its 2-at-203dec8 / 0-at-7ccfc6a results
+are BL-174 stage 1's, re-stated here because that packet is not in either tree. The cache-version
+finding is from run `32611562210`'s own log, read at stage 2.`
 
 ---
 
-**PARTIAL 2026-08-22 at harness `7ccfc6a` — the three INSTRUCTION surfaces are corrected; this row
-stays OPEN because two surfaces are referred to the arbiter and its Done-when requires a choice
-recorded for *each*.**
+### BL-176 — `aetheris`, a build output, is committed to the tree and is three months stale (#TBD)
+**Status:** OPEN
+**Kind:** question · **Census items:** n/a · **Contract:** n/a
+**Size:** S–M · **Priority:** low
+**Section:** harness (`../aetheris/aetheris`)
 
-**The triage test, stated before it was applied.** Does the document address a reader in the
-present about what to do now, or does it describe what a past ticket asked for at its own time?
-Present-tense standing guidance whose audience is *whoever is working now* → INSTRUCTION, fixed.
-A dated unit of past work — a milestone ticket, its notes, its implementation record — whose
-audience is that unit's reader → RECORD, not edited. A compiled binary → ARTIFACT. A dated record
-carrying a present-tense instruction block → BOTH, referred.
+Filed 2026-08-23 at **BL-174** stage 2. Surfaced by that row's census, which returned the file as
+one of eleven `aetheris_nif` hits and classed it **ARTIFACT** — neither an instruction to fix nor
+a record to preserve, and out of that row's scope for that reason rather than by judgement.
 
-| surface | class | disposition |
-|---|---|---|
-| `.github/copilot-instructions.md` §Repository context, §Full check suite, §Rust standards | INSTRUCTION | **fixed** |
-| `README.md` §Project structure, §Running checks | INSTRUCTION | **fixed** |
-| `docs/aetheris/test-plan.md` §1 table, §2, §Commands | INSTRUCTION | **fixed** |
-| `.github/workflows/ci.yml` | INSTRUCTION (to a machine) | **fixed under BL-173**, closed |
-| `docs/aetheris/milestones/m01-core-harness.md` | RECORD | not edited |
-| `docs/aetheris/milestones/m03-replay-diff.md` | RECORD | not edited |
-| `docs/aetheris/milestones/remove-nif.md` | RECORD | not edited |
-| `docs/aetheris/milestones/remove-nif-implementation-notes.md` | RECORD | not edited |
-| `aetheris` (committed escript) | ARTIFACT | not editable; see below |
-| `docs/aetheris/notes-m09.md:91` | **BOTH** | **referred — not decided** |
-| `docs/aetheris/milestones/m10-autonomous-agent-tooling.md:868` | **BOTH** | **referred — not decided** |
+**What it is.** `file aetheris` reports an escript; it is a ZIP archive whose entry table contains
+`aetheris_nif.so`, the compiled shared object of a crate deleted at `e977af0` (2026-05-20). It was
+committed at `f43c905` (2026-05-16) and has not been rebuilt since —
+`git -C ../aetheris log -1 --format='%h %ad' --date=short -- aetheris`.
 
-**Why the two are referred rather than ruled.** Both are dated records carrying a live-shaped
-instruction block. `m10` sits in the same directory as `m01` and `m03`, which this row rules
-correctly-left-alone, and this row's own Costs line already calls it *"the ambiguous one"*; ruling
-it INSTRUCTION would require a reason that does not also reach `m01` and `m03`, and none was found.
-`notes-m09.md` is the same shape one level down — a milestone's notes file, opening *"Architecture
-call:"* and *"Worth knowing ahead of T5"*, with one `cargo` chain inside it. The choice is
-available and cheap either way; what is not available is making it silently, so it is named here
-with an executor rather than left in a packet.
+**The question is not whether to rebuild it.** Rebuilding produces a fresh binary that is stale
+again the next time `lib/` changes, and nothing notices in between; that is the same defect with a
+newer timestamp. The question is **whether a build output belongs in the tree at all**. `mix
+escript.build` produces it on demand and `CLAUDE.md` §How to run already documents that command.
+Against removal: someone may be invoking `./aetheris` from a checkout without a build step, and
+this repo has not surveyed who.
 
-**The escript, stated so it is not re-triaged.** `aetheris` is a committed escript — a zip archive
-whose entry table contains `aetheris_nif.so`, embedded when it was built at `f43c905`
-(2026-05-16), four days before the crate was deleted. It is not a document, carries no instruction,
-and no text edit reaches it. Separately: it is a build output committed to the tree and three
-months stale, which is a different defect from this row's and is **not** filed here.
+**Done when:** the file is either removed from the tree and gitignored, with the invocation path
+for anyone relying on it named, or deliberately kept with a stated rebuild trigger and something
+that enforces it. Recording "we looked and chose to keep it" **without** a trigger does not
+discharge this row — that is the state it is already in.
 
-**The census is short — extended, not corrected.** Following this row's own vocabulary-sweep
-argument, the class is *the `e977af0` deletion*, and `aetheris_nif` is only one token that speaks
-it. `e977af0` also deleted `lib/aetheris/nif.ex` and removed the `rustler` dependency, so
-`git -C ../aetheris grep -niE 'rustler|rust nif|nif crate|nif\.ex|NifResult'` reaches surfaces the
-row's command cannot. Run at `7ccfc6a`, the ones **still standing and not covered above** are:
+**Costs:** S if removed, M if kept, because keeping it means building the trigger.
 
-- `docs/aetheris/specs.md` §10 *Rust NIF Interface* — a standing specification, present tense,
-  giving the full `defmodule Aetheris.NIF` signature block for a module deleted at `e977af0`, plus
-  two `**Constraint:**` lines about NIF scheduling. This is INSTRUCTION-class by the test above and
-  is the largest single surface the token census missed.
-- `.gitignore:22` — `# Rust build output (compiled by Rustler at mix compile time)`, and `:25`
-  `# Compiled NIF binaries (generated, not source)` over `/priv/native/`. The patterns still do
-  useful work; the comments describe a mechanism that no longer exists.
-- `docs/aetheris/milestones/milestone-reference.md:7` — RECORD (m03's row, what m03 built).
-- `mix.lock:23` still carries a `rustler` entry at `0.37.3` — a resolved dependency for a package
-  absent from `mix.exs` since `e977af0`, and `deps/rustler` exists in the working tree. **Not
-  documentation**, so out of this row's class entirely, and named here only so the finding has a
-  home; `mix deps.unlock --unused` is the shape of it.
+**Collides with:** nothing. **BL-174** classed it and does not dispose of it.
 
-**Not swept, deliberately, and named so the omission is visible:** the gate-set enumerations on
-every page this ticket touched are left unreconciled. `README.md` §Running checks still declares
-four `mix` commands, `test-plan.md` two disagreeing sets on one page, `.github/copilot-instructions.md`
-five. That is **BL-150**'s standing subject and its 2026-08-22 append says in terms that reconciling
-them *"is not filed as a row here either"*. This ticket removed the `cargo` tails that were false
-and touched nothing else in those lists.
+`Source: BL-174 stage 2, 2026-08-23, at harness `a49d05a`. The ZIP entry was read with
+`grep -aoE '.{60}aetheris_nif.{60}' aetheris` at stage 1.`
 
-**Done-when, restated against what is left.** *"each surface above is either corrected or marked as
-historical, with the choice recorded per surface"* — nine of eleven done, two referred.
-*"a re-run of the census command returns only the records deliberately left"* — at `7ccfc6a` the
-command returns the four records, the escript, the two referred surfaces, and one sentence in each
-of the four fixed files recording what was removed and why. Those sentences are a category the
-Done-when did not anticipate; they are deliberate, and removing them to satisfy the clause
-literally would delete the record the clause exists to produce.
+---
 
-`Source: this ticket, 2026-08-22, at harness `7ccfc6a` / agents at the commit carrying this append.
-The triage test is stated above and was applied to all eleven hits. The extended census is
-reproducible by the command quoted in it; its positive control is the same command and flags for
-`aetheris_worker`, which returns hits across the tree rather than nothing. **No count is given
-here deliberately** — the first draft of this sentence said *45 files*, and this ticket's own
-commit made it 46 by adding one `aetheris_worker` mention to `README.md`. A control figure over a
-set the commit is editing is falsified by that commit; the command is the durable form.`
+### BL-177 — `mix.lock` still resolves `rustler`, a dependency removed three months ago (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** low
+**Section:** harness (`../aetheris/mix.lock`)
+
+Filed 2026-08-23 at **BL-174** stage 2, found by that row's **extended** census — the one keyed on
+the `e977af0` deletion rather than on the `aetheris_nif` token, which does not reach this file.
+
+`mix.lock:23` carries a resolved entry for `rustler` at `0.37.3`. `mix.exs` has named no such
+dependency since `e977af0` removed `{:rustler, "~> 0.36"}` (2026-05-20), and `deps/rustler` exists
+in at least one working tree. **Outside BL-174's class** — a lockfile is not documentation — so it
+is filed rather than swept.
+
+**Why it is not fixed in BL-174's commit, stated so the next reader does not treat the omission as
+an oversight.** `mix deps.unlock --unused` rewrites `mix.lock`, and `mix.lock` is hashed into two
+`ci.yml` cache keys: `plt-…-${{ hashFiles('**/mix.lock') }}` and the deps/build key. Changing it
+invalidates both, and the next run is cold. That is a small, one-time, self-healing cost — but it
+is a **cache-behaviour change**, and BL-174 is a documentation row whose whole argument is that it
+changes declarations and not behaviour. Mixing the two would make the row's own claim false.
+
+**And the cost is now measured rather than assumed.** Run `32611562210` demonstrated the same
+mechanism from the other direction: BL-173 removed a *path* from two cache steps, which changes
+`actions/cache`'s **version** rather than its key, and both caches missed on byte-identical keys
+and rebuilt. One cold run either way. See **BL-175**.
+
+**Done when:** `mix.lock` carries no entry absent from `mix.exs`'s dependency tree — check with
+`mix deps.unlock --check-unused` if that flag holds in this Elixir version, otherwise by
+`mix deps.unlock --unused` producing an empty diff — and the run that follows the change is
+observed cold and then green, with the run id recorded. A green run alone does not discharge it;
+the point is that the invalidation was expected and watched.
+
+**Costs:** S. One command and one cold CI run.
+
+**Collides with:** **BL-175** (shares the cache-invalidation mechanism), **BL-174** (found it, does
+not own it).
+
+`Source: BL-174 stage 2, 2026-08-23. The lock entry is `git -C ../aetheris grep -n rustler mix.lock`;
+the cache-key dependency is `ci.yml`'s two `hashFiles('**/mix.lock')` expressions.`
+
+---
+
+### BL-178 — no `cargo` gate runs against either surviving Rust crate, and their state is unknown (#TBD)
+**Status:** OPEN
+**Kind:** question · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/native/aetheris_worker`, `../aetheris/native/aetheris_exec_server`)
+
+Filed 2026-08-23 at **BL-174** stage 2. Stage 1 removed four `cargo` commands from `README.md`
+§Running checks because they ran under `native/aetheris_nif`, deleted at `e977af0`. That left the
+README declaring **no Rust checks at all** — which is true, and is the finding.
+
+`native/aetheris_worker` and `native/aetheris_exec_server` exist and are the workspace members of
+`native/Cargo.toml`. Nothing runs `cargo fmt --check`, `cargo clippy -- -D warnings` or
+`cargo test` against either: not `ci.yml` (which installs `dtolnay/rust-toolchain@stable` and then
+never invokes cargo directly), not `sprint.sh`, and no other gate.
+
+**This row does NOT decide to add a gate.** It decides what the gate would find, first, because a
+gate that has never run has an unknown initial state and a red first run inside a documentation
+ticket converts that ticket into Rust repair of unknown size. That is the sequencing this
+backlog already carries as a rule — enumerate what a hardening will trip before sequencing it
+(**BL-077**, **BL-069**).
+
+**Done when:** all three commands have been RUN against each crate and the results recorded here —
+command, crate, exit code, and the head of any failure — **before** any decision about wiring. If
+all six are green, adding the gate is a separate, small, and now-safe change with its own row. If
+any is red, this row's disposition is the triage, not the gate.
+
+**One thing to settle while running them, for this row and not for BL-174's commit.** The crates
+are workspace members, so `cargo fmt --check --all`, `cargo clippy --workspace -- -D warnings` and
+`cargo test --workspace` from `native/` may cover both in one invocation and would be the better
+form. `.github/copilot-instructions.md` currently prescribes the per-crate shape
+(`cd native/<crate> && …`), landed at `a49d05a`; if the workspace form is adopted, that instruction
+is corrected by this row.
+
+**Costs:** M, and the size is genuinely unknown until the six runs happen — which is the point.
+
+**Collides with:** **BL-150** (the gate-set declarations disagree and no row owns reconciling them;
+this row must not be read as taking that on).
+
+`Source: BL-174 stage 2, 2026-08-23, at harness `a49d05a`. The absence of any cargo GATE is
+`git -C ../aetheris grep -ln 'cargo fmt\|cargo clippy\|cargo test' -- scripts/ .github/ mix.exs lib/`,
+which returns `.github/copilot-instructions.md` alone — a file that prescribes the commands and
+runs nothing. `git -C ../aetheris grep -n cargo -- .github/workflows/ci.yml scripts/sprint.sh`
+returns hits in `ci.yml` only, all of them `~/.cargo` cache paths, a cache key and one comment;
+`sprint.sh` returns none. Positive control on the same pair, `mix`: 28 and 60.`
+
+---
+
+### BL-179 — every CI job warns that its actions target a deprecated Node, and the runner is already forcing them onto a newer one (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`)
+
+Filed 2026-08-23 at **BL-174** stage 2, from run `32611562210` — the push-triggered run that
+discharged **BL-173**'s outstanding evidence. Not caused by that commit and not by this one:
+the same annotation appears in run `32563924592`, at the same count.
+
+**What the runs say.** Both jobs annotate:
+
+> Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to
+> temporarily use Node 20, you can set the `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true`
+> environment variable.
+
+It is emitted once per step using `actions/cache@v4` or `actions/checkout@v4`, which declare a
+Node 20 runtime.
+
+**Why this is a row and not a style note.** The forcing has **already been applied** — the runner
+is not warning about a future change, it is reporting that it overrode the actions' declared
+runtime today. Every step using these actions is running on a runtime its author did not test
+against, and the escape hatch named in the message is a variable whose own name says it is
+unsafe. A deprecation with a runner-side override already in effect is a dated failure: the
+override is what will be withdrawn, and when it is, the actions stop rather than warn.
+
+**Done when:** every action in `ci.yml` declares a Node runtime the runner does not override, or
+each one that cannot is named with the upstream issue and a date to re-check. A run whose log
+contains no such annotation is the check; `gh run view <id> --log | grep -c 'Node 20 is being
+deprecated'` returning 0 discharges it, and the positive control is the same command against
+`32611562210`, which does not return 0.
+
+**Costs:** S if a major-version bump of both actions clears it; unknown if a pinned action has no
+Node-24 release.
+
+**Collides with:** **BL-173** (closed; this was found in its evidence run and is not its subject).
+
+`Source: BL-174 stage 2, 2026-08-23, from `gh run view 32611562210 --log` and the same for
+`32563924592`. Checked for an existing owner before filing: no row in either backlog file mentions
+`actions/cache@`, `actions/checkout@`, Node 24 or `ACTIONS_ALLOW_USE_UNSECURE` except BL-173's own
+closed row, which names `actions/cache@v4` for its missing-path silence and not for its runtime.`

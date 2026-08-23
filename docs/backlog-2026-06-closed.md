@@ -5829,3 +5829,241 @@ disposition. Every figure above carries the command that produced it. The two-st
 than contradict it.`
 
 ---
+
+### BL-174 — the `aetheris_nif` removal was never swept out of the documentation, and one of the surfaces is read by an agent (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** five surfaces, enumerated below · **Contract:** n/a
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/README.md`, `../aetheris/.github/copilot-instructions.md`, `../aetheris/docs/aetheris/test-plan.md`, `../aetheris/docs/aetheris/notes-m09.md`, `../aetheris/docs/aetheris/milestones/m10-autonomous-agent-tooling.md`)
+
+Filed 2026-08-22 at **BL-172**, from the same reading that produced **BL-173**. **BL-172 is now
+DONE and lives in `docs/backlog-2026-06-closed.md`**, closed on run `32563924592`; the id is the
+address, so that reference resolves there, and this row stays open on its own terms. **Reported,
+not fixed.** `e977af0` (2026-05-20) deleted `native/aetheris_nif/` and removed the `rustler`
+dependency; `mix.exs` names neither and `lib/aetheris/nif.ex` is gone
+(`git -C ../aetheris ls-files lib/aetheris/nif.ex` returns nothing). The documentation was not
+swept with it.
+
+**The census**, at harness `203dec8`, from
+`git -C ../aetheris grep -c 'aetheris_nif' -- .` — which returns hits in eleven files, of which
+`docs/aetheris/milestones/remove-nif.md`, `remove-nif-implementation-notes.md`,
+`m01-core-harness.md` and `m03-replay-diff.md` are records of what a past ticket did and are
+**correctly** left alone, `.github/workflows/ci.yml` is **BL-173**'s, and one is not a document at
+all — `aetheris`, the committed escript binary, carries the string in compiled data and is out of
+scope here for that reason rather than by judgement. The remainder are standing surfaces that
+instruct a reader:
+
+| surface | what it says | who reads it |
+|---|---|---|
+| `README.md:143`, §*Running checks* | `cd native/aetheris_nif` then three `cargo` commands | anyone following the README's own check list |
+| `README.md:115`, §*Project structure* | lists `native/aetheris_nif/` and `nif.ex  Rustler NIF wrapper` | the same reader, one section earlier |
+| `.github/copilot-instructions.md:43-45` | *"For any change touching `native/aetheris_nif/`"* + the same `cargo` chain | **a coding agent**, not a person |
+| `.github/copilot-instructions.md:15` | describes the project as having a Rust NIF crate | the same agent, as orientation |
+| `docs/aetheris/test-plan.md:37,94,98` | a Rust unit-test section, a `cargo test` line, and an *"All checks"* chain ending in the deleted directory | a ticket author deciding what to run |
+| `docs/aetheris/notes-m09.md:91` | the same `cargo` chain | m09's reader |
+| `docs/aetheris/milestones/m10-autonomous-agent-tooling.md:868` | `cd ../aetheris_nif && cargo …` inside an instruction block | m10's reader |
+
+**Why this is worth a row when the failure is loud.** `cd` into a directory that does not exist
+fails immediately, so a human hits it and works around it. The `copilot-instructions.md` surface
+is the exception and is the reason for the **medium** rather than low: it is read by a coding
+agent as standing instruction, and an agent that cannot find the directory has no author to ask —
+it improvises, or it reports a check it did not run. **BL-150**'s standing subject is documents
+that say what the tree does not; this is that class with an agent as the reader.
+
+**And it is a worked instance of the vocabulary-sweep rule** in harness `CLAUDE.md` — *"a
+vocabulary change owes a sweep of everything that speaks it, in the same commit"*. `remove-nif.md`
+lists *"Remove the `native/aetheris_nif/` subtree from the Project structure section"* as a
+deliverable, so the sweep was scoped to the README's structure list and not to the class; the
+structure list still names it anyway.
+
+**Done when:** each surface above is either corrected or marked as historical, with the choice
+recorded per surface, and a re-run of the census command returns only the records deliberately
+left. `README.md` §Project structure also names `nif.ex`, which is a second deletion the same
+commit made and the same sweep missed — it is in scope.
+
+**Costs:** S. The judgement is per-surface: which of these are records and which are
+instructions, and `m10-autonomous-agent-tooling.md` is the ambiguous one.
+
+**Collides with:** **BL-173**, which holds the `ci.yml` cache path from the same census. **BL-150**
+carries the gate-declaration append that found three of these surfaces, and settles nothing.
+
+`Source: BL-172, 2026-08-22, derived at harness `203dec8`. The census command and its output are
+above; the control that it is not blind is the same command for `aetheris_exec_server`, which
+returns hits in `.gitignore`, `CLAUDE.md` and `docs/aetheris/advanced-git-tools.md` among others.
+Line numbers are from that commit and are cited with their sections, which survive an insert.`
+
+---
+
+**PARTIAL 2026-08-22 at harness `7ccfc6a` — the three INSTRUCTION surfaces are corrected; this row
+stays OPEN because two surfaces are referred to the arbiter and its Done-when requires a choice
+recorded for *each*.**
+
+**The triage test, stated before it was applied.** Does the document address a reader in the
+present about what to do now, or does it describe what a past ticket asked for at its own time?
+Present-tense standing guidance whose audience is *whoever is working now* → INSTRUCTION, fixed.
+A dated unit of past work — a milestone ticket, its notes, its implementation record — whose
+audience is that unit's reader → RECORD, not edited. A compiled binary → ARTIFACT. A dated record
+carrying a present-tense instruction block → BOTH, referred.
+
+| surface | class | disposition |
+|---|---|---|
+| `.github/copilot-instructions.md` §Repository context, §Full check suite, §Rust standards | INSTRUCTION | **fixed** |
+| `README.md` §Project structure, §Running checks | INSTRUCTION | **fixed** |
+| `docs/aetheris/test-plan.md` §1 table, §2, §Commands | INSTRUCTION | **fixed** |
+| `.github/workflows/ci.yml` | INSTRUCTION (to a machine) | **fixed under BL-173**, closed |
+| `docs/aetheris/milestones/m01-core-harness.md` | RECORD | not edited |
+| `docs/aetheris/milestones/m03-replay-diff.md` | RECORD | not edited |
+| `docs/aetheris/milestones/remove-nif.md` | RECORD | not edited |
+| `docs/aetheris/milestones/remove-nif-implementation-notes.md` | RECORD | not edited |
+| `aetheris` (committed escript) | ARTIFACT | not editable; see below |
+| `docs/aetheris/notes-m09.md:91` | **BOTH** | **referred — not decided** |
+| `docs/aetheris/milestones/m10-autonomous-agent-tooling.md:868` | **BOTH** | **referred — not decided** |
+
+**Why the two are referred rather than ruled.** Both are dated records carrying a live-shaped
+instruction block. `m10` sits in the same directory as `m01` and `m03`, which this row rules
+correctly-left-alone, and this row's own Costs line already calls it *"the ambiguous one"*; ruling
+it INSTRUCTION would require a reason that does not also reach `m01` and `m03`, and none was found.
+`notes-m09.md` is the same shape one level down — a milestone's notes file, opening *"Architecture
+call:"* and *"Worth knowing ahead of T5"*, with one `cargo` chain inside it. The choice is
+available and cheap either way; what is not available is making it silently, so it is named here
+with an executor rather than left in a packet.
+
+**The escript, stated so it is not re-triaged.** `aetheris` is a committed escript — a zip archive
+whose entry table contains `aetheris_nif.so`, embedded when it was built at `f43c905`
+(2026-05-16), four days before the crate was deleted. It is not a document, carries no instruction,
+and no text edit reaches it. Separately: it is a build output committed to the tree and three
+months stale, which is a different defect from this row's and is **not** filed here.
+
+**The census is short — extended, not corrected.** Following this row's own vocabulary-sweep
+argument, the class is *the `e977af0` deletion*, and `aetheris_nif` is only one token that speaks
+it. `e977af0` also deleted `lib/aetheris/nif.ex` and removed the `rustler` dependency, so
+`git -C ../aetheris grep -niE 'rustler|rust nif|nif crate|nif\.ex|NifResult'` reaches surfaces the
+row's command cannot. Run at `7ccfc6a`, the ones **still standing and not covered above** are:
+
+- `docs/aetheris/specs.md` §10 *Rust NIF Interface* — a standing specification, present tense,
+  giving the full `defmodule Aetheris.NIF` signature block for a module deleted at `e977af0`, plus
+  two `**Constraint:**` lines about NIF scheduling. This is INSTRUCTION-class by the test above and
+  is the largest single surface the token census missed.
+- `.gitignore:22` — `# Rust build output (compiled by Rustler at mix compile time)`, and `:25`
+  `# Compiled NIF binaries (generated, not source)` over `/priv/native/`. The patterns still do
+  useful work; the comments describe a mechanism that no longer exists.
+- `docs/aetheris/milestones/milestone-reference.md:7` — RECORD (m03's row, what m03 built).
+- `mix.lock:23` still carries a `rustler` entry at `0.37.3` — a resolved dependency for a package
+  absent from `mix.exs` since `e977af0`, and `deps/rustler` exists in the working tree. **Not
+  documentation**, so out of this row's class entirely, and named here only so the finding has a
+  home; `mix deps.unlock --unused` is the shape of it.
+
+**Not swept, deliberately, and named so the omission is visible:** the gate-set enumerations on
+every page this ticket touched are left unreconciled. `README.md` §Running checks still declares
+four `mix` commands, `test-plan.md` two disagreeing sets on one page, `.github/copilot-instructions.md`
+five. That is **BL-150**'s standing subject and its 2026-08-22 append says in terms that reconciling
+them *"is not filed as a row here either"*. This ticket removed the `cargo` tails that were false
+and touched nothing else in those lists.
+
+**Done-when, restated against what is left.** *"each surface above is either corrected or marked as
+historical, with the choice recorded per surface"* — nine of eleven done, two referred.
+*"a re-run of the census command returns only the records deliberately left"* — at `7ccfc6a` the
+command returns the four records, the escript, the two referred surfaces, and one sentence in each
+of the four fixed files recording what was removed and why. Those sentences are a category the
+Done-when did not anticipate; they are deliberate, and removing them to satisfy the clause
+literally would delete the record the clause exists to produce.
+
+`Source: this ticket, 2026-08-22, at harness `7ccfc6a` / agents at the commit carrying this append.
+The triage test is stated above and was applied to all eleven hits. The extended census is
+reproducible by the command quoted in it; its positive control is the same command and flags for
+`aetheris_worker`, which returns hits across the tree rather than nothing. **No count is given
+here deliberately** — the first draft of this sentence said *45 files*, and this ticket's own
+commit made it 46 by adding one `aetheris_worker` mention to `README.md`. A control figure over a
+set the commit is editing is falsified by that commit; the command is the durable form.`
+
+**DONE 2026-08-23 at harness `a49d05a`** (stage 2), the stage that discharged the arbiter's ruling
+on the two referred surfaces, repaired the surface stage 1 found and did not fix, and gave the
+findings stage 1 had only named an executor each. Stage 1 is harness `7ccfc6a` / agents `b3b6069`,
+both on origin, with run **`32611562210`** green on `7ccfc6a`.
+
+**The ruling, and why it is the right one.** `docs/aetheris/notes-m09.md` and
+`docs/aetheris/milestones/m10-autonomous-agent-tooling.md` are **RECORD**. Stage 1 could not find a
+discriminator between them and the three surfaces it fixed, and the finding is that there is none
+of the kind it was looking for: every dated ticket document carries imperative prose, so
+"contains an instruction block" promotes `m01`, `m03`, `remove-nif` and
+`remove-nif-implementation-notes` too, and this row becomes a rewrite of the milestone archive
+that its own RECORD ruling refuses. The discriminator is **ARRIVAL**. A reader reaches
+`CLAUDE.md`, `README.md` and `.github/copilot-instructions.md` without having chosen a subject; a
+reader reaches a dated milestone document only by choosing it. Repairing arrival points is bounded
+by the number of entry points; repairing records is bounded by the number of past tickets, which
+only grows.
+
+**C1a — the class-level sentence was WIDENED, because its own words did not reach the surface the
+ruling was about.** As committed at `7ccfc6a` it read *"If you are reading a **milestone document**
+that instructs you to build or check a NIF, that document is a record of past work and not an
+instruction to you."* `notes-m09.md` sits at `docs/aetheris/notes-m09.md`, **not** under
+`milestones/`. Semantically it is a document about milestone 09; by location it is not a milestone
+document, and a reader resolving the phrase by location would have excluded exactly the file the
+ruling names. Ambiguity in the instrument is the thing worth removing, so the sentence now binds
+*"any document"*, enumerates where records live — the milestone tickets, their implementation
+notes, and the loose per-milestone notes files directly under `docs/aetheris/` — and names
+`notes-m09.md` explicitly.
+
+**C1b — the sentence is now in every arrival surface, and the set was established rather than
+assumed.** `.github/copilot-instructions.md` is Copilot's, not what a Claude session reads.
+
+| file | how it was established | before |
+|---|---|---|
+| `CLAUDE.md` | self-declares mandatory: *"Read this file in full before touching any code"* | absent — added |
+| `.github/copilot-instructions.md` | GitHub's own convention; opens *"Before writing any code, read `CLAUDE.md` in full"* | present since `7ccfc6a` |
+| `README.md` | the repo front door; the surface stage 1 already classed INSTRUCTION on this same arrival criterion | absent — added |
+
+**Excluded, with the reason**: `AGENTS.md` does not exist (`git -C ../aetheris ls-files AGENTS.md`
+is empty) though `README.md` §Project structure still names it — a stale structure entry, not this
+row's; `docs/aetheris/elixir-agent-instructions.md` is titled `# AGENTS.md` and addresses AI agents
+but governs a **`scheduler` service**, and `git grep` finds nothing pointing at it;
+`docs/aetheris/playbook.md` is linked from README's document list rather than made mandatory, and
+carries no NIF content at all. Each placement is in its own file's voice, not a pasted duplicate.
+
+**C2 — `specs.md` §10 is repaired, not deferred.** It was the largest instruction-class instance of
+this row's own subject, and closing the row while it waited for another row would have reproduced
+the defect this row names: a complete-looking claim produced by a narrow instrument. §10 is
+repointed from *Rust NIF Interface* to *Hashing and Diff Primitives*, read from the code:
+`hash_content/1` is a private helper inlined in three modules (`git -C ../aetheris grep -n 'defp
+hash_content' -- lib/` → `Eval.Runner`, `Execution.Loop`, `Skill.Extractor`), `byte_identical?/2`
+was dropped with no replacement, and `diff_text/2` is a pure-Elixir Myers diff inside
+`Trajectory.Diff` whose public `enrich_hunks/1` is unchanged. Two dependents are **named, not
+edited** — §5's *"skips word-diff NIF enrichment"* and §14's *"NIFs must not block the scheduler"*.
+`docs/aetheris/determinism-contract.md` does **not** depend on §10: zero hits for
+NIF/rustler/hash_content/byte_identical, against positive controls of 2 for `hash` and 9 for
+`determinis` on the same command and flags.
+
+**C3 — the two `.gitignore` comments are corrected and NO pattern is touched**, verified by diffing
+the comment-stripped file against `HEAD`: identical. `/priv/native/` can no longer be produced by
+anything, so the comment says so and the pattern stays, because a stale
+`priv/native/aetheris_nif.so` survives in working copies predating the deletion.
+
+**C7 — how the Done-when's census clause is satisfied, stated so a later reader does not take it
+literally.** The clause reads *"a re-run of the census command returns only the records
+deliberately left"*. It is satisfied by **every hit having a recorded class**, not by the token
+being absent. The census at `a49d05a` returns the four milestone records, the escript, the two
+surfaces ruled RECORD here, and one or two sentences in each of `ci.yml`, `README.md`,
+`CLAUDE.md`, `.github/copilot-instructions.md`, `.gitignore`, `docs/aetheris/specs.md` and
+`docs/aetheris/test-plan.md` that exist **because** of this row — they record what was removed and
+why, and they are the class-level statement the ruling asked for. **Deleting them would satisfy the
+clause literally and destroy the record it exists to produce.** Note that `CLAUDE.md` and
+`.gitignore` did not carry the token before and now do; that is deliberate, and is the same
+category as the four sentences stage 1 added.
+
+**What this row did NOT do**, each with its executor:
+
+| finding | executor |
+|---|---|
+| a standing gate for phantom workflow cache paths | **BL-175** |
+| `aetheris`, a stale committed build output | **BL-176** |
+| `mix.lock`'s unused `rustler` entry | **BL-177** |
+| no `cargo` gate against the two surviving crates | **BL-178** |
+| every CI job forced off a deprecated Node runtime | **BL-179** |
+| the gate-set declarations disagreeing across nine surfaces | **BL-150**, and no row owns reconciling them |
+| the CI `sandbox` job passing without running the set | **BL-048**, which is UNRULED and already owns it |
+
+`Source: BL-174 stage 2, 2026-08-23, at harness `a49d05a` / agents at the commit carrying this
+close. Every figure carries its command. The arrival set, the §10 dependents and the
+`determinism-contract.md` negative were derived at this stage, not inherited.`
+
+---

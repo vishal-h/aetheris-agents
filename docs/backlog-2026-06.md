@@ -7183,6 +7183,22 @@ and saved fresh. One cold run, self-healing, and it happened on the commit that 
 phantom paths. A check that runs **before** such an edit lands is therefore worth more than one
 that runs after.
 
+> **[Established 2026-08-23.** The account above no longer rests on the single miss it was
+> recorded from. Three runs on the harness form a controlled sequence in which the path list is the
+> only thing that varies: `32563924592` at `203dec8`, both steps restored from their keys;
+> `32611562210` at `7ccfc6a`, both missed on keys byte-identical to that first run's and saved
+> fresh; `32618789914` at `a4f93e1`, both restored again under those same keys. The two commits
+> either side of the miss carry byte-identical cache blocks — `for c in 7ccfc6a a4f93e1; do git -C
+> ../aetheris show $c:.github/workflows/ci.yml | sed -n '/actions\/cache/,/restore-keys/p'; done`,
+> diffed pairwise — so the difference at the miss is that `7ccfc6a` dropped `priv/plts` from the PLT
+> step and `native/aetheris_nif/target` from the Cargo step, and nothing else. **The sequence
+> carries its own control:** the deps-and-build step, whose path list did not change across the
+> three commits, restored from its key in every one of those runs and in both jobs — so the miss
+> is not a property of the day, the runner or the key. `actions/cache` identifies an entry by key
+> **and** by a version derived from the path list, and removing a path invalidates the cache that
+> path was never in. **This is established, not a reading.** Read from the three runs' own logs
+> (`gh run view <id> --log`) at the close that added this line. **]**
+
 **Done when:** the check is committed at a named path in one of the two repos, is invoked by
 something that runs on its own (not by hand), and has been demonstrated red — by mutation, on the
 tree it guards, with the restore verified.
@@ -7583,6 +7599,19 @@ advanced. **This is a reading of one line of output. It is not established.**
 3. The assertion (or the coordination it tests) is made deterministic, with the fix argued from
    the forced reproduction rather than from the green that follows it.
 4. The workflow is green on a commit that carries the fix, with the run id recorded.
+
+> **[Amended 2026-08-23.** Clause 4 as written is the unforced pass this row rejects everywhere
+> else in its own text. The row states that sixteen passes establish nothing about the mechanism,
+> and that a green re-run answers nothing because it is one more unforced pass — and then takes a
+> single green workflow run as its closing evidence. That is the same evidence it has already
+> refused, arriving under a different name. **The test of the fix is clause 1's forced
+> reproduction, re-run against the repaired code and no longer producing the failure.** A run
+> that cannot be made to fail before the repair proves nothing about the repair; one that could,
+> and then cannot, is the only thing here that does. **A green workflow run is corroboration
+> recorded after that check, with its run id, and is not the check.** Clause 4 is left as written
+> rather than rewritten, so a later reader sees both the contradiction and its correction — the
+> row's own argument was sound and its closing condition did not follow it, which is worth more
+> to that reader than a clause that was always right. **]**
 
 **Is this one test or a class? — the census, and it is a Done-when clause, not a suggestion.**
 Two timing-dependent assertions in this suite have now failed under load in three months, this

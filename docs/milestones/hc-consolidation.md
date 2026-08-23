@@ -909,6 +909,18 @@ disposition. Read the wording there.
 
 ---
 
+### R31 — a document is an instruction surface if a reader reaches it without having chosen a subject, and a record if a reader reaches it only by choosing it.
+
+`2026-08-23, at the BL-174 close — the discriminator is ARRIVAL, not directory and not the presence of imperative prose, which every ticket document carries. Standing guidance is repaired per surface because entry points are few; records are dispositioned at class level inside the arrival surfaces because past tickets only accumulate. Ruled by the arbiter, authorised by R22.`
+
+---
+
+### R32 — a record that was wrong when written is corrected by a dated note added in place; the original line is not rewritten.
+
+`2026-08-23, at the BL-174 close — "records are not edited" protects what a past ticket asked for, not a factual error the record carried from the start. The note names the false figure and gives the command that produces the true one. The instance is remove-nif-implementation-notes.md's "four call-site modules", which was three at e977af0 itself; that file is deliberately NOT corrected by the commit carrying this ruling. Ruled by the arbiter, authorised by R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

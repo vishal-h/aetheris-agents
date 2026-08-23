@@ -1835,6 +1835,8 @@ reddens on a runner's limits gets disabled, which is how this set rotted in the 
 
 `Source: BL-048, closed at harness 6e2fad8, 2026-07-25.`
 
+`2026-08-23, at the BL-174 close — the first dispatch has happened and the CI branch is CLOSED: three runs on ubuntu-latest (32553802996, 32563924592, 32611562210) all report the probe verdict NOT CAPABLE with missing seccomp, exec_server, network_namespace and "worker refused to start: :containment_unavailable", so the deterministic set is absent from every one of their step lists and the sandbox job has passed without executing it every time. The remaining branch, the harness sprint as the standing home, is AVAILABLE BUT CONDITIONAL and the condition is stated here because the row does not carry it: BL-048 closes on that branch only when the containment probe is run WHERE THE SPRINT RUNS and the set is shown actually executing and able to go red. Wiring it to a sprint that fails the same probe reproduces the vacuous green one level down, which is the defect this row exists to remove. If the probe fails there too, the finding is that the set has no automatic home at all, which is a larger row and not a close. Ruling recorded only: not executed, the probe not run, and this row's status unchanged.`
+
 ---
 
 ### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute (#TBD)
@@ -4934,6 +4936,46 @@ list is empty.
   2 because a correction living only in a notes file has been made and not delivered, which is
   BL-133's class.`
 
+- `2026-08-23` (BL-174 post-close) — **The single-backtick wrapper used for `Source:` lines and
+  dated entries MANGLES whenever the text it wraps contains backticked terms, which is most of
+  them. Filed, NOT fixed.** A single-backtick code span ends at the next backtick, so the wrapper's
+  opening tick pairs with the first inner tick and the parity inverts from there: the prose renders
+  as code and the code terms render as prose, with the spaces around them eaten. Demonstrated
+  rather than argued, on a row in the closed archive, with `pandoc -f gfm` (GitHub's flavour):
+
+  ```
+  $ pandoc -f gfm -t html <<'X'
+  `Source: BL-172, 2026-08-22, derived at harness `203dec8` / agents at the commit carrying this
+  row. Every figure above carries its command. The absence of a warning is read from the run's own
+  log rather than inferred from `actions/cache`'s documentation.`
+  X
+  <p><code>Source: BL-172, 2026-08-22, derived at harness </code>203dec8<code>/ agents at the
+  commit carrying this row. … inferred from</code>actions/cache<code>'s documentation.</code></p>
+  ```
+
+  `203dec8` and `actions/cache` — the two things meant to be code — are the only two rendered as
+  prose. The control is the blockquote form, which nests code spans correctly: the same renderer
+  over `../aetheris/docs/aetheris/test-plan.md` §2 produces one `<blockquote>` with every inner
+  term in its own `<code>`.
+
+  **Standing across every row in both backlog files and in the ruling registry**, wherever a
+  wrapped line carries an inner backtick — the count is deliberately not given, since it moves with
+  every append. The population is `grep -c '^\`Source:' docs/backlog-2026-06.md` and the same over
+  `docs/backlog-2026-06-closed.md` and `docs/milestones/hc-consolidation.md`.
+
+  **Not fixed, and the reason is not effort.** The wrapper is the house form for this kind of
+  block, it appears in files this row has no licence to rewrite wholesale, and changing it is a
+  presentation decision about the documentation system rather than a defect in any one row — which
+  is exactly what this row collects. Two candidate remedies exist and neither is chosen here: the
+  blockquote form already used in `test-plan.md` §2, or a double-backtick wrapper, which nests
+  single ticks correctly. **What a later reader should NOT conclude is that these blocks are
+  malformed prose**; they are correct source rendered by a rule their author did not account for.
+
+  `Source: BL-174 post-close, 2026-08-23. Found by the A2 pre-push check on that ticket's own
+  `specs.md` §10 edit, which had the same defect and WAS fixed, being one commit old and this
+  ticket's own work. The distinction is that one was a fresh defect in unpushed work and this is a
+  standing convention with hundreds of instances.`
+
 - `2026-08-21` (ds close, after the close commits) — **The retired Project was not inert: six
   built-in workflows were enabled on it the whole time, and one of them closed four issues during
   this close.** Found by the retirement acts themselves, which is why it is not in either close
@@ -7143,11 +7185,36 @@ that runs after.
 
 **Done when:** the check is committed at a named path in one of the two repos, is invoked by
 something that runs on its own (not by hand), and has been demonstrated red — by mutation, on the
-tree it guards, with the restore verified. **Where it wires in is deliberately open**: a
-`sprint.sh` arm, a `drift_check.py` check, or a step in `ci.yml` itself are all defensible and
-they differ in what they can see. A `ci.yml` step is the only one that runs where the paths are
-actually resolved and is also the only one that cannot report on the workflow before it is pushed.
-Choosing is this row's work, not its precondition.
+tree it guards, with the restore verified.
+
+**The deciding criterion, ruled at the BL-174 close: the check must be able to fail BEFORE the
+false declaration reaches origin.** A declaration that is already pushed has already been believed,
+and BL-173's own history is the argument — the two phantom paths survived three months precisely
+because the only thing that could observe them ran after the push and said nothing.
+
+**That eliminates `ci.yml`.** A step there reports only after a push, and it would be a workflow
+checking its own declaration — the one candidate that cannot satisfy the criterion, rather than
+one of three that merely differ in what they see.
+
+**Two candidates remain open**, a `sprint.sh` arm and a `drift_check.py` check. **The arbiter's
+lean is `drift_check`**, on the ground that this is drift by definition: a document stating what
+the tree contains, checked against the tree. Recorded as a lean and not as a decision.
+
+**The precondition that lean needs is already met, and is recorded here so the row does not carry
+it as an open question.** Adopting `drift_check` requires that `drift_check.py` can read the
+*harness* tree, since `ci.yml` is `../aetheris/`. It can, and does:
+`scripts/drift_check.py:56` defines `HARNESS_ROOT = REPO_ROOT.parent / "aetheris"`, `:61` and `:62`
+read `event.ex` and `store.ex` from it, check 8 maps the manifest's `aetheris` repo column to it at
+`:598`, and `backlog_resolution` scans both roots at `:1167`. So reaching across the seam is
+established practice in that script rather than a new capability the row would have to justify —
+which strengthens the lean rather than qualifying it.
+
+`[Corrected before this row was committed. The sentence above first read that every check
+drift_check runs today reads the agents repo and that whether it reaches the harness was the first
+thing to settle. That is false, and it was written without opening the file:
+`grep -nE '\.\./aetheris|HARNESS_ROOT' scripts/drift_check.py` returns the five sites named above.
+Recorded rather than silently replaced, because a precondition invented for a lean is the kind of
+qualification that outlives the sentence it was attached to.]`
 
 **Costs:** S for the check, which exists. The wiring choice is the row.
 

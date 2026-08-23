@@ -6552,3 +6552,99 @@ whose `requires_worker` set is excluded from this gate and is unaffected either 
 > Pushed at the arbiter's ratification: harness `77ab709`, then agents `1130871`. **]**
 
 ---
+
+### BL-176 — `aetheris`, a build output, is committed to the tree and is three months stale (#TBD)
+**Status:** DONE
+**Kind:** question · **Census items:** n/a · **Contract:** n/a
+**Size:** S–M · **Priority:** low
+**Section:** harness (`../aetheris/aetheris`)
+
+Filed 2026-08-23 at **BL-174** stage 2. Surfaced by that row's census, which returned the file as
+one of eleven `aetheris_nif` hits and classed it **ARTIFACT** — neither an instruction to fix nor
+a record to preserve, and out of that row's scope for that reason rather than by judgement.
+
+**What it is.** `file aetheris` reports an escript; it is a ZIP archive whose entry table contains
+`aetheris_nif.so`, the compiled shared object of a crate deleted at `e977af0` (2026-05-20). It was
+committed at `f43c905` (2026-05-16) and has not been rebuilt since —
+`git -C ../aetheris log -1 --format='%h %ad' --date=short -- aetheris`.
+
+**The question is not whether to rebuild it.** Rebuilding produces a fresh binary that is stale
+again the next time `lib/` changes, and nothing notices in between; that is the same defect with a
+newer timestamp. The question is **whether a build output belongs in the tree at all**. `mix
+escript.build` produces it on demand and `CLAUDE.md` §How to run already documents that command.
+Against removal: someone may be invoking `./aetheris` from a checkout without a build step, and
+this repo has not surveyed who.
+
+**Done when:** the file is either removed from the tree and gitignored, with the invocation path
+for anyone relying on it named, or deliberately kept with a stated rebuild trigger and something
+that enforces it. Recording "we looked and chose to keep it" **without** a trigger does not
+discharge this row — that is the state it is already in.
+
+**Costs:** S if removed, M if kept, because keeping it means building the trigger.
+
+**Collides with:** nothing. **BL-174** classed it and does not dispose of it.
+
+`Source: BL-174 stage 2, 2026-08-23, at harness `a49d05a`. The ZIP entry was read with
+`grep -aoE '.{60}aetheris_nif.{60}' aetheris` at stage 1.`
+
+> **[CLOSED 2026-08-23 at harness `82a12cd`. The ruling was REMOVE, and the branch the Done-when
+> offered as the alternative was not taken.** `aetheris` is out of the tree and ignored at
+> `.gitignore:19`, whose comment states why a build output committed for three months is ignored now
+> and names this row.
+>
+> **The check that could have stopped it ran first, and it found five live sites.** Both trees were
+> searched for references to the file **as a path** rather than as a build product, before the
+> removal. Repointed in the same commit: `scripts/sprint.sh`'s four closing `info` lines, now
+> `mix aetheris …` — the script's own `ESCRIPT` variable was already `"mix aetheris"` and nothing in
+> it consumed the binary, so its `mix escript.build` prerequisite was dropped as false as well as
+> unused; `agents/skill_extraction.exs:3`'s worked example in a `raise` message; and
+> `docs/aetheris/runbook.md` §Exit code, which names the escript as the way to get a real exit code
+> (BL-044) and now says to build it first. `runbook.md` §Option C already had the build step above
+> the invocation and is unchanged. **None of the four standing-instruction files** —
+> `.github/copilot-instructions.md`, `CLAUDE.md`, `README.md`, `docs/aetheris/test-plan.md` — named
+> it as a path; `CLAUDE.md:519-521` names it under `mix escript.build`, which is the form this row
+> relied on. Nothing under `.github/` mentions it. Nothing execs it: Rig's `fork.rs` builds
+> `Command::new("mix")` with `"aetheris"` as the first *argument*, a Mix task.
+>
+> **Every remaining hit is a frozen record, and that is a ruling this row makes rather than an
+> assumption.** `runbook-m11.md`, `runbook-m12.md`, `handoff-m07-m08.md`, the two m08 milestone
+> docs, five review files, and backlog and consolidation rows. This repo states the class in its own
+> words twice — `.github/copilot-instructions.md:24-31` ("that document is a record and not an
+> instruction to you", covering "every dated record in the repository, wherever it sits") and
+> `docs/aetheris/runbook.md:6-25`, which enumerates the three runbook categories rather than
+> pattern-matching them and puts `runbook-m11.md` and `runbook-m12.md` in the never-retro-updated
+> list. So the Done-when's "document you may not edit" case was reached and is answered: there is no
+> live document with a claim on this file that was left standing, and no record was edited.
+>
+> **The staleness is demonstrated, not argued from the date.** The removed binary carried the
+> `aetheris_nif.so` of a crate deleted at `e977af0`, and it bundled `rustler` — the same May residue
+> **BL-177** removes from `mix.lock` in this batch, which is how the two rows turn out to be one
+> fact seen twice. Run bare it did not start at all: the exqlite NIF fails to load and the run exits
+> 1 before any command dispatches. Run under the workaround the frozen m11/m12 runbooks document,
+> `ERL_LIBS=_build/dev/lib`, **it worked** — and worked *wrongly*, which is the more useful result.
+> That variable supplies current *deps*; the escript's own archive supplies `aetheris`. Its
+> `--help` listed neither `schedule` nor `server`, added at `f018b5f` (2026-05-20) and `be43092`
+> (2026-05-21), and `./aetheris server --help` answered `Error: unknown command: server`, exit 1,
+> where the current CLI dispatches it. The binary ran May's CLI and said nothing about it. **That is
+> the row's own hypothesis — "runs May's code silently" — turned into an observation.**
+>
+> **The invocation path for anyone relying on it, which the Done-when requires by name.** They now
+> get `./aetheris: No such file or directory`, exit **127**. The command that produces the file is
+> `mix escript.build`, documented at `CLAUDE.md:519-521` §How to run and at
+> `docs/aetheris/runbook.md` §Option C.
+>
+> **No gate observes this file's disappearance, and none is added.** That is stated rather than
+> left for a later reader to discover: nothing in `ci.yml`, `sprint.sh`, `drift_check.py` or the
+> harness seven reads `aetheris` as a file, before this commit or after it, so the removal is
+> invisible to
+> every check and its only consequence is the exit 127 above. Checked, not assumed:
+> `grep -n -P "(^|[^.])\./aetheris|escript|['\"]aetheris['\"]" scripts/drift_check.py` returns five
+> hits and every one is the harness *directory* — `HARNESS_ROOT = REPO_ROOT.parent / "aetheris"` and
+> its four derivatives — with a positive control of 5 `HARNESS_ROOT` occurrences from the same
+> grep shape; and the harness seven were run to green on a tree from which the file was already
+> gone. A gate asserting the absence of a build output would be a rebuild trigger by another
+> name, which is the branch this ruling declined.
+> **]**
+
+
+---

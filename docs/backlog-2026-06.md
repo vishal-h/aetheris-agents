@@ -4971,10 +4971,10 @@ list is empty.
   single ticks correctly. **What a later reader should NOT conclude is that these blocks are
   malformed prose**; they are correct source rendered by a rule their author did not account for.
 
-  `Source: BL-174 post-close, 2026-08-23. Found by the A2 pre-push check on that ticket's own
-  `specs.md` §10 edit, which had the same defect and WAS fixed, being one commit old and this
-  ticket's own work. The distinction is that one was a fresh defect in unpushed work and this is a
-  standing convention with hundreds of instances.`
+  > **Source: BL-174 post-close, 2026-08-23.** Found by the A2 pre-push check on that ticket's own
+  > `specs.md` §10 edit, which had the same defect and WAS fixed, being one commit old and this
+  > ticket's own work. The distinction is that one was a fresh defect in unpushed work and this is a
+  > standing convention with hundreds of instances.
 
 - `2026-08-21` (ds close, after the close commits) — **The retired Project was not inert: six
   built-in workflows were enabled on it the whole time, and one of them closed four issues during
@@ -7209,12 +7209,12 @@ read `event.ex` and `store.ex` from it, check 8 maps the manifest's `aetheris` r
 established practice in that script rather than a new capability the row would have to justify —
 which strengthens the lean rather than qualifying it.
 
-`[Corrected before this row was committed. The sentence above first read that every check
-drift_check runs today reads the agents repo and that whether it reaches the harness was the first
-thing to settle. That is false, and it was written without opening the file:
-`grep -nE '\.\./aetheris|HARNESS_ROOT' scripts/drift_check.py` returns the five sites named above.
-Recorded rather than silently replaced, because a precondition invented for a lean is the kind of
-qualification that outlives the sentence it was attached to.]`
+> **[Corrected before this row was committed.** The sentence above first read that every check
+> drift_check runs today reads the agents repo and that whether it reaches the harness was the first
+> thing to settle. That is false, and it was written without opening the file:
+> `grep -nE '\.\./aetheris|HARNESS_ROOT' scripts/drift_check.py` returns the five sites named above.
+> Recorded rather than silently replaced, because a precondition invented for a lean is the kind of
+> qualification that outlives the sentence it was attached to.**]**
 
 **Costs:** S for the check, which exists. The wiring choice is the row.
 
@@ -7392,3 +7392,78 @@ Node-24 release.
 `32563924592`. Checked for an existing owner before filing: no row in either backlog file mentions
 `actions/cache@`, `actions/checkout@`, Node 24 or `ACTIONS_ALLOW_USE_UNSECURE` except BL-173's own
 closed row, which names `actions/cache@v4` for its missing-path silence and not for its runtime.`
+
+---
+
+### BL-180 — the single-backtick wrapper convention mangles wherever the wrapped text carries an inner backtick (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** M · **Priority:** medium
+**Section:** documentation system — `docs/backlog-2026-06.md`, `docs/backlog-2026-06-closed.md`, `docs/milestones/hc-consolidation.md`, and any document using the convention
+
+Filed 2026-08-23 at the BL-174 post-close. **The finding and its evidence are the `2026-08-23`
+append on BL-150**; read it there rather than here. This row exists because that one is a census.
+A finding whose only home is a census has no executor, which is the shape this backlog keeps
+filing rows to escape — and this row's own subject is a convention nobody will change by
+noticing it again.
+
+**The category error that produces the defect, which is what points at the answer.** A `Source:`
+line is **provenance prose**. The wrapper is a **code span**, used to set that prose apart
+visually. Marking prose as code is the error; the mangling is its symptom, not an unlucky
+interaction. A code span is defined to end at the next backtick, so any wrapped text carrying an
+inner tick has its parity inverted from that tick onward: prose renders as code, the terms meant
+as code render as prose, and the whitespace beside them is eaten.
+
+**And it is not only cosmetic.** Outside a code span the Markdown parser consumes backslash
+escapes, so a shell or regex command that inverts out of its span renders as a **different
+command**. Observed on this ticket's own text: `grep -nE '\.\./aetheris|HARNESS_ROOT' …` rendered
+as `grep -nE '../aetheris|HARNESS_ROOT' …`, turning two literal dots into two any-character
+wildcards. A reader copying the rendered command runs something else.
+
+**Two candidate forms are already named** — the blockquote, and the double-backtick wrapper, which
+nests single ticks correctly. **This row is not obliged to pick either**, and a third may be
+better: the question is what should mark provenance prose, given that it is prose.
+
+**The criterion, ruled at this close.** Whichever form is adopted:
+
+1. **must nest code spans correctly**, and must be **demonstrated doing so by a renderer** — not
+   argued from the grammar;
+2. **must be migrated mechanically — a script, not hand edits.** The population spans three
+   documents and is append-only in two of them, so a hand pass converts what its author happens to
+   see and silently leaves the rest, which is this defect's own failure mode one level up;
+3. **must publish a before-and-after render on a real sample drawn from the population**, not a
+   constructed example. A constructed example is chosen to exhibit the bug and proves nothing
+   about the forms actually in the tree.
+
+**PROSPECTIVE DISCIPLINE, in force from this row's filing rather than from its close.** **No new
+wrapped block carries an inner backtick unless the wrapper nests.** Write the wrapper with bare
+filenames and bare commit hashes, or use a form that nests. This is what **R31** and **R32** in
+`docs/milestones/hc-consolidation.md` already do, and BL-048's `2026-08-23` line likewise — all
+three were written with bare names for exactly this reason. The discipline is stated here so the
+next author inherits it instead of rediscovering the defect.
+
+**Done when:** a form is chosen and stated; the population is converted **by a committed script**,
+with the script named and its before-and-after render on a real drawn sample published; **and**
+something keeps new instances out — a check, a lint, or a `drift_check` arm — that has been
+demonstrated red against a deliberately reintroduced instance and restored. **This row does not
+close on "we chose a form"**: a choice without the population converted leaves two conventions in
+the same files, which is worse than one broken one, because a reader cannot then tell which blocks
+are wrong. **It does not close on a hand migration either**, however complete it looks — a
+hand pass has no way to demonstrate it reached every instance, and the check in the third clause is
+what would have to prove it, so the check is owed regardless.
+
+**And R31 and R32 are revisited as part of this row.** Both are currently written with bare
+filenames — `remove-nif-implementation-notes.md`, `e977af0` — **to route around this defect**, so
+their wording is shaped by a bug rather than by what reads best. Once a nesting form exists they
+should be re-examined and, if the form permits, given their code terms back. They are **not**
+rewritten before then: **C5 of this close forbids it**, and rewriting them under the broken
+convention would be the second hand-migration this row's Done-when refuses.
+
+**Costs:** M. The choice is small, the script is small, the check is small; the risk is the
+migration touching append-only files whose history is their point.
+
+**Collides with:** **BL-150**, which holds the finding and its evidence and settles nothing —
+this row is its executor. **BL-175**, which will wire a check into one of the same candidate
+homes and may share the plumbing.
+
+`Source: BL-174 post-close second follow-on, 2026-08-23. Evidence is BL-150's 2026-08-23 append; the two instances repaired before this row was filed are in the commit carrying it, and were the second and third of this arc after specs.md §10. No count of the population is given here or in BL-150 — it moves with every append, and the commands in that append are the durable form.`

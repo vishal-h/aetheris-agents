@@ -1837,6 +1837,73 @@ reddens on a runner's limits gets disabled, which is how this set rotted in the 
 
 `2026-08-23, at the BL-174 close — the first dispatch has happened and the CI branch is CLOSED: three runs on ubuntu-latest (32553802996, 32563924592, 32611562210) all report the probe verdict NOT CAPABLE with missing seccomp, exec_server, network_namespace and "worker refused to start: :containment_unavailable", so the deterministic set is absent from every one of their step lists and the sandbox job has passed without executing it every time. The remaining branch, the harness sprint as the standing home, is AVAILABLE BUT CONDITIONAL and the condition is stated here because the row does not carry it: BL-048 closes on that branch only when the containment probe is run WHERE THE SPRINT RUNS and the set is shown actually executing and able to go red. Wiring it to a sprint that fails the same probe reproduces the vacuous green one level down, which is the defect this row exists to remove. If the probe fails there too, the finding is that the set has no automatic home at all, which is a larger row and not a close. Ruling recorded only: not executed, the probe not run, and this row's status unchanged.`
 
+`2026-08-23, later the same day — the CONDITION IS MET and the row CLOSES on the sprint branch, at
+harness bb06cfb. The condition was that the containment probe be run WHERE THE SPRINT RUNS, and
+that the set then be shown actually executing and able to go red.`
+
+**Where the sprint runs, concretely, because the ruling asked for the method and not just the
+verdict.** The sprint is `../aetheris/scripts/sprint.sh`, run by hand on this workstation from the
+harness root — it is not a hosted runner and has no counterpart in CI. It already invokes the probe
+at its Prerequisites section, line 344, as `mix run scripts/containment_probe.exs` in the **dev**
+env, which is the invocation that was reproduced verbatim rather than approximated; CI's `sandbox`
+job runs the same script under `MIX_ENV=test`, and the worker binary is built per-env, so the two
+are not interchangeable. The machine: Ubuntu 22.04.5 LTS, kernel 6.8.0-136-generic, with
+`kernel.unprivileged_userns_clone=1` and `kernel.apparmor_restrict_unprivileged_userns=0` — which
+is the concrete difference from the `ubuntu-latest` 24.04 image the CI branch died on, and it is a
+property of one laptop rather than of anything reproducible.
+
+**The probe's own output there, exit 0:**
+
+```
+  ── containment probe ─────────────────────────────────────────────
+    network namespace : true
+    seccomp filter    : true
+    exec server       : true
+    overlay           : false   (not required)
+  ──────────────────────────────────────────────────────────────────
+    verdict: CAPABLE — the sandbox set can run here
+```
+
+**Against the CI branch, re-verified here rather than taken from the ruling above.** All three runs
+report `verdict: NOT CAPABLE` with `missing: seccomp, exec_server, network_namespace`, and
+`grep -c 'Run the deterministic sandbox set'` returns **0** in all three logs — the step is absent
+from the step list, so the job passed without the set ever executing. That is the vacuous green the
+condition exists to avoid reproducing.
+
+**The arm, and both things it was required to show.** `./scripts/sprint.sh sandbox_set`, also in
+`all`.
+
+1. **It EXECUTES, named rather than counted.** The arm runs `mix test --only requires_worker
+   --trace` and writes every test that actually ran to `sprint/<ts>/sandbox_set/executed.txt` — 64
+   of them, by name, distinguished from the excluded ones by carrying a timing rather than the
+   literal `(excluded)`. It gates on an **anchor**: `BL-043: http_call completes a real round-trip
+   under the live seccomp filter`, the one test in the set that can only pass where containment was
+   genuinely established. If the anchor stops running the arm fails, because the set having run is
+   not the same claim as the set having run *sandboxed*.
+2. **It can go RED.** An assertion in the set was mutated —
+   `test/aetheris/execution/tool/run_command_test.exs`, the `working_dir` test's
+   `assert Map.fetch!(decoded, "exit_code") == 0` changed to `== 99`. The arm failed and named the
+   failing test: `[FAIL] mix test --only requires_worker exited non-zero — 972 tests, 1 failure,
+   907 excluded, 1 skipped`, with `1) test run_command with working_dir executes in the specified
+   directory` in its trace. The file was restored from a **sha-verified working-copy backup**
+   (sha256 `bc8f04b82df5…` before and after), never `git checkout --`, and the arm went green again.
+
+**`--only requires_worker`, not `--include`.** `--include` runs the whole suite and reports one
+total, so the set's own result is invisible inside it. `--only` runs exactly the set and **exits
+non-zero when the filter matches nothing**, so an arm that stops selecting the set goes red rather
+than green-on-empty — which is the same defect as the CI branch, one level down.
+
+**The arm is NOT promoted.** Every assertion uses `fail`, so it is counted and non-blocking under
+R7; the sprint exited 0 on the red run, with `reds NOT YET DECLARED ... 1`. Promotion is a later
+ticket's act with its own red-by-mutation evidence, exactly as `export_mechanism` was left.
+
+**What this close does NOT claim.** The set now has an automatic home **on a capable host**, which
+is the branch the ruling left available. It has no home that runs without a human starting it, and
+none on any hosted runner — the CI branch is closed NOT CAPABLE and nothing here reopens it. D4's
+larger finding is therefore not reached, but it is not refuted either: the sprint is a standing home
+in the sense the ruling meant, and it is one person's laptop.
+
+
 ---
 
 ### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute (#TBD)
@@ -1887,7 +1954,7 @@ on the six files is walked, not assumed.
 ---
 
 ### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
-**Status:** UNRULED
+**Status:** DONE
 **Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
 
 `mix test --include requires_worker` reports **15 failures** on `main` at `8021a59`, with no
@@ -7199,6 +7266,29 @@ that runs after.
 > path was never in. **This is established, not a reading.** Read from the three runs' own logs
 > (`gh run view <id> --log`) at the close that added this line. **]**
 
+> **[Refined 2026-08-23.** The account above says a **path-list change** moves the derived cache
+> entry version. Run `32639839807` establishes the complementary half: a **major version bump of
+> the action itself** does NOT. That run is the first on `actions/cache@v6` — `0783e3f` bumped v4
+> to v6, and `git merge-base --is-ancestor 0783e3f <sha>` answers no for every earlier run's
+> commit — so if the derivation had moved with the major, every one of its four cache steps would
+> have been cold. Proven two ways from the run's own log, not from the exit status. **One**, the
+> Cargo step took an **exact primary-key** hit: `Cache hit for: Linux-cargo-e6bffd8c…` at line 428
+> (the primary form; the restore-key form prints `Cache hit for restore-key:`), confirmed by the
+> post step at line 834, `Cache hit occurred on the primary key Linux-cargo-e6bffd8c…, not saving
+> cache.` That entry was written by run `32553802996` under **v4**, on a byte-identical key.
+> **Two**, the three steps whose keys DID move — the `check` and `sandbox` deps-and-build steps
+> and the PLT step, all cold on their primary keys because BL-177 rewrote `mix.lock` and the run
+> saved under the new hash `…77751441…` — each fell back to a **prefix** entry written under v4:
+> `Cache hit for restore-key: Linux-mix-v1.17.2-otp-27-99d441ac…` (lines 378 and 1252) and
+> `plt-Linux-v1.17.2-otp-27-OTP-27.0.1-99d441ac…` (line 403), all three of those entries saved by
+> run `32553802996`. A restore-key matches only within the same cache version, so a moved version
+> would have hidden them from a v6 reader entirely. **Both facts belong on this row: a path-list
+> change moves the entry version, a major version bump does not.** Read from the runs' own logs
+> with `gh run view <id> --log` bound by `-R` per R33; the v4/v6 provenance of each writing run is
+> from `git show <sha>:.github/workflows/ci.yml`, reading the `uses:` lines rather than a grep for
+> the version string — the tree at `c171a78` matches both `actions/cache@v4` and `@v6`, because
+> BL-179's comment block quotes the old version in prose. **]**
+
 **Done when:** the check is committed at a named path in one of the two repos, is invoked by
 something that runs on its own (not by hand), and has been demonstrated red — by mutation, on the
 tree it guards, with the restore verified.
@@ -7244,7 +7334,7 @@ finding is from run `32611562210`'s own log, read at stage 2.`
 
 
 ### BL-178 — no `cargo` gate runs against either surviving Rust crate, and their state is unknown (#TBD)
-**Status:** OPEN
+**Status:** DONE
 **Kind:** question · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
 **Size:** M · **Priority:** medium
 **Section:** harness (`../aetheris/native/aetheris_worker`, `../aetheris/native/aetheris_exec_server`)
@@ -7280,6 +7370,61 @@ is corrected by this row.
 
 **Collides with:** **BL-150** (the gate-set declarations disagree and no row owns reconciling them;
 this row must not be read as taking that on).
+
+**CLOSED 2026-08-23 at harness `bb06cfb`. All six ran, all six exited 0, and the gate is wired in
+the same ticket.** The six, each command against each surviving crate:
+
+| command | crate | exit | output |
+|---|---|---|---|
+| `cargo fmt --check` | `aetheris_worker` | 0 | no output |
+| `cargo fmt --check` | `aetheris_exec_server` | 0 | no output |
+| `cargo clippy --locked -- -D warnings` | `aetheris_worker` | 0 | `Checking` through the dependency graph, then the crate; `Finished` |
+| `cargo clippy --locked -- -D warnings` | `aetheris_exec_server` | 0 | `Checking aetheris_exec_server`; `Finished` |
+| `cargo test --locked` | `aetheris_worker` | 0 | `test result: ok. 34 passed; 0 failed` |
+| `cargo test --locked` | `aetheris_exec_server` | 0 | `test result: ok. 17 passed; 0 failed` |
+
+**Two of the first-pass runs were warm-cache replays, and the results above are NOT those runs.**
+`cargo clippy --locked` on `aetheris_exec_server` finished in 0.04s emitting `Finished` and no
+`Checking` line at all — a green from a step that checked nothing, which is this backlog's
+**Silent-wrong-answer** class arriving inside the measurement meant to settle the row. Caught by
+reading the elapsed time and the absence of a `Checking` line rather than the exit code, which was
+0 either way. Every result in the table is from a re-run against a fresh `CARGO_TARGET_DIR` in the
+scratchpad, so no verdict rests on a replay and none of it touched `native/target`.
+
+`native/Cargo.lock` is byte-identical before and after — sha256 `b0e038b3615b…`, checked after each
+group. **`cargo fmt` cannot take `--locked` and does not need it**: it rejects the flag outright
+(`error: unexpected argument '--locked' found`) because it resolves no dependencies. The flag is on
+the two commands that do.
+
+**The workspace question, settled: the workspace form is equivalent and is what was wired.** The
+row asked for the same RESULT and not merely the same exit code, and exit codes agreeing was the
+weakest of the three checks:
+
+- `cargo clippy --workspace --locked -- -D warnings` from `native/` emits a `Checking` line for
+  **each** member, so both crates are demonstrably reached.
+- `cargo test --workspace --locked` runs the **same two test binaries** the per-crate runs built —
+  identical binary hashes, `aetheris_worker-e00e58200b0a51e3` and
+  `aetheris_exec_server-381c87e387d05e41` — with the same per-crate counts.
+- `cargo fmt --check --all` reports nothing on a clean tree, so its coverage is invisible in its own
+  output and agreement proves nothing. A formatting defect was planted in one file of **each** crate;
+  the workspace form exited 1 and named **both** (`Diff in …/aetheris_worker/src/protocol.rs:48`,
+  `Diff in …/aetheris_exec_server/src/runner.rs:218`). Restored from a **sha-verified working-copy
+  backup**, never `git checkout --`, and green again.
+
+**The row's "separate row" clause is overruled, on the prompt's instruction and its reasoning.** The
+row deferred wiring because a gate with an unknown initial state can turn a small ticket into Rust
+repair of unbounded size. The measurement discharges exactly that reason, and the wiring is a few
+lines — so it lands here rather than as a second row. **This is not a precedent for skipping the
+measurement**; it is what the measurement was for.
+
+**What landed at `bb06cfb`:** three steps in `ci.yml`'s `check` job with
+`working-directory: native`, placed after the existing `mix` steps. No cache path, key or step was
+touched — `native/target` is still not cached, which is the same deliberate omission recorded beside
+the Cargo cache step. `.github/copilot-instructions.md` prescribed the per-crate `cd native/<crate>`
+shape and is corrected to the workspace form, per this row's own clause.
+
+**One clause stays open for the arbiter's push**, the way BL-179 and BL-177 did: the gate's first
+CI run is its own evidence and has not happened, because this ticket does not push.
 
 `Source: BL-174 stage 2, 2026-08-23, at harness `a49d05a`. The absence of any cargo GATE is
 `git -C ../aetheris grep -ln 'cargo fmt\|cargo clippy\|cargo test' -- scripts/ .github/ mix.exs lib/`,

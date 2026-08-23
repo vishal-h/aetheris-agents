@@ -324,3 +324,76 @@ def test_the_closure_sections_carry_no_field():
     closures = [s for s in sections if not s.is_title]
     assert closures, "positive control: the file has closure sections"
     assert all(s.field_hits() == [] for s in closures)
+
+
+# ---------------------------------------------------------------------------
+# PLACEMENT — the archive invariant
+# ---------------------------------------------------------------------------
+#
+# Added after `5721718`, which marked BL-048 and BL-178 `DONE` and left both in the
+# open file. Every gate passed: the vocabulary assertion reads the VALUE and was
+# blind to the FILE, so the one rule t1b split the backlog on was the one rule
+# nothing checked. Both directions are tested, because one direction is half a guard.
+
+
+def _sec(row_id, value, path, *, title=True):
+    """A minimal title (or closure) section, standing in one file."""
+    suffix = " (#TBD)" if title else ""
+    lines = (f"### {row_id} — synthetic{suffix}", f"**Status:** {value}", "")
+    return bs.Section((row_id,), lines[0], 1, lines, path)
+
+
+def test_a_terminal_row_in_the_open_file_fails():
+    sec = _sec("BL-901", "DONE", bs.BACKLOG_MD)
+    (row,) = bs.resolve([sec])
+    assert row.value == "DONE"
+    assert any("belongs in" in p for p in row.problems), row.problems
+
+
+def test_a_non_terminal_row_in_the_archive_fails():
+    sec = _sec("BL-902", "OPEN", bs.BACKLOG_ARCHIVE_MD)
+    (row,) = bs.resolve([sec])
+    assert row.value == "OPEN"
+    assert any("only DONE archives" in p for p in row.problems), row.problems
+
+
+def test_unruled_is_not_terminal_and_must_not_archive():
+    """C4: UNRULED has an open remainder, so the archive is wrong for it."""
+    assert bs.resolve([_sec("BL-903", "UNRULED", bs.BACKLOG_MD)])[0].problems == ()
+    archived = bs.resolve([_sec("BL-904", "UNRULED", bs.BACKLOG_ARCHIVE_MD)])[0]
+    assert any("only DONE archives" in p for p in archived.problems), archived.problems
+
+
+def test_each_side_accepts_the_rows_that_belong_on_it():
+    """The positive control: without it the two tests above pass on a check that
+    flags everything."""
+    assert bs.resolve([_sec("BL-905", "DONE", bs.BACKLOG_ARCHIVE_MD)])[0].problems == ()
+    assert bs.resolve([_sec("BL-906", "OPEN", bs.BACKLOG_MD)])[0].problems == ()
+
+
+def test_placement_is_inert_off_the_two_real_files(tmp_path):
+    """A fixture is not part of the split and must not be judged against it —
+    which is what keeps every `--file <fixture>` test above meaningful."""
+    assert bs.resolve([_sec("BL-907", "DONE", None)])[0].problems == ()
+    assert bs.resolve([_sec("BL-908", "DONE", tmp_path / "fixture.md")])[0].problems == ()
+
+
+def test_the_real_backlog_honours_the_split():
+    """The done-check, over both real files. Derived on both sides, no literals."""
+    rows = bs.load()
+    misplaced = [(r.row_id, r.problems) for r in rows
+                 if any("archives" in p or "belongs in" in p for p in r.problems)]
+    assert misplaced == [], misplaced
+
+    # Positive control: both sides are non-empty, so the assertion above is not
+    # passing over an empty set.
+    by_file = {}
+    for path in bs.BACKLOG_FILES:
+        titles = [s for s in bs.parse_sections(path.read_text(), path) if s.is_title]
+        by_file[path.name] = titles
+        assert titles, f"positive control: {path.name} has title sections"
+    archived = bs.resolve(
+        [s for s in bs.parse_files(bs.BACKLOG_FILES)
+         if s.path == bs.BACKLOG_ARCHIVE_MD]
+    )
+    assert archived and all(r.value in bs.TERMINAL for r in archived)

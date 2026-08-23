@@ -130,6 +130,11 @@ class Section(NamedTuple):
     heading: str
     start: int  # 1-based line number of the heading
     lines: tuple[str, ...]  # the heading line and its body, verbatim
+    # Which file the section was read from, for the PLACEMENT assertion below.
+    # `None` when the caller parsed a bare string (every fixture test does), and
+    # the placement check is inert for those — it is an invariant about the two
+    # real backlog files, not a property of arbitrary text.
+    path: Path | None = None
 
     @property
     def is_title(self) -> bool:
@@ -148,7 +153,7 @@ class Section(NamedTuple):
         return hits
 
 
-def parse_sections(text: str) -> list[Section]:
+def parse_sections(text: str, path: Path | None = None) -> list[Section]:
     lines = text.split("\n")
     starts = [i for i, line in enumerate(lines) if HEADING_RE.match(line)]
     out = []
@@ -157,7 +162,7 @@ def parse_sections(text: str) -> list[Section]:
         heading = lines[i]
         m = ID_PREFIX_RE.match(heading)
         ids = tuple(ID_RE.findall(m.group(1))) if m else tuple(ID_RE.findall(heading[:40]))
-        out.append(Section(ids, heading, i + 1, tuple(lines[i:end])))
+        out.append(Section(ids, heading, i + 1, tuple(lines[i:end]), path))
     return out
 
 
@@ -202,15 +207,59 @@ def resolve(sections: list[Section]) -> list[RowStatus]:
                     f"not the row's title section"
                 )
         value = hits[0][2] if len(hits) == 1 else None
+        problems.extend(_placement_problems(row_id, value, hits))
         rows.append(RowStatus(row_id, value, tuple(problems)))
     return rows
+
+
+# The ARCHIVE INVARIANT, added after `5721718` broke it: a row is in the closed
+# file **iff** its title section carries a terminal value. t1b split the backlog on
+# exactly this rule and nothing asserted it afterwards, so two rows were marked DONE
+# and left in the open file, and every gate passed — the vocabulary check reads the
+# VALUE and was blind to the FILE.
+#
+# THIS DOES NOT MAKE THE PATH LOAD-BEARING. The module docstring's rule — *the id is
+# the address and the path is never load-bearing* — governs how a CONSUMER resolves a
+# row, and it is unchanged: every consumer still reads the union and no caller asks
+# which side a row is on. This is a hygiene invariant about the two files, checked
+# here because this module is the only thing that already parses both.
+#
+# UNRULED IS NOT TERMINAL and belongs in the open file. `TERMINAL` is the authority,
+# not a second list — a row the arbiter has not settled has an open remainder.
+def _placement_problems(row_id, value, hits) -> list[str]:
+    """Empty unless a row's title section sits on the wrong side of the split."""
+    title = next((sec for sec, _, _ in hits if sec.is_title), None)
+    # Inert for a bare string, and for any file that is not one of the two real
+    # backlog files — `--file <fixture>` must not be judged against a split it is
+    # not part of.
+    if title is None or title.path is None:
+        return []
+    try:
+        where = title.path.resolve()
+    except OSError:                                       # pragma: no cover
+        return []
+    if where not in (BACKLOG_MD.resolve(), BACKLOG_ARCHIVE_MD.resolve()):
+        return []
+    in_archive = where == BACKLOG_ARCHIVE_MD.resolve()
+    should_be_archived = value in TERMINAL
+    if should_be_archived and not in_archive:
+        return [
+            f"`**Status:** {value}` is terminal, but the row is in "
+            f"{BACKLOG_MD.name} — a terminal row belongs in {BACKLOG_ARCHIVE_MD.name}"
+        ]
+    if in_archive and not should_be_archived:
+        return [
+            f"`**Status:** {value}` is not terminal, but the row is in "
+            f"{BACKLOG_ARCHIVE_MD.name} — only {', '.join(TERMINAL)} archives"
+        ]
+    return []
 
 
 def parse_files(paths) -> list[Section]:
     """Sections from every file in the union, concatenated in the given order."""
     out = []
     for path in paths:
-        out.extend(parse_sections(path.read_text()))
+        out.extend(parse_sections(path.read_text(), path))
     return out
 
 
@@ -242,7 +291,11 @@ def _cmd_check(paths) -> int:
     if bad:
         print(f"FAIL: {len(bad)} of {len(rows)} row ids")
         return 1
-    print(f"OK: all {len(rows)} row ids carry exactly one field, all in vocabulary")
+    print(
+        f"OK: all {len(rows)} row ids carry exactly one field, all in vocabulary, "
+        f"and each is on the correct side of the split "
+        f"({'/'.join(TERMINAL)} archives, everything else stays open)"
+    )
     return 0
 
 

@@ -1144,7 +1144,8 @@ BACKLOG_REF_ALLOW: dict[tuple[str, str], str] = {
     **{
         (f"BL-{n}", "tests/test_backlog_status.py"):
             "synthetic fixture id for the parser's own tests; never a real row."
-        for n in ("900", "901", "902", "910", "911", "912", "920", "930", "940", "950")
+        for n in ("900", "901", "902", "903", "904", "905", "906", "907", "908",
+                  "910", "911", "912", "920", "930", "940", "950")
     },
 }
 

@@ -6914,3 +6914,317 @@ closed row, which names `actions/cache@v4` for its missing-path silence and not 
 > lacked a Node-24 release. Nothing is carried forward from this row. **]**
 
 ---
+
+### BL-048 — The `requires_worker` test set is red: 15 failures, invisible to CI and to every default `mix test` (#TBD)
+**Status:** DONE
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+`mix test --include requires_worker` reports **15 failures** on `main` at `8021a59`, with no
+BL-042 changes applied (verified by stashing them and re-running: the failing set is
+byte-identical, 900 tests / 15 failures). CI never sees them — `ci.yml:64` runs
+`--exclude requires_worker --exclude integration` — and neither does a local `mix test`,
+because `test_helper.exs:4` excludes the same tags by default. Found off-territory by
+BL-042's own done-check, which is the only reason it is on the record at all.
+
+Three distinct causes, not one:
+
+- **Test written against a stale allowlist** — `run_command_test.exs` uses `pwd`, which is not
+  in `PERMITTED_COMMANDS` (`aetheris_exec_server/src/runner.rs:7-24`); the exec server
+  correctly answers `command not permitted: pwd`. 3 failures.
+- **`fs_hash` is nil where the test expects `sha256:…`** — `client_test.exs:53`,
+  `fs_hash_stability_test.exs` (×2). ~~This one is **not** obviously a stale test and may be a
+  live defect in worker fs-hashing; it needs diagnosis, not a test edit.~~ **CORRECTED — it is
+  nil by design, not a live defect. Diagnosed and closed as BL-053** (`d4728af` removed the
+  whole-sandbox hash for a real 30s-timeout reason; the tests were never updated). 3 failures,
+  now green.
+- **Network/credential-dependent integration tests pulled in by the include** — `httpbin.org`,
+  the GitHub MCP server, the HTTP MCP transport. `--include requires_worker` overrides the
+  `:integration` exclusion for tests carrying both tags, so these run whether or not the
+  environment can support them. 6+ failures. **CORRECTED — the characterization is mostly
+  wrong.** Eight of the nine carry `** (stop) {:worker_crashed, 159}` — 159 = 128+31 = SIGSYS —
+  which is **BL-043**'s `setsockopt` seccomp gap killing the worker, not a missing credential or
+  an unreachable host. Landing BL-043 should clear ~8 of these on its own. The ninth
+  (`RunOverlayTest`) is **BL-050**'s handshake race. So the strand is two tracked defects wearing
+  an environment-dependency costume; the `:integration` tagging question is real but secondary.
+  Do not re-triage per packet — this correction is the triage.
+
+**This is the gate-rot pattern the CLAUDE.md gate rule exists to catch**, running in the
+direction that is hardest to see: a set that no gate executes cannot go red visibly, so it
+went red silently and stayed. When it broke is unknown, because nothing was watching.
+
+**Done when:** each failure is triaged to stale-test / live-defect / environment-dependent;
+stale tests are corrected, live defects get their own rows, environment-dependent tests are
+tagged so an include cannot drag them into a run that cannot satisfy them; and the set is
+wired into something that runs it — a sprint case or a CI job with the worker available —
+so it cannot rot invisibly again. Until then it is a **known-red gate named with this ticket
+ref** in packets, not re-triaged each time.
+
+`Source: BL-042 done-check, off-territory, 2026-07-23. Baseline captured on a clean tree.`
+
+**Status 2026-07-25, after BL-050/055/056 (`9871059`):** `requires_worker` is **6 failures**
+(951 tests / 65 excluded), down from 11 — and **stable across two consecutive runs with identical
+membership**. The four MCP failures and `RunOverlayTest` are gone. Residual, each named:
+
+| Cause | Count | Ticket |
+|---|---|---|
+| stale `pwd` allowlist | 3 | BL-048 (this row) — the last strand actually owned here |
+| `McpHttpTest` — `port_close` in an `on_exit` cleanup | 1 | environment |
+| `McpGithubTest` — the server now spawns fine; the agent did not choose to call an MCP tool | 1 | LLM-behaviour integration test, not containment |
+| `OverlayAutonomousTest` | 1 | **not BL-050** — see below |
+
+**`OverlayAutonomousTest` is a different defect wearing BL-050's clothes.** It fails with a
+byte-identical message before and after the reorder. Root cause: `supervisor.ex:62` starts **no
+worker at all** for `provider: "stub"` with empty `mcp_servers`, so that run never mounts an
+overlay and the probe cannot land in `upper/`. Diagnosed rather than assumed fixed, and left with
+BL-048 rather than silently claimed by BL-050. It needs its own decision — the test asserts overlay
+behaviour for a configuration that by design has no worker.
+
+**Zero real SIGSYS remain.** The only `worker_crashed, 159` lines in the capture are
+`verify_worker_lifecycle_test.exs` stopping workers with that reason deliberately.
+
+**Status 2026-07-25, after BL-043:** `requires_worker` reports **11 failures** (940 tests / 65
+excluded) at harness `515a4ab`, and **SIGSYS is down 8 → 4**. BL-043 corrects this row's
+third bullet twice over: the nine residuals were never "network/credential-dependent integration
+tests", and they were never *one* cause either. They are now:
+
+| Cause | Count | Ticket |
+|---|---|---|
+| stale `pwd` allowlist | 3 | BL-048 (this row) |
+| MCP-stdio spawn vs. the deliberate `execve` exclusion (SIGSYS) | 4 | **BL-055** |
+| overlay (`RunOverlayTest`, `OverlayAutonomousTest`) | 2 | BL-050 / BL-054 slot |
+| external service — `httpbin.org` returning 503, and `McpHttpTest`'s `port_close` cleanup | 2 | genuinely environment-dependent |
+
+The `httpbin` one is worth reading closely: it now fails on a real **503 from the live host**,
+where before it died of SIGSYS. That is the repair working — the request reaches the internet.
+
+**Status 2026-07-25, after BL-053:** `mix test --include requires_worker` at harness
+`915d582` reports **12 failures** (was 15; 934 tests / 65 excluded). The fs_hash strand
+is closed. Remaining: pwd ×3, SIGSYS/BL-043 ×8, and **one load-sensitive flake** — the twelfth
+slot is not stable. In the BL-053 run it was `RunHelpersTimeoutTest` "a status change alone
+counts as activity" (a 300 ms inactivity window, 10/10 green in isolation); in the diagnosis run
+it was `RunOverlayTest` (BL-050). Both are races that surface only under the full suite's load.
+Filed as **BL-054** so the twelfth slot has a name rather than being met as a first sighting each
+time (the BL-051 lesson).
+
+---
+
+### BL-048 — DONE (pending first CI dispatch) 2026-07-25
+
+Landed at harness `6e2fad8`. **The set is green and wired.** `mix test --include
+requires_worker` on a capable machine: **951 tests, 0 failures, 67 excluded, 1 skipped**,
+identical across two consecutive runs.
+
+**One thing pends, and it is the human's move.** The wiring is a CI job gated on the worker's
+containment attestation, and the attestation only reports on `ubuntu-latest` once a job runs
+there (a PR or `workflow_dispatch`). If it reports capable, BL-048 closes as a CI job. If it
+reports *not* capable — GitHub's 24.04 image may restrict unprivileged user namespaces via
+AppArmor, which this repo has deliberately not surveyed — the harness sprint is the standing
+home and **BL-048 still closes**, just wired there: `scripts/sprint.sh` already prints the same
+probe. Either way the set has a gate; which gate is what the first dispatch decides.
+
+**The six, each triaged (the row's own done-when):**
+
+| Test | Disposition | Why |
+|---|---|---|
+| `RunCommandTest` ×3 | **fixed** | Three *different* non-permitted commands — `sleep`, `pwd`, `false` — not just `pwd`. Each asserted against a command the exec server is right to refuse, so none exercised what its name claimed. Rewritten on `python3` |
+| `McpHttpTest` | **fixed** | Test-hygiene, not environment: `on_exit` called `Port.close` on an already-closed port and raised, so the test's only failure mode was its own teardown. It is hermetic (local python mock) and stays in the set |
+| `McpGithubTest` | **retagged, kept** | `:requires_real_provider`. Needs a real model to *choose* to call the tool, plus a token and the binary. The stdio GitHub MCP path is live and surfaced, so the test is kept — it just cannot live in a sandbox-only set |
+| httpbin `http_call` | **retagged (extracted)** | `:requires_internet`, in a module of its own. See the correction below |
+| `OverlayAutonomousTest` | **skipped, filed as BL-057** | Cannot pass as written; no test-side config fixes it. See BL-057 |
+
+**A correction worth recording, because it nearly shipped.** The first attempt retagged the
+httpbin test in place with `@tag requires_worker: false`. That does **not** hold against a
+module-level `@moduletag :requires_worker` under an `--include` — the test still ran, and the
+set reported **green** because httpbin happened to return 200 on that run. The second run got a
+503 and exposed it. The fix is a module of its own; the lesson is that "the set is green" needed
+two runs to be worth saying, which is why the done-check asked for two.
+
+**Residual accounting, corrected one last time.** This row's characterisations were wrong twice
+before: "network/credential-dependent integration tests" (they were mostly SIGSYS → BL-043),
+then "mostly BL-043" (half were the MCP-stdio/`execve` exclusion → BL-055). Final state: **zero
+residual in the deterministic set.** What was environment-dependent is retagged out and still
+runs under its own include — verified, not assumed: both retagged tests were executed under
+`--include requires_internet` / `--include requires_real_provider` and fail for their
+environmental reasons (a live 503; the model not calling the tool). Retagged, not dropped.
+
+**Part B — the set cannot rot invisibly again.** `scripts/containment_probe.exs` asks the worker
+what it established (BL-050/055/056 made that a runtime fact) and reports
+netns/seccomp/exec-server/overlay. The CI `sandbox` job runs the probe, then runs the set if
+capable or **skips with the missing primitive named** — deliberately not red, because a job that
+reddens on a runner's limits gets disabled, which is how this set rotted in the first place.
+
+`Source: BL-048, closed at harness 6e2fad8, 2026-07-25.`
+
+`2026-08-23, at the BL-174 close — the first dispatch has happened and the CI branch is CLOSED: three runs on ubuntu-latest (32553802996, 32563924592, 32611562210) all report the probe verdict NOT CAPABLE with missing seccomp, exec_server, network_namespace and "worker refused to start: :containment_unavailable", so the deterministic set is absent from every one of their step lists and the sandbox job has passed without executing it every time. The remaining branch, the harness sprint as the standing home, is AVAILABLE BUT CONDITIONAL and the condition is stated here because the row does not carry it: BL-048 closes on that branch only when the containment probe is run WHERE THE SPRINT RUNS and the set is shown actually executing and able to go red. Wiring it to a sprint that fails the same probe reproduces the vacuous green one level down, which is the defect this row exists to remove. If the probe fails there too, the finding is that the set has no automatic home at all, which is a larger row and not a close. Ruling recorded only: not executed, the probe not run, and this row's status unchanged.`
+
+`2026-08-23, later the same day — the CONDITION IS MET and the row CLOSES on the sprint branch, at
+harness bb06cfb. The condition was that the containment probe be run WHERE THE SPRINT RUNS, and
+that the set then be shown actually executing and able to go red.`
+
+**Where the sprint runs, concretely, because the ruling asked for the method and not just the
+verdict.** The sprint is `../aetheris/scripts/sprint.sh`, run by hand on this workstation from the
+harness root — it is not a hosted runner and has no counterpart in CI. It already invokes the probe
+at its Prerequisites section, line 344, as `mix run scripts/containment_probe.exs` in the **dev**
+env, which is the invocation that was reproduced verbatim rather than approximated; CI's `sandbox`
+job runs the same script under `MIX_ENV=test`, and the worker binary is built per-env, so the two
+are not interchangeable. The machine: Ubuntu 22.04.5 LTS, kernel 6.8.0-136-generic, with
+`kernel.unprivileged_userns_clone=1` and `kernel.apparmor_restrict_unprivileged_userns=0` — which
+is the concrete difference from the `ubuntu-latest` 24.04 image the CI branch died on, and it is a
+property of one laptop rather than of anything reproducible.
+
+**The probe's own output there, exit 0:**
+
+```
+  ── containment probe ─────────────────────────────────────────────
+    network namespace : true
+    seccomp filter    : true
+    exec server       : true
+    overlay           : false   (not required)
+  ──────────────────────────────────────────────────────────────────
+    verdict: CAPABLE — the sandbox set can run here
+```
+
+**Against the CI branch, re-verified here rather than taken from the ruling above.** All three runs
+report `verdict: NOT CAPABLE` with `missing: seccomp, exec_server, network_namespace`, and
+`grep -c 'Run the deterministic sandbox set'` returns **0** in all three logs — the step is absent
+from the step list, so the job passed without the set ever executing. That is the vacuous green the
+condition exists to avoid reproducing.
+
+**The arm, and both things it was required to show.** `./scripts/sprint.sh sandbox_set`, also in
+`all`.
+
+1. **It EXECUTES, named rather than counted.** The arm runs `mix test --only requires_worker
+   --trace` and writes every test that actually ran to `sprint/<ts>/sandbox_set/executed.txt` — 64
+   of them, by name, distinguished from the excluded ones by carrying a timing rather than the
+   literal `(excluded)`. It gates on an **anchor**: `BL-043: http_call completes a real round-trip
+   under the live seccomp filter`, the one test in the set that can only pass where containment was
+   genuinely established. If the anchor stops running the arm fails, because the set having run is
+   not the same claim as the set having run *sandboxed*.
+2. **It can go RED.** An assertion in the set was mutated —
+   `test/aetheris/execution/tool/run_command_test.exs`, the `working_dir` test's
+   `assert Map.fetch!(decoded, "exit_code") == 0` changed to `== 99`. The arm failed and named the
+   failing test: `[FAIL] mix test --only requires_worker exited non-zero — 972 tests, 1 failure,
+   907 excluded, 1 skipped`, with `1) test run_command with working_dir executes in the specified
+   directory` in its trace. The file was restored from a **sha-verified working-copy backup**
+   (sha256 `bc8f04b82df5…` before and after), never `git checkout --`, and the arm went green again.
+
+**`--only requires_worker`, not `--include`.** `--include` runs the whole suite and reports one
+total, so the set's own result is invisible inside it. `--only` runs exactly the set and **exits
+non-zero when the filter matches nothing**, so an arm that stops selecting the set goes red rather
+than green-on-empty — which is the same defect as the CI branch, one level down.
+
+**The arm is NOT promoted.** Every assertion uses `fail`, so it is counted and non-blocking under
+R7; the sprint exited 0 on the red run, with `reds NOT YET DECLARED ... 1`. Promotion is a later
+ticket's act with its own red-by-mutation evidence, exactly as `export_mechanism` was left.
+
+**What this close does NOT claim.** The set now has an automatic home **on a capable host**, which
+is the branch the ruling left available. It has no home that runs without a human starting it, and
+none on any hosted runner — the CI branch is closed NOT CAPABLE and nothing here reopens it. D4's
+larger finding is therefore not reached, but it is not refuted either: the sprint is a standing home
+in the sense the ruling meant, and it is one person's laptop.
+
+
+---
+
+### BL-178 — no `cargo` gate runs against either surviving Rust crate, and their state is unknown (#TBD)
+**Status:** DONE
+**Kind:** question · **Census items:** n/a · **Contract:** harness `CLAUDE.md` §CI contract
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/native/aetheris_worker`, `../aetheris/native/aetheris_exec_server`)
+
+Filed 2026-08-23 at **BL-174** stage 2. Stage 1 removed four `cargo` commands from `README.md`
+§Running checks because they ran under `native/aetheris_nif`, deleted at `e977af0`. That left the
+README declaring **no Rust checks at all** — which is true, and is the finding.
+
+`native/aetheris_worker` and `native/aetheris_exec_server` exist and are the workspace members of
+`native/Cargo.toml`. Nothing runs `cargo fmt --check`, `cargo clippy -- -D warnings` or
+`cargo test` against either: not `ci.yml` (which installs `dtolnay/rust-toolchain@stable` and then
+never invokes cargo directly), not `sprint.sh`, and no other gate.
+
+**This row does NOT decide to add a gate.** It decides what the gate would find, first, because a
+gate that has never run has an unknown initial state and a red first run inside a documentation
+ticket converts that ticket into Rust repair of unknown size. That is the sequencing this
+backlog already carries as a rule — enumerate what a hardening will trip before sequencing it
+(**BL-077**, **BL-069**).
+
+**Done when:** all three commands have been RUN against each crate and the results recorded here —
+command, crate, exit code, and the head of any failure — **before** any decision about wiring. If
+all six are green, adding the gate is a separate, small, and now-safe change with its own row. If
+any is red, this row's disposition is the triage, not the gate.
+
+**One thing to settle while running them, for this row and not for BL-174's commit.** The crates
+are workspace members, so `cargo fmt --check --all`, `cargo clippy --workspace -- -D warnings` and
+`cargo test --workspace` from `native/` may cover both in one invocation and would be the better
+form. `.github/copilot-instructions.md` currently prescribes the per-crate shape
+(`cd native/<crate> && …`), landed at `a49d05a`; if the workspace form is adopted, that instruction
+is corrected by this row.
+
+**Costs:** M, and the size is genuinely unknown until the six runs happen — which is the point.
+
+**Collides with:** **BL-150** (the gate-set declarations disagree and no row owns reconciling them;
+this row must not be read as taking that on).
+
+**CLOSED 2026-08-23 at harness `bb06cfb`. All six ran, all six exited 0, and the gate is wired in
+the same ticket.** The six, each command against each surviving crate:
+
+| command | crate | exit | output |
+|---|---|---|---|
+| `cargo fmt --check` | `aetheris_worker` | 0 | no output |
+| `cargo fmt --check` | `aetheris_exec_server` | 0 | no output |
+| `cargo clippy --locked -- -D warnings` | `aetheris_worker` | 0 | `Checking` through the dependency graph, then the crate; `Finished` |
+| `cargo clippy --locked -- -D warnings` | `aetheris_exec_server` | 0 | `Checking aetheris_exec_server`; `Finished` |
+| `cargo test --locked` | `aetheris_worker` | 0 | `test result: ok. 34 passed; 0 failed` |
+| `cargo test --locked` | `aetheris_exec_server` | 0 | `test result: ok. 17 passed; 0 failed` |
+
+**Two of the first-pass runs were warm-cache replays, and the results above are NOT those runs.**
+`cargo clippy --locked` on `aetheris_exec_server` finished in 0.04s emitting `Finished` and no
+`Checking` line at all — a green from a step that checked nothing, which is this backlog's
+**Silent-wrong-answer** class arriving inside the measurement meant to settle the row. Caught by
+reading the elapsed time and the absence of a `Checking` line rather than the exit code, which was
+0 either way. Every result in the table is from a re-run against a fresh `CARGO_TARGET_DIR` in the
+scratchpad, so no verdict rests on a replay and none of it touched `native/target`.
+
+`native/Cargo.lock` is byte-identical before and after — sha256 `b0e038b3615b…`, checked after each
+group. **`cargo fmt` cannot take `--locked` and does not need it**: it rejects the flag outright
+(`error: unexpected argument '--locked' found`) because it resolves no dependencies. The flag is on
+the two commands that do.
+
+**The workspace question, settled: the workspace form is equivalent and is what was wired.** The
+row asked for the same RESULT and not merely the same exit code, and exit codes agreeing was the
+weakest of the three checks:
+
+- `cargo clippy --workspace --locked -- -D warnings` from `native/` emits a `Checking` line for
+  **each** member, so both crates are demonstrably reached.
+- `cargo test --workspace --locked` runs the **same two test binaries** the per-crate runs built —
+  identical binary hashes, `aetheris_worker-e00e58200b0a51e3` and
+  `aetheris_exec_server-381c87e387d05e41` — with the same per-crate counts.
+- `cargo fmt --check --all` reports nothing on a clean tree, so its coverage is invisible in its own
+  output and agreement proves nothing. A formatting defect was planted in one file of **each** crate;
+  the workspace form exited 1 and named **both** (`Diff in …/aetheris_worker/src/protocol.rs:48`,
+  `Diff in …/aetheris_exec_server/src/runner.rs:218`). Restored from a **sha-verified working-copy
+  backup**, never `git checkout --`, and green again.
+
+**The row's "separate row" clause is overruled, on the prompt's instruction and its reasoning.** The
+row deferred wiring because a gate with an unknown initial state can turn a small ticket into Rust
+repair of unbounded size. The measurement discharges exactly that reason, and the wiring is a few
+lines — so it lands here rather than as a second row. **This is not a precedent for skipping the
+measurement**; it is what the measurement was for.
+
+**What landed at `bb06cfb`:** three steps in `ci.yml`'s `check` job with
+`working-directory: native`, placed after the existing `mix` steps. No cache path, key or step was
+touched — `native/target` is still not cached, which is the same deliberate omission recorded beside
+the Cargo cache step. `.github/copilot-instructions.md` prescribed the per-crate `cd native/<crate>`
+shape and is corrected to the workspace form, per this row's own clause.
+
+**One clause stays open for the arbiter's push**, the way BL-179 and BL-177 did: the gate's first
+CI run is its own evidence and has not happened, because this ticket does not push.
+
+`Source: BL-174 stage 2, 2026-08-23, at harness `a49d05a`. The absence of any cargo GATE is
+`git -C ../aetheris grep -ln 'cargo fmt\|cargo clippy\|cargo test' -- scripts/ .github/ mix.exs lib/`,
+which returns `.github/copilot-instructions.md` alone — a file that prescribes the commands and
+runs nothing. `git -C ../aetheris grep -n cargo -- .github/workflows/ci.yml scripts/sprint.sh`
+returns hits in `ci.yml` only, all of them `~/.cargo` cache paths, a cache key and one comment;
+`sprint.sh` returns none. Positive control on the same pair, `mix`: 28 and 60.`
+
+---
+

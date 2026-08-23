@@ -925,6 +925,8 @@ disposition. Read the wording there.
 
 `2026-08-23, at the BL-180 close — git -C binds its target explicitly and gh does not: gh api repos/:owner/:repo/... resolves the repository from the working directory, so a query aimed at the wrong one returns a well-formed negative that reads exactly like a finding. The control is a query against the same tool that MUST resolve. The class is any tool taking its target from ambient state rather than from an argument, cd included, and the tell is that nothing in the command names what it read. Ruled by the arbiter, authorised by R22.`
 
+`2026-08-23, amended at BL-182's filing — the same shape one level down. R33 governs a tool taking its TARGET from ambient state; this governs a tool whose IDENTITY comes from ambient state, because a shell resolves a bare name. A recorded command naming grep does not name a program: in this environment grep is a shell function dispatching to ugrep while /usr/bin/grep is GNU grep, and find is a function over bfs, so the same recorded command runs a different program for its author and for its reader. The tell is identical to R33's — nothing in the command names what actually ran — and so is the remedy's shape: establish what the name resolved to before trusting anything measured with it, using type -a and not --version, which reports whatever ran rather than what resolved. The instance is BL-182, which measures the corpus and repairs none of it. Landed at that row's filing under R22; the choice of discipline is reserved to that row under R35 and is not made here.`
+
 ---
 
 ### R34 — an instrument's completeness must itself be controlled, not only its emptiness.

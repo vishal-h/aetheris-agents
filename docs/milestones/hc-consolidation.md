@@ -921,6 +921,24 @@ disposition. Read the wording there.
 
 ---
 
+### R33 — a tool whose target is implicit needs a positive control on every negative it returns.
+
+`2026-08-23, at the BL-180 close — git -C binds its target explicitly and gh does not: gh api repos/:owner/:repo/... resolves the repository from the working directory, so a query aimed at the wrong one returns a well-formed negative that reads exactly like a finding. The control is a query against the same tool that MUST resolve. The class is any tool taking its target from ambient state rather than from an argument, cd included, and the tell is that nothing in the command names what it read. Ruled by the arbiter, authorised by R22.`
+
+---
+
+### R34 — an instrument's completeness must itself be controlled, not only its emptiness.
+
+`2026-08-23, at the BL-180 close — the standing rule that a negative needs a positive control governs an instrument returning NOTHING. This governs one returning SOMETHING: a census, sweep or grep that under-reports produces a clean-looking result and reads as exhaustive, and no property of the output distinguishes a complete sweep from a short one. The control is a planted instance in the shape the instrument is most likely to miss. The instance is BL-180's own sweep, which found seven of fourteen wrapped blocks while sweeping for the wrapper defect and missed one of the two it had been sent to find. Ruled by the arbiter, authorised by R22.`
+
+---
+
+### R35 — a decision a row's Done-when reserves is not the arbiter's to make early.
+
+`2026-08-23, at the BL-180 close — a packet may not refer to the arbiter a choice the row it just authored requires to be made with evidence the row has not yet produced. Deciding it in prose is the close the Done-when refuses, arriving by another route, and it is the more dangerous route because it carries none of the Done-when's conditions with it. The instance is BL-180, whose packet head asked the arbiter to choose the replacement form while its body ruled that a form chosen without the population converted is not a close. Ruled by the arbiter, authorised by R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

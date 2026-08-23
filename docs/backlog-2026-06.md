@@ -7452,6 +7452,31 @@ are wrong. **It does not close on a hand migration either**, however complete it
 hand pass has no way to demonstrate it reached every instance, and the check in the third clause is
 what would have to prove it, so the check is owed regardless.
 
+**Clause 3, amended 2026-08-23 — the detector must decide by PARITY OR BY RENDERING, never by a
+line-prefix pattern, and it owes a positive control per shape.** A prefix grep cannot answer this
+question in kind. The property is **backtick parity across a block**; where a line begins is not
+evidence about it, so a line-prefix pattern can only ever approximate the population and its
+approximation fails silently. Two patterns were tried on one commit and both were short: one
+required the backtick at column one; its replacement allowed leading whitespace and is still blind
+to a wrapper opening after a list marker, which is this file's commonest shape. Reproduce with
+`grep -cE '^[[:space:]]*[-*+][[:space:]]+\x60' docs/backlog-2026-06.md` for the population, and the
+same lines piped through `grep -cE '^[[:space:]]*\x60'` for what the widened pattern would have seen,
+which is none of them. No figure is quoted here: both move with every append, and the pair of
+commands is what a later reader can re-run.
+
+So the check owed by clause 3 must **parse or render**, and must ship with a **positive control that
+plants an instance in every shape it could plausibly miss** — indented, after a list marker, inside
+a blockquote, and inside a fenced block that must be **exempt** — showing it fire on the defects and
+stay silent on the non-defects. A detector without that control is the instrument this row is about,
+pointed at itself.
+
+**The evidence for this amendment is the sweep that produced this row.** Sweeping the very commit
+that filed this defect, the first pattern returned 7 of 14 wrapped-block candidates and **missed one
+of the two known instances**; it was widened only because the prompt had already named both, not
+because any control reported the pattern short. **An instrument that under-reports returns a
+clean-looking result and reads as exhaustive** — and this one under-reported while sweeping for this
+exact defect. Recorded here rather than in the packet because the packet does not travel.
+
 **And R31 and R32 are revisited as part of this row.** Both are currently written with bare
 filenames — `remove-nif-implementation-notes.md`, `e977af0` — **to route around this defect**, so
 their wording is shaped by a bug rather than by what reads best. Once a nesting form exists they

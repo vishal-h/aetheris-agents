@@ -6680,3 +6680,237 @@ discharge this row — that is the state it is already in.
 
 
 ---
+
+### BL-177 — `mix.lock` still resolves `rustler`, a dependency removed three months ago (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** low
+**Section:** harness (`../aetheris/mix.lock`)
+
+Filed 2026-08-23 at **BL-174** stage 2, found by that row's **extended** census — the one keyed on
+the `e977af0` deletion rather than on the `aetheris_nif` token, which does not reach this file.
+
+`mix.lock:23` carries a resolved entry for `rustler` at `0.37.3`. `mix.exs` has named no such
+dependency since `e977af0` removed `{:rustler, "~> 0.36"}` (2026-05-20), and `deps/rustler` exists
+in at least one working tree. **Outside BL-174's class** — a lockfile is not documentation — so it
+is filed rather than swept.
+
+**Why it is not fixed in BL-174's commit, stated so the next reader does not treat the omission as
+an oversight.** `mix deps.unlock --unused` rewrites `mix.lock`, and `mix.lock` is hashed into two
+`ci.yml` cache keys: `plt-…-${{ hashFiles('**/mix.lock') }}` and the deps/build key. Changing it
+invalidates both, and the next run is cold. That is a small, one-time, self-healing cost — but it
+is a **cache-behaviour change**, and BL-174 is a documentation row whose whole argument is that it
+changes declarations and not behaviour. Mixing the two would make the row's own claim false.
+
+**And the cost is now measured rather than assumed.** Run `32611562210` demonstrated the same
+mechanism from the other direction: BL-173 removed a *path* from two cache steps, which changes
+`actions/cache`'s **version** rather than its key, and both caches missed on byte-identical keys
+and rebuilt. One cold run either way. See **BL-175**.
+
+**Done when:** `mix.lock` carries no entry absent from `mix.exs`'s dependency tree — check with
+`mix deps.unlock --check-unused` if that flag holds in this Elixir version, otherwise by
+`mix deps.unlock --unused` producing an empty diff — and the run that follows the change is
+observed cold and then green, with the run id recorded. A green run alone does not discharge it;
+the point is that the invalidation was expected and watched.
+
+**Costs:** S. One command and one cold CI run.
+
+**Collides with:** **BL-175** (shares the cache-invalidation mechanism), **BL-174** (found it, does
+not own it).
+
+`Source: BL-174 stage 2, 2026-08-23. The lock entry is `git -C ../aetheris grep -n rustler mix.lock`;
+the cache-key dependency is `ci.yml`'s two `hashFiles('**/mix.lock')` expressions.`
+
+> **[Worked 2026-08-23 at harness `9b76009`. The edit is done and the row stays OPEN on one clause,
+> which is the run.** The status field keeps the bare vocabulary word `OPEN` because it takes one of
+> three and nothing else; what is outstanding is narrow and is stated here rather than in the field.
+>
+> **The lock clause is discharged.** This Elixir is 1.17.2 and it does carry `--check-unused`, so the
+> set was established before the removal rather than inferred after it: `mix deps.unlock
+> --check-unused` named exactly `:rustler` and exited 1; `mix deps.unlock --unused` reported
+> `Unlocked deps: * rustler`; the diff is one deleted line, `mix.lock:23`; and `--check-unused`
+> then exits 0. `mix.exs`'s dependency list names nothing removed. `deps/rustler` is present in
+> this working tree and is **not tracked** — `/deps/` is gitignored and `git ls-files deps/` returns
+> nothing — so it is named and left alone, as this row said it would be.
+>
+> **The harness seven ran green on the resulting tree**, each capped: `mix test` reports `972 tests,
+> 0 failures, 133 excluded` in 90.5s, and `mix dialyzer` `Total errors: 0`. **BL-135** did not fire.
+>
+> **What remains is clause 2 — the run observed cold and then green, with its run id recorded — and
+> it is the arbiter's to record, because it comes from a push this batch was forbidden to make.**
+> The prediction is published here *before* that push so it can be falsified rather than described.
+> `hashFiles('**/mix.lock')` matches exactly one tracked file, whose sha256 moves
+> `50d81d01…d974` → `f8422995…8407`, and that hash is in two of the four cache keys. **BL-179**
+> lands in the same batch and bumps `actions/cache` v4 → v6, which can move the derived entry
+> *version* independently of the key (**BL-175**). Per step:
+>
+> | step | key input | prediction |
+> |---|---|---|
+> | `check` / Cache deps and build | `hashFiles('**/mix.lock')` | **cold, certain** |
+> | `check` / Cache Dialyzer PLTs | `hashFiles('**/mix.lock')` | **cold, certain** |
+> | `sandbox` / Cache deps and build | `hashFiles('**/mix.lock')` | **cold, certain** |
+> | `check` / Cache Cargo | `hashFiles('**/Cargo.lock')`, unchanged here | **not predicted either way** |
+>
+> Cache Cargo is the step that separates the two mechanisms, and it is deliberately left unpredicted
+> rather than guessed: its key does not move, so it goes cold only if the major bump moves the entry
+> version. **The three certain-cold steps carry `restore-keys`, and HOW they miss reads the same
+> question a second time** — a partial restore from the `${{ runner.os }}-mix-…-` prefix means the
+> entry version did **not** move across the bump; a complete miss means it did. The two readings
+> must agree with each other and with Cache Cargo. A disagreement is a finding about **BL-175**'s
+> mechanism and goes in that row, not this one. **]**
+
+> **[CLOSED 2026-08-23 on run `32639839807`** — `push`, head harness `c171a78`, conclusion
+> **success**, both jobs green (`check` 19 steps, `sandbox` 13, no failed step). **Clause 2's run
+> id is recorded and the row closes.**
+>
+> **The invalidation was expected, published before the push, and observed** — which is this row's
+> stated point, in its own words: *"A green run alone does not discharge it; the point is that the
+> invalidation was expected and watched."* The primary key moved on exactly the three steps
+> predicted and on no others. From the run's own log:
+>
+> | step | primary key | outcome |
+> |---|---|---|
+> | `check` / Cache deps and build | `…-77751441ec3b…` | **miss**; restored from `…-99d441acfd94…` |
+> | `check` / Cache Dialyzer PLTs | `plt-…-77751441ec3b…` | **miss**; restored from `plt-…-99d441acfd94…` |
+> | `sandbox` / Cache deps and build | `…-77751441ec3b…` | **miss**; restored from `…-99d441acfd94…`, saved under the new key |
+> | `check` / Cache Cargo | `Linux-cargo-e6bffd8c…` | **exact hit** — *"Cache hit occurred on the primary key … not saving cache."* |
+>
+> `99d441acfd94…` is `hashFiles('**/mix.lock')` before this row's edit and `77751441ec3b…` after
+> it; `sandbox`'s post step saved the new one, and `check`'s post step reported
+> *"Failed to save: Unable to reserve cache with key …, another job may be creating this cache"* —
+> the two jobs racing to write the same new entry, benign and green.
+>
+> **THE OBSERVED SHAPE IS NARROWER THAN THE WORD "COLD", AND THIS ROW SAYS SO RATHER THAN LETTING
+> THE WORD STAND.** `grep -c 'Cache not found for input keys'` over the whole log returns **0**:
+> no step experienced a complete miss. All four restored an entry. The three moved-key steps took a
+> **partial restore** from their `restore-keys` prefix — resolved, in this run, to
+> `Linux-mix-v1.17.2-otp-27-` and `plt-Linux-v1.17.2-otp-27-OTP-27.0.1-`. So what happened is
+> *primary-key invalidation with prefix fallback*, not a cold run; this row's filing said *"the next
+> run is cold"* before anyone had considered that these steps carry `restore-keys`. **The close
+> rests on the invalidation clause, which is satisfied exactly, and not on the word.**
+>
+> **What the run settles about the mechanism, which was the other reason to watch it.** The
+> second reading published with the prediction was: a partial restore means the derived entry
+> *version* did **not** move across the `actions/cache` v4→v6 bump, a complete miss means it did,
+> and the reading must agree with Cache Cargo. **Both readings agree, and they agree twice
+> over** — Cache Cargo, whose key is byte-identical across the change, took an **exact primary-key
+> hit**; and the three moved-key steps found prefix entries *written by v4 runs*, which a version
+> change would have made invisible to a v6 reader. **The major bump did not move the entry
+> version.** That is information **BL-175** wants and it is deliberately not written there: this
+> round was authorised to touch that row only on a *disagreement*, and there is none. **]**
+
+---
+
+### BL-179 — every CI job warns that its actions target a deprecated Node, and the runner is already forcing them onto a newer one (#TBD)
+**Status:** DONE
+**Kind:** bug · **Census items:** n/a · **Contract:** n/a
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/.github/workflows/ci.yml`)
+
+Filed 2026-08-23 at **BL-174** stage 2, from run `32611562210` — the push-triggered run that
+discharged **BL-173**'s outstanding evidence. Not caused by that commit and not by this one:
+the same annotation appears in run `32563924592`, at the same count.
+
+**What the runs say.** Both jobs annotate:
+
+> Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to
+> temporarily use Node 20, you can set the `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true`
+> environment variable.
+
+It is emitted once per step using `actions/cache@v4` or `actions/checkout@v4`, which declare a
+Node 20 runtime.
+
+**Why this is a row and not a style note.** The forcing has **already been applied** — the runner
+is not warning about a future change, it is reporting that it overrode the actions' declared
+runtime today. Every step using these actions is running on a runtime its author did not test
+against, and the escape hatch named in the message is a variable whose own name says it is
+unsafe. A deprecation with a runner-side override already in effect is a dated failure: the
+override is what will be withdrawn, and when it is, the actions stop rather than warn.
+
+**Done when:** every action in `ci.yml` declares a Node runtime the runner does not override, or
+each one that cannot is named with the upstream issue and a date to re-check. A run whose log
+contains no such annotation is the check; `gh run view <id> --log | grep -c 'Node 20 is being
+deprecated'` returning 0 discharges it, and the positive control is the same command against
+`32611562210`, which does not return 0.
+
+**Costs:** S if a major-version bump of both actions clears it; unknown if a pinned action has no
+Node-24 release.
+
+**Collides with:** **BL-173** (closed; this was found in its evidence run and is not its subject).
+
+`Source: BL-174 stage 2, 2026-08-23, from `gh run view 32611562210 --log` and the same for
+`32563924592`. Checked for an existing owner before filing: no row in either backlog file mentions
+`actions/cache@`, `actions/checkout@`, Node 24 or `ACTIONS_ALLOW_USE_UNSECURE` except BL-173's own
+closed row, which names `actions/cache@v4` for its missing-path silence and not for its runtime.`
+
+> **[Worked 2026-08-23 at harness `0783e3f`. The bump is done and the row stays OPEN on one clause,
+> which is the run.** The status field keeps the bare vocabulary word `OPEN`; what is outstanding is
+> stated here rather than in the field.
+>
+> **The enumeration clause is discharged, and it was run over EVERY action in the file rather than
+> the two the annotation names.** `runs.using` was read from each action's own `action.yml` at the
+> pinned ref through the GitHub contents API — the action's own declaration, not its documentation:
+>
+> | action | pinned | `runs.using` at that pin | annotates? | disposition |
+> |---|---|---|---|---|
+> | `actions/checkout` | `@v4` | `node20` | yes | bumped to **`@v7`** (`node24`) |
+> | `actions/cache` | `@v4` | `node20` | yes | bumped to **`@v6`** (`node24`) |
+> | `erlef/setup-beam` | `@v1` | **`node24`** | no | unchanged — `v1` already declares it |
+> | `dtolnay/rust-toolchain` | `@stable` | **`composite`** | no | unchanged — declares no Node runtime at all; every step is `shell: bash` and it nests no `uses:` |
+>
+> **No action in this file lacks a Node-24 release, so the row's alternative clause — name it with
+> an upstream issue and a date to re-check — is not engaged.** `actions/checkout` declares `node24`
+> from `v5` up; `actions/cache` from `v5` up.
+>
+> **The table is corroborated from live data, in the other direction, by the annotation's own
+> distribution in the row's own run.** All 12 hits in `32611562210` fall on `checkout` and
+> `Cache *` steps and their `Post` halves — 8 in `check` (checkout plus three caches, main and post
+> each), 4 in `sandbox` (checkout plus one cache) — and **none** on `setup-beam` or
+> `rust-toolchain`, which is what a `node24` action and a composite action look like in that log.
+>
+> **Changelogs read before bumping, not after.** `checkout` v5 and `cache` v5 are the `node24`
+> majors and raise the minimum **self-hosted** runner to `2.327.1`; both jobs are `ubuntu-latest`.
+> `checkout` v6 persists credentials to a separate file and this workflow performs no git write.
+> `checkout` v7 blocks fork checkout for `pull_request_target` and `workflow_run`, and this
+> workflow triggers on `workflow_dispatch`, `pull_request` and `push: [main]` — neither. `cache` v6
+> and `checkout` v7 are ESM migrations. No `cache` release note between `v4.3.0` and `v6.1.0`
+> mentions cache-version derivation, compression or zstd; the positive control on that negative is
+> the same pipeline searching for `node`, which returns 2.
+>
+> `yaml.safe_load` parses the edited file: two jobs, `check` (13 steps) and `sandbox` (9), ten
+> `uses:` steps enumerated.
+>
+> **What remains is the run, and it is the arbiter's, because it comes from a push this batch was
+> forbidden to make.** The check is
+> `gh run view -R vishal-h/aetheris <id> --log | grep -c 'Node 20 is being deprecated'` returning
+> **0**. **Its positive control was run BEFORE the change, against the run this row names**, so the
+> control cannot be an artifact of the fix: the same command against `32611562210` returns **12**,
+> not 0. The expectation for the arbiter's run is therefore 12 → 0. See **BL-177**, same batch, for
+> what the cache steps are predicted to do in that same run. **]**
+
+> **[CLOSED 2026-08-23 on run `32639839807`** — `push`, head harness `c171a78`, conclusion
+> **success**, both jobs green. **The check returned 0 and the row closes.**
+>
+> ```
+> $ gh run view -R vishal-h/aetheris 32639839807 --log | grep -c 'Node 20 is being deprecated'
+> 0
+> ```
+>
+> **Positive control, restated at the close and unchanged from the one run before the fix**, so it
+> cannot be an artifact of the fix:
+>
+> ```
+> $ gh run view -R vishal-h/aetheris 32611562210 --log | grep -c 'Node 20 is being deprecated'
+> 12
+> ```
+>
+> **12 → 0**, which is exactly the expectation this row published before the push. `gh` bound with
+> `-R vishal-h/aetheris` on both invocations, per **R33** — `gh run view` otherwise resolves the
+> repository from the working directory.
+>
+> The Done-when's first branch is the one taken: *every* action in `ci.yml` now declares a Node
+> runtime the runner does not override. The alternative branch — name any action that cannot, with
+> an upstream issue and a date to re-check — was **not engaged**, because no action in the file
+> lacked a Node-24 release. Nothing is carried forward from this row. **]**
+
+---

@@ -113,19 +113,19 @@ milestone actually is (one-person remote control):
 Base address `ai@example.com`; intent via plus-addressing: `ai+invoice@`,
 `ai+docbuilder@`, `ai+payslip@`.
 
-`[2026-08-24 — the domain in the address above, and the one in §8's DMARC conjunct, are
-`example.com`: RFC 2606's documentation placeholder, substituted for the live one. What this
-section teaches is the LOCAL PART and the plus-addressing scheme — `ai`, `ai+invoice@`,
-`ai+docbuilder@`, `ai+payslip@`, and the case-and-dot normalisation below — and in §8 the
-DMARC conjunct. The DOMAIN carries no design information that the placeholder does not. A
-brief names a mechanism; a live endpoint is DEPLOYMENT CONFIGURATION, and a brief naming one
-is the same category error as a brief hardcoding a token. When uc-inbox is built, the real
-address belongs where the rest of that deployment's configuration lives — an env var resolved
-at agent-eval time beside the channel credentials, never a literal in a brief, a script or an
-agent file. Ruled by the arbiter on that ground, which is independent of the export sweep that
-occasioned it: the U2 sweep matched §4's address and has no pattern that could match §8's bare
-domain, which a full-file sweep found. `scripts/u2_patterns.txt` and the U2 class are
-untouched.]`
+> 2026-08-24 — the domain in the address above, and the one in §8's DMARC conjunct, are
+> `example.com`: RFC 2606's documentation placeholder, substituted for the live one. What this
+> section teaches is the LOCAL PART and the plus-addressing scheme — `ai`, `ai+invoice@`,
+> `ai+docbuilder@`, `ai+payslip@`, and the case-and-dot normalisation below — and in §8 the
+> DMARC conjunct. The DOMAIN carries no design information that the placeholder does not. A
+> brief names a mechanism; a live endpoint is DEPLOYMENT CONFIGURATION, and a brief naming one
+> is the same category error as a brief hardcoding a token. When uc-inbox is built, the real
+> address belongs where the rest of that deployment's configuration lives — an env var resolved
+> at agent-eval time beside the channel credentials, never a literal in a brief, a script or an
+> agent file. Ruled by the arbiter on that ground, which is independent of the export sweep that
+> occasioned it: the U2 sweep matched §4's address and has no pattern that could match §8's bare
+> domain, which a full-file sweep found. `scripts/u2_patterns.txt` and the U2 class are
+> untouched.
 
 **Decision — route on `Delivered-To`, not `To`.** A BCC'd recipient appears in
 **neither** `To` nor `Cc`, so routing off `To` silently drops every BCC'd message.

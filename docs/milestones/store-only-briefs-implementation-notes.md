@@ -107,11 +107,11 @@ question is still open; it is a different question from this one and was not in 
 
 ## Addendum, same day — the U2 sweep fires on `uc-inbox.md`, and one ordering defect
 
-`[Added after `109b6c5`, as its own commit rather than as an amend. `109b6c5` is cited by
-the `export_mechanism` run output published in this change's review packet — the bundle
-header names it — so amending would leave that citation pointing at a tree reachable by no
-hash, which is the class `CLAUDE.md` §Definition of done forbids. The price is one extra
-commit, which is the price that rule already accepts.]`
+> Added after `109b6c5`, as its own commit rather than as an amend. `109b6c5` is cited by
+> the `export_mechanism` run output published in this change's review packet — the bundle
+> header names it — so amending would leave that citation pointing at a tree reachable by no
+> hash, which is the class `CLAUDE.md` §Definition of done forbids. The price is one extra
+> commit, which is the price that rule already accepts.
 
 ### The finding
 

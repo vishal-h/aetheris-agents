@@ -37,10 +37,14 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `eb5442d` | 2026-08-22 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
+| `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a915f96` | 2026-08-06 |
+| `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
+| `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
+| `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `bcf3b65` | 2026-08-24 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
@@ -164,6 +168,88 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > repo-side work; the artifact it produces — `capability-matrix.md` — is exported and
 > re-pinned below. `docs/capability-matrix-overrides.json` is data read by
 > `assemble_matrix.py`, not a reference doc, and is out for the same reason.
+
+> **DESIGN BRIEFS — the inclusion rule stated, 2026-08-24. Four rows added, two refused.**
+> Placed here, at the end of the inclusion-rule blocks and before the section break, because
+> this is the family it joins: the block above rules on runbooks and generated data, the one
+> above that on working artifacts and milestone specifications. Nothing above is rewritten and
+> no existing block's argument is amended; this adds the kind those blocks never reached.
+>
+> **The silence being closed.** Six design-brief rows have sat in the table since 2026-06-24,
+> and `git grep -in "research\|brief" -- docs/project-knowledge-manifest.md` returned only
+> those six table rows and no prose line at all. So the six rested on no written rule, and any
+> new decision about a brief would have extended a silence rather than applied a rule.
+>
+> **The rule, ruled by the arbiter.** *A design brief earns a manifest row when a STORE-SIDE
+> actor must read it to do its work.* The row is not a judgement about a document's importance;
+> it is the mechanism by which the project store carries a document, and the store is
+> claude-ui's only surface. Applied: claude-ui drafts milestone documents from design briefs,
+> so a parked use-case brief awaiting milestone drafting is read store-side and earns a row.
+> **A document whose reader is repo-side — reviews, implementation notes, the record of how a
+> rule was reached — does not earn a row, whatever its kind.** The six research briefs already
+> carry rows on exactly this ground, retroactively stated: they are the design prior art a
+> milestone doc cites, and the actor citing them drafts store-side.
+>
+> **This is beside the rule above, not in place of it.** That block reads: *"Milestone working
+> artifacts — `docs/reviews/*.md`, `*-implementation-notes.md`, scan files — are not exported.
+> They are the record of *how* a decision was reached and are read from the repo by the
+> sessions that need them; project knowledge carries standing reference docs."* Both tests are
+> live and they agree wherever they overlap — that block asks what kind of artifact it is, this
+> one asks which side of the seam its reader sits on, and the working-artifact exclusions hold
+> under either. Where the earlier block is silent is on a document that is a working artifact by
+> kind and unreachable to its actual reader by placement, which is what a parked brief is.
+>
+> **§8.3 of `aetheris/docs/methodology/prose-conventions-brief-2026-08-23.md` is OVERRULED, and
+> is named so a later reader meets both positions.** That section argues the opposite: that a
+> parked design brief is a working artifact on this manifest's own test, that committing briefs
+> to the repo *"returns them to where the rule already places their kind — out of the manifest
+> by kind, exactly as reviews and implementation notes are"*, and that the store copy becomes
+> mere convenience. The commit half of that is adopted and is why the briefs are now tracked.
+> The no-row half is overruled: it reasons from the artifact's kind alone and so cannot see that
+> the actor who needs a brief has no way to read the repo. Under §8.3 as written, committing a
+> brief would take it away from claude-ui — the one reader the document exists for — the moment
+> the next remove-all-upload-all ran. **§8.1 of the same brief is ACCEPTED**, and it is this same
+> rule applied rather than an exception to it: that brief gets no row because its reader is
+> repo-side, being the record of how an adoption decision was reached.
+>
+> **Four rows added.**
+> `aetheris-agents--inbox-brief.md`, `aetheris-agents--ravenmigrate-brief.md` and
+> `aetheris-agents--almanac-brief.md` are the three parked use-case design briefs in
+> `docs/aetheris/backlog/`, each self-declaring `**Type:** design brief` and each carrying a
+> section on what a milestone doc drafted from it would contain. `uc-inbox.md` was already
+> committed and is added now rather than left as the odd one out; the other two were committed
+> at `b56aed3`, having existed only in the store until then. Export names follow the six research
+> rows' convention, `<repo>--<short>-brief.md`, which is also the store's own name for the one
+> brief whose store path either repository records — `claude/aetheris-agents--inbox-brief.md`,
+> cited in the prose-conventions brief §1 — so when the `claude/` originals are deleted at a
+> later boundary the replacements are legible as the same documents.
+> `aetheris--research-README.md` is the fourth and is a different case: it is the only document
+> that states what a brief in `aetheris/docs/aetheris/research/` IS, and without it the store has
+> carried the six briefs and not the sentence defining the kind. A store-side reader needs it to
+> know what it is reading.
+>
+> **Two refusals, recorded with their reason so the rule is seen to have a boundary.**
+> `docs/aetheris/backlog/litellm-migration.md` and `docs/aetheris/backlog/payslip-view-report.md`
+> sit in the same directory as the three added briefs and get **no row**. Neither is a design
+> brief a store-side actor would draft a milestone from, and this is settled from each file's own
+> header rather than by impression: neither carries a `**Type:**` line, neither contains the
+> string *design brief* anywhere, and neither has a milestone-shape section, where all three
+> added briefs have all three. What they have instead is ticket furniture — litellm declares
+> `**Status:** Backlog — implement after P6`, scopes itself in three implementation phases and
+> ends in `## References`; payslip-view-report declares `**Candidate backlog row:** unnumbered`,
+> `**Size:** XS–S`, and ends in `## Decision points (if it becomes a ticket)` and
+> `## Done-when (if filed)`. Both are specifications for repo-side work, and this manifest has
+> carried specifications inside `backlog-2026-06.md` since BL-007. If either is later re-drafted
+> as a design brief, the rule above reaches it and the ruling is the arbiter's.
+>
+> **What this edit does NOT do.** It uploads nothing. Adding a row changes what the *next*
+> boundary exports and leaves the store exactly as it was, still holding its `claude/` copies of
+> the three briefs; deleting those is the arbiter's act at that boundary, not this commit's.
+> Only the four new rows are pinned. The four rows standing stale at this commit
+> (`aetheris-agents--CLAUDE.md`, `backlog-2026-06.md`, `aetheris--CLAUDE.md`,
+> `aetheris--runbook.md`) are deliberately left stale — clearing them here would assert an export
+> that did not happen, which is the born-green failure the 2026-08-22 block records. Their cells
+> were derived and discarded rather than never computed; see this change's implementation notes.
 
 ---
 

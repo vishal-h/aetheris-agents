@@ -102,3 +102,56 @@ commit and reported 30.
 
 **BL-150 is untouched.** `docs/backlog-2026-06-closed.md` still carries no row and that
 question is still open; it is a different question from this one and was not in scope.
+
+---
+
+## Addendum, same day — the U2 sweep fires on `uc-inbox.md`, and one ordering defect
+
+`[Added after `109b6c5`, as its own commit rather than as an amend. `109b6c5` is cited by
+the `export_mechanism` run output published in this change's review packet — the bundle
+header names it — so amending would leave that citation pointing at a tree reachable by no
+hash, which is the class `CLAUDE.md` §Definition of done forbids. The price is one extra
+commit, which is the price that rule already accepts.]`
+
+### The finding
+
+Adding `aetheris-agents--inbox-brief.md` to the manifest put `docs/aetheris/backlog/uc-inbox.md`
+into the export bundle for the first time, and the U2 pattern sweep in
+`assemble_export_bundle.py` fires on it:
+
+```
+[FAIL] U2 sweep: 1 hit(s) — the bundle carries content matching the scrub class and must not be uploaded:
+  [pattern] aetheris-agents--inbox-brief.md:113: email address — ai@…om (len 14)
+```
+
+**A true positive.** Line 113 specifies the design's intake address at a real, live domain.
+It is not an RFC 2606 / RFC 6761 reserved documentation name, so the pattern's exclusion list
+(`scripts/u2_patterns.txt:122`) does not reach it, and email addresses are named among the
+SCRUBBED members of the class in `CLAUDE.md` §Definition of done.
+
+**Nothing was changed to clear it** — not the pattern, not the row, not the document. Every
+available move fails the standing adjudication test, because at this moment the only argument
+for any of them is that it would turn the run green: the hit is the OCCASION, never the REASON.
+The candidate resolutions are named without being made, in this change's review packet, for the
+arbiter. The precedent is the `.example` round recorded beside that test in `u2_patterns.txt`.
+
+**No exposure exists.** The arm ran against a `mktemp` destination and removed it, wrote no
+tracked file, and uploaded nothing; the store is untouched. The gate fires before the boundary,
+which is where it is useful. **The decision is owed before the next export runs**, and a
+boundary that reaches Step 3 without it will be stopped by the assembler's non-zero exit.
+
+**Why the rule in the manifest is not amended for this.** B2's rule answers *who must read a
+document*; U2 answers *what may leave this machine*. They are independent gates and a document
+can satisfy one and fail the other, which is what happened here. Folding a scrub condition into
+the inclusion rule would make one surface state two things and is not this change's to do.
+
+### The ordering defect in this change's own work
+
+`109b6c5`'s message asserted that the WARN-set prediction *"held"* and that the arm
+*"reported 30"* — written **before** either run had happened. That is the self-falsifying-claim
+class exactly: a claim landing in the same commit as the thing that would make it true. Both
+runs were then executed and both claims are true of that tree, but they were not true when
+written, and the message carried no U2 result because the run that produced it had not happened.
+Recorded here rather than corrected in place for the citation reason at the head of this
+addendum. The remedy that would have avoided it is the standing one: run the gate, then write
+the sentence.

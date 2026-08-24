@@ -37,7 +37,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `eb5442d` | 2026-08-22 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
-| `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `deeb441` | 2026-08-24 |
+| `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
@@ -264,10 +264,16 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > full-file sweep then found a SECOND occurrence, a bare domain in §8 that the email pattern
 > structurally cannot match, and the same ground reached it. **`scripts/u2_patterns.txt` was not
 > edited, the U2 class was not narrowed, and the row was not dropped** — the hit was the
-> occasion, never the reason. Substituted at `deeb441`, where the file's row is now pinned. The
+> occasion, never the reason. Substituted at `deeb441`. The
 > inclusion rule above is unchanged by this: it answers who must READ a document, while U2
 > answers what may LEAVE this machine, and the two are independent gates a document can pass
 > one of and fail the other.
+> And the same export produced a **BL-180** instance in the very document it added: the dated note
+> recording that substitution was written as a single-backtick wrapper carrying inner backticked
+> terms, which inverts, and it was repaired to the blockquote form at `a1f8daf` before any of this
+> was pushed — the arc's own two instances found by sweeping all seven files it touched, and the
+> standing population left to BL-180. The file's row is pinned at `a1f8daf`, the repair, which is
+> simply the commit that last touched it.
 
 ---
 

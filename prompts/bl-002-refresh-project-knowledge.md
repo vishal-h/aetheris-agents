@@ -111,7 +111,8 @@ manifest is itself a row and lands in the bundle like any other
 document. Deterministic given the two HEADs: two runs into two
 directories are byte-identical.
 
-Two refusals, both deliberate:
+The run can decline to write a bundle, and it can decline to vouch for
+one it wrote. Both are deliberate:
 - A destination that already has content is REFUSED, not merged. The
   2026-08-14 boundary found a complete bundle from the previous export
   sitting at that path; merging would have produced correctly-named,
@@ -119,14 +120,29 @@ Two refusals, both deliberate:
   `--replace` moves the existing directory aside to
   `<dest>.superseded.<n>` — it is never deleted, being the only record
   of what was last uploaded.
-- The bundle is written UNSWEPT and says so, in a
-  `_UNSWEPT-DO-NOT-UPLOAD.txt` file inside it, because the U2 scrub
-  class is what stands between it and a project and this script cannot
-  check it unaided (U2's needles are the real identifiers themselves;
-  a committed script carrying them would be the disclosure). Run the
-  sweep with `--replace --needles FILE` over an untracked needle file,
-  one per line — a clean sweep writes no marker. Delete the needle file
-  afterwards.
+
+**The bundle is swept before it is yours to upload, and the run tells you what
+happened — read it rather than assuming either outcome.**
+
+- **A `_UNSWEPT-DO-NOT-UPLOAD.txt` inside the bundle means the bundle does not
+  leave this machine.** The marker is the script declining to vouch for what
+  it assembled. It goes to a human to rule on, and it is never cleared by
+  changing the sweep: an adjudication may change a gate only when the change
+  is derivable from the class definition, or from a standard independent of
+  the hit — the hit is the OCCASION, never the REASON. `CLAUDE.md` §Definition
+  of done carries that test and a worked instance of it being applied
+  correctly.
+- **No marker means the sweep ran clean, and a clean sweep claims something
+  narrower than it sounds:** no text in the bundle matched these patterns —
+  never *no identifying content*. The class members with no lexical signature
+  are reachable only beside a key that names them, and
+  `scripts/u2_patterns.txt` enumerates that under-reach.
+
+Which sweeps exist, which flags start or extend them, and what each covers are
+in `python3 scripts/assemble_export_bundle.py --help` and in
+`scripts/u2_patterns.txt`. They are deliberately not restated here: a second
+description of a script drifts from it silently, which is what this step did
+for months after BL-160 replaced the mechanism it described.
 
 Step 4 — Commit the manifest only if its content changed. Run:
   git diff --quiet docs/project-knowledge-manifest.md

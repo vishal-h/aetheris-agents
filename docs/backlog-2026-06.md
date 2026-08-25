@@ -4747,6 +4747,9 @@ list is empty.
   hazard is stated rather than left implicit: a reader who trusts Step 3 concludes the bundle is
   unswept and looks for a marker that a clean run does not write, which is the wrong direction to
   be wrong in for a check that stands between the bundle and a project.
+  `[2026-08-25 — the No fix ruling above is SUPERSEDED. Fixed by deletion at the held-repairs
+  round; see this row's 2026-08-25 append for the ruling and the bar. This block is a
+  point-in-time record of the finding and is not rewritten.]`
 
 - `2026-08-21` (ds close) — **`CLAUDE.md` §Definition of done names a file that does not exist, and
   `pytest.ini` records its non-existence as deliberate.** Found by close criterion 4's census of the
@@ -4938,6 +4941,19 @@ list is empty.
   the open file's row and answers a question about text while reading as an answer about the table.
   Verified at agents `78c81a3`; split commit `f9328aa`; the ds close's export-set section is the
   `2026-08-21` block in `docs/project-knowledge-manifest.md`.
+- `2026-08-25` (the held-repairs round) — **append 23's Step 3 finding is FIXED, and the bar for
+  repairing anything in this row is now stated: INDEPENDENTLY RE-FOUND AFTER A NO-FIX RULING EARNS A
+  REPAIR.** Append 23 ruled No fix on `2026-08-21`. The reviewer re-found the same three false claims
+  on `2026-08-25`, while holding a document that cited append 23 — which is one finding discovered
+  twice, and the evidence that the deferral had begun costing more than the repair. **Fixed by
+  DELETION, not correction.** The step's second bulleted item described the sweep mechanism; a second
+  description of a script is the thing that drifted when BL-160 retired the value route, so a more
+  accurate one buys time rather than a fix. The step now carries the operator's action, the marker's
+  stop condition, and pointers to `--help` and `scripts/u2_patterns.txt`. The first bulleted item is
+  unchanged and its `--replace` description was verified at HEAD before it was kept. **The bar exists
+  so the other appends in this row have a threshold rather than a mood: this row COLLECTS findings,
+  and collecting stays its function — a repair is earned by a second independent discovery, not by a
+  finding being annoying.** Nothing else in this row is reopened.
 
 `Source: R23, ruled by the arbiter 2026-08-12 at the gc t3 review and recorded at
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five

@@ -1766,118 +1766,6 @@ appended m4 t3, 2026-08-06.`
 
 ---
 
-### BL-047 — DONE (impl) 2026-07-24 · §5/§3 edits pending §8 ratification
-
-**Classification ratified (human, 2026-07-24): Option 3** — `git_*` is served-not-verified,
-always, **not** lifted by `--allow-effects`. It is `:contained` for *safety* (local-only; no
-`push`/`fetch`/`pull`/`clone`/`remote`, confirmed from source) but not verify-reproducible:
-verify mounts no overlay, so the recorded repo is absent and `git_commit` embeds a
-nondeterministic SHA. Re-executing would manufacture a spurious `:output_mismatch` — BL-049 at
-family scale. The read/mutate line does **not** split the family; none reproduce.
-
-**Landed (harness `f41eb12` code+tests, `68d2614` notes):** `EffectClass` gains `@git_tools`
-(single source of the **ten** names — read `git_status`/`git_diff`/`git_diff_staged`/`git_log`/
-`git_show`, mutate `git_add`/`git_commit`/`git_checkout`/`git_cherry_pick`/
-`git_cherry_pick_control`), referenced by both `@contained_tools` and the new
-`@non_reproducible_tools`, plus `non_reproducible?/1`. `Verifier.plan_step/2` serves
-non-reproducible tools **ahead of** the `--allow-effects` gate, so the git serve is
-unconditional. Union / `@classes` / `known_tools/0` / completeness test / `@exec_server_tools`
-(`[run_command]`) all untouched — git is served, never re-executed (3a; 3b rejected).
-
-**The family is TEN, not eleven.** All three authorities agree on ten; the landed §5 said
-"eleven" (×2), inherited from BL-042 — corrected in the held §5 edits, flagged not followed.
-
-**Tripwire (BL-049 F1 forward):** every `git_*` the *registry* exposes must be in
-`@non_reproducible_tools`, expected set derived from `Registry.names()` (a real source), not a
-literal — mutation-checked (drop `git_commit` → guard fails naming it; completeness stays
-green). A future `git_worktree` forgotten in the set fails loudly instead of shipping
-re-executable.
-
-**Done-check:** before-fix `git_commit` → `:error unknown_tool:git_commit`; after → `:served`
-under default AND `--allow-effects`; git-only starts no worker; non-vacuity — git served while
-a co-recorded `http_call` re-executes and egresses under `--allow-effects`. `mix test` 930/0,
-format/credo/dialyzer/hex.audit green. `requires_worker` red set unchanged (BL-048 + BL-050).
-
-**§5/§3 edits (five): LANDED, harness `af56a57` (§8, human-approved 2026-07-24).** §3 verify
-row (re-execution qualified to reproducible output; served set gains `git_*`; non-guarantee
-reframed), §5 three-classes split (`eleven`→`ten` ×2), the two-reasons-to-serve paragraph, the
-opt-in rider (`--allow-effects` does not lift the git serve), residual bullet → resolved.
-claude-ui r1 raised one non-blocking finding (F1: `non_reproducible?` scope) — answered by
-keeping it name-only (`classify/2` is name-first, so a colliding external `git_status` is
-`:contained` not `:uncontained`) plus the `@non_reproducible_tools ⊆ @contained_tools` guard;
-closed at r2. Draft: `docs/reviews/bl-047-contract-draft.md`. Reviews r0/r1/r2 +
-`bl-047-review-r1.md` in `docs/reviews/`.
-
-`Source: BL-042 execution (routing gap demonstrated 2026-07-23 at 8021a59); classification
-ratified + implemented 2026-07-24 at f41eb12.`
-
-<details><summary>Original ticket (pre-implementation)</summary>
-
-### BL-047 — Verify never re-executes the `git_*` family: exec-server routing gap + a taxonomy decision (#TBD)
-**Status:** UNRULED
-**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
-
-`Verifier` re-executes a recorded tool by sending it to the worker's own dispatch table
-(`Client.execute` → `main.rs` `dispatch/3`), which knows only `read_file`, `list_dir`,
-`write_file`, `http_call`. But `run_command` and the eleven `git_*` tools are **exec-server
-MCP tools** in a live run (`loop.ex` `@exec_server_tools`, `dispatch_mcp_tool/4`). So every
-member of that family re-executed as `unknown_tool:<name>` — a per-step `:error`, never a
-comparison — while determinism-contract §5 claimed `:contained` tools are "re-executed and
-compared".
-
-Demonstrated at BL-042 against unmodified `8021a59`, before any fix:
-
-```
-%{error: "unknown_tool:run_command", status: :error, actual_output: nil,
-  recorded_output: "{\"duration_ms\":20,\"exit_code\":0,\"stderr\":\"\",\"stdout\":\"connected\\n\"}"}
-```
-
-**BL-042 routed `run_command` only** — the tool its own containment proof requires, whose
-re-execution BL-025 already ratified, and whose new hazard (egress) is exactly what BL-042's
-network namespace contains. The `git_*` family was deliberately left unrouted rather than
-fixed by the same three lines, because routing it is not merely a bug fix:
-
-**The real question is whether mutating git operations should re-execute under verify at
-all.** `git_add`, `git_commit`, `git_checkout`, `git_cherry_pick` and
-`git_cherry_pick_control` mutate a repository. Re-executing `git_commit` against a sandbox
-whose HEAD has moved does not reproduce a recorded step, it writes a new one; `git_checkout`
-can destroy working-tree state that the recorded run did not have. The read-only members
-(`git_status`, `git_diff`, `git_diff_staged`, `git_log`, `git_show`) are a different case
-entirely. This is a taxonomy decision of the same weight as BL-025's three classes and it
-should be **decided**, not inherited from an accident of routing — which is the whole reason
-BL-042 did not quietly extend its own fix over the family.
-
-**Options to adjudicate (not a menu to pick from silently):** route them all as `:contained`;
-split the family, re-executing the read-only members and reclassifying the mutating ones as
-`:uncontained` (record-and-served); or declare the family unsupported under verify with an
-explicit status distinct from `:error`.
-
-**Done when:** the classification of each `git_*` tool is decided and recorded in §5 with a
-human-approved edit (§8), the implementation matches the decision, and a recorded `git_*`
-trajectory verifies to whatever verdict that decision implies — never to
-`unknown_tool:<name>`. §5's routing-gap paragraph and §3's verify row (both landed by BL-042)
-are updated to remove the named gap.
-
-**Pre-wired by BL-049, so read this before routing (BL-049 r1 F5).** The volatile-metadata
-strip is already in place for `git_*` on the **record** side: it keys off the exec-server id at
-dispatch (`loop.ex`, `dispatch_mcp_tool/4` → `exec_server_payload/2`), so all twelve routed
-tools are recorded with `duration_ms` in the step envelope, `git_*` included, and
-`VolatileMetadataTest` unit-covers the `git_*` response shape. The **verify** side is not:
-`Verifier`'s `@exec_server_tools` is `run_command` alone, and both `reexecute/3` and
-`normalize_recorded/2` key off it. So routing the family is one edit to that list — but the
-invariant between the two lists is **subset containment**, not equality: a name in `Verifier`'s
-list that `Loop` does not route would be normalized on read yet recorded unstripped, which is
-BL-049's failure mode reintroduced for exactly that tool. Confirm both sides agree when you
-route them.
-
-`Source: BL-042 execution, demonstrated 2026-07-23 at 8021a59. §5 correction landed with
-BL-042's contract edit; this row closes the gap that correction names. Pre-wiring note added
-from BL-049 review r1, 2026-07-24.`
-
-</details>
-
----
-
 ### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute (#TBD)
 **Status:** OPEN
 **Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
@@ -1994,6 +1882,54 @@ decided, not left ambiguous.
 `Source: BL-025 execution, rev-2 adjacent finding, 2026-07-23.`
 
 ---
+
+### BL-185 — `backlog_status.py --check` reports ARCHIVED-ONLY as a NOTE, and the corpus population is now zero (#TBD)
+**Status:** OPEN
+**Size:** S · **Priority:** low · **Section:** Drift apparatus (aetheris-agents/scripts/)
+
+Filed 2026-08-25 by the ticket that created the state, in the commit that emptied it — a
+deferral needs an executor in the round it is deferred, and prose in a packet files nothing.
+
+**The state.** Defeat 5 (`5003173`) taught the parser that a `**Status:**` line inside a
+`<details>` block is archived text rather than a field. That created a state the parser could
+not previously express: a row whose ONLY `**Status:**` lines are archived has **no live
+declaration at all**. `_cmd_check` reports it as a loud `NOTE`, by row id and by line, and
+**exits 0**.
+
+**Why it is a NOTE today, and this is not the thing to re-litigate.** The commit that
+corrected the reading is the commit that created the state, and turning a corrected reading
+straight into a blocking failure makes a parser fix and a live-corpus repair one landing —
+the coupling `CLAUDE.md` §Definition of done forbids (*before making a soft failure hard,
+enumerate what else that gate holds*). That enumeration was run and was exact: one row,
+BL-047, and it is closed by the commit that files this.
+
+**Why the NOTE should not stay.** The check's contract is *every row id carries exactly one
+field*. ARCHIVED-ONLY means the row carries **zero** live fields, so while this is a NOTE a
+row can silently lose its declaration and `--check` still exits 0. That is a real hole in the
+one assertion this module exists to make, and it is the **Silent-wrong-answer** shape: a
+well-formed green over a row nobody has declared anything about.
+
+**Done when:** `ARCHIVED-ONLY` is promoted from `notes` to `problems` in `resolve`, so
+`--check` exits 1 on it; the promotion lands with its own red-by-mutation evidence (a fixture
+row put into the state, watched to fail, restored from a sha-verified working-copy backup);
+and the corpus population is **re-measured at the promoting commit and found to be 0** rather
+than inherited from this row — `python3 scripts/backlog_status.py --census` prints it on the
+`ARCHIVED-ONLY` line, and the line prints even when it is zero for exactly this reason. If it
+is non-zero, the rows are closed or repaired first and the promotion is the *second* landing,
+never the same one. **R7 applies**: promotion is a later ticket's act, with that ticket's own
+evidence.
+
+**Not a carried red.** Nothing is red. This is a soft gate that should become hard once its
+population is provably empty, which is the ordinary BL-077 sequencing and not a tracked
+failure being deferred.
+
+`Source: the BL-047 close, 2026-08-25. The design choice is recorded at the site that takes
+it — `scripts/backlog_status.py`, `_cmd_check`, which states both the ruling and its cost —
+and this row is its executor. Population at filing: `ARCHIVED-ONLY 0`, from
+`python3 scripts/backlog_status.py --census` at this commit.`
+
+---
+
 
 ## boxy-pipeline
 
@@ -2247,7 +2183,7 @@ multi-line street/city/state/zip.
 | ✔ | BL-031 | **Done 2026-07-21.** Inactivity bound on `{status, max_event_seq}` with a paused-run exemption via `Aetheris.RunPause` (shared with Sweep by construction); config key `:await_inactivity_timeout_ms`, default 300 000. BL-030's fork-start emit later measured against its 200 ms poll floor |
 | ✔ | BL-025 | **Done 2026-07-23.** Grew in-cycle to include the CLI rewire (it never reached `Verifier`). Spawned BL-042/043/044/045 |
 | ✔ | BL-042 | **Done 2026-07-23.** Grew in-cycle by one tool: `run_command` was never re-executed under verify at all (`unknown_tool`), so the netns had nothing to contain until the routing was fixed. Spawned BL-047 (the `git_*` half of that gap, plus its taxonomy question) and BL-048 (the red `requires_worker` set found off-territory) |
-| ✔ | BL-047 | **DONE (impl) 2026-07-24** — implementation landed; **§5/§3 edits pending §8 ratification**, per the section's own heading. Ticked for the implementation, not for the doc half, which is the open remainder |
+| ✔ | BL-047 | **DONE 2026-07-24.** Implementation at harness `f41eb12`; the §5/§3 edits landed the SAME DAY at `af56a57` (§8, human-approved), so there is no doc half outstanding. Closed 2026-08-25 and moved to `backlog-2026-06-closed.md`. `[Superseded 2026-08-25. Previously read: "**DONE (impl) 2026-07-24** — implementation landed; **§5/§3 edits pending §8 ratification**, per the section's own heading. Ticked for the implementation, not for the doc half, which is the open remainder" — true when written, false from `af56a57` the same day. Corrected in place with this dated note per the harness supersession rule; not R32.]` |
 | ✔ | BL-049 | **DONE 2026-07-24.** Direction chosen: the third of the row's three options — stop returning timing inside the compared payload, the one matching the existing worker-native shape |
 | ✔ | BL-038 | **Done 2026-07-25** (`c0977c2` + F1 `e4baddf`; GUI merge gate green, 500 of 896). Scope narrowed in-cycle to server-side search only — no client-side filter, no pagination — because two filtering paths can disagree. BL-024 (19b) inherits the find-run-by-id primitive as intended: a server-side `label`/`run_id` LIKE reaching the whole store, which a window-scoped client filter could not have been. Spawned BL-058 |
 | 22b | BL-058 | Same surface as BL-036 (check 9) one section down. Do with or after BL-035/BL-036 cleanup; decide §5's scope rule before writing the check |

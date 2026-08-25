@@ -7228,3 +7228,148 @@ returns hits in `ci.yml` only, all of them `~/.cargo` cache paths, a cache key a
 
 ---
 
+## The close — 2026-08-25
+
+**One row, and it arrives with an edit rather than as a pure move.** BL-047's implementation closed on 2026-07-24 and its doc half closed the same day at harness
+`af56a57`; the row was never moved, and its heading and summary-table row went on saying the doc half was pending
+for a month. Both are superseded in place with dated notes below, the row is given its **first live `**Status:**`
+field** — it never had one at depth 0 — and the preserved pre-implementation ticket under its `<summary>`
+travels **byte-identical**, `**Status:** UNRULED` included. That block is not edited to say DONE: it is the
+record of what the row declared BEFORE the work, and a post-implementation verdict written into it would
+destroy the one thing it exists to hold.
+
+**Placement follows the archive's own convention, not the header's general sentence.** `fda1466` states it:
+arrivals land under the dated `## The close — …` container at EOF — where BL-181, BL-176, BL-177, BL-179,
+BL-048 and BL-178 all went — rather than under the topic container reproduced from the open file (BL-047
+sat under `## Drift apparatus (optional hardening)` there). A new round gets a new dated container.
+
+### BL-047 — DONE 2026-07-24 · §5/§3 edits landed the same day, harness `af56a57` (#TBD)
+**Status:** DONE
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+`[Superseded 2026-08-25, and corrected in place with this note per the harness supersession rule (`CLAUDE.md` §Continuous learning → Workflow patterns, *An artifact's kind decides how a correction is made; its push state decides only whether the correction may be silent*). This row is a PUBLISHED RECORD, not a ratified decision: the licence to correct it silently lapsed when it acquired readers, so the text is corrected and the correction is dated. The heading previously read:*
+
+> `### BL-047 — DONE (impl) 2026-07-24 · §5/§3 edits pending §8 ratification`
+
+*and the summary-table row in `backlog-2026-06.md` carried the same clause. Both were TRUE WHEN WRITTEN and became false the same day: `af56a57` (harness, 2026-07-24, `BL-047: land determinism-contract §5/§3 edits (approved, §8)`) landed the five held edits, and the row's own body recorded that it had — see the **§5/§3 edits (five): LANDED** paragraph below, which is RIGHT and is NOT rewritten to match anything. Superseded, therefore, and NOT R32, which governs a record that was wrong when written. The `(#TBD)` suffix is added at the same time and is not cosmetic: it makes this the row's TITLE section, which after the archive's title-first convention it now is — the only depth-0 section BL-047 owns. It is also true, in the sense `CLAUDE.md` fixes for it: BL-047 never had a GitHub issue and none is owed.]`
+
+
+**Classification ratified (human, 2026-07-24): Option 3** — `git_*` is served-not-verified,
+always, **not** lifted by `--allow-effects`. It is `:contained` for *safety* (local-only; no
+`push`/`fetch`/`pull`/`clone`/`remote`, confirmed from source) but not verify-reproducible:
+verify mounts no overlay, so the recorded repo is absent and `git_commit` embeds a
+nondeterministic SHA. Re-executing would manufacture a spurious `:output_mismatch` — BL-049 at
+family scale. The read/mutate line does **not** split the family; none reproduce.
+
+**Landed (harness `f41eb12` code+tests, `68d2614` notes):** `EffectClass` gains `@git_tools`
+(single source of the **ten** names — read `git_status`/`git_diff`/`git_diff_staged`/`git_log`/
+`git_show`, mutate `git_add`/`git_commit`/`git_checkout`/`git_cherry_pick`/
+`git_cherry_pick_control`), referenced by both `@contained_tools` and the new
+`@non_reproducible_tools`, plus `non_reproducible?/1`. `Verifier.plan_step/2` serves
+non-reproducible tools **ahead of** the `--allow-effects` gate, so the git serve is
+unconditional. Union / `@classes` / `known_tools/0` / completeness test / `@exec_server_tools`
+(`[run_command]`) all untouched — git is served, never re-executed (3a; 3b rejected).
+
+**The family is TEN, not eleven.** All three authorities agree on ten; the landed §5 said
+"eleven" (×2), inherited from BL-042 — corrected in the held §5 edits, flagged not followed.
+
+**Tripwire (BL-049 F1 forward):** every `git_*` the *registry* exposes must be in
+`@non_reproducible_tools`, expected set derived from `Registry.names()` (a real source), not a
+literal — mutation-checked (drop `git_commit` → guard fails naming it; completeness stays
+green). A future `git_worktree` forgotten in the set fails loudly instead of shipping
+re-executable.
+
+**Done-check:** before-fix `git_commit` → `:error unknown_tool:git_commit`; after → `:served`
+under default AND `--allow-effects`; git-only starts no worker; non-vacuity — git served while
+a co-recorded `http_call` re-executes and egresses under `--allow-effects`. `mix test` 930/0,
+format/credo/dialyzer/hex.audit green. `requires_worker` red set unchanged (BL-048 + BL-050).
+
+**§5/§3 edits (five): LANDED, harness `af56a57` (§8, human-approved 2026-07-24).** §3 verify
+row (re-execution qualified to reproducible output; served set gains `git_*`; non-guarantee
+reframed), §5 three-classes split (`eleven`→`ten` ×2), the two-reasons-to-serve paragraph, the
+opt-in rider (`--allow-effects` does not lift the git serve), residual bullet → resolved.
+claude-ui r1 raised one non-blocking finding (F1: `non_reproducible?` scope) — answered by
+keeping it name-only (`classify/2` is name-first, so a colliding external `git_status` is
+`:contained` not `:uncontained`) plus the `@non_reproducible_tools ⊆ @contained_tools` guard;
+closed at r2. Draft: `docs/reviews/bl-047-contract-draft.md`. Reviews r0/r1/r2 +
+`bl-047-review-r1.md` in `docs/reviews/`.
+
+`Source: BL-042 execution (routing gap demonstrated 2026-07-23 at 8021a59); classification
+ratified + implemented 2026-07-24 at f41eb12.`
+
+<details><summary>Original ticket (pre-implementation)</summary>
+
+### BL-047 — Verify never re-executes the `git_*` family: exec-server routing gap + a taxonomy decision (#TBD)
+**Status:** UNRULED
+**Size:** M · **Priority:** medium · **Section:** Harness (aetheris/)
+
+`Verifier` re-executes a recorded tool by sending it to the worker's own dispatch table
+(`Client.execute` → `main.rs` `dispatch/3`), which knows only `read_file`, `list_dir`,
+`write_file`, `http_call`. But `run_command` and the eleven `git_*` tools are **exec-server
+MCP tools** in a live run (`loop.ex` `@exec_server_tools`, `dispatch_mcp_tool/4`). So every
+member of that family re-executed as `unknown_tool:<name>` — a per-step `:error`, never a
+comparison — while determinism-contract §5 claimed `:contained` tools are "re-executed and
+compared".
+
+Demonstrated at BL-042 against unmodified `8021a59`, before any fix:
+
+```
+%{error: "unknown_tool:run_command", status: :error, actual_output: nil,
+  recorded_output: "{\"duration_ms\":20,\"exit_code\":0,\"stderr\":\"\",\"stdout\":\"connected\\n\"}"}
+```
+
+**BL-042 routed `run_command` only** — the tool its own containment proof requires, whose
+re-execution BL-025 already ratified, and whose new hazard (egress) is exactly what BL-042's
+network namespace contains. The `git_*` family was deliberately left unrouted rather than
+fixed by the same three lines, because routing it is not merely a bug fix:
+
+**The real question is whether mutating git operations should re-execute under verify at
+all.** `git_add`, `git_commit`, `git_checkout`, `git_cherry_pick` and
+`git_cherry_pick_control` mutate a repository. Re-executing `git_commit` against a sandbox
+whose HEAD has moved does not reproduce a recorded step, it writes a new one; `git_checkout`
+can destroy working-tree state that the recorded run did not have. The read-only members
+(`git_status`, `git_diff`, `git_diff_staged`, `git_log`, `git_show`) are a different case
+entirely. This is a taxonomy decision of the same weight as BL-025's three classes and it
+should be **decided**, not inherited from an accident of routing — which is the whole reason
+BL-042 did not quietly extend its own fix over the family.
+
+**Options to adjudicate (not a menu to pick from silently):** route them all as `:contained`;
+split the family, re-executing the read-only members and reclassifying the mutating ones as
+`:uncontained` (record-and-served); or declare the family unsupported under verify with an
+explicit status distinct from `:error`.
+
+**Done when:** the classification of each `git_*` tool is decided and recorded in §5 with a
+human-approved edit (§8), the implementation matches the decision, and a recorded `git_*`
+trajectory verifies to whatever verdict that decision implies — never to
+`unknown_tool:<name>`. §5's routing-gap paragraph and §3's verify row (both landed by BL-042)
+are updated to remove the named gap.
+
+**Pre-wired by BL-049, so read this before routing (BL-049 r1 F5).** The volatile-metadata
+strip is already in place for `git_*` on the **record** side: it keys off the exec-server id at
+dispatch (`loop.ex`, `dispatch_mcp_tool/4` → `exec_server_payload/2`), so all twelve routed
+tools are recorded with `duration_ms` in the step envelope, `git_*` included, and
+`VolatileMetadataTest` unit-covers the `git_*` response shape. The **verify** side is not:
+`Verifier`'s `@exec_server_tools` is `run_command` alone, and both `reexecute/3` and
+`normalize_recorded/2` key off it. So routing the family is one edit to that list — but the
+invariant between the two lists is **subset containment**, not equality: a name in `Verifier`'s
+list that `Loop` does not route would be normalized on read yet recorded unstripped, which is
+BL-049's failure mode reintroduced for exactly that tool. Confirm both sides agree when you
+route them.
+
+`Source: BL-042 execution, demonstrated 2026-07-23 at 8021a59. §5 correction landed with
+BL-042's contract edit; this row closes the gap that correction names. Pre-wiring note added
+from BL-049 review r1, 2026-07-24.`
+
+</details>
+
+**THE CLOSE — 2026-08-25. Done-when met on all four clauses, RE-DERIVED at harness `7436aa1` rather than inherited from the row's own 2026-07-24 done-check.**
+
+1. *Classification decided and recorded in §5 with a human-approved (§8) edit.* `docs/aetheris/determinism-contract.md` §5 (`## 5. Verify re-execution: effect classes and containment`) carries it at `:221-240`: the ten `git_*` tools are `:contained` for safety and **served, not re-executed**, and that serve is not lifted by `--allow-effects`. The §8 edit is `af56a57`, resolved as an object rather than quoted — `git -C ../aetheris cat-file -t af56a57` → `commit`, `af56a57a9f5d7a460688054077cdedfd4c0902b1`, 2026-07-24, touching `docs/aetheris/determinism-contract.md` alone, 42 insertions / 19 deletions.
+2. *The implementation matches the decision.* `lib/aetheris/execution/effect_class.ex:62-65` is `@git_tools`, the ten names single-sourced; `:70` folds them into `@contained_tools`; `:80` is `@non_reproducible_tools @git_tools`; `:165-166` is `non_reproducible?/1`. `verifier.ex:488` records the `⊆` invariant.
+3. *A recorded `git_*` trajectory verifies to the verdict the decision implies, never to `unknown_tool:<name>`.* Established at `f41eb12` by the row's own done-check, and **re-derived independently at `7436aa1` by the BL-184 round**, whose subject is verify's re-execution behaviour and which states the property from the outside while sizing a different hazard: *"`git_*` is served and never re-executed (BL-047)"* (`docs/backlog-2026-06.md`, BL-184, the Population paragraph). Cited, not re-narrated — that round is BL-184's record and stays there.
+4. *§5's routing-gap paragraph and §3's verify row no longer name the gap.* §5 `:228-240` now states the gap in the PAST tense and names both resolutions (BL-042 routes `run_command`; BL-047 decides `git_*` the other way). §3's verify row names the `git_*` family as served-not-verified in both its guarantee and its non-guarantee column. Neither says `unknown_tool` as a live defect.
+
+**WHAT THIS CLOSE COSTS, named rather than left to be discovered.** This row moves to `backlog-2026-06-closed.md`, and that file **is not in the project-knowledge store**. A manifest row for it is added in the commit after this one, which changes what the *next* export carries and uploads nothing — so from this commit until an export actually runs, **BL-047 leaves the store's sight**: a store-side reader searching the exported backlog for `BL-047` gets nothing back, where before this commit they got the open row. That is the price of the move and it is paid deliberately; the alternative is a terminal row left in the open file, which is the invariant `fda1466` was written to repair. The id remains the address and resolves over the union from the repo.
+
+---
+

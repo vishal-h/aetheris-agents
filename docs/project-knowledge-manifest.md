@@ -32,16 +32,16 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `38009fd` | 2026-08-21 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `767f1e7` | 2026-08-25 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `eb5442d` | 2026-08-22 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fda1466` | 2026-08-23 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `fdb1d64` | 2026-08-12 |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2ebc59c` | 2026-08-09 |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `c171a78` | 2026-08-23 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
 | `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `bcf3b65` | 2026-08-24 |
@@ -1211,6 +1211,154 @@ No **Repo push state** paragraph, per the standing note below.
 
 Previous export: **2026-08-18, the ds boundary** (four rows advanced; 25 rows; its two firsts
 recorded in that block).
+
+**Export boundary — 2026-08-25, the design-brief boundary.** Appended; nothing above is
+rewritten. **Four rows advanced:**
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `38009fd` | `767f1e7` | 2026-08-25 |
+| `backlog-2026-06.md` | aetheris-agents | `eb5442d` | `fda1466` | 2026-08-23 |
+| `aetheris--CLAUDE.md` | aetheris | `fdb1d64` | `a49d05a` | 2026-08-23 |
+| `aetheris--runbook.md` | aetheris | `2ebc59c` | `c171a78` | 2026-08-23 |
+
+Row count **30**, parsed bound to the table's header row rather than carried from the previous
+boundary: 4 movers + 25 current + 1 self row, and **4 + 25 + 1 = 30**; seventeen agents rows,
+thirteen harness. The previous boundary recorded 26 — the design-brief edit of 2026-08-24 added
+four rows and nothing has been dropped, so the set grew by exactly those four.
+
+**THESE FOUR MOVERS ARE THE FOUR THAT STOOD STALE, and clearing them is what makes this
+commit different from the last three re-pins.** Each of the three preceding rounds re-pinned
+against a scratch copy, or re-pinned and deliberately left these four alone, because no export
+was happening and clearing them would have asserted one that had not — the born-green failure
+the 2026-08-22 block records. **An export IS happening here**, so `repin_manifest.py` was run
+against the tracked manifest **unrestricted**, with no scratch-copy splice, and the four
+cleared. That switch is deliberate and is stated because the habit of the last three rounds is
+the opposite and a later reader would otherwise read this as a slip.
+
+**And the four rows added on 2026-08-24 were BORN CURRENT, not moved.**
+`aetheris-agents--inbox-brief.md` (`a1f8daf`), `aetheris-agents--ravenmigrate-brief.md` and
+`aetheris-agents--almanac-brief.md` (both `b56aed3`), and `aetheris--research-README.md`
+(`bcf3b65`) were pinned by hand when the rows were added and none has moved since, so they do
+not appear in the movers table above. **Their absence from it is not evidence they were
+exported** — that is the born-green trap the 2026-08-22 block states in full for
+`use-cases.md`, and it applies to all four here for the same reason: a currency check cannot
+distinguish *exported at this commit* from *never exported, pinned at this commit*. What
+establishes arrival is the upload and the post-upload content check, not this table.
+
+**This is the FIRST EXPORT CARRYING THE DESIGN-BRIEF ROWS, and the first run of any kind under
+the inclusion rule the DESIGN BRIEFS block above states.** That block was written on 2026-08-24
+and added its four rows; it uploaded nothing, by its own terms. So the rule — *a design brief
+earns a manifest row when a STORE-SIDE actor must read it to do its work* — has until now
+determined only what the table says. This boundary is the first time it determines what the
+store holds. Three parked use-case briefs and the research README reach the store here for the
+first time; two documents in the same directory as the three briefs
+(`docs/aetheris/backlog/litellm-migration.md`, `docs/aetheris/backlog/payslip-view-report.md`)
+were refused rows by that block and are correctly absent.
+
+**The U2 class boundary landed at `767f1e7` and is cited, not restated.** `CLAUDE.md`
+§Definition of done now scopes the U2 class to THIRD PARTIES and records the instrument's
+bare-domain gap. Read it there. Two consequences for this record and no more: the operator's
+own company name or domain inside the operator's own reference documents is out of the class,
+so no document in this bundle is owed a substitution on that ground; and the `uc-inbox.md`
+address substituted at `deeb441` stands on a SEPARATE ground — a live endpoint is deployment
+configuration, not specification — which never depended on U2 and did not move with the
+scoping. That is why `aetheris-agents--inbox-brief.md` exports with a placeholder domain while
+this record declines to scrub anything else.
+
+> **Step 0 ran, and its verdict was PASS.** The arm is
+> `cd ~/sandbox/elixirws/aetheris && ./scripts/sprint.sh export_mechanism`, run before anything
+> was written. Six assertions, six green, exit 0: `repin_manifest.py --dry-run` exits 0 leaving
+> the tracked manifest byte-identical at sha256 `d0dd6974e2fe`, compared across the run rather
+> than assumed; `repin_manifest.py` against an unreadable `--manifest` exits 1 into the shell;
+> `assemble_export_bundle.py DEST` exits 0 writing a bundle of **30** documents carrying the
+> manifest's own row; the U2 pattern sweep returned `[PASS]` over 19 patterns and left no
+> `_UNSWEPT-DO-NOT-UPLOAD.txt`; a non-empty destination without `--replace` exits 1; the temp
+> destination was removed and no tracked file was written. Recorded here because the procedure
+> requires it: this sentence is BL-161's branch 1 reaching an executor rather than remaining a
+> promise, and it is what makes the arm *named in a boundary record* rather than merely
+> existing. The arm ran a **second** time as a post-commit gate; both runs and any difference
+> between them are published in this boundary's review packet.
+
+> **Mirror-pair check, per the BL-002 convention.** `diff -q` over
+> `aetheris/docs/methodology/triad-loop.md` (canonical) and `aetheris-agents/docs/triad-loop.md`
+> (mirror) → **byte-identical**: **205 lines** and sha256
+> `16432ded5f3117459c4f0b9f88271903c7b3d3eec227442fedad52982f0ab50b` on both sides, with a
+> negative control against `milestone-methodology.md` returning exit 1 so `diff -q` is known to
+> discriminate. Both figures are **unmoved** from the previous boundary, canonical not having
+> changed since `2050c04`. `drift_check` still has no byte-identity check between mirrors, and
+> the `diff -q` remains the only thing covering that class.
+
+> **`docs/backlog-2026-06-closed.md` STILL CARRIES NO ROW, and this boundary does not settle it
+> either.** The question was filed on **BL-150**, reserved rather than ruled at the 2026-08-22
+> boundary, and left untouched by the 2026-08-24 design-brief edit, which recorded it as *"a
+> different question from this one"* and out of that scope. It is reserved here for the reason
+> the 2026-08-22 block gives and which has not weakened: Step 1 of
+> `prompts/bl-002-refresh-project-knowledge.md` reserves adding a document to a deliberate edit
+> with its reason recorded in this prose, and a session executing the procedure is the wrong
+> actor to widen the set it is uploading. **A ruling is still owed either way** — a row, or a
+> stated refusal.
+>
+> **The measured consequence has NOT changed, and it has grown.** It remains that a search of
+> the exported backlog returns nothing for a closed row's id. Re-measured at this commit rather
+> than carried: for `BL-161`, `BL-152`, `BL-002`, `BL-069` and `BL-135`, a heading search over
+> the exported `docs/backlog-2026-06.md` returns **0** for every one, while the same search over
+> the unexported `docs/backlog-2026-06-closed.md` finds each. A positive control — `BL-160`, an
+> open row — returns a hit in the exported half, so the search discriminates rather than being
+> blind. The population is larger than when the question was filed: the file held **80** closed
+> rows at the split and the count is reproducible with
+> `command grep -cE '^###* .*BL-[0-9]+ —' docs/backlog-2026-06-closed.md`, so a later reader
+> replaces the figure rather than trusting it. Every row closed since the split has joined the
+> set the store cannot see.
+
+> **The store will hold `claude/` COPIES OF THREE BRIEFS that this export also delivers under
+> their row names, and deleting the originals is the arbiter's act after the upload — not this
+> commit's.** The three paths, named so the deletion needs no reconstruction:
+>
+> - `claude/aetheris-agents--inbox-brief.md`
+> - `claude/aetheris-agents--ravenmigrate-brief.md`
+> - `claude/aetheris-agents--almanac-brief.md`
+>
+> **Only the first is a path this repository has ever read; the other two are inferred and are
+> flagged as such rather than presented as observed.** A sweep for `claude/…` paths across both
+> repositories returns exactly one brief path, the inbox one, cited in
+> `aetheris/docs/methodology/prose-conventions-brief-2026-08-23.md` §1; the ravenmigrate name is
+> additionally corroborated by the 2026-08-09 store read-back recorded in
+> `docs/milestones/hc-consolidation.md`, which enumerated `aetheris-agents--ravenmigrate-brief`
+> among the three `claude/` documents then present. The almanac name is inferred from the
+> `<repo>--<short>-brief.md` convention alone. If a store name differs the mismatch surfaces
+> when the arbiter goes to delete, and it is cosmetic. **These are check-3 population, not
+> check-1 findings**: a `claude/`-namespaced document carries no row and is out of the export set
+> by construction, per BL-143's ruling and `CLAUDE.md` §Definition of done. They are enumerated,
+> not judged, and the remove-all half of this upload does not touch them.
+
+> **The bundle, and the fixed point this record cannot reach.** Assembled by
+> `scripts/assemble_export_bundle.py` from `git show HEAD:<path>` and never from the working
+> tree, both repositories clean. **Thirty documents.** The harness HEAD at assembly is
+> `bcf3b65`, unmoved through this boundary — nothing was written in that repository. The agents
+> HEAD at assembly is **the commit carrying this record**, whose hash this paragraph cannot
+> state from inside itself: the manifest is itself a row, so any claim here about the delivered
+> bundle would have to be written before the run that produces it. That is the same fixed point
+> the 2026-08-22 block names, and it is paid the same way — the delivered run's own output, its
+> file count and its U2 sweep result are published in this boundary's review packet,
+> `export-boundary-2026-08-25-packet.md`. What this record does assert is the property, not the
+> result: the bundle is deterministic given the two HEADs, and its membership is derived from
+> the table above rather than from any list a session holds.
+
+**Ordering.** Two agents commits, and the split is forced. `CLAUDE.md` is manifest-tracked, so
+the U2 class edit lands in the FIRST commit and the re-pin in the second: a row cannot pin to
+the commit that moves it, and landing the edit after Step 2 would stale that row the instant it
+landed, which is the BL-034 invariant this file's Constraints section states. The second commit
+carries the re-pinned table and this record together — the record states the bundle's facts,
+which are not facts until the run that produces them has exited. Commits touching only this file
+stale nothing: the self-referential row is `_(this export)_` and check 8 skips it by design.
+Nothing was written in the harness repository at this boundary; its two rows move to commits
+that already existed there.
+
+No **Repo push state** paragraph, per the standing note below.
+
+Previous export: **2026-08-22** (four rows advanced; 26 rows; the Step 0 first and the
+`use-cases.md` born-green case recorded in that block).
 
 ---
 

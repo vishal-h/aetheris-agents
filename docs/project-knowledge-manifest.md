@@ -37,6 +37,7 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
 | `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fda1466` | 2026-08-23 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `d0e4213` | 2026-08-25 |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
@@ -274,6 +275,68 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > was pushed — the arc's own two instances found by sweeping all seven files it touched, and the
 > standing population left to BL-180. The file's row is pinned at `a1f8daf`, the repair, which is
 > simply the commit that last touched it.
+
+> **THE CLOSED BACKLOG HALF — ruled 2026-08-25. One row added, and a question reserved at three
+> boundaries is settled.** Placed here, in the inclusion-rule family, beside the DESIGN BRIEFS
+> block whose test this applies. Nothing above is rewritten and no existing block's argument is
+> amended.
+>
+> **What was reserved.** `docs/backlog-2026-06-closed.md` was created at `f9328aa` (ds t1b) when
+> the backlog split, taking 80 closed rows with it, and has carried no row since. The ds close of
+> 2026-08-21 adjudicated the export set two days later without considering it; the 2026-08-22
+> boundary filed the question on **BL-150** and reserved it; the 2026-08-24 design-brief edit
+> recorded it as out of scope; the 2026-08-25 boundary reserved it again. A ruling was owed
+> either way — a row, or a stated refusal.
+>
+> **Ruled: it earns a row.** The test is the DESIGN BRIEFS block's, applied unchanged — *a
+> document earns a manifest row when a STORE-SIDE actor must read it to do its work.*
+>
+> **The argument, in one sentence: promotion carries RULES forward and does not carry
+> DISPOSITIONS.** Methodology §7's ritual moves a closed row's durable rule into `CLAUDE.md`, the
+> methodology, or `docs/milestones/hc-consolidation.md`, and it works — BL-161's branch-1 detail
+> was needed store-side on 2026-08-25 and was reachable from a promoted paragraph. But a row's
+> **Done-when, its closure basis, and the arbiter's reasoning at closure** are promoted nowhere.
+> BL-047's Done-when was needed store-side the same day and no promoted surface carried it; it
+> had to be read out of the row by a repo-side session. *Was this settled, and on what basis* is
+> the question a reviewer asks most often, and it is the one question the store cannot answer for
+> the closed half.
+>
+> **The precedent, which makes this an application rather than a new rule.** `docs/use-cases.md`
+> earned its row at the ds close of 2026-08-21 partly because the exported `CLAUDE.md` pointed at
+> a document the store did not hold — recorded in that block as *"the store currently carries a
+> pointer to a document the store does not have"*. The exported `backlog-2026-06.md` references
+> closed rows by id throughout, and the 2026-08-25 boundary measured it: a heading search for
+> `BL-161`, `BL-152`, `BL-002`, `BL-069` and `BL-135` returns **0** in the exported half and
+> finds each in the unexported one, with an open row as the positive control. Same
+> dangling-pointer shape, larger population, and it grows with every close.
+>
+> **Why this does NOT overturn the `ds-milestone.md` refusal**, stated because the two would
+> otherwise read as in tension. That document was refused on the `cloudcost/m3-milestone.md`
+> reasoning — it holds derived reasoning *about* rules whose normative text lives elsewhere, and
+> its conclusions did land elsewhere. A closed row holds derived reasoning too, but it also holds
+> **the disposition itself**, which lands nowhere else. That is the distinguishing feature, and
+> it is why both rulings stand.
+>
+> **The adjudication test, applied to this ruling.** The occasion is BL-047's close, which put
+> the last UNRULED row into the invisible half. The reason is the precedent above and the
+> inclusion test — both of which predate the occasion by four days, and either of which would
+> have produced this ruling on 2026-08-21 had anyone asked the question then. *The hit is the
+> occasion, never the reason.*
+>
+> **BORN GREEN, and the green says less than it looks.** The row is pinned by hand at the commit
+> that last touched the file, so check 8 compares pinned against current, finds them equal, and
+> the row emits no WARN — on its first boundary as on every one after. A currency check cannot
+> distinguish *exported at this commit* from *never exported, pinned at this commit*. **The
+> document is NOT in the store and will not be until the next export runs**; this paragraph is
+> the only thing in either repo recording that. Same trap as `use-cases.md` at the 2026-08-21
+> close, stated again because it applies again.
+>
+> **One thing the arbiter could not weigh, recorded rather than omitted.** The closed half's size
+> against the store's capacity. The two figures available disagree about what they measure — the
+> 2026-08-25 bundle lists `backlog-2026-06.md` at 504,295 bytes while the store reports its whole
+> knowledge size as 402,078 — so no capacity conclusion is derivable from here. If the closed
+> half proves large enough to matter against the store's cap, that is a fact that reopens this
+> ruling, and it belongs in the next boundary's record.
 
 ---
 

@@ -129,6 +129,54 @@ FIXTURE_BAD_VALUE = """\
 **Size:** S · **Priority:** low
 """
 
+# Defeat 5: a row that preserves its own pre-implementation ticket under a
+# `<summary>`. BOTH attributions are exercised at once — the inner `### BL-` must
+# not mint a section, and the inner `**Status:**` must not be read as the row's
+# live value — because in the real shape they arrive together and a fixture that
+# separated them would not be the shape.
+#
+# BL-960 is the whole shape: a live depth-0 field ABOVE the block, an archived one
+# INSIDE it, and they disagree. If depth is ignored the row has two fields and
+# `--check` fails; if depth is tracked it has exactly one and the value is DONE —
+# the live one, never the archived one. The disagreement is deliberate: with both
+# set to the same value, a parser reading the wrong line would still print the
+# right answer and the test would pass on a broken parser.
+FIXTURE_DETAILS = """\
+### BL-960 — a row preserving its pre-implementation ticket (#TBD)
+**Status:** DONE
+**Size:** S · **Priority:** low
+
+Body of the live row.
+
+<details><summary>Original ticket (pre-implementation)</summary>
+
+### BL-960 — the original title, preserved verbatim (#TBD)
+**Status:** UNRULED
+**Size:** S · **Priority:** low
+
+Body of the archived ticket.
+
+</details>
+
+### BL-961 — the next real row (#TBD)
+**Status:** OPEN
+**Size:** S · **Priority:** low
+"""
+
+# The same shape with the live field REMOVED — BL-047's actual state between C1
+# and C2. The row's only `**Status:**` is archived, so it has no live declaration.
+FIXTURE_ARCHIVED_ONLY = """\
+### BL-970 — DONE (impl) 2026-07-24 · a disposition heading, no live field
+Body of the live row.
+
+<details><summary>Original ticket (pre-implementation)</summary>
+
+### BL-970 — the original title, preserved verbatim (#TBD)
+**Status:** UNRULED
+
+</details>
+"""
+
 
 def _write(tmp_path: Path, text: str) -> Path:
     path = tmp_path / "backlog.md"
@@ -216,6 +264,178 @@ def test_defeat_4b_a_second_canonical_field_fails_loudly(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Defeat 5 — `<details>` depth. TEST 1 of the C1 pair.
+# ---------------------------------------------------------------------------
+
+
+def test_defeat_5_a_depth_1_status_is_not_counted_and_a_depth_0_one_is(tmp_path):
+    """The whole of defeat 5 in one shape, both halves asserted separately.
+
+    The two halves fail differently and a single assertion could not tell them
+    apart: forgetting the HEADING half mints a second BL-960 section, forgetting
+    the FIELD half gives the row two fields. Both are checked, and the resolved
+    value is checked against the disagreeing pair so that reading the wrong line
+    cannot produce the right answer.
+    """
+    path = _write(tmp_path, FIXTURE_DETAILS)
+    sections = bs.parse_sections(path.read_text())
+
+    # HALF 1 — the inner `### BL-960` is not a row heading. Two sections, not three.
+    assert [s.ids for s in sections] == [("BL-960",), ("BL-961",)]
+    # …and the preserved heading is still INSIDE BL-960's span, not dropped.
+    assert "### BL-960 — the original title" in "\n".join(sections[0].lines)
+
+    # HALF 2 — the depth-0 field is the value; the depth-1 one is not a field.
+    assert sections[0].field_hits() == [(1, "DONE")]
+    assert [v for _, v in sections[0].field_hits(deep=True)] == ["UNRULED"]
+
+    rows = bs.resolve(sections)
+    assert {r.row_id: r.value for r in rows} == {"BL-960": "DONE", "BL-961": "OPEN"}
+    # DONE, not UNRULED: the archived line disagrees, so this distinguishes a
+    # parser that reads the live line from one that reads the last line it saw.
+    assert all(not r.problems for r in rows)
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+
+def test_depth_is_measured_at_line_start(tmp_path):
+    """`<details><summary>…</summary>` is itself outer; `</details>` is itself inner.
+
+    This is the ordering the two attributions rest on, and getting it wrong by one
+    line moves the block's own delimiters into the wrong row.
+    """
+    lines = ["a", "<details><summary>s</summary>", "b", "</details>", "c"]
+    assert bs.details_depths(lines) == [0, 0, 1, 1, 0]
+
+
+def test_an_unbalanced_close_clamps_rather_than_going_negative(tmp_path):
+    """Malformed markup must not silently PROMOTE archived text to a field.
+
+    Without the clamp a stray `</details>` drives depth to -1, and every later
+    `**Status:**` inside a real block then reads as depth 0 — a well-formed wrong
+    answer, which is the class this parser exists to remove.
+    """
+    lines = ["</details>", "<details>", "x", "</details>", "y"]
+    assert bs.details_depths(lines) == [0, 0, 1, 1, 0]
+    assert min(bs.details_depths(lines)) >= 0
+
+
+# --- defeat 5's own defeat: this file is full of prose ABOUT its markup ---------
+#
+# Found the day depth tracking landed. A row filed to record the design choice
+# wrote `<details>` inside a code span, in a sentence explaining depth tracking;
+# the scanner read it as a tag, opened a depth that never closed, and 64 row
+# headings after that line stopped existing. `--check` said 45 sections where
+# there were 109, and exited 0.
+
+FIXTURE_PROSE_ABOUT_MARKUP = """\
+### BL-990 — a row whose PROSE names the tag (#TBD)
+**Status:** OPEN
+
+A `<details>` block is archived text. Nothing here opens one, and a naked
+</details> in prose must not close one either.
+
+```
+<details><summary>an EXAMPLE, inside a fence</summary>
+### BL-991 — an example heading, not a row
+**Status:** DONE
+</details>
+```
+
+### BL-992 — the row after all that (#TBD)
+**Status:** OPEN
+"""
+
+
+def test_markup_named_in_prose_or_quoted_in_a_fence_is_not_markup(tmp_path):
+    """The regression that amended C1, asserted at every surface it broke."""
+    path = _write(tmp_path, FIXTURE_PROSE_ABOUT_MARKUP)
+    lines = path.read_text().split("\n")
+    depths, in_fence = bs.scan_markup(lines)
+
+    # 1. Depth never rises: no line in this fixture is a real tag.
+    assert max(depths) == 0, [(i + 1, lines[i]) for i, d in enumerate(depths) if d]
+    # 2. The fence is recognised, so the assertion above is not passing because the
+    #    scanner has simply stopped seeing anything.
+    assert any(in_fence), "positive control: the fixture's fence is detected"
+
+    sections = bs.parse_sections(path.read_text())
+    # 3. The fenced `### BL-991` is an example, not a row.
+    assert [s.ids for s in sections] == [("BL-990",), ("BL-992",)]
+    # 4. The fenced `**Status:** DONE` is an example, not a field — BL-990 would
+    #    otherwise carry two and fail.
+    rows = bs.resolve(sections)
+    assert {r.row_id: r.value for r in rows} == {"BL-990": "OPEN", "BL-992": "OPEN"}
+    assert all(not r.problems and not r.notes for r in rows)
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+
+def test_a_fence_closes_only_on_its_own_character():
+    """CommonMark's rule, and the one that keeps a shell block quoting `~~~` safe."""
+    _, in_fence = bs.scan_markup(["a", "```", "~~~", "x", "```", "b"])
+    assert in_fence == [False, True, True, True, True, False]
+
+
+def test_the_live_corpus_details_depth_is_balanced():
+    """THE ASSERTION THAT WOULD HAVE CAUGHT IT, over the real files.
+
+    An unclosed `<details>` swallows every row heading after it, and the symptom is
+    a section count that is quietly too low — indistinguishable from a correct one
+    by reading the exit code. Balance is the property that fails loudly instead.
+    """
+    for path in bs.BACKLOG_FILES:
+        lines = path.read_text().split("\n")
+        depths = bs.details_depths(lines)
+        assert depths[-1] == 0, (path.name, "unclosed <details>", depths[-1])
+        assert min(depths) >= 0, (path.name, "clamp breached")
+
+    # Positive control: the corpus really does contain a `<details>` block, so the
+    # balance assertion is standing over something rather than over a file with no
+    # tags at all.
+    #
+    # It does NOT also assert that the corpus contains a PROSE mention of the tag.
+    # That was written here first and was wrong: it is a claim about what the
+    # backlog happens to say this week, not about the parser, and it went red the
+    # moment it was checked against a tree that did not yet carry the row whose
+    # prose it was describing. The prose-vs-markup property is a SHAPE, and it is
+    # asserted where shapes belong — on a fixture, in
+    # `test_markup_named_in_prose_or_quoted_in_a_fence_is_not_markup`, which holds
+    # whatever the corpus says.
+    text = "\n".join(p.read_text() for p in bs.BACKLOG_FILES)
+    assert bs.DETAILS_OPEN_RE.search(text), "positive control: a real block exists"
+
+
+def test_archived_only_is_a_note_and_never_a_failure(tmp_path):
+    """The C1 design choice, asserted rather than described.
+
+    A row whose only field is archived has NO live declaration. `--check` says so,
+    loudly and by name, and exits 0 — and the row is NOT given the archived value.
+    """
+    path = _write(tmp_path, FIXTURE_ARCHIVED_ONLY)
+    (row,) = bs.resolve(bs.parse_sections(path.read_text()))
+
+    assert row.value is None                       # NOT "UNRULED"
+    assert row.problems == ()                      # not a failure…
+    assert row.archived_only                       # …but flagged
+    assert any(n.startswith("ARCHIVED-ONLY") for n in row.notes), row.notes
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+
+def test_no_field_at_any_depth_is_still_a_hard_failure(tmp_path):
+    """The boundary of the choice above: ARCHIVED-ONLY is softened, absence is not.
+
+    Without this, `test_archived_only_is_a_note_and_never_a_failure` would pass
+    just as well on a parser that had stopped failing on anything at all.
+    """
+    path = _write(tmp_path, "### BL-980 — a row with no status line at all (#TBD)\nBody.\n")
+    (row,) = bs.resolve(bs.parse_sections(path.read_text()))
+
+    assert row.problems == ("no **Status:** field",)
+    assert row.notes == ()
+    assert not row.archived_only
+    assert bs.main(["--check", "--file", str(path)]) == 1
+
+
+# ---------------------------------------------------------------------------
 # Vocabulary
 # ---------------------------------------------------------------------------
 
@@ -275,10 +495,24 @@ def test_check_fails_when_a_field_is_removed(tmp_path):
 
 
 def test_every_row_id_carries_exactly_one_field_in_the_vocabulary():
+    """Widened at C1, not weakened: the partition is asserted to be EXHAUSTIVE.
+
+    Before defeat 5 every row had a value, so `all(value in VOCABULARY)` was the
+    whole statement. Defeat 5 adds one lawful way to have none — ARCHIVED-ONLY —
+    and the assertion becomes *every row is in exactly one of the two states*,
+    which is strictly more than the old form said. A row that fell out of both
+    (value `None`, no note) would now fail here and could not have failed before.
+    """
     rows = bs.load()
     bad = [(r.row_id, r.problems) for r in rows if r.problems]
     assert bad == [], bad
-    assert all(r.value in bs.VOCABULARY for r in rows)
+
+    valued = [r for r in rows if r.value is not None]
+    noted = bs.archived_only(rows)
+    assert all(r.value in bs.VOCABULARY for r in valued)
+    assert len(valued) + len(noted) == len(rows), [
+        r.row_id for r in rows if r.value is None and not r.archived_only
+    ]
 
 
 def test_the_backlog_passes_check():
@@ -306,7 +540,17 @@ def test_the_census_the_test_derives_equals_the_cli_s():
 
     assert printed == counts
     assert f"THE OPEN SET IS {counts['OPEN']}." in result.stdout
-    assert sum(counts.values()) == len(bs.load())
+
+    # The exhaustiveness identity, in its C1 form. It previously read
+    # `sum(counts.values()) == len(load())`, which asserted that every row has a
+    # value; defeat 5 makes that false by design for an ARCHIVED-ONLY row. The
+    # replacement asserts the same thing the old one did — that the census
+    # partitions the row set with nothing falling through — over the partition
+    # that now exists. Both sides stay derived; neither is a literal (BL-164).
+    rows = bs.load()
+    archived_n = len(bs.archived_only(rows))
+    assert sum(counts.values()) + archived_n == len(rows)
+    assert f"= {len(rows)}" in result.stdout and "(OK)" in result.stdout
 
 
 def test_the_census_names_the_command_that_reproduces_it():
@@ -319,11 +563,142 @@ def test_the_census_names_the_command_that_reproduces_it():
 
 
 def test_the_closure_sections_carry_no_field():
-    """One field per row id, on the title section only — else `exactly one` fails."""
-    sections = bs.parse_sections(bs.BACKLOG_MD.read_text())
+    """One field per row id, on the title section only — else `exactly one` fails.
+
+    Scoped to the UNION, not to the open file. The invariant was always about both
+    — `resolve` merges every section an id owns across both files — and pinning the
+    positive control to one side made it hostage to which side happened to hold a
+    closure section that week. It stopped holding the week the open file's last one
+    moved to the archive, and the test then failed on its own control while the
+    invariant it asserts was untouched.
+    """
+    sections = bs.parse_files(bs.BACKLOG_FILES)
     closures = [s for s in sections if not s.is_title]
-    assert closures, "positive control: the file has closure sections"
+    assert closures, "positive control: the union has closure sections"
     assert all(s.field_hits() == [] for s in closures)
+
+
+# ---------------------------------------------------------------------------
+# THE NO-CHANGE TEST — defeat 5 over the LIVE corpus. TEST 2 of the C1 pair,
+# and the one that proves the fix has EXACTLY ONE SUBJECT.
+# ---------------------------------------------------------------------------
+#
+# A unit test shows the new reading is right on a shape built to show it. It says
+# nothing about the 183 rows nobody built, and a depth fix is exactly the kind of
+# change that can quietly re-segment a file. So the two readings are run over the
+# real corpus and DIFFED, and the diff is asserted to be the ARCHIVED-ONLY set —
+# derived on both sides, never enumerated here.
+
+
+def _depth_blind_reading(paths):
+    """The PRE-C1 algorithm, reconstructed: every `### BL-` is a heading and every
+    `**Status:**` is a field, whatever depth it sits at.
+
+    This is a deliberate SECOND derivation over the same file, which the module
+    docstring warns against — and the warning does not reach it, because its whole
+    purpose is to be the OTHER derivation. It is never trusted: it exists only to
+    be compared against the module, and if the two ever agree everywhere the test
+    fails on its own positive control below.
+
+    Built from the module's own regexes so that a later change to `HEADING_RE` or
+    `FIELD_RE` moves both readings together and this test keeps measuring depth
+    rather than drifting into a regex test.
+    """
+    rows = {}
+    for path in paths:
+        lines = path.read_text().split("\n")
+        starts = [i for i, l in enumerate(lines) if bs.HEADING_RE.match(l)]
+        for n, i in enumerate(starts):
+            end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+            m = bs.ID_PREFIX_RE.match(lines[i])
+            ids = (tuple(bs.ID_RE.findall(m.group(1))) if m
+                   else tuple(bs.ID_RE.findall(lines[i][:40])))
+            hits = [bs.FIELD_RE.fullmatch(l).group(1)
+                    for l in lines[i:end] if bs.FIELD_RE.fullmatch(l)]
+            for row_id in ids:
+                rows.setdefault(row_id, []).extend(hits)
+    return rows
+
+
+def test_defeat_5_changes_exactly_one_row_over_the_live_corpus():
+    """Same row ids, same field count, same value — for every row but the noted ones."""
+    old = _depth_blind_reading(bs.BACKLOG_FILES)
+    new = {r.row_id: r for r in bs.load()}
+
+    # POSITIVE CONTROL, first: both readings are over a real, non-trivial corpus.
+    # Without it every assertion below passes vacuously on two empty dicts.
+    assert len(new) > 100, len(new)
+    assert len(old) > 100, len(old)
+
+    # 1. THE ROW-ID COUNT IS UNCHANGED. Re-segmenting is the failure mode a depth
+    #    change most easily causes, and it shows up here before anything else.
+    assert set(old) == set(new)
+    assert len(old) == len(new)
+
+    # 2. THE PER-ROW FIELD-COUNT SET. Not a summary string: the count for every id
+    #    under both readings, compared id by id.
+    old_counts = {k: len(v) for k, v in old.items()}
+    new_counts = {k: r.n_fields for k, r in new.items()}
+    differing = {k for k in old_counts if old_counts[k] != new_counts[k]}
+
+    # 3. THE DIFF IS THE SET OF ROWS CARRYING A FIELD INSIDE `<details>` — derived
+    #    from the module, never enumerated here. This is the stable statement of
+    #    what defeat 5 changed. It is NOT "the ARCHIVED-ONLY set": those coincide
+    #    only while such a row has no live field, and the first row to gain one
+    #    (BL-047, at its close) separated them. ARCHIVED-ONLY is a strict SUBSET,
+    #    asserted as such below, and can legitimately be empty.
+    deep = {row_id
+            for sec in bs.parse_files(bs.BACKLOG_FILES)
+            if sec.field_hits(deep=True)
+            for row_id in sec.ids}
+    assert differing == deep, (sorted(differing), sorted(deep))
+
+    # 4. …and it is NOT empty. If it were, this test would be asserting that the
+    #    C1 change did nothing at all, and would pass on a reverted parser.
+    assert deep, "positive control: defeat 5 has at least one subject in the corpus"
+    assert {r.row_id for r in bs.archived_only(bs.load())} <= deep
+
+    # 5. Every row OUTSIDE the diff resolves to the same value it did before.
+    for row_id, r in new.items():
+        if row_id in deep:
+            continue
+        assert old[row_id] == ([r.value] if r.value else []), (row_id, old[row_id])
+
+
+def test_the_deep_field_rows_are_exactly_what_a_raw_depth_scan_finds():
+    """A third, independent reading — a raw depth scan over the files — agrees.
+
+    Steps 3 and 4 above compare the module against a reconstruction of its own
+    prior self, which shares its assumptions. This shares none of them: it counts
+    `<details>` and `**Status:**` directly and asks which rows have the second
+    only inside the first.
+    """
+    deep = {row_id
+            for sec in bs.parse_files(bs.BACKLOG_FILES)
+            if sec.field_hits(deep=True)
+            for row_id in sec.ids}
+
+    scanned = set()
+    for path in bs.BACKLOG_FILES:
+        lines = path.read_text().split("\n")
+        depths = bs.details_depths(lines)
+        cur, seen_deep = None, {}
+        for i, line in enumerate(lines):
+            if bs.HEADING_RE.match(line) and depths[i] == 0:
+                m = bs.ID_PREFIX_RE.match(line)
+                cur = (tuple(bs.ID_RE.findall(m.group(1))) if m
+                       else tuple(bs.ID_RE.findall(line[:40])))
+            if cur and depths[i] > 0 and bs.FIELD_RE.fullmatch(line):
+                for row_id in cur:
+                    seen_deep[row_id] = seen_deep.get(row_id, 0) + 1
+        scanned |= set(seen_deep)
+
+    assert scanned == deep, (sorted(scanned), sorted(deep))
+    # Positive control: the corpus contains `<details>` at all, so a scan that
+    # found nothing would be caught rather than read as agreement.
+    blocks = sum(len(bs.DETAILS_OPEN_RE.findall(p.read_text()))
+                 for p in bs.BACKLOG_FILES)
+    assert blocks > 0, "positive control: the corpus contains <details> blocks"
 
 
 # ---------------------------------------------------------------------------

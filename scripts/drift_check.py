@@ -1145,7 +1145,17 @@ BACKLOG_REF_ALLOW: dict[tuple[str, str], str] = {
         (f"BL-{n}", "tests/test_backlog_status.py"):
             "synthetic fixture id for the parser's own tests; never a real row."
         for n in ("900", "901", "902", "903", "904", "905", "906", "907", "908",
-                  "910", "911", "912", "920", "930", "940", "950")
+                  "910", "911", "912", "920", "930", "940", "950",
+                  # defeat 5 (`<details>` depth): 960/961 the live-and-archived
+                  # pair, 970 the archived-only row, 980 the no-field-at-any-depth
+                  # control. Extended as a DATA ENUMERATION, per agents CLAUDE.md
+                  # §Learning — m6-cloudcost: this is the set itself, not a count
+                  # of it, so it grows by a member rather than by a corrected number.
+                  "960", "961", "970", "980",
+                  # the prose-and-fence masking regression: 990 the row whose
+                  # PROSE names the tag, 991 the heading quoted inside a fence,
+                  # 992 the row after it that must survive both.
+                  "990", "991", "992")
     },
 }
 

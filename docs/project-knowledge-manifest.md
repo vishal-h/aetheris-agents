@@ -282,11 +282,11 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 > amended.
 >
 > **What was reserved.** `docs/backlog-2026-06-closed.md` was created at `f9328aa` (ds t1b) when
-> the backlog split, taking 80 closed rows with it, and has carried no row since. The ds close of
-> 2026-08-21 adjudicated the export set two days later without considering it; the 2026-08-22
-> boundary filed the question on **BL-150** and reserved it; the 2026-08-24 design-brief edit
-> recorded it as out of scope; the 2026-08-25 boundary reserved it again. A ruling was owed
-> either way — a row, or a stated refusal.
+> the backlog split, taking the then-closed rows with it, and has carried no row since. The ds
+> close of 2026-08-21 adjudicated the export set two days later without considering it; the
+> 2026-08-22 boundary filed the question on **BL-150** and reserved it; the 2026-08-24
+> design-brief edit recorded it as out of scope; the 2026-08-25 boundary reserved it again. A
+> ruling was owed either way — a row, or a stated refusal.
 >
 > **Ruled: it earns a row.** The test is the DESIGN BRIEFS block's, applied unchanged — *a
 > document earns a manifest row when a STORE-SIDE actor must read it to do its work.*
@@ -1221,6 +1221,24 @@ with Done-check staying required — which is why they share a hash and a date.
 > procedure is the wrong actor to widen the set it is uploading. **A ruling is owed either way** — a
 > row, or a stated refusal on the reasoning that keeps `ds-milestone.md` out. Filed at agents
 > `eb5442d` on BL-150.
+>
+> `[R32 note added 2026-08-25. The line above says the split took **80 closed rows**. That figure
+> is WRONG, and wrong when written — the split happened once and moved the rows it moved, so this
+> is R32 and not supersession. **The line is deliberately NOT rewritten.** At `f9328aa` the file
+> held **76** `### BL-` headings resolving to **60** distinct row ids, and the open file lost the
+> same 76 (183 → 107). Reproduce with
+> `git show f9328aa:docs/backlog-2026-06-closed.md | grep -cE '^###* .*BL-[0-9]+ —'` → 76, and
+> the same pipeline through `grep -oE 'BL-[0-9]+' | sort -u | wc -l` → 60. That grep is this
+> file's OWN counting command, taken from the `Export boundary — 2026-08-25, the design-brief
+> boundary` block, and it matches the same line set as the narrower `^### BL-` — checked, not
+> assumed. **ds t1b's own implementation notes agree at 60**, recording `60 DONE` in the
+> pre-split census (`docs/milestones/ds-t1b-implementation-notes.md:133`). The figure is
+> corrected HERE and de-numeralised where it was being re-quoted — the `THE CLOSED BACKLOG HALF`
+> block in the inclusion-rule family above now reads *"the then-closed rows"* — because a
+> corrected number re-arms the trap for the next quoter, which is how 80 reached that block from
+> this one. **A THIRD occurrence stands uncorrected**: the same `Export boundary — 2026-08-25,
+> the design-brief boundary` block says the file *"held **80** closed rows at the split"*. It is
+> left for the arbiter, who has this measurement.]`
 
 > **The procedure disagrees with `repin_manifest.py` in Step 2, and that was found by running Step
 > 0.** Step 2 says the re-pinner rewrites the commit cell *"touching nothing else — not the prose,

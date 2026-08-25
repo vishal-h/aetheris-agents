@@ -19,11 +19,18 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 > `backlog_resolution` check both read the **union**, and so does the harness sprint's
 > KNOWN_RED resolver.
 >
-> **The export set carries this file only.** `docs/project-knowledge-manifest.md` has a
-> row for `backlog-2026-06.md` and **deliberately none for the archive**: a row would buy
-> an export obligation and a third standing staleness WARN over history that does not
-> change. The consequence is stated rather than left silent — an uploaded backlog
-> describes the open set and not the closed one.
+> **The export set carries BOTH halves.** `docs/project-knowledge-manifest.md` has a
+> row for `backlog-2026-06.md` and, since `c508341`, one for the archive as well.
+> The ruling that added it lives in that file, in the inclusion-rule family — read
+> the `THE CLOSED BACKLOG HALF` block there. It is pointed at rather than
+> restated, so there is one surface to amend and not two.
+>
+> **But the archive's row is BORN GREEN, and the store does not hold that half
+> yet.** A row pinned at the commit that last touched its file makes check 8
+> compare equal and emit no WARN — a currency result, never evidence of an upload.
+> So until the next export actually runs, an uploaded backlog still describes the
+> open set and not the closed one. That consequence is stated rather than left
+> silent, as it was before, and it now has an end date rather than being permanent.
 
 
 ---

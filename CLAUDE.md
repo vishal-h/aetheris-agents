@@ -534,6 +534,34 @@ fixed reachability and not governance, and then here, on the split BL-152 set fo
 marker: the criterion in `CLAUDE.md`, the mechanism in the file implementing it. The notes file is
 the historical record of how the class was reached and is not edited.]`
 
+> 2026-08-25 — the class is scoped to THIRD PARTIES, and this is where a later reader comes to
+> reopen it. What U2 covers is identifying data belonging to third parties: the accounts, the
+> people in them, and the internal structure whose data passes through the harness. It is **not
+> a self-anonymisation rule for the operator's own documentation.** The operator's own company
+> name or domain, appearing in the operator's own reference documents inside the operator's own
+> project store, is **out of the class** — the store already identifies the account by
+> construction, so scrubbing the name inside it protects nothing and costs the documents their
+> concreteness. Two things this ruling does NOT do, without which it reads as a licence rather
+> than a boundary. **First**, it does not reach `docs/aetheris/backlog/uc-inbox.md`: that
+> address was substituted on a SEPARATE ground — a brief specifies a mechanism and a live
+> endpoint is DEPLOYMENT CONFIGURATION, not specification — which never depended on U2 and does
+> not move with this. The sweep was the occasion, never the reason, which is the adjudication
+> test below. **Second**, it depends on the store staying the operator's. If the export set is
+> ever shared beyond them or published, the calculus changes and this ruling is the thing to
+> reopen, because the premise it rests on — that the store already identifies the account to
+> everyone who can read it — is exactly what such a change falsifies.
+>
+> **A property of the instrument, recorded here because it is not a defect and no pattern is
+> added for it.** The pattern set has **no pattern for a bare domain**. At the 2026-08-24 export
+> `uc-inbox.md` carried two occurrences of the same domain and the sweep matched **one** — the
+> one inside an email address, reachable through the email pattern; the bare domain in its §8
+> was found by reading the file, not by the instrument. No pattern is added, on two independent
+> grounds: under the ruling above the operator's own domain is not in the class, so the pattern
+> would have nothing in scope to catch; and a generic domain pattern is unusable here anyway,
+> matching ordinary dotted identifiers this repository is full of — `from.id`, `corpus.duckdb`.
+> This belongs with the under-reach `scripts/u2_patterns.txt` already enumerates, and that file
+> is unchanged.
+
 **The U2 sweep runs by default, and a clean sweep claims something narrower than it sounds.** A
 clean sweep claims **no text in the bundle matches these patterns** — never *no identifying
 content*. The class members with no lexical signature (logins, display names, organisation and

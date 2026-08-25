@@ -30,6 +30,96 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 
 ## Harness (aetheris/)
 
+### BL-184 — `mix aetheris verify` writes into the operator's real repository: re-execution mounts no overlay (#TBD)
+**Status:** OPEN
+**Size:** M · **Priority:** high · **Section:** Harness (aetheris/)
+
+**The hazard.** A bare `mix aetheris verify <trajectory>` — no flags — re-executes the
+recorded `write_file` steps **into the run's real `sandbox_path`**. That path is the
+operator's working tree, not a copy of it. Verifying a recorded run therefore mutates the
+repository the run was recorded in, as a side effect of asking whether it reproduces.
+
+**What was demonstrated.** In the BL-047 read-only round, a throwaway clone used as the
+sandbox came back dirty after a bare verify: `git status` reported
+`M test/fixtures/m10/broken_source.ex`. That file is tracked
+(`aetheris` `test/fixtures/m10/broken_source.ex`, 630 bytes) and the verify had no business
+writing it. This row records that demonstration as its origin; the mechanism below was
+resolved independently against `aetheris` `7436aa1` rather than carried from it.
+
+**Mechanism — anchors resolved at `aetheris` `7436aa1`.**
+
+- `Verifier.execute_planned_steps/4` (`lib/aetheris/execution/verifier.ex`, `:110`) starts
+  the re-execution worker with `run_id`, `sandbox_path`, `network_namespace` and
+  `mode: :verify` (`:113`–`:123`). It passes **no `:overlay`**. The word `overlay` does not
+  occur in `verifier.ex` at all, while `Aetheris.Worker.Client` reads `:overlay` as a real
+  start option and forwards it into the init payload (`lib/aetheris/worker/client.ex:232`,
+  `:117`) — so this is a default that was never set, not a capability the worker lacks.
+  §5 of the determinism contract states the same fact from the other side, as a
+  *reproducibility* premise: *"verify passes no overlay, so OverlayFS is not mounted on this
+  path"*.
+- With no overlay, the worker's mount namespace confines writes to `sandbox_path` — and
+  `sandbox_path` **is** the operator's tree. `Verifier.resolve_sandbox_path/2` (`:210`) takes
+  the caller's `:sandbox_path` when given and otherwise reads `meta["sandbox_path"]` from the
+  trajectory (`:213`), which is where the recorded run actually ran.
+- `write_file` re-executes because it is *supposed* to: `EffectClass.classify("write_file")`
+  is `:contained` and `EffectClass.non_reproducible?("write_file")` is `false`, so
+  `plan_step/2` (`:154`) sends it down the `:execute` arm. **There is no misclassification
+  here.** The tool is correctly classed, the sandbox correctly confines it, and the
+  destination is wrong — which is why no test asserting effect classes can catch this.
+
+**It fires with `--allow-effects` OFF, so the documented dangerous flag is not the guard.**
+That flag reaches exactly two things: the `:uncontained` serve arm in `plan_step/2` (`:162`),
+and `network_isolated = not allow_effects` in `execute_planned_steps/4` (`:111`). Neither
+touches a `:contained` tool's re-execution or its write destination. An operator following
+`docs/aetheris/runbook.md` §Verifying a run exactly, passing nothing, gets the writes — and
+the runbook offers `--allow-effects` as *the* thing to be careful about.
+
+**Population.** In this machine's trajectory corpus at `7436aa1` — `priv/runs/*/`, which is
+gitignored (`.gitignore:55`), so this is working state and not a claim about the tree —
+`python3` over `priv/runs/*/trajectory.json` counting `tool_called` payloads finds 43,665
+trajectories, of which **10** carry any `git_*` call and **9** of those also carry
+`git_add`/`git_commit`; **114** carry a `write_file` call. Re-derive with the census script
+rather than trusting these figures: they move whenever a run is recorded or swept. The
+`write_file` figure is the one that sizes this row — `git_*` is served and never
+re-executed (BL-047), so the git population is the *adjacent* hazard, not this one, and it
+matters here only because those nine are recorded runs that committed to a real repository
+and whose `write_file` neighbours would be replayed into it.
+
+**The runbook reads as isolation and is not.** `docs/aetheris/runbook.md:250` says verify
+re-executes "in a fresh sandboxed worker". Both words are true and neither means what a
+reader takes from them: the worker is new, and it is namespaced, and the sandbox root it is
+confined to is the operator's own directory. **That sentence is deliberately left alone** —
+what it should say depends on which fix below is taken.
+
+**OPEN DESIGN QUESTION — stated, not answered.** This row does not choose, and the round
+that filed it was fenced from choosing. The candidates, with what each costs:
+
+1. **Overlay.** Pass `:overlay` from `Verifier`, so re-execution lands on a throwaway upper
+   layer. Preserves the verdict; the writes become invisible, including the ones an operator
+   might want to inspect. Interacts with `sandbox.rs`'s existing overlay path, which record
+   runs already use.
+2. **Refusal.** Verify declines to re-execute any write-effecting `:contained` tool and
+   serves it instead, as `git_*` is served. Safe and cheap; shrinks what verify verifies, and
+   needs a third serve reason beside the two that now exist.
+3. **Prompt.** Verify names the destination and asks before writing. Honest, and unavailable
+   on the non-interactive paths verify is actually run from.
+4. **Flag.** Re-execution of write-effecting tools becomes opt-in, off by default. Mirrors
+   `--allow-effects`; adds a second effects flag whose relationship to the first has to be
+   specified, and defaults verify to a weaker verdict for everyone.
+
+**Done when:** the question above is answered and recorded with a human-approved edit where
+the answer is normative (determinism-contract §5 if the taxonomy moves, §8 per its own change
+discipline), the implementation matches the answer, a bare verify over a trajectory
+containing a `write_file` step leaves the sandbox tree unmodified *or* says plainly that it
+will not, and `runbook.md`'s "fresh sandboxed worker" sentence is corrected to whatever the
+answer makes true.
+
+`Source: the BL-047 read-only round (the demonstration). Mechanism, classifications, anchors
+and corpus figures resolved at `aetheris` `7436aa1` by the round that filed this row, which
+was fenced from repairing it. Filed 2026-08-25.`
+
+---
+
 ### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X") (#TBD)
 **Status:** OPEN
 **Size:** M · **Priority:** low

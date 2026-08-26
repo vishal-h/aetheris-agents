@@ -32,19 +32,19 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `767f1e7` | 2026-08-25 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `67e2eb6` | 2026-08-25 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `fda1466` | 2026-08-23 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `d0e4213` | 2026-08-25 |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `c171a78` | 2026-08-23 |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
-| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `1ab24d8` | 2026-07-26 |
+| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `ca11d35` | 2026-08-26 |
 | `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `bcf3b65` | 2026-08-24 |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
@@ -1459,6 +1459,130 @@ No **Repo push state** paragraph, per the standing note below.
 
 Previous export: **2026-08-22** (four rows advanced; 26 rows; the Step 0 first and the
 `use-cases.md` born-green case recorded in that block).
+
+**Export boundary — 2026-08-27.** Appended; nothing above is rewritten. **Five rows advanced:**
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `767f1e7` | `67e2eb6` | 2026-08-25 |
+| `backlog-2026-06.md` | aetheris-agents | `fda1466` | `8a3a1d0` | 2026-08-26 |
+| `backlog-2026-06-closed.md` | aetheris-agents | `d0e4213` | `8a3a1d0` | 2026-08-26 |
+| `aetheris--runbook.md` | aetheris | `c171a78` | `ca11d35` | 2026-08-26 |
+| `aetheris--determinism-contract.md` | aetheris | `1ab24d8` | `ca11d35` | 2026-08-26 |
+
+Row count **31**, parsed bound to the table's HEADER ROW rather than to the pipe character and
+rather than carried from the previous boundary: **5 movers + 25 current + 1 self row = 31.** The
+binding matters more than it used to — this file now carries many boundary-record tables of its
+own, and a sweep counting pipe-leading lines over the whole file over-counts by every one of
+them. The previous boundary recorded **30**; the set grew by exactly one, `backlog-2026-06-closed.md`,
+added at `c508341`, and **nothing was dropped** — checked by set comparison in both directions
+against the table at `ebfce4c`, not by subtracting counts.
+
+**What moved, and why.** In this repository: `CLAUDE.md` at `67e2eb6`, which gave the packet head
+a plain-language register and made *verbatim* a completeness claim; and both backlog halves at
+`8a3a1d0`, the close of BL-186 carrying BL-047's archived row superseded in place, with BL-184's
+close and the C3 corrections behind it. In the harness: `runbook.md` and `determinism-contract.md`,
+both at `ca11d35`, BL-186 moving the premise at all four §5 surfaces and the six that instruct.
+**What stayed out is unchanged and was not revisited**: no document was added to or removed from
+the table at this boundary, which touched it only through `repin_manifest.py`. `docs/milestones/`
+remains out **as a kind** on the block above, and `prompts/bl-002-refresh-project-knowledge.md` —
+rewritten at `08987bc` in the run-up to this boundary — carries no row and is owed none, the
+procedure being the instrument rather than an exported reference.
+
+**THE RE-PIN RAN UNRESTRICTED AGAINST THE TRACKED MANIFEST, and the five stale rows cleared.**
+This is stated because the recent habit is the opposite and a later reader would otherwise read
+it as a slip. The three rounds before the 2026-08-25 boundary re-pinned against a scratch copy,
+or re-pinned and deliberately left the stale rows alone, because no export was happening and
+clearing them would have asserted one that had not. **An export IS happening here**, so
+`repin_manifest.py` was run against the tracked file with no scratch-copy splice and no row
+withheld, and all five cleared. That is what a boundary is for, and it is the whole difference
+between this round and a non-boundary one.
+
+> **Step 0 ran, and its verdict was PASS.** The arm is
+> `cd ~/sandbox/elixirws/aetheris && ./scripts/sprint.sh export_mechanism`, run before anything
+> was written. Six assertions, six green, exit 0: `repin_manifest.py --dry-run` exits 0 leaving
+> the tracked manifest byte-identical at sha256 `05be586be32b`, compared across the run rather
+> than assumed; `repin_manifest.py` against an unreadable `--manifest` exits 1 into the shell;
+> `assemble_export_bundle.py DEST` exits 0 writing a bundle of **31** documents carrying the
+> manifest's own row; the U2 pattern sweep returned `[PASS]` over 19 patterns and left no
+> `_UNSWEPT-DO-NOT-UPLOAD.txt`; a non-empty destination without `--replace` exits 1; the temp
+> destination was removed and no tracked file was written. Recorded here because the procedure
+> requires it: this sentence is BL-161's branch 1 reaching an executor rather than remaining a
+> promise, and it is what makes the arm *named in a boundary record* rather than merely existing.
+> The arm ran once, at Step 0.
+
+> **Mirror-pair check, per the BL-002 convention**, run before anything was written. `diff -q`
+> over `aetheris/docs/methodology/triad-loop.md` (canonical) and
+> `aetheris-agents/docs/triad-loop.md` (mirror) → **byte-identical**: **205 lines** and sha256
+> `16432ded5f3117459c4f0b9f88271903c7b3d3eec227442fedad52982f0ab50b` on both sides, with a
+> negative control — the same `diff -q` against a one-byte-mutated copy of the mirror — returning
+> exit 1, so `diff -q` is known to discriminate rather than assumed to. Both figures are
+> **unmoved** from the previous two boundaries, canonical not having changed since `2050c04`.
+> `drift_check` still has no byte-identity check between mirrors, and the `diff -q` remains the
+> only thing covering that class.
+
+> **`docs/backlog-2026-06-closed.md` EXPORTS FOR THE FIRST TIME at this boundary.** Its row was
+> added at `c508341` and pinned by hand at `d0e4213`, the commit that then last touched the file,
+> so check 8 compared pinned against current, found them equal, and the row was **born green**.
+> It appears in the movers table above because `8a3a1d0` has since touched the file; born green
+> and then moved, and **neither state is evidence of arrival**. A currency check cannot
+> distinguish *exported at this commit* from *never exported, pinned at this commit*, and
+> clearing a staleness WARN says only that the pin now matches the file's last-touching commit —
+> it says nothing whatever about what the store holds. **This boundary is what makes the
+> document's presence in the store true, and the post-upload content check is what establishes
+> it** — check 2 of the post-upload verification below, which reads the uploaded document rather
+> than trusting its name, and which lists this row among the movers it covers. Same shape the
+> 2026-08-22 block states in full for `use-cases.md`, stated again because it applies again to a
+> different document arriving for the first time.
+
+> **THE CAPACITY FIGURE THE RULING RESERVED, measured here for the first time.** The
+> `THE CLOSED BACKLOG HALF` block records one thing the arbiter could not weigh — the closed
+> half's size against the store's capacity — and names it as the fact that would reopen that
+> ruling, belonging *"in the next boundary's record"*. This is the next boundary's record.
+> **`docs/backlog-2026-06-closed.md` is 520,686 bytes** at `8a3a1d0`, from
+> `git show HEAD:docs/backlog-2026-06-closed.md | wc -c`; the open half beside it is **500,943**
+> from the same command. Measured from committed content rather than from the delivered bundle,
+> deliberately: the assembler reads `git show HEAD:<path>`, so the two are the same object, and
+> taking the figure from git keeps this record from asserting a result about a bundle that
+> contains it. **The figure is reported and NOT adjudicated.** Whether it bears on the store's cap
+> is the arbiter's to weigh, and this round rules nothing; what it does is make the question
+> decidable rather than deferred a fifth time. The two figures the ruling found in disagreement
+> are left where they stand — no reconciliation is attempted here, that being a ruling too.
+
+> **The bundle, and the fixed point this record still cannot reach.** Assembled by
+> `scripts/assemble_export_bundle.py` from `git show HEAD:<path>` and never from the working tree,
+> both repositories clean. The harness HEAD at assembly is `ca11d35`, unmoved through this
+> boundary — nothing was written in that repository. The agents HEAD at assembly is **the commit
+> carrying this record**, whose hash this paragraph cannot state from inside itself: the manifest
+> is itself a row, so any claim here about the delivered bundle would have to be written before
+> the run that produces it. That is the same fixed point the 2026-08-22 and 2026-08-25 blocks
+> name, and it is paid the same way — the delivered run's own output, its file count and its U2
+> sweep result, are published in this boundary's review packet,
+> `export-boundary-2026-08-27-packet.md`. What this record asserts is the property, not the
+> result: the bundle is deterministic given the two HEADs, and its membership is derived from the
+> table above rather than from any list a session holds.
+
+> **This is the FIRST BOUNDARY RUN UNDER THE REPAIRED STEP 3.** That step was rewritten at
+> `08987bc`, which deleted a description of the sweep mechanism that had gone stale after BL-160
+> replaced what it described, rather than correcting it — two surfaces disagreeing at the next
+> change being the thing the deletion removes. Whether the step as rewritten carries enough to
+> execute it is a verdict about a run that has not happened when this sentence is written, so it
+> is not asserted here; it is reported in this boundary's review packet, which is the only surface
+> that can hold it.
+
+**Ordering.** **One agents commit, and no split is forced.** No manifest-tracked document was
+edited at this boundary, so there is no content commit to land first: the re-pinned table and this
+record are the boundary's only tracked write and they commit **alone**, which is the BL-034
+invariant in its simplest form — nothing lands after Step 2 that could stale a row the re-pin has
+just recorded. Commits touching only this file stale nothing: the self-referential row is
+`_(this export)_` and check 8 skips it by design. Nothing was written in the harness repository;
+its two rows move to `ca11d35`, a commit that already existed there.
+
+No **Repo push state** paragraph, per the standing note below.
+
+Previous export: **2026-08-25, the design-brief boundary** (four rows advanced; 30 rows; the first
+export carrying the design-brief rows, and the first run under the inclusion rule those rows were
+added by, recorded in that block).
 
 ---
 

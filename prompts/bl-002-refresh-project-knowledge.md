@@ -112,7 +112,7 @@ document. Deterministic given the two HEADs: two runs into two
 directories are byte-identical.
 
 The run can decline to write a bundle, and it can decline to vouch for
-one it wrote. Both are deliberate:
+one it wrote. Each is deliberate.
 - A destination that already has content is REFUSED, not merged. The
   2026-08-14 boundary found a complete bundle from the previous export
   sitting at that path; merging would have produced correctly-named,

@@ -1391,6 +1391,25 @@ this record declines to scrub anything else.
 > `command grep -cE '^###* .*BL-[0-9]+ —' docs/backlog-2026-06-closed.md`, so a later reader
 > replaces the figure rather than trusting it. Every row closed since the split has joined the
 > set the store cannot see.
+>
+> `[Superseded 2026-08-26. Nothing above is rewritten and the wording stands where it stood; two
+> things have changed under it, and they are different in kind. **FIRST — the ruling is no longer
+> owed, and this half IS supersession.** It was settled at `c508341`:
+> `docs/backlog-2026-06-closed.md` now has a manifest row, and the reasoning that added it is
+> recorded in the inclusion-rule family above, in the `THE CLOSED BACKLOG HALF` block. Read it
+> there; it is not restated here. **SECOND — the `80` above was never right, so that half is
+> wrong-when-written rather than superseded, and the number alone is NOT the hazard.** The hazard
+> is the sentence that pairs it with a reproducing command: the command counts the file TODAY,
+> the figure claims the SPLIT, and a reader who does exactly what the sentence instructs derives
+> a growth figure from a base that never existed — a confident wrong answer rather than an
+> obviously stale one. The command itself is sound and worth keeping for what it actually
+> measures, which is today's count:
+> `command grep -cE '^###* .*BL-[0-9]+ —' docs/backlog-2026-06-closed.md`. **No corrected split
+> figure is given here, deliberately.** Correcting the number would re-arm the trap for the next
+> quoter, which is how it came to stand in three separate blocks of this file. What the split
+> actually moved is measured ONCE, in the R32 note under `Export boundary — 2026-08-22`, with the
+> commands that reproduce it and the ds t1b corroboration. Go there for the figure; there is no
+> second copy, and this note is not one.]`
 
 > **The store will hold `claude/` COPIES OF THREE BRIEFS that this export also delivers under
 > their row names, and deleting the originals is the arbiter's act after the upload — not this

@@ -7373,3 +7373,224 @@ from BL-049 review r1, 2026-07-24.`
 
 ---
 
+## The close — 2026-08-26
+
+**One row, arriving as a move plus a new depth-0 `**Status:**` field and a close record.** BL-184's
+heading is superseded in place with a dated note: it named the defect (*"re-execution mounts no
+overlay"*), which was true when written and is false as of harness `a748861`. The body below the
+heading travels **byte-identical** — it is the record of what the row declared before the work,
+including its four-candidate OPEN DESIGN QUESTION, and rewriting it to match the answer would
+destroy the one thing it exists to hold. The close record is appended below it, not woven into it.
+
+**Placement follows the archive's own convention**, as `fda1466` states it and `d0e4213` last
+applied it: an arrival lands under a new dated `## The close — …` container at EOF, not under the
+topic container reproduced from the open file (BL-184 sat under `## Harness (aetheris/)` there).
+
+### BL-184 — DONE 2026-08-26 · verify mounts an overlay; a failed mount stops attesting itself (#TBD)
+**Status:** DONE
+**Size:** M · **Priority:** high · **Section:** Harness (aetheris/)
+
+`[Superseded 2026-08-26, corrected in place with this dated note per the harness supersession rule
+(`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns, *An artifact's kind decides how a
+correction is made; its push state decides only whether the correction may be silent*). This row is a
+PUBLISHED RECORD, not a ratified decision, so the licence to correct it silently lapsed the moment it
+acquired readers.*
+
+*TWO LINES CHANGED and no others. (1) The heading, which previously read:*
+
+> BL-184 — `mix aetheris verify` writes into the operator's real repository: re-execution mounts no overlay (#TBD)
+
+*(2) The depth-0 `**Status:**` field, `OPEN` -> `DONE`. That line is REPLACED rather than joined by a
+second one: BL-184 carries no `<details>` block, so unlike BL-047 at `d0e4213` there is no archived
+status to preserve beside a new live one, and two depth-0 fields would fail
+`backlog_status.py --check` outright.*
+
+*Both were TRUE when written. This is a SUPERSESSION, not R32 — neither was wrong from the start, and
+the heading's *"re-execution mounts no overlay"* was an accurate statement of harness `7436aa1`.*
+
+*EVERYTHING BELOW THIS NOTE IS BYTE-IDENTICAL to the row as it stood in `docs/backlog-2026-06.md` at
+`ed8b6eb`, its four-candidate OPEN DESIGN QUESTION included. It is the record of what the row declared
+BEFORE the work; the answer is appended after it, never woven into it. sha256 of that remainder,
+computed before the write: `ddd3bdb4f755bffb5d946bd23f3cf8ddceb2645c8eaac2eedc3d55ff9f312c99`.]*
+
+
+**The hazard.** A bare `mix aetheris verify <trajectory>` — no flags — re-executes the
+recorded `write_file` steps **into the run's real `sandbox_path`**. That path is the
+operator's working tree, not a copy of it. Verifying a recorded run therefore mutates the
+repository the run was recorded in, as a side effect of asking whether it reproduces.
+
+**What was demonstrated.** In the BL-047 read-only round, a throwaway clone used as the
+sandbox came back dirty after a bare verify: `git status` reported
+`M test/fixtures/m10/broken_source.ex`. That file is tracked
+(`aetheris` `test/fixtures/m10/broken_source.ex`, 630 bytes) and the verify had no business
+writing it. This row records that demonstration as its origin; the mechanism below was
+resolved independently against `aetheris` `7436aa1` rather than carried from it.
+
+**Mechanism — anchors resolved at `aetheris` `7436aa1`.**
+
+- `Verifier.execute_planned_steps/4` (`lib/aetheris/execution/verifier.ex`, `:110`) starts
+  the re-execution worker with `run_id`, `sandbox_path`, `network_namespace` and
+  `mode: :verify` (`:113`–`:123`). It passes **no `:overlay`**. The word `overlay` does not
+  occur in `verifier.ex` at all, while `Aetheris.Worker.Client` reads `:overlay` as a real
+  start option and forwards it into the init payload (`lib/aetheris/worker/client.ex:232`,
+  `:117`) — so this is a default that was never set, not a capability the worker lacks.
+  §5 of the determinism contract states the same fact from the other side, as a
+  *reproducibility* premise: *"verify passes no overlay, so OverlayFS is not mounted on this
+  path"*.
+- With no overlay, the worker's mount namespace confines writes to `sandbox_path` — and
+  `sandbox_path` **is** the operator's tree. `Verifier.resolve_sandbox_path/2` (`:210`) takes
+  the caller's `:sandbox_path` when given and otherwise reads `meta["sandbox_path"]` from the
+  trajectory (`:213`), which is where the recorded run actually ran.
+- `write_file` re-executes because it is *supposed* to: `EffectClass.classify("write_file")`
+  is `:contained` and `EffectClass.non_reproducible?("write_file")` is `false`, so
+  `plan_step/2` (`:154`) sends it down the `:execute` arm. **There is no misclassification
+  here.** The tool is correctly classed, the sandbox correctly confines it, and the
+  destination is wrong — which is why no test asserting effect classes can catch this.
+
+**It fires with `--allow-effects` OFF, so the documented dangerous flag is not the guard.**
+That flag reaches exactly two things: the `:uncontained` serve arm in `plan_step/2` (`:162`),
+and `network_isolated = not allow_effects` in `execute_planned_steps/4` (`:111`). Neither
+touches a `:contained` tool's re-execution or its write destination. An operator following
+`docs/aetheris/runbook.md` §Verifying a run exactly, passing nothing, gets the writes — and
+the runbook offers `--allow-effects` as *the* thing to be careful about.
+
+**Population.** In this machine's trajectory corpus at `7436aa1` — `priv/runs/*/`, which is
+gitignored (`.gitignore:55`), so this is working state and not a claim about the tree —
+`python3` over `priv/runs/*/trajectory.json` counting `tool_called` payloads finds 43,665
+trajectories, of which **10** carry any `git_*` call and **9** of those also carry
+`git_add`/`git_commit`; **114** carry a `write_file` call. Re-derive with the census script
+rather than trusting these figures: they move whenever a run is recorded or swept. The
+`write_file` figure is the one that sizes this row — `git_*` is served and never
+re-executed (BL-047), so the git population is the *adjacent* hazard, not this one, and it
+matters here only because those nine are recorded runs that committed to a real repository
+and whose `write_file` neighbours would be replayed into it.
+
+**The runbook reads as isolation and is not.** `docs/aetheris/runbook.md:250` says verify
+re-executes "in a fresh sandboxed worker". Both words are true and neither means what a
+reader takes from them: the worker is new, and it is namespaced, and the sandbox root it is
+confined to is the operator's own directory. **That sentence is deliberately left alone** —
+what it should say depends on which fix below is taken.
+
+**OPEN DESIGN QUESTION — stated, not answered.** This row does not choose, and the round
+that filed it was fenced from choosing. The candidates, with what each costs:
+
+1. **Overlay.** Pass `:overlay` from `Verifier`, so re-execution lands on a throwaway upper
+   layer. Preserves the verdict; the writes become invisible, including the ones an operator
+   might want to inspect. Interacts with `sandbox.rs`'s existing overlay path, which record
+   runs already use.
+2. **Refusal.** Verify declines to re-execute any write-effecting `:contained` tool and
+   serves it instead, as `git_*` is served. Safe and cheap; shrinks what verify verifies, and
+   needs a third serve reason beside the two that now exist.
+3. **Prompt.** Verify names the destination and asks before writing. Honest, and unavailable
+   on the non-interactive paths verify is actually run from.
+4. **Flag.** Re-execution of write-effecting tools becomes opt-in, off by default. Mirrors
+   `--allow-effects`; adds a second effects flag whose relationship to the first has to be
+   specified, and defaults verify to a weaker verdict for everyone.
+
+**Done when:** the question above is answered and recorded with a human-approved edit where
+the answer is normative (determinism-contract §5 if the taxonomy moves, §8 per its own change
+discipline), the implementation matches the answer, a bare verify over a trajectory
+containing a `write_file` step leaves the sandbox tree unmodified *or* says plainly that it
+will not, and `runbook.md`'s "fresh sandboxed worker" sentence is corrected to whatever the
+answer makes true.
+
+`Source: the BL-047 read-only round (the demonstration). Mechanism, classifications, anchors
+and corpus figures resolved at `aetheris` `7436aa1` by the round that filed this row, which
+was fenced from repairing it. Filed 2026-08-25.`
+
+---
+
+**THE CLOSE — 2026-08-26. The OPEN DESIGN QUESTION above is answered: CANDIDATE 1, OVERLAY.
+Anchors RESOLVED against the commits that carry them, not transcribed from the round that filed
+this row.** Two harness commits: `7faa269` (C1) and `a748861` (C2).
+
+**What was ruled, and the one thing the row's candidate 1 did not contain.** Candidate 1 said
+*"Pass `:overlay` from `Verifier`, so re-execution lands on a throwaway upper layer."* That is C2.
+It rests on a premise the row could not have known was false: that `containment.overlay` reports
+whether the mount happened. It did not. `mount_overlay` printed a failed `libc::mount(2)` and fell
+through to a trailing `Ok(())`, so `main.rs` set `overlay_established = true` and the `ready`
+handshake published `"overlay": true` for a sandbox with no overlay. A design making every verify
+depend on that field had to make it honest first, which is why the fix is two commits and why C1
+landed green before C2 was written.
+
+1. *The question is answered and recorded with a human-approved edit where the answer is
+   normative.* **The taxonomy did not move**, which is the condition this clause attaches to:
+   `EffectClass.classify("write_file")` is still `:contained`, `non_reproducible?/1` is still
+   `false` for it, and it is still re-executed. Nothing about the three classes changed — what
+   changed is the destination a `:contained` re-execution writes to, which §5 documents as fact
+   rather than declares as taxonomy. So no §8 edit is owed *by this clause*.
+   **`determinism-contract.md` was NOT edited, and it now needs to be.** Four passages in §5 are
+   falsified by `a748861` and one of them carries BL-047's argument. That is filed as **BL-186**,
+   which stays open — it is deliberately NOT recorded inside this row, because a finding written
+   into the row that the same commit closes has a record and no executor.
+2. *The implementation matches the answer.* `lib/aetheris/execution/verifier.ex:122` passes
+   `overlay: verify_overlay(allow_effects, verify_run_id, sandbox_path)` into the `Client.start`
+   at `:113`–`:124` — the option the row identified as absent at `7436aa1`. `verify_overlay/3`
+   (`:175`, `:177`) returns `nil` under `--allow-effects` and otherwise derives the map through
+   `Agent.Supervisor.derive_overlay/3` (`lib/aetheris/agent/supervisor.ex:100`), which was split
+   out of `derive_overlay/1` (`:84`, `:86`) so there is one builder rather than two.
+3. *A bare verify over a trajectory containing a `write_file` step leaves the sandbox tree
+   unmodified, **or** says plainly that it will not.* **The first disjunct, not the second.**
+   `test/aetheris/execution/verify_overlay_test.exs` asserts it from the host after the worker
+   exits — `refute File.exists?(Path.join(sandbox_path, "written.txt"))` on a re-executed
+   `write_file`, with `report.verified == 1` beside it so the assertion is about a step that
+   really ran. Its paired opposite asserts the file **is** there under `--allow-effects`.
+   Mutation-checked: removing the `:overlay` option reds the first test with the file in
+   `/tmp/test-verify-overlay-130/written.txt`.
+4. *`runbook.md`'s "fresh sandboxed worker" sentence is corrected to whatever the answer makes
+   true.* `../aetheris/docs/aetheris/runbook.md:255` onward now states where a re-executed write
+   lands, gives the path shape, says the layer is not deleted so the writes can be inspected, says
+   nothing reads it back, and says verify declines when the mount fails. `:308` states what
+   `--allow-effects` changes. The old wording is quoted there rather than merely replaced, so a
+   reader working from memory of it is corrected.
+
+**AND THE REFUSAL, which no candidate contained.** Verify declines a requested-but-failed overlay
+rather than degrading (`client.ex:360` `startup_verdict/5`, the arm at `:380`; the operator message
+at `verify.ex:148`). A warning-and-continue would have reinstated this row's defect under a message
+nobody reads. `--allow-effects` cannot reach that arm, because it requests no overlay — which is
+what makes "writes through" a waiver rather than a refusal in different words. The governing
+sentence, now in `runbook.md:308` and in `verifier.ex`: **`--allow-effects` waives DESTINATION and
+EFFECT, never CAPABILITY** — which is why it drops the network namespace and the write overlay and
+does not drop the seccomp filter (BL-056).
+
+**WHAT THIS ROW DOES NOT CLAIM, stated because the difference is invisible from the outside.** The
+fix is **established on this platform** — Linux `6.8.0-136-generic`, unprivileged user namespaces
+permitted, `overlay` in `/proc/filesystems`, verified by a live worker run under the exact verify
+start options. It is **not** established for a host that cannot mount an OverlayFS, and this row
+does not assert that it is. What covers those hosts is not a demonstration but **C1's honest
+attestation**: where the mount does not take, `containment.overlay` now reads `false` instead of
+`true`, so verify **refuses** with a message naming the destination and the `SYS_ADMIN` requirement
+rather than silently writing into the operator's tree. The row's hazard is closed there by a
+refusal, not by an overlay — which is a different thing and is worth reading as one. What is not
+covered anywhere is a *recorded* run on such a host, which continues into `sandbox_path` by the
+documented `overlay_base_dir: nil` fallback; that is unchanged by this row and deliberately so.
+
+**Also not claimed: that anything runs these checks by default.** The two live destination tests are
+`:requires_worker`, which `test/test_helper.exs` excludes — they pass when run and nothing runs them
+in the default `mix test`. The refusal is asserted at `startup_verdict/5` in
+`containment_gate_test.exs`, which **does** run in the default gate; it tests the policy, not the
+one line in `Client.init/1` that supplies `overlay_requested`, and that line is covered by nothing.
+The A1 round's read (b) found the whole overlay facility living behind exclusions and this row does
+not change that. What it changes is that the property is asserted at all.
+
+**The demonstration that opened this row is not re-run and is not owed.** It was a throwaway clone
+coming back `M test/fixtures/m10/broken_source.ex` after a bare verify; the property it demonstrated
+is now asserted by a test with a mutation control, which is a better instrument than a second
+anecdote. The fixture is an agent input and no test reads it, which is why nothing went red when a
+verify wrote to it — that remains true and is why the test had to be written rather than found.
+
+**WHAT THIS CLOSE COSTS, named rather than left to be discovered.** This row moves to
+`backlog-2026-06-closed.md`, which is manifest-tracked (`d0e4213`) but whose row goes stale the
+moment this commit lands. From here until an export actually runs, **BL-184 leaves the project-
+knowledge store's sight**: a store-side reader searching the exported backlog for `BL-184` gets
+nothing where before they got the open row. Same cost `d0e4213` paid and named for BL-047, paid for
+the same reason — the alternative is a terminal row left in the open file. The id remains the
+address and resolves over the union from the repo.
+
+`Source: implemented 2026-08-26 across harness `7faa269` (C1) and `a748861` (C2), and closed here.
+The A1 gate round of 2026-08-25 established that OverlayFS is available to a verify run on this
+platform and found the attestation defect as its §F1; its packet is a session scratchpad file
+(`bl-184-a1-gate-packet.md`) and is in neither tree, so it is named rather than cited.`
+
+---
+

@@ -37,56 +37,6 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 
 ## Harness (aetheris/)
 
-### BL-186 — `determinism-contract.md` §5 says verify mounts no overlay, and since BL-184 it does (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** high · **Section:** Harness (aetheris/)
-
-Filed 2026-08-26 by the round that created the divergence, in the commit that closed BL-184 — a
-deferred finding needs an executor in the round it is deferred, and it needs a row that STAYS OPEN,
-which is why it is here and not inside BL-184's close record.
-
-**Why this is not BL-184's to fix.** §8 of that document makes any edit altering a guarantee a
-human-approved change in the review cycle. The BL-184 round was fenced from making one and reported
-instead. This row is the executor for the edit.
-
-**The divergence — four passages, anchors resolved at `aetheris` `a748861`.** All in §5
-(`## 5. Verify re-execution: effect classes and containment`).
-
-| site | what it says | status |
-|---|---|---|
-| `:271`–`:272`, §Containment boundary (from source) | "verify passes no overlay, so OverlayFS is not mounted on this path" | **FALSE.** Direct contradiction of `verifier.ex:122`. |
-| `:237`, §The three classes | BL-047: `git_*` "are not verify-reproducible — verify reconstructs no repo working-tree or history (**it mounts no overlay**)" | **Premise false, conclusion intact.** |
-| `:400`, §Reporting: served is not verified | the same argument restated: "because verify mounts no overlay, so the recorded run's repo working-tree and history are absent" | **Same.** Two surfaces of one argument. |
-| `:291`, §When containment cannot be established | "Verify depends on **two** containment primitives" — with `:302` citing `startup_verdict/4` and the subsection enumerating two refusal messages | **Three, `/5`, three messages.** |
-
-**The `git_*` sites are the ones that matter, and BL-047 is NOT reopened.** The overlay's lower
-layer *is* `sandbox_path`, so a re-executed `git_*` would now see a repo rather than an absent one
-— the stated premise fails. The conclusion does not: the tree it would see is the repo **as it is
-now**, not as it was when the run was recorded, and `git_commit` would still embed a fresh
-nondeterministic SHA. So `git_*` remains served-not-verified, on a restated reason. **A reader of §5
-today gets a true conclusion from a false premise**, which is the specific harm here: the next
-person to reason from that premise will reason wrongly, and nothing in the text warns them.
-
-**Two constraints on the edit, so the next round does not have to re-derive them.**
-
-- **De-numeralise `:291`'s "two", do not raise it to three.** It is a count over a set that has now
-  grown twice, and correcting the number preserves the mechanism that broke it — the standing rule
-  under `CLAUDE.md` §Learning — m6-cloudcost. The `startup_verdict/4` citation at `:302` is a
-  different thing and is simply stale: repoint it.
-- **`:237` and `:400` are one argument with two surfaces, so they change together or not at all.**
-  Editing one leaves the other asserting the false premise, and a reader who finds the stale one
-  first has no way to know it was superseded.
-
-**Done when:** §5 no longer asserts that verify mounts no overlay; the `git_*` serve reason is
-restated from "there is no repo" to "there is no recorded-state repo" at both `:237` and `:400`;
-`:291`'s count is de-numeralised and its `startup_verdict/4` citation and two-message enumeration
-are brought current; and the edit is human-approved per §8 in the same review cycle.
-
-`Source: BL-184 C2 (harness `a748861`) created the divergence; the round reported it rather than
-editing, per §8. Sites resolved at that commit, not transcribed.`
-
----
-
 ### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X") (#TBD)
 **Status:** OPEN
 **Size:** M · **Priority:** low

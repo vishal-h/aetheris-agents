@@ -7261,6 +7261,17 @@ verify mounts no overlay, so the recorded repo is absent and `git_commit` embeds
 nondeterministic SHA. Re-executing would manufacture a spurious `:output_mismatch` — BL-049 at
 family scale. The read/mutate line does **not** split the family; none reproduce.
 
+`[Premise superseded 2026-08-26 (BL-186). The paragraph above says "verify mounts no overlay,
+so the recorded repo is absent" — TRUE WHEN WRITTEN and false as of harness `a748861`, where
+BL-184 gave verify an overlay whose lower layer is the recorded `sandbox_path`. **The
+ratification is not disturbed and this row is not reopened**: Option 3 stands, `git_*` remains
+served-not-verified and not lifted by `--allow-effects`, because what verify would now see is
+the repo as it is NOW rather than as it was recorded, and `git_commit` still embeds a fresh
+SHA. The reason moved; the conclusion did not. `determinism-contract.md` §5 carries the
+restated premise. This row's text is not rewritten — corrected in place with this note, per
+the harness supersession rule, on the same footing as the BL-184 heading note in this
+container.]`
+
 **Landed (harness `f41eb12` code+tests, `68d2614` notes):** `EffectClass` gains `@git_tools`
 (single source of the **ten** names — read `git_status`/`git_diff`/`git_diff_staged`/`git_log`/
 `git_show`, mutate `git_add`/`git_commit`/`git_checkout`/`git_cherry_pick`/
@@ -7594,3 +7605,149 @@ platform and found the attestation defect as its §F1; its packet is a session s
 
 ---
 
+## The close — 2026-08-26 (second round)
+
+**A second container on the same date, deliberately.** The convention `fda1466` states and
+`d0e4213` last applied is that an arrival lands under a new dated `## The close — …` container at
+EOF. The container above is dated 2026-08-26 and opens *"One row, arriving as a move"* — adding a
+second row to it would falsify that sentence about a round it does not belong to. So the date is
+qualified rather than reused, and the two rounds stay separable by a reader.
+
+### BL-186 — DONE 2026-08-26 · §5's overlay premise restated at every surface that asserted it (#TBD)
+**Status:** DONE
+**Size:** S · **Priority:** high · **Section:** Harness (aetheris/)
+
+`[Heading superseded 2026-08-26, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns, *An artifact's
+kind decides how a correction is made; its push state decides only whether the correction may be
+silent*). This row is a PUBLISHED RECORD, not a ratified decision. The heading previously read:*
+
+> `### BL-186 — `determinism-contract.md` §5 says verify mounts no overlay, and since BL-184 it does (#TBD)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`; BL-186 carries no `<details>`
+block, so unlike BL-047 at `d0e4213` there is no archived status to preserve beside a live one, and
+two depth-0 fields would fail `backlog_status.py --check` outright. The heading was TRUE WHEN
+WRITTEN — §5 did say it — and is false as of harness `ca11d35`. A SUPERSESSION, not R32.*
+
+*EVERYTHING BETWEEN THIS NOTE AND THE CLOSE RECORD IS BYTE-IDENTICAL to the row as it stood in
+`docs/backlog-2026-06.md` at `5c57d40`, its four-site divergence table and its Done-when included.
+It is the record of what the row declared BEFORE the work; the answer is appended after it, never
+woven into it. sha256 of that body, computed before the write: `efbf88b8741ec0b45e735b10c28c72c5377f8d1d5ddc5a7996b7c04b932e34b3`.]`
+
+Filed 2026-08-26 by the round that created the divergence, in the commit that closed BL-184 — a
+deferred finding needs an executor in the round it is deferred, and it needs a row that STAYS OPEN,
+which is why it is here and not inside BL-184's close record.
+
+**Why this is not BL-184's to fix.** §8 of that document makes any edit altering a guarantee a
+human-approved change in the review cycle. The BL-184 round was fenced from making one and reported
+instead. This row is the executor for the edit.
+
+**The divergence — four passages, anchors resolved at `aetheris` `a748861`.** All in §5
+(`## 5. Verify re-execution: effect classes and containment`).
+
+| site | what it says | status |
+|---|---|---|
+| `:271`–`:272`, §Containment boundary (from source) | "verify passes no overlay, so OverlayFS is not mounted on this path" | **FALSE.** Direct contradiction of `verifier.ex:122`. |
+| `:237`, §The three classes | BL-047: `git_*` "are not verify-reproducible — verify reconstructs no repo working-tree or history (**it mounts no overlay**)" | **Premise false, conclusion intact.** |
+| `:400`, §Reporting: served is not verified | the same argument restated: "because verify mounts no overlay, so the recorded run's repo working-tree and history are absent" | **Same.** Two surfaces of one argument. |
+| `:291`, §When containment cannot be established | "Verify depends on **two** containment primitives" — with `:302` citing `startup_verdict/4` and the subsection enumerating two refusal messages | **Three, `/5`, three messages.** |
+
+**The `git_*` sites are the ones that matter, and BL-047 is NOT reopened.** The overlay's lower
+layer *is* `sandbox_path`, so a re-executed `git_*` would now see a repo rather than an absent one
+— the stated premise fails. The conclusion does not: the tree it would see is the repo **as it is
+now**, not as it was when the run was recorded, and `git_commit` would still embed a fresh
+nondeterministic SHA. So `git_*` remains served-not-verified, on a restated reason. **A reader of §5
+today gets a true conclusion from a false premise**, which is the specific harm here: the next
+person to reason from that premise will reason wrongly, and nothing in the text warns them.
+
+**Two constraints on the edit, so the next round does not have to re-derive them.**
+
+- **De-numeralise `:291`'s "two", do not raise it to three.** It is a count over a set that has now
+  grown twice, and correcting the number preserves the mechanism that broke it — the standing rule
+  under `CLAUDE.md` §Learning — m6-cloudcost. The `startup_verdict/4` citation at `:302` is a
+  different thing and is simply stale: repoint it.
+- **`:237` and `:400` are one argument with two surfaces, so they change together or not at all.**
+  Editing one leaves the other asserting the false premise, and a reader who finds the stale one
+  first has no way to know it was superseded.
+
+**Done when:** §5 no longer asserts that verify mounts no overlay; the `git_*` serve reason is
+restated from "there is no repo" to "there is no recorded-state repo" at both `:237` and `:400`;
+`:291`'s count is de-numeralised and its `startup_verdict/4` citation and two-message enumeration
+are brought current; and the edit is human-approved per §8 in the same review cycle.
+
+`Source: BL-184 C2 (harness `a748861`) created the divergence; the round reported it rather than
+editing, per §8. Sites resolved at that commit, not transcribed.`
+
+---
+
+**THE CLOSE. Two commits: harness `ca11d35`, agents this one.** The §8 approval is the human's and
+is given by their push of this round; the edit was authored by the arbiter and landed as given.
+
+**Done-when, clause by clause.**
+
+1. *§5 no longer asserts that verify mounts no overlay.* §Containment boundary loses *"verify
+   passes no overlay, so OverlayFS is not mounted on this path"* and gains a paragraph stating that
+   a default verify mounts an OverlayFS whose lower layer is the recorded run's `sandbox_path` —
+   confirmed at source, not inferred: `Agent.Supervisor.derive_overlay/3` builds the map with
+   `"lower" => sandbox_path`, and `Verifier.verify_overlay/3` returns `nil` under `--allow-effects`
+   and otherwise derives a fresh base per invocation.
+2. *The `git_*` serve reason is restated from "there is no repo" to "there is no recorded-state
+   repo".* Done at **all four** §5 surfaces under R1 — the `:contained` bullet, §Reporting's
+   restatement, its `--allow-effects` clause, and §The opt-in — not the two this row named. The
+   row's own constraint was that `:237` and `:400` are one argument with two surfaces; reading the
+   section for the CLASS rather than the phrase found two more carrying the same premise, and
+   leaving either would have left a reader who meets the stale one first with no warning.
+3. *`:291`'s count is de-numeralised and its `startup_verdict/4` citation and two-message
+   enumeration are brought current.* The count is de-numeralised rather than raised to three, per
+   the standing rule under `CLAUDE.md` §Learning — m6-cloudcost, and the paragraph now names
+   `startup_verdict/5` as the authority so a primitive added there does not stale it. The citation
+   is repointed — arity resolved from `client.ex`, not transcribed. The overlay refusal joins the
+   two message blocks, its text resolved by rendering `Verify.overlay_unavailable_message/0` and
+   diffed against the published block: identical. The paragraph that followed argued from *how
+   many* messages there are; it is rewritten onto the axis that actually distinguishes them —
+   whether `--allow-effects` is the way past.
+4. *Human-approved per §8 in the same review cycle.* §8 prescribes approval, not a block form, so
+   the dated block follows this document's own convention at its `:15`
+   (`**Amended … (BL-nnn, human-approved in-cycle per §8):**`).
+
+**BEYOND THIS ROW'S FOUR SITES, because the table above was a lead and not a census.** Six harness
+surfaces that *instruct* carried the same false premise and take the same clauses: `effect_class.ex`
+(three — the `@git_tools` comment, the `@non_reproducible_tools` comment, and
+`non_reproducible?/1`'s `@doc`), `verify_report.ex`'s `serve_reason` typedoc, `verifier.ex`'s
+two-reasons comment, and `verify_git_test.exs`'s moduledoc. §The opt-in gains the overlay waiver and
+its *"both guards"* is de-numeralised; `runbook.md` §Verifying a run names what an operator buys
+reaching for `--allow-effects` past a failed mount — the network waiver and the `:uncontained`
+re-execution come with it, and there is no flag that waives the overlay alone.
+
+**DELIBERATELY NOT EDITED, a ruling rather than an omission.**
+`docs/aetheris/milestones/bl-047-implementation-notes.md` carries the false premise and stays as it
+is: a point-in-time milestone record, where rewriting to match the present erases the context it
+exists to preserve. R31 — arrival decides. BL-047's archived row is corrected the other way, in
+place with a dated note, because a row is a published record rather than a milestone snapshot. **Its
+text is not rewritten and BL-047 is not reopened**: Option 3 stands, `git_*` remains
+served-not-verified and not lifted by `--allow-effects`.
+
+**WHAT THE CONCLUSION RESTS ON NOW.** Not *"there is no repo"* — there is one, and since BL-184 it
+is the recorded `sandbox_path` itself. It is that the repo a re-executed `git_*` op would read is
+that tree **as it is now**, not as it was when the step was recorded, and that `git_commit` embeds a
+fresh SHA either way. That holds under `--allow-effects` too, where the overlay is waived and the op
+reads `sandbox_path` directly — the same repo in the same present state. The premise moved; the
+conclusion did not.
+
+**Gates.** Harness: `deps.get`, `hex.audit`, `compile --warnings-as-errors`, `format
+--check-formatted`, `credo --strict`, `dialyzer`, `test` (981 tests, 0 failures, 135 excluded), and
+`cargo test` in both native crates (34 and 17 passed). Agents: `drift_check.py --strict`,
+`backlog_status.py --check` and `--census`, and the Python whole-suite gate.
+
+**WHAT THIS CLOSE COSTS.** This row never appeared in an export: filed and closed between
+boundaries, it leaves the open file having never been in the store's copy of it. The archive row is
+born green — pinned at the commit that last touched the file, which makes check 8 compare equal —
+and that is a currency result, never evidence of an upload. Same cost `d0e4213` and the container
+above named, paid for the same reason.
+
+`Source: authored by the arbiter; landed 2026-08-26 across harness `ca11d35` and this commit. The
+divergence was created by BL-184 C2 (`a748861`) and filed by that round rather than fixed, per §8.
+Every anchor here was resolved against the tree at the commit under test, not carried from the
+filing row.`
+
+---

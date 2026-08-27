@@ -40,6 +40,19 @@ draft and a landing record were re-homed, and a criterion inferred from those tw
 be inferred from exactly the data points that went wrong. See
 `cloudcost/m4-consolidation.md` §Promotion candidates.]`
 
+**A cc:prompt declares its ROUND TYPE — code, mechanical, or documentation —
+before anything else.** A session that receives one without it reports the
+omission and asks, before acting. The type is the reviewer's estimate of what
+the round will produce, not a contract; its job is to let the arbiter decline a
+round whose shape they did not expect. It is a rule rather than a habit because
+the reviewer's conventions live only in its prompts, and a convention with no
+repo-side home survives exactly as long as the reviewer remembers to restate it
+— which this one failed at immediately, being adopted 2026-08-26 and absent from
+the very next round's prompt for that exact reason.
+`Source: adopted 2026-08-26, on the arbiter's twice-raised concern that
+documentation rounds were accumulating with nobody counting them — a declared
+type is what makes them countable. Landed here 2026-08-27.`
+
 ---
 
 ## Commands

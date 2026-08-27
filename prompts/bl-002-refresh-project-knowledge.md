@@ -102,6 +102,12 @@ Formatting rules:
 
 Step 3 — Assemble the bundle:
 
+**Run this AFTER Step 4's commit.** The numbering is not the execution order at
+this step. Step 3 reads `git show HEAD:<path>`, and the manifest is itself a row
+— so assembling before the manifest commit ships a bundle whose own manifest
+carries the *previous* boundary's table and no record of this one. The failure
+is silent: same file count, same names, clean sweep, exit 0.
+
     python3 scripts/assemble_export_bundle.py /tmp/claude-project-export
 
 One file per manifest row, named by the table's export-name column, its

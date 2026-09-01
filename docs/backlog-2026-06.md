@@ -7446,8 +7446,152 @@ same Known params block, provider rather than month).
 **Costs:** S for the wiring on DO/AWS alone; M to answer the semantics question across all four,
 which is the part that makes it worth a row.
 
+**Appended 2026-09-01 — the first in-tree instance, and it has an observable consequence rather
+than only a wrong label.** *(Appended below the row's own `Source:` stamp, not between it and the
+body it attributes.)* Run `cloudcost-orch-digitalocean-ymo32A`
+(`../aetheris/priv/runs/cloudcost-orch-digitalocean-ymo32A/trajectory.json`, started
+`2026-09-01T12:48:16.282465Z`). The request named **August 2026**; with nothing to carry the month,
+`fetch_do.py` fell back to `current_period()` and ran for **2026-09** — every step's stdout stamps
+`"period": "2026-09"`. **2026-09 has no invoice on 2026-09-01**, so step 0 returned
+`{"source":"billing","error":"no DigitalOcean invoice found for period 2026-09"}` with
+`"status": "partial"` and exit 1, `totals: null`, and the pipeline composed and rendered a report
+whose §Cost summary reads *"No combined total"* and *"No service-level cost lines in this report."*
+The inventory leg was unaffected — 20 resources — so the artifact is a well-formed report with the
+cost half missing.
+
+**Why this strengthens the row.** Until now the month gap was recorded as a *labelling* defect: the
+card said August, the run fetched the current month, and the report would have been a correct report
+for the wrong period. This run shows the failure is not confined to the label — **the substituted
+period changed the outcome.** August 2026 is a settled month with an invoice; September 2026, on its
+first day, has none. So the fallback did not merely relabel the request, it selected a period the
+provider cannot answer for, and the operator received an empty cost summary for a month whose data
+exists. That is the difference between a wrong caption and a wrong result, and it is the strongest
+argument this row has for being worth doing.
+
+**It also demonstrates the semantics question above is live rather than theoretical.**
+`fetch_do.py:478`'s raise-on-missing-invoice is exactly the *"an honoured month is a month that can
+now fail a run"* concern this row raised when filed — reached here through the **default** path
+rather than a requested one, which shows the hazard is not introduced by wiring `--period`: it is
+already present and currently lands on whatever month the clock supplies.
+
+**Not owed to this row:** how that partial is *represented* to the operator. Both surfaces collapse
+it — the Orchestrator panel to a blank failure, the Runs list to `done` — which is **BL-189**, filed
+the same day from the same run.
+
 `Source: filed 2026-09-01 from the ticket that extended the Known params block with
 CLOUDCOST_PROVIDER, at the reviewer's direction to carry the month finding's second half. The
 inert-param instance is that ticket's own pre-fix baseline run against the live API, quoted from
 its stdout. All adapter line citations are lines read at agents c3839a9; the four `--period` call
 sites were each opened rather than generalised from `fetch_do.py`.`
+
+
+### BL-189 — a degraded run has no representation: the stage CLIs' three-valued status is collapsed to a boolean on both operator surfaces, in opposite directions (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer** — *a mechanism that returns a well-formed value where a gap exists*
+**Size:** M · **Priority:** medium
+**Section:** aetheris-agents (`agents/orchestrator.exs`, `rig/`) and harness (`runs.status`) — generic to every stage-CLI pipeline, observed on cloudcost
+
+Filed 2026-09-01. **Filed as its own row, and the two candidates were checked rather than assumed.**
+**BL-156** owns the approval card's `description`/`context` — two *planner-authored* text fields —
+and its Done-when is satisfied by deriving those from something checkable; the error line is a
+third field, `stepErrors[step.id]`, whose value comes from the harness rather than the planner, so
+BL-156 can close completely with this defect intact. **BL-154** owns the *cancel* path, and this
+run completed normally and was never cancelled — its Done-when is about what a cancelled run
+records. **But BL-154 is the nearest neighbour and shares half the question**: it already names
+`runs.status` vocabulary as harness-owned work, needing a value distinguishable from `running` and
+an unattended `failed`. This row needs one distinguishable from `done` and `failed`. Same
+vocabulary, different member, and the harness half of both should be decided once rather than twice.
+
+**What the stage CLIs actually emit.** The repo contract is three-valued and documented
+(`CLAUDE.md` §Python script conventions — *stage CLIs degrade, they don't crash*): a partial result
+carries `{"status": "partial"}` on **stdout** with an `errors` array, and exits **1**. That is a
+third state, not a failure. Nothing downstream models it.
+
+**The run.** `cloudcost-orch-digitalocean-ymo32A`, started `2026-09-01T12:48:16.282465Z`, finished
+`12:48:34.196446Z`, label `Cloudcost · DigitalOcean`, in the dev DB and `priv/runs/`. Four steps,
+read from its trajectory:
+
+| step | script | exit | stdout `status` | stdout `errors` | stderr |
+|---|---|---|---|---|---|
+| 0 | `fetch_do.py` | **1** | `partial` | `[{"source":"billing","error":"no DigitalOcean invoice found for period 2026-09"}]` | **empty** |
+| 1 | `detect_orphans.py` | 0 | `ok` | `null` | empty |
+| 2 | `compose_report_data.py` | **1** | `partial` | **`null`** | **empty** |
+| 3 | `render_report.py` | 0 | `ok` | `null` | empty |
+
+Step 0's inventory leg succeeded — `counts.resources: 20`, `files.inventory` written — while its
+billing leg failed; `totals` is `null`. Step 2 carries `totals` with `services: 0`,
+`cost_grand_total: null`, `currency: null`. Terminal event `run_complete{"reason":"agent_finished"}`;
+`runs.status` = **`done`**.
+
+**Two refinements on the framing, because a fix keyed to the simpler version would miss them.**
+First, **step 2 is `partial` with `errors: null`** — a partial does *not* imply a populated
+`errors[]`, so a display keyed only on `errors[]` renders nothing for step 2 and the blank returns
+by another route. Second, `totals` is **present with null members**, not withheld wholesale, so a
+presence check on `totals` does not detect the degradation either.
+
+**Surface 1 — the Orchestrator panel over-reports it, as a failure with no message.**
+`get_step_result` (`agents/orchestrator.exs:255-283` at `20e60c7`) finds the first `tool_result`
+whose `exit_code` is nonzero and extracts **stderr only**. The fallback at `:275` is
+`output["stderr"] || "Step failed"` — and `||` catches **nil**, not `""`. stderr here is present
+and empty, so the guard is there and does not fire: `String.trim("")` → `{:error, ""}`. Rig then
+renders `status === 'failed' && error &&`
+(`rig/src/components/modules/orchestrator/OrchestratorView.tsx:117`), and `""` is falsy in JS, so
+the message `<p>` is suppressed while `<StepIcon status={status} />` (`:95-99`) renders regardless
+— a red failure icon beside nothing. The run summary does say *"Completed with errors"*
+(`:348`, `:354`), so the panel is not wholly silent; what is missing is any statement of *what*
+went wrong, on the only line that could carry it.
+
+**This surface was demonstrated, not merely cited, and the distinction is recorded because it
+matters.** No planner run wrapped this one — `runs` holds exactly two rows for 2026-09-01 and
+neither is an orchestrator run — so `get_step_result` never executed against this trajectory in
+production. The function's body was therefore transcribed verbatim from `:255-283` and run against
+the real trajectory file, returning `{:error, ""}` and emitting
+`{"type":"step_complete","step_id":"step-1","status":"failed","error":""}`. The panel behaviour is
+a demonstration on real data; it is **not** a field observation of an operator seeing a blank card.
+
+**Surface 2 — the harness under-reports it, as an unqualified success.** `runs.status` is `done`,
+byte-identical to a fully-successful run, and the trajectory's terminal event is
+`agent_finished`. There is no third value to reach: over the whole dev DB `runs.status` takes
+exactly two values, `done` (863) and `failed` (183). A `partial` has nowhere to go, which is why
+this is a vocabulary question and not a display bug — and it is the same vocabulary BL-154 needs.
+
+**Surface 3 — the artifact is the only one that represents it, and it drops the cause.** Recorded
+because it changes what the fix must recover rather than invent. The rendered report's §Data notes
+carries *"Warnings (1) … no usable cost snapshot for this provider — the sections it feeds are
+composed without it, provider=digitalocean"*, and its §Cost summary reads *"No combined total"* and
+*"No service-level cost lines in this report."* So the degradation **is** disclosed downstream —
+but the specific cause is not: the string `invoice` occurs **0** times in the report, and so does
+`partial`. `render_warnings` is `[]` and `mom_status` is `ok`, so the renderer reports itself
+clean. The information exists in step 0's stdout and is lost at every hop after it.
+
+**No cloudcost change is owed.** Partial-with-exit-1 on a missing invoice is the
+degrade-don't-crash contract behaving exactly as specified — September's invoice does not exist on
+2026-09-01, `fetch_do.py:478` raises, the adapter catches it into `errors[]`, and the pipeline
+composes and renders what it has. The pipeline is the one component in this story that is correct.
+**The gap is representation, not pipeline**, and a fix that touched cloudcost would be fixing the
+wrong thing.
+
+**Done when:** on a nonzero step exit the Orchestrator step card shows the stage-CLI `errors[]`
+when stdout parses to that shape, else truncated stdout, **never a blank** — including the
+`partial`-with-`errors: null` case above, which has no `errors[]` to show; **and** a `partial` run
+is distinguishable from both success and failure on whichever surface the operator reads. **Not**
+when only the blank is filled: a run that is `done` in the Runs list and degraded in fact is the
+half of this that costs an operator a wrong conclusion rather than a moment's confusion.
+
+**Collides with:** **BL-154** (shares the `runs.status` vocabulary question — decide the harness
+half once, for cancelled and partial together); **BL-156** (same card, adjacent field, and a
+card-content mechanism should be designed for both); **BL-187** and **BL-188** (same run, different
+defects — BL-188 is why this run was fetching 2026-09 at all, and BL-187 is why the param that
+would have said so was never validated).
+
+**Costs:** M. The panel half is S — parse stdout in `get_step_result` and prefer `errors[]`, and
+the render already handles a non-empty string. The status vocabulary is the real work, is
+harness-owned, and is shared with BL-154.
+
+`Source: filed 2026-09-01 from run `cloudcost-orch-digitalocean-ymo32A`, read from
+`../aetheris/priv/runs/cloudcost-orch-digitalocean-ymo32A/trajectory.json` and
+`../aetheris/priv/aetheris.db`. Every line citation was quote-verified at agents `20e60c7` — the
+`get_step_result` range is re-pinned from the `:235-263` of the filing prompt, which was correct
+before `20e60c7` added twenty prompt lines above it. The `done`/`failed` populations are from the
+dev DB at read time and will move; the command is
+`sqlite3 priv/aetheris.db "select status, count(*) from runs group by status"`.`

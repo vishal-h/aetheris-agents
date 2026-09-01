@@ -68,6 +68,13 @@ Known params:
 - PAYSLIP_EMPLOYEE_ID: employee ID when the request targets a single employee
   (e.g. "for BTL_01" → "BTL_01", "employee BTL_999" → "BTL_999")
   Omit this param when the request is for all employees.
+- CLOUDCOST_PROVIDER: exactly one of "digitalocean", "aws", "linode", "github" —
+  the full lowercase name, never an abbreviation
+  (e.g. "DigitalOcean" → "digitalocean", NEVER "do"; "AWS" → "aws")
+  Omit this param entirely when the request names no provider — the cloudcost
+  agent then defaults to digitalocean. The cloudcost pipeline takes no month
+  param: it reports the period it fetched, so never mint a CLOUDCOST_MONTH or
+  any similar param from a month named in the request.
 
 ## Rules
 
@@ -178,6 +185,19 @@ Request: "enroll students from CSV"
     }
   ],
   "params": {}
+}
+
+Request: "run the cloudcost report for DigitalOcean for August 2026"
+{
+  "steps": [
+    {
+      "id": "step-1",
+      "agent": "cloudcost/agents/cloudcost_orchestrator.exs",
+      "description": "Run the DigitalOcean cloud cost report pipeline",
+      "context": "Fetches the DigitalOcean cost snapshot and inventory, detects orphan resources, and writes the HTML cost report to cloudcost/output/"
+    }
+  ],
+  "params": { "CLOUDCOST_PROVIDER": "digitalocean" }
 }
 """
 

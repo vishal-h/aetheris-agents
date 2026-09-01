@@ -1295,6 +1295,22 @@ non-LLM* door — the path that removes the planner — and closing it would lea
 for every launch that still goes through the planner. Recorded here, on the row that owns
 per-launch provider selection.
 
+**Discharged in part, 2026-09-01 — the prompt-side half above is no longer true, and the sentence
+it turns on is left as written because it was true when verified.** *"has never mentioned any
+cloudcost key, at any commit. Verified at agents `97c61a0`"* was correct at `97c61a0` and is false
+from the commit carrying this note: `agents/orchestrator.exs`'s **Known params** block now names
+`CLOUDCOST_PROVIDER`, its four-value enum, the no-abbreviation rule, and the omit-to-default
+behaviour this row's `:58` citation describes, and the Examples block carries a cloudcost example.
+Verified live: the request *"Run the cloudcost report pipeline for DigitalOcean for Aug 2026"*
+emitted `CLOUDCOST_PROVIDER: "digitalocean"` where the same request against the pre-fix file
+emitted `"do"`. **What this does NOT discharge**, and the reason the row stays open on this point:
+a prompt instruction has no truth-maker, so the planner is now *told* the enum rather than *held*
+to it — nothing between the model and `System.put_env` validates the value, and the only enum check
+is the agent's own run-time raise, downstream of the operator's approval. That residue is
+**BL-187**, filed the same day and pointing back here. This row's Open question 2 — whether
+per-launch selection lives in a launch-parameter concept or in the request the planner reads — is
+untouched: the fix makes the second option work as designed, and does not decide between them.
+
 **Also stale in this row's own Done-when, noted rather than edited:** *"the operator can pick aws
 vs do per launch"* is itself a two-provider enumeration, written 2026-08-03 before Linode (m3) and
 GitHub (m6). The criterion is right and its enumeration is short by two — the same defect m6 t4
@@ -7261,3 +7277,177 @@ owed, is a synchronisation in one test.
 **Collides with:** **BL-181** (the parent census; **DONE**, in `docs/backlog-2026-06-closed.md`). Nothing else.
 
 `Source: BL-181's census, 2026-08-23, at harness 77ab709. The mechanism is derived from the two stub response queues in orb_blackboard_test.exs and from Orb.Supervisor.register_agents_and_insert_result/2; no failure of this assertion has been observed and the row does not claim one.`
+
+
+### BL-187 — the planner's `params` map has no declared per-use-case spec, and nothing validates it before the operator approves (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** n/a · **Contract:** `../aetheris/CLAUDE.md` **Silent-wrong-answer**
+**Size:** M · **Priority:** medium
+**Section:** aetheris-agents (`agents/orchestrator.exs`, `rig/`) — generic to every planner-launched agent
+
+Filed 2026-09-01, deferred out of the ticket that fixed the `CLOUDCOST_PROVIDER` half of it by
+prompt, under the standing rule that a deferred finding gets a row in the round it is deferred.
+**Filed as its own row rather than appended**, and the ground is stated because the choice was
+open. **BL-156** owns the approval card's *step text* (`description`/`context`) and its Done-when
+is about deriving that text from something checkable — it does not reach `params`, which is a
+different field with a different fix. **BL-085** owns per-launch provider *selection* and records
+the prompt-side gap this ticket closed. **BL-151** excludes it by its own header: this has a
+natural home, and it does not break nothing today. **BL-094** removes the planner for the agents
+that move to a direct door, leaving this intact for every launch that still goes through it.
+
+**What the surface is.** `params` is a flat map of env var names to values, authored freely by the
+planner LLM from the prose at `agents/orchestrator.exs:61-63` and the **Known params** block. The
+values are read at `:219-220`, rendered on the approval card, and — after approval — written
+straight into the process environment with `System.put_env` (`:272-273`, restored `:295-298`).
+**Nothing between the model and `put_env` checks anything**: not that a key is one the target agent
+reads, not that a value is in that key's admissible set, not that a key belongs to the use case the
+step names. The only structural constraint is the JSON shape `:212-220` decodes, which is satisfied
+by any string→string map.
+
+**So the enum lives in exactly one place, and it is downstream of approval.**
+`cloudcost/agents/cloudcost_orchestrator.exs:66-68` raises on an unrecognised `CLOUDCOST_PROVIDER`.
+That raise is correct and should stay — but it fires at *run* time, after the operator has already
+read the card and pressed Approve, and it is the *agent's* guard, so every agent must re-implement
+it or have none. A plan is authorised against values nothing has validated.
+
+**Two live instances, from one baseline run.** Both were produced by running the pre-fix
+`orchestrator.exs` against the request *"Run the cloudcost report pipeline for DigitalOcean for Aug
+2026"*, which emitted:
+
+    "params": {"CLOUDCOST_MONTH": "2026-08", "CLOUDCOST_PROVIDER": "do"}
+
+1. **A value outside the enum.** `"do"` is not one of `digitalocean|aws|linode|github`. The
+   planner abbreviated it; the prompt had never named the key. This half is now fixed by prompt
+   (the **Known params** block names the key, its enum, and the no-abbreviation rule), and the fix
+   is verified live — but a prompt instruction has no truth-maker, which is BL-156's own Done-when
+   talking about the neighbouring field.
+2. **A key no consumer reads, which is the more interesting half and is NOT fixed.**
+   `CLOUDCOST_MONTH` is consumed by nothing: `grep -rn "CLOUDCOST_MONTH" . ../aetheris` returns
+   **0** at `c3839a9` (positive control, same pattern and flags: `CLOUDCOST_PROVIDER` returns
+   **132**). `cloudcost_orchestrator.exs:50-51` calls `CLOUDCOST_PROVIDER` *"the one env-overridable
+   knob in this file"*. The month is a `--period` CLI flag on all four fetch scripts, and STEP 1's
+   args array (`:257-258`) is a fixed literal that never passes it — the period is whatever the
+   fetch script defaults to (current UTC month), *reported* by STEP 1 rather than *set* by anyone.
+   So the planner minted a parameter that would be `put_env`'d and read by no one, while the
+   approval card displayed `CLOUDCOST_MONTH: 2026-08` — telling the operator a target month the
+   run cannot honour. Run on 2026-09-01, that plan fetches 2026-09 and renders a report the card
+   said would cover August.
+
+**That second instance is the Silent-wrong-answer shape exactly:** a well-formed value where a gap
+exists, on the one surface an operator authorises a run from. It is also why the fix is not "add
+`CLOUDCOST_MONTH` to Known params" — teaching the planner to emit an inert key makes the card more
+confidently wrong, not less. The prompt edit therefore tells the planner the cloudcost pipeline
+takes no month param at all, which is true today and is a prompt-side patch on a missing mechanism.
+
+**Two candidate mechanisms, not adjudicated here.** (a) A **declared param spec per use case** —
+`tools.json` is the existing per-use-case manifest and already declares env deps, so the admissible
+key set and each key's enum could be derived rather than restated; the planner prompt's Known
+params block would then be generated from it rather than hand-maintained, which is what let it go
+five providers stale. (b) **Plan-time validation** in `orchestrator.exs` before the plan is emitted
+for approval: reject or strip a key absent from the declared set, reject a value outside a declared
+enum, and surface the rejection on the card. These compose — (b) needs (a) to have something to
+validate against.
+
+**Done when:** an operator cannot approve a plan carrying a param key no agent in that plan reads,
+or a value outside that key's declared admissible set — either because the plan is rejected before
+the card renders, or because the card marks the offending param as unvalidated. **Not** when the
+prompt is merely told which keys exist: that is what this ticket did, it is a real improvement, and
+it has no truth-maker.
+
+**Collides with:** **BL-188** (the month finding's other half, filed alongside this row — BL-188 makes a month-named request *honourable* where this row makes an unread key *rejectable*; a declared spec landing here is where `CLOUDCOST_MONTH` becomes legitimate rather than stripped); **BL-156** (same planner, same card, adjacent field — a card-content mechanism
+should be designed once for both); **BL-085** (its 2026-08-14 annotation is the prompt-side half,
+now discharged); **BL-094** (a direct door renders its own card from the manifest and would want
+exactly the declared spec (a) describes); **BL-084** (tools manifests for the use cases that have
+none — (a) is unbuildable for a use case with no manifest, and cloudcost is one of them).
+
+**Costs:** M. (b) alone against a hand-written spec is S and buys most of the safety. (a) is the
+real work and overlaps BL-084 and BL-094.
+
+`Source: filed 2026-09-01 from the ticket that extended the Known params block with
+CLOUDCOST_PROVIDER. Baseline and post-fix plan calls were run live against the Anthropic API with
+the production planner model (claude-haiku-4-5-20251001); the pre-fix params map quoted above is
+that run's own stdout, not a reconstruction. Line citations are lines read at agents c3839a9. The
+CLOUDCOST_MONTH negative carries its positive control inline, per the standing rule that a zero
+without a control is an observation about the command.`
+
+
+### BL-188 — nothing carries a month from a cloudcost request to the pipeline, so a month-named request cannot be honoured (#TBD)
+**Status:** OPEN
+**Kind:** missing capability · **Census items:** n/a · **Contract:** n/a
+**Size:** S–M · **Priority:** medium
+**Section:** aetheris-agents (`agents/orchestrator.exs`, `cloudcost/agents/cloudcost_orchestrator.exs`, `cloudcost/scripts/fetch_*.py`)
+
+Filed 2026-09-01, alongside **BL-187** and out of the same ticket. **Filed as its own row rather
+than as a clause of BL-187, on the reviewer's referral of the choice.** The two are the opposite
+halves of one observation and their Done-whens cannot be merged: BL-187 ends with a plan carrying
+`CLOUDCOST_MONTH` being **rejected**, this one ends with a month-named request being **honoured**.
+A declared param spec that rejects the key satisfies BL-187 completely and leaves an operator who
+asks for August still unable to get August. BL-187 is also generic to every planner-launched agent;
+this is cloudcost-specific and its real work is a per-provider semantics question BL-187 has no
+place for.
+
+**What is missing.** There is no path from a month in the request to the period the pipeline runs
+for. The planner has no key to emit (`CLOUDCOST_MONTH` is consumed by nothing —
+`grep -rn "CLOUDCOST_MONTH" . ../aetheris` returns **0** at `c3839a9`; positive control
+`CLOUDCOST_PROVIDER` returns **132**). `cloudcost_orchestrator.exs` reads no month
+(`CLOUDCOST_PROVIDER` is *"the one env-overridable knob in this file"*, `:50-51`). And STEP 1's
+args array (`:257-258`) is a fixed literal `["<fetch_script>", "--output-dir", "<output_dir>"]`
+that never passes a period. The period is whatever the fetch script defaults to, *reported* by
+STEP 1 downstream rather than set by anyone.
+
+**The observed instance, from a live pre-fix planner run.** Asked for *"Run the cloudcost report
+pipeline for DigitalOcean for Aug 2026"*, the planner emitted `"CLOUDCOST_MONTH": "2026-08"` and a
+card reading *"renders HTML report for August 2026"*. Both are inert. Run on 2026-09-01 that plan
+fetches 2026-09 and produces a September report the operator approved as August — the
+**Silent-wrong-answer** shape, and the reason the ticket that found this declined to teach the
+planner the key.
+
+**The flag already exists and is honoured — this is wiring, not new capability.** All four adapters
+accept `--period YYYY-MM` and act on it, verified per adapter rather than inferred from one:
+`fetch_do.py:539`, `fetch_aws.py:1071`, `fetch_linode.py:1329`, `fetch_github.py:892`. In
+`fetch_do.py` it drives invoice selection (`:468-478`), the payload (`:302`, `:508`) and the output
+filenames (`:582`). So the mechanical part is small: the agent reads a month from env and appends
+`["--period", month]` to STEP 1's args; the planner's **Known params** block gains the key; the
+prompt edit that currently says *"the cloudcost pipeline takes no month param"* is retired.
+
+**The real work is that the four adapters do not agree on what a period means, and a uniform flag
+would paper over it.** Enumerated, because a fix written against DigitalOcean alone would be wrong
+for two of the other three:
+
+- `fetch_do.py` / `fetch_aws.py` — `args.period or current_period()`. Straightforward.
+- `fetch_do.py` additionally **raises** `no DigitalOcean invoice found for period {period}`
+  (`:478`) when the requested month has no invoice. So an honoured month is a month that can now
+  *fail* a run that previously always succeeded — and a hard raise runs into this repo's standing
+  rule that **stage CLIs degrade, they don't crash** (`CLAUDE.md` §Python script conventions). A
+  request for a future or too-old month is the ordinary case here, not the exotic one.
+- `fetch_linode.py` — `period = args.period` with **no** `current_period()` fallback, and already
+  carries `period_basis = "requested" if args.period else None` (`:1329-1330`). Linode is
+  **structurally one month behind** (`:1033` — no preview invoice, so a run reads the newest
+  settled invoice), which `cloudcost_orchestrator.exs:41-44` also records. A month asked for and a
+  month delivered are routinely different here **by design**, and `period_basis` is the existing
+  vocabulary for saying so.
+- `fetch_github.py` — `validate_period(args.period or current_period())`, its own validation path.
+
+So the question this row actually has to answer is **what a month-named request means when the
+provider cannot deliver that month** — refuse, deliver the nearest settled period and say so, or
+report `period_basis` up to the card. Linode already models the third; nothing surfaces it.
+
+**Done when:** a cloudcost request naming a month either produces a report for that month, or
+produces a plan or report that says which period it will actually cover and why it differs — for
+every one of the four providers, not only the two with the simple semantics. **Not** when
+`--period` is threaded through and the divergence is left to be discovered per provider.
+
+**Collides with:** **BL-187** (the other half — it rejects the key, this one earns it; if BL-187's
+declared spec lands first, this row is what adds `CLOUDCOST_MONTH` to that spec rather than working
+around it); **BL-156** (the card is where a differing period would have to be disclosed, and its
+Done-when already asks for card text derived from something checkable); **BL-085** (same prompt,
+same Known params block, provider rather than month).
+
+**Costs:** S for the wiring on DO/AWS alone; M to answer the semantics question across all four,
+which is the part that makes it worth a row.
+
+`Source: filed 2026-09-01 from the ticket that extended the Known params block with
+CLOUDCOST_PROVIDER, at the reviewer's direction to carry the month finding's second half. The
+inert-param instance is that ticket's own pre-fix baseline run against the live API, quoted from
+its stdout. All adapter line citations are lines read at agents c3839a9; the four `--period` call
+sites were each opened rather than generalised from `fetch_do.py`.`

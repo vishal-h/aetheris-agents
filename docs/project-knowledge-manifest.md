@@ -23,13 +23,19 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 **The store also holds documents under the `claude/` namespace that sessions wrote directly
 and that have no repo copy.** They are outside the manifest by design and are never removed by
 a remove-all-upload-all pass — *remove-all* reads *all of the manifest set*, never *everything
-in the store*. As of the 2026-09-07 export there are six such documents predating it, plus the
-two rows that export added under the same prefix, `claude/m-payslip-release.md` and
-`claude/backlog-scale-2026-09.md`, which ARE manifest-tracked despite it: the Projects tool
-namespaces a new bare filename under `claude/`, and the export-name column records where a
-document actually is. Stated here so the blind spot the paragraph above records is a declared
-exclusion rather than an undetectable gap. The figure is the store's, as read by the claude-ui
-session at that export, and is not re-derivable from either repository.
+in the store*. As of the 2026-09-07 export there are six such documents, and nothing under
+`claude/` carries a row: every manifest-tracked document sits in the store at its bare export
+name. Stated here so the blind spot the paragraph above records is a declared exclusion rather
+than an undetectable gap. The figure is the store's, as read by the claude-ui session at that
+export, and is not re-derivable from either repository; that `claude/` holds nothing else is
+the same session's report after its same-day correction, recorded at the end of the 2026-09-07
+boundary record below.
+`[Corrected 2026-09-07, after the boundary closed. As committed at `675829d` this paragraph
+also named two rows the export had added *under the same prefix*, `claude/m-payslip-release.md`
+and `claude/backlog-scale-2026-09.md`, *"which ARE manifest-tracked despite it"*. They no longer
+have the prefix: the store was corrected the same day and the two rows re-pinned to their bare
+export names. The dated block at the end of the 2026-09-07 boundary record says what changed
+and why; the procedural gap it exposed is **BL-196**.]`
 
 ---
 
@@ -52,8 +58,8 @@ session at that export, and is not re-derivable from either repository.
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
-| `claude/m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
-| `claude/backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
+| `m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
+| `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -1705,6 +1711,63 @@ No **Repo push state** paragraph, per the standing note below.
 
 Previous export: **2026-08-27** (five rows advanced; 31 rows; the first run under the repaired
 Step 3, and the closed half's capacity figure measured, recorded in that block).
+
+> `[Correction, 2026-09-07, written after this boundary closed and after the record above was
+> committed at `675829d`. Nothing above is rewritten. This block says what the record got wrong,
+> what was changed and by whom, what it does not close, and what the done-check on this commit
+> is predicted to show.
+>
+> WHAT WAS WRONG. The block above headed *"Two of the thirty-two did not land under their bare
+> names"* accepted the `claude/` placement and pinned the two new rows' export names as
+> `claude/m-payslip-release.md` and `claude/backlog-scale-2026-09.md`. That placement is not a
+> naming detail the export-name column can absorb. BL-143's ruling of 2026-08-16 makes the
+> `claude/` prefix the discriminator for BOTH post-upload checks, and both are stated on it in
+> `prompts/bl-002-refresh-project-knowledge.md` §Post-upload verification: check 1 compares every
+> store path NOT under `claude/` against the export-name column, and check 3 enumerates
+> everything under `claude/` without judging it. With two manifest-tracked documents under the
+> prefix, check 1 could never again reach set equality — two names in the column that the store
+> side's namespace filter excludes — and check 3 would enumerate those same two as agent-written
+> documents and wave them past its timestamp condition. The two newest documents in the store
+> were invisible to both halves of the verification. The block above saw that the boundary "cuts
+> through the manifest set" and recorded it so that it would be findable; it did not see that
+> the cut had disabled both checks for as long as it stood.
+>
+> WHAT CHANGED, AND WHO DID IT. The store side was corrected OUT OF BAND by the claude-ui
+> session of 2026-09-07: both documents re-uploaded at their top-level names, the `claude/`
+> copies deleted, so `claude/` again holds only documents that carry no row. That is REPORTED
+> here and not verified — no session writing this file can see the store, and the claude-ui
+> session is the named holder. On the repo side this commit re-pins the two rows' export-name
+> cells to `m-payslip-release.md` and `backlog-scale-2026-09.md`; their repo path, repo, commit
+> and last-changed cells are unchanged, `bec45d0` and 2026-09-07 for both. The header paragraph's
+> sentence that said the two were manifest-tracked despite their prefix is corrected in place
+> with its own dated note; the `claude/` namespace remains a declared exclusion holding the six
+> rows-less documents the header counts. The *"two rows added"* table above still names the
+> `claude/` paths, as it did when written, and is left as the record of what this boundary
+> pinned.
+>
+> WHAT THIS DOES NOT CLOSE. The re-pin restores the invariant for this boundary's set and does
+> nothing about the mechanism. The procedure describes one upload route — the Step 5 bundle,
+> handed to a human who uploads in the UI — and a second route exists, the one this boundary
+> actually used, whose namespacing of a new bare filename the invariant does not survive. That
+> property of the tool was already on record in the 2026-08-18 block above, under *"Who performed
+> the upload, and that the first attempt failed"*, as evidence for BL-143's ownership question;
+> what was not on record is that it falsifies the premise both checks rest on. That is filed as
+> **BL-196**, which names the two candidate fixes without choosing. Filing it also discharges the
+> deviation the block above declared — *"no backlog row is filed"* — for the wider finding, though
+> not on that block's terms: the row was excluded from the export round and is filed by the
+> correction round that followed it.
+>
+> THE DONE-CHECK, predicted before the run. `python3 scripts/drift_check.py --strict`,
+> post-commit, run twice because this correction lands as two commits. After the commit carrying
+> this file alone, predicted WARN set **EMPTY**: check 8's row regex captures the second, third
+> and fourth cells — repo path, repo, commit — and never the export name, so an edit confined to
+> the first cell moves nothing it compares, and this file's own row is `_(this export)_` and
+> skipped by design. After the commit that files BL-196, predicted WARN set **exactly one
+> member**: `docs/backlog-2026-06.md`, pinned at `0709360` and moved by that commit — the
+> strict-exempt mid-cycle staleness `CLAUDE.md` §Definition of done describes, and not a row
+> this round may re-pin, since a pin advanced without an upload is the blind direction the
+> header paragraph names. Results are reported in the round's close report, not here, for the
+> fixed-point reason the record above gives.]`
 
 ---
 

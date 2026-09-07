@@ -8016,6 +8016,22 @@ defaults `script_path` to `"agents/orchestrator.exs"`. And step **3** of the
 payslip pipeline is `drive/agents/drive_upload_orchestrator.exs`
 (`agents/orchestrator.exs:105-106`), which is the step the card named.
 
+**Hop 2 has a visible consequence, and it is the end-to-end check on this table.**
+`inspect/1` on a binary returns that binary *with its quotes*, so the prediction
+from `:312` alone was that the card renders the message **quote-wrapped** — an
+error already written as prose arriving inside literal double quotes because it
+passed through `inspect/1` on the way out. **Confirmed against the reported card**,
+which shows step 3's error as `"step timed out after 5 minutes"`, double quotes
+included. The derivation is kept here beside the observation rather than replaced
+by it: the quoting was predicted from one line of source before anyone looked, and
+its holding is what makes hops 1→5 trustworthy as a chain rather than as five
+separately plausible reads. It is a small wart on its own and earns no row; it
+earns the Done-when clause below, so a fix does not carry it forward.
+`[Predicted in the filing round and labelled a prediction; confirmed 2026-09-07 at
+the round-1 review, finding 11, from a screenshot of the 2026-09-07 payslip run.
+The card itself is not an artifact either repo holds, so this cites the reviewer's
+report of it, not a file.]`
+
 **What the message is true of.** It is an accurate report of the *orchestrator's*
 wait: `Task.yield` did expire after 300 000 ms. It is rendered as a report about
 the *step*, and about the step it is unsupported — the trajectory records no
@@ -8123,22 +8139,71 @@ report itself. Whether that is what happened here is **not settled and is not
 claimed** — see below.
 
 **What is NOT established, said plainly.** The trajectory cannot distinguish two
-histories, and this row does not choose between them: (i) the run died at
-`02:42:54` for a reason of its own, and the orchestrator's cap then fired
-harmlessly 300 s later; (ii) the run was alive and working, and the orchestrator's
+histories, and this row does not choose between them: (i) the run died **at some
+point during the tool call**, before the exec server could return a `tool_result`,
+for a reason of its own, and the orchestrator's cap then fired harmlessly at
+`run_start + 300 s`; (ii) the run was alive at that moment and the orchestrator's
 cap ended the BEAM node under it — `Aetheris.start_run/1` starts the run in the
 orchestrator's own node, so the script's exit takes the run with it, leaving
 exactly the `running`-with-no-terminal-event state the sweep later cured. Both
 produce this trajectory byte for byte. The message is wrong about the step under
-either, which is why the row is filable without settling it; a fixing ticket that
-wants to settle it needs a wall-clock record from outside the trajectory.
+either, which is why the row is filable without settling it.
+
+`[(i) reworded 2026-09-07 at the round-1 review, finding 10. It read "the run died
+at `02:42:54` for a reason of its own" — **dating the death from the last event**,
+which is the inference this row warns against under **Against that control,
+`drive-upload-s2inHA`**, where `finished_at` is said to date the
+*last event and **not** the death of the process*. The row committed that error in
+its own hypothesis while cautioning against it. The Drive record below refutes the
+`02:42:54` anchor outright; (i) survives only in the form now stated, which asserts
+no death time at all.]`
+
+**There IS a wall-clock record outside the trajectory, and it is the Drive objects
+the step was writing.** `drive_upload.py` writes to Drive, and Drive stamps every
+object with `createdTime`/`modifiedTime` — a clock this repo does not own and the
+trajectory cannot influence. Read through the Files API, which returns **seconds**
+(the Drive UI shows minutes and is not the citable form), `2026-08/BTL_01/` holds
+six objects created between **`2026-09-07T02:42:59.432Z`** and
+**`2026-09-07T02:43:15.359Z`**. The run's last recorded event, `tool_called`, is at
+`02:42:54.185347Z`. **So writes began 5.2 s after the trajectory stops and continued
+for 21.2 s past it: the process was alive and doing work well beyond its last
+event.** The API call is
+`files().list(q="'<BTL_01 folder id>' in parents and trashed=false",
+fields="files(name,createdTime,modifiedTime,size)")` under
+`drive.readonly`, credential `GOOGLE_SERVICE_ACCOUNT`.
+
+**Two caveats, stated rather than resolved by assertion.** First, **nothing else
+wrote that folder as far as the run table can see**:
+`sqlite3 ../aetheris/priv/aetheris.db "select run_id, status, started_at from runs
+where run_id like 'drive-upload-%' and started_at like '2026-09-07%';"` returns
+`drive-upload-s2inHA` and nothing else (positive control: the same query over
+`2026-06-10%` returns many). But that rules out another *run*, **not another
+writer** — a direct `python3 drive/scripts/drive_upload.py` invocation bypassing
+the orchestrator creates no run row at all, and BL-191's evidence block records
+exactly that happening for the August send. What binds these writes to this run is
+not the query but the **latency**: the first object appears 5.2 s after the
+`tool_called` that launched the script, which is what authenticate-then-upload
+costs. Second, the objects' own timestamps are Drive's clock, not this machine's;
+no skew correction has been applied and none is needed at this magnitude, but a
+fixing ticket reasoning at sub-second precision should not assume the two agree.
+
+**What this changes, and what it does not.** It **refutes (i) as previously
+worded** — the run did not die at `02:42:54`. It does **not** choose between (i)
+and (ii): the record shows the process alive at `02:43:15`, and says nothing about
+whether it was still alive at `run_start + 300 s`, which is when the cap fired and
+is the moment the two histories differ. So the row still declines to choose. What
+is no longer true is the row's previous claim that the settling evidence is
+unavailable: the outside clock exists, it has been read, and the remaining gap is
+narrower and differently shaped than "we have no record."
 
 **Done when:** on a `Task.yield` expiry the step card no longer asserts that the
 *step* timed out — the emitted `error` names the orchestrator's own wait as its
 subject and states the bound it actually applied; **and** the operator can reach
 the harness's `await_run` diagnosis, either by giving the orchestrator's cap
 headroom over the harness's inactivity bound so the accurate message wins, or by
-dropping the outer cap and letting `await_run` be the one clock. **Not** when only
+dropping the outer cap and letting `await_run` be the one clock; **and** the
+replacement message does not arrive quote-wrapped — whatever hop 2 becomes, it must
+not hand the card `inspect/1` of a string that was already prose. **Not** when only
 the wording changes: two 300 000 ms clocks racing, with the less informative one
 structurally winning, is the defect underneath the sentence.
 

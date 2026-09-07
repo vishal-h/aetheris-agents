@@ -162,11 +162,20 @@ exactly as `64 − 17 + 19`.
 
 **Two things this does NOT do.** It does not discharge **arm 1** of the Done-when —
 see the arm-status block above; the rebuild had no step and no cap. And it is
-**distinct from BL-191's cleanup**, which is about files *present and misplaced*: a
-cleanup that strips stray months from a period folder would not have noticed three
-employees whose August payslip was never uploaded, and would have left the archive
-quietly incomplete **for exactly the people the fix was for**. That distinction is
-the reason this is recorded here rather than folded into BL-191.
+**distinct from the misplaced-object cleanup now filed as BL-194**, which is about
+files *present and misplaced*: a cleanup that strips stray months from a period
+folder would not have noticed three employees whose August payslip was never
+uploaded, and would have left the archive quietly incomplete **for exactly the
+people the fix was for**. That distinction is the reason this is recorded here
+rather than folded into that row.
+`[Repointed 2026-09-07, round-4 review finding 15. This block read **"distinct from
+BL-191's cleanup"** and **"rather than folded into BL-191"** when written earlier
+today. It inherited the wrong pointer from this row's own older sentence above and
+**amplified** it, adding a confident characterisation of a cleanup BL-191 does not
+contain — the *an inherited citation is still uncited* failure
+(`../aetheris/CLAUDE.md`), committed by repeating a reference without opening it.
+The distinction the block draws is sound and is unchanged; only its referent was
+wrong.]`
 
 `Source: Files API `files().list` under `drive.readonly`, read 2026-09-07 after the
 rebuild; the absence figures are BL-193's widened read of the same folder before it.
@@ -200,7 +209,16 @@ exist.
 **Partial Drive state, and whose it is.** The 2026-08 upload died mid-run, so
 `2026-08/<employee>/` in Drive holds an **unknown subset** of months — some
 employees' folders received other months' files before the run stopped, and
-nothing here records which. **Cleaning that up is BL-191's, not this row's.**
+nothing here records which. **Cleaning that up is BL-194's, not this row's.**
+`[Repointed 2026-09-07 at the round-4 review, finding 15. This read **"Cleaning
+that up is BL-191's"** from this row's filing at `ab64cf2` until now. **BL-191
+never contained a cleanup** — read at `c9e34a3`, it is the runbook env-var
+divergence, the `sprint.sh:1061` gate and the Expected-output block, and its
+Done-when is entirely renaming and documentation. So this sentence discharged an
+obligation to a row that had never accepted it, and the cleanup had no executor
+anywhere for as long as the sentence stood. **BL-194** is filed for it and this
+now points there. The superseded text is kept above rather than overwritten
+because the wrong pointer is the defect worth seeing.]`
 Said explicitly so the two are not merged later: BUG-001 closes on a *forward*
 run behaving correctly, and it can reach `verified` with the historical mess
 still in Drive. The mess is live client data and its own task.
@@ -8396,3 +8414,119 @@ on the same command and flags, and it hits in `../aetheris` — `lib/aetheris/sw
 `test/aetheris/sweep_test.exs:75`. The `runs.status` populations are `done` 868 / `failed` 184 at read
 time and will move; the command is
 `sqlite3 priv/aetheris.db "select status, count(*) from runs group by status"`.`
+
+---
+
+### BL-194 — misplaced payslip objects in Drive period folders have no owner: `2026-07/` holds 36 May files and nothing is filed to remove them (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** 36 misplaced objects in one period folder, measured not extrapolated · **Contract:** `../aetheris/CLAUDE.md` **An inherited citation is still uncited** — *a line or section reference you took from prior notes and never opened yourself is a rumor with a number*
+**Size:** S · **Priority:** medium
+**Section:** aetheris-agents (`drive/`) — data remediation, no existing script does this
+
+Filed 2026-09-07 at the round-4 review, finding 15. **This row exists because an
+obligation was discharged by citation to a row that never accepted it.** BUG-001
+said *"Cleaning that up is BL-191's, not this row's"* (at `ab64cf2`, before the
+BL-193 rounds), and the BL-193 r3 block repeated and amplified it as *"distinct
+from BL-191's cleanup, which is about files present and misplaced"*. **BL-191
+contains no cleanup.** Read at `c9e34a3`, its content is (a) `drive/runbook.md`
+naming two folder-ID env vars nothing has read since `72367ac`, (a′)
+`sprint.sh:1061` gating the drive arm on those dead vars, and (b) an
+Expected-output block the script never prints; its Done-when has four clauses,
+all renaming, documentation, the sprint gate, and the sweep enumeration. Nothing
+in it concerns Drive objects. So the cleanup had **no executor anywhere** while
+two rows asserted it had one.
+
+**Why nothing caught it, and the class.** `drift_check`'s `backlog_resolution`
+check verifies every `BL-nnn` reference **resolves to an existing row** — a
+**currency** check, not a **content** check. A citation pointing at a real row
+that does not say what the citation claims passes it, and passed it 192 times.
+This is the same shape as the standing learning that **`drift_check` verifies a
+pin is current, never that it is complete** (`CLAUDE.md` §Definition of done),
+firing here on the cross-reference checker rather than on the manifest. **No
+mechanism is proposed for it in this row** — a content check over prose
+cross-references is a different and much larger problem — but the blindness is
+recorded so the next person to trust a green `backlog_resolution` knows what it
+bought them.
+
+---
+
+**Scope, measured across every employee folder rather than extrapolated from one.**
+The one-folder extrapolation error is exactly what the round-2 review caught in
+BL-193, so the identity test was run over all three period folders and all 18
+employee folders in each:
+
+| period folder | employee folders | objects | misplaced | verdict |
+|---|---|---|---|---|
+| `2026-05/` | 18 | 36 | **0** | clean |
+| `2026-07/` | 18 | **72** | **36** | **contaminated** |
+| `2026-08/` | 18 | 36 | **0** | clean |
+
+`2026-07/` holds `{'2026-05': 36, '2026-07': 36}` — every one of its 18 employee
+folders carries 4 objects, exactly 2 of them misplaced May files. **Uniform across
+all 18**, so the population is 36 and not approximately 36. That is the entire
+cleanup: **one folder, one wrong month, a known count.**
+
+**Both clean folders are clean by accident, and neither accident is a mechanism.**
+`2026-05/` is clean **by accident of history** — it was the first run, only one
+month existed in `payslip/output/`, so there was nothing to misplace. `2026-08/`
+is clean **by accident of remediation** — it was deleted and rebuilt on 2026-09-07
+by a direct `drive_upload.py` invocation after the fix landed. Nothing produced
+either state that would keep it clean, and nothing is watching either.
+
+`Source: Files API `files().list` under `drive.readonly`, read 2026-09-07 after the
+`2026-08/` rebuild. The identity test is filename month prefix vs containing period
+folder name; the script is session-scratchpad only and is not committed, so the
+figures are re-derived by re-running the test rather than by trusting this table.
+**The two clean rows are as-of that read and are the mutable half of this row** —
+the round-4 review's own finding 13 went stale inside one session for exactly this
+reason, so treat any period-folder state here as needing a fresh read before acting.`
+
+---
+
+**The identity test, which needs no external source of truth.** A payslip object is
+misplaced iff **its filename's month prefix differs from the name of the period
+folder containing it** — `2026-05-Payslip.pdf` under `2026-07/` is misplaced;
+`2026-07-Payslip.pdf` under `2026-07/` is not. Both operands are already in Drive,
+so the test needs no reference to `payslip/output/`, no run record, and no clock. It
+is decidable per object by inspection, which is what makes this an S.
+
+**Two invocations, never one.** The tool **lists, diffs, and emits a dry-run report**
+on its first invocation and **acts only on a second, explicit** one. The first
+invocation must be incapable of moving anything.
+
+**Quarantine, never delete.**
+1. Objects are **moved to a quarantine folder, not removed**. `files.delete` is not
+   in the tool's scope at all.
+2. **The quarantine parent lives OUTSIDE the client-visible tree** — not under
+   `payslips/`, not under any period folder. A quarantine inside the tree it is
+   cleaning is a second contamination, and the next reader cannot tell the two
+   apart by the identity test that found the first.
+3. The dry-run report lists **`source → quarantine` pairs**, one per object, so the
+   move is **reversible by inspection** — a reader with the report can put every
+   object back without re-deriving anything.
+4. **The report is written to a file**, not only to stdout. A remediation record
+   that exists only in a terminal scrollback is not a record; the file is what makes
+   the second invocation auditable against the first.
+
+**Done when:** `2026-07/` passes the identity test — every object's filename month
+prefix equals its containing period folder's name — with the 36 misplaced May
+objects in a quarantine outside `payslips/`, and a committed-or-archived dry-run
+report naming every `source → quarantine` pair. **Not** when the objects are
+deleted, and **not** when a script exists that could do it: the row closes on the
+folder being clean and the move being reversible from the report.
+
+**Not done-when:** touching `2026-05/` or `2026-08/`. Both pass the identity test at
+filing and neither needs a move; a tool that "cleans" a clean folder is a tool whose
+dry run nobody reads.
+
+**Collides with:** **BUG-001** — which caused this contamination and whose
+references to a cleanup this row now owns; the forward fix landed there, this is the
+historical residue, and BUG-001 can reach `verified` with `2026-07/` still dirty.
+**BL-191** — *only* in that it was wrongly cited as owning this; the two share no
+file and no Done-when clause, and BL-191 is unchanged by this row beyond incoming
+citations being repointed away from it.
+
+`Source: filed 2026-09-07 at the round-4 review (`docs/reviews/bl-193-review-r3.md`
+findings 15 and 16). BL-191's content was read at `c9e34a3` by this session rather
+than taken from the review, per the contract this row is filed under — the
+misattribution it corrects was itself an unopened citation repeated twice.`

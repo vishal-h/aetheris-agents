@@ -8160,8 +8160,12 @@ type, timestamp from events where run_id='<id>' order by seq;"` and the same wit
 `payload_json` in place of the projection. Every line citation was quote-verified at agents
 `ab64cf2` / harness `ca11d35`. The located-not-absent result for the string is
 `grep -rn --binary-files=without-match "step timed out after 5 minutes" <repo> --exclude-dir=.git
---exclude-dir=_build --exclude-dir=deps --exclude-dir=node_modules`: 0 in `../aetheris`, 1 in
-this repo, with `orphaned_no_live_process` as the positive control on the same command and flags
-(2 hits in `../aetheris`). The `runs.status` populations are `done` 868 / `failed` 184 at read
+--exclude-dir=_build --exclude-dir=deps --exclude-dir=node_modules`: **0 in `../aetheris`**, and in
+this repo the sole non-prose hit is the emission site, `agents/orchestrator.exs:302`. Stated as a
+site rather than as a count **because this row spends the search**: from the commit that carries it,
+the same grep also matches the row's own heading, its hop-1 table cell and this sentence, so any
+count published here is false in its own commit. `orphaned_no_live_process` is the positive control
+on the same command and flags, and it hits in `../aetheris` — `lib/aetheris/sweep.ex:204` and
+`test/aetheris/sweep_test.exs:75`. The `runs.status` populations are `done` 868 / `failed` 184 at read
 time and will move; the command is
 `sqlite3 priv/aetheris.db "select status, count(*) from runs group by status"`.`

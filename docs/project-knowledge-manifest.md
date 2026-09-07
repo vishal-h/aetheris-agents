@@ -20,6 +20,17 @@ leaves the manifest silently under-describing project knowledge, and drift repor
 green while the record is wrong. The tooling is blind in that direction; the
 discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 
+**The store also holds documents under the `claude/` namespace that sessions wrote directly
+and that have no repo copy.** They are outside the manifest by design and are never removed by
+a remove-all-upload-all pass — *remove-all* reads *all of the manifest set*, never *everything
+in the store*. As of the 2026-09-07 export there are six such documents predating it, plus the
+two rows that export added under the same prefix, `claude/m-payslip-release.md` and
+`claude/backlog-scale-2026-09.md`, which ARE manifest-tracked despite it: the Projects tool
+namespaces a new bare filename under `claude/`, and the export-name column records where a
+document actually is. Stated here so the blind spot the paragraph above records is a declared
+exclusion rather than an undetectable gap. The figure is the store's, as read by the claude-ui
+session at that export, and is not re-derivable from either repository.
+
 ---
 
 | export name | repo path | repo | commit | last changed |
@@ -32,15 +43,17 @@ discipline is what covers it. Source: BL-022 filing, 2026-07-17.
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `67e2eb6` | 2026-08-25 |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `c3839a9` | 2026-08-27 |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `0709360` | 2026-09-07 |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
 | `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
+| `claude/m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
+| `claude/backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
@@ -1583,6 +1596,115 @@ No **Repo push state** paragraph, per the standing note below.
 Previous export: **2026-08-25, the design-brief boundary** (four rows advanced; 30 rows; the first
 export carrying the design-brief rows, and the first run under the inclusion rule those rows were
 added by, recorded in that block).
+
+**Export boundary — 2026-09-07.** Appended; nothing above is rewritten. **Two rows advanced:**
+
+| row | repo | was | now | last changed |
+|---|---|---|---|---|
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | `67e2eb6` | `c3839a9` | 2026-08-27 |
+| `backlog-2026-06.md` | aetheris-agents | `8a3a1d0` | `0709360` | 2026-09-07 |
+
+**And two rows added**, both new documents, both pinned at the commit that created them:
+
+| row | repo | pinned at | last changed |
+|---|---|---|---|
+| `claude/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
+| `claude/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
+
+Their repo paths are `docs/milestones/m-payslip-release.md` and `docs/backlog-scale-2026-09.md`,
+stated here in prose rather than as a second five-column table: check 8's row regex matches a
+backticked path in the second cell wherever it appears in this file, and a record-table in the
+main table's shape would be parsed as a second pin — one that is right today and stale forever
+once either file next moves.
+
+Row count **33**, parsed bound to the table's HEADER ROW rather than to the pipe character and
+rather than carried from the previous boundary: **2 movers + 2 added + 28 current + 1 self row
+= 33.** The previous boundary recorded **31**; the set grew by exactly the two rows above and
+**nothing was dropped** — checked by set comparison in both directions against the table at
+`2f846b0`, the last commit to touch this file, not by subtracting counts. The other 29 rows are
+byte-unchanged, including all 13 harness rows.
+
+**What moved, and why.** In this repository: `CLAUDE.md` at `c3839a9`, which gave the ROUND
+TYPE rule its repo-side home and made Step 3 of the refresh procedure state its own
+precondition; and the open backlog half at `0709360`, BUG-001's arm 1 naming the October run,
+BL-195 filed, BL-194's class note gaining its scope axis. The two new documents are the two
+claude-ui drafts landed at `bec45d0`: the payslip-release milestone doc and the backlog-scale
+analysis. `docs/milestones/` remains out **as a kind** — `m-payslip-release.md` earns its row
+as a document the arbiter chose to export, not as a reversal of that ruling, and no other file
+under that directory gains one. In the harness: nothing moved. Its HEAD is `ca11d35`, unmoved
+since the previous boundary, and every one of its rows sits at a hash already recorded. Two were
+re-verified here by field — `CLAUDE.md` at `a49d05a`, `docs/aetheris/runbook.md` at `ca11d35` —
+and the other eleven were left on the arbiter's statement that the harness was read at
+`ca11d35`, which is recorded as what was checked and what was not.
+
+**THE UPLOAD HALF RAN FIRST, FROM THE CLAUDE-UI SESSION, and this record is written after
+it.** Thirty-two content documents were written to the project against agents `0709360` and
+harness `ca11d35`: every row of the previous table except the manifest's own, plus the two new
+documents. The manifest is deliberately last — regenerated here, committed, then uploaded — so
+the manifest in the store is the one describing this export. That inverts the order of every
+boundary above, where the bundle was assembled from the committed manifest and then uploaded,
+and it is why the re-pin below is by hand.
+
+> **Two of the thirty-two did not land under their bare names, and the export-name column
+> says where they are.** The Projects tool namespaces a NEW bare filename under `claude/` — the
+> same property the 2026-08-18 block above records as the reason claude-ui could not write the
+> manifest set back after removing it. `m-payslip-release.md` and `backlog-scale-2026-09.md`
+> are new, so they are at `claude/m-payslip-release.md` and `claude/backlog-scale-2026-09.md`.
+> **Accepted, not worked around**: the export-name column records what is actually in the
+> store, which is the only thing it is for. Two consequences, stated rather than left to be
+> derived. First, the header now states the `claude/` exclusion *as* an exclusion — six
+> documents predating this export sit under `claude/` with no repo copy, plus these two, which
+> ARE manifest-tracked despite their prefix; the figure is the claude-ui session's reading of the
+> store and is not re-derivable here. Second, the post-upload checks in
+> `prompts/bl-002-refresh-project-knowledge.md` draw the check-1/check-3 boundary at the
+> `claude/` prefix, and that boundary now cuts through the manifest set: these two rows are
+> check-1 population by their row and check-3 population by their path. **The procedure text is
+> not edited at this boundary and no backlog row is filed** — both were excluded from the round
+> by the arbiter, and the second is a stated deviation from the rule that a deferred finding gets
+> a row in the round that defers it. It is recorded here so that it is at least findable, beside
+> BL-143's ownership question, which is where it belongs when that is next opened.
+
+> **WHAT DID NOT RUN, and why.** Step 0, the `export_mechanism` sprint arm — excluded by the
+> arbiter for this round. `repin_manifest.py` — not run; the four re-pinned cells were written
+> by hand, each verified before writing against
+> `git log -1 --format='%h %ad' --date=short -- <path>` in this repository, and each agreed with
+> the value the arbiter supplied. `assemble_export_bundle.py` — not run, the bundle having been
+> delivered by another route. **So the U2 pattern sweep did not run over this export's
+> content**: the sweep is a step of the assembler, and nothing else runs it. The two movers'
+> new content and the two new documents went to the store unswept by the instrument, which is
+> recorded as a fact about this boundary and not adjudicated. This record therefore carries none
+> of the mechanism's assertions and claims none.
+
+> **The done-check and its prediction, written before the run.** The check is
+> `python3 scripts/drift_check.py --strict`, post-commit. **Predicted WARN set: EMPTY.** The two
+> `project_knowledge` staleness WARNs the pre-edit run reported — `CLAUDE.md`
+> `67e2eb6`→`c3839a9` and `docs/backlog-2026-06.md` `8a3a1d0`→`0709360` — clear because each
+> row now pins its file's own last-touching commit, and the commit carrying this record touches
+> only this file, whose row is `_(this export)_` and skipped by check 8. That would be the first
+> zero-WARN run of the cycle. Two structural checks ride with it: the run still reports **11**
+> checks, and `backlog_resolution` is still among them — either missing means check 8's table
+> parse broke on the new rows, which is worse than a WARN. The result cannot be written here,
+> for the fixed-point reason the 2026-08-22, 2026-08-25 and 2026-08-27 blocks name: it is
+> reported in the session's close report, and a reader re-runs the command at the commit
+> carrying this record.
+
+> **Mirror-pair check, per the BL-002 convention**, run before anything was written. `diff -q`
+> over `aetheris/docs/methodology/triad-loop.md` (canonical) and
+> `aetheris-agents/docs/triad-loop.md` (mirror) → **byte-identical**: **205 lines** and sha256
+> `16432ded5f3117459c4f0b9f88271903c7b3d3eec227442fedad52982f0ab50b` on both sides, with the
+> negative control — the same `diff -q` against a one-byte-mutated copy of the mirror —
+> returning exit 1. Both figures are **unmoved** from the previous three boundaries.
+
+**Ordering.** **One agents commit, and no split is forced.** The content this boundary exports
+was committed before it — `bec45d0` and `0709360` are already on `main` — so the re-pinned
+table, the header paragraph and this record are the boundary's only tracked write and they
+commit **alone**, which is the BL-034 invariant in its simplest form. Commits touching only this
+file stale nothing. Nothing was written in the harness repository.
+
+No **Repo push state** paragraph, per the standing note below.
+
+Previous export: **2026-08-27** (five rows advanced; 31 rows; the first run under the repaired
+Step 3, and the closed half's capacity figure measured, recorded in that block).
 
 ---
 

@@ -85,7 +85,19 @@ the orchestrator's `Task.yield(300_000)` (**BL-193**). The rebuild was a direct
 `drive_upload.py` invocation — no run row exists for it, `runs` ends that day at
 `email-orch-dWIgxw` — so there was **no step and no cap**. It produced a wall-clock
 number smaller than 300 s; it did not demonstrate the fixed code fits *through the
-orchestrator*, which is what arm 1 asks. September's orchestrated run closes it.]`
+orchestrator*, which is what arm 1 asks. The next orchestrated upload closes it —
+**October's run, for `PAYSLIP_MONTH=2026-09`**.]`
+
+`[Corrected 2026-09-07, same day as written. This block ended *"September's
+orchestrated run closes it"*, and two later sentences in this row said *"the
+September run"* and *"the September verification"*. All three were written with
+September still the month being lived in, and all three named the wrong run: the
+run that discharges arm 1 uploads **September's payslips**, and that run happens
+in **October**, with `PAYSLIP_MONTH=2026-09`. A month name is ambiguous between the
+payroll period and the calendar month the run executes in, which is the same shape
+as the two-clocks pairing this row already records — two plausible readings, one
+right, nothing in the word forcing the choice. All three sites now name the run by
+its `PAYSLIP_MONTH` value, which is not ambiguous. The Done-when is untouched.]`
 
 `[The budget arm 1 is measured against, and WHICH FIGURE PAIRS WITH IT — recorded
 because two plausible numbers exist for the rebuild and only one pairing is right.
@@ -114,8 +126,8 @@ trusted; the archive contents move.
 
 **The caveat both rounds stated, and it is load-bearing here.** *The count is
 measured; the claim that the count caused the timeout is hypothesis.* This row is
-where that distinction has to survive, because the person watching the September
-run will otherwise expect to see a timeout stop happening.
+where that distinction has to survive, because the person watching the October
+run (`PAYSLIP_MONTH=2026-09`) will otherwise expect to see a timeout stop happening.
 
 `[2026-09-07, from BL-193's Drive read — recorded here because it bears on this
 row's evidence, and it changes NEITHER this row's status NOR its Done-when.
@@ -129,8 +141,8 @@ The widened read over every employee folder under `2026-08/` shows the upload
 writing steadily at ~3 s per object for 293 s and stopping at `02:47:52.739Z`,
 0.270 s after the orchestrator's cap at `02:47:52.469Z`, with 17 of 108 objects
 never written — so the volume did run the step into a wall, and it was the
-orchestrator's wall. **The September verification is NOT closed by this and its
-Done-when is untouched:** that gate is about the *fixed code* uploading one month,
+orchestrator's wall. **The October verification (`PAYSLIP_MONTH=2026-09`) is NOT
+closed by this and its Done-when is untouched:** that gate is about the *fixed code* uploading one month,
 and this is evidence about the *unfixed* run. Source: Files API `files().list`
 under `drive.readonly`; the settling read and its pre-registered prediction are in
 **BL-193**.]`
@@ -8448,6 +8460,23 @@ cross-references is a different and much larger problem — but the blindness is
 recorded so the next person to trust a green `backlog_resolution` knows what it
 bought them.
 
+`[Extended 2026-09-07, at the round that landed `docs/milestones/m-payslip-release.md`
+and `docs/backlog-scale-2026-09.md` (`bec45d0`). **The check's scope is narrower
+than prose, so a dangling id in a document fails no gate at all.** `backlog_resolution`
+scans the two backlog files plus every `*.py` and `*.sh` in both repos
+(`scripts/drift_check.py`, `BACKLOG_SCOPE_GLOBS`) — by its own comment, *"NOT all
+committed prose"*. That round's prompt expected the two new `.md` files to enter the
+scoped set and the count to move 234 → 236; the post-commit `--strict` run at
+`bec45d0` reported **234 scoped files, unchanged**, and the ten `BL-nnn` ids the two
+documents carry were resolved by hand against the union, not by the gate. So the
+green is blind on two axes: **currency-not-content**, above, for a reference it
+reads; and **scope**, for the prose references it never reads. A milestone doc, a
+review packet or an implementation note can cite a row that does not exist and every
+gate stays green. The scoping is deliberate — the check's own comment gives the
+reason, a July packet naming a row folded before it was filed is a true historical
+statement — so this is recorded as a boundary of what the green buys, not as a
+defect, and widening it is not proposed here.]`
+
 ---
 
 **Scope, measured across every employee folder rather than extrapolated from one.**
@@ -8530,3 +8559,89 @@ citations being repointed away from it.
 findings 15 and 16). BL-191's content was read at `c9e34a3` by this session rather
 than taken from the review, per the contract this row is filed under — the
 misattribution it corrects was itself an unopened citation repeated twice.`
+
+---
+
+### BL-195 — two email orchestrators with one label: `email_orchestrator.exs` is what Rig, the sprint and the spec wire; `email_orchestrator2.exs` is what the guide's pattern and the live run use; nothing says which is current (#TBD)
+**Status:** OPEN
+**Kind:** debt · **Census items:** two agent files, five naming sites · **Contract:** `docs/agent-creation-guide.md` §Runtime parameters in orchestrators — the eval-time `raise` (`:137`); `CLAUDE.md` §Python script conventions — *a required-but-absent credential must `raise` immediately*
+**Size:** S · **Priority:** high — **blocking `docs/milestones/m-payslip-release.md`**, its §5 dependency 1
+**Section:** aetheris-agents (`email/agents/`)
+
+Filed 2026-09-07. `docs/milestones/m-payslip-release.md` §5 dependency 1 recorded
+the duplicate as *"**Blocking. Has no backlog row** as of 2026-09-07 — flagged in
+the session's technical brief and never filed"*. That day filed six rows and this
+was the one it should have produced and did not; this is the row. It answers the
+milestone's §7 question 1 — *a row, or folded into t1?* — with **a row**, so the
+obligation stays visible if the milestone slips, and t1 closes it.
+
+**The two files, read at `bec45d0`.** Both 35 lines, both `%Aetheris.RunConfig{}`,
+both `label: "Email Orchestrator"`, both `run_id: "email-orch-#{…}"`, both
+`tools: ["run_command"]`, both running `email_download_template.py` then
+`email_send.py`. They differ in the one thing the guide is about, and neither is a
+superset of the other:
+- **`email_orchestrator.exs`** (orch1; last touched `cae9eca`) reads nothing from the
+  environment at eval time. Its step 2 says *"The script reads PAYSLIP_MONTH and
+  PAYSLIP_EMPLOYEE_ID from the environment automatically"* (`:30`), so an absent
+  month is discovered by the script, inside the run, after step 1 has already spent
+  a template download. It **does** carry the `timeout_ms` hints `cae9eca` added —
+  120 000 ms for the download, 300 000 ms for the send (`:23`, `:29`).
+- **`email_orchestrator2.exs`** (orch2; added `d1c43e9`, last touched `bda1fef`) has
+  `month = System.get_env("PAYSLIP_MONTH") || raise "PAYSLIP_MONTH not set"` (`:2`)
+  and passes `--month` explicitly (`:17`). That line is byte-identical to the one
+  `docs/agent-creation-guide.md:137` teaches. It carries **no** `timeout_ms` hints.
+
+**Who names which.**
+
+| site | names |
+|---|---|
+| `rig/src/components/modules/orchestrator/OrchestratorView.tsx:18` (`STEP_CONFIG_HINTS`) | orch1 |
+| `../aetheris/scripts/sprint.sh:1150` (the email arm, at harness `ca11d35`) | orch1 |
+| `docs/rig/milestones/orchestrator/orchestrator-agent-spec.md:117` (the planner's example plan) | orch1 |
+| `docs/capability-matrix.md:52-53` | **both**, adjacent rows, the same label |
+| the live August send, run `email-orch-dWIgxw` (**BL-191**'s evidence block) | orch2, from the CLI |
+
+So the tooling wires the file without the pattern, the operator ran the file with
+it, and the matrix — read whole into the planner's system prompt — offers the
+planner two agents it cannot tell apart by label.
+
+**Why the identical label is a defect and not a cosmetic.** Label and run-id prefix
+are byte-identical across the two files, so neither field of a run row says which
+file produced it: `email-orch-dWIgxw` is attributed to orch2 by the session that
+launched it, not by anything the run recorded. And m-payslip-release §3 proposes a
+third file, `email_release_orchestrator.exs`; adding it on top of an unresolved
+pair is how the pair becomes permanent, which is the milestone's own reason for
+calling this blocking.
+
+**The likely shape, stated so t1 does not re-derive it.** Keep the *name* the three
+wiring sites already use, `email_orchestrator.exs`, and give it orch2's *content*
+plus orch1's `timeout_ms` hints — one file changes and three wiring sites do not.
+Whether that is the right merge is t1's to decide; what this row fixes is that
+exactly one file survives and every site below names it.
+
+**Done when:** exactly one email orchestrator file exists under `email/agents/`; it
+carries the eval-time `raise` for `PAYSLIP_MONTH` and the `timeout_ms` hints; every
+site in the table names it — `OrchestratorView.tsx`, `sprint.sh`, the orchestrator
+spec — and the capability matrix's Email section is **regenerated**, not hand-edited,
+per `CLAUDE.md` §Learning — m6-cloudcost (*a generated artefact with consumers is a
+wiring place in its own right*), so it lists one email agent. An agent-eval of the
+survivor (`mix run --eval 'Code.eval_file(…)'`) raises without `PAYSLIP_MONTH` and
+evaluates with it.
+
+**Not done-when:** deleting either file without repointing every site above;
+adding `email_release_orchestrator.exs` beside the pair.
+
+**Collides with:** **m-payslip-release t1** — this row *is* that ticket's substance,
+and closes when t1 lands. **BL-191** — the run that evidences orch2 is BL-191's run,
+and its step-0 failure (`DRIVE_TEMPLATES_FOLDER_ID` unset) is BL-191's, not this
+row's; the survivor inherits BL-191's dependency on that variable either way.
+**BL-192** — orch2 passes `--month` and orch1 leaves it to the environment, but the
+malformed-month crash is inside `email_send.py` and is BL-192's whichever file
+survives.
+
+`Source: filed 2026-09-07 from `docs/milestones/m-payslip-release.md` §5 at
+`bec45d0`. Every citation in this row was opened by the filing session at agents
+`bec45d0` and harness `ca11d35`, both trees clean: the two agent files whole, the
+Rig hint table, the sprint arm, the spec's example plan, the matrix rows and the
+guide's pattern. The technical brief the milestone doc mentions is claude-ui's and is
+not in either tree; the milestone doc is the citable source.`

@@ -70,6 +70,40 @@ month that has **prior months present in `payslip/output/`** both:
 1. completes inside the step timeout, and
 2. leaves the destination period folder containing **only that month's files**.
 
+`[Arm status marked 2026-09-07, round-3 review finding 13. **The gate is unchanged
+— this records which of its two arms is discharged, and is bookkeeping, not a
+relaxation.** Rewriting a gate to fit the evidence one happens to hold is the
+quiet downgrade `CLAUDE.md` §Definition of done forbids; splitting a compound gate
+that was already written as two numbered arms, and marking one, is not that. The
+wording of both arms is byte-unchanged.
+**Arm 2 — DISCHARGED.** The 2026-08 rebuild of `07:43:48Z–07:46:25Z` left the
+destination holding **36 objects, 18 employees, month `2026-08` only** (Files API,
+`drive.readonly`). Arm 2 is about **output**, so the invocation path is irrelevant
+to it and a direct call satisfies it exactly as an orchestrated one would.
+**Arm 1 — OUTSTANDING, and not dischargeable by that run.** *"The step timeout"* is
+the orchestrator's `Task.yield(300_000)` (**BL-193**). The rebuild was a direct
+`drive_upload.py` invocation — no run row exists for it, `runs` ends that day at
+`email-orch-dWIgxw` — so there was **no step and no cap**. It produced a wall-clock
+number smaller than 300 s; it did not demonstrate the fixed code fits *through the
+orchestrator*, which is what arm 1 asks. September's orchestrated run closes it.]`
+
+`[The budget arm 1 is measured against, and WHICH FIGURE PAIRS WITH IT — recorded
+because two plausible numbers exist for the rebuild and only one pairing is right.
+The cap fires at `run_start + 300 s`, and `run_start → tool_called` cost **1.716 s**
+in the August run (agent startup, LLM call, tool dispatch — **BL-193**), so the
+script's share of the budget is **≈298.3 s**, not 300.
+**Pair the SHELL figure with the budget**: the `run_command` tool call spans the
+script's startup, auth, uploads *and* exit, so the comparable quantity is the whole
+process wall time — **159.701 s (`2m39.701s`) against ≈298.3 s, 53.5% of budget**.
+**Pair the DRIVE figure with the archive**: the Drive-object span, first folder
+`createdTime` `07:43:48.782Z` → last object `createdTime` `07:46:25.124Z` =
+**156.3 s**, is the citable number for reasoning about what is *in* the archive and
+when. It sits **inside** the shell figure; the ~3.4 s difference is startup, auth
+and exit, which the tool call also pays for (**3.359 s**). **Comparing 156.3 s to
+the cap would silently omit it**, and would read 52.4% where the answer is 53.5%. Same class as the two-clocks problem **BL-193**
+documents: two plausible numbers, one correct pairing, and nothing in either
+figure forcing the choice.]`
+
 Nothing else closes it. Until then the fix is proven by unit tests and by a
 mutation-checked red run, and not by a live upload.
 
@@ -100,6 +134,44 @@ Done-when is untouched:** that gate is about the *fixed code* uploading one mont
 and this is evidence about the *unfixed* run. Source: Files API `files().list`
 under `drive.readonly`; the settling read and its pre-registered prediction are in
 **BL-193**.]`
+
+`[2026-09-07, round-3 review finding 13. **THE UNFILTERED GLOB DID NOT MERELY ADD
+WRONG FILES — IT STARVED THE WANTED ONE, and that is structural rather than
+accidental.** `collect_upload_files` sorts by `(employee_id, path.name)`, so within
+each employee the write order is by filename and **the requested month sorts last**
+(`2026-05-Payslip.csv`, `…pdf`, `2026-07-…`, then `2026-08-…`). Every employee's
+August payslip was therefore the last thing written for that employee, so **any
+truncation of this run loses the requested month first** — the one month the
+request was for. That is a property of the defect, not of where the run happened to
+stop.
+
+**What it cost, as of the widened read.** The cap-killed run left three of eighteen
+employees with **no August payslip in Drive**: `BTL_036` (1 of 6 objects written),
+and `BTL_06` and `BTL_Consult_01`, whose folders were never created at all. The
+other fifteen completed. **No employee was harmed** — `email_send.py` reads local
+`payslip/output/`, and all eighteen August emails went out; the gap was the
+archive only.
+
+**And it is CLOSED. The gap is historical, not live.** At `07:43:48Z–07:46:25Z` the
+same day, `2026-08/` was deleted and rebuilt by a direct `drive_upload.py`
+invocation: **36 objects, 18 employees, month `2026-08` only**, all three previously
+missing employees present. Verified by a later Files API read — the employee folders
+themselves carry `createdTime` in that window, so they are new objects rather than
+the old tree amended, and the visible-folder count moves `64 → 66`, which reconciles
+exactly as `64 − 17 + 19`.
+
+**Two things this does NOT do.** It does not discharge **arm 1** of the Done-when —
+see the arm-status block above; the rebuild had no step and no cap. And it is
+**distinct from BL-191's cleanup**, which is about files *present and misplaced*: a
+cleanup that strips stray months from a period folder would not have noticed three
+employees whose August payslip was never uploaded, and would have left the archive
+quietly incomplete **for exactly the people the fix was for**. That distinction is
+the reason this is recorded here rather than folded into BL-191.
+
+`Source: Files API `files().list` under `drive.readonly`, read 2026-09-07 after the
+rebuild; the absence figures are BL-193's widened read of the same folder before it.
+No run row exists for the rebuild — `runs` ends that day at `email-orch-dWIgxw` —
+which is why it is described as a direct invocation.`]`
 
 **And the run trail is more complicated than "it timed out" — read this before
 interpreting the next run.** Established 2026-09-07 by reading the dev DB:
@@ -8248,11 +8320,28 @@ uninterrupted seconds of steady work behind it. That is (ii), and it is the one
 observation (i) cannot accommodate: a process that died of its own accord does not
 stop writing at `run_start + 300 s` to the fraction of a second.
 
-The overshoot is the right size for the mechanism. `Task.yield` returning `nil`
+**The overshoot is CONSISTENT with the shutdown mechanism; it does not
+discriminate, and the earlier wording claimed it did.** `Task.yield` returning `nil`
 brutal-kills only the *awaiting task* (`orchestrator.exs:301`); the `python3` child
-dies when the BEAM node exits, which happens after the reduce halts and the script
-finishes printing — a few hundred milliseconds later. An object landing 0.270 s
-past the cap is that interval, not a discrepancy.
+dies when the BEAM node exits, after the reduce halts and the script finishes
+printing — a few hundred milliseconds later, which is the size of this interval.
+**But a second account produces the same observation**: Drive's `createdTime`
+records when Drive *completed* an object, not when the client began the request, so
+at a ~3 s per-object cadence an upload initiated up to ~3 s before the cap lands
+after it with no child outliving anything. Under that reading a 0.270 s overshoot
+and a 2.5 s overshoot are equally consistent, so **the interval's size is not a
+discriminator and no falsifiability claim attaches to a large one.** Both accounts
+have the process working when the cap fired, so **(ii)** is untouched either way —
+what narrows is the corroboration, not the settlement.
+`[Restated 2026-09-07 at the round-3 review, finding 14. It read "The overshoot is
+the right size for the mechanism … An object landing 0.270 s past the cap is that
+interval, not a discrepancy", and the packet built on it with "a large overshoot
+would have been evidence against the story; 0.270 s is evidence for it". That is a
+discrimination claim the in-flight account defeats. Corrected rather than deleted
+because the mechanism is still the likelier reading and a reader should have it —
+it is offered as consistency now, not as confirmation. **The settlement does not
+rest on this paragraph**: it rests on the sign of the subtraction above, which both
+accounts agree on.]`
 
 **The invalidator was checked and did not fire.** The row committed in advance to
 discarding the count prediction if the per-employee upload rate varied materially,

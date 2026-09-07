@@ -206,8 +206,14 @@ Confirm Editor access on `DRIVE_OUTPUT_FOLDER_ID` against existing payslip outpu
 
 ```bash
 cd ~/sandbox/elixirws/aetheris-agents
-python3 drive/scripts/drive_upload.py --source payslip/output/
+python3 drive/scripts/drive_upload.py --source payslip/output/ --month 2026-04
 ```
+
+`--month` selects which month to upload, as `YYYY-MM`. It falls back to the
+`PAYSLIP_MONTH` env var when omitted, and the script exits 1 when neither is
+set. The month is a filter as well as a destination: only
+`{month}-Payslip.pdf` and `{month}-Payslip.csv` are collected, so the other
+months in each employee's `payslip/output/` archive stay where they are.
 
 Expected output:
 ```
@@ -218,9 +224,9 @@ N uploaded, 0 failed.
 ```
 
 Requires `payslip/output/` to contain at least one employee directory with
-`*-Payslip.pdf` or `*-Payslip.csv` files. Run the payslip orchestrator first
-if output is empty. Uploads are idempotent — re-running overwrites existing
-Drive files rather than duplicating them.
+`{month}-Payslip.pdf` or `{month}-Payslip.csv` files. Run the payslip
+orchestrator first if output is empty for that month. Uploads are idempotent —
+re-running overwrites existing Drive files rather than duplicating them.
 
 Verify in Drive:
 `https://drive.google.com/drive/folders/{DRIVE_OUTPUT_FOLDER_ID}`

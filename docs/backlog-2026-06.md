@@ -35,6 +35,91 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 
 ---
 
+## Bugs
+
+> **`BUG-` is a distinct id space from `BL-`, and the split is by kind, not by
+> priority.** A `BUG-` row is a **defect with a root cause** — something that
+> behaved wrongly, was diagnosed, and whose row records the diagnosis. A `BL-` row
+> is **enhancement or hardening** — work that makes something better or safer,
+> including defects filed as opportunities rather than as diagnosed faults. Both
+> spaces are read by `scripts/backlog_status.py` and `drift_check.py`'s
+> `backlog_resolution` check via the same union; the id remains the address, and
+> nothing about the prefix changes where a row may live or when it closes.
+> `[Declared 2026-09-07 with BUG-001, the first row in this space. The convention
+> had been proposed and used in filenames — the ticket was `bug-001`, its reviews
+> are `docs/reviews/bug-001-review*.md` — with no row anchoring it, which is the
+> shape BL-162 names: a rule alive only in the artifacts that assume it.]`
+
+### BUG-001 — the Drive upload step ignored the requested month and uploaded every archived month into it (#TBD)
+**Status:** **fixed** — *not* `verified`; see Done-when
+**Kind:** defect · **Size:** S · **Priority:** high
+**Section:** aetheris-agents (`drive/scripts/drive_upload.py`)
+**Runs:** `payslip-orch-WRFoqQ` (generation, correct) · `drive-upload-s2inHA` (the failed upload of the same request)
+
+**Root cause, referenced rather than restated.** `collect_upload_files` globbed
+`*-Payslip.pdf` / `*-Payslip.csv` with no month predicate while `main()` used
+`PAYSLIP_MONTH` only to name the destination folder, so every month in
+`payslip/output/` was uploaded into the requested month's folder. The full RCA,
+the fix, the corrected tests and four rounds of review are in
+`drive/docs/bug-001-implementation-notes.md` and
+`docs/reviews/bug-001-review.md`, `-r1.md`, `-r2.md`. Read those; this row exists
+to carry the **obligation**, not the analysis.
+
+**Done-when — the `fixed` → `verified` transition.** The next live upload for a
+month that has **prior months present in `payslip/output/`** both:
+1. completes inside the step timeout, and
+2. leaves the destination period folder containing **only that month's files**.
+
+Nothing else closes it. Until then the fix is proven by unit tests and by a
+mutation-checked red run, and not by a live upload.
+
+**The prediction under test.** 108 → 36 uploads, measured at `87a4c30`: 18
+employees × 3 months present × 2 file types, reduced to one month. The commands
+are in the implementation notes so the figures can be re-derived rather than
+trusted; the archive contents move.
+
+**The caveat both rounds stated, and it is load-bearing here.** *The count is
+measured; the claim that the count caused the timeout is hypothesis.* This row is
+where that distinction has to survive, because the person watching the September
+run will otherwise expect to see a timeout stop happening.
+
+**And the run trail is more complicated than "it timed out" — read this before
+interpreting the next run.** Established 2026-09-07 by reading the dev DB:
+
+- **`drive-upload-s2inHA` did not record a timeout.** Its events end at seq 3
+  `tool_called` (`run_command`, `python3 drive/scripts/drive_upload.py`,
+  `timeout_ms: 300000`, **no `--month`** — the `PAYSLIP_MONTH` fallback path), with
+  **no `tool_result`**, followed by seq 4 `run_orphaned`
+  `{"reason":"orphaned_no_live_process","last_event_type":"tool_called"}`.
+  `runs.status` is `failed` by that sweep. So the DB shows the harness losing the
+  process, **not** a 300s timeout firing.
+- **The timeout hypothesis nevertheless has precedent, at a different limit.**
+  Two earlier upload runs *did* record one — `drive-upload--gjVYA` and
+  `drive-upload-bMsa_Q`, both 2026-06-10, both
+  `tool_result{"duration_ms":60001,"exit_code":-1,"stderr":"timed out after 60000ms"}`
+  at a **60 s** limit, and both with `runs.status` = `done` because the agent
+  reported the timeout and finished.
+
+So: the step has demonstrably timed out before, at 60 s; the failure this ticket
+was filed from was an orphan sweep at a 300 s limit; and **no 300 s timeout is
+recorded anywhere.** The causal claim rests on the upload count alone. State that
+plainly rather than letting the next reader infer a timeout event that does not
+exist.
+`Commands: sqlite3 ../aetheris/priv/aetheris.db "select seq, type, payload_json from events where run_id='drive-upload-s2inHA' order by seq;" and the same for the two June runs; run ids and statuses from the runs table. Read 2026-09-07; the dev DB moves.`
+
+**Partial Drive state, and whose it is.** The 2026-08 upload died mid-run, so
+`2026-08/<employee>/` in Drive holds an **unknown subset** of months — some
+employees' folders received other months' files before the run stopped, and
+nothing here records which. **Cleaning that up is BL-191's, not this row's.**
+Said explicitly so the two are not merged later: BUG-001 closes on a *forward*
+run behaving correctly, and it can reach `verified` with the historical mess
+still in Drive. The mess is live client data and its own task.
+
+**Not done-when:** a green `drive/tests/` run. That is the fix's evidence and it
+is already green at 38; it is not this row's transition.
+
+---
+
 ## Harness (aetheris/)
 
 ### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X") (#TBD)
@@ -7595,3 +7680,300 @@ harness-owned, and is shared with BL-154.
 before `20e60c7` added twenty prompt lines above it. The `done`/`failed` populations are from the
 dev DB at read time and will move; the command is
 `sqlite3 priv/aetheris.db "select status, count(*) from runs group by status"`.`
+
+---
+
+### BL-190 — the whole-suite gate is red: a cloudcost seat test compares a frozen fixture against a reference date that is the wall clock (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** n/a · **Contract:** `CLAUDE.md` §Definition of done — *every existing gate runs at ticket boundaries, even off-territory; a red gate gets a tracked ticket the day it's found*
+**Size:** S · **Priority:** medium
+**Section:** aetheris-agents (`cloudcost/tests/test_fetch_github.py`)
+
+Filed 2026-09-07, found by an **off-territory** run of the whole-suite gate at the bug-001
+(drive month-selection) ticket boundary. Filed rather than fixed: the ticket that found it
+touches `drive/` only, and which of the two available fixes is right is a cloudcost judgment.
+This is the gate rule working — the red surfaced only because a ticket ran the gate off its own
+territory, which is the exact invisibility the rule exists to prevent.
+
+**The gate.** `python3 -m pytest -q -m "not integration and not dormant"` from the repo root:
+
+```
+FAILED cloudcost/tests/test_fetch_github.py::test_the_normalized_inventory_is_readable_by_the_shared_rule_engine
+1 failed, 1558 passed, 3 skipped, 324 deselected, 7 xfailed in 190.37s (0:03:10)
+```
+
+Reproduced at a **clean tree at `87a4c30`** (`git stash push -u`, re-run, `git stash pop`), so it
+is not the finding ticket's doing. The assertion, `cloudcost/tests/test_fetch_github.py:926`:
+
+```
+>       assert counts["candidates"] == 0
+E       assert 1 == 0
+```
+
+**Why it is red, measured rather than inferred.** `detect_orphans.py`'s `idle_seat` rule fires at
+`DEFAULT_SEAT_INACTIVE_DAYS = 30` (`:92`). The test runs `detect_orphans.py` with no
+`--reference-date`, so `resolve_reference_date` (`:710`) falls back to the inventory's
+`generated_at` — and the inventory is generated by `run_main` **during the test**, so that value
+is the wall clock. The seat fixture's timestamps are frozen and, per its own `_comment`, REAL and
+load-bearing. Ages at filing:
+
+| `last_activity_at` (fixture) | idle days at 2026-09-07 | ≥30? |
+|---|---|---|
+| `2026-08-06T11:09:27+05:30` | 31.93 | **yes** |
+| `2026-08-13T05:25:00+05:30` | 25.17 | no |
+| `2026-08-13T11:19:41+05:30` … ×4 | ~24.9 | no |
+
+One of six seats has crossed the threshold, hence `candidates == 1`. Command:
+`python3 -c "from datetime import datetime,timezone; print((datetime.now(timezone.utc)-datetime.fromisoformat('2026-08-06T11:09:27+05:30')).days)"`.
+
+**It is a moving red, not a stable one.** It first went red on or about **2026-09-05**, when the
+`2026-08-06` seat crossed 30 days; nothing was watching, so the date is derived from the fixture
+rather than observed. The remaining five cross on or about **2026-09-12**, at which point the
+value becomes `6` rather than `1` — so a fix that re-pins the expected number to today's answer
+is wrong within a week.
+
+**This is the m6 self-closing condition firing, and its collateral.** `CLAUDE.md` §Learning —
+m6-cloudcost records the unexercised-arm disposition: *"That closes on its own the first time a
+seat on this account crosses 30 days idle. No ticket owns it and none should."* That was the
+right call about the **rule**. What went unnoticed is that a *test* asserting the rule does not
+fire was left pinned to the pre-condition, so the arm closing on its own turned the gate red. The
+test's own comment says so in as many words — *"t3 is the ticket that gives seats a rule. Until
+it lands, a legible seat yields no candidate"* — and `idle_seat` / `CONFIDENCE_IDLE_SEAT` are in
+`detect_orphans.py` now, so t3 landed. The general shape: **a condition stated as self-closing
+needs the assertions keyed to it enumerated at the time it is stated**, or it closes into a red
+gate nobody owns.
+
+**Done-when** — one of two, and the choice is the ticket's:
+1. The test pins `--reference-date` to a date fixed relative to the fixture, and asserts the
+   answer that date implies. Restores determinism, and the test then means what its docstring
+   says (*"the same file always yields the same answer"*, `detect_orphans.py:713`).
+2. The test asserts the post-t3 truth — that a legible seat now yields a candidate — with a
+   reference date still pinned, since without pinning the count moves with the calendar either way.
+
+Either way: **pin the reference date**. Not done-when: relaxing the assertion, widening it to a
+range, or marking the test `integration`/`dormant` — `CLAUDE.md` forbids marking a red test, and
+neither marker's criterion reaches this one (it needs nothing outside a fresh clone).
+
+**Sweep owed with the fix.** This row cites one test because one test failed. Any other assertion
+keyed to a frozen cloudcost fixture against a wall-clock-derived reference date is the same bug
+not yet fired, and the population is not enumerated here — enumerate it in the fixing ticket
+rather than trusting that the gate would have caught the rest, since it catches each only on the
+day its own threshold passes.
+
+---
+
+### BL-191 — `drive/runbook.md` documents two folder-ID env vars nothing has read since `72367ac`, and the sprint's drive arm gates on both (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** see below — deliberately not totalled here · **Contract:** `CLAUDE.md` §Learning — m6-cloudcost, *a wiring list's clause can be right while its enumeration is short*; and §Learning — BL-007, *a deferred finding gets a backlog row in the same round it's deferred*
+**Size:** M · **Priority:** medium
+**Section:** aetheris-agents (`drive/runbook.md` and the docs beside it) **and harness** (`../aetheris/scripts/sprint.sh`)
+
+Filed 2026-09-07 at the bug-001 review (`docs/reviews/bug-001-review.md` finding 1),
+which raised it as two documentation defects in `drive/runbook.md`. **The census run
+to write this row found the population wider than that and reaching executable
+code**, so the row is filed at the width the evidence supports rather than the
+width it was raised at. The bug-001 round **edited the affected section without
+fixing either half**, which is what obliges this row rather than a note.
+
+**(a) The env-var divergence — a sweep, not a one-line edit.** `72367ac`
+(2026-06-06, *"feat(drive/p8-002): replace dual folder IDs with single
+DRIVE_ROOT_FOLDER_ID"*) renamed the variable in the scripts and left every
+document and one script behind. What the code actually reads today:
+
+```
+$ grep -rn "environ.get" drive/scripts/*.py
+drive/scripts/drive_upload.py:137:    root_id = os.environ.get("DRIVE_ROOT_FOLDER_ID")
+drive/scripts/drive_download.py:99:    root_id = os.environ.get("DRIVE_ROOT_FOLDER_ID")
+```
+
+`DRIVE_ROOT_FOLDER_ID` appears in `drive/runbook.md` **zero** times. The two
+names it does use — `DRIVE_OUTPUT_FOLDER_ID` and `DRIVE_PAYROLL_FOLDER_ID` — are
+read by nothing. The occurrence counts per file are reproducible rather than
+transcribed here, because the population moves as documents are edited:
+
+```
+$ grep -rc "DRIVE_OUTPUT_FOLDER_ID" --include=*.md --include=*.sh . ../aetheris | grep -v ':0$'
+$ grep -rc "DRIVE_PAYROLL_FOLDER_ID" --include=*.md --include=*.sh . ../aetheris | grep -v ':0$'
+```
+
+At filing they span `drive/runbook.md`, `drive/README.md`, `drive/milestone.md`,
+`email/runbook.md`, `email/README.md`, `email/milestone.md`,
+`docs/agent-creation-guide.md`, `docs/rig/milestones/p8/p8-002-drive-folder-convention.md`
+and `../aetheris/scripts/sprint.sh`. The `p8-002` file is the **dated ticket that
+performed the rename** and is a record — it is not swept, per the standing
+treatment of records.
+
+**(a′) The part that is not documentation, and the reason this is not S-sized.**
+`../aetheris/scripts/sprint.sh:1061` gates the **drive arm** on the two dead
+variables and `exit 1`s the run when either is unset:
+
+```
+  for var in GOOGLE_SERVICE_ACCOUNT DRIVE_PAYROLL_FOLDER_ID DRIVE_OUTPUT_FOLDER_ID; do
+    if [[ -z "${!var:-}" ]]; then
+      fail "$var is not set — see ${DRIVE_DIR}/runbook.md"
+      exit 1
+```
+
+So an operator who sets what the **scripts** read gets a hard `exit 1` on the
+drive arm — and `TARGET == "all"` includes it, so the whole sprint dies. An
+operator who sets what the **sprint** demands passes that gate and then hits
+`drive_upload.py`'s own `DRIVE_ROOT_FOLDER_ID environment variable is not set.`
+Neither operator can satisfy both from the runbook, because the runbook only
+documents the dead pair. Note where the failure message points: **at the runbook**,
+the one document that would confirm the wrong variable. The rot is a closed loop —
+the executable gate demands the ghost, the runbook documents the ghost, and only
+the scripts know the real name. `sprint.sh:1137` passes `DRIVE_OUTPUT_FOLDER_ID`
+to `email_download_template.py`, which reads `DRIVE_TEMPLATES_FOLDER_ID` and
+ignores it: a third dead site.
+
+**Not verified here: whether the drive sprint arm has run since `72367ac`.** It
+cannot have passed its own prerequisite loop and then succeeded, so either it has
+not been run, or it was run with the ghosts exported and failed inside the Python.
+The fixing ticket should establish which — it decides whether this is latent rot
+or a known-broken arm nobody filed.
+
+**`[Evidence added 2026-09-07, at the bug-001 round-2 review. THE ROT IS NO LONGER
+LATENT — it fired in production the same morning this row was written.]`** The
+third dead site named above, `sprint.sh:1137` passing `DRIVE_OUTPUT_FOLDER_ID` to
+a script that reads `DRIVE_TEMPLATES_FOLDER_ID`, was observed live rather than by
+census. Running `email/agents/email_orchestrator2.exs` from the CLI failed at
+**step 0** with:
+
+```
+DRIVE_TEMPLATES_FOLDER_ID environment variable is not set
+```
+
+Run id **`email-orch-dWIgxw`**. It blocked the **August payslip send**, which
+completed only because `email_send.py` was then invoked directly, bypassing the
+orchestrator.
+
+`[Precision added 2026-09-07 from the dev DB, after the block was first written:
+the STEP failed and the RUN is recorded `done`. Seq 4 is
+`tool_result{"output":"{\"exit_code\":1,\"stderr\":\"DRIVE_TEMPLATES_FOLDER_ID
+environment variable is not set.\\n\"}"}`, seq 5 `step_complete{"step":0}`, seq 9
+`run_complete{"reason":"agent_finished"}`, and `runs.status` = `done`. So an
+operator reading run status alone sees a **successful** run of an orchestrator
+whose first step failed — which is **BL-189**'s class exactly (a degraded run
+collapsed to a boolean on the operator surface), observed here rather than
+reasoned about. It does not change this row; it is recorded because BL-189 is open
+and this is a second instance for it.]` `DRIVE_TEMPLATES_FOLDER_ID` appears in **no runbook** — so the
+operator had no document that would have told them what to export, which is the
+same failure as (a) with the variable missing from the docs entirely rather than
+merely misnamed in them.
+
+**What this changes and what it does not.** It does **not** settle the paragraph
+above: whether the *drive* arm has run since `72367ac` is still unverified, and
+this was the *email* orchestrator, not `sprint.sh`. What it settles is the
+**class** — that these mismatches are load-bearing rather than cosmetic, and that
+the cost is a blocked delivery rather than a confusing document. Priority stays
+medium only because the workaround (invoke the script directly) is known and was
+used; a fixing ticket should weigh that this rot has now cost one payroll run.
+`Source: reported by the reviewer at docs/reviews/bug-001-review-r1.md §Commended;
+the run id and the step-0 message are theirs. Not reproduced from this session —
+the failure is in the operator's live environment, and re-running it would mean
+re-blocking a send.`
+
+**(b) An Expected-output block the script has never produced.** `drive/runbook.md`
+§"Validate upload standalone" shows per-file lines:
+
+```
+Uploaded BTL_001/2026-04-Payslip.pdf → <file_id>
+Uploaded BTL_001/2026-04-Payslip.csv → <file_id>
+```
+
+`drive_upload.py` prints no such line. Its only stdout is the summary
+`f"{uploaded} uploaded, {len(failed)} failed."` — `:194` in the bug-001 working
+tree, uncommitted at filing, so grep for the string rather than the line — and
+per-employee failures go to stderr. An operator following the runbook sees output that does not match the
+document and cannot tell a working step from a broken one — a false negative in
+the document written to be followed under pressure. This is the more dangerous
+half despite being the smaller edit.
+
+**Done-when.**
+1. `drive/runbook.md` names `DRIVE_ROOT_FOLDER_ID` throughout, including the
+   troubleshooting entry currently keyed to a message the script cannot emit
+   (`### DRIVE_OUTPUT_FOLDER_ID not set`), and the sibling docs are swept with it.
+2. `sprint.sh`'s drive arm gates on the variable the scripts read, and its
+   `email_download_template.py` invocation passes the one that script reads.
+3. The Expected-output block matches what the script prints, verified by running
+   it rather than by reading the source.
+4. The sweep is enumerated **in the fixing ticket** at that ticket's commit — not
+   in this row, whose counts will already be stale by then.
+
+**Not done-when:** correcting the occurrence counts quoted above. Per
+§Learning — m6-cloudcost, a count in prose about a moving set is de-numeralised,
+not corrected; the commands are given so a later reader re-derives rather than
+trusts.
+
+---
+
+### BL-192 — `email_send.py` crashes on a malformed month instead of degrading: `strptime` is called for display, so its validation is incidental (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** one call site · **Contract:** `CLAUDE.md` §Python script conventions — *stage CLIs degrade, they don't crash*
+**Size:** S · **Priority:** low
+**Section:** aetheris-agents (`email/scripts/email_send.py`)
+
+Filed 2026-09-07 at the bug-001 round-2 review (`docs/reviews/bug-001-review-r1.md`
+finding 5). **Found while fixing a different script**, and recorded because nothing
+else points at this line: the bug-001 round matched `email_send.py`'s month-handling
+*intent* and deliberately declined to match its *behaviour*, and that decision is
+the only reason anyone looked.
+
+**The defect.** `email/scripts/email_send.py:220` is the file's only `strptime`:
+
+```python
+    month_display = datetime.strptime(args.month, "%Y-%m").strftime("%B %Y")
+```
+
+It is a **display expression**. The month is being formatted for the email body
+(`"%B %Y"` → *April 2026*); that it also validates the input is incidental, and
+nothing downstream depends on the validation having happened. So a malformed
+`--month` / `PAYSLIP_MONTH` produces an uncaught `ValueError`:
+
+```
+$ python3 -c "from datetime import datetime; datetime.strptime('2026-*','%Y-%m')"
+ValueError: time data '2026-*' does not match format '%Y-%m'
+```
+
+**Be precise about what is wrong, because the exit code is not it.** An uncaught
+exception exits **1**, which is the same code a clean rejection would use. The
+defect is the *shape*: stderr carries a Python traceback rather than a message an
+operator can act on, and the repo convention is explicit that a stage CLI emits a
+message and exits rather than raising. A caller reading stderr sees an interpreter
+frame from `_strptime.py`, not a statement about its own input.
+
+**Blast radius, established rather than assumed.** Line 220 runs *after*
+`load_config`, `get_employees` and the employee filter, but *before* the send loop
+— so the crash costs a config read and a CSV parse and sends nothing. There is no
+partial-delivery risk. `find_pdf` builds a literal path
+(`{output_dir}/{employee_id}/{month}-Payslip.pdf`) and tests `.exists()`, so
+unlike `drive_upload.py` this script never treats the month as a **glob**; a
+metacharacter month here cannot re-collect other months. **The severity is a bad
+error message, not data movement.** That is why this is S and low, and why it is
+filed separately rather than folded into BL-191 (different file, different
+concern, and BL-191 is already an M spanning two repos).
+
+**Why the two scripts now differ, recorded so a later reader does not "fix" the
+wrong one.** `drive/scripts/drive_upload.py` validates the resolved month with
+`datetime.strptime(payslip_month, "%Y-%m")` inside a `try`, printing
+`--month/PAYSLIP_MONTH must be YYYY-MM, got: …` and exiting 1. It was written that
+way **deliberately**, at bug-001 round 2 finding 3. The review that prompted it
+cited `email_send.py:220` as the pattern to match, and the round matched its
+*intent* while diverging from its *behaviour* on the ground that copying the
+behaviour would copy this defect. In `drive_upload.py` the stakes were higher: the
+month is passed to `entry.glob()`, so an unvalidated `2026-*` re-collected every
+month and — proven by mutation, with a live `HttpError 404` carrying
+`q=name = '2026-*'` — issued a real Drive API call for a folder literally named
+`2026-*`. The divergence is toward the convention, not away from it.
+
+So: **the two scripts differ on purpose, and `drive_upload.py` is the correct
+side.** Converging them means bringing `email_send.py` up, never bringing
+`drive_upload.py` down.
+
+**Done-when.** `email_send.py` rejects a non-`YYYY-MM` month with a message and
+`sys.exit(1)` before doing any work, and a test pins the rejection. Separating the
+validation from the display expression is the natural shape — validate at
+resolution, beside the existing `if not args.month` guard at `:206-208`, and let
+`:220` keep formatting a value already known good.
+
+**Not done-when:** changing `drive_upload.py`. See above.

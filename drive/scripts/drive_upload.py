@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+from datetime import datetime
 from itertools import groupby
 from pathlib import Path
 
@@ -18,12 +19,17 @@ FOLDER_MIME = "application/vnd.google-apps.folder"
 MIME_TYPES = {".pdf": "application/pdf", ".csv": "text/csv"}
 
 
-def collect_upload_files(source_dir):
-    """Walk source_dir and return uploadable payslip files.
+def collect_upload_files(source_dir, month):
+    """Walk source_dir and return uploadable payslip files for *month*.
 
-    For each direct subdirectory (employee), collects all files matching
-    *-Payslip.pdf and *-Payslip.csv. Skips HTML files and any non-directory
-    entries at the source root.
+    For each direct subdirectory (employee), collects the files matching
+    {month}-Payslip.pdf and {month}-Payslip.csv. Skips HTML files and any
+    non-directory entries at the source root.
+
+    *month* is an exact "YYYY-MM" string, not a pattern: payslip/output/ is a
+    per-employee archive holding every month generated to date, so a glob with
+    no month predicate uploads all of them into the requested month's folder.
+    Matches the exact-month path construction in email/scripts/email_send.py.
 
     Returns a list of (employee_id, path) tuples sorted by
     (employee_id, path.name).
@@ -33,7 +39,7 @@ def collect_upload_files(source_dir):
     for entry in source.iterdir():
         if not entry.is_dir():
             continue
-        for pattern in ("*-Payslip.pdf", "*-Payslip.csv"):
+        for pattern in (f"{month}-Payslip.pdf", f"{month}-Payslip.csv"):
             for path in entry.glob(pattern):
                 results.append((entry.name, path))
     results.sort(key=lambda t: (t[0], t[1].name))
@@ -120,6 +126,11 @@ def main():
         default="payslip/output/",
         help="Local source directory (default: payslip/output/)",
     )
+    parser.add_argument(
+        "--month",
+        default=None,
+        help="Payslip month to upload, YYYY-MM (default: PAYSLIP_MONTH env var)",
+    )
     args = parser.parse_args()
 
     from drive.scripts.drive_utils import period_folder_name
@@ -129,9 +140,25 @@ def main():
         print("DRIVE_ROOT_FOLDER_ID environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    payslip_month = os.environ.get("PAYSLIP_MONTH")
+    payslip_month = args.month
+    if payslip_month is None:
+        payslip_month = os.environ.get("PAYSLIP_MONTH")
     if not payslip_month:
-        print("PAYSLIP_MONTH environment variable is not set.", file=sys.stderr)
+        print("--month or PAYSLIP_MONTH env var is required.", file=sys.stderr)
+        sys.exit(1)
+
+    # The month is used as a glob pattern by collect_upload_files and as a Drive
+    # folder name by period_folder_name, so an unvalidated value re-opens the very
+    # defect this script was fixed for: '2026-*' would re-collect every month and
+    # upload them into a folder literally named '2026-*'. Validated the way
+    # email/scripts/email_send.py:220 does, but exiting 1 rather than raising.
+    try:
+        datetime.strptime(payslip_month, "%Y-%m")
+    except ValueError:
+        print(
+            f"--month/PAYSLIP_MONTH must be YYYY-MM, got: {payslip_month!r}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     source = Path(args.source)
@@ -139,7 +166,7 @@ def main():
         print(f"Source directory not found: {source}", file=sys.stderr)
         sys.exit(1)
 
-    files = collect_upload_files(source)
+    files = collect_upload_files(source, payslip_month)
     if not files:
         print("No uploadable files found.", file=sys.stderr)
         sys.exit(1)

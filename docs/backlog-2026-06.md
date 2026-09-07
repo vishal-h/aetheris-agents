@@ -83,6 +83,24 @@ measured; the claim that the count caused the timeout is hypothesis.* This row i
 where that distinction has to survive, because the person watching the September
 run will otherwise expect to see a timeout stop happening.
 
+`[2026-09-07, from BL-193's Drive read — recorded here because it bears on this
+row's evidence, and it changes NEITHER this row's status NOR its Done-when.
+**Corroboration of the mechanism, from outside the system that produced it.**
+`2026-08/BTL_01/` holds **6** objects, `2026-07/BTL_01/` **4**, and
+`2026-05/BTL_01/` **2** — the blast radius growing by one month per run, measured
+on Drive's `createdTime` with no reference to `payslip/output/` at all, so it is
+independent of the local `find` count that has been carrying the claim.
+**And the causal half now has direct evidence rather than remaining hypothesis.**
+The widened read over every employee folder under `2026-08/` shows the upload
+writing steadily at ~3 s per object for 293 s and stopping at `02:47:52.739Z`,
+0.270 s after the orchestrator's cap at `02:47:52.469Z`, with 17 of 108 objects
+never written — so the volume did run the step into a wall, and it was the
+orchestrator's wall. **The September verification is NOT closed by this and its
+Done-when is untouched:** that gate is about the *fixed code* uploading one month,
+and this is evidence about the *unfixed* run. Source: Files API `files().list`
+under `drive.readonly`; the settling read and its pre-registered prediction are in
+**BL-193**.]`
+
 **And the run trail is more complicated than "it timed out" — read this before
 interpreting the next run.** Established 2026-09-07 by reading the dev DB:
 
@@ -8129,25 +8147,39 @@ status or event activity%'` returns 0, but that is a check that cannot observe i
 subject and is reported as a substitution, not as evidence; the same LIKE form
 over `orphaned_no_live_process` returns 80 as a positive control).
 
-**Also worth the fixing ticket's attention:** the step's own `timeout_ms` is
-`300000` (`drive/agents/drive_upload_orchestrator.exs:23`, set at `5b52ee6`),
-**equal** to the orchestrator's wait. A script that genuinely ran the full five
-minutes would have its `tool_result` land at `tool_called + 300 s`, which is later
-than `Task.yield`'s deadline at `run_start + 300 s`, so the honest ms-denominated
-message loses that race too, and the orchestrator abandons a run that was about to
-report itself. Whether that is what happened here is **not settled and is not
-claimed** — see below.
+**Also worth the fixing ticket's attention, and no longer hypothetical:** the
+step's own `timeout_ms` is `300000` (`drive/agents/drive_upload_orchestrator.exs:23`,
+set at `5b52ee6`), **equal** to the orchestrator's wait. A script that genuinely ran
+the full five minutes has its `tool_result` land at `tool_called + 300 s` =
+`02:47:54.185Z`, which is later than `Task.yield`'s deadline at `run_start + 300 s`
+= `02:47:52.469Z`, so the honest ms-denominated message loses that race too and the
+orchestrator abandons a run that was about to report itself. **The margin is
+`1.716 s`** — the same 1.716 s the record ends after, because `tool_called` and the
+cap are the same offset from `run_start`.
+`[Was "whether that is what happened here is not settled and is not claimed". It is
+now settled that it is: the Drive read below shows the script still writing at
+`02:47:52.739Z`, so it was alive, mid-work, and 1.716 s short of the exec server's
+own timeout when the orchestrator gave up on it. Amended 2026-09-07, round-2
+review finding 12.]`
 
-**What is NOT established, said plainly.** The trajectory cannot distinguish two
-histories, and this row does not choose between them: (i) the run died **at some
-point during the tool call**, before the exec server could return a `tool_result`,
-for a reason of its own, and the orchestrator's cap then fired harmlessly at
+**What THE TRAJECTORY does not establish, and what settled it from outside.** The
+trajectory alone cannot distinguish two histories: (i) the run died **at some point
+during the tool call**, before the exec server could return a `tool_result`, for a
+reason of its own, and the orchestrator's cap then fired harmlessly at
 `run_start + 300 s`; (ii) the run was alive at that moment and the orchestrator's
 cap ended the BEAM node under it — `Aetheris.start_run/1` starts the run in the
 orchestrator's own node, so the script's exit takes the run with it, leaving
 exactly the `running`-with-no-terminal-event state the sweep later cured. Both
-produce this trajectory byte for byte. The message is wrong about the step under
-either, which is why the row is filable without settling it.
+produce this trajectory byte for byte, which is why the row was filable before
+either was chosen: the message is wrong about the step under either. **The
+trajectory's inability to choose is permanent and is not a gap anyone should try to
+close there.** What chose is an outside clock, below.
+`[Heading and closing sentence amended 2026-09-07 at the round-2 review. They read
+"What is NOT established, said plainly" and "this row does not choose between
+them", which the widened Drive read falsified — the row now chooses. The two
+histories are kept stated because the argument for (ii) is that (i) cannot
+accommodate one observation, and a reader cannot check that against a history the
+row has deleted.]`
 
 `[(i) reworded 2026-09-07 at the round-1 review, finding 10. It read "the run died
 at `02:42:54` for a reason of its own" — **dating the death from the last event**,
@@ -8187,14 +8219,55 @@ costs. Second, the objects' own timestamps are Drive's clock, not this machine's
 no skew correction has been applied and none is needed at this magnitude, but a
 fixing ticket reasoning at sub-second precision should not assume the two agree.
 
-**What this changes, and what it does not.** It **refutes (i) as previously
-worded** — the run did not die at `02:42:54`. It does **not** choose between (i)
-and (ii): the record shows the process alive at `02:43:15`, and says nothing about
-whether it was still alive at `run_start + 300 s`, which is when the cap fired and
-is the moment the two histories differ. So the row still declines to choose. What
-is no longer true is the row's previous claim that the settling evidence is
-unavailable: the outside clock exists, it has been read, and the remaining gap is
-narrower and differently shaped than "we have no record."
+**SETTLED: it is (ii). The orchestrator's cap ended the run.** `[2026-09-07,
+round-2 review finding 12. The paragraph this replaces read "It does **not** choose
+between (i) and (ii)" — true of the round-1 read, which covered `BTL_01` only.
+`BTL_01` sorts first under `collect_upload_files`' `(employee_id, path.name)`
+ordering, so its six objects are the first six of the run and could never have
+spoken to the cap. Widening the same read to every employee folder under
+`2026-08/` settles it.]`
+
+The prediction was written and pinned **before** the widened read, from `BTL_01`'s
+own mean inter-object gap (3.185 s) and the 108-object population: if the cap ended
+the run, expect **≈92 objects**, a maximum near **`02:47:5x`**, and ≈16 absent
+**concentrated in the last employee folders alphabetically**. Observed:
+
+| | predicted | observed |
+|---|---|---|
+| objects present under `2026-08/` | ≈92 | **91** |
+| last `createdTime` | ≈`02:47:5x` | **`2026-09-07T02:47:52.739Z`** |
+| objects absent | ≈16 | **17** |
+| where the absences fall | last folders alphabetically | **`BTL_036` 1-of-6, `BTL_06` and `BTL_Consult_01` absent entirely** — the last three in sort order |
+
+**The deciding fact is the sign of one subtraction.** The cap fires at
+`run_start + 300 s` = **`02:47:52.469Z`**. The last object was created at
+**`02:47:52.739Z`** — **0.270 s *after* the cap**, not before it. The process was
+not merely alive at some earlier moment; it was **still writing at the instant the
+cap fired**, and it stopped there, mid-employee, with 17 objects still owed and 293
+uninterrupted seconds of steady work behind it. That is (ii), and it is the one
+observation (i) cannot accommodate: a process that died of its own accord does not
+stop writing at `run_start + 300 s` to the fraction of a second.
+
+The overshoot is the right size for the mechanism. `Task.yield` returning `nil`
+brutal-kills only the *awaiting task* (`orchestrator.exs:301`); the `python3` child
+dies when the BEAM node exits, which happens after the reduce halts and the script
+finishes printing — a few hundred milliseconds later. An object landing 0.270 s
+past the cap is that interval, not a discrepancy.
+
+**The invalidator was checked and did not fire.** The row committed in advance to
+discarding the count prediction if the per-employee upload rate varied materially,
+since 3.185 s came from one folder. Across the sixteen folders written, per-folder
+mean gaps run **2.786 s to 3.185 s, a spread of 0.399 s**; the global gap
+distribution over all 90 intervals is mean 3.259 s, median 2.950 s, σ 0.711 s. The
+rate is stable, so the prediction stands as made rather than as re-fitted.
+
+**What is still not claimed.** Drive's clock is not this machine's, and no skew
+correction has been applied — so the 0.270 s figure itself should not be read at
+sub-second precision. **The conclusion does not need it to be:** the argument is
+that writing proceeded steadily for 293 s and stopped within a second of the cap,
+which survives several seconds of skew in either direction. What would overturn it
+is not a clock correction but a different writer, and the caveat above on that
+still stands unchanged.
 
 **Done when:** on a `Task.yield` expiry the step card no longer asserts that the
 *step* timed out — the emitted `error` names the orchestrator's own wait as its

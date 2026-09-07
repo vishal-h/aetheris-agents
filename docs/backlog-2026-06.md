@@ -7640,6 +7640,12 @@ byte-identical to a fully-successful run, and the trajectory's terminal event is
 exactly two values, `done` (863) and `failed` (183). A `partial` has nowhere to go, which is why
 this is a vocabulary question and not a display bug — and it is the same vocabulary BL-154 needs.
 
+`[Second instance, added 2026-09-07. Run **`email-orch-dWIgxw`** — `runs.status` =
+`done` over a step 0 that failed on `DRIVE_TEMPLATES_FOLDER_ID` — is this surface
+observed rather than reasoned about. Its evidence stays where it was recorded, in
+**BL-191**'s dated block `[Evidence added 2026-09-07, at the bug-001 round-2
+review]`, which already discusses that run; nothing is moved or duplicated here.]`
+
 **Surface 3 — the artifact is the only one that represents it, and it drops the cause.** Recorded
 because it changes what the fix must recover rather than invent. The rendered report's §Data notes
 carries *"Warnings (1) … no usable cost snapshot for this provider — the sections it feeds are
@@ -7977,3 +7983,185 @@ resolution, beside the existing `if not args.month` guard at `:206-208`, and let
 `:220` keep formatting a value already known good.
 
 **Not done-when:** changing `drive_upload.py`. See above.
+
+---
+
+### BL-193 — the Rig step card's "step timed out after 5 minutes" is the orchestrator describing its own wait, rendered as a statement about the step; it is emitted by this repo, not by the harness (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Census items:** one emission site · **Contract:** `../aetheris/CLAUDE.md` **Every claim has a truth-maker** — *the claim reached past what its author had access to, and nothing in the artifact marks where the reach began*
+**Size:** S · **Priority:** medium
+**Section:** aetheris-agents (`agents/orchestrator.exs`) — generic to every step of every Rig-driven pipeline
+
+Filed 2026-09-07. **The string was located, and it is in neither repo the reporting
+session searched.** It is not in `rig/` (established before this row) and it is not
+in `../aetheris/`; it is at **`agents/orchestrator.exs:302`**, in this repo, at
+`ab64cf2`. Recorded as a located-not-absent result because the search that
+preceded this row had eliminated the two plausible homes and concluded the string
+came from the harness "or something the harness passes through" — it comes from
+neither.
+
+**The emission path**, each hop opened rather than inferred (all pins at agents
+`ab64cf2`, harness `ca11d35`):
+
+| hop | site | what it does |
+|---|---|---|
+| 1 | `agents/orchestrator.exs:295-304` | `await_with_timeout` wraps `RunHelpers.await_run/2` in `Task.async` and `Task.yield(task, 300_000)`; on `nil` it brutal-kills the task and returns `{:error, "step timed out after 5 minutes"}` (`:302`) |
+| 2 | `agents/orchestrator.exs:306-313` | the `with` short-circuits to `else {:error, reason} -> {:error, inspect(reason)}` (`:312`) — so the value that travels is `inspect/1` of a binary |
+| 3 | `agents/orchestrator.exs:324-326` | prints `step_complete{"status":"failed","error":<reason>}` on stdout |
+| 4 | `rig/src/hooks/useOrchestrator.ts:36-37` | `msg.status === 'failed' && msg.error` → `stepErrors[step_id]` |
+| 5 | `rig/src/components/modules/orchestrator/OrchestratorView.tsx:117` | renders it on the step card |
+
+Rig runs this file by default: `rig/src-tauri/src/commands/orchestrate.rs:25`
+defaults `script_path` to `"agents/orchestrator.exs"`. And step **3** of the
+payslip pipeline is `drive/agents/drive_upload_orchestrator.exs`
+(`agents/orchestrator.exs:105-106`), which is the step the card named.
+
+**What the message is true of.** It is an accurate report of the *orchestrator's*
+wait: `Task.yield` did expire after 300 000 ms. It is rendered as a report about
+the *step*, and about the step it is unsupported — the trajectory records no
+timeout of any kind.
+
+---
+
+**The control, and what it establishes.** Two runs of the same agent on
+2026-06-10, both recorded as timed out after 60 000 ms, read from
+`../aetheris/priv/aetheris.db`:
+
+```
+sqlite3 priv/aetheris.db "select seq, step, type, timestamp from events where run_id='drive-upload--gjVYA' order by seq;"
+```
+
+| run | shape |
+|---|---|
+| `drive-upload--gjVYA` | `prompt_built` 11:26:07.109 → `llm_called` → `llm_responded` → `tool_called` 11:26:08.474 → **`tool_result` 11:27:08.480** → `step_complete` → step 1 → `run_complete` 11:27:10.568 |
+| `drive-upload-bMsa_Q` | `prompt_built` 05:11:56.432 → … → `tool_called` 05:12:14.935 → **`tool_result` 05:13:14.941** → `step_complete` → step 1 → `run_complete` 05:13:17.280 |
+
+Both `tool_result` payloads are byte-identical in the fields that matter:
+
+```json
+{"fs_hash":null,"output":"{\"duration_ms\":60001,\"exit_code\":-1,\"stderr\":\"timed out after 60000ms\",\"stdout\":\"\"}","tool_name":"run_command"}
+```
+
+So a **genuine timeout in this record**: (a) carries a `tool_result` event,
+arriving one timeout-length after `tool_called`; (b) states the bound in
+**milliseconds**, from `../aetheris/native/aetheris_exec_server/src/runner.rs:140`
+— `format!("timed out after {timeout_ms}ms")`, the harness's only timeout string;
+(c) is **not** a run failure — the agent reads the result, finishes its next step,
+and `runs.status` is **`done`** for both.
+
+**The discriminator this buys.** In the control shape `get_step_result`
+(`agents/orchestrator.exs:255-283`) finds that nonzero-exit `tool_result`,
+extracts `stderr`, and the card shows `timed out after 60000ms`. **A genuine step
+timeout can therefore never produce the words "5 minutes" on the card** — the
+harness denominates in ms and never renders minutes at all
+(`grep -rniE "minute" --include=*.ex --include=*.exs --include=*.rs lib native test`
+in `../aetheris` returns 3 hits: a cron field list, a `wait_for_all` schema
+description, and a test name; none is an error message). The string is diagnostic
+of hop 1 and of nothing else.
+
+**Against that control, `drive-upload-s2inHA`:**
+
+| seq | step | type | timestamp |
+|---|---|---|---|
+| 0 | 0 | `prompt_built` | 2026-09-07T02:42:52.470985Z |
+| 1 | 0 | `llm_called` | 2026-09-07T02:42:52.472326Z |
+| 2 | 0 | `llm_responded` | 2026-09-07T02:42:54.183058Z |
+| 3 | 0 | `tool_called` | 2026-09-07T02:42:54.185347Z |
+| 4 | 0 | `run_orphaned` | 2026-09-07T03:32:56.313121Z |
+
+`tool_called` payload carries `timeout_ms: 300000`; `run_orphaned` carries
+`{"last_event_type":"tool_called","reason":"orphaned_no_live_process"}`.
+`runs.status` = **`failed`**, `started_at` `02:42:52.469350Z`, `finished_at`
+`02:42:54.185347Z` — the `finished_at` is the sweep's, set from the last
+non-orphan event (`../aetheris/lib/aetheris/sweep.ex:253-255`), so it dates the
+last event and **not** the death of the process.
+
+Every discriminating feature of the control is absent: no `tool_result`, no ms
+string, no continuation, and a `failed` status written ~50 minutes later by the
+startup sweep (`../aetheris/lib/aetheris/sweep.ex:202-204`, the only emitter of
+that reason). The record ends 1.716 s into the run.
+
+---
+
+**The finding.** The card asserted a five-minute step timeout over a trajectory
+whose evidence for one is not merely absent but structurally excluded: the only
+timeout the harness can record is a `tool_result`, and this run has none. This is
+**BL-189**'s class — an operator surface disagreeing with the audit trail — with a
+different mechanism worth stating separately, because BL-189's is a *lossy
+projection* of a real record (a three-valued status collapsed to a boolean) and
+this one is a *substitution*: the surface reports a fact about the emitter as a
+fact about the emitter's subject. A fix keyed to BL-189's mechanism — parse the
+step's stdout, prefer `errors[]` — does not reach this, because at hop 1 there is
+no step output to parse; the run never produced one.
+
+**And the harness's own accurate message is unreachable through this call site.**
+`await_run` has an inactivity bound of exactly the same size — `300_000`, from
+`config/config.exs:25` and `run_helpers.ex:12` — and on expiry returns
+`"run <id> stalled: no status or event activity for 300000ms (last status: …,
+last event seq: …)"` (`run_helpers.ex:182-184`), which describes this trajectory
+correctly and names the last seq. It cannot arrive. The two clocks start
+differently: `Task.yield`'s deadline is fixed at task spawn, while
+`continue_or_timeout` **resets** `watch.since` on every activity change
+(`run_helpers.ex:144-146`), and the first poll always resets it because
+`watch.key` starts `nil` (`:70-74`). So `await_run`'s deadline is strictly later
+than `Task.yield`'s by at least one poll interval (`@poll_interval_ms 200`,
+`:11`) for *every* run, including one that emits no events at all. **This is a
+derivation from the pinned lines, not an observation** — the message travels as a
+return value on stdout and is written to no table, so the dev DB cannot witness
+it either way (`select count(*) from events where payload_json like '%stalled: no
+status or event activity%'` returns 0, but that is a check that cannot observe its
+subject and is reported as a substitution, not as evidence; the same LIKE form
+over `orphaned_no_live_process` returns 80 as a positive control).
+
+**Also worth the fixing ticket's attention:** the step's own `timeout_ms` is
+`300000` (`drive/agents/drive_upload_orchestrator.exs:23`, set at `5b52ee6`),
+**equal** to the orchestrator's wait. A script that genuinely ran the full five
+minutes would have its `tool_result` land at `tool_called + 300 s`, which is later
+than `Task.yield`'s deadline at `run_start + 300 s`, so the honest ms-denominated
+message loses that race too, and the orchestrator abandons a run that was about to
+report itself. Whether that is what happened here is **not settled and is not
+claimed** — see below.
+
+**What is NOT established, said plainly.** The trajectory cannot distinguish two
+histories, and this row does not choose between them: (i) the run died at
+`02:42:54` for a reason of its own, and the orchestrator's cap then fired
+harmlessly 300 s later; (ii) the run was alive and working, and the orchestrator's
+cap ended the BEAM node under it — `Aetheris.start_run/1` starts the run in the
+orchestrator's own node, so the script's exit takes the run with it, leaving
+exactly the `running`-with-no-terminal-event state the sweep later cured. Both
+produce this trajectory byte for byte. The message is wrong about the step under
+either, which is why the row is filable without settling it; a fixing ticket that
+wants to settle it needs a wall-clock record from outside the trajectory.
+
+**Done when:** on a `Task.yield` expiry the step card no longer asserts that the
+*step* timed out — the emitted `error` names the orchestrator's own wait as its
+subject and states the bound it actually applied; **and** the operator can reach
+the harness's `await_run` diagnosis, either by giving the orchestrator's cap
+headroom over the harness's inactivity bound so the accurate message wins, or by
+dropping the outer cap and letting `await_run` be the one clock. **Not** when only
+the wording changes: two 300 000 ms clocks racing, with the less informative one
+structurally winning, is the defect underneath the sentence.
+
+**Not done-when:** any change to `../aetheris`. Nothing in the harness is
+misbehaving here — `runner.rs`, `run_helpers.ex` and `sweep.ex` each report what
+they observed, accurately.
+
+**Collides with:** **BL-189** (same class, different mechanism — see above; a
+card-content fix should be designed for both, and BL-189's `get_step_result`
+parsing is the sibling arm of this row's hop-1 arm). **BL-154** (Rig's Cancel
+kills the direct child only — the same "the orchestrator's node owns the run"
+lifecycle fact this row's unsettled branch (ii) turns on). **BL-156** (same card,
+adjacent field).
+
+`Source: filed 2026-09-07. Trajectory evidence read from `../aetheris/priv/aetheris.db`
+at harness `ca11d35`; the three runs are `drive-upload-s2inHA`, `drive-upload--gjVYA` and
+`drive-upload-bMsa_Q`, and the commands are `sqlite3 priv/aetheris.db "select seq, step,
+type, timestamp from events where run_id='<id>' order by seq;"` and the same with
+`payload_json` in place of the projection. Every line citation was quote-verified at agents
+`ab64cf2` / harness `ca11d35`. The located-not-absent result for the string is
+`grep -rn --binary-files=without-match "step timed out after 5 minutes" <repo> --exclude-dir=.git
+--exclude-dir=_build --exclude-dir=deps --exclude-dir=node_modules`: 0 in `../aetheris`, 1 in
+this repo, with `orphaned_no_live_process` as the positive control on the same command and flags
+(2 hits in `../aetheris`). The `runs.status` populations are `done` 868 / `failed` 184 at read
+time and will move; the command is
+`sqlite3 priv/aetheris.db "select status, count(*) from runs group by status"`.`

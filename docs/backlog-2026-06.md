@@ -8645,3 +8645,132 @@ survives.
 Rig hint table, the sprint arm, the spec's example plan, the matrix rows and the
 guide's pattern. The technical brief the milestone doc mentions is claude-ui's and is
 not in either tree; the milestone doc is the citable source.`
+
+### BL-196 — the export procedure says nothing about upload ROUTES: a route that namespaces a new bare filename put two manifest-tracked documents under `claude/`, where neither post-upload check could see them (#TBD)
+**Status:** OPEN
+**Kind:** decision — the gap is a procedural defect; which of its two repairs to take is not a session's to choose · **Census items:** two documents, one boundary · **Contract:** `prompts/bl-002-refresh-project-knowledge.md` §Post-upload verification, checks 1 and 3; `CLAUDE.md` §Definition of done — *the manifest set is the scope of remove-all, and `claude/` is outside it*; **BL-143**'s ruling of 2026-08-16, which both of those restate
+**Size:** S · **Priority:** medium — owed before the next boundary that uploads by the second route, which is the only route claude-ui can drive
+**Section:** process / project knowledge (`prompts/bl-002-refresh-project-knowledge.md`,
+`docs/project-knowledge-manifest.md`)
+
+Filed 2026-09-07, after the export boundary of the same date closed at `675829d` and
+the defect was found. The manifest re-pin that repairs that boundary's two rows, the
+commit before this one, does **not** close this row: it restores the invariant for
+one boundary's set and says nothing about the next.
+
+**The mechanism.** The 2026-09-07 boundary was uploaded from the claude-ui session,
+whose Projects tool can rewrite an existing top-level document but namespaces a NEW
+bare filename under `claude/`. Two of the thirty-two documents were new —
+`m-payslip-release.md` and `backlog-scale-2026-09.md`, rows pinned at `bec45d0` —
+so they landed at `claude/m-payslip-release.md` and `claude/backlog-scale-2026-09.md`,
+and the boundary record pinned those as their export names (*"Accepted, not worked
+around: the export-name column records what is actually in the store"*,
+`docs/project-knowledge-manifest.md` §Export boundary — 2026-09-07, the block
+headed *Two of the thirty-two did not land under their bare names*, `:1648` at
+`675829d`). Both post-upload checks discriminate on the prefix. Check 1 compares
+every store path **not** under `claude/` against the export-name column, set
+equality both ways (`prompts/bl-002-refresh-project-knowledge.md:208–212`): with two
+column names filtered off the store side, it could never again reach equality, and
+the finding it would raise reads as a permanent two-name discrepancy rather than as
+a misplaced upload. Check 3 enumerates everything under `claude/` without judging
+it (`:216–224`): it would list those same two as agent-written documents and wave
+them past its no-older-timestamp condition. So the two newest documents in the
+store were invisible to both halves of the verification, and the record that
+introduced the invisibility described it as a boundary that *"cuts through the
+manifest set"* rather than as the checks going blind.
+
+**The store side has been corrected out of band**, by the claude-ui session of
+2026-09-07: both documents re-uploaded at top-level names, the `claude/` copies
+deleted, so `claude/` again holds only documents that carry no row. That is that
+session's report and is not verifiable from this repository, which cannot see the
+store. The repo side is the manifest commit before this one, which re-pins the two
+export names and adds a dated correction block to the boundary record.
+
+**The authority, and the premise it rested on.** BL-143's ruling of 2026-08-16
+(`docs/backlog-2026-06.md` §BL-143, the block *Ruled 2026-08-16 by the arbiter*,
+`:4042–4093`) is what both checks rest on: *"Check 1 … governs the MANIFEST
+NAMESPACE, which is every store path not under `claude/`. Check 3 governs `claude/`.
+A `claude/`-namespaced document is neither a check-1 finding nor a check-3
+exception: it is out of the export set BY CONSTRUCTION."* BL-163 carried that into
+the procedure text and closed; the procedure's own pointer back to the ruling is at
+`:227–229`. The ruling's premise is that *under `claude/`* and *carries no row*
+partition the store identically — that the namespace is a faithful proxy for row
+membership. It was, for every upload the ruling had seen: Step 5 hands a bundle to a
+human who uploads it in the UI (`prompts/bl-002-refresh-project-knowledge.md:160–`),
+and on that route a document lands at the name the bundle gives it, so nothing
+rowed can end up under the prefix. The ruling never said that; it did not have to,
+because no other route had carried a new document. The tool property itself was on
+record ten days before the ruling was tested by it — the manifest's 2026-08-18 block
+*"Who performed the upload, and that the first attempt failed"* (`:1039–1047` at
+`675829d`) records that claude-ui's tool *"forces a new bare filename into the
+`claude/` namespace"* — but as evidence for BL-143's ownership question and as
+BL-165's finding, never as a threat to the discriminator. What the ruling did not
+contemplate is not the tool. It is that a route exists on which the proxy and the
+thing it proxies come apart, and the 2026-09-07 boundary is the first on which that
+route carried a new document.
+
+**Why the procedure could not say the invariant was violated.** It has no vocabulary
+for routes. Step 5 assumes one and does not name it as an assumption; the
+2026-09-07 record described its own upload as an *ordering* difference — *"THE
+UPLOAD HALF RAN FIRST, FROM THE CLAUDE-UI SESSION"* — and not as a route difference;
+and the export-name column then absorbed the placement as *"where a document
+actually is"*, which is the column recording the symptom as data. Nothing told the
+boundary that a manifest-tracked document under `claude/` is a violated invariant
+rather than an accepted fact, so the boundary accepted it, in writing, with the
+consequence half-seen.
+
+**Two candidate fixes, NOT chosen here.**
+
+- **(a) Constrain the procedure to routes that cannot namespace.** State in
+  `bl-002` that a document reaches the store only by a route on which it lands at
+  its bare export name — Step 5's human-in-the-UI route, or any other with that
+  property — and that a boundary uploaded by another route is not a boundary until
+  its new documents have been moved to their bare names. This is what the
+  out-of-band correction restored. It leaves BL-143's ruling and both standing
+  statements untouched, and its cost is that the route claude-ui can actually drive
+  is excluded exactly for new documents, which is BL-165's finding again from the
+  other side: the actor the procedure addresses cannot perform it.
+- **(b) Change the discriminator in both checks from *is under `claude/`* to *has a
+  manifest row* — which is what the namespace was always a proxy for.** Check 1
+  then compares the store's rowed documents, wherever they sit, against the
+  export-name column; check 3 enumerates the row-less ones, wherever they sit; and
+  a rowed document under `claude/` becomes a check-1 finding instead of an
+  invisible one. This edits BL-143's ruling and the two standing statements that
+  restate it — the procedure's §Post-upload verification and `CLAUDE.md`
+  §Definition of done's *`claude/` is outside it* paragraph — so it is an arbiter
+  call, and a ratified ruling is corrected by a dated block that quotes the
+  superseded wording in the position it occupied (harness `CLAUDE.md`, the
+  artifact's-kind rule), never silently. It also changes what a store-side reader
+  needs: the export-name column read **by field**, so the reader can tell a rowed
+  name from an unrowed one under the same prefix.
+
+**Done when:** the procedure states which upload routes are permitted, or the
+discriminator in both checks no longer depends on the namespace.
+
+**Not done-when:** re-pinning export names to wherever a route happened to put a
+document — that is what the 2026-09-07 boundary did, and it is the defect, not a
+repair; adding a check-1 exemption for manifest-tracked documents under `claude/`,
+which makes the invariant hold by definition and blinds the check the same way.
+
+**Collides with:** **BL-143** — the authority both checks cite; its own Done-when,
+owner and trigger, is unchanged and this row does not widen it, but branch (b)
+edits its ruling and the choice between the branches belongs beside that ruling as
+a dated note whichever way it goes. **BL-165** — Step 5's remove half as a hand
+enumeration; the same tool property is its evidence, and branch (a) makes BL-165's
+route the only route while branch (b) does not. **BL-163** — CLOSED; it carried the
+ruling into the procedure text and is not reopened, since the text it wrote is a
+faithful restatement of a ruling whose premise has since been falsified. **BL-162**
+— the finding of 2026-09-07 was recorded inside the boundary record with an explicit
+*"no backlog row is filed"* deviation, findable only by a reader of that record;
+this row is what that deviation deferred.
+
+`Source: filed 2026-09-07 by claude-code at agents `675829d`, harness `ca11d35`,
+both trees clean at the start of the round. The store-side facts — the two
+documents' placement under `claude/`, the re-upload at top-level names, the
+deletion of the `claude/` copies — are the claude-ui session of 2026-09-07's
+report, carried here with that holder named and not verified, because nothing in
+this repository can see the store. Every repo citation was opened at `675829d`:
+BL-143's row and ruling block, the procedure's §Post-upload verification and Step
+5, the manifest's header paragraph, its 2026-09-07 record and its 2026-08-18
+upload block. Line numbers are as of `675829d`; the manifest's are shifted by the
+correction commit that precedes this one.`

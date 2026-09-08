@@ -12,8 +12,38 @@ project-knowledge export and its manifest. You cannot upload to
 Claude.ai — your job is to assemble the bundle, write the manifest,
 and print upload instructions for the human.
 
-Step 0 — Pre-flight. Prove the two scripts this procedure runs still
-work, before anything is written:
+**What is exported, since 2026-09-08 (hybrid-context design, harness
+`docs/aetheris/research/hybrid-context-design-2026-08.md`).** Project
+knowledge is the KERNEL, not the corpus. The manifest's `surface` column
+says which: `export` and `both` rows are exported; `on-demand` rows are
+NOT — they live in git only and reach claude-ai at HEAD through their
+tree's generated `index.md`, served by the GitHub connector (the
+manifest header's connector notice). **The both-surface conflict rule:**
+a `both` row is exported AND fetchable, and on any conflict the copy
+fetched at HEAD wins — the export is a convenience cache, refreshed here
+and never authoritative. Every step below that says "row" means a KERNEL
+row unless it says otherwise; `scripts/_manifest.py`'s `export_rows()` is
+the one place the rule is applied and the assembler uses it.
+
+Step 0 — Pre-flight, two halves, both before anything is written.
+
+**0a — Index generation first.** Every indexed tree's `index.md` is a
+kernel row and the retrieval map of everything on the on-demand surface,
+so a stale index exported here is a stale map in the store until the
+next boundary. For each manifest row whose path is an `index.md`:
+
+    python3 scripts/gen_index.py ../aetheris/docs/aetheris/research --check
+    python3 scripts/drift_check.py --check index_integrity
+
+Both must be green. If `--check` exits 1, regenerate (drop `--check`) and
+commit the index as a research-only commit BEFORE this boundary, then
+re-run both; if it REFUSES, a document in the tree lacks the frontmatter
+the index needs — fix the document (its own research-only commit), never
+the generator. The trees are the manifest's `index.md` rows; do not keep
+a list here.
+
+**0b — The mechanism.** Prove the two scripts this procedure runs still
+work:
 
     (cd ../aetheris && ./scripts/sprint.sh export_mechanism)
 
@@ -46,11 +76,13 @@ rather than merely existing, and it is why BL-161's branch 1 has an
 executor rather than a promise: the next boundary record carries the
 naming by construction, without anyone remembering to write it.
 
-Step 1 — The file set is the manifest's table, and only the manifest's
-table. `docs/project-knowledge-manifest.md` is the sole authority for
-which documents are exported, from which repo, and under what export
-name — some of those names are editorial and no path rule regenerates
-them. This prompt used to carry a second copy of that list and it went
+Step 1 — The file set is the manifest table's KERNEL rows — surface
+`export` or `both` — and only those. `docs/project-knowledge-manifest.md`
+is the sole authority for which documents are exported, from which repo,
+under what export name, and on which surface — some of those names are
+editorial and no path rule regenerates them. An `on-demand` row is in the
+table because the manifest is the top-level map; it is not in the export
+set, and the bundle being smaller than the table is the rule working. This prompt used to carry a second copy of that list and it went
 stale; the copy is gone rather than corrected, because two surfaces
 disagree at the next addition (BL-145's shape, and `CLAUDE.md`
 §Learning — m6-cloudcost on enumerations).
@@ -59,9 +91,12 @@ Existence is verified by the assembler in Step 3, per row, by reading
 each source out of committed history: a row whose path is not in HEAD
 fails the run and no bundle is written. Nothing is silently dropped.
 
-Adding or removing a document is an edit to that table, made
-deliberately and with its reason recorded in the manifest's prose — not
-a change to this prompt.
+Adding or removing a document, or moving one between surfaces, is an
+edit to that table, made deliberately and with its reason recorded in
+the manifest's prose — not a change to this prompt. A new KERNEL row
+names what it displaces or triggers a probe re-run (design §2.1); the
+kernel budget line in the manifest header is the figure it is measured
+against.
 
 Step 2 — Re-pin the manifest's commit column:
 
@@ -81,13 +116,15 @@ this procedure's discharge of BL-161's branch 1 and is not optional.
 The table's format is the contract (check 8 of drift_check.py parses it;
 deviation = FAIL on zero rows):
 
-  | export name | repo path | repo | commit | last changed |
-  |-------------|-----------|------|--------|--------------|
-  | `<export-name>` | `<repo/path>` | <repo-name> | `<short-hash>` | <YYYY-MM-DD> |
+  | export name | repo path | repo | commit | last changed | surface |
+  |-------------|-----------|------|--------|--------------|---------|
+  | `<export-name>` | `<repo/path>` | <repo-name> | `<short-hash>` | <YYYY-MM-DD> | <surface> |
 
 Formatting rules:
 - export name in backticks; repo path in backticks; repo name BARE
-  (aetheris-agents or aetheris); commit as backticked short hash.
+  (aetheris-agents or aetheris); commit as backticked short hash;
+  surface BARE, exactly one of export / on-demand / both — the shared
+  parser refuses a row without it or with anything else.
 - The manifest's own row uses _(this export)_ in the commit column
   (unbackticked, not a hash) — drift_check skips it by design.
 - Per file: commit = git log -1 --format=%h -- <path> run in the
@@ -110,11 +147,13 @@ is silent: same file count, same names, clean sweep, exit 0.
 
     python3 scripts/assemble_export_bundle.py /tmp/claude-project-export
 
-One file per manifest row, named by the table's export-name column, its
-content read from `git show HEAD:<path>` in the owning repo — never the
-working tree, so an uncommitted edit does not reach the store. The
-manifest is itself a row and lands in the bundle like any other
-document. Deterministic given the two HEADs: two runs into two
+One file per KERNEL row (surface export or both), named by the table's
+export-name column, its content read from `git show HEAD:<path>` in the
+owning repo — never the working tree, so an uncommitted edit does not
+reach the store. The manifest is itself a row and lands in the bundle
+like any other document. The run prints how many `on-demand` rows it
+left out and names them; read that line rather than counting files
+against table rows. Deterministic given the two HEADs: two runs into two
 directories are byte-identical.
 
 The run can decline to write a bundle, and it can decline to vouch for
@@ -163,9 +202,14 @@ Step 5 — Print for the human:
     unswept and the upload cannot proceed on it — say so rather than
     printing upload instructions under it.
   - upload instructions: in the Claude.ai project, REMOVE the old
-    knowledge files (stale handoff, old specs/architecture/runbook/
-    protocol/README, old CLAUDE.md), then upload everything in
-    /tmp/claude-project-export/
+    knowledge files (everything at a bare export name — the previous
+    kernel, and any document that has since moved to `on-demand`),
+    then upload everything in /tmp/claude-project-export/
+  - the connector: the on-demand surface is served by the GitHub
+    connector granted for both repos; the boundary is not the place to
+    change that, but the record should say whether the grant was
+    checked (the manifest header's connector notice says what a lapsed
+    grant looks like)
   - the refresh rule: re-run this same task at milestone end or
     before any handoff; the manifest commit hash is how a future
     session detects staleness.
@@ -206,8 +250,11 @@ handed back.
 Three checks, and the third is the one that catches an incremental upload:
 
 1. **Count and names, over the manifest namespace.** The store's document set — every store
-   path **not** under `claude/` — equals the manifest's export-name column exactly: set
-   comparison in both directions, not a count. A name in one and not the other is the finding.
+   path **not** under `claude/` — equals the export-name column of the manifest's KERNEL rows
+   (surface `export` or `both`) exactly: set comparison in both directions, not a count. An
+   `on-demand` row has no store copy by design and is neither expected nor a finding here —
+   the design retires the store-set≡manifest check for that surface (§1.1); its integrity is
+   `drift_check`'s `index_integrity` arm, run at Step 0a. A name in one and not the other is the finding.
    A `claude/`-namespaced document carries no row and is out of the export set **by
    construction**: it is not a check-1 finding, and check 3 is where it is accounted for.
 2. **Content, on the movers only.** For each row re-pinned this boundary, read the uploaded doc

@@ -8962,3 +8962,39 @@ file. The **m13** milestone the brief names as consumer does not exist as a row;
 row stands on its own and m13, if scoped, inherits it.
 
 `Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `moadim-hardening-catalog-2026-08.md` Cluster 2 and its Cross-references, opened in the landed batch. `scheduler.ex` was read whole at harness `bb42099`; the 0-hit term search and its control were run there.`
+
+### BL-201 — kernel budget: a `drift_check` arm that warns when the `export`+`both` rows exceed the manifest's stated cap (#TBD)
+**Status:** OPEN
+**Kind:** mechanism · **Contract:** the hybrid-context design §2.1 (harness `docs/aetheris/research/hybrid-context-design-2026-08.md`) — *"Exceeding it is a drift warning"* — and the **Kernel budget** line in `docs/project-knowledge-manifest.md`'s header, which carries the `[not yet mechanised — BL-201]` marker this row removes
+**Size:** S · **Priority:** low until the backlog split lands — the figure is dominated by one row the split removes, and an arm landed before it is red from its first run
+**Section:** aetheris-agents (`scripts/drift_check.py`, `tests/test_drift_check.py`, the manifest header)
+
+Filed 2026-09-08 by the hybrid enablement session (design §5), which recorded the budget
+line in the manifest header — cap 120 KB; measured 869 KiB at agents `799ddc9` / harness
+`a950ca9`, `backlog-2026-06.md` alone 617 KB — and did not mechanise it. Two reasons,
+both stated at the manifest's **THE SURFACE COLUMN** block: the session's scope named the
+§1.1 index-integrity arm and no other, and a warning that fires on every run from the
+day it lands is BL-009's alarm-fatigue class. Until this row closes the budget is a
+convention, which is the kind of thing the design note itself says a budget must not be
+(§1.1: *"auditable rather than tidy"*).
+
+**Done when:** a `kernel_budget` arm in `drift_check.py` sums `git show HEAD:<path> |
+wc -c` over `export_rows()` in each row's own repo, reads the cap from the manifest
+header's **Kernel budget** line, and WARNs — not strict-exempt — when the sum exceeds it,
+printing the sum, the cap and the largest rows; a red fixture test whose cap sits below
+its fixture's sum; and the header's `[not yet mechanised — BL-201]` marker removed in the
+same commit.
+
+**Not done-when:** raising the cap so the arm is green on landing; landing the arm while
+the kernel is over budget without first enumerating what it trips (`CLAUDE.md`
+§Definition of done, *before making a soft failure hard*) — if the split has not landed,
+the arm lands with the over-budget state declared as expected-red, keyed to this row,
+never silently.
+
+**Collides with:** `docs/backlog-scale-2026-09.md` (the split) — the D-B kernel table names
+`queue.md post-split` as the member, so the arm is meaningful after it; the design's
+displacement rule (§2.1), which the arm enforces only indirectly. The manifest itself is
+the second-largest kernel row (134 KB, mostly boundary records) and nothing here or in
+the split addresses that.
+
+`Source: filed 2026-09-08 by claude-code at the hybrid enablement session, agents `799ddc9`, harness `a950ca9`. The measurement is the session's, reproducible by `python3 scripts/assemble_export_bundle.py $(mktemp -d)/bundle`, which prints each kernel document's size.`

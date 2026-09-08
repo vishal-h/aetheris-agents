@@ -17,6 +17,16 @@ table with a regex of its own (`scripts/drift_check.py:580-584`) that requires s
 spaces around the pipes and backticks on the first two cells. `ROW_RE` below is that
 regex widened to capture all five cells — anything check 8 parses, this parses.
 
+**The `surface` column (hybrid-context design, 2026-09-08).** Every row carries one of
+`export`, `on-demand`, `both`. `export` rows are the kernel — uploaded to the project
+store at each BL-002 boundary. `on-demand` rows live in git only and are reached at HEAD
+through a generated `index.md` (claude-ai via the GitHub connector, cc via the sibling
+checkout); they keep a row because the manifest is the top-level map, but the assembler
+does not bundle them. `both` rows are exported AND fetchable, and on any conflict the
+copy fetched at HEAD wins — the export is a convenience cache. The kernel is the set of
+rows whose surface is in `KERNEL_SURFACES`; `export_rows()` is the one place that set is
+applied, so the assembler and anything else that needs "what gets uploaded" agree.
+
 **One deliberate divergence from check 8.** The self-referential row carries
 `_(this export)_` in its commit column instead of a hash; check 8's regex does not match
 it, by design, so the manifest cannot restale itself. This parser *does* return it, with
@@ -43,14 +53,19 @@ REPO_DIRS = {
 # The literal the self-referential row carries in its commit column.
 SELF_COMMIT = "_(this export)_"
 
-HEADER = "| export name | repo path | repo | commit | last changed |"
+HEADER = "| export name | repo path | repo | commit | last changed | surface |"
 
-# `| `name` | `repo/path` | repo | `abc1234` | YYYY-MM-DD |`, and the self row's
+SURFACES = ("export", "on-demand", "both")
+KERNEL_SURFACES = frozenset({"export", "both"})
+
+# `| `name` | `repo/path` | repo | `abc1234` | YYYY-MM-DD | surface |`, and the self row's
 # unbackticked `_(this export)_` in the commit position.
 ROW_RE = re.compile(
     r"^\| `([^`]+)` \| `([^`]+)` \| (\S+) \| (?:`([0-9a-f]{5,})`|"
     + re.escape(SELF_COMMIT)
-    + r") \| (\S+) \|$"
+    + r") \| (\S+) \| ("
+    + "|".join(re.escape(x) for x in SURFACES)
+    + r") \|$"
 )
 
 
@@ -60,6 +75,7 @@ class Row(NamedTuple):
     repo: str
     commit: str | None  # None for the self-referential row
     last_changed: str
+    surface: str  # one of SURFACES
     line_no: int  # 1-based, for the rewriter and for error messages
 
 
@@ -90,10 +106,10 @@ def parse_rows(text: str) -> list[Row]:
         m = ROW_RE.match(line)
         if not m:
             raise ManifestError(f"line {offset}: unparseable export-table row: {line!r}")
-        name, path, repo, commit, last_changed = m.groups()
+        name, path, repo, commit, last_changed, surface = m.groups()
         if repo not in REPO_DIRS:
             raise ManifestError(f"line {offset}: unknown repo {repo!r} for {path}")
-        rows.append(Row(name, path, repo, commit, last_changed, offset))
+        rows.append(Row(name, path, repo, commit, last_changed, surface, offset))
 
     if not rows:
         raise ManifestError("zero data rows parsed from the export table")
@@ -102,6 +118,15 @@ def parse_rows(text: str) -> list[Row]:
 
 def read_rows(manifest: Path = MANIFEST_MD) -> list[Row]:
     return parse_rows(manifest.read_text(encoding="utf-8"))
+
+
+def export_rows(rows: list[Row]) -> list[Row]:
+    """The kernel: rows whose surface is `export` or `both`, in file order.
+
+    `on-demand` rows are the manifest's map of what lives in git only; they are never
+    bundled and never uploaded. This is the one place that rule is applied.
+    """
+    return [row for row in rows if row.surface in KERNEL_SURFACES]
 
 
 def repo_dir(row: Row, repo_dirs: dict[str, Path] | None = None) -> Path:

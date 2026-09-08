@@ -107,12 +107,12 @@ def _manifest_text(rows) -> str:
         "Header prose that names `deadbee` for no reason.",
         "",
         HEADER,
-        "|-------------|-----------|------|--------|--------------|",
+        "|-------------|-----------|------|--------|--------------|---------|",
     ]
     for name, path, repo, commit in rows:
         cell = SELF_COMMIT if commit is None else f"`{commit.hash}`"
         date = SELF_ROW_DATE if commit is None else commit.date
-        lines.append(f"| `{name}` | `{path}` | {repo} | {cell} | {date} |")
+        lines.append(f"| `{name}` | `{path}` | {repo} | {cell} | {date} | export |")
     lines += ["", PROSE_TABLE]
     return "\n".join(lines)
 
@@ -346,7 +346,7 @@ def test_the_date_is_derived_from_the_resolved_commit_not_from_the_path(repin_wo
         for line in manifest.read_text(encoding="utf-8").splitlines()
         if line.startswith("| `agents--CLAUDE.md`")
     ][0]
-    assert row.endswith("| 2015-03-04 |"), row
+    assert row.endswith("| 2015-03-04 | export |"), row
 
 
 def test_the_self_referential_row_keeps_its_placeholder(repin_world):

@@ -1,7 +1,8 @@
 # Project Knowledge Manifest
 
-This file records which documents are uploaded to the Claude.ai project and at
-what commit they were exported. Its purpose is drift detection: a future session
+This file records which documents are uploaded to the Claude.ai project, at
+what commit they were exported, and — since 2026-09-08 — on which **surface** each
+document is served. Its purpose is drift detection: a future session
 can compare the `commit` column against `git log -1 --format=%h -- <path>` in
 the owning repo to determine whether the project knowledge is stale.
 
@@ -11,6 +12,36 @@ automatically and emits WARN for any stale entry. See **BL-002** in
 `prompts/bl-002-refresh-project-knowledge.md` for the exact row format.
 
 Refresh trigger: milestone end, or before any handoff session.
+
+**Surfaces (hybrid-context design, 2026-09-08).** The `surface` column says how a document
+reaches its reader. `export` — the kernel: uploaded to the project store at each BL-002
+boundary. `on-demand` — git only, never uploaded; reached at HEAD through the generated
+`index.md` of its tree, and that index is itself a kernel row. `both` — exported AND fetchable;
+on any conflict **the copy fetched at HEAD wins**, the export being a convenience cache; used
+sparingly. The kernel is the set of `export` and `both` rows: `scripts/_manifest.py`'s
+`export_rows()` is the one place that rule is applied, and `assemble_export_bundle.py` bundles
+nothing else. Kernel composition follows the design note's ratified D-B table
+(`aetheris/docs/aetheris/research/hybrid-context-design-2026-08.md` §2); the assignment made
+here and its reasons are the dated **THE SURFACE COLUMN** block after the table.
+
+**Kernel budget: 120 KB** — the design note's §2.1 figure, over the committed sizes of the
+`export` and `both` rows. Exceeding it is a drift warning `[not yet mechanised — BL-201]`.
+Measured at agents `799ddc9` / harness `a950ca9`, before the commit that added this line:
+**869 KiB, over budget by more than seven times**, and two rows carry almost all of it —
+`backlog-2026-06.md` (617 KB, the pre-split queue the D-B table names as `queue.md
+post-split`) and this manifest (134 KB, mostly boundary records). Reproduce:
+`python3 scripts/assemble_export_bundle.py $(mktemp -d)/bundle` prints every kernel document's
+size beside its name. A new kernel row names what it displaces, or triggers a probe re-run
+(design §3) to justify the growth.
+
+**Connector notice — the corpus is fetch-only.** Everything on the `on-demand` surface, and
+every document reachable through an indexed tree's `index.md`, lives in git only and is served
+to claude-ai by the **GitHub connector** on the claude.ai project, granted for BOTH
+repositories (`aetheris-agents` and `aetheris`); claude-code reads the sibling checkouts. **If a
+fetch returns nothing, check the connector grant before anything else**: a lapsed grant fails
+as *no connector*, never as *no results*, and no session should re-derive this architecture
+from that confusion. The index a fetch starts from is `aetheris--research-index.md`
+(`aetheris/docs/aetheris/research/index.md`), the only indexed tree as of 2026-09-08.
 
 **Uploads happen only as part of an export boundary — the manifest is regenerated
 and included in the same set.** The check compares this file against git, so it
@@ -39,41 +70,45 @@ and why; the procedural gap it exposed is **BL-196**.]`
 
 ---
 
-| export name | repo path | repo | commit | last changed |
-|-------------|-----------|------|--------|--------------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `99a46df` | 2026-08-04 |
-| `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 |
-| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 |
-| `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 |
-| `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 |
-| `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 |
-| `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 |
-| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `c3839a9` | 2026-08-27 |
-| `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `0709360` | 2026-09-07 |
-| `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 |
-| `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 |
-| `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
-| `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 |
-| `m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
-| `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 |
-| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 |
-| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `ca11d35` | 2026-08-26 |
-| `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `bcf3b65` | 2026-08-24 |
-| `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 |
-| `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 |
-| `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 |
-| `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 |
-| `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 |
-| `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `2050c04` | 2026-08-21 |
-| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `2050c04` | 2026-08-21 |
-| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 |
+| export name | repo path | repo | commit | last changed | surface |
+|-------------|-----------|------|--------|--------------|---------|
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `99a46df` | 2026-08-04 | on-demand |
+| `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 | on-demand |
+| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 | on-demand |
+| `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 | on-demand |
+| `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 | export |
+| `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 | on-demand |
+| `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 | on-demand |
+| `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 | on-demand |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `c3839a9` | 2026-08-27 | on-demand |
+| `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 | on-demand |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 | export |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `0709360` | 2026-09-07 | export |
+| `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 | on-demand |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 | on-demand |
+| `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 | on-demand |
+| `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
+| `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
+| `m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
+| `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
+| `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `481ae2a` | 2026-08-12 | export |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 | on-demand |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 | on-demand |
+| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 | on-demand |
+| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `ca11d35` | 2026-08-26 | on-demand |
+| `aetheris--ROADMAP.md` | `ROADMAP.md` | aetheris | `4339ba7` | 2026-07-16 | export |
+| `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `bcf3b65` | 2026-08-24 | on-demand |
+| `aetheris--research-index.md` | `docs/aetheris/research/index.md` | aetheris | `a950ca9` | 2026-09-08 | both |
+| `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `41ff2cf` | 2026-06-24 | on-demand |
+| `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `da8fb4d` | 2026-06-24 | on-demand |
+| `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `b9a1cdb` | 2026-06-24 | on-demand |
+| `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `934add8` | 2026-06-24 | on-demand |
+| `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `ff971a8` | 2026-07-20 | on-demand |
+| `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `c195cbb` | 2026-07-17 | on-demand |
+| `aetheris--bl-008-synthesis.md` | `docs/aetheris/research/bl-008-synthesis-2026-08.md` | aetheris | `49e9ebf` | 2026-09-08 | both |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `2050c04` | 2026-08-21 | export |
+| `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `2050c04` | 2026-08-21 | export |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 | export |
 
 > `methodology--triad-loop.md`: the harness copy is canonical. A byte-identical
 > mirror lives at `aetheris-agents/docs/triad-loop.md`; keep them in sync, edit
@@ -356,6 +391,52 @@ and why; the procedural gap it exposed is **BL-196**.]`
 > knowledge size as 402,078 — so no capacity conclusion is derivable from here. If the closed
 > half proves large enough to matter against the store's cap, that is a fact that reopens this
 > ruling, and it belongs in the next boundary's record.
+
+
+> **THE SURFACE COLUMN — the design note's D-B applied, 2026-09-08. Every row assigned, four
+> rows added.** The hybrid-context design (`aetheris/docs/aetheris/research/hybrid-context-design-2026-08.md`,
+> r2; D-B ratified in r1) makes project knowledge the KERNEL and everything else an on-demand
+> corpus reached at HEAD; the `surface` column is how this table says which is which. The
+> header's **Surfaces** paragraph defines the three values; this block records the assignment
+> and why, in the family of the inclusion-rule blocks above — it does not amend any of them.
+>
+> **Assignment.** `export`: the members of the D-B kernel table that carry rows — this
+> manifest (the map of maps), `rig--current-state-2026-06.md` (the current-state doc),
+> `backlog-2026-06.md` (the queue, pre-split), `capability-matrix.md`, the two methodology
+> rows, and the two `ROADMAP.md` rows added here. `both`: `aetheris--research-index.md` — the
+> retrieval map itself, which a store-side reader needs before knowing what to fetch and which
+> must also be readable at HEAD, where it is truth — and `aetheris--bl-008-synthesis.md`, the
+> design note's one named `both` candidate, *while under ratification; demote after*.
+> `on-demand`: every other row. The six research briefs and the research README keep their
+> rows and lose nothing: the manifest is the top-level map and they are reached through the
+> index at HEAD, which is the direction the D-B table sends the whole research tree first.
+>
+> **Four rows added, pinned by hand at each file's last-touching commit in its own repo.**
+> `aetheris-agents--ROADMAP.md` and `aetheris--ROADMAP.md` (the D-B table: *orientation before
+> any fetch*, both repos), `aetheris--research-index.md` (generated at harness `a950ca9` by
+> `scripts/gen_index.py`; 23 entries), `aetheris--bl-008-synthesis.md`. All four are **BORN
+> GREEN** in exactly the sense the block above states: pinned current, in no store until the
+> next export runs. The fourteen briefs filed at harness `2c1a6b6` get no rows of their own —
+> they are `on-demand` by construction, reached through the index, and a row per on-demand
+> document would re-create the enumeration the index exists to replace.
+>
+> **What this block does NOT decide, said so the after-run can decide it.** The three
+> `CLAUDE.md` rows, `use-cases.md` and `backlog-scale-2026-09.md` are `on-demand` because the
+> D-B table does not name them, not because a reader was found who does not need them. If the
+> probe after-run (design §3, against `hybrid-probe-baseline-2026-09-08.md`) regresses on a
+> question those documents answer, the surface to reassign is named here.
+>
+> **Two consequences elsewhere.** The post-upload completeness check (BL-002, check 1) now
+> compares the store against the KERNEL rows only — an `on-demand` row has no store copy by
+> design, and the design note retires the store-set≡manifest check for that surface (§1.1).
+> And this table's row count is no longer the bundle's file count: the assembler prints how
+> many rows it left out and why, so a bundle smaller than the table reads as the rule working.
+>
+> **What this does not do.** It uploads nothing. The kernel budget line in the header is
+> recorded and measured, and it is over; the arm that would warn on it is **BL-201**, filed
+> beside this edit rather than landed with it, because a warning that fires on every run from
+> the day it lands is BL-009's alarm-fatigue class and the figure is dominated by one row the
+> backlog split removes.
 
 ---
 

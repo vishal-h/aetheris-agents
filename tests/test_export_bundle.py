@@ -62,17 +62,18 @@ def _commit(repo: Path, rel: str, content: str) -> str:
     return _git(repo, "log", "-1", "--format=%h", "--", rel)
 
 
-def _manifest_text(rows: list[tuple[str, str, str, str]]) -> str:
-    """`rows` = (export name, repo path, repo, commit-cell-or-None)."""
+def _manifest_text(rows: list[tuple]) -> str:
+    """`rows` = (export name, repo path, repo, commit-cell-or-None[, surface])."""
     lines = [
         "# fixture manifest",
         "",
         HEADER,
-        "|-------------|-----------|------|--------|--------------|",
+        "|-------------|-----------|------|--------|--------------|---------|",
     ]
-    for name, path, repo, commit in rows:
+    for name, path, repo, commit, *rest in rows:
+        surface = rest[0] if rest else "export"
         cell = SELF_COMMIT if commit is None else f"`{commit}`"
-        lines.append(f"| `{name}` | `{path}` | {repo} | {cell} | 2026-08-16 |")
+        lines.append(f"| `{name}` | `{path}` | {repo} | {cell} | 2026-08-16 | {surface} |")
     lines += ["", "Some prose after the table.", ""]
     return "\n".join(lines)
 
@@ -496,10 +497,13 @@ def test_two_runs_into_two_directories_are_byte_identical(bundle_world, tmp_path
 @pytest.mark.integration
 @pytest.mark.skipif(not HARNESS_ROOT.exists(), reason="sibling harness checkout absent")
 def test_the_live_bundle_reproduces_every_manifest_row_at_head(tmp_path):
-    """The done-check's durable residue: 25 rows in, 25 documents out, all at HEAD.
+    """The done-check's durable residue: every KERNEL row in, one document out, all at HEAD.
 
     Compared against the preserved 2026-08-14 bundle in the packet; here against
-    `git show HEAD:` because a /tmp artifact cannot be a committed test's fixture.
+    `git show HEAD:` because a /tmp artifact cannot be a committed test's fixture. Since
+    the surface column (2026-09-08) the population is `export_rows()`, not every row: an
+    `on-demand` row is in the manifest as a map entry and out of the bundle by rule, and
+    that exclusion is asserted by name in the surface tests below, not here.
 
     **Swept off deliberately, and this is not the sweep being tuned.** This test's claim
     is composition — every manifest row in, one document out, bytes from HEAD — and the
@@ -509,14 +513,97 @@ def test_the_live_bundle_reproduces_every_manifest_row_at_head(tmp_path):
     make this test red for a reason it does not assert. The sweep's live verdict belongs
     to the boundary run and to whoever rules on those hits, not here.
     """
-    from _manifest import REPO_DIRS, git_show, read_rows
+    from _manifest import REPO_DIRS, export_rows, git_show, read_rows
 
     dest = tmp_path / "live"
     assert assemble_export_bundle.assemble(dest, patterns_file=None) == 0
 
-    rows = read_rows()
+    rows = export_rows(read_rows())
+    assert rows, "the live manifest carries no kernel row"
     assert sorted(_bundle_docs(dest)) == sorted(r.export_name for r in rows)
     for row in rows:
         assert (dest / row.export_name).read_bytes() == git_show(
             REPO_DIRS[row.repo], row.repo_path
         ), f"{row.export_name} is not what HEAD holds"
+
+
+# --------------------------------------------------------------------------- #
+# The surface column (hybrid-context design, 2026-09-08)                       #
+# --------------------------------------------------------------------------- #
+
+
+def test_on_demand_rows_stay_out_of_the_bundle_and_both_rows_go_in(tmp_path, capsys):
+    """`export` and `both` are the kernel; `on-demand` is the manifest's map of git-only
+    documents and must never reach a bundle. Three surfaces, one row each, asserted by
+    name — a count would agree with the wrong set as readily as the right one."""
+    agents = _init_repo(tmp_path / "agents")
+    _commit(agents, "kernel.md", "kernel\n")
+    _commit(agents, "cache.md", "both: exported and fetched, HEAD wins\n")
+    _commit(agents, "docs/research/brief.md", "git-only\n")
+    manifest_rel = "docs/project-knowledge-manifest.md"
+    body = _manifest_text(
+        [
+            ("kernel.md", "kernel.md", "aetheris-agents", "0000000", "export"),
+            ("cache.md", "cache.md", "aetheris-agents", "0000000", "both"),
+            ("brief.md", "docs/research/brief.md", "aetheris-agents", "0000000", "on-demand"),
+            ("project-knowledge-manifest.md", manifest_rel, "aetheris-agents", None, "export"),
+        ]
+    )
+    _commit(agents, manifest_rel, body)
+    repo_dirs = {"aetheris-agents": agents, "aetheris": tmp_path / "unused"}
+    dest = tmp_path / "out"
+    rc = assemble_export_bundle.assemble(
+        dest, agents / manifest_rel, repo_dirs=repo_dirs, patterns_file=None
+    )
+    assert rc == 0
+    assert sorted(_bundle_docs(dest)) == ["cache.md", "kernel.md", "project-knowledge-manifest.md"]
+    out = capsys.readouterr().out
+    assert "1 on-demand row(s) of 4 left out of the bundle" in out
+    assert "brief.md" in out
+
+
+def test_a_manifest_with_no_kernel_row_is_refused(tmp_path):
+    agents = _init_repo(tmp_path / "agents")
+    _commit(agents, "docs/research/brief.md", "git-only\n")
+    manifest_rel = "docs/project-knowledge-manifest.md"
+    body = _manifest_text(
+        [("brief.md", "docs/research/brief.md", "aetheris-agents", "0000000", "on-demand")]
+    )
+    _commit(agents, manifest_rel, body)
+    dest = tmp_path / "out"
+    rc = assemble_export_bundle.assemble(
+        dest, agents / manifest_rel, repo_dirs={"aetheris-agents": agents, "aetheris": agents},
+        patterns_file=None,
+    )
+    assert rc == 1
+    assert not dest.exists() or not list(dest.iterdir())
+
+
+@pytest.mark.parametrize("cell", ["", "exported", "On-Demand", "both both"])
+def test_a_row_with_a_missing_or_unknown_surface_is_unparseable(cell):
+    """The column is required and closed: a five-cell row or a misspelt surface is a
+    ManifestError, never a row silently read as export."""
+    from _manifest import parse_rows
+
+    row = f"| `x.md` | `x.md` | aetheris-agents | `0000000` | 2026-08-16 |"
+    row = row + (f" {cell} |" if cell else "")
+    text = "\n".join(["# m", "", HEADER, "|---|---|---|---|---|---|", row, ""])
+    with pytest.raises(ManifestError):
+        parse_rows(text)
+
+
+def test_export_rows_is_the_one_place_the_kernel_rule_lives():
+    from _manifest import KERNEL_SURFACES, SURFACES, export_rows, parse_rows
+
+    assert set(SURFACES) == {"export", "on-demand", "both"}
+    assert KERNEL_SURFACES == {"export", "both"}
+    text = _manifest_text(
+        [
+            ("a.md", "a.md", "aetheris-agents", "0000000", "export"),
+            ("b.md", "b.md", "aetheris-agents", "0000000", "on-demand"),
+            ("c.md", "c.md", "aetheris", "0000000", "both"),
+        ]
+    )
+    rows = parse_rows(text)
+    assert [r.surface for r in rows] == ["export", "on-demand", "both"]
+    assert [r.export_name for r in export_rows(rows)] == ["a.md", "c.md"]

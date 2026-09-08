@@ -6,6 +6,14 @@ Reads `docs/project-knowledge-manifest.md` as the sole authority for which docum
 exported and under what name, reads each one's content from `git show HEAD:<path>` in the
 owning repo, and writes the flat bundle into the directory given as an argument.
 
+**Only the kernel is bundled** — rows whose `surface` is `export` or `both`. An
+`on-demand` row is in the manifest because the manifest is the top-level map, and it is
+NOT in the bundle: that document lives in git only and is fetched at HEAD through its
+tree's generated `index.md`. A `both` row is exported and fetchable, and on any conflict
+the copy fetched at HEAD wins; the export is a convenience cache (hybrid-context design
+§1, 2026-09-08). The run prints how many rows it left out and why, so an export whose
+bundle is smaller than its manifest is read as the rule working, not as a short bundle.
+
 Deterministic given the two repos' HEADs: no timestamps, no working-tree reads, no
 directory ordering — same HEADs and same manifest, byte-identical bundle.
 
@@ -41,7 +49,7 @@ Usage:
                                                  [--needles FILE] [--show-matches]
 
 Exit codes:
-  0 — bundle written from every manifest row, sweep clean (or not run)
+  0 — bundle written from every kernel row (surface export|both), sweep clean (or not run)
   1 — destination refused, a source could not be read, or the U2 sweep hit
 """
 
@@ -58,6 +66,7 @@ from _manifest import (  # noqa: E402
     REPO_DIRS,
     SCRIPT_DIR,
     ManifestError,
+    export_rows,
     git_head,
     git_show,
     read_rows,
@@ -203,9 +212,22 @@ def assemble(
     repo_dirs = repo_dirs or REPO_DIRS
 
     try:
-        rows = read_rows(manifest)
+        all_rows = read_rows(manifest)
     except (ManifestError, OSError) as exc:
         print(f"[FAIL] manifest: {exc}", file=sys.stderr)
+        return 1
+
+    rows = export_rows(all_rows)
+    on_demand = [row for row in all_rows if row not in rows]
+    if on_demand:
+        print(
+            f"[INFO] surface: {len(on_demand)} on-demand row(s) of {len(all_rows)} left out of "
+            f"the bundle — git-only, reached at HEAD through an index, never uploaded: "
+            + ", ".join(row.export_name for row in on_demand)
+        )
+    if not rows:
+        print("[FAIL] manifest: no row carries surface export or both — nothing to bundle",
+              file=sys.stderr)
         return 1
 
     seen: dict[str, str] = {}

@@ -1352,3 +1352,225 @@ def test_backlog_resolution_live_repo_passes():
     drift_check.check_backlog_resolution()
     assert not fails_of("backlog_resolution"), fails_of("backlog_resolution")
     assert passes_of("backlog_resolution")
+
+
+# --------------------------------------------------------------------------- #
+# index_integrity (check 12) — every fixture is a synthetic git repo in tmp_path  #
+# --------------------------------------------------------------------------- #
+# The broken states are constructed here and watched fail here, per the harness rule
+# **Silent-wrong-answer** ("construct the broken state and watch the check fail in it").
+# Both directions of hybrid-context design §1.1 get a red fixture, and so does the §1.2
+# gap the design says this arm must catch when a refused document is committed anyway.
+
+import subprocess as _sp
+
+
+def _ii_git(repo, *args):
+    return _sp.run(["git", *args], cwd=repo, check=True, capture_output=True, text=True).stdout.strip()
+
+
+def _ii_init(path):
+    path.mkdir(parents=True)
+    _ii_git(path, "init", "-q", "-b", "main")
+    _ii_git(path, "config", "user.email", "t@example.com")
+    _ii_git(path, "config", "user.name", "t")
+    return path
+
+
+def _ii_commit(repo, rel, content):
+    f = repo / rel
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(content, encoding="utf-8")
+    _ii_git(repo, "add", rel)
+    _ii_git(repo, "commit", "-q", "-m", f"add {rel}")
+
+
+def _ii_doc(title, description="What it is for.", type_="brief"):
+    return f'---\ntype: {type_}\ntitle: "{title}"\ndescription: {description}\n---\n# {title}\n\nbody\n'
+
+
+def _ii_index(entries):
+    head = "---\ntype: index\ntitle: \"Index: research\"\ndescription: gen\n---\n# Index\n\n<!-- generated -->\n\n"
+    return head + "".join(f"- [{t}]({p}) - {d}\n" for p, t, d in entries)
+
+
+_II_MANIFEST = """\
+# fixture manifest
+
+| export name | repo path | repo | commit | last changed | surface |
+|-------------|-----------|------|--------|--------------|---------|
+| `h--index.md` | `docs/research/index.md` | aetheris | `0000000` | 2026-09-08 | both |
+"""
+
+
+def _ii_world(tmp_path, monkeypatch, files, index_entries, manifest=_II_MANIFEST):
+    """A harness repo with a research tree + committed index, and a manifest naming it."""
+    harness = _ii_init(tmp_path / "harness")
+    for rel, content in files.items():
+        _ii_commit(harness, f"docs/research/{rel}", content)
+    _ii_commit(harness, "docs/research/index.md", _ii_index(index_entries))
+    manifest_path = tmp_path / "manifest.md"
+    manifest_path.write_text(manifest, encoding="utf-8")
+    monkeypatch.setattr(drift_check, "MANIFEST_MD", manifest_path)
+    monkeypatch.setattr(
+        drift_check, "_REPO_DIR_MAP", {"aetheris": harness, "aetheris-agents": tmp_path / "unused"}
+    )
+    reset()
+    return harness
+
+
+_II_GOOD_FILES = {
+    "a.md": _ii_doc("Alpha", "About alpha."),
+    "b.md": _ii_doc("Beta", "About beta."),
+}
+_II_GOOD_ENTRIES = [("a.md", "Alpha", "About alpha."), ("b.md", "Beta", "About beta.")]
+
+
+def test_index_integrity_green_tree_passes(tmp_path, monkeypatch):
+    _ii_world(tmp_path, monkeypatch, _II_GOOD_FILES, _II_GOOD_ENTRIES)
+    drift_check.check_index_integrity()
+    assert not fails_of("index_integrity") and not warns_of("index_integrity")
+    assert passes_of("index_integrity") == [
+        "aetheris:docs/research: 2 index entries ↔ 2 files at HEAD, every file indexed and every entry current"
+    ]
+
+
+def test_index_integrity_direction_1_entry_that_does_not_resolve_is_fail(tmp_path, monkeypatch):
+    """An entry whose file is gone at HEAD."""
+    entries = _II_GOOD_ENTRIES + [("gone.md", "Gone", "Deleted brief.")]
+    _ii_world(tmp_path, monkeypatch, _II_GOOD_FILES, entries)
+    drift_check.check_index_integrity()
+    fails = fails_of("index_integrity")
+    assert fails == ["aetheris:docs/research: index entry `gone.md` does not resolve at HEAD"]
+    assert not passes_of("index_integrity")
+
+
+def test_index_integrity_direction_2_file_with_no_entry_is_fail(tmp_path, monkeypatch):
+    """The bcf3b65 / bb42099 shape: a frontmatter-bearing file committed, index not regenerated."""
+    files = dict(_II_GOOD_FILES, **{"c.md": _ii_doc("Gamma", "About gamma.")})
+    _ii_world(tmp_path, monkeypatch, files, _II_GOOD_ENTRIES)
+    drift_check.check_index_integrity()
+    fails = fails_of("index_integrity")
+    assert len(fails) == 1 and "`c.md` is at HEAD with frontmatter and has no index entry" in fails[0]
+    assert not passes_of("index_integrity")
+
+
+@pytest.mark.parametrize(
+    "content, fragment",
+    [
+        ("# No frontmatter\n\nbody\n", "has no frontmatter"),
+        ("---\ntype: brief\ntitle: \"T\"\n---\n# T\n", "lacks required frontmatter description"),
+        ("---\ntype: brief\ntitle: \"T\"\ndescription: d\nnot a key\n---\n# T\n", "unreadable frontmatter"),
+    ],
+)
+def test_index_integrity_the_1_2_gap_committed_anyway_is_fail(tmp_path, monkeypatch, content, fragment):
+    """A document the generator would have refused, committed into the tree regardless."""
+    files = dict(_II_GOOD_FILES, **{"z.md": content})
+    _ii_world(tmp_path, monkeypatch, files, _II_GOOD_ENTRIES)
+    drift_check.check_index_integrity()
+    fails = fails_of("index_integrity")
+    assert len(fails) == 1 and "`z.md`" in fails[0] and fragment in fails[0]
+
+
+def test_index_integrity_stale_description_is_warn_and_fails_under_strict(tmp_path, monkeypatch):
+    files = dict(_II_GOOD_FILES, **{"b.md": _ii_doc("Beta", "About beta, revised.")})
+    _ii_world(tmp_path, monkeypatch, files, _II_GOOD_ENTRIES)
+    drift_check.check_index_integrity()
+    warns = warns_of("index_integrity")
+    assert len(warns) == 1 and "1 entry no longer match" in warns[0] and "b.md" in warns[0]
+    assert not fails_of("index_integrity") and not passes_of("index_integrity")
+
+    reset()
+    monkeypatch.setattr(drift_check, "_strict", True)
+    drift_check.check_index_integrity()
+    assert fails_of("index_integrity"), "a stale entry is not strict-exempt"
+
+
+def test_index_integrity_uncommitted_edit_under_the_tree_is_exempt_warn(tmp_path, monkeypatch):
+    harness = _ii_world(tmp_path, monkeypatch, _II_GOOD_FILES, _II_GOOD_ENTRIES)
+    (harness / "docs/research/new.md").write_text(_ii_doc("New"), encoding="utf-8")
+    _ii_git(harness, "add", "docs/research/new.md")  # staged, not committed: still not HEAD
+    monkeypatch.setattr(drift_check, "_strict", True)
+    drift_check.check_index_integrity()
+    warns = warns_of("index_integrity")
+    assert len(warns) == 1 and "uncommitted working-tree changes" in warns[0]
+    assert not fails_of("index_integrity"), "the exempt WARN must not be promoted under --strict"
+    assert not passes_of("index_integrity"), "no PASS while the reading is vacuous"
+
+
+def test_index_integrity_no_index_row_in_manifest_is_warn(tmp_path, monkeypatch):
+    manifest = _II_MANIFEST.replace("`docs/research/index.md`", "`docs/research/a.md`")
+    _ii_world(tmp_path, monkeypatch, _II_GOOD_FILES, _II_GOOD_ENTRIES, manifest=manifest)
+    drift_check.check_index_integrity()
+    assert warns_of("index_integrity") and "no `index.md` row" in warns_of("index_integrity")[0]
+
+
+def test_index_integrity_index_named_but_not_committed_is_fail(tmp_path, monkeypatch):
+    harness = _ii_world(tmp_path, monkeypatch, _II_GOOD_FILES, _II_GOOD_ENTRIES)
+    _ii_git(harness, "rm", "-q", "docs/research/index.md")
+    _ii_git(harness, "commit", "-q", "-m", "drop index")
+    drift_check.check_index_integrity()
+    fails = fails_of("index_integrity")
+    assert len(fails) == 1 and "is not at HEAD" in fails[0]
+
+
+def test_index_entries_parse_escaped_brackets_back():
+    text = "- [Title \\[x\\]](a.md) - desc\n- not an entry\n"
+    assert drift_check._parse_index_entries(text) == {"a.md": ("Title [x]", "desc")}
+
+
+# --------------------------------------------------------------------------- #
+# project_knowledge — the surface column                                        #
+# --------------------------------------------------------------------------- #
+
+def _pk_manifest(rows):
+    head = ("# m\n\n| export name | repo path | repo | commit | last changed | surface |\n"
+            "|---|---|---|---|---|---|\n")
+    return head + "".join(
+        f"| `{n}` | `{p}` | aetheris | `{c}` | 2026-01-01 | {s} |\n" for n, p, c, s in rows
+    )
+
+
+def _pk_world(tmp_path, monkeypatch, rows):
+    harness = _ii_init(tmp_path / "harness")
+    for _n, p, _c, _s in rows:
+        _ii_commit(harness, p, f"{p}\n")
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_pk_manifest(rows), encoding="utf-8")
+    monkeypatch.setattr(drift_check, "MANIFEST_MD", manifest)
+    monkeypatch.setattr(drift_check, "_REPO_DIR_MAP", {"aetheris": harness})
+    reset()
+
+
+def test_project_knowledge_on_demand_row_with_a_stale_pin_is_not_warned(tmp_path, monkeypatch):
+    _pk_world(tmp_path, monkeypatch, [("brief.md", "docs/brief.md", "0000000", "on-demand")])
+    drift_check.check_project_knowledge()
+    assert not warns_of("project_knowledge") and not fails_of("project_knowledge")
+    assert passes_of("project_knowledge") == [
+        "0 kernel manifest entries all match git HEAD; 1 on-demand row(s) not compared — HEAD is their surface"
+    ]
+
+
+@pytest.mark.parametrize("surface", ["export", "both"])
+def test_project_knowledge_kernel_row_with_a_stale_pin_is_still_warned(tmp_path, monkeypatch, surface):
+    _pk_world(tmp_path, monkeypatch, [("k.md", "docs/k.md", "0000000", surface)])
+    drift_check.check_project_knowledge()
+    warns = warns_of("project_knowledge")
+    assert len(warns) == 1 and "docs/k.md stale" in warns[0]
+
+
+def test_project_knowledge_five_cell_row_reads_as_export(tmp_path, monkeypatch):
+    """The pre-2026-09-08 shape: no surface cell, compared as every row was then."""
+    harness = _ii_init(tmp_path / "harness")
+    _ii_commit(harness, "docs/k.md", "k\n")
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(
+        "# m\n\n| export name | repo path | repo | commit | last changed |\n|---|---|---|---|---|\n"
+        "| `k.md` | `docs/k.md` | aetheris | `0000000` | 2026-01-01 |\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(drift_check, "MANIFEST_MD", manifest)
+    monkeypatch.setattr(drift_check, "_REPO_DIR_MAP", {"aetheris": harness})
+    reset()
+    drift_check.check_project_knowledge()
+    assert len(warns_of("project_knowledge")) == 1

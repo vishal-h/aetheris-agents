@@ -263,7 +263,11 @@ python3 scripts/drift_check.py
 **Checks run:** event types (event.ex ↔ specs.md §6), Tauri commands (lib.rs ↔ specs.md §4),
 DB schema (store.ex ↔ specs.md §2), env vars (Rust code ↔ specs.md §1 ↔ runbook.md),
 routes (registry.ts ↔ App.tsx), payload field sampling (live DB ↔ specs.md §6),
-milestone README Status: lines.
+milestone README Status: lines, and — since 2026-09-08 — `index_integrity`: for every
+manifest row whose path is an `index.md`, each entry resolves at HEAD and every
+frontmatter-bearing file in that tree has an entry (the hybrid-context design's §1.1 arm;
+the generator is `scripts/gen_index.py`, and a file the generator would refuse is a FAIL
+here if committed anyway). The manifest is the list of indexed trees; there is no second one.
 
 **When to run:** after any Rig milestone, after adding commands, event types, env vars,
 routes, or DB tables. Zero FAIL findings and zero *unexplained* WARN findings required — for a

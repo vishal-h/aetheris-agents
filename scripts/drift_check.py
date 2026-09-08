@@ -18,7 +18,10 @@ Checks:
   payload_fields   — live DB payload sampling vs specs.md §6 (skipped if DB absent)
   milestone_status    — docs/rig/milestones/*/README.md has Status: line
   project_knowledge   — project-knowledge-manifest.md commit hashes vs git HEAD (WARN if stale),
-                        plus a WARN when a tracked path has uncommitted edits (BL-041b)
+                        plus a WARN when a tracked path has uncommitted edits (BL-041b).
+                        Rows on the `on-demand` surface are not compared: HEAD is the
+                        surface they are served from, so nothing about them can be stale
+                        (hybrid-context design, 2026-09-08); they are counted in the PASS.
   command_fields      — specs.md §4 ```rust struct fields vs commands/*.rs (BL-036)
   use_case_registry   — docs/use-cases.md vs every machine-separable enumeration of use
                         cases: the two doc tables, assemble_matrix.SECTIONS and the section
@@ -29,6 +32,15 @@ Checks:
                         files plus every *.py/*.sh in both repos) names a row in the
                         UNION of the open file and the closed archive. FAIL, never WARN;
                         allowlist keyed by (id, file), each entry with its reason (ds t1b).
+  index_integrity     — for every manifest row whose path is an `index.md` (an INDEXED
+                        TREE, hybrid-context design §1.1): each index entry resolves at
+                        HEAD in that row's repo; every markdown file at HEAD in the tree
+                        has an entry; every such file carries the frontmatter the index
+                        needs (the §1.2 gap committed anyway); an entry whose title or
+                        description no longer matches the file's frontmatter is a WARN.
+                        The tree list comes from the manifest, never from a second list
+                        here. Uncommitted edits under the tree get a strict-exempt WARN on
+                        check 8's terms — the reading is about HEAD.
 
 --strict promotes WARN to FAIL, with one exemption: project_knowledge
 manifest-STALENESS WARNs stay WARN and do not affect the exit code (mid-cycle
@@ -46,6 +58,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.resolve()))
+from _frontmatter import FrontmatterError, read_document  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Repo layout                                                                  #
@@ -586,10 +601,13 @@ def check_milestone_status() -> None:
 # --------------------------------------------------------------------------- #
 
 # Regex for manifest data rows:
-#   | `export-name` | `repo/path` | repo-name | `abc1234` | YYYY-MM-DD |
-# Rows with _(this export)_ as commit are skipped (manifest self-reference).
+#   | `export-name` | `repo/path` | repo-name | `abc1234` | YYYY-MM-DD | surface |
+# Rows with _(this export)_ as commit are skipped (manifest self-reference). The trailing
+# `surface` cell (2026-09-08) is captured when present and None on the five-cell shape
+# the table had before it, which is read as `export` — the surface every row had then.
 _MANIFEST_ROW_RE = re.compile(
-    r"^\| `[^`]+` \| `([^`]+)` \| (\S+) \| `([0-9a-f]{5,})`",
+    r"^\| `[^`]+` \| `([^`]+)` \| (\S+) \| `([0-9a-f]{5,})`"
+    r"(?: \| \S+ \| (export|on-demand|both) \|)?",
     re.MULTILINE,
 )
 
@@ -643,7 +661,7 @@ def check_project_knowledge() -> None:
         return
 
     text = MANIFEST_MD.read_text(encoding="utf-8")
-    rows = _MANIFEST_ROW_RE.findall(text)  # [(repo_path, repo_name, commit), ...]
+    rows = _MANIFEST_ROW_RE.findall(text)  # [(repo_path, repo_name, commit, surface), ...]
 
     if not rows:
         _fail(check, "zero data rows parsed from project-knowledge-manifest.md")
@@ -652,7 +670,14 @@ def check_project_knowledge() -> None:
     stale: list[str] = []
     uncommitted: list[str] = []
     structural: list[str] = []
-    for repo_path, repo_name, manifest_commit in rows:
+    on_demand: list[str] = []
+    for repo_path, repo_name, manifest_commit, surface in rows:
+        if surface == "on-demand":
+            # Served from HEAD, never from the store: the pin is a map entry, not a claim
+            # about an upload, and comparing it would report staleness where none can
+            # exist. Counted, so the PASS line says how many rows were not compared.
+            on_demand.append(repo_path)
+            continue
         repo_dir = _REPO_DIR_MAP.get(repo_name)
         if repo_dir is None:
             _warn(check, f"unknown repo name {repo_name!r} in manifest — cannot verify {repo_path}")
@@ -701,7 +726,13 @@ def check_project_knowledge() -> None:
     # repo, git log/status failure — BL-041b review F1); with the gate in place
     # len(rows) is the count actually checked wherever the PASS prints.
     if not stale and not uncommitted and not structural:
-        _ok(check, f"{len(rows)} manifest entries all match git HEAD")
+        compared = len(rows) - len(on_demand)
+        _ok(
+            check,
+            f"{compared} kernel manifest entries all match git HEAD"
+            + (f"; {len(on_demand)} on-demand row(s) not compared — HEAD is their surface"
+               if on_demand else ""),
+        )
 
 # --------------------------------------------------------------------------- #
 # Check 9: command_fields                                                      #
@@ -1232,6 +1263,196 @@ def check_backlog_resolution():
                  f"{len(BACKLOG_REF_ALLOW)} allowlist entr(ies))")
 
 
+
+# --------------------------------------------------------------------------- #
+# Check 12: index_integrity (hybrid-context design §1.1)                        #
+# --------------------------------------------------------------------------- #
+#
+# An INDEXED TREE is a directory whose generated `index.md` carries a manifest row —
+# the manifest is the top-level map, so the tree list is read from it and never kept
+# as a second list here. For each tree, at HEAD in the row's own repo:
+#
+#   direction 1 — every index entry's path resolves to a file at HEAD      (FAIL)
+#   direction 2 — every markdown file at HEAD in the tree has an entry      (FAIL)
+#   the §1.2 gap — a file at HEAD with missing/unreadable/incomplete
+#                  frontmatter, i.e. a document the generator would have
+#                  refused, committed anyway                                (FAIL)
+#   staleness   — an entry whose title or description differs from the
+#                  file's frontmatter: the index was not regenerated         (WARN)
+#
+# HEAD rather than the working tree, on check 8's terms: the committed index is the
+# artifact that travels, and an uncommitted edit under the tree makes this run's reading
+# vacuous for that tree — reported as a strict-exempt WARN, not hidden.
+#
+# The file-with-no-entry direction mechanises a repair performed by hand twice: harness
+# bcf3b65 (the activegraph brief, 2026-08-24) and bb42099 (the hybrid note, 7 on disk vs
+# 6 linked, gap accepted 2026-09-07).
+
+_INDEX_ENTRY_RE = re.compile(r"^- \[(.*)\]\(([^)]+)\) - (.*)$")
+_INDEX_REQUIRED = ("type", "title", "description")
+
+
+def _unescape_link_text(text: str) -> str:
+    return text.replace("\\[", "[").replace("\\]", "]")
+
+
+def _parse_index_entries(text: str) -> dict[str, tuple[str, str]]:
+    """{relative path: (title, description)} from a generated index's entry lines."""
+    entries: dict[str, tuple[str, str]] = {}
+    for line in text.splitlines():
+        m = _INDEX_ENTRY_RE.match(line)
+        if m:
+            entries[m.group(2)] = (_unescape_link_text(m.group(1)), m.group(3))
+    return entries
+
+
+def _git_show_text(repo_dir: Path, path: str) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{path}"],
+            cwd=repo_dir, capture_output=True, timeout=30,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.decode("utf-8", "replace")
+
+
+def _git_ls_tree_md(repo_dir: Path, tree: str) -> list[str] | None:
+    """Every `*.md` path at HEAD under `tree` (repo-relative), or None if git failed."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", tree],
+            cwd=repo_dir, capture_output=True, text=True, timeout=30,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    return [ln for ln in result.stdout.splitlines() if ln.endswith(".md")]
+
+
+def _indexed_trees() -> list[tuple[str, str, str]] | None:
+    """[(repo_name, tree, index_path)] from manifest rows whose path is an index.md.
+
+    None when the manifest cannot be read at all (structural, reported by the caller).
+    """
+    if not MANIFEST_MD.exists():
+        return None
+    text = MANIFEST_MD.read_text(encoding="utf-8")
+    trees: list[tuple[str, str, str]] = []
+    for repo_path, repo_name, _commit, _surface in _MANIFEST_ROW_RE.findall(text):
+        if Path(repo_path).name == "index.md":
+            trees.append((repo_name, str(Path(repo_path).parent), repo_path))
+    return trees
+
+
+def check_index_integrity() -> None:
+    check = "index_integrity"
+
+    trees = _indexed_trees()
+    if trees is None:
+        _warn(check, "docs/project-knowledge-manifest.md not found — no indexed tree can be read")
+        return
+    if not trees:
+        _warn(check, "the manifest carries no `index.md` row — no indexed tree to check; "
+                     "the hybrid architecture requires at least one")
+        return
+
+    for repo_name, tree, index_path in trees:
+        label = f"{repo_name}:{tree}"
+        repo_dir = _REPO_DIR_MAP.get(repo_name)
+        if repo_dir is None:
+            _warn(check, f"{label}: unknown repo name {repo_name!r} in manifest — cannot verify")
+            continue
+
+        index_text = _git_show_text(repo_dir, index_path)
+        if index_text is None:
+            _fail(check, f"{label}: {index_path} is not at HEAD — the manifest names an index "
+                         f"that is not committed")
+            continue
+        entries = _parse_index_entries(index_text)
+        if not entries:
+            _fail(check, f"{label}: {index_path} carries zero entries — not a generated index")
+            continue
+
+        files = _git_ls_tree_md(repo_dir, tree)
+        if files is None:
+            _warn(check, f"{label}: git ls-tree failed — cannot enumerate the tree at HEAD")
+            continue
+        files = [f for f in files if f != index_path]
+
+        dirty = _git_is_dirty(repo_dir, tree)
+        if dirty is None:
+            _warn(check, f"{label}: git status failed — cannot check for uncommitted edits")
+        elif dirty:
+            _warn(
+                check,
+                f"{label} has uncommitted working-tree changes — this check reads HEAD, so "
+                f"its reading for this tree is about the committed index and tree only; "
+                f"re-run after committing",
+                strict_exempt=True,
+            )
+
+        problems = 0
+        # direction 1: every entry resolves at HEAD
+        files_rel = {str(Path(f).relative_to(tree)) for f in files}
+        for rel in sorted(entries):
+            if rel not in files_rel:
+                _fail(check, f"{label}: index entry `{rel}` does not resolve at HEAD")
+                problems += 1
+
+        # direction 2 + the §1.2 gap: every file at HEAD is indexable and indexed
+        stale: list[str] = []
+        for repo_path in sorted(files):
+            rel = str(Path(repo_path).relative_to(tree))
+            text = _git_show_text(repo_dir, repo_path)
+            if text is None:
+                _warn(check, f"{label}: git show failed for {repo_path}")
+                problems += 1
+                continue
+            try:
+                doc = read_document(text)
+            except FrontmatterError as exc:
+                _fail(check, f"{label}: `{rel}` has unreadable frontmatter ({exc}) — the "
+                             f"generator would refuse it; it is invisible to retrieval")
+                problems += 1
+                continue
+            fm = doc.frontmatter
+            if fm is None:
+                _fail(check, f"{label}: `{rel}` has no frontmatter — the generator would refuse "
+                             f"it; it is invisible to retrieval")
+                problems += 1
+                continue
+            missing = [
+                f for f in _INDEX_REQUIRED
+                if not isinstance(fm.get(f), str) or not fm.get(f, "").strip()
+            ]
+            if missing:
+                _fail(check, f"{label}: `{rel}` lacks required frontmatter "
+                             f"{', '.join(missing)} — the generator would refuse it")
+                problems += 1
+                continue
+            if rel not in entries:
+                _fail(check, f"{label}: `{rel}` is at HEAD with frontmatter and has no index "
+                             f"entry — regenerate {index_path}")
+                problems += 1
+                continue
+            if entries[rel] != (fm["title"], fm["description"]):
+                stale.append(rel)
+
+        if stale:
+            _warn(check, f"{label}: {len(stale)} entr{'y' if len(stale) == 1 else 'ies'} no "
+                         f"longer match the file's frontmatter (title or description) — "
+                         f"regenerate {index_path}: " + ", ".join(stale))
+            problems += 1
+
+        if problems == 0 and dirty is False:
+            _ok(check, f"{label}: {len(entries)} index entries ↔ {len(files)} files at HEAD, "
+                       f"every file indexed and every entry current")
+
+
 CHECKS = [
     check_event_types,
     check_tauri_commands,
@@ -1244,6 +1465,7 @@ CHECKS = [
     check_command_fields,
     check_use_case_registry,
     check_backlog_resolution,
+    check_index_integrity,
 ]
 
 _CHECK_NAMES = {fn.__name__.replace("check_", ""): fn for fn in CHECKS}

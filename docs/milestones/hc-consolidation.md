@@ -945,6 +945,12 @@ disposition. Read the wording there.
 
 ---
 
+### R36 — a commit touching only `docs/aetheris/research/**` is always-landable.
+
+`2026-09-08 — ruled by the arbiter in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1 item 7 at harness `c3e70a0`, which states the rule, its four constraints and its rationale; this entry points at it and does not restate it. The motivating instance is harness `bb42099`, a research commit that could not cite the rule because it had not landed. First applied at harness `2c1a6b6`, the research commit that filed the fourteen staged briefs. Landed under R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

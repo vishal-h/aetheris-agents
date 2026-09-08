@@ -8774,3 +8774,191 @@ BL-143's row and ruling block, the procedure's §Post-upload verification and St
 5, the manifest's header paragraph, its 2026-09-07 record and its 2026-08-18
 upload block. Line numbers are as of `675829d`; the manifest's are shifted by the
 correction commit that precedes this one.`
+
+---
+
+### BL-197 — `tools_hash`: the script, tool and skill surface a run can reach is hashed into run identity (#TBD)
+**Status:** OPEN
+**Kind:** feature · **Census items:** n/a — the first deliverable is the population (see Done-when) · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md` §2 (definitions) and §4 (the fork guarantee); the research inputs below
+**Size:** S · **Priority:** medium — a **BL-008 D9 prerequisite**, so it lands before BL-008's P0
+**Section:** harness (`../aetheris/lib/aetheris/execution/`, `../aetheris/lib/aetheris/agent/server.ex`)
+
+Filed 2026-09-08 from the research batch landed at harness `2c1a6b6`. The idea is
+the external schema analysis's item #1, dispositioned at
+`../aetheris/docs/aetheris/research/research-reconciliation-2026-07-26.md` §2 as
+*"tools_hash S-ticket idea, orthogonal to BL-025's EffectClass"* and never filed;
+the BL-008 synthesis brief makes it a dependency
+(`bl-008-synthesis-2026-08.md` D9: *"Skill bodies live as files under the
+content-hashed tool surface (tools_hash family), so run identity captures the exact
+skill content a run could read"*; the 2026-09-08 margin note under its §3 says it
+lands before P0), and the pi brief's Take 2 and the dsh brief's L4 both point at it.
+
+**The code today, read at harness `bb42099`.** Nothing hashes a tool surface: `tools_hash`,
+`config_hash` and `tool_surface` occur nowhere under `lib/` (0 hits; control, the
+same search for `fork_from` finds it). What a run records about its tools is the
+**names** — `"tools" => config.tools` in the trajectory meta
+(`lib/aetheris/agent/server.ex:669`, `:941`) — and what a fork reads back is the
+same list (`lib/aetheris/execution/fork.ex:181`). So two runs whose `run_command`
+reaches a script that changed between them are identical by every field the
+harness records, and verify cannot tell which script a recorded step ran.
+
+**Done when:** (1) the population is written down first — which files count as the
+tool surface (the `tools` list; the scripts and skill files under the agent root that
+`run_command` can invoke; MCP server identities if they are in scope) — as a stated
+rule in the contract, not an inferred one; (2) a content hash over that population is
+computed at run start and captured with the run's config (`config_json` and the
+trajectory meta, the same two sites that carry `model`), so fork and verify can read
+it; (3) the mutation test is on the record: change one byte of one in-surface script
+between record and verify and the hash differs, with a test that fails if it does
+not. The hash is a **field**, not a gate — what a mismatch *means* to verify is
+decided by the row that consumes it, not here.
+
+**Not done-when:** hashing the tool names only, which the meta already carries.
+
+**Collides with:** **BL-008** — D9's interim rule is BL-025 `:contained`
+record-and-serve on reads under the skills path *"if the hashed-surface item has not
+landed"*; this row is that item, and BL-008's milestone doc should cite it rather than
+carry the interim. **BL-025** (closed) — EffectClass is orthogonal, per the
+reconciliation's own disposition; do not fold. **BL-198** — the two are the D9
+pair; independent, no ordering between them.
+
+`Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `research-reconciliation-2026-07-26.md` §2, `bl-008-synthesis-2026-08.md` D9 and §3, `pi-harness-2026-07.md` Take 2 and `dsh-model-visible-logged-2026-08.md` L4, all opened in the landed batch. The code citations were opened at harness `bb42099` before that batch landed; the two research commits after it touch no `lib/` file.`
+
+---
+
+### BL-198 — MVML record-mode assertion: at prompt assembly, the assembled prompt equals the log-derived prompt (#TBD)
+**Status:** OPEN
+**Kind:** gate · **Census items:** n/a · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md` §3 (mode guarantees); the dsh brief's L1
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/execution/loop.ex`)
+
+Filed 2026-09-08 from the research batch landed at harness `2c1a6b6`. The dsh brief
+(`../aetheris/docs/aetheris/research/dsh-model-visible-logged-2026-08.md` L1) names the
+invariant — *anything that reaches a model request must be reconstructable from the
+session log* — and lists three adoptions in increasing cost. This row is the second,
+L1.2: *"at prompt assembly, assert the assembled prompt equals the log-derived prompt.
+Verify mode checks equivalence after the fact; this catches divergence at write time,
+where the defect is cheapest to localize."* The first adoption (naming the invariant in
+the contract) is a contract edit and is not this row; the third (deriving the transcript
+from the log instead of carrying it as loop state) is on record in the brief as a
+direction without a ticket, and stays so.
+
+**The code today, read at harness `bb42099`.** The loop carries message state and
+writes events in parallel: `prompt_built` is emitted at
+`lib/aetheris/execution/loop.ex:183` from the prompt the loop assembled from its own
+`messages`, and nothing compares that prompt with what the events up to that step would
+reconstruct. The brief's own evidence that the two can diverge is the `caused_by`
+trajectory/SQLite delta; its evidence that the single-source form is reachable is
+BL-005's byte-identical log-derived reconstruction.
+
+**Done when:** in record mode, at the `prompt_built` site, the loop derives the prompt
+from prior trajectory events plus recorded config, compares it with the assembled one,
+and surfaces a divergence — as an event carrying the first differing position, or as a
+run failure; which one is the row's decision and is recorded on it. A test injects a
+divergence (mutate the loop's in-memory messages after the events are written) and sees
+the assertion fire; the same test passes on the unmutated loop. The comparison's cost
+is measured on one real run and recorded, since it runs every step.
+
+**Not done-when:** verify-mode equivalence only, which BL-005 already established, or
+an assertion that is on in tests and off in record runs.
+
+**Collides with:** **BL-008** — D9 (MVML compliance) is stated against the named
+invariant; this row is the runtime check behind it. **BL-197** — the D9 pair;
+independent. **BL-005** (closed) — its reconstruction is the derivation this row
+re-uses at write time.
+
+`Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `dsh-model-visible-logged-2026-08.md` L1 (adoption 2), opened in the landed batch; `loop.ex:183` opened at harness `bb42099`.`
+
+---
+
+### BL-199 — length-stop tool-call guard: a tool call inside a response the token limit cut off is executed as if it were whole, on both provider paths (#TBD)
+**Status:** OPEN
+**Kind:** defect — reachable by reading, not demonstrated live · **Census items:** two provider paths · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md` §3; the pi brief's Take 1
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/execution/loop.ex`, `../aetheris/lib/aetheris/execution/llm_adapter/anthropic.ex`, `…/ollama.ex`)
+
+Filed 2026-09-08 from the research batch landed at harness `2c1a6b6`. The pi brief
+(`../aetheris/docs/aetheris/research/pi-harness-2026-07.md` Take 1) records pi's rule:
+when an assistant message ends with `stopReason === "length"`, execute **no** tool call
+in it, because every argument in it may be truncated; synthesize an error tool-result
+per call and let the next turn retry. Its *"Aetheris check"* asked whether the loop
+guards this. It does not.
+
+**The code today, read at harness `bb42099`.** The Anthropic adapter reads
+`stop_reason` off the body (`anthropic.ex:203`) and puts it on the response struct on
+both branches (`:220`, `:235`). The loop never reads it: `stop_reason` has **0**
+occurrences in `loop.ex` (control: `tool_calls`, 2). `handle_llm_response/4` records
+`llm_responded` and calls `execute_response/4` unconditionally (`loop.ex:274-296`), so
+a `max_tokens` response carrying a parseable `tool_use` block executes it. The Ollama
+adapter is the higher-risk path, as the brief predicts: its response struct carries no
+stop field at all (`ollama.ex:162-172`) and it extracts tool calls by regex over the
+text (`:193-201`), so a `<tool_call>` block cut mid-stream can still match. The failure
+range is the brief's: a half path that errors, or a truncated-but-valid path or
+`run_command` with dropped trailing arguments that silently does the wrong thing — the
+**Silent-wrong-answer** shape at a structural boundary.
+
+**Done when:** on a length stop with at least one tool call present, nothing executes;
+each call gets a recorded `tool_result` carrying a structured error (under
+`failure_category: "truncated_response"` if that vocabulary exists by then, otherwise a
+named error key stated on the row), and the loop continues to the next turn. **Both**
+paths are covered: Anthropic via `stop_reason == "max_tokens"`, Ollama via the field the
+adapter must first start reading (the API's `done_reason` or its equivalent — establish
+which from the API, not from this row). One fixture test per path with a truncated
+response, each **red before the guard and green after**, with the red run on the
+record.
+
+**Not done-when:** guarding the Anthropic path only; dropping the tool call silently
+with no `tool_result` recorded, which loses the model's retry signal.
+
+**Collides with:** **BL-006** — `stop_reason` is not yet in any DB event; if this row
+records it on `llm_responded`, drift_check's INFO fires and BL-006's trigger is met —
+promote the field there, do not add a second surface here. **BL-023** — retry parity
+is a different failure (429), not this one. The pi brief's Take 3 (`failure_category`
+vocabulary, reconciliation §2 #9) is the vocabulary this row would use and is not
+filed by it.
+
+`Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `pi-harness-2026-07.md` Take 1 and its Actionable cross-references, opened in the landed batch. Every `lib/` citation was opened at harness `bb42099`; the 0-hit search and its control were run there.`
+
+---
+
+### BL-200 — scheduler safety audit against the moadim brief's Cluster 2: seven items, each answered has / lacks deliberately / lacks by omission (#TBD)
+**Status:** OPEN
+**Kind:** verification · **Census items:** seven — overlap protection, global concurrency cap, same-minute deduplication, global lock sentinel, missed-fire handling, watchdog and retention, tighten-only cap composition · **Contract:** none yet — the audit's output is what a contract sentence would rest on
+**Size:** S · **Priority:** medium — a scheduled run here can carry irreversible effects (payslip release, cleanup execution), which is the brief's reason the *missed-fire* item is a stated rule and not an accident
+**Section:** harness (`../aetheris/lib/aetheris/scheduler.ex`, `../aetheris/lib/aetheris/scheduled_run.ex`)
+
+Filed 2026-09-08 from the research batch landed at harness `2c1a6b6`. The moadim brief
+(`../aetheris/docs/aetheris/research/moadim-hardening-catalog-2026-08.md` Cluster 2)
+carries a seven-item checklist of scheduler safety semantics with moadim's stance on
+each, and names its consumer as *"an m13 scheduler audit"*: *"one pass over the
+scheduler answering, for each item, 'has this, lacks this deliberately, or lacks this by
+omission.' Findings file as rows; no finding is presumed here."* This row is that pass.
+
+**The code today, read at harness `bb42099`, stated as the audit's starting point and not
+as its verdicts.** `Aetheris.Scheduler` is 148 lines: a GenServer ticking every 60 s
+(`scheduler.ex:25`, `:56-59`), each tick reading `Store.list_due_scheduled_runs/1` and
+starting every due row fire-and-forget (`:72-74`, `:81-90`), then advancing the schedule
+by cron parse (`:103-128`). None of *overlap*, *concurren*, *lock*, *missed*,
+*watchdog*, *ttl*, *dedup*, *max_runtime* or *catch-up* occurs in the file (0 hits;
+control: *cron*, several). An absent word is not an absent property — the cap may live
+in the Store, the overlap rule in the run's own admission — which is exactly why the
+audit reads the code rather than greps it.
+
+**Done when:** a seven-row table is on the record — in this row's DONE section or in a
+committed implementation-notes file it names — giving each item one of the three
+verdicts **with the `file:line` that establishes it**, and for every *lacks by omission*
+verdict either a filed row or the arbiter's recorded decision not to file one. The
+retention items (watchdog, TTL reaping, disk-ceiling eviction) are answered here and
+their rows, if any, are filed against the retention family the brief names (E6
+candidate), not against the scheduler.
+
+**Not done-when:** implementing any item inside the audit; a verdict without a citation;
+*lacks* recorded without saying which of the two kinds.
+
+**Collides with:** **BL-003** (closed) — the brief maps the concurrency cap onto BL-003's
+state-from-reality philosophy; the audit reads that closure rather than re-deriving it.
+The E-cluster retention row the brief refers to is not filed and is not this row's to
+file. The **m13** milestone the brief names as consumer does not exist as a row; this
+row stands on its own and m13, if scoped, inherits it.
+
+`Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `moadim-hardening-catalog-2026-08.md` Cluster 2 and its Cross-references, opened in the landed batch. `scheduler.ex` was read whole at harness `bb42099`; the 0-hit term search and its control were run there.`

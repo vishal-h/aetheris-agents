@@ -152,6 +152,97 @@ def test_link_text_escapes_square_brackets(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# the header's fetch instruction (2026-09-08) — present, repo derived per tree, #
+# deterministic                                                                #
+# --------------------------------------------------------------------------- #
+
+FETCH_SENTENCE = (
+    "Documents listed here are on-demand. When their content is needed, FETCH them via the "
+    "github-mcp connector — repository {repo} (this tree), branch main, path as written — and "
+    "cite the served commit SHA. Do not answer from kernel summaries when the source is one "
+    "fetch away. If a fetch fails, say so and answer from the kernel with the gap named."
+)
+
+
+def _git_tree(root, remote_url):
+    """A good tree inside its own git checkout whose `origin` is `remote_url`."""
+    tree = _good_tree(root)
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "remote", "add", "origin", remote_url], check=True)
+    return tree
+
+
+def _fetch_lines(text):
+    return [l for l in text.splitlines() if l.startswith("Documents listed here are on-demand.")]
+
+
+def test_header_carries_the_fetch_instruction_verbatim_above_the_entries(tmp_path):
+    tree = _git_tree(tmp_path, "git@github.com:vishal-h/aetheris-agents.git")
+    text = gen_index.generate(tree)
+    lines = text.splitlines()
+    fetch = _fetch_lines(text)
+    assert fetch == [FETCH_SENTENCE.format(repo="vishal-h/aetheris-agents")]
+    assert lines.index(fetch[0]) < min(i for i, l in enumerate(lines) if l.startswith("- ["))
+    assert lines.index(fetch[0]) > lines.index("# Index: research")
+
+
+@pytest.mark.parametrize(
+    "remote, slug",
+    [
+        ("git@github.com:vishal-h/aetheris.git", "vishal-h/aetheris"),
+        ("git@github.com:vishal-h/aetheris-agents.git", "vishal-h/aetheris-agents"),
+        ("https://github.com/vishal-h/aetheris.git", "vishal-h/aetheris"),
+        ("https://github.com/vishal-h/aetheris-agents", "vishal-h/aetheris-agents"),
+    ],
+)
+def test_repository_line_is_derived_from_the_tree_not_hardcoded(tmp_path, remote, slug):
+    tree = _git_tree(tmp_path, remote)
+    assert gen_index._repo_slug(tree) == slug
+    assert _fetch_lines(gen_index.generate(tree)) == [FETCH_SENTENCE.format(repo=slug)]
+
+
+def test_two_trees_with_identical_documents_differ_only_in_the_repository_line(tmp_path):
+    harness = _git_tree(tmp_path / "h", "git@github.com:vishal-h/aetheris.git")
+    agents = _git_tree(tmp_path / "a", "git@github.com:vishal-h/aetheris-agents.git")
+    diff = [
+        (x, y) for x, y in zip(gen_index.generate(harness).splitlines(),
+                               gen_index.generate(agents).splitlines()) if x != y
+    ]
+    assert diff == [(FETCH_SENTENCE.format(repo="vishal-h/aetheris"),
+                     FETCH_SENTENCE.format(repo="vishal-h/aetheris-agents"))]
+
+
+def test_repository_line_falls_back_to_an_explicit_placeholder_outside_a_checkout(tmp_path):
+    tree = _good_tree(tmp_path)          # no git init: nothing to derive from
+    assert gen_index._repo_slug(tree) is None
+    assert _fetch_lines(gen_index.generate(tree)) == [
+        FETCH_SENTENCE.format(repo=gen_index.REPO_UNRESOLVED)
+    ]
+    result = _run(str(tree))
+    assert result.returncode == 0
+    assert "repository not derivable" in result.stderr
+    assert gen_index.REPO_UNRESOLVED in (tree / "index.md").read_text(encoding="utf-8")
+
+
+def test_cli_repo_override_names_the_given_repository(tmp_path):
+    tree = _git_tree(tmp_path, "git@github.com:vishal-h/aetheris.git")
+    assert _run(str(tree), "--repo", "someone/elsewhere").returncode == 0
+    text = (tree / "index.md").read_text(encoding="utf-8")
+    assert _fetch_lines(text) == [FETCH_SENTENCE.format(repo="someone/elsewhere")]
+    assert "vishal-h/aetheris" not in text
+
+
+def test_regenerated_index_with_fetch_header_is_byte_identical_across_runs(tmp_path):
+    tree = _git_tree(tmp_path, "git@github.com:vishal-h/aetheris.git")
+    assert _run(str(tree)).returncode == 0
+    first = (tree / "index.md").read_bytes()
+    assert _run(str(tree)).returncode == 0
+    assert (tree / "index.md").read_bytes() == first
+    assert _run(str(tree), "--check").returncode == 0
+    assert b"vishal-h/aetheris (this tree)" in first
+
+
+# --------------------------------------------------------------------------- #
 # refusal (§1.2) — every case lists the document and writes nothing            #
 # --------------------------------------------------------------------------- #
 

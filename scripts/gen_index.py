@@ -24,6 +24,15 @@ non-empty `type` (the OKF conformance bar), `title`, `description`. When the bod
 H1, it must equal `title` — the frontmatter title is a second surface stating what the
 heading determines, and this is the check that keeps the two from drifting silently.
 
+**The header carries a fetch instruction (2026-09-08).** An index that only *lists* on-demand
+documents was measured to produce zero connector fetches in ten probes — the store said
+on-demand without saying fetch. So every generated index states, above its entries, that the
+documents are fetched via the github-mcp connector, names the repository, and says what to do
+on a miss. The repository is DERIVED from the tree being indexed — the `origin` remote of the
+checkout containing it — never hardcoded, so an agents-repo tree names `vishal-h/aetheris-agents`
+and a harness tree `vishal-h/aetheris`. `--repo OWNER/NAME` overrides the derivation; when
+neither is available the line carries an explicit placeholder and the CLI warns on stderr.
+
 Exit codes:
   0 — index written (or, with --check, the committed index already equals the generated one)
   1 — refusal (frontmatter missing/unreadable/incomplete, or H1 ≠ title), or --check mismatch
@@ -33,6 +42,8 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -43,6 +54,17 @@ from _frontmatter import FrontmatterError, first_heading, read_document  # noqa:
 REQUIRED_FIELDS = ("type", "title", "description")
 GENERATOR = "scripts/gen_index.py"
 OKF_VERSION = "0.2"
+
+# The fetch instruction every generated index carries above its entries. `{repo}` is the
+# owner/name of the checkout containing the indexed tree (see `_repo_slug`).
+FETCH_INSTRUCTION = (
+    "Documents listed here are on-demand. When their content is needed, FETCH them via the "
+    "github-mcp connector — repository {repo} (this tree), branch main, path as written — and "
+    "cite the served commit SHA. Do not answer from kernel summaries when the source is one "
+    "fetch away. If a fetch fails, say so and answer from the kernel with the gap named."
+)
+REPO_UNRESOLVED = "<unresolved: not inside a git checkout with a GitHub origin remote; pass --repo OWNER/NAME>"
+_GITHUB_REMOTE_RE = re.compile(r"github\.com[:/]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
 
 
 class Refusal(Exception):
@@ -100,7 +122,9 @@ def collect_entries(tree: Path, output: Path) -> list[tuple[str, str, str]]:
     return entries
 
 
-def render_index(tree_label: str, regen_command: str, entries: list[tuple[str, str, str]]) -> str:
+def render_index(
+    tree_label: str, regen_command: str, entries: list[tuple[str, str, str]], repo: str | None = None
+) -> str:
     lines = [
         "---",
         "type: index",
@@ -121,6 +145,8 @@ def render_index(tree_label: str, regen_command: str, entries: list[tuple[str, s
         f"`{regen_command}`. It carries no timestamp because the same tree must produce the "
         "same bytes. Entry format: [title](path) - description. -->",
         "",
+        FETCH_INSTRUCTION.format(repo=repo or REPO_UNRESOLVED),
+        "",
     ]
     for rel, title, description in entries:
         lines.append(f"- [{_escape_link_text(title)}]({rel}) - {description}")
@@ -128,12 +154,14 @@ def render_index(tree_label: str, regen_command: str, entries: list[tuple[str, s
     return "\n".join(lines)
 
 
-def generate(tree: Path, output: Path | None = None, tree_label: str | None = None) -> str:
+def generate(
+    tree: Path, output: Path | None = None, tree_label: str | None = None, repo: str | None = None
+) -> str:
     output = output or (tree / "index.md")
     label = tree_label or tree.name
     entries = collect_entries(tree, output)
     regen = f"python3 {GENERATOR} <path-to>/{label}"
-    return render_index(label, regen, entries)
+    return render_index(label, regen, entries, repo or _repo_slug(tree))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -144,6 +172,11 @@ def main(argv: list[str] | None = None) -> int:
         "--label",
         help="tree label used in the heading (default: the tree's repo-relative path when "
              "TREE is inside a git checkout, else its directory name)",
+    )
+    parser.add_argument(
+        "--repo",
+        help="owner/name named in the header's fetch instruction (default: derived from the "
+             "`origin` remote of the git checkout containing TREE)",
     )
     parser.add_argument(
         "--check",
@@ -158,9 +191,13 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     output = Path(args.output) if args.output else tree / "index.md"
     label = args.label or _repo_relative_label(tree)
+    repo = args.repo or _repo_slug(tree)
+    if repo is None:
+        print(f"[WARN] {tree}: repository not derivable from an origin remote — the fetch "
+              f"instruction will name {REPO_UNRESOLVED}; pass --repo OWNER/NAME", file=sys.stderr)
 
     try:
-        text = generate(tree, output, label)
+        text = generate(tree, output, label, repo)
     except Refusal as exc:
         print(f"[REFUSED] {len(exc.problems)} document(s) in {tree} cannot be indexed; "
               f"nothing written:", file=sys.stderr)
@@ -181,6 +218,26 @@ def main(argv: list[str] | None = None) -> int:
     n = sum(1 for line in text.splitlines() if line.startswith("- ["))
     print(f"[OK] wrote {output}: {n} entr{'y' if n == 1 else 'ies'}")
     return 0
+
+
+def _repo_slug(tree: Path) -> str | None:
+    """`owner/name` from the `origin` remote of the checkout containing `tree`, else None.
+
+    Derived, never hardcoded: an agents-repo tree names vishal-h/aetheris-agents and a harness
+    tree vishal-h/aetheris because that is what each checkout's remote says. ssh and https
+    forms both parse; a trailing `.git` is dropped.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(tree), "remote", "get-url", "origin"],
+            capture_output=True, text=True, check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    m = _GITHUB_REMOTE_RE.search(result.stdout.strip())
+    return f"{m.group(1)}/{m.group(2)}" if m else None
 
 
 def _repo_relative_label(tree: Path) -> str:

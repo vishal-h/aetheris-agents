@@ -42,6 +42,14 @@ fetch returns nothing, check the connector grant before anything else**: a lapse
 as *no connector*, never as *no results*, and no session should re-derive this architecture
 from that confusion. The index a fetch starts from is `aetheris--research-index.md`
 (`aetheris/docs/aetheris/research/index.md`), the only indexed tree as of 2026-09-08.
+`[2026-09-08, after the bare-condition after-run — the OWNER MAPPING, stated so a fetch can be
+addressed without re-deriving it: `aetheris` = `vishal-h/aetheris`; `aetheris-agents` =
+`vishal-h/aetheris-agents`. The connector is `github-mcp`, read-only; branch `main`; path as
+written in this manifest's `repo path` column or in the index entry.]`
+`[2026-09-08, same finding — the WRONG-INSTRUMENT FINGERPRINT: a session that searches memory or
+Drive and never mentions project knowledge is running OUTSIDE the project; discard it and restart
+in-project. The after-run detected one such session by exactly this fingerprint and discarded it
+before probe 1.]`
 
 **Uploads happen only as part of an export boundary — the manifest is regenerated
 and included in the same set.** The check compares this file against git, so it

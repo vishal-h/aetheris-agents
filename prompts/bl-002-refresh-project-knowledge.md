@@ -1,7 +1,20 @@
 # BL-002 — Refresh Claude.ai project knowledge
 
-**Trigger:** milestone end, before any handoff session, or when
-`docs/project-knowledge-manifest.md` commit hashes diverge from HEAD.
+**Trigger:** milestone end, before any handoff session, when
+`docs/project-knowledge-manifest.md` commit hashes diverge from HEAD, or
+when an indexed tree's `index.md` gains or loses entries.
+
+The last of those is not derivable from the others, and it is the only one
+no gate can see. The index is the map of everything on the on-demand
+surface. `drift_check` check 8 compares a row's PIN against git;
+`index_integrity` compares the index against its TREE; neither compares the
+store's copy against either, and no instrument in this repo can see the
+store at all. So both run green over a store map that is missing entries —
+and a missing entry is not a wrong answer a reader can catch, it is a
+document that was never offered. `[Added 2026-09-09. The 2026-09-08
+boundary exported the research index at 24 entries; the tree reached 27
+before the next boundary, with check 8 and index_integrity green
+throughout.]`
 
 **Issue:** https://github.com/vishal-h/aetheris-agents/issues/43
 
@@ -98,15 +111,31 @@ names what it displaces or triggers a probe re-run (design §2.1); the
 kernel budget line in the manifest header is the figure it is measured
 against.
 
-Step 2 — Re-pin the manifest's commit column:
+Step 2 — Re-pin the manifest's commit and `last changed` columns:
 
     python3 scripts/repin_manifest.py            # --dry-run to preview
 
 It runs `git log -1 --format=%h -- <path>` per row in that row's OWN
-repo (../aetheris for the harness rows) and rewrites the commit cell,
-touching nothing else — not the prose, not the `last changed` column,
-not the self-referential row. Run against a manifest already current it
-writes nothing at all.
+repo (../aetheris for the harness rows) and rewrites TWO cells from ONE
+reading: the commit cell, and the `last changed` cell beside it, the date
+coming from `git log -1 --format=%ad --date=short <commit>` on the commit
+just resolved rather than independently from the path — so the two cannot
+disagree, and a date-only move is reported as one. Nothing else is
+touched: not the prose, not the deviation section, not the per-boundary
+sections, not the self-referential row, which keeps `_(this export)_`.
+Run against a manifest already current it writes nothing at all;
+idempotence is the correctness property.
+
+`[Corrected 2026-09-09. This paragraph listed the `last changed` column
+among the cells the script does NOT touch. That was true until BL-151
+(2026-08-16) made it two cells from one reading, and false in every run
+since — the procedure under-described its own instrument for three weeks,
+in the direction that matters, since a reader would have re-pinned the
+date by hand or reported it unpinned. Read from
+`scripts/repin_manifest.py`'s module docstring, §"Two cells, one
+reading", and its `current_date` handling — not from this file's history.
+`CLAUDE.md` §Definition of done already stated it correctly, which is the
+second surface this one was drifting from.]`
 
 The manifest's narrative — what moved this boundary and why, what stayed
 out and on what rule — is still written by hand, in the same commit. It

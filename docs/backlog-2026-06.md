@@ -8998,3 +8998,71 @@ the second-largest kernel row (134 KB, mostly boundary records) and nothing here
 the split addresses that.
 
 `Source: filed 2026-09-08 by claude-code at the hybrid enablement session, agents `799ddc9`, harness `a950ca9`. The measurement is the session's, reproducible by `python3 scripts/assemble_export_bundle.py $(mktemp -d)/bundle`, which prints each kernel document's size.`
+
+### BL-202 — measure the two-surface fetch-instruction condition: the generated index's fetch header has never been in front of a probe (#TBD)
+**Status:** OPEN
+**Kind:** measurement · **Contract:** the hybrid-context design's **Appendix A** (harness `docs/aetheris/research/hybrid-context-design-2026-08.md`), which puts the SAME fetch instruction at two boundaries — the generated index header and the project's custom instructions, *"this is the same instruction at the session's outer boundary, so a session reads it before it reads any index"* — and that note's **§3 item 2**, the probe control, whose comparison between runs is *"the only instrument that can actually reassign a surface"*
+**Size:** S · **Priority:** low — cheap, and gated on nothing
+**Section:** aetheris (harness `docs/aetheris/research/`, one new measurement record); no code in either repository
+
+The closed probe series — baseline → midpoint → after-bare → v2, all four in harness
+`docs/aetheris/research/` — established that a project instruction produces fetches. It
+established nothing about the generated index's fetch-instruction header. The 2026-09-09 export
+boundary found why, by reading the store: the store's `index.md` was the copy exported at the
+2026-09-08 boundary, harness `4ecf008`, whose header is the do-not-hand-edit comment alone; the
+fetch paragraph first exists at harness `f81e524`, committed two hours after that boundary's
+agents commit `1326a70`. So v2 ran with ONE of the two surfaces live, and its correction states
+what that costs the finding: *"v2's nine-of-ten fetch rate is therefore attributable to Appendix
+A's project instructions ALONE, and the generated index's fetch header is UNTESTED rather than
+proven — it has never been in front of a probe"* (harness
+`docs/aetheris/research/hybrid-probe-after-v2-2026-09-09.md`, corrected at harness `f77e565` —
+§What this is, §Method → Run against → Store, and §Reading (e), plus the frontmatter
+`description`; four sites, one claim). The 2026-09-09 boundary re-pinned the index row from
+`4ecf008` to `f77e565` and records that *"this upload is the first time it reaches the store"*
+(`docs/project-knowledge-manifest.md`, the 2026-09-09 boundary block). The condition this row
+measures therefore exists for the first time, and existed for no run in the closed series.
+
+**Done when:** one probe run under the TWO-SURFACE condition — Appendix A's project instructions
+live AND the store's index carrying the fetch header — filed as a measurement record under
+harness `docs/aetheris/research/` in the shape the series established: OKF frontmatter per that
+tree's `README.md` §Frontmatter convention (OKF F3); a **Run against** block stating both
+surfaces and the store copy each rests on; the operator's results file rendered verbatim as the
+probe table; and a **§Reading** that names the outcome against the two branches below rather
+than leaving the comparison to the reader. Protocol as the series ran it — harness
+`docs/aetheris/research/hybrid-probe-baseline-2026-09-08.md` §Method and the v2 record's §Method:
+a fresh in-project claude-ai session; the same ten probes asked verbatim, one each; `github-mcp`
+read-only enabled on the project with the grant proven by a separate instructed fetch outside the
+probe set (the after-bare record's **Run against**, so that a zero in the fetch column is a zero
+of behaviour and not of capability); source, answer and wrong-source scored per probe by the
+operator; each `source_cited` cell carrying the served commit SHA, the ref left unpassed so the
+connector serves `main` at HEAD. Then the index is regenerated — and, per the fourth trigger added
+at agents `7123293`, *"when an indexed tree's `index.md` gains or loses entries"*, an **export
+boundary is owed**, because the new record adds an entry to that tree's index.
+
+**What it decides, both outcomes stated so the row is falsifiable.** The comparison baseline is
+v2's own §Reading (c): fetches on nine of ten probes, 10/10 source, 10/10 answer, 0 wrong-source.
+
+- **Results match v2** — fetch rate and the three scores within noise. The header adds nothing
+  measurable on top of the project instruction. That is a FINDING and not a failure: it argues
+  for simplifying the generated header, and for treating the project instruction as the
+  load-bearing surface.
+- **Results exceed v2** — the header carries independent weight, and the design's second boundary
+  earns its place.
+
+**A precondition, not a step: confirm the store half before probe 1.** Read the store's
+`index.md` in the claude.ai project's Context pane and confirm the fetch paragraph is there
+(at `f77e565` it is line 13, entries starting at 15; at `4ecf008` entries start at 13). No
+instrument in either repository can see the store — that is the 2026-09-09 boundary's own
+finding, `drift_check` check 8 comparing a pin against git and `index_integrity` comparing an
+index against its tree, neither reaching the store. A run whose store half is asserted rather
+than read reproduces exactly the defect this row exists to repair.
+
+**Not done-when:** re-opening the closed probe series — this is a new measurement with its own
+record, and the four series files take a dated pointer at most; changing the index header or
+Appendix A before the run, which would measure a third condition and leave this one still
+unmeasured; any code change in either repository.
+
+**Gated on nothing.** One session, one operator afternoon, no dependency on any other row — it
+can be taken whenever an operator has the time.
+
+`Source: filed 2026-09-09 by claude-code at agents `40048bd` / harness `f77e565`. Every claim above is quoted from, or resolved against, harness `docs/aetheris/research/hybrid-probe-after-v2-2026-09-09.md`, `…/hybrid-probe-baseline-2026-09-08.md`, `…/hybrid-probe-after-bare-2026-09-08.md` and `…/hybrid-context-design-2026-08.md` (Appendix A and §3), and `docs/project-knowledge-manifest.md`'s 2026-09-09 boundary block. The row states no fact those records do not carry; the run it describes is a later, operator-driven session.`

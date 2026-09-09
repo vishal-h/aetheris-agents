@@ -9066,3 +9066,83 @@ unmeasured; any code change in either repository.
 can be taken whenever an operator has the time.
 
 `Source: filed 2026-09-09 by claude-code at agents `40048bd` / harness `f77e565`. Every claim above is quoted from, or resolved against, harness `docs/aetheris/research/hybrid-probe-after-v2-2026-09-09.md`, `…/hybrid-probe-baseline-2026-09-08.md`, `…/hybrid-probe-after-bare-2026-09-08.md` and `…/hybrid-context-design-2026-08.md` (Appendix A and §3), and `docs/project-knowledge-manifest.md`'s 2026-09-09 boundary block. The row states no fact those records do not carry; the run it describes is a later, operator-driven session.`
+
+### BL-203 — the on-demand pin column carries no obligation, and does not say so (#TBD)
+**Status:** OPEN
+**Kind:** documentation · **Contract:** the manifest header's own statement of what the `commit` column is for — *"a future session can compare the `commit` column against `git log -1 --format=%h -- <path>` in the owning repo to determine whether the project knowledge is stale"*, and *"Check 8 of `scripts/drift_check.py` (`project_knowledge`) parses this table automatically and emits WARN for any stale entry"* (`docs/project-knowledge-manifest.md`, opening paragraphs) — against check 8's surface skip, which exempts most of the table's rows from exactly that comparison and says so nowhere the reader of those sentences will be
+**Size:** XS · **Priority:** low — nothing fails; the cost is a reader chasing a lag that is not drift
+**Section:** aetheris-agents — `docs/project-knowledge-manifest.md`; on the drop branch also `scripts/repin_manifest.py` and `tests/test_repin_manifest.py`. No change to `scripts/drift_check.py` on either branch
+
+**The column means two different things and the table is silent about which.** For a kernel row
+(`export`, `both`) the pin is a claim about the STORE — the uploaded copy came from this commit —
+and check 8 compares it against git, which is the only way store staleness becomes visible. For an
+`on-demand` row nothing was ever uploaded: the document is served from HEAD by the connector, so
+there is no store copy for the pin to describe, and check 8 skips those rows deliberately. The
+skip and its reason are in the source and only in the source — `scripts/drift_check.py`, the
+module docstring's `project_knowledge` entry (*"Rows on the `on-demand` surface are not compared:
+HEAD is the surface they are served from, so nothing about them can be stale"*, at `:22-24` at
+HEAD) and the branch that performs it (`:675-680`, whose comment already states the distinction
+this row asks the manifest to state: *"the pin is a map entry, not a claim"*). The
+PASS line reports the split (`:729-734`), so a reader of the OUTPUT can see it; a reader of the
+TABLE cannot.
+
+**The population, with the command rather than a bare number.** At the commit filing this row:
+27 `on-demand`, 8 `export`, 2 `both`, 37 rows. Reproduce —
+`python3 -c "import sys;sys.path.insert(0,'scripts');import _manifest,collections;print(collections.Counter(r.surface for r in _manifest.read_rows()))"`.
+So the majority of the cells in that column look identical to a load-bearing pin, sit in the same
+column under the same header, and mean something else: a note of when the file last moved,
+maintained by nothing between boundaries and compared by nothing at all.
+
+**The hazard is a reader treating a lagging on-demand pin as drift to chase** — or, in the shape
+already observed, keying a prediction about check 8 on *does this file carry a manifest row* where
+check 8 keys on *does this row's surface make it comparable*. The worked instance is on the record:
+the 2026-09-09 export boundary re-pinned `aetheris--research-README.md` from `a950ca9` to
+`324584c`, a harness commit that already existed. That boundary block calls it the
+*"on-demand pin staleness no gate can see"*, and its prediction paragraph records that the re-pin
+could not appear in check 8's output in either direction — *"which is also why it was invisible
+until the re-pin"* (`docs/project-knowledge-manifest.md`, the 2026-09-09 boundary block).
+`[The prompt filing this row also cites the README round itself (harness `324584c`) as having
+produced a WARN prediction wrong for this reason. That is recorded here as PROMPT-SUPPLIED and NOT
+RESOLVED: the round's prediction lives in its packet, packets are by default sent to a session
+scratchpad, and neither repository carries it — `324584c`'s commit message contains no WARN
+prediction, and `docs/reviews/` holds no packet for that round. The row does not rest on it; the
+boundary block above is committed and carries the same mechanism.]`
+
+**Done when:** the manifest states, AT THE POINT A READER MEETS THE COLUMN — the opening
+paragraphs, not only the `Surfaces` paragraph below them — what the pin means for each surface:
+for `export` and `both` a claim about the store that check 8 compares, for `on-demand` a
+last-moved note that nothing compares. Whichever branch is taken, the two sentences quoted in
+**Contract** above are the ones that currently over-claim, and are the ones to repair. Then
+`python3 scripts/drift_check.py --strict` green, post-commit, with the WARN set predicted in
+writing first under the surface-aware predicate (a row warns only if its surface is `export` or
+`both` AND its pinned commit is behind its own file's last-touching commit).
+
+**Two branches, both acceptable; the round takes one and says why in its commit.**
+
+- **Mark it.** Keep the value and add one line of manifest prose — and, if it reads better, a
+  visual marker in the on-demand cells — saying the column is a last-moved note on that surface
+  and that nothing compares it. Cheapest, preserves the information, touches no script.
+- **Drop it.** Leave the cell empty or a dash for `on-demand` rows. Honest, loses last-moved
+  information, and makes the table ragged.
+
+**The drop branch is the one with a tail, and it is named here so the round costs it before
+choosing.** `scripts/repin_manifest.py` re-pins EVERY row regardless of surface — its loop
+(`:73`) tests only `row.commit is None`, the self-referential row, and has no surface condition —
+so a drop branch must decide what the script writes into an emptied cell, and that decision is the
+mechanism by which an `on-demand` pin is currently corrected at all (the 2026-09-09 boundary
+record names the script as *"the only thing that clears it"*). The field is available:
+`_manifest.Row` carries `surface` (`scripts/_manifest.py:78`). The test fixtures are not: every
+row built by `tests/test_repin_manifest.py` hardcodes `| export |` (`:115`), so the drop branch
+also owes a fixture carrying an `on-demand` row and an assertion over what the script does to it.
+None of that is owed by the mark branch.
+
+**Not done-when:** changing check 8's behaviour — the skip is correct and its stated reason is
+sound, and this row exists because that reason is unreachable from the table, not because it is
+wrong; changing what any surface MEANS, or reassigning a row between surfaces, which is the design
+note's act and needs a probe (**BL-202**); touching the boundary procedure in
+`prompts/bl-002-refresh-project-knowledge.md`.
+
+**Gated on nothing.** One documentation round on the mark branch; add a script edit and one test
+fixture on the drop branch.
+
+`Source: filed 2026-09-09 by claude-code. Every citation was resolved at HEAD in the commit filing this row rather than carried from the prompt: the two `drift_check.py` line ranges were read (the prompt supplied none), the surface tally was derived by the command quoted above, and the 2026-09-09 boundary block was read in `docs/project-knowledge-manifest.md`. The one claim that did not resolve is bracketed above as prompt-supplied.`

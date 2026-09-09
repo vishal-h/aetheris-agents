@@ -9,6 +9,21 @@ evaluates. All sprint and agent commands run from `../aetheris/`.
 
 ---
 
+## How context reaches Claude
+
+Project knowledge holds a small kernel. The rest of the corpus stays in git and is
+fetched on demand through the GitHub connector.
+
+- [`docs/project-knowledge-manifest.md`](docs/project-knowledge-manifest.md) — the
+  surface column says where each document lives; the connector notice says how to
+  reach the fetched ones.
+- [`../aetheris/docs/aetheris/research/hybrid-context-design-2026-08.md`](../aetheris/docs/aetheris/research/hybrid-context-design-2026-08.md)
+  — the design and its measurements, in the harness repo.
+- [`prompts/bl-002-refresh-project-knowledge.md`](prompts/bl-002-refresh-project-knowledge.md)
+  — run this to refresh the store.
+
+---
+
 ## Use cases
 
 **`docs/use-cases.md` is the registry** — the committed declaration of what the use cases are

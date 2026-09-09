@@ -9102,11 +9102,19 @@ the 2026-09-09 export boundary re-pinned `aetheris--research-README.md` from `a9
 could not appear in check 8's output in either direction — *"which is also why it was invisible
 until the re-pin"* (`docs/project-knowledge-manifest.md`, the 2026-09-09 boundary block).
 `[The prompt filing this row also cites the README round itself (harness `324584c`) as having
-produced a WARN prediction wrong for this reason. That is recorded here as PROMPT-SUPPLIED and NOT
-RESOLVED: the round's prediction lives in its packet, packets are by default sent to a session
-scratchpad, and neither repository carries it — `324584c`'s commit message contains no WARN
-prediction, and `docs/reviews/` holds no packet for that round. The row does not rest on it; the
-boundary block above is committed and carries the same mechanism.]`
+produced a WARN prediction wrong for this reason. Filed as PROMPT-SUPPLIED and NOT RESOLVED, and
+**confirmed 2026-09-09 by the arbiter, who holds that round's review packet**: it predicted two
+WARNs for `324584c`, observed one, and diagnosed the cause as keying on *does this file carry a
+manifest row* where check 8 keys on *does that row's surface make it comparable* — the same
+mis-keying this row is about, one round earlier and on the prediction side rather than the pin
+side. **The evidence is real and lives outside both repositories**, so the filing session's
+negative was correct and stands: `324584c`'s commit message carries no WARN prediction,
+`docs/reviews/` holds no packet for that round, and a search of the harness for a recorded
+prediction returns nothing against a positive control of four hits in
+`docs/project-knowledge-manifest.md`. Recorded so a later reader learns the instance is genuine
+and where it is held, rather than re-running those searches and concluding it never happened. The
+row does not rest on it either way; the boundary block above is committed and carries the same
+mechanism.]`
 
 **Done when:** the manifest states, AT THE POINT A READER MEETS THE COLUMN — the opening
 paragraphs, not only the `Surfaces` paragraph below them — what the pin means for each surface:

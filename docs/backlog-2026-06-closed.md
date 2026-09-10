@@ -7751,3 +7751,134 @@ Every anchor here was resolved against the tree at the commit under test, not ca
 filing row.`
 
 ---
+
+## The close — 2026-09-10
+
+**One row, arriving as a move, and the first row this backlog has closed on work an autonomous
+session produced.** BL-065 was implemented end to end by the ticket session of backlog-loop
+experiment run 1, batch-reviewed and accepted as-is, and merged to harness `main` at `185b4c9`.
+The review packet is `../aetheris/docs/reviews/bl-065-review.md` and the run's own record is
+`../aetheris/docs/aetheris/research/experiments/auto-run-1-report.md` §6; both live in the harness
+repo, so they are repo-qualified here rather than cited as if they resolved in this one.
+
+**Placement follows the archive's own convention**, as `fda1466` states it and the 2026-08-26
+containers last applied it: an arrival lands under a new dated `## The close — …` container at EOF,
+not under the topic container reproduced from the open file (BL-065 sat under
+`## Harness (aetheris/)` there). A new round gets a new dated container.
+
+**The row was closed in two commits, not one, and the split is the point.** At `e8a73ab` this
+repository recorded the implementation while the work sat on an unmerged local branch and
+deliberately HELD the status at `OPEN` — `scripts/backlog_status.py --check` enforces that a
+terminal row lives in this file, and declaring DONE against a branch `main` did not carry would
+have made the archive assert a fix a fresh clone did not have. The merge is what made the
+declaration true; this commit is what makes it. A row is terminal when the code is, not when the
+review is.
+
+### BL-065 — DONE 2026-09-10 · a failed trajectory write no longer reports the run as `done` (#TBD)
+**Status:** DONE
+**Size:** S · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/agent/server.ex`)
+
+`[Heading superseded 2026-09-10, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns, *An artifact's
+kind decides how a correction is made; its push state decides only whether the correction may be
+silent*). This row is a PUBLISHED RECORD, not a ratified decision. The heading previously read:*
+
+> `### BL-065 — A failed trajectory write still reports the run as `done` (#TBD)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`; BL-065 carries no `<details>`
+block, so there is no archived status to preserve beside a live one, and two depth-0 fields would
+fail `backlog_status.py --check` outright. The heading was TRUE WHEN WRITTEN — the defect was real
+at harness `6f89261` and at every commit before it — and is false as of harness `185b4c9`. A
+SUPERSESSION, not R32.*
+
+*EVERYTHING BETWEEN THIS NOTE AND THE **Implemented, reviewed and merged** PARAGRAPH IS
+BYTE-IDENTICAL to the row as it stood in `docs/backlog-2026-06.md` at `f29f6fd`, its Done-when
+included. It is the record of what the row declared BEFORE the work; the answer is appended after
+it, never woven into it. sha256 of that body, computed before the write:
+`35cdaa462a36c9eab4d3f5006c6380cae43a6c57b79752a8a3933f971bb5b0fa`.*
+
+*WHAT FOLLOWS IT IS NOT BYTE-IDENTICAL AND IS NOT CLAIMED TO BE.* Those paragraphs are the close
+record this repository wrote at `e8a73ab`, REWRITTEN here to cite the merge and to drop the
+hold-at-OPEN language, whose stated condition — *"its terminal declaration and archive move belong
+to whoever merges `auto/run-1`"* — has now been met. Nothing depended on the earlier wording: it
+was written and superseded between export boundaries, so it never reached the store, and the text
+it replaces is readable at `e8a73ab`.]`
+
+Raised by BL-030 r1 and carried through r2. Not introduced there — latent since
+the write was added.
+
+**The defect.** `execute_run/…` calls the trajectory write and then branches on a
+*different* value (`server.ex:680-684`):
+
+```elixir
+    Aetheris.Trajectory.File.write(config.run_id, events, meta)
+
+    case result do
+      :ok -> GenServer.cast(server_pid, {:run_complete, :done})
+      {:error, reason} -> GenServer.cast(server_pid, {:run_failed, reason})
+    end
+```
+
+`result` is the **loop's** result. `File.write/3`'s `{:ok, path} | {:error, …}` is
+never examined, so a disk-full, permission or rename failure produces a run whose
+status reads `done`, with no trajectory file and no error recorded anywhere. The
+same pattern is at the resume path (`server.ex:952`).
+
+**Class:** Silent-wrong-answer (harness `CLAUDE.md`) — the failure renders as a
+normal completion, which is exactly what lets it survive. Ask what a broken write
+looks like from outside: identical to a successful one.
+
+**Consequence already relied upon.** BL-030 r1's completion transition treats
+terminal status as "the harness has finished writing", *not* "the file exists",
+and its reload is best-effort for this reason — on this path Rig stays in the
+reconstructed view with its terminal banner. That degradation is correct and
+should stay correct after this is fixed; fixing it here means the operator also
+learns the write failed.
+
+**Done when:** a failed trajectory write is surfaced — the run does not report
+`done` on a write failure, or the failure is recorded as an event/log with the
+reason — and both call sites (`:680`, `:952`) are covered. Exercise the gap
+explicitly (a write forced to fail must not produce a `done` run), not just the
+happy path.
+
+**Implemented, reviewed and merged.** Produced 2026-09-10 by the autonomous ticket session of
+backlog-loop experiment run 1, batch-reviewed and **ACCEPTED AS-IS**, no edit required before
+landing. Committed as harness `e28e009` on `auto/run-1` and merged to harness `main` at
+**`185b4c9`** (`--no-ff`; the branch is kept rather than deleted, the run-1 report citing it).
+Both call sites bind `Aetheris.Trajectory.File.write/3`'s return value and branch on a new private
+`run_outcome/2` (three clauses) instead of on the loop's `result` alone; a write failure now casts
+`{:run_failed, {:trajectory_write_failed, reason}}` rather than `{:run_complete, :done}`. Two new
+tests, one per call site, red before the fix and green after, with per-site mutation confirming
+each test binds to its own call site rather than both binding to `:680`. BL-030 r1's degradation is
+preserved: terminal status still means *the harness has finished writing*, not *the file exists*,
+and the reload path is untouched.
+
+**Done-when, arm by arm.** The first arm — *the run does not report `done` on a write failure* — is
+**discharged at both call sites**. The second arm — *or the failure is recorded as an event/log
+with the reason* — is a disjunct, so this Done-when is satisfied without it; it remains
+**undischarged by design**, the run-1 addenda having ruled that branch unavailable for this row.
+The reason reaches only a transient `WaitRegistry` payload today: `handle_cast({:run_failed, …})`
+appends no event and SQLite stores only `"failed"`. That is a real residue and it is deliberately
+**not filed** — it is the row's own second arm, narrowed by ruling rather than left undone, and
+recorded here so a later reader meets it rather than rediscovers it.
+
+**One reviewer finding, recorded and not reopened.** The loop-failed-**and**-write-failed
+combination is untested. `run_outcome/2`'s clause 1 gives the loop's own reason precedence, and
+dialyzer confirms all three clauses reachable, but the existing adapter-error tests exercise clause
+1 with a *successful* write only. In a change whose point is *stop discarding the write result*,
+the one arm that deliberately discards it rests on reading rather than on a test. It did not block
+acceptance — a run whose loop failed already does not report `done`, so the Done-when is met — and
+it is a candidate follow-up, not a row.
+
+**Gates at the merge.** `mix test` on harness `main` at `185b4c9`: **983 tests, 0 failures, 135
+excluded**, exit 0 — 981 before the merge plus the two new ones. At the ticket commit the session
+also ran `mix format --check-formatted`, `mix credo --strict`, `mix dialyzer` (0 errors) and
+`mix compile --warnings-as-errors`, all exit 0. **`mix hex.audit` is RED, exit 1** — two upstream
+`mint` advisories, unrelated to this change, carried openly and now tracked as **BL-204**; it is
+named with its ref rather than relaxed, re-pointed or downgraded. Agents-side,
+`scripts/backlog_status.py --check` is green at this move.
+
+**What this close costs.** The row is moving into a file whose manifest row is on the `on-demand`
+surface, so check 8 compares nothing about it and this move produces no `project_knowledge` WARN in
+either direction. That is a property of the surface, not evidence that the archive and the store
+agree — the distinction **BL-203** exists to state at the point a reader meets the column.

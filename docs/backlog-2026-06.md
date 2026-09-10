@@ -9263,3 +9263,65 @@ of done). Until it closes, the red is **named with this row's ref** in any packe
 boundary runs it, and re-triaged by nobody.
 
 `Source: found 2026-09-10 by the autonomous ticket session of backlog-loop experiment run 1, running the harness gate set off-territory at the BL-065 ticket boundary; captured as finding 1 of `../aetheris/docs/reviews/bl-065-review.md` (§Verification 5 carries the whole output quoted above) and named there rather than filed, that session being forbidden to file. Filed by the operator at the run-1 landing, per the same packet's own reading of the gate rule. The run-1 report records it at `../aetheris/docs/aetheris/research/experiments/auto-run-1-report.md` §8.2.`
+
+---
+
+### BL-205 — the cloudcost seat-idleness test asserts `candidates == 0` against today's date, so it went red on a calendar boundary (#TBD)
+**Status:** OPEN
+**Kind:** defect — a green test that expires · **Size:** TBD — the fix is a judgement, not yet ruled · **Priority:** medium
+**Section:** cloudcost (`cloudcost/tests/test_fetch_github.py`, `cloudcost/scripts/detect_orphans.py`)
+
+**The failure.** `cloudcost/tests/test_fetch_github.py::test_the_normalized_inventory_is_readable_by_the_shared_rule_engine`
+fails at its last assertion, `assert counts["candidates"] == 0` → `assert 1 == 0`. Reproducer,
+one line from the repo root:
+
+```
+python3 -m pytest -q "cloudcost/tests/test_fetch_github.py::test_the_normalized_inventory_is_readable_by_the_shared_rule_engine"
+```
+
+**The mechanism.** The test calls `detect_orphans.py` with no `--reference-date`, so every age
+rule resolves against **today**. The seat rule fires above `DEFAULT_SEAT_INACTIVE_DAYS = 30`
+(`cloudcost/scripts/detect_orphans.py:92`). The recorded seat at
+`last_activity_at: 2026-08-06T11:09:27+05:30` crossed 30 days on **2026-09-06**, which is when
+the assertion started failing; it is one candidate today. The remaining five recorded seats sit
+at `2026-08-13`, and they cross next — at which point the count rises again and the test fails
+differently, with a different number.
+
+**The crossing schedule, probed rather than reasoned.** The fixture set
+(`cloudcost/tests/fixtures/github_copilot_seats.json`) holds six seats: one at `2026-08-06` and
+**five** at `2026-08-13`, of which one is `05:25+05:30` — i.e. `2026-08-12T23:55Z`, a day earlier
+in UTC than its local date reads. Running `detect_orphans.py` over the inventory the test itself
+produces, with `--reference-date` swept, gives: `2026-09-05` → 0, **`2026-09-06` → 1**,
+`2026-09-10` → 1 (today), **`2026-09-12` → 2**, **`2026-09-13` → 6**, `2026-09-14` → 6;
+`skipped` stays 0 throughout. So there are two further step changes, not one, and the second
+takes the count to **6**. `[The filing instruction for this row said the next seat crosses on
+2026-09-13 "at which point the count becomes 2". That pairs the right date with the wrong count:
+2 arrives on 2026-09-12, from the UTC-shifted seat, and 2026-09-13 brings 6. Noted rather than
+followed, and the sweep above is the truth-maker.]`
+
+**Provenance.** Found 2026-09-10 by the off-territory gate run recorded in
+`filter-rev1-packet.md` §7c — a session-scratchpad packet, in neither tree, so it is cited by
+filename and cannot be opened by anyone but its author. **Not caused by that work:** both of its
+commits are Markdown-only. That is inference from the diff — **the gate was NOT re-run at the
+base commit to confirm**, and this row does not claim it was.
+
+**Predicted, and arrived.** The `## Learning — m6-cloudcost` entry in harness `CLAUDE.md` says
+of the unexercised seat arm that it *"closes on its own the first time a seat on this account
+crosses 30 days idle. No ticket owns it and none should."* It closed, exactly as written. What
+that entry did not anticipate is that closing it turns a **green test red** — the arm's first
+exercise arrives as a gate failure rather than as coverage.
+
+**Two candidate fixes, NEITHER ruled.** (1) Pin `--reference-date` in the test: deterministic,
+and it retires a live assertion — the test stops tracking the account and starts tracking a
+frozen date. (2) Give seats a rule, which is what the test's own comment defers to t3.
+
+**One thing to establish first.** That comment reads: *"t3 is the ticket that gives seats a rule.
+Until it lands, a legible seat yields no candidate, and that is the correct result rather than a
+gap."* If **t3 has landed**, the assertion is guarding something other than what the comment
+says it guards, and which fix is right cannot be chosen until that is settled.
+
+**Done when:** the gate is green **and** this row records which candidate was taken and why. A
+fix that retires the live assertion **says so explicitly** rather than leaving the retirement to
+be inferred from the diff.
+
+`Source: filed 2026-09-10 by claude-code at agents `1b72708`. The failure and the reference-date sweep were reproduced in this session against that tree; the fixture dates are read from `cloudcost/tests/fixtures/github_copilot_seats.json` at the same commit.`

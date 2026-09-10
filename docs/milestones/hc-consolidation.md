@@ -951,6 +951,12 @@ disposition. Read the wording there.
 
 ---
 
+### R37 — the autonomous backlog loop is bounded to rows already executable as written.
+
+`2026-09-10 — ruled by the arbiter in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1 item 8 at harness `aa2f429`, which states the bound, its riders and its evidence, and carries the `[R37]` tag this entry resolves; this entry points at it and does not restate it. Landed under R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

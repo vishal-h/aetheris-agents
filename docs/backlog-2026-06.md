@@ -1830,6 +1830,14 @@ normalizes while BL-025's must reflect the record verbatim.
 - `test/aetheris/execution/verifier_test.exs` — asserts both reader paths,
   including the `"result"`-only failed-tool step
 
+`[Noted 2026-09-10. The ruling does not say whether the constructor collapses
+`"output"` and `"result"` into one key. The Done-when's "only one way to write
+the payload" reads as a collapse, which would break the verbatim reader and
+recorded trajectories. Absent from the Touches list: `eval/scorer/fs_hash.ex`
+and `eval/scorer/exit_code.ex`, which read `:tool_result` payload fields, and
+`cli/commands/run_helpers.ex`'s `format_verbose_detail/1`. Resolve before the
+row is taken.]`
+
 `Source: BL-028 (2026-07-21), BL-027/BL-025 (2026-07-23) — same root cause, third reader.`
 
 ---
@@ -2030,6 +2038,25 @@ already in the Touches list, so the row stays S.
 - `test/aetheris/execution/pre_tools_test.exs` — covers the mode skip clause
 - `test/aetheris/cli/commands/run_helpers_test.exs` — covers config normalization
 - `test/aetheris/eval/runner_test.exs` — covers template mode parsing
+
+`[Corrected 2026-09-10. The ruling above states that the only decoder
+accepting a stored `"verify"` is `run_helpers.ex:462`, reached solely through
+`lookup_run/1`. That is FALSE. `fork.ex`'s `assemble_config/5` decodes stored
+trajectory meta with `String.to_existing_atom`, and `server.ex` writes that
+string at two sites — so after the rename, forking a recorded `:verify` run
+raises ArgumentError. The wording is quoted rather than replaced because a
+reader would otherwise act on it.
+
+Two further gaps found the same day. The amendment's total decode has four
+callers that bind `%{RunConfig.from_map(...) | ...}` and cannot consume an
+`{:error, _}`: `application.ex`, `aetheris.ex`, `scheduler.ex`,
+`api/playground_router.ex`. And the row's premise that the mode carries no
+behaviour is stale — `client.ex`'s `startup_verdict/5` branches on
+`mode == :verify` for the seccomp and overlay gates, added by BL-055/BL-184
+after this row was filed.
+
+The ruling and its Touches list need re-examination before the row is taken.
+Not re-ruled here.]`
 
 `Source: BL-025 execution, rev-2 adjacent finding, 2026-07-23.`
 

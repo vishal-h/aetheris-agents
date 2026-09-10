@@ -347,6 +347,10 @@ beside the rule above because that one says a claim cites the commit it was veri
 this one says what a cited commit may then do. The six commits were resolved from `git log` at the
 promotion, not transcribed from the handoff.`
 
+The **prose budget** in the harness `CLAUDE.md` binds every artifact this repo produces —
+packets, notes, reviews, backlog rows, boundary records. It caps expression, not coverage.
+Canonical there; do not restate it here.
+
 **Every existing gate runs at ticket boundaries, even off-territory** (`mix test`,
 `tsc -b`/`bun run build`, `bun run lint`, sprint, `drift_check --strict`, the Python
 whole-suite gate below). A red gate gets a

@@ -708,6 +708,37 @@ reason — and both call sites (`:680`, `:952`) are covered. Exercise the gap
 explicitly (a write forced to fail must not produce a `done` run), not just the
 happy path.
 
+**Implemented and reviewed 2026-09-10 — harness `e28e009` on `auto/run-1`, UNPUSHED
+and UNMERGED.** Produced by the autonomous ticket session of backlog-loop experiment
+run 1, batch-reviewed and **ACCEPTED AS-IS**, no edit required before landing. Both
+call sites bind `Aetheris.Trajectory.File.write/3`'s return value and branch on a new
+private `run_outcome/2` (three clauses) instead of on the loop's `result` alone; a
+write failure now casts `{:run_failed, {:trajectory_write_failed, reason}}` rather
+than `{:run_complete, :done}`. Two new tests, one per call site, red before the fix
+and green after, with per-site mutation confirming each test binds to its own site.
+`mix test` 983 tests / 0 failures. BL-030 r1's degradation is preserved: terminal
+status still means *the harness has finished writing*, not *the file exists*, and the
+reload path is untouched.
+
+**Done-when, arm by arm.** The first arm — *the run does not report `done` on a write
+failure* — is **discharged at both call sites**. The second arm — *or the failure is
+recorded as an event/log with the reason* — is a disjunct, so the row's Done-when is
+satisfied without it; it remains **undischarged by design**, the run-1 addenda having
+ruled branch 2 unavailable for this row. The reason reaches only a transient
+`WaitRegistry` payload today. Record: harness `docs/reviews/bl-065-review.md`, and the
+run-1 report at `docs/aetheris/research/experiments/auto-run-1-report.md` §6.
+
+`[Status HELD AT OPEN deliberately, 2026-09-10, and this is the note that says why so
+no later reader reads it as an oversight. The work is committed to a LOCAL branch that
+is neither pushed nor merged — `main` does not carry it, and a fresh clone at HEAD
+still has the defect. `**Status:** DONE` is the file's terminal value and
+`scripts/backlog_status.py --check` enforces that a terminal row lives in
+`docs/backlog-2026-06-closed.md`; declaring DONE here would have turned that gate red
+(mutation-tested at this commit: `FAIL BL-065: **Status:** DONE is terminal, but the
+row is in backlog-2026-06.md`, exit 1, against 202/202 OK). The row therefore stays
+OPEN with the record above, and its terminal declaration and archive move belong to
+whoever merges `auto/run-1`. Ruled by the operator at the run-1 landing.]`
+
 ---
 
 ### BL-071 — Resource-level AWS cost + the resource-rate spot-check (#TBD)

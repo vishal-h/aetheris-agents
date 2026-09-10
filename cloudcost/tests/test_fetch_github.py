@@ -915,15 +915,20 @@ def test_the_normalized_inventory_is_readable_by_the_shared_rule_engine(
 
     result = subprocess.run(
         [sys.executable, str(USE_CASE_ROOT / "scripts" / "detect_orphans.py"),
-         str(tmp_path / f"github_inventory_{PERIOD}.json"), "--output-dir", str(tmp_path)],
+         str(tmp_path / f"github_inventory_{PERIOD}.json"), "--output-dir", str(tmp_path),
+         "--reference-date", "2026-09-10"],
         capture_output=True, text=True, cwd=USE_CASE_ROOT,
     )
     assert result.returncode == 0, result.stderr
     counts = json.loads(result.stdout)["counts"]
     assert counts["skipped"] == 0
-    # t3 is the ticket that gives seats a rule. Until it lands, a legible seat yields no
-    # candidate, and that is the correct result rather than a gap.
-    assert counts["candidates"] == 0
+    # The date is pinned because ages are otherwise measured against the inventory's
+    # `generated_at`, which the stub stamps at fetch time — so what this asserts would depend
+    # on the day the suite runs. Every other cross-stage test in the suite pins one.
+    # At 2026-09-10 the fixture's six seats fall either side of `rule_idle_seat`'s >30d with
+    # room to spare: seat 10000004 last acted 2026-08-06 and is 34d idle, the other five acted
+    # 2026-08-12/13 and are 27–28d. So one candidate, and not a boundary case.
+    assert counts["candidates"] == 1
 
 
 # ---------------------------------------------------------------------------------- fixtures

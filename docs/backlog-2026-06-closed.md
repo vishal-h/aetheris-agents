@@ -7994,3 +7994,149 @@ not run or reported here.
 surface, so check 8 compares nothing about it and this move produces no `project_knowledge`
 WARN in either direction — a property of the surface, not evidence that the archive and the
 store agree, the distinction **BL-203** exists to state.
+
+---
+
+## The close — 2026-09-10 (third round)
+
+**A third container on the same date, on the precedent of the second above.** That container's
+own note explains itself by BL-204's non-membership in the first round; BL-205 belongs to
+neither, so the date is qualified again rather than reused.
+
+### BL-205 — DONE 2026-09-10 · the seat test's reference date is pinned and it asserts the post-t3 outcome (#TBD)
+**Status:** DONE
+**Kind:** defect — a green test that expires · **Size:** TBD — the fix is a judgement, not yet ruled · **Priority:** medium
+**Section:** cloudcost (`cloudcost/tests/test_fetch_github.py`, `cloudcost/scripts/detect_orphans.py`)
+
+`[Heading superseded 2026-09-10, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns). The heading
+previously read:*
+
+> `### BL-205 — the cloudcost seat-idleness test asserts `candidates == 0` against today's date, so it went red on a calendar boundary (#TBD)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`; BL-205 carries no `<details>`
+block, so there is no archived status to preserve beside a live one. The heading was TRUE WHEN
+WRITTEN and is false as of `cloudcost/tests/test_fetch_github.py` at this commit. The `**Size:**`
+field is carried unchanged and still reads `TBD — the fix is a judgement, not yet ruled`; the
+judgement is ruled below, and the field is left as the row filed it rather than back-filled.
+EVERYTHING BETWEEN THIS NOTE AND THE **Neither candidate was taken** PARAGRAPH IS BYTE-IDENTICAL
+to the row as it stood in `docs/backlog-2026-06.md` at `34b1575`, lines 9250–9304, its Done-when
+included. sha256 of that body, computed before the write and verified against this file after it:
+`5f271ee0a4aee5f7576bbbaa2ba5c90fa5dcac1419cd898e5876f00f2ade8a87`. WHAT FOLLOWS IT IS NOT
+BYTE-IDENTICAL AND IS NOT CLAIMED TO BE.]`
+
+**The failure.** `cloudcost/tests/test_fetch_github.py::test_the_normalized_inventory_is_readable_by_the_shared_rule_engine`
+fails at its last assertion, `assert counts["candidates"] == 0` → `assert 1 == 0`. Reproducer,
+one line from the repo root:
+
+```
+python3 -m pytest -q "cloudcost/tests/test_fetch_github.py::test_the_normalized_inventory_is_readable_by_the_shared_rule_engine"
+```
+
+**The mechanism.** The test calls `detect_orphans.py` with no `--reference-date`, so every age
+rule resolves against **today**. The seat rule fires above `DEFAULT_SEAT_INACTIVE_DAYS = 30`
+(`cloudcost/scripts/detect_orphans.py:92`). The recorded seat at
+`last_activity_at: 2026-08-06T11:09:27+05:30` crossed 30 days on **2026-09-06**, which is when
+the assertion started failing; it is one candidate today. The remaining five recorded seats sit
+at `2026-08-13`, and they cross next — at which point the count rises again and the test fails
+differently, with a different number.
+
+**The crossing schedule, probed rather than reasoned.** The fixture set
+(`cloudcost/tests/fixtures/github_copilot_seats.json`) holds six seats: one at `2026-08-06` and
+**five** at `2026-08-13`, of which one is `05:25+05:30` — i.e. `2026-08-12T23:55Z`, a day earlier
+in UTC than its local date reads. Running `detect_orphans.py` over the inventory the test itself
+produces, with `--reference-date` swept, gives: `2026-09-05` → 0, **`2026-09-06` → 1**,
+`2026-09-10` → 1 (today), **`2026-09-12` → 2**, **`2026-09-13` → 6**, `2026-09-14` → 6;
+`skipped` stays 0 throughout. So there are two further step changes, not one, and the second
+takes the count to **6**. `[The filing instruction for this row said the next seat crosses on
+2026-09-13 "at which point the count becomes 2". That pairs the right date with the wrong count:
+2 arrives on 2026-09-12, from the UTC-shifted seat, and 2026-09-13 brings 6. Noted rather than
+followed, and the sweep above is the truth-maker.]`
+
+**Provenance.** Found 2026-09-10 by the off-territory gate run recorded in
+`filter-rev1-packet.md` §7c — a session-scratchpad packet, in neither tree, so it is cited by
+filename and cannot be opened by anyone but its author. **Not caused by that work:** both of its
+commits are Markdown-only. That is inference from the diff — **the gate was NOT re-run at the
+base commit to confirm**, and this row does not claim it was.
+
+**Predicted, and arrived.** The `## Learning — m6-cloudcost` entry in harness `CLAUDE.md` says
+of the unexercised seat arm that it *"closes on its own the first time a seat on this account
+crosses 30 days idle. No ticket owns it and none should."* It closed, exactly as written. What
+that entry did not anticipate is that closing it turns a **green test red** — the arm's first
+exercise arrives as a gate failure rather than as coverage.
+
+**Two candidate fixes, NEITHER ruled.** (1) Pin `--reference-date` in the test: deterministic,
+and it retires a live assertion — the test stops tracking the account and starts tracking a
+frozen date. (2) Give seats a rule, which is what the test's own comment defers to t3.
+
+**One thing to establish first.** That comment reads: *"t3 is the ticket that gives seats a rule.
+Until it lands, a legible seat yields no candidate, and that is the correct result rather than a
+gap."* If **t3 has landed**, the assertion is guarding something other than what the comment
+says it guards, and which fix is right cannot be chosen until that is settled.
+
+**Done when:** the gate is green **and** this row records which candidate was taken and why. A
+fix that retires the live assertion **says so explicitly** rather than leaving the retirement to
+be inferred from the diff.
+
+`Source: filed 2026-09-10 by claude-code at agents `1b72708`. The failure and the reference-date sweep were reproduced in this session against that tree; the fixture dates are read from `cloudcost/tests/fixtures/github_copilot_seats.json` at the same commit.`
+
+**Neither candidate was taken, because the row's one-thing-to-establish settles them both.**
+t3 **has** landed — `97c61a0`, 2026-08-14, *"feat(m6 t3): the seat orphan rule"*, which is where
+`rule_idle_seat` and `DEFAULT_SEAT_INACTIVE_DAYS = 30` come from (`git log -S 'def rule_idle_seat'`
+returns that commit and no other). So candidate (2), *give seats a rule*, was already discharged
+four weeks before this row was filed, and candidate (1), *pin `--reference-date`*, was diagnosed as
+the whole fix when it is half of one: the assertion was **obsolete**, not merely date-sensitive. Its
+comment deferred to a ticket that had landed, and `candidates == 0` had been asserting the absence
+of a rule that exists. A pin alone would have frozen a wrong expectation into a deterministic one.
+
+**What landed.** `--reference-date 2026-09-10` on the `detect_orphans.py` invocation, and
+`candidates == 1` in place of `candidates == 0`, with the comment replaced by one stating why the
+date is pinned and what it selects. `returncode == 0` and `skipped == 0` are untouched — they are
+the test's stated purpose, the adapter/rule-engine seam, and they are not what broke.
+
+**The count was measured, not reasoned.** Before the assertion was written, `detect_orphans.py`
+was run over the inventory the test itself produces, at the pin:
+
+```
+$ python3 scripts/detect_orphans.py <tmp>/github_inventory_2026-07.json \
+      --output-dir <tmp> --reference-date 2026-09-10          # exit 0
+{"resources": 6, "candidates": 1, "reported": 0, "excluded": 0, "skipped": 0}
+```
+
+The single candidate is `idle_seat` on seat `10000004`, whose own evidence string reads *"last
+activity 2026-08-06 — idle 34d at ref 2026-09-10; threshold >30d"*. **34, not 35** — the engine
+floors a timestamp difference against a midnight reference, so the seat's `05:39:27Z` costs it a
+day against the calendar count. The nearest non-firing seat is 28d. The pin therefore sits between
+28 and 34 with margin on both sides, and is not on the rule's `>30` boundary; the row's own swept
+schedule (`2026-09-12` → 2, `2026-09-13` → 6) is now inert, because a frozen reference date cannot
+reach either step.
+
+**The live assertion is retired, and this says so rather than leaving it to the diff.** Before the
+pin this test tracked the account: the six recorded seats aged against today, and the assertion
+would have changed value twice more this month. After it, the test tracks a frozen date and asserts
+what the rule engine does with a fixed inventory. That is a real loss of coverage and it is the
+right trade here — the seam this test exists to assert is `skipped == 0` over a shape the engine
+has never seen, which is date-independent, and the four other cross-stage tests in the suite
+(`test_detect_orphans.py`, `test_compose_report_data.py`, `test_fetch_linode.py`,
+`test_optimization_signals.py`) all pin a reference date for exactly this reason. This test was the
+only one that did not.
+
+**Gates**, all from the agents repo root at this commit. `python3 -m pytest -q
+cloudcost/tests/test_fetch_github.py` — **55 passed**, exit 0. `python3 -m pytest -q -m "not
+integration and not dormant"` under `timeout 1800` — **1621 passed, 3 skipped, 325 deselected
+(integration=114, dormant=211), 7 xfailed in 213.18s**, exit 0, the exit read from the pytest
+command itself and not from a wrapping shell; the run finished well inside its cap rather than
+being cap-killed. `python3 scripts/backlog_status.py --check` — exit 0, *204 of 204 row ids*.
+
+**`drift_check --strict` is owed after this commit, not inside it.** Check 8 reads committed
+history, so its verdict on a commit that edits `docs/backlog-2026-06.md` — a manifest-tracked row
+on the `export` surface — cannot be established by a run that precedes the commit, and a result
+asserted here would be a claim landing in the same commit as the thing that would make it true.
+Run pre-commit at `34b1575` it was **exit 0, 19 PASS 0 FAIL 3 WARN 8 INFO**, the three WARNs all
+`project_knowledge` staleness (`backlog-2026-06.md`, `docs/aetheris/research/index.md`,
+`docs/methodology/milestone-methodology.md`). The post-commit prediction is the **same three
+members** — this commit re-stales `backlog-2026-06.md`'s row rather than adding one, and
+`backlog-2026-06-closed.md` sits on the `on-demand` surface where check 8 compares nothing. The
+run and its verdict are in this round's packet. The manifest is not re-pinned.
+
+**Not touched:** `detect_orphans.py`, the fixtures, any other test, `lib/`, the manifest.

@@ -2006,6 +2006,14 @@ callers all discard or override the mode. The one channel that would execute
 it — the eval task template (`eval/runner.ex:269,298`) — has no CLI
 subcommand, no file loader, and no builtin task that sets it.
 
+**Amended 2026-09-10.** The rename also makes `from_map/2`'s mode decode
+total. `run_config.ex:152` decodes with a bare `String.to_atom/1`, so after
+the rename a stored `"verify"` still becomes `:verify`, matches neither
+guard, and yields a live run that silently loses both skips — the rename
+would introduce the wrong answer it exists to remove. The decode returns an
+error on any unrecognised mode instead. Still no alias; `run_config.ex` is
+already in the Touches list, so the row stays S.
+
 **Touches:** (harness, resolved at `377d455`)
 - `lib/aetheris/run_config.ex` — the `mode` union (`:115`) and the two mode
   docstrings (`:47`, `:54`)
@@ -8909,6 +8917,14 @@ repo**: `drift_check.py`'s `event_types` check `_fail`s on
 the same requirement. That makes this row cross-repo and doc-touching, which
 item 3 excludes — the same ground on which BL-153 was skipped in the run-1
 margin note. It is left off the list rather than decided here.
+
+**Not eligible for the backlog-loop experiment, 2026-09-10.** The
+`docs/rig/specs.md` §6 requirement above makes this row cross-repo, which
+the experiment's design excludes by name ("What this experiment does not
+test: cross-repo coordination"). That holds however the doc question is
+settled, so the doc question is not what disqualifies it and remains open.
+The ruling and Touches list stand for whenever the row is taken
+interactively.
 
 `Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `dsh-model-visible-logged-2026-08.md` L1 (adoption 2), opened in the landed batch; `loop.ex:183` opened at harness `bb42099`.`
 

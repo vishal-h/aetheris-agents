@@ -9243,56 +9243,6 @@ fixture on the drop branch.
 
 ---
 
-### BL-204 — `mix hex.audit` is red on two upstream `mint` advisories (#TBD)
-**Status:** OPEN
-**Kind:** code · **Size:** S · **Priority:** medium — no harness code is wrong; the gate is red and a red gate carried silently is what this row exists to prevent
-**Section:** Harness (`../aetheris/mix.exs`, `../aetheris/mix.lock`)
-
-**The gate.** `mix hex.audit` exits 1 in the harness checkout. Whole output as captured
-2026-09-10:
-
-```
-Advisories:
-  mint 1.9.3 - EEF-CVE-2026-82729 (MEDIUM)
-    aka: CVE-2026-82729, GHSA-7p8w-j234-7qc8
-    Quadratic chunk-size parsing in Mint.HTTP1.Parse allows CPU-exhaustion DoS
-    https://osv.dev/vulnerability/EEF-CVE-2026-82729
-
-  mint 1.9.3 - EEF-CVE-2026-82728 (HIGH)
-    aka: CVE-2026-82728, GHSA-g83f-2j6r-q6m4
-    Unbounded HTTP/1 status-line and chunk-extension buffering in Mint causes memory-exhaustion DoS
-    https://osv.dev/vulnerability/EEF-CVE-2026-82728
-
-Found packages with security advisories
-```
-
-**Upstream-triggered, and unrelated to the ticket that found it.** `mint` is a transitive
-dependency; nothing in this repository or the harness caused either advisory to appear, and
-the change under review when the red surfaced — **BL-065**, the trajectory-write branch —
-touches `lib/aetheris/agent/server.ex` and two test files only. The red is here because an
-off-territory gate was run at a ticket boundary, which is the mechanism `CLAUDE.md`
-§Definition of done describes: *"Gates that only run when a ticket happens to touch their
-territory rot invisibly."* Filing it the day it was found is that rule's other half.
-
-**Not BL-060.** The nearest existing row is **BL-060**, which is **DONE and about `bandit`**,
-a different package and a different advisory set. It is not reopened, altered, or closed by
-this row. The negative was established with positive controls rather than reported bare:
-`grep -cniE "mint|advisor|hex\.audit"` over the two backlog halves returns **17** in the open
-file and **111** in the closed one — CI-workflow prose and `mint` in the *minted* sense, none
-of them a live row — so the search demonstrably reaches.
-
-**Done when:** `mix hex.audit` exits 0 in the harness checkout, by whichever route upstream
-makes available — a `mint` release carrying both fixes pulled through `mix deps.update mint`
-and the resulting `mix.lock` change committed, or, if no fixed release exists yet, a dated
-note in this row recording the check and the next date to re-check. **The gate is not
-relaxed, re-pointed, or downgraded to a warning to get a clean run** (`CLAUDE.md` §Definition
-of done). Until it closes, the red is **named with this row's ref** in any packet whose ticket
-boundary runs it, and re-triaged by nobody.
-
-`Source: found 2026-09-10 by the autonomous ticket session of backlog-loop experiment run 1, running the harness gate set off-territory at the BL-065 ticket boundary; captured as finding 1 of `../aetheris/docs/reviews/bl-065-review.md` (§Verification 5 carries the whole output quoted above) and named there rather than filed, that session being forbidden to file. Filed by the operator at the run-1 landing, per the same packet's own reading of the gate rule. The run-1 report records it at `../aetheris/docs/aetheris/research/experiments/auto-run-1-report.md` §8.2.`
-
----
-
 ### BL-205 — the cloudcost seat-idleness test asserts `candidates == 0` against today's date, so it went red on a calendar boundary (#TBD)
 **Status:** OPEN
 **Kind:** defect — a green test that expires · **Size:** TBD — the fix is a judgement, not yet ruled · **Priority:** medium

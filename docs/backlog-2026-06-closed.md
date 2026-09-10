@@ -7882,3 +7882,115 @@ named with its ref rather than relaxed, re-pointed or downgraded. Agents-side,
 surface, so check 8 compares nothing about it and this move produces no `project_knowledge` WARN in
 either direction. That is a property of the surface, not evidence that the archive and the store
 agree — the distinction **BL-203** exists to state at the point a reader meets the column.
+
+---
+
+## The close — 2026-09-10 (second round)
+
+**A second container on the same date, on the precedent of `## The close — 2026-08-26 (second
+round)` above.** The container above is dated 2026-09-10 and opens *"One row, arriving as a
+move, and the first row this backlog has closed on work an autonomous session produced"* —
+BL-204 is neither, so adding it there would falsify that sentence about a round it does not
+belong to. The date is qualified rather than reused.
+
+### BL-204 — DONE 2026-09-10 · `mint` bumped to 1.10.0 and `mix hex.audit` is green (#TBD)
+**Status:** DONE
+**Kind:** code · **Size:** S · **Priority:** medium
+**Section:** Harness (`../aetheris/mix.lock`)
+
+`[Heading superseded 2026-09-10, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns). This row is
+a PUBLISHED RECORD, not a ratified decision. The heading previously read:*
+
+> `### BL-204 — `mix hex.audit` is red on two upstream `mint` advisories (#TBD)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`; BL-204 carries no `<details>`
+block, so there is no archived status to preserve beside a live one, and two depth-0 fields would
+fail `backlog_status.py --check` outright. The heading was TRUE WHEN WRITTEN — the gate was red at
+harness `94e7adc` and at every commit before it — and is false as of harness `3a85d85`. A
+SUPERSESSION, not R32.*
+
+*EVERYTHING BETWEEN THIS NOTE AND THE **Closed by the bump upstream made available** PARAGRAPH IS
+BYTE-IDENTICAL to the row as it stood in `docs/backlog-2026-06.md` at `86c8196`, lines 9250–9292,
+its Done-when included. It is the record of what the row declared BEFORE the work; the answer is
+appended after it, never woven into it. sha256 of that body, computed before the write:
+`760cdc13a3e3ed323eeaf93f0dcd3ee949bf4ab6cbddc6c4550a362ccb5dfdf8`.*
+
+*WHAT FOLLOWS IT IS NOT BYTE-IDENTICAL AND IS NOT CLAIMED TO BE.*]`
+
+**The gate.** `mix hex.audit` exits 1 in the harness checkout. Whole output as captured
+2026-09-10:
+
+```
+Advisories:
+  mint 1.9.3 - EEF-CVE-2026-82729 (MEDIUM)
+    aka: CVE-2026-82729, GHSA-7p8w-j234-7qc8
+    Quadratic chunk-size parsing in Mint.HTTP1.Parse allows CPU-exhaustion DoS
+    https://osv.dev/vulnerability/EEF-CVE-2026-82729
+
+  mint 1.9.3 - EEF-CVE-2026-82728 (HIGH)
+    aka: CVE-2026-82728, GHSA-g83f-2j6r-q6m4
+    Unbounded HTTP/1 status-line and chunk-extension buffering in Mint causes memory-exhaustion DoS
+    https://osv.dev/vulnerability/EEF-CVE-2026-82728
+
+Found packages with security advisories
+```
+
+**Upstream-triggered, and unrelated to the ticket that found it.** `mint` is a transitive
+dependency; nothing in this repository or the harness caused either advisory to appear, and
+the change under review when the red surfaced — **BL-065**, the trajectory-write branch —
+touches `lib/aetheris/agent/server.ex` and two test files only. The red is here because an
+off-territory gate was run at a ticket boundary, which is the mechanism `CLAUDE.md`
+§Definition of done describes: *"Gates that only run when a ticket happens to touch their
+territory rot invisibly."* Filing it the day it was found is that rule's other half.
+
+**Not BL-060.** The nearest existing row is **BL-060**, which is **DONE and about `bandit`**,
+a different package and a different advisory set. It is not reopened, altered, or closed by
+this row. The negative was established with positive controls rather than reported bare:
+`grep -cniE "mint|advisor|hex\.audit"` over the two backlog halves returns **17** in the open
+file and **111** in the closed one — CI-workflow prose and `mint` in the *minted* sense, none
+of them a live row — so the search demonstrably reaches.
+
+**Done when:** `mix hex.audit` exits 0 in the harness checkout, by whichever route upstream
+makes available — a `mint` release carrying both fixes pulled through `mix deps.update mint`
+and the resulting `mix.lock` change committed, or, if no fixed release exists yet, a dated
+note in this row recording the check and the next date to re-check. **The gate is not
+relaxed, re-pointed, or downgraded to a warning to get a clean run** (`CLAUDE.md` §Definition
+of done). Until it closes, the red is **named with this row's ref** in any packet whose ticket
+boundary runs it, and re-triaged by nobody.
+
+`Source: found 2026-09-10 by the autonomous ticket session of backlog-loop experiment run 1, running the harness gate set off-territory at the BL-065 ticket boundary; captured as finding 1 of `../aetheris/docs/reviews/bl-065-review.md` (§Verification 5 carries the whole output quoted above) and named there rather than filed, that session being forbidden to file. Filed by the operator at the run-1 landing, per the same packet's own reading of the gate rule. The run-1 report records it at `../aetheris/docs/aetheris/research/experiments/auto-run-1-report.md` §8.2.`
+
+**Closed by the bump upstream made available.** `mint 1.10.0` carries both fixes and states no
+breaking changes; it satisfies `finch 0.23.0`'s `{:mint, "~> 1.8"}`, so `mix deps.update mint`
+took it and `mix.exs` did not change. The `mix.lock` diff is **one line** — `mint 1.9.3 ->
+1.10.0` — and no other package moved, `hpax 1.0.4` included; `castore` is optional and absent
+from the lock. Committed as harness **`3a85d85`** on `main` and pushed, lock-only.
+
+**Done-when, arm by arm.** The Done-when is a disjunction and the FIRST arm was taken: *`mix
+hex.audit` exits 0 in the harness checkout*, by the route it names — a `mint` release carrying
+both fixes, pulled through `mix deps.update mint`, the resulting `mix.lock` change committed.
+The second arm — *a dated note recording the check and the next date to re-check* — was for the
+case where no fixed release existed, and is **not reachable from here**. Nothing at this site
+should be read as a deferral. The gate was **not** relaxed, re-pointed or downgraded.
+
+**Before and after, both whole.** Before, at harness `94e7adc`: exit **1**, twelve lines, the
+two advisories quoted in the body above and nothing else. After, at `3a85d85`: exit **0**, one
+line, `No retired or security advisory packages found`. Both captures are complete rather than
+excerpted — the BL-020 lesson under **Complete-output** is that `hex.audit`'s summary line
+carries no count, so a fragment cannot be told from the whole.
+
+**Gates at the commit**, all from the harness checkout at `3a85d85`, all exit 0: `mix test`
+**983 tests, 0 failures, 135 excluded**; `mix format --check-formatted`; `mix credo --strict`
+(*2068 mods/funs, found no issues*); `mix dialyzer` (*Total errors: 0*); `mix compile
+--warnings-as-errors`, run with `--force` so it recompiled all 107 files rather than passing on
+an up-to-date build. A minor bump that broke a gate would have been a finding; none did.
+
+**What this close does not touch.** **BL-205** — the cloudcost seat-idleness test red on a
+calendar boundary — is a separate row and stays OPEN and red. The Python whole-suite gate is
+not run or reported here.
+
+**What this close costs.** The row moves into a file whose manifest row is on the `on-demand`
+surface, so check 8 compares nothing about it and this move produces no `project_knowledge`
+WARN in either direction — a property of the surface, not evidence that the archive and the
+store agree, the distinction **BL-203** exists to state.

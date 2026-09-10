@@ -1807,6 +1807,29 @@ it, and adding a writer that invents a third key is caught — by a test or by t
 only one way to write the payload. Decide explicitly whether the readers share code or only
 share the convention.
 
+**Ruled 2026-09-10: one writer constructor; readers share the convention.**
+A single function constructs the `:tool_result` payload — the Done-when's
+second arm, "only one way to write the payload" — carrying a `@type` and
+docstring. The existing readers are pointed at it and keep their own
+normalization; they do NOT share an accessor, because BL-028's reader
+normalizes while BL-025's must reflect the record verbatim.
+
+**Touches:** (harness, resolved at `377d455`)
+- `lib/aetheris/execution/loop.ex` — every writer: the in-process `"result"`
+  clauses of `handle_tool_call/5` (`:428-530`), the MCP `"output"` clause
+  (`:548-555`), `exec_server_payload/2` (`:577`), and `record_tool_error/7`
+  (`:355`); the new constructor lands here
+- `lib/aetheris/execution/fork.ex` — `event_to_messages/1`'s `:tool_result`
+  clause (`:115`), BL-028's normalizing reader
+- `lib/aetheris/execution/verifier.ex` — `serve_step/2` (`:301`) and
+  `verify_step/2` (`:331`), BL-025's verbatim readers
+- `test/aetheris/execution/loop_tool_error_test.exs` — asserts the error
+  payload's `"result"` + `"is_error"` keys
+- `test/aetheris/execution/fork_test.exs` — asserts reconstruction from both
+  `"output"`- and `"result"`-keyed payloads
+- `test/aetheris/execution/verifier_test.exs` — asserts both reader paths,
+  including the `"result"`-only failed-tool step
+
 `Source: BL-028 (2026-07-21), BL-027/BL-025 (2026-07-23) — same root cause, third reader.`
 
 ---
@@ -1973,6 +1996,32 @@ event-type union (BL-040). Conflating those two is a recorded sketch-failure; ke
 **Done when:** the mode is renamed to what it does (e.g. `:replay_context`) with its two
 call-site parsers updated, or kept with a docstring stating it performs no verification —
 decided, not left ambiguous.
+
+**Ruled 2026-09-10: rename.** The mode becomes `:replay_context`; both string
+decoders are updated. No deprecated alias, because the mode is not settable
+from any external surface: no CLI switch (`run.ex` and `verify.ex` @switches),
+no Rig field, and the only decoder that accepts a stored `"verify"`
+(`run_helpers.ex:462`) is reached solely through `lookup_run/1`, whose three
+callers all discard or override the mode. The one channel that would execute
+it — the eval task template (`eval/runner.ex:269,298`) — has no CLI
+subcommand, no file loader, and no builtin task that sets it.
+
+**Touches:** (harness, resolved at `377d455`)
+- `lib/aetheris/run_config.ex` — the `mode` union (`:115`) and the two mode
+  docstrings (`:47`, `:54`)
+- `lib/aetheris/execution/loop.ex` — `prepare_llm_messages/3`'s
+  `when mode in [:replay, :verify]` guard (`:416-418`)
+- `lib/aetheris/execution/pre_tools.ex` — the `run/3` skip clause (`:59`) and
+  the two docstrings (`:10`, `:48`)
+- `lib/aetheris/cli/commands/run_helpers.ex` — `normalize_config_value(:mode, …)`
+  (`:462`), the first string decoder
+- `lib/aetheris/eval/runner.ex` — `parse_mode/1` (`:298`) and its call site in
+  `build_run_config/3` (`:269`), the second string decoder
+- `test/aetheris/run_config_test.exs` — covers `from_map/2` mode decoding
+- `test/aetheris/execution/loop_test.exs` — covers mode-gated loop behaviour
+- `test/aetheris/execution/pre_tools_test.exs` — covers the mode skip clause
+- `test/aetheris/cli/commands/run_helpers_test.exs` — covers config normalization
+- `test/aetheris/eval/runner_test.exs` — covers template mode parsing
 
 `Source: BL-025 execution, rev-2 adjacent finding, 2026-07-23.`
 
@@ -8823,6 +8872,43 @@ an assertion that is on in tests and off in record runs.
 invariant; this row is the runtime check behind it. **BL-197** — the D9 pair;
 independent. **BL-005** (closed) — its reconstruction is the derivation this row
 re-uses at write time.
+
+**Ruled 2026-09-10: an event, not a run failure.** A divergence is surfaced as
+an event carrying the first differing position. The trajectory writes normally
+on divergence, so the event lands in a working log — this is not the BL-065
+shape, where the failure had nowhere to record itself.
+
+Two consequences: the new event type must be added to `@event_type_map` in the
+trajectory file module, or replay raises `unknown event type`; and the
+comparison's cost is measured on a STUB run — a real-provider run is not
+required, and anything that surfaces only under a real provider is handled
+when it does.
+
+**Touches:** (harness, resolved at `377d455`)
+- `lib/aetheris/execution/loop.ex` — the `prompt_built` site (`:183`), where
+  the derivation and comparison land
+- `lib/aetheris/trajectory/file.ex` — `@event_type_map` (`:96`), the
+  hand-typed `~w[]a` list the ruling names; `to_event_type/1` (`:112`) is what
+  raises `unknown event type` without it
+- `lib/aetheris/trajectory/event.ex` — `@event_types` (`:20`) and the
+  `@type event_type` union (`:46`). **Not named by the ruling, and required:**
+  `Store`'s decoder map derives from `Event.known_types/0`
+  (`lib/aetheris/store.ex:1072`), so a type absent from `:20` is undecodable
+  on read-back from SQLite. `store.ex` itself needs no edit
+- `test/aetheris/execution/loop_test.exs` — the divergence-injection test
+- `test/aetheris/trajectory/file_test.exs` — round-trips the new type through
+  `@event_type_map`
+- `test/aetheris/trajectory/event_test.exs` — covers the union and
+  `known_types/0`
+
+**Outside this Touches list, and outside filter item 3 — needs a ruling.**
+Adding an event type also requires **`docs/rig/specs.md` §6 in the agents
+repo**: `drift_check.py`'s `event_types` check `_fail`s on
+`"<type> in event.ex but missing from specs.md §6"` (`scripts/drift_check.py`
+`check_event_types`, `:183`), and harness `CLAUDE.md` critical rule 14 states
+the same requirement. That makes this row cross-repo and doc-touching, which
+item 3 excludes — the same ground on which BL-153 was skipped in the run-1
+margin note. It is left off the list rather than decided here.
 
 `Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `dsh-model-visible-logged-2026-08.md` L1 (adoption 2), opened in the landed batch; `loop.ex:183` opened at harness `bb42099`.`
 

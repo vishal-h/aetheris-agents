@@ -637,6 +637,7 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 | `pre_tool_result` | intermediate result before tool execution |
 | `context_summarised` | rolling-context summary was applied |
 | `run_orphaned` | `reason`, `last_event_type?` — written by the startup / `mix aetheris sweep` cure when an orphaned `running` run is marked `failed` |
+| `skill_injected` | `skill_id`, `content_hash` — one per served catalogue entry at step 0 (m14 D9); registered by m14 T2, emitted from m14 T12 |
 
 **Note on `run_orphaned`:** unlike every other terminal event, `run_orphaned`
 is written *by the harness sweep*, not by the run's own loop — the owning

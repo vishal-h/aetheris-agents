@@ -9348,3 +9348,89 @@ the four site line numbers were read, the 23-vs-22 counts and the identity of th
 member were derived by differencing the parsed sets rather than counted by eye, the
 zero-emission negative was run with `event.ex`'s own two hits as its positive control, and
 `specs.md:628` and `drift_check.py:170` were opened.`
+
+---
+
+### BL-207 — `run_command` is not confined to the sandbox root; `read_file` and `write_file` are (#TBD)
+**Status:** OPEN
+**Kind:** hardening · **Size:** TBD — the row states the severity; scoping belongs to the round that takes it · **Priority:** high — a permitted basename with an out-of-root argument executes today, and the containment the two file tools enforce is absent from the tool that spawns processes
+**Section:** harness (`../aetheris/native/aetheris_exec_server/src/`, `../aetheris/native/aetheris_worker/src/`)
+
+**The asymmetry.** `read_file` and `write_file` resolve through `Sandbox::resolve` /
+`Sandbox::resolve_new` (`native/aetheris_worker/src/sandbox.rs:28-94`) and return
+`SandboxError::PathEscape` on a path outside the root — rejected lexically first, then
+re-checked after canonicalisation so a symlink cannot launder the escape. `run_command` does
+not. `resolve_working_dir` (`native/aetheris_exec_server/src/main.rs:658-668`) returns an
+absolute `working_dir` verbatim:
+
+```rust
+if Path::new(dir_str).is_absolute() {
+    PathBuf::from(dir_str)
+} else {
+    work_dir.join(dir_str)
+}
+```
+
+There is no comparison against the root on the absolute branch, and no canonicalisation on
+either.
+
+**Three things compound it.**
+
+- **`PERMITTED_COMMANDS` constrains the basename and nothing else.** The list is
+  `native/aetheris_exec_server/src/runner.rs:7-24`; `is_permitted` (`runner.rs:26-36`) takes
+  `Path::new(command).file_name()` and asks only whether that string is in the list — its own
+  docstring says so: *"Only the final path component is checked, so `/usr/bin/git` → `git` →
+  permitted."* The args are never examined, the `working_dir` is never examined, and which
+  binary of that name PATH finds is never examined.
+- **No chroot, so the host tree stays visible.** The worker enters a user and mount namespace
+  via `unshare(2)` (`native/aetheris_worker/src/sandbox.rs:141-161`) and stops there:
+  `grep -n 'chroot\|pivot_root' native/aetheris_worker/src/*.rs` returns nothing, with the
+  same grep for `unshare` as the positive control (`sandbox.rs:141,155,161` and
+  `main.rs:81`). A new mount namespace that never changes root is a namespace holding the
+  same filesystem.
+- **Interpreters resolve from outside the root.** `Command::new(command)` (`runner.rs:102`)
+  is an ordinary PATH lookup, so `python3`, `mix` and `node` are found on the host and run
+  host code by construction.
+
+**Net: a permitted basename with an out-of-root argument executes.** `cat /etc/hosts` needs
+no absolute `working_dir` at all — `cat` is permitted and the path is an argument, which
+nothing inspects. This is a **design gap, not a bug**: the two file tools were given a
+containment mechanism and the command tool was not, and each piece behaves exactly as its
+own code says it does.
+
+`[Found at filing, not prompt-supplied, and recorded because it is the same gap on the
+documentation surface: the tool schema the LLM is shown ASSERTS the containment. The
+`working_dir` description in `lib/aetheris/execution/tool_schema/registry.ex:57-60` reads
+*"Working directory relative to sandbox root (default: '.')"*; the exec server's own copy of
+the same schema (`native/aetheris_exec_server/src/main.rs:121-124`) reads *"relative to
+AETHERIS_WORK_DIR"*, which is the honest description of what `resolve_working_dir` does with
+a relative path and still silent about what it does with an absolute one. Named here as
+evidence for the row's claim rather than as a second row — whichever branch the Done-when
+takes, one of these two strings becomes false and has to move with it.]`
+
+**Done when:** a decision is recorded ON THIS ROW between at least these three, with its
+reasoning — the row does not prescribe a fix:
+
+1. **Confine `resolve_working_dir` to the root** the way `Sandbox::resolve` confines paths,
+   and rule what happens to the argument surface, which that does not reach.
+2. **`pivot_root` in the worker**, which reaches the argument surface and the PATH lookup
+   together and costs the run its access to the host toolchain the permitted commands live in.
+3. **An explicit ruling that `run_command` is intentionally uncontained**, with what that
+   means for the determinism contract written down — the contract's §2 Environment definition
+   (`../aetheris/docs/aetheris/determinism-contract.md:54-55`) scopes the environment to *"the
+   per-run OverlayFS working directory, the wall clock, and the RNG seed"*, and an uncontained
+   `run_command` is a fourth thing not named there.
+
+**Not done-when:** narrowing `PERMITTED_COMMANDS`. A shorter allowlist changes which host
+binaries a run can reach and leaves the containment asymmetry exactly where it is.
+
+**Collides with:** **BL-197** — that row's first deliverable is the tool-surface population,
+and its contract clause states this unreachability as a NON-GUARANTEE rather than closing it.
+That is what makes this row necessary rather than optional: a hash over a population that a
+run can read around is a hash with a stated hole, and the hole needs an owner. No ordering
+between them; BL-197 does not block on this and this does not block on BL-197.
+
+`Source: found 2026-09-11 by BL-197's gather round; filed the same day by claude-code. Every
+citation was resolved at harness `65862bb` in the gather round: `sandbox.rs`, `main.rs`,
+`runner.rs` and `registry.ex` were opened at the quoted line ranges, and the chroot negative
+was run with its own positive control rather than asserted.`

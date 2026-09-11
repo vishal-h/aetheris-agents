@@ -9240,3 +9240,72 @@ note's act and needs a probe (**BL-202**); touching the boundary procedure in
 fixture on the drop branch.
 
 `Source: filed 2026-09-09 by claude-code. Every citation was resolved at HEAD in the commit filing this row rather than carried from the prompt: the two `drift_check.py` line ranges were read (the prompt supplied none), the surface tally was derived by the command quoted above, and the 2026-09-09 boundary block was read in `docs/project-knowledge-manifest.md`. The one claim that did not resolve is bracketed above as prompt-supplied.`
+
+---
+
+### BL-206 — the event-type map in `trajectory/file.ex` is unenforced and is already one short: `:observation` is declared but unmapped (#TBD)
+**Status:** OPEN
+**Kind:** hardening · **Size:** S · **Priority:** low while latent; the trigger that makes it live is ordinary work
+**Section:** harness (`../aetheris/lib/aetheris/trajectory/file.ex`)
+
+**A new event type must land at four sites in three files, and one check covers two of
+them.** The sites: `lib/aetheris/trajectory/event.ex:20` (`@event_types`, the atom-table
+list), `event.ex:~46` (the `@type event_type ::` union), `lib/aetheris/trajectory/file.ex:96`
+(`@event_type_map`, the string→atom map that deserialisation reads), and, in
+`aetheris-agents`, `docs/rig/specs.md` §6's payload table.
+`scripts/drift_check.py:170` (`check_event_types`) compares the FIRST against the LAST and
+nothing else — it parses `@event_types` out of `event.ex` and the §6 table out of `specs.md`,
+and FAILs on a set difference in either direction. Sites 2 and 3 are enforced by nothing.
+
+**Site 3 is already short.** `@event_type_map` holds 22 entries against `@event_types`' 23;
+the missing one is `:observation`. On a miss, `to_event_type/1` (`file.ex:111-116`) does not
+degrade — it `raise`s `ArgumentError, "unknown event type: ..."`, from inside `map_to_event/1`,
+so a single unmappable event aborts the deserialisation of the whole trajectory file rather
+than the one event.
+
+**Why it is latent rather than live.** `:observation` is emitted nowhere: `grep -rn
+':observation'` over the harness returns two hits, both in `event.ex` itself (`:26` in the
+list, `:52` in the union), and zero outside it. No trajectory file can therefore contain the
+string, so `to_event_type/1` never reaches the raise. And because the type IS documented at
+`docs/rig/specs.md:628`, the one check that exists is green — the gap is invisible from the
+only instrument pointed at this surface. Any NEW type added the same way that IS emitted makes
+it live on replay: written by the emitter, refused by the reader, with the failure appearing at
+read time in a different module from the change that caused it.
+
+`[Found at filing, not prompt-supplied, and recorded because it is the same defect on the
+adjacent unenforced site: SITE 2 IS ALSO ONE SHORT. The `@type event_type ::` union holds 22
+of the 23, missing `:run_started` — which `@event_types`, `@event_type_map` and `specs.md` §6
+all carry. That gap is inert in a different way (a `@type` union is dialyzer's surface, not the
+runtime's, so nothing raises), and it is NOT in this row's Done-when, which the round taking
+this row should not silently widen. It is named here because it is evidence for the row's
+claim rather than a separate one: two of the four sites are covered by no check, and both have
+drifted, independently, in opposite directions. Derived at harness `d4b8c90` by parsing the
+three sites and differencing the sets; the command is in the round's record, not restated here.]`
+
+**Done when:** `:observation` is in `@event_type_map`, AND site 3 is covered by a check —
+either a `drift_check.py` arm or a harness test asserting that `@event_types` and
+`@event_type_map` hold the same set. Which of the two is the row's decision and is recorded on
+this row when it is taken.
+
+**The two branches, so the round costs them before choosing.** A `drift_check.py` arm puts the
+check where the existing event-type check already lives, in the instrument the done-check
+already runs, and reaches the harness from `aetheris-agents` the way check 1 already does — but
+it means parsing a `~w[...]a` sigil out of Elixir source with a regex, a second parser over a
+second syntax. A harness test asserts it in the language that owns both attributes, where
+`Module.get_attribute` makes the comparison exact and no parsing is involved — but it runs
+under `mix test`, not under the drift gate, and a future reader chasing event-type drift will
+look at `drift_check.py` first.
+
+**Not done-when:** adding `:run_started` to the `@type` union (see the bracketed note; it is a
+real gap and wants its own row if it is to be closed), emitting `:observation` anywhere, or
+changing `to_event_type/1`'s raise-on-miss behaviour — the raise is what makes the gap
+detectable at all, and softening it would convert a loud failure into a silent one.
+
+**Gated on nothing.** One round; a one-word edit plus whichever check the round chooses.
+
+`Source: found 2026-09-11 by the BL-008 milestone-doc gather round; filed the same day by
+claude-code. Every citation was resolved at harness `d4b8c90` in the round filing this row:
+the four site line numbers were read, the 23-vs-22 counts and the identity of the missing
+member were derived by differencing the parsed sets rather than counted by eye, the
+zero-emission negative was run with `event.ex`'s own two hits as its positive control, and
+`specs.md:628` and `drift_check.py:170` were opened.`

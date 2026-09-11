@@ -9214,6 +9214,34 @@ list), `event.ex:~46` (the `@type event_type ::` union), `lib/aetheris/trajector
 nothing else — it parses `@event_types` out of `event.ex` and the §6 table out of `specs.md`,
 and FAILs on a set difference in either direction. Sites 2 and 3 are enforced by nothing.
 
+`[Corrected 2026-09-11 during m14 T2. **The enforced pair is 2 ↔ 4, not 1 ↔ 4, and the
+unenforced sites are 1 and 3, not 2 and 3.** The superseded wording is the paragraph
+immediately above — *"compares the FIRST against the LAST and nothing else — it parses
+`@event_types` out of `event.ex` … Sites 2 and 3 are enforced by nothing"* — quoted because a
+reader would otherwise act on it: it is what tells a round which sites it must land a new type
+at by hand. `check_event_types`'s parser is `_parse_event_types_from_event_ex` at
+`scripts/drift_check.py:137`, whose regex is `@type event_type ::\s*(.*?)(?=\n\s*@|\Z)` — it
+reads the `@type` UNION, site 2. `@event_types` is parsed by nothing. Two independent
+truth-makers. By mutation, against a complete four-site change: removing `:skill_injected` from
+site 1 alone leaves the check PASS; removing it from site 2 or from site 4 turns it FAIL. And
+from the standing gate, needing no mutation at all: `:run_started` is present at site 1 and
+absent from site 4 today — `grep -cE '^\| `run_started` \|' docs/rig/specs.md` returns 0, with
+`run_orphaned` as the positive control returning 1 — while `check_event_types` is GREEN. That is
+only possible if site 1 is not the compared site.
+**What this does to the rest of the row.** The Done-when is UNCHANGED and is correct either way:
+three-way identity across sites 1, 2 and 3 is what it asks for. What changes is why it matters.
+Under the superseded reading site 1 was believed covered by `drift_check`, so this row was
+hardening an already-watched surface; in fact site 1 is watched by nothing, and this row's
+three-way check is the only thing that would ever reach it. The row is more necessary, not less.
+Two consequences elsewhere in the row, neither of which alters what it asks for. The widening
+block's *"the site-1-vs-site-4 pair is untouched by this: `drift_check.py:170` already enforces
+it"* is false in its first clause and true in its second — this row still does not reach that
+pair directly. And **Not done-when**'s exclusion of *"extending the check to the
+site-1-vs-site-4 pair `drift_check.py:170` already covers"* loses its stated reason but keeps
+its force by transitivity: once sites 1, 2 and 3 are checked identical and `check_event_types`
+holds 2 ↔ 4, all four agree without a fourth arm. Corrected here rather than by rewriting the
+paragraphs so the reasoning that changed stays readable beside what it changed.]`
+
 **Site 3 is already short.** `@event_type_map` holds 22 entries against `@event_types`' 23;
 the missing one is `:observation`. On a miss, `to_event_type/1` (`file.ex:111-116`) does not
 degrade — it `raise`s `ArgumentError, "unknown event type: ..."`, from inside `map_to_event/1`,

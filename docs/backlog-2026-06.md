@@ -1696,6 +1696,7 @@ on them, per the p3 pattern (docs → mock/real split if useful → UI).
 ### BL-008 — Skills auto-extraction + Rig skills view (compounding) (#49)
 **Status:** OPEN
 **Size:** L · **Priority:** medium-low
+**Section:** harness (`../aetheris/docs/aetheris/milestones/m14-skills-auto-extraction.md`)
 
 The "compounding/dreaming" idea from the Burr HN thread, grounded in what
 exists: `skills` table schema-complete (`store.ex:817`), write path live
@@ -1718,6 +1719,11 @@ Scope sketch:
 
 **Done when:** milestone docs exist; a normal sprint run leaves at least
 one skill row behind and Rig can show it.
+
+`[2026-09-11: the milestone doc landed at harness `65862bb` and was approved
+that day — thirteen tickets over P0–P3, of which P0 is gated on BL-197. That
+is the Done-when's FIRST clause only; nothing here is done, and the remaining
+two clauses are untouched.]`
 
 ### BL-094 — A direct, non-LLM launch door for config-style orchestrators (#TBD)
 **Status:** OPEN

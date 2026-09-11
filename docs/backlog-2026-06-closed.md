@@ -8294,3 +8294,164 @@ three duplicate `hash_content/1` helpers.
 `cb909c9`, both pushed; the round's evidence is `bl-197-review-packet.md`, a session-scratchpad
 packet in neither tree and cited by filename because nobody but its author can open it. The
 citations in this close were resolved at harness `cb909c9` and agents `1cd4647`.`
+
+---
+
+## The close — 2026-09-11 (second round)
+
+### BL-208 — DONE 2026-09-11 · the sha256 content-digest idiom has four sites and no shared home (#TBD)
+**Status:** DONE
+
+`[Heading superseded 2026-09-11, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns). This row is
+a PUBLISHED RECORD, not a ratified decision. The heading previously read:*
+
+> `### BL-208 — the sha256 content-digest idiom has four sites and no shared home (#TBD)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`.*
+
+*EVERYTHING BETWEEN THIS NOTE AND THE **Landed at** PARAGRAPH IS BYTE-IDENTICAL to the row as it
+stood in `docs/backlog-2026-06.md` at `74ba746`, lines 9421–9455, its `Source:` included. It is
+the record of what the row declared BEFORE the work; the answer is appended after it, never woven
+into it. sha256 of that body, computed before the write and verified against this file after it:
+`06f53ce6430cfafdecbf694ec868a16aeeab8a61da2842d3c67ec47da29756bb`.*
+
+*WHAT FOLLOWS IT IS NOT BYTE-IDENTICAL AND IS NOT CLAIMED TO BE.*]`
+
+**Kind:** hardening · **Size:** XS · **Priority:** low — latent; nothing is wrong today
+**Section:** harness (`../aetheris/lib/aetheris/`)
+
+**The census, four sites.** Three are byte-identical private helpers:
+
+```elixir
+defp hash_content(data),
+  do: "sha256:" <> Base.encode16(:crypto.hash(:sha256, data), case: :lower)
+```
+
+at `lib/aetheris/skill/extractor.ex:248`, `lib/aetheris/eval/runner.ex:304` and
+`lib/aetheris/execution/loop.ex:1127`. The fourth is
+`lib/aetheris/execution/tool_surface.ex:68`, which reuses the **format** and not the
+code — it hashes an accumulated digest rather than taking `data`, so it is not a
+fourth copy of the function, but it is a fourth place that produces the string.
+
+**Why it is latent.** Nothing breaks today: all four emit the same shape over the same
+algorithm, and the three copies are private, so no caller can pick the wrong one. It
+bites when one site's format changes and the others do not — a prefix, a case, a
+truncation, a move to a different algorithm — because the values are written into
+trajectories and compared across runs, and **no check compares the four**. A change at
+one site is silent at the other three until something that reads two of them disagrees.
+
+**Done when:** one shared function exists, the four sites call it, and a decision is
+recorded ON THIS ROW about how a FIFTH site is prevented: by a check that fails when
+the string is produced anywhere else, or by there being only one way to produce it and
+the shared function being it. The row is not closed by the refactor alone — four call
+sites pointed at one function is the easy half, and it is exactly the state that made
+three copies look harmless.
+
+`Source: census taken 2026-09-11 during BL-197, which put the refactor out of scope and
+recorded the four sites in
+`../aetheris/docs/aetheris/milestones/bl-197-implementation-notes.md` §Deviations. All
+four citations were re-read at harness `cb909c9` when this row was filed; BL-197's
+commits touch none of the three helper files.`
+
+**Landed at** harness `56d6ee9` (the refactor) and agents — this commit (this close). Neither
+pushed at the time of writing; the round reports before pushing.
+
+**THE RULING THE ROW LEFT OPEN: a fifth site is prevented BY BOTH mechanisms, and the module alone
+prevents nothing.** The Done-when offered two ways — *"a check that fails when the string is
+produced anywhere else, or ... there being only one way to produce it and the shared function
+being it"* — as alternatives. They are not alternatives, and the row's own next sentence is why:
+*"four call sites pointed at one function is the easy half, and it is exactly the state that made
+three copies look harmless."*
+
+A shared module makes the right thing available. It does not make the wrong thing unavailable:
+`"sha256:" <> Base.encode16(:crypto.hash(:sha256, data), case: :lower)` is four tokens of stock
+Elixir that any future author can type without ever learning `Aetheris.Hash` exists, and nothing
+would tell them — or the reviewer — that they had just recreated the condition this row closed.
+That is precisely how the three copies arose: there was no prohibition, only an absence. So the
+row closes on both mechanisms, and the check is the load-bearing half.
+
+**Mechanism 1 — the shared module.** `Aetheris.Hash` at `../aetheris/lib/aetheris/hash.ex`, placed
+at the top level beside `Aetheris.ID`, which is the repo's precedent for a small single-purpose
+utility (no `util/` or `support/` namespace exists). **Two** functions, because the four sites were
+not uniform, exactly as the census recorded:
+
+- `content/1` — data to string. The three byte-identical private helpers.
+- `format/1` — a raw, already-computed digest to string. `Execution.ToolSurface`, which accumulates
+  with `hash_init/hash_update/hash_final` and shared only the FORMAT.
+
+All four sites call it; the three private `hash_content/1` helpers are gone rather than left as
+delegating wrappers, so there is one function and not four plus one.
+
+**Mechanism 2 — the check.** `../aetheris/test/aetheris/hash_test.exs` fails when the `"sha256:`
+format literal appears anywhere in `lib/` outside `hash.ex`. Three properties it was built to have:
+
+1. It matches **the format string, not the expression**. A fifth site written differently —
+   interpolation, a pipeline, `hash_init/update/final` — still has to write that prefix. The
+   positive control below is deliberately spelled `"sha256:#{hex}"` with a pipeline, and is caught.
+2. It excludes the shared module **by path**, not by content, so the exclusion cannot drift.
+3. It anchors the scan to `Path.expand("../../lib", __DIR__)` rather than to the process cwd. A
+   wildcard resolved against cwd answers a question about where the suite was started and returns
+   a clean empty list when that is somewhere else.
+
+It reads whole lines and does not except comments. That is deliberate and stated in the failure
+message: a module that documents the format should point at `Aetheris.Hash` rather than write the
+literal.
+
+**What the round found that the row did not predict: no test anywhere pinned a digest VALUE.**
+Every existing assertion was `"sha256:" <> _` or `String.starts_with?(…, "sha256:")` — shape, not
+value. Under a value-changing mutation applied to all four sites at once, the whole suite returned
+**1017 tests, 1 failure**: three of the four sites were completely uncovered, and only
+`loop_tool_error_test.exs`, which recomputes the expected digest inline as an independent oracle,
+noticed. So the row's premise — *"no check compares the four"* — was understated: nothing checked
+even one of them against a value. Golden assertions were added at the three uncovered sites, which
+is what makes the mutation evidence below possible at all:
+
+- `tool_surface_test.exs` — the empty-surface digest pinned by value. An absent root is the one
+  fully deterministic digest the module produces, so it is the right place to pin the format.
+- `runner_test.exs` — `prompt_hash` pinned by value, and separately against `Hash.content/1` of the
+  task's own prompts.
+- `extractor_test.exs` — a recording adapter captures the synthesis request and asserts
+  `context_hash` is the digest OF the messages that request ships. The extractor dispatches with a
+  bare `GenServer.call(adapter_pid, {:call, request})`, so a test process can serve it; `Stub`
+  discards the request, which is why nothing could assert this before. No `lib/` change was needed.
+
+**Digest values are unchanged, and here is the method rather than the belief.** A probe capturing
+every digest the four sites can produce was run at harness `e1c38e6` BEFORE any edit and again
+after, and the digest sections are byte-identical — md5 `c387df805dda1876fb6d6a3af52dd043` both
+times, `diff` exit 0. It covers `ToolSurface.hash/2` end to end over a fixed non-git root plus its
+three per-entry digests, and the three-site idiom over eight vectors including empty, binary and
+the real `Jason.encode!` shapes. The comparison carries a negative control: one hex digit altered
+in the after-file makes `diff` exit 1, so a zero difference is agreement and not a blind
+comparison. `Hash.content/1` was additionally checked equal to the literal old expression on every
+vector — 0 mismatches — and structurally it is the same three operations in the same order.
+
+**Mutation evidence, one site at a time.** Each restore was from a working-copy backup verified by
+`sha256sum -c`, never `git checkout --`, and the mutation marker was confirmed absent afterwards.
+
+| site | mutation | result |
+|---|---|---|
+| `skill/extractor.ex` | digest input changed | 1 failure — the new `context_hash` test |
+| `eval/runner.ex` (both calls) | digest input changed | 1 failure — `prompt_hash`, under `--include integration` |
+| `execution/loop.ex` | digest input changed | 1 failure — `loop_tool_error_test.exs` |
+| `execution/tool_surface.ex` | `format/1` swapped for `content/1` | 1 failure — the empty-surface value |
+
+And the check's own positive control, run against `lib/` rather than a fixture, as the round
+required: a fifth site was added at `lib/aetheris/bl208_control.ex` spelled `"sha256:#{hex}"` with
+a pipeline; the check failed naming `lib/aetheris/bl208_control.ex:11`; the file was deleted and
+the check passed. Both outputs are in the round's report.
+
+**Not touched.** `Aetheris.Eval.Scorer.FsHash` — it compares a payload it does not compute, and was
+never one of the four. `ToolSurface.content_digest/1` produces a per-entry digest with **no**
+prefix and is not a fifth site; the check matching on the prefix leaves it alone by construction,
+which is one reason to match the format string rather than the hash expression.
+
+**Size was filed XS and was S.** A module, four call sites, a new test file with a source-scanning
+check, and three golden assertions that had to be invented because no value was pinned anywhere.
+The refactor alone was XS; discovering that the mutation evidence the close requires was
+unobtainable against the existing suite was not.
+
+`Source: closed 2026-09-11 by claude-code. Refactor at harness `56d6ee9`, this close in the agents commit
+carrying this edit, neither pushed. The four sites were re-read at harness `e1c38e6` before the work —
+all four still at the line numbers BL-197's census recorded — and the whole-of-`lib/` search that
+found them is `grep -rn '"sha256:' lib/`, which after the refactor returns hits in `hash.ex` only.`

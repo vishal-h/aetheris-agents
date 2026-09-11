@@ -9276,16 +9276,37 @@ read time in a different module from the change that caused it.
 adjacent unenforced site: SITE 2 IS ALSO ONE SHORT. The `@type event_type ::` union holds 22
 of the 23, missing `:run_started` — which `@event_types`, `@event_type_map` and `specs.md` §6
 all carry. That gap is inert in a different way (a `@type` union is dialyzer's surface, not the
-runtime's, so nothing raises), and it is NOT in this row's Done-when, which the round taking
-this row should not silently widen. It is named here because it is evidence for the row's
-claim rather than a separate one: two of the four sites are covered by no check, and both have
+runtime's, so nothing raises). `[Superseded 2026-09-11: this note continued *"and it is NOT in
+this row's Done-when, which the round taking this row should not silently widen"*. The Done-when
+above was widened to cover it the next round, deliberately and on the record rather than
+silently — see the dated block there for why the two sites cannot be split. The original wording
+is kept rather than overwritten so the reasoning that changed is readable beside what it
+changed.]` It is named here because it is evidence for the row's claim rather than a separate
+one: two of the four sites are covered by no check, and both have
 drifted, independently, in opposite directions. Derived at harness `d4b8c90` by parsing the
 three sites and differencing the sets; the command is in the round's record, not restated here.]`
 
-**Done when:** `:observation` is in `@event_type_map`, AND site 3 is covered by a check —
-either a `drift_check.py` arm or a harness test asserting that `@event_types` and
-`@event_type_map` hold the same set. Which of the two is the row's decision and is recorded on
-this row when it is taken.
+**Done when:** all THREE harness sites hold the same set — `@event_types` (`event.ex:20`),
+the `@type event_type` union (`event.ex:~46`) and `@event_type_map` (`file.ex:96`) — AND that
+three-way identity is covered by a check, either a `drift_check.py` arm or a harness test.
+Which of the two is the row's decision and is recorded on this row when it is taken.
+
+**The two known drifts are INSTANCES the check must catch, not the population.** `:observation`
+absent from site 3 and `:run_started` absent from site 2 are what differencing the three sites
+returned at harness `d4b8c90`; the population the row is closed against is whatever that
+differencing returns when the round runs it, which is why the Done-when is phrased as identity
+of the three sets rather than as a list of members to add. A round that adds exactly these two
+members and writes no check has closed the instances and left the row's actual subject — that
+two of the four sites are covered by nothing — exactly where it was.
+
+`[Widened 2026-09-11, one round after filing, by the session that filed it. As filed the
+Done-when named site 3 alone, on the prompt's framing; the bracketed note below had already
+found site 2 short and explicitly excluded it. That split is not survivable: a check built for
+site 3 alone leaves site 2's drift live, and the two sites drifted INDEPENDENTLY and in
+OPPOSITE directions — site 3 short of `:observation`, site 2 short of `:run_started`, neither
+implying the other. So one check covers both or the row closes green over a live gap. The
+site-1-vs-site-4 pair is untouched by this: `drift_check.py:170` already enforces it and this
+row still does not reach it.]`
 
 **The two branches, so the round costs them before choosing.** A `drift_check.py` arm puts the
 check where the existing event-type check already lives, in the instrument the done-check
@@ -9296,12 +9317,24 @@ second syntax. A harness test asserts it in the language that owns both attribut
 under `mix test`, not under the drift gate, and a future reader chasing event-type drift will
 look at `drift_check.py` first.
 
-**Not done-when:** adding `:run_started` to the `@type` union (see the bracketed note; it is a
-real gap and wants its own row if it is to be closed), emitting `:observation` anywhere, or
-changing `to_event_type/1`'s raise-on-miss behaviour — the raise is what makes the gap
+**The widening costs the two branches differently, and the round should know which way before
+it chooses.** The `drift_check.py` arm absorbs site 2 nearly free: the union is a third regex
+over source the arm is already reading, and it was parsed that way at filing to derive the
+drift in the first place, so the approach is demonstrated rather than assumed. The test branch
+does not absorb it free: `@type` is NOT a module attribute at runtime — `Module.get_attribute(
+Aetheris.Trajectory.Event, :type)` raises — so the union has to come from
+`Code.Typespec.fetch_types/1` and be walked as typespec AST, which is a second mechanism
+alongside `Module.get_attribute` for the other two sites. Both were checked at harness
+`d4b8c90`; `fetch_types/1` returns the `event_type` entry, `get_attribute` raises. That does
+not settle the choice — exactness in the owning language may still be worth two mechanisms —
+but it removes "no parsing is involved" as a reason that covers all three sites.
+
+**Not done-when:** emitting `:observation` anywhere, extending the check to the
+site-1-vs-site-4 pair `drift_check.py:170` already covers, or changing `to_event_type/1`'s
+raise-on-miss behaviour — the raise is what makes the gap
 detectable at all, and softening it would convert a loud failure into a silent one.
 
-**Gated on nothing.** One round; a one-word edit plus whichever check the round chooses.
+**Gated on nothing.** One round; two one-word edits plus whichever check the round chooses.
 
 `Source: found 2026-09-11 by the BL-008 milestone-doc gather round; filed the same day by
 claude-code. Every citation was resolved at harness `d4b8c90` in the round filing this row:

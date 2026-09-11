@@ -8140,3 +8140,157 @@ members** — this commit re-stales `backlog-2026-06.md`'s row rather than addin
 run and its verdict are in this round's packet. The manifest is not re-pinned.
 
 **Not touched:** `detect_orphans.py`, the fixtures, any other test, `lib/`, the manifest.
+
+---
+
+## The close — 2026-09-11
+
+**One row, and the first this backlog has closed on a ratified contract edit.** The container is
+dated rather than qualified: no other close carries this date.
+
+### BL-197 — DONE 2026-09-11 · `tools_hash` over the DECLARED tool surface, recorded at three sites (#TBD)
+**Status:** DONE
+**Kind:** feature · **Census items:** n/a — the first deliverable is the population (see Done-when) · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md` §2 (definitions) and §4 (the fork guarantee); the research inputs below
+**Size:** S · **Priority:** medium — a **BL-008 D9 prerequisite**, so it lands before BL-008's P0
+**Section:** harness (`../aetheris/lib/aetheris/execution/`, `../aetheris/lib/aetheris/agent/server.ex`)
+
+`[Heading superseded 2026-09-11, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns). This row is
+a PUBLISHED RECORD, not a ratified decision. The heading previously read:*
+
+> `### BL-197 — `tools_hash`: the script, tool and skill surface a run can reach is hashed into run identity (#TBD)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`; BL-197 carries no `<details>`
+block, so there is no archived status to preserve beside a live one, and two depth-0 fields would
+fail `backlog_status.py --check` outright. The heading was NOT true when written and is the one
+thing this close corrects rather than supersedes: it says the hashed surface is the one a run
+**can reach**, and the population that landed is the one a run **declares**. The difference is
+not a narrowing of scope — it is the finding. `run_command` is not confined to the sandbox root
+(**BL-207**), so the reachable set is the host filesystem and no definition over it exists to
+give. The `**Size:**` field is carried unchanged at `S` and is wrong; see **Size was filed S and
+was M** below, where it is ruled rather than back-filled.*
+
+*EVERYTHING BETWEEN THIS NOTE AND THE **Landed at** PARAGRAPH IS BYTE-IDENTICAL to the row as it
+stood in `docs/backlog-2026-06.md` at `1cd4647`, lines 8833–8872, its Done-when and its
+Collides-with included. It is the record of what the row declared BEFORE the work; the answer is
+appended after it, never woven into it. sha256 of that body, computed before the write and
+verified against this file after it: `37b395199da28d9b12aefebe2541f00160b0e8194b74921778ac9efa420827e2`.*
+
+*WHAT FOLLOWS IT IS NOT BYTE-IDENTICAL AND IS NOT CLAIMED TO BE.*]`
+
+Filed 2026-09-08 from the research batch landed at harness `2c1a6b6`. The idea is
+the external schema analysis's item #1, dispositioned at
+`../aetheris/docs/aetheris/research/research-reconciliation-2026-07-26.md` §2 as
+*"tools_hash S-ticket idea, orthogonal to BL-025's EffectClass"* and never filed;
+the BL-008 synthesis brief makes it a dependency
+(`bl-008-synthesis-2026-08.md` D9: *"Skill bodies live as files under the
+content-hashed tool surface (tools_hash family), so run identity captures the exact
+skill content a run could read"*; the 2026-09-08 margin note under its §3 says it
+lands before P0), and the pi brief's Take 2 and the dsh brief's L4 both point at it.
+
+**The code today, read at harness `bb42099`.** Nothing hashes a tool surface: `tools_hash`,
+`config_hash` and `tool_surface` occur nowhere under `lib/` (0 hits; control, the
+same search for `fork_from` finds it). What a run records about its tools is the
+**names** — `"tools" => config.tools` in the trajectory meta
+(`lib/aetheris/agent/server.ex:669`, `:941`) — and what a fork reads back is the
+same list (`lib/aetheris/execution/fork.ex:181`). So two runs whose `run_command`
+reaches a script that changed between them are identical by every field the
+harness records, and verify cannot tell which script a recorded step ran.
+
+**Done when:** (1) the population is written down first — which files count as the
+tool surface (the `tools` list; the scripts and skill files under the agent root that
+`run_command` can invoke; MCP server identities if they are in scope) — as a stated
+rule in the contract, not an inferred one; (2) a content hash over that population is
+computed at run start and captured with the run's config (`config_json` and the
+trajectory meta, the same two sites that carry `model`), so fork and verify can read
+it; (3) the mutation test is on the record: change one byte of one in-surface script
+between record and verify and the hash differs, with a test that fails if it does
+not. The hash is a **field**, not a gate — what a mismatch *means* to verify is
+decided by the row that consumes it, not here.
+
+**Not done-when:** hashing the tool names only, which the meta already carries.
+
+**Collides with:** **BL-008** — D9's interim rule is BL-025 `:contained`
+record-and-serve on reads under the skills path *"if the hashed-surface item has not
+landed"*; this row is that item, and BL-008's milestone doc should cite it rather than
+carry the interim. **BL-025** (closed) — EffectClass is orthogonal, per the
+reconciliation's own disposition; do not fold. **BL-198** — the two are the D9
+pair; independent, no ordering between them.
+
+`Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `research-reconciliation-2026-07-26.md` §2, `bl-008-synthesis-2026-08.md` D9 and §3, `pi-harness-2026-07.md` Take 2 and `dsh-model-visible-logged-2026-08.md` L4, all opened in the landed batch. The code citations were opened at harness `bb42099` before that batch landed; the two research commits after it touch no `lib/` file.`
+
+**Landed at** harness `a1bda7e` (the implementation) and `cb909c9` (a trim of the amendment note
+this row's own work added to the contract header, on the prose budget). Both pushed. The contract
+carries §2 **Tool surface** and §4 **Anything outside the tool surface**, arbiter-ratified wording
+landed **verbatim** — established by diffing the supplied text against the landed text with
+whitespace normalised, not asserted.
+
+What the three Done-when clauses got:
+
+1. **The population is written down first, as a stated rule in the contract.** §2 defines it as
+   every git-tracked path under the run's `sandbox_path` at hash time plus every path in
+   `tool_surface_extras`, and says in terms that it is **declared, not reachable**.
+2. **The hash is computed at run start and captured with the run's config.** One stamp, in
+   `Agent.Server.init/1` — the single site both `handle_call(:run, …)` and
+   `handle_call(:resume_from_checkpoint, …)` pass through, so a resume is not silently nil — and
+   it reaches `config_json` via `encode_config/1` and both trajectory meta maps.
+3. **The mutation test is on the record.** See directly below; this is the clause that was
+   satisfied differently from how it was written.
+
+**Clause 3 was satisfied differently from how it was written, and that is the ROW'S LOOSENESS
+rather than a short delivery.** It asked for one byte changed "between record and verify". A
+record/verify cycle has nothing to assert here, because this row's own last sentence says the
+hash is **a field, not a gate** — verify consumes it nowhere, so there is no verdict for a
+mutation to move. What landed is the property the clause was reaching for, asserted at the level
+where it actually is assertable: six mutations at the `ToolSurface` level, each applied to a
+working-copy backup and each restore verified by sha **and** by a present→absent control on the
+mutated string — path dropped from the digest, content digest replaced by a constant, extras
+dropped, the tracked set replaced by a filesystem walk, and the two recording sites broken
+separately. Plus two named inverse cases in the green suite: an in-surface byte change moves the
+hash, an untracked change under the same root does not. The row is closed on that, and the
+substitution is recorded here rather than left to be inferred from the diff.
+
+**Size was filed S and was M.** A contract edit, two `RunConfig` fields, a new module, a
+run-start stamp, three recording sites, six mutation tests with their controls, and a measured
+cost figure. Not a complaint — the work was correctly scoped and the ticket said what it wanted.
+Recorded so the next sizing of a **contract-touching** row has the precedent: the code was S and
+the contract was not, and nothing in the S estimate was carrying the ratification, the verbatim
+check, or the non-guarantee that had to be written beside it.
+
+**Cost, measured rather than estimated.** 467 paths, 23.4 ms on a cold first call in a fresh
+BEAM, 19–21 ms warm across five consecutive calls, over the harness root — `sandbox_path:
+File.cwd!()`, which `../aetheris/agents/codebase_qa.exs:9` uses. **Not optimised**, by
+instruction. Corroboration at the other end: `init/1`, and therefore this hash, runs on every
+agent server the harness suite starts, and the suite finishes in 91.5 s.
+
+**What it unblocks: m14's P0.** `../aetheris/docs/aetheris/milestones/m14-skills-auto-extraction.md`
+§2 names this row as a hard gate — *"No P0 ticket starts until BL-197 lands."* It has landed.
+**m14 is NOT edited**: the gate clause stays exactly as written, and this row's close is where
+the fact that it is satisfied lives. A gate clause rewritten to say it was met is a gate that can
+no longer be read as a condition by the next person who needs to apply one.
+
+**Left open by design, each with a home.**
+
+- **BL-207** — `run_command` is not confined to the sandbox root. The contract states this as a
+  **non-guarantee** (§4) rather than closing it, which is exactly why that row exists and why
+  this one could be closed without it. Open.
+- **BL-208** — the sha256 content-digest idiom now has four sites and no shared home;
+  `tool_surface.ex` is the fourth, reusing the format and not the code. Filed this round, out of
+  this row's scope by instruction. Open.
+- **This row's own `:669`/`:941` citations.** They are cited for `model` and are the `"tools"
+  => config.tools` lines; `model` is at `:665` and `:937`, in the same two meta maps. The row
+  names the right two sites and the wrong two lines. Recorded in
+  `../aetheris/docs/aetheris/milestones/bl-197-implementation-notes.md` §The correction the row's
+  citations need, and **deliberately not edited into the row above** — the body is the record of
+  what was declared before the work, and correcting it in place would destroy the one thing the
+  byte-identity claim is protecting.
+
+**Not touched:** `m14-skills-auto-extraction.md`, the manifest, `Aetheris.API.RunPolicy` (whose
+closed `@known_client_fields` allowlist rejects both new fields, which is the correct default and
+is recorded in the implementation notes as a silent consequence rather than an edit), and the
+three duplicate `hash_content/1` helpers.
+
+`Source: closed 2026-09-11 by claude-code. Implementation at harness `a1bda7e`, trim at
+`cb909c9`, both pushed; the round's evidence is `bl-197-review-packet.md`, a session-scratchpad
+packet in neither tree and cited by filename because nobody but its author can open it. The
+citations in this close were resolved at harness `cb909c9` and agents `1cd4647`.`

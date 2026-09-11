@@ -8824,55 +8824,6 @@ correction commit that precedes this one.`
 
 ---
 
-### BL-197 — `tools_hash`: the script, tool and skill surface a run can reach is hashed into run identity (#TBD)
-**Status:** OPEN
-**Kind:** feature · **Census items:** n/a — the first deliverable is the population (see Done-when) · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md` §2 (definitions) and §4 (the fork guarantee); the research inputs below
-**Size:** S · **Priority:** medium — a **BL-008 D9 prerequisite**, so it lands before BL-008's P0
-**Section:** harness (`../aetheris/lib/aetheris/execution/`, `../aetheris/lib/aetheris/agent/server.ex`)
-
-Filed 2026-09-08 from the research batch landed at harness `2c1a6b6`. The idea is
-the external schema analysis's item #1, dispositioned at
-`../aetheris/docs/aetheris/research/research-reconciliation-2026-07-26.md` §2 as
-*"tools_hash S-ticket idea, orthogonal to BL-025's EffectClass"* and never filed;
-the BL-008 synthesis brief makes it a dependency
-(`bl-008-synthesis-2026-08.md` D9: *"Skill bodies live as files under the
-content-hashed tool surface (tools_hash family), so run identity captures the exact
-skill content a run could read"*; the 2026-09-08 margin note under its §3 says it
-lands before P0), and the pi brief's Take 2 and the dsh brief's L4 both point at it.
-
-**The code today, read at harness `bb42099`.** Nothing hashes a tool surface: `tools_hash`,
-`config_hash` and `tool_surface` occur nowhere under `lib/` (0 hits; control, the
-same search for `fork_from` finds it). What a run records about its tools is the
-**names** — `"tools" => config.tools` in the trajectory meta
-(`lib/aetheris/agent/server.ex:669`, `:941`) — and what a fork reads back is the
-same list (`lib/aetheris/execution/fork.ex:181`). So two runs whose `run_command`
-reaches a script that changed between them are identical by every field the
-harness records, and verify cannot tell which script a recorded step ran.
-
-**Done when:** (1) the population is written down first — which files count as the
-tool surface (the `tools` list; the scripts and skill files under the agent root that
-`run_command` can invoke; MCP server identities if they are in scope) — as a stated
-rule in the contract, not an inferred one; (2) a content hash over that population is
-computed at run start and captured with the run's config (`config_json` and the
-trajectory meta, the same two sites that carry `model`), so fork and verify can read
-it; (3) the mutation test is on the record: change one byte of one in-surface script
-between record and verify and the hash differs, with a test that fails if it does
-not. The hash is a **field**, not a gate — what a mismatch *means* to verify is
-decided by the row that consumes it, not here.
-
-**Not done-when:** hashing the tool names only, which the meta already carries.
-
-**Collides with:** **BL-008** — D9's interim rule is BL-025 `:contained`
-record-and-serve on reads under the skills path *"if the hashed-surface item has not
-landed"*; this row is that item, and BL-008's milestone doc should cite it rather than
-carry the interim. **BL-025** (closed) — EffectClass is orthogonal, per the
-reconciliation's own disposition; do not fold. **BL-198** — the two are the D9
-pair; independent, no ordering between them.
-
-`Source: filed 2026-09-08 by claude-code at agents `1e9cb57` and harness `2c1a6b6`, from `research-reconciliation-2026-07-26.md` §2, `bl-008-synthesis-2026-08.md` D9 and §3, `pi-harness-2026-07.md` Take 2 and `dsh-model-visible-logged-2026-08.md` L4, all opened in the landed batch. The code citations were opened at harness `bb42099` before that batch landed; the two research commits after it touch no `lib/` file.`
-
----
-
 ### BL-198 — MVML record-mode assertion: at prompt assembly, the assembled prompt equals the log-derived prompt (#TBD)
 **Status:** OPEN
 **Kind:** gate · **Census items:** n/a · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md` §3 (mode guarantees); the dsh brief's L1

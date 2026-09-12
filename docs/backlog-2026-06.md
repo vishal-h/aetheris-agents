@@ -9525,3 +9525,66 @@ by the non-tool branch at `:228`, so the tool branch discards a value it has alr
 extracted.`
 
 ---
+### BL-211 — Segmenter's public surface: an events-taking entry point, and fence-stripping's home (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** none
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/segmenter.ex`)
+
+Two consequences of the same gap, filed together because they are one edit to one file.
+
+**(a) The trajectory file is read twice.** `Aetheris.Skill.Candidate.extract/2` reads it once
+itself and once inside `Segmenter.segment/2`, because `Segmenter` exposes no entry point taking
+already-read events. Recorded as a deviation at m14 T5 (harness `cb98075`).
+
+**(b) Fence-stripping has no home.** LLM responses come back wrapped in a markdown fence despite
+the prompt forbidding it. Measured at m14 T5: both live extractor runs fenced their JSON.
+`Segmenter` solved this privately as `strip_fences/1`; m14 T6's curator will need it a third time.
+
+**Ruling on placement, taken at the T5 review.** Fence-stripping is not segmentation and does not
+belong in `Segmenter`'s public surface. It gets its own module — or joins an existing
+LLM-response helper if one already fits; check `../aetheris/lib/aetheris/execution/` before
+creating one — and `Segmenter.strip_fences/1` becomes a caller rather than the owner. Do not
+export it from `Segmenter`.
+
+**Done when.** `Segmenter` takes events without re-reading the file and `Candidate` uses that
+path; fence-stripping has exactly one implementation in `lib/` with the existing callers pointing
+at it; a test asserts a fenced response and a bare one both parse through the shared path.
+
+`Source: m14 T5, 2026-09-12, harness `cb98075`. Authorised by the arbiter at the T5 review, which
+also took the placement call above. Both citations were re-resolved at `cb98075` before filing:
+`candidate.ex:105` is `File.read(run_id)` and `:106` is `Segmenter.segment/2`, whose own
+`File.read/1` is at `segmenter.ex:121` — `segment_events/2` (`:172`) is private, so there is no
+events-taking entry point to call instead; `strip_fences/1` is private at `:271`, read only by the
+`Jason.decode` at `:264`.`
+
+---
+### BL-212 — `EXTRACTOR_DENY_LIST` is applied by nothing, and T3's notes claim otherwise (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D10
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/native/aetheris_worker/src/`, `../aetheris/lib/aetheris/run_config.ex`)
+
+**The dead constant.** m14 T3 landed `Sandbox::with_deny_list` and `EXTRACTOR_DENY_LIST` (harness
+`02d2059`). No caller exists: every construction site in `native/aetheris_worker/src/` is
+`Sandbox::new`, verified at `cb98075` across `main.rs:61`, `main.rs:111` and the three `tools/`
+files.
+
+**The wrong note.** `docs/aetheris/milestones/m14-t3-implementation-notes.md` §Decisions states
+*"`with_deny_list` is the opt-in, and T5 is its first caller."* T5 landed and is not a caller — it
+gives its agent no tools at all, so it reaches no worker sandbox. That sentence is now a false
+claim about landed work.
+
+Nothing is currently unprotected: no agent in the repo requests the deny-list. What exists is a
+dead constant and a wrong note.
+
+**Done when.** The deny-list is reachable from a run — a `RunConfig` field (rule 15's three
+sites), a worker init-payload field, and `main.rs` — with a test that a run declaring it cannot
+write a denied path; and T3's notes sentence is corrected to say what actually landed.
+
+`Source: m14 T5, 2026-09-12, harness `cb98075` §4 D3. Authorised by the arbiter at the T5 review.
+The citations were re-resolved at `cb98075` before filing: `EXTRACTOR_DENY_LIST` is defined at
+`sandbox.rs:35` and `with_deny_list` at `:66`, whose only non-test caller is `Sandbox::new` itself
+at `:62` passing `&[]`; the notes sentence is at `m14-t3-implementation-notes.md:44`.`
+
+---

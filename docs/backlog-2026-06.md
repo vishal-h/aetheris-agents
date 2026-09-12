@@ -9535,7 +9535,7 @@ Two consequences of the same gap, filed together because they are one edit to on
 
 **(a) The trajectory file is read twice.** `Aetheris.Skill.Candidate.extract/2` reads it once
 itself and once inside `Segmenter.segment/2`, because `Segmenter` exposes no entry point taking
-already-read events. Recorded as a deviation at m14 T5 (harness `cb98075`).
+already-read events. Recorded as a deviation at m14 T5 (harness `9b8f5a7`).
 
 **(b) Fence-stripping has no home.** LLM responses come back wrapped in a markdown fence despite
 the prompt forbidding it. Measured at m14 T5: both live extractor runs fenced their JSON.
@@ -9551,8 +9551,11 @@ export it from `Segmenter`.
 path; fence-stripping has exactly one implementation in `lib/` with the existing callers pointing
 at it; a test asserts a fenced response and a bare one both parse through the shared path.
 
-`Source: m14 T5, 2026-09-12, harness `cb98075`. Authorised by the arbiter at the T5 review, which
-also took the placement call above. Both citations were re-resolved at `cb98075` before filing:
+`Source: m14 T5, 2026-09-12, harness `9b8f5a7` — the T5 review and its packet cite this commit
+as `cb98075`, which was amended to carry m14 T6's constraint edit before it was pushed — it
+reached no remote and is reachable from no ref. Every line cited below is byte-identical across
+the two, the amendment touching one milestone document and no `lib/` or `native/` file.
+Authorised by the arbiter at the T5 review, which also took the placement call above. Both citations were re-resolved at `9b8f5a7` before filing:
 `candidate.ex:105` is `File.read(run_id)` and `:106` is `Segmenter.segment/2`, whose own
 `File.read/1` is at `segmenter.ex:121` — `segment_events/2` (`:172`) is private, so there is no
 events-taking entry point to call instead; `strip_fences/1` is private at `:271`, read only by the
@@ -9567,7 +9570,7 @@ events-taking entry point to call instead; `strip_fences/1` is private at `:271`
 
 **The dead constant.** m14 T3 landed `Sandbox::with_deny_list` and `EXTRACTOR_DENY_LIST` (harness
 `02d2059`). No caller exists: every construction site in `native/aetheris_worker/src/` is
-`Sandbox::new`, verified at `cb98075` across `main.rs:61`, `main.rs:111` and the three `tools/`
+`Sandbox::new`, verified at `9b8f5a7` across `main.rs:61`, `main.rs:111` and the three `tools/`
 files.
 
 **The wrong note.** `docs/aetheris/milestones/m14-t3-implementation-notes.md` §Decisions states
@@ -9582,8 +9585,10 @@ dead constant and a wrong note.
 sites), a worker init-payload field, and `main.rs` — with a test that a run declaring it cannot
 write a denied path; and T3's notes sentence is corrected to say what actually landed.
 
-`Source: m14 T5, 2026-09-12, harness `cb98075` §4 D3. Authorised by the arbiter at the T5 review.
-The citations were re-resolved at `cb98075` before filing: `EXTRACTOR_DENY_LIST` is defined at
+`Source: m14 T5, 2026-09-12, harness `9b8f5a7` §4 D3 — cited as `cb98075` in the T5 review and
+its packet; that commit was amended before pushing, reached no remote, and is reachable from no
+ref. The amendment changed one milestone document only. Authorised by the arbiter at the T5 review.
+The citations were re-resolved at `9b8f5a7` before filing: `EXTRACTOR_DENY_LIST` is defined at
 `sandbox.rs:35` and `with_deny_list` at `:66`, whose only non-test caller is `Sandbox::new` itself
 at `:62` passing `&[]`; the notes sentence is at `m14-t3-implementation-notes.md:44`.`
 

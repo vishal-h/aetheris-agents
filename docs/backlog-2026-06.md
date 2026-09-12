@@ -9494,3 +9494,34 @@ declaration line and the assertion line are recorded separately because the ExUn
 names the first and the stacktrace the second, and BL-208's report conflated them.`
 
 ---
+### BL-210 — the Anthropic adapter discards the text block on tool-calling responses (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** none
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/execution/llm_adapter/anthropic.ex`)
+
+**What happens.** `anthropic.ex:213` sets `content: nil` whenever a response also carries a
+`tool_use` block, so the model's accompanying text is dropped before the `llm_responded`
+event is written. `raw_response` is therefore empty on every tool-calling step. Measured at
+m14 T4 over 58 done Payslip runs: 55 with exactly one non-empty `raw_response`, 3 with none,
+none with two; positive control over all 869 done runs returns `{0: 46, 1: 817, 30: 6}`.
+
+**Why it matters.** This is a Silent-wrong-answer: the run completes normally and the
+trajectory is well-formed, but agent language is missing from every step that called a tool.
+Two consumers already depend on it — `Skill.Extractor.find_final_response/1` today, and m14
+T5's extractor next. `Aetheris.Skill.Segmenter` works around it by falling back to
+agent-authored `tool_input` values (m14 T4, harness `35256af`); that fallback is correct for
+segmentation but is not a fix, and it does not help any consumer that needs the model's prose.
+
+**Done when.** The adapter preserves the text block alongside `tool_use`, the `llm_responded`
+payload carries it, and a test asserts a tool-calling response round-trips both. Whether
+`Segmenter`'s fallback is then retired is a separate call — do not remove it as part of this
+row.
+
+`Source: m14 T4, 2026-09-12. Authorised by the arbiter at the T4 review. The citation was
+re-resolved at harness `35256af` before filing: `:213` is `content: nil` inside the
+`if tool_block do` branch opened at `:210`, and `text_block` — bound at `:208` — is read only
+by the non-tool branch at `:228`, so the tool branch discards a value it has already
+extracted.`
+
+---

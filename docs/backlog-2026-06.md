@@ -9415,3 +9415,82 @@ citation was resolved at harness `65862bb` in the gather round: `sandbox.rs`, `m
 was run with its own positive control rather than asserted.`
 
 ---
+
+### BL-209 — `build_synthesis_request/1` hardcodes `model: "stub-v1"`, so skill LLM synthesis 404s against a real provider (#TBD)
+**Status:** OPEN
+**Kind:** bug · **Size:** TBD — see the Done-when; the row's decision is whether this is fixed at all · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/extractor.ex`)
+
+**The defect.** `mix test --include integration` fails
+`Aetheris.Integration.SkillExtractionAnthropicTest` — the test *extract_skill synthesizes
+description and prompt template with Anthropic*, declared at
+`../aetheris/test/aetheris/integration/skill_extraction_test.exs:215`, failing at its
+`assert skill.description != ""` (`:260`):
+
+```
+1) test extract_skill synthesizes description and prompt template with Anthropic
+   (Aetheris.Integration.SkillExtractionAnthropicTest)
+   test/aetheris/integration/skill_extraction_test.exs:215
+   Assertion with != failed, both sides are exactly equal
+   code: assert skill.description != ""
+   left: ""
+```
+
+The run's own log gives the cause rather than leaving it to be inferred:
+
+```
+[warning] Skill LLM synthesis failed: "HTTP 404: model: stub-v1"
+```
+
+`build_synthesis_request/1` hardcodes `model: "stub-v1"`
+(`../aetheris/lib/aetheris/skill/extractor.ex:179`). Against a stub adapter that is
+harmless — the field is ignored. Against a real provider it is a 404, and
+`log_synthesis_failure/2` degrades to `%{skill | description: "", prompt_template: ""}`, so
+the failure surfaces as an empty description rather than as an error. Two of the three
+`:integration` assertions in that test then fail on the empty strings.
+
+**Attribution, dated rather than asserted.** `git log -S'model: "stub-v1"' --
+lib/aetheris/skill/extractor.ex` places the line at harness `743dcd8`, **2026-05-13**,
+*"fix(m04): T2 — dispatch synthesis through adapter pid, not Stub module"* — four months
+before it was found. `ANTHROPIC_API_KEY` is set in the environment that ran it, so this is a
+genuine failure and not a skip-because-absent.
+
+**Why four months passed, which is the part worth keeping.** The test module carries
+`@moduletag :integration` (`skill_extraction_test.exs:204`), and plain `mix test` — the
+harness's standing gate — **excludes** that tag. Nothing in the routine gate suite has ever
+run this test. It was found on 2026-09-11 by BL-208's off-territory run: BL-208's site 2
+(`eval/runner.ex`) lives in a test file that is *also* `@moduletag :integration`, so its
+mutation could not be observed without `--include integration`, and that run surfaced this.
+The gate rule's premise in one instance — a gate that only runs when a ticket happens to
+touch its territory rots invisibly — with the twist that here the *tag*, not the territory,
+is what kept it out of view.
+
+**Done when — and this is a DECISION, not a fix.** m14 §1.1 records that the milestone
+**supersedes** m04's `Skill.Extractor`: *"`Skill.Extractor` — whole-run, `tool_sequence` from
+the first run"* is replaced by *"segment-scoped extraction, boundary by reasoning shift"* per
+D3, and m14 T5 is the ticket that builds it. So patching the hardcoded model may be work T5
+discards. The row closes on **either**:
+
+1. the model is taken from the run's config rather than hardcoded, and
+   `mix test --include integration` passes that test; **or**
+2. it is recorded that m14 T5's supersession retires this code path, and the row is closed
+   against **that** — with the retirement pointed at, not merely claimed.
+
+Which of the two is the row's decision and is **not made here**. Whoever takes it should read
+m14 T5 before writing code. The `Size:` field is TBD for the same reason: (1) is XS and (2)
+is a paragraph.
+
+**Not done-when:** silencing the test, removing its `:integration` tag, relaxing the
+assertions, or making the synthesis failure louder without deciding the question above. The
+degrade-to-empty behaviour in `log_synthesis_failure/2` is deliberate and is not this row's
+subject.
+
+`Source: found 2026-09-11 by BL-208's off-territory `mix test --include integration` run;
+filed 2026-09-12 by claude-code. Every citation was re-resolved at harness `56d6ee9` before
+filing rather than carried from the finding round: the `-S` attribution was re-run, `:179`
+and `:204` were opened, the module name was read from `:191`, the assertion line `:260` was
+read from the failure's own stacktrace, and `ANTHROPIC_API_KEY` was re-checked as set. The
+declaration line and the assertion line are recorded separately because the ExUnit header
+names the first and the stacktrace the second, and BL-208's report conflated them.`
+
+---

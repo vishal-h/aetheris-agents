@@ -8484,3 +8484,135 @@ commit is pushed, which is what this rule requires of the citation above. R36 an
 `hc-consolidation.md:948` and `:954`, re-resolved before filing.`
 
 ---
+
+## The close — 2026-09-12
+
+**One row, closed on a Done-when its own milestone assigns to a phase rather than to the
+milestone's end.** The container is dated rather than qualified: no other close carries this date.
+
+### BL-008 — DONE 2026-09-12 · Skills auto-extraction + Rig skills view (compounding) (#49)
+**Status:** DONE
+
+`[Heading superseded 2026-09-12, corrected in place with this dated note per the harness
+supersession rule (`../aetheris/CLAUDE.md` §Continuous learning → Workflow patterns). This row is
+a PUBLISHED RECORD, not a ratified decision. The heading previously read:*
+
+> `### BL-008 — Skills auto-extraction + Rig skills view (compounding) (#49)`
+
+*and the depth-0 `**Status:**` field is REPLACED, `OPEN` -> `DONE`. BL-008 carries no `<details>`
+block, so there is no archived status to preserve beside a live one.*
+
+*EVERYTHING BETWEEN THIS NOTE AND THE **Landed at** PARAGRAPH IS BYTE-IDENTICAL to the row as it
+stood in `docs/backlog-2026-06.md` at `c497ae7`, lines 1698–1726, its `Section:` field and its
+2026-09-11 dated note included. It is the record of what the row declared BEFORE the work; the
+answer is appended after it, never woven into it. sha256 of that body, computed before the write
+and verified against this file after it:
+`cb6b5ad04a58ac07adc67949a845f02316ade9132a96483bf51dcd08f07270f2`.*
+
+*WHAT FOLLOWS IT IS NOT BYTE-IDENTICAL AND IS NOT CLAIMED TO BE.*]`
+
+**Size:** L · **Priority:** medium-low
+**Section:** harness (`../aetheris/docs/aetheris/milestones/m14-skills-auto-extraction.md`)
+
+The "compounding/dreaming" idea from the Burr HN thread, grounded in what
+exists: `skills` table schema-complete (`store.ex:817`), write path live
+(`insert_skill`, `store.ex:132/619`), public API `Aetheris.extract_skill`
+(`lib/aetheris.ex:111`) — but nothing calls it automatically and nothing
+reads the table. Operationally empty.
+
+Scope sketch:
+- Harness: post-run hook (opt-in via RunConfig flag) that calls
+  `extract_skill` for successful runs matching criteria (e.g. ≥N steps,
+  `reason: agent_finished`); populate `source_run_ids_json`.
+- Dedup/quality gate before insert (don't accumulate near-identical
+  skills from repeated sprint runs).
+- Rig: read-only Skills section under Harness (one command, one view —
+  follow the harness.rs / RunList.tsx pattern per runbook's "Adding a
+  new module" steps).
+- Relation to `api/tenant/scripts/extract_skill_hints.py` (separate,
+  domain-specific): document the distinction or unify deliberately.
+- Schema/command/doc changes → drift_check in the same commit.
+
+**Done when:** milestone docs exist; a normal sprint run leaves at least
+one skill row behind and Rig can show it.
+
+`[2026-09-11: the milestone doc landed at harness `65862bb` and was approved
+that day — thirteen tickets over P0–P3, of which P0 is gated on BL-197. That
+is the Done-when's FIRST clause only; nothing here is done, and the remaining
+two clauses are untouched.]`
+
+**Landed at** harness `f5249d2` and agents `c497ae7`, both pushed — the state at which P1 was
+discharged. The evidence is `../aetheris/docs/aetheris/milestones/m14-p1-discharge.md`, committed
+at `f5249d2`.
+
+**This close does not close m14.** The milestone's §1 rules that BL-008's Done-when *"is
+discharged at the end of P1 by T5, T6 and T7, not at the end of the milestone"*, and P1 ended at
+the two commits above. T8–T13 are unstarted or in flight and m14 continues; no other row is
+touched by this one. A milestone whose backlog row closes mid-flight is unusual enough that the
+reason is stated here rather than left to be reconstructed from §1.
+
+What the three Done-when clauses got:
+
+1. **Milestone docs exist.** `m14-skills-auto-extraction.md`, landed at harness `65862bb` and
+   approved 2026-09-11 — already recorded in the row's own dated note above, which correctly said
+   at the time that this was the first clause only.
+2. **A normal sprint run leaves at least one skill row behind.** `SELECT COUNT(*) FROM skills`
+   went 0 → 4 on the live store (`priv/aetheris.db`), four `use_case: "payslip"` rows all carrying
+   `source_run_ids: ["payslip-orch-5Jhdvw"]`, a real payslip orchestrator run rather than a
+   fixture. `Curator.Report`: `inserted: 4, duplicates: 0, superseded: 0, evicted: 0,
+   mismatches: 0, rejected: 0`. See the substitution below — this clause was satisfied
+   differently from how it was written.
+3. **Rig can show it.** The `/skills` view was opened by clicking **Skills** in the nav of the
+   running Rig binary against the live DB — rendered, not asserted — showing
+   `Active (4) · Superseded (0) · Retired (0) · All (4)`, one card per row. T7 is agents
+   `95b1161`, pushed.
+
+**Clause 2 was satisfied differently from how it was written, and that is a DESIGN SUPERSESSION
+rather than a short delivery.** The clause says a *sprint run* leaves a row behind, and the scope
+sketch above says how: *"post-run hook (opt-in via RunConfig flag) that calls `extract_skill`"*.
+No such hook was built and none should have been. T5's scope rules the opposite in terms — the
+extractor *"is a normal recorded run, not a hook in `Agent.Server`; its failure cannot affect the
+source run"* — so extraction is a second run over a completed trajectory, not something the source
+run does on its way out. What discharged the clause is therefore a normal recorded payslip run
+(`payslip-orch-5Jhdvw`, 39 events, terminal `run_complete`, 0 `error` events) whose trajectory the
+extractor then read, followed by the curator writing the four rows. The property the clause was
+reaching for — real runs, not fixtures, produce durable skill rows — holds; the mechanism the
+clause named does not exist and was deliberately replaced. Recorded here rather than left to be
+inferred, and the row body above is not edited to match, because it is the record of what was
+declared before the work.
+
+**The `Section:` field was added before this close, not by it.** Agents `ad7d9f4`, 2026-09-11,
+pointing at the milestone document — the milestone's §8 item 3 asked for it *"when this document
+is approved"*, and it was approved and executed that day. The field travels into this archive
+inside the byte-identical block above. §8 item 3 is marked resolved in the milestone doc in a
+separate harness commit, per R38.
+
+**Left open by design, each with a home.**
+
+- **m14 T8–T13.** The remaining tickets, in the milestone doc. P1's discharge record names its own
+  honest limit: one trajectory of one use case, the shape the segmenter is most likely to get
+  right. That is not a defect of this row's Done-when, which never asked for a heterogeneous
+  corpus, but it is why the row closing is not the milestone closing.
+- **BL-211 through BL-219**, the deferred findings the T5, T6 and T7 reviews and the discharge run
+  filed. All open, none folded into this close. **BL-213** (the curator's mismatch record) did not
+  bear on the discharge run — `mismatches: 0` — and stays open on its own terms; **BL-215**
+  (envelope truncation) was avoided by trajectory choice rather than fixed, which the discharge
+  record states.
+- **`api/tenant/scripts/extract_skill_hints.py`.** The scope sketch's last-but-one bullet asked to
+  *"document the distinction or unify deliberately"*. Neither was done and neither is owed by the
+  Done-when, which does not mention it. Named here so a reader does not have to establish from the
+  diff that a scope-sketch bullet went unaddressed; a scope sketch is not a Done-when, and the row
+  closes on the latter.
+
+**Not touched:** any other backlog row, the manifest, `docs/use-cases.md`, and the milestone doc's
+ticket sections — the harness commit that accompanies this one edits §8 item 3 and nothing else.
+
+`Source: closed 2026-09-12 by claude-code. Discharge evidence at harness `f5249d2`
+(`m14-p1-discharge.md`), P1's three tickets at harness `9b8f5a7` (T5) and `3de3908` (T6) and
+agents `95b1161` (T7), the milestone doc at harness `65862bb`, the `Section:` field at agents
+`ad7d9f4` — every one of them pushed. The four-row count was re-read from the live store at close
+time and agrees with the discharge record. The round's evidence is `m14-t8-review-packet.md`, a
+session-scratchpad packet in neither tree and cited by filename because nobody but its author can
+open it.`
+
+---

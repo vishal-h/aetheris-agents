@@ -1693,38 +1693,6 @@ on them, per the p3 pattern (docs → mock/real split if useful → UI).
 
 ---
 
-### BL-008 — Skills auto-extraction + Rig skills view (compounding) (#49)
-**Status:** OPEN
-**Size:** L · **Priority:** medium-low
-**Section:** harness (`../aetheris/docs/aetheris/milestones/m14-skills-auto-extraction.md`)
-
-The "compounding/dreaming" idea from the Burr HN thread, grounded in what
-exists: `skills` table schema-complete (`store.ex:817`), write path live
-(`insert_skill`, `store.ex:132/619`), public API `Aetheris.extract_skill`
-(`lib/aetheris.ex:111`) — but nothing calls it automatically and nothing
-reads the table. Operationally empty.
-
-Scope sketch:
-- Harness: post-run hook (opt-in via RunConfig flag) that calls
-  `extract_skill` for successful runs matching criteria (e.g. ≥N steps,
-  `reason: agent_finished`); populate `source_run_ids_json`.
-- Dedup/quality gate before insert (don't accumulate near-identical
-  skills from repeated sprint runs).
-- Rig: read-only Skills section under Harness (one command, one view —
-  follow the harness.rs / RunList.tsx pattern per runbook's "Adding a
-  new module" steps).
-- Relation to `api/tenant/scripts/extract_skill_hints.py` (separate,
-  domain-specific): document the distinction or unify deliberately.
-- Schema/command/doc changes → drift_check in the same commit.
-
-**Done when:** milestone docs exist; a normal sprint run leaves at least
-one skill row behind and Rig can show it.
-
-`[2026-09-11: the milestone doc landed at harness `65862bb` and was approved
-that day — thirteen tickets over P0–P3, of which P0 is gated on BL-197. That
-is the Done-when's FIRST clause only; nothing here is done, and the remaining
-two clauses are untouched.]`
-
 ### BL-094 — A direct, non-LLM launch door for config-style orchestrators (#TBD)
 **Status:** OPEN
 **Size:** M/L · **Priority:** medium · **Section:** aetheris-agents (`rig/`)

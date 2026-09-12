@@ -957,6 +957,12 @@ disposition. Read the wording there.
 
 ---
 
+### R38 — a row or document that cites a commit is filed only after that commit is pushed.
+
+`2026-09-12 — ruled by the arbiter in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R38]` item (item 9 at harness `3de3908`), which states the rule, the rider for the case where the order cannot be avoided, and its evidence; this entry points at it and does not restate it. The motivating instance is m14 T5's two rows, filed citing `cb98075` — a held commit amended away before pushing, so both citations were reachable from no ref and had to be re-pointed at agents `064e3ce`. Landed under R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

@@ -8455,3 +8455,32 @@ unobtainable against the existing suite was not.
 carrying this edit, neither pushed. The four sites were re-read at harness `e1c38e6` before the work —
 all four still at the line numbers BL-197's census recorded — and the whole-of-`lib/` search that
 found them is `grep -rn '"sha256:' lib/`, which after the refactor returns hits in `hash.ex` only.`
+
+### BL-216 — DONE 2026-09-12 · `[R38]` has no row in the ratified-decisions registry (#TBD)
+**Status:** DONE
+**Kind:** process · **Contract:** none
+**Size:** XS · **Priority:** low
+**Section:** agents (`docs/milestones/hc-consolidation.md`)
+
+R36 and R37 each carry a row in the ratified-decisions registry. R38, added to the harness
+methodology file and tagged there, did not. Until the registry row is written the tag points at
+nothing: a reader meeting `[R38]` in the methodology has no way to reach when it was ruled, by
+whom, or on what instance, which is the whole function the registry serves for its two
+predecessors.
+
+Filed and closed in one commit, per its own instruction: writing the entry is one row in one file,
+and filing the work as future work would have cost more than doing it.
+
+**Done when.** `[R38]` resolves in the registry the same way `[R36]` and `[R37]` do — one entry,
+pointing at the harness methodology rather than restating it.
+
+**Landed at** agents — this commit. The entry is `hc-consolidation.md:960`, written in the form
+R36 and R37 use: the ruling date, the single home of the text, the tag it resolves, the motivating
+instance, and the authority it landed under (R22).
+
+`Source: m14 T6, 2026-09-12. The methodology text is harness `3de3908`,
+`docs/methodology/milestone-methodology.md:89`–`:94`, carrying the `[R38]` tag at `:90`; that
+commit is pushed, which is what this rule requires of the citation above. R36 and R37 are
+`hc-consolidation.md:948` and `:954`, re-resolved before filing.`
+
+---

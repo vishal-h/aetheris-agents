@@ -9593,3 +9593,119 @@ The citations were re-resolved at `9b8f5a7` before filing: `EXTRACTOR_DENY_LIST`
 at `:62` passing `&[]`; the notes sentence is at `m14-t3-implementation-notes.md:44`.`
 
 ---
+
+### BL-213 — the curator's provenance record has no durable home (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D6, D7
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/skill/curator.ex`, `../aetheris/lib/aetheris/store.ex`)
+
+`Aetheris.Skill.Curator.Report` is returned by `curate/2` and persisted nowhere. The struct's own
+moduledoc says so — *"This is the curator's audit record. It is returned, never written"* — and no
+call site exists outside `test/`. An operator auditing a curated row has the row and no record of
+what disagreed when it was written, what was rejected, or what was evicted.
+
+**The ruling, taken at the T6 review; this row implements it rather than reopening it.** The record
+goes to a sibling curation-log table, not a column on `skills`. The report covers rejections and
+evictions, and neither has a `skills` row to hang off.
+
+**§2's constraint is amended by this row, not worked around.** The milestone doc reads *"The
+extractor and curator never write documents (D1, D10). The extractor's only output is its JSON;
+the curator's only write is the `skills` table."* The clause it needs is the one about DOCUMENTS —
+recording its own provenance in a DB table it owns was never what that constraint was protecting
+against. Making that amendment is part of this row.
+
+**Sequencing.** Must land before m14 T11. T11 records a human approval, and approving a row whose
+curation left no record is approving something unauditable. Does not gate T7.
+
+**Done when.** A curation writes its report durably; the record is readable back by `source_run_id`
+and by skill id; §2's constraint says documents; and a test asserts a rejected candidate — which
+produces no `skills` row — still appears in the log.
+
+`Source: m14 T6, 2026-09-12, harness `3de3908`. Citations re-resolved there before filing:
+`Curator.Report`'s moduledoc spans `curator.ex:1`–`:39` and the quoted sentence is at `:5`;
+`curate/2` is specced at `:193`, returning `{:ok, %Report{}}`. `grep -rn 'Curator.curate' lib/
+agents/` over the harness returns one line, `curator.ex:3`, which is that moduledoc naming the
+function and not a call. §2's constraint is
+`docs/aetheris/milestones/m14-skills-auto-extraction.md:77`–`:78`. T6 named the gap in its commit
+body and its implementation notes; until this row it had no executor.`
+
+---
+### BL-214 — the pre-reflection envelope is recoverable and unused (#TBD)
+**Status:** OPEN
+**Kind:** enhancement · **Contract:** D6
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/curator.ex`, `../aetheris/agents/skill_extractor.exs`)
+
+The extractor run's own `user_prompt` holds the deterministic envelope as it stood *before* the
+reflector touched it: `skill_extractor.exs` computes the candidates at agent-eval time and hands
+them to the run as `user_prompt`, and the loop writes that into the run's `prompt_built` event.
+
+A curator given the extractor run id could therefore diff the model's output against the original
+rather than only against the source trajectory. That closes the one residual the T6 anchor design
+cannot see — an interior anchor moved from one reasoning unit to another leaves a well-formed
+partition, and every re-derived measurement is then an honest measurement of a boundary the
+segmenter did not choose.
+
+**What happens when `store_prompts` is off.** It is a `RunConfig` toggle, so the capability is
+conditional: with it false the `prompt_built` event carries `context_hash` and `message_count`
+only, and the original envelope is not in the trajectory at all. The degradation has to be a
+stated behaviour — the check announces that it could not run and why — and never a silent loss.
+A curator that quietly skips the diff reports the same clean result whether the envelope agreed or
+was never available.
+
+**Done when.** The curator accepts an extractor run id, diffs the reflected envelope against the
+stored one, and records the differences in the same record BL-213 gives a home; a run whose
+extractor had `store_prompts` false produces a stated not-available outcome rather than a pass;
+and a test covers both.
+
+`Source: m14 T6, 2026-09-12, harness `3de3908`. Citations re-resolved there before filing:
+`agents/skill_extractor.exs:45`–`:48` builds `material` from `Candidate.envelope/1`, and `:90` is
+`user_prompt: material`. `store_prompts` defaults true at `run_config.ex:120`, is documented at
+`:59`–`:61`, and gates the `system_prompt`/`user_prompt`/`tool_schema` keys of `prompt_built` at
+`loop.ex:173`–`:179`. The residual this closes is stated at `curator.ex:92`–`:96` and in T6's
+Do-not-generate clause in the milestone doc.`
+
+---
+### BL-215 — the reflector can exceed its response budget, leaving an unparseable envelope (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D5
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/agents/skill_extractor.exs`, `../aetheris/lib/aetheris/execution/loop.ex`)
+
+One of the 26 runs in T6's corpus pass: `skill-extract-b3f9iA`, over source `payslip-orch--5UWRg`
+(7 reasoning units, 7 candidates in its envelope). Its single response opens a markdown JSON
+fence, runs to 13,009 characters, and ends mid-sentence with no closing fence and no parse.
+Measured at m14 T6, 2026-09-12.
+
+**This is a Silent-wrong-answer at the pipeline level.** The extractor run reports done, its
+trajectory is well-formed, and the candidates for that trajectory simply do not exist downstream.
+Nothing currently notices — not the run, not the curator, not an operator reading the skills table,
+which shows fewer rows and no gap.
+
+**The signal is present twice and read by nothing.** That response's `output_tokens` is 4096,
+exactly the adapter's `@default_max_tokens`, and the Anthropic adapter parses the API's
+`stop_reason` and carries it on the response — but `llm_responded` is appended without it, so the
+one field that states the run was cut off never reaches the trajectory.
+
+Section it against T5's agent: `max_steps: 2`, `tools: []`, no output-size strategy of any kind —
+the envelope is one response, however long the trajectory it summarises.
+
+**Done when.** A truncated or unparseable envelope is detectable by the run itself rather than by
+whoever tries to parse it later, and a long trajectory has a stated strategy — chunking, a
+per-candidate emission, or a documented cap on candidates per run.
+
+`Source: m14 T6, 2026-09-12, harness `3de3908`. The corpus size is T6's own, from that commit's
+body (*"ran over 26 real payslip trajectories (25 envelopes decoded, 91 candidates)"*);
+`priv/runs/skill-extract-*` holds more directories than that, earlier passes included, so the 26
+is the pass and not the directory count. The truncation reproduces with
+`python3 -c "import json; r =
+json.load(open('priv/runs/skill-extract-b3f9iA/trajectory.json')); t = [e for e in r['events'] if
+e['type'] == 'llm_responded'][0]['payload']; print(len(t['raw_response']), t['output_tokens'],
+t['raw_response'].rstrip().endswith(chr(96) * 3))"` from the harness root, printing
+`13009 4096 False`. Other citations re-resolved at the same commit:
+`@default_max_tokens 4096` at `execution/llm_adapter/anthropic.ex:20`; `stop_reason` read at
+`:203` and set on the response at `:220` and `:235`; the two `:llm_responded` appends that omit it
+at `loop.ex:248` and `:278`; `max_steps: 2` and `tools: []` at `agents/skill_extractor.exs:57`–`:58`.`
+
+---

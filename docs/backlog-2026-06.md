@@ -9713,3 +9713,79 @@ t['raw_response'].rstrip().endswith(chr(96) * 3))"` from the harness root, print
 at `loop.ex:248` and `:278`; `max_steps: 2` and `tools: []` at `agents/skill_extractor.exs:57`–`:58`.`
 
 ---
+
+### BL-217 — the nested row structs in `commands/*.rs` are fence-undocumented, so `command_fields` cannot see them (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** BL-036 (check 9)
+**Size:** M · **Priority:** medium
+**Section:** Rig (`rig/src-tauri/src/commands/*.rs`, `docs/rig/specs.md` §4, `scripts/drift_check.py`)
+
+`check_command_fields` iterates the structs it parsed out of specs.md §4's ` ```rust ` fences and
+resolves each against `commands/*.rs`. A struct present in the source and absent from every fence
+is never visited, so it is outside the check entirely: a field added, renamed, retyped or removed
+in one of them drifts with no finding. Of the 56 `pub struct`s the check's own source parser finds
+in `commands/*.rs`, 12 are fenced and **44 are not** — and every nested row struct is among the 44
+(`SkillRow`, `ClassificationRow`, `ClientRow`, `ModelUsageRow`, `UseCaseUsageRow`, `ZipRow`,
+`EncryptedZipRow`, `MigrationClientRow`).
+
+**The gap is one-directional, and the other direction already has a row.** BL-052 covers the
+*ghost* arm — documented in §4, not found in the source. This is its mirror: in the source,
+documented in no fence. Neither implies the other and BL-052's fix does not reach this.
+
+**Filed as a class deliberately.** `SkillRow` was not made the single exception at m14 T7. This row
+decides whether §4 gets fences for all 44 or `command_fields` learns to read the prose form, and
+does the sweep either way — a per-struct exception is what turns a blind spot into 44 separate
+decisions nobody records.
+
+**Done when.** Every `pub struct` in `commands/*.rs` is inside `command_fields`' population by one
+of the two routes, or is excluded by a rule the check implements rather than by absence; the sweep
+covers all 44; and a test asserts that a field added to a previously-unfenced struct draws a
+finding.
+
+`Source: m14 T7, 2026-09-12, agents `95b1161`. The census is re-derived at that commit through
+`drift_check`'s own parsers, not by an independent regex —
+`_parse_command_structs_from_source(COMMANDS_DIR)` returns 56,
+`_parse_command_structs_from_specs` returns 12, the difference is 44, and the ghost set is empty.
+The check's population is `pub struct` only (`_RUST_STRUCT_RE`, `drift_check.py:742`), which is why
+a bare-regex count over the same files gives 57. The blind spot is structural at
+`check_command_fields`' loop head, `drift_check.py:838` — `for struct_name, doc_fields in
+sorted(doc_structs.items())` — which enumerates the documented side and never the source side.
+**The T7 prompt's wording is corrected here rather than carried:** it said the 44 are documented in
+§4 "as prose". Of the 44, 11 are named in §4 prose, 3 appear only as a field type inside another
+struct's fence (`MatrixUseCase`, `ModelUsageRow`, `UseCaseUsageRow`), and 30 are absent from §4
+altogether. The invariant — all 44 outside the check — holds for every one; only the sketch was
+short, and the "or teach it the prose form" branch above is narrower than it first reads, since for
+30 structs there is no prose to teach it.`
+
+---
+
+### BL-218 — `usage.rs` drops undecodable DB rows silently (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** Silent-wrong-answer
+**Size:** S · **Priority:** medium
+**Section:** Rig (`rig/src-tauri/src/commands/usage.rs`)
+
+Both row-collecting queries in `get_usage_stats` end `.filter_map(|r| r.ok()).collect()`. A row
+whose decode fails is discarded with no error, no count and no log. The caller receives a shorter
+list and cannot distinguish it from a genuinely shorter one — the query succeeded, the command
+returns `Ok`, and the usage figures are quietly computed over a subset.
+
+This is the **Silent-wrong-answer** class in its plainest form: a well-formed value returned where
+a gap exists. The two sites are the per-model rows and the per-use-case rows, so a decode failure
+understates both the model breakdown and, through `aggregate_by_use_case`, the per-use-case totals.
+
+**The class is these two sites and no others.** The three other `.filter_map(|e| e.ok())` calls
+under `commands/` are in `tools.rs` over `read_dir` entries, one of them in a test helper; none
+decodes a DB row. `usage.rs:200`'s `filter_map` is a deliberate filter over names, not an error
+drop.
+
+**Done when.** An undecodable row is surfaced — an error, or a returned count of what was dropped —
+rather than discarded, and a test covers the drop path.
+
+`Source: m14 T7, 2026-09-12, agents `95b1161`. Citations re-resolved at that commit:
+`usage.rs:102` (per-model, after `.map_err(|e| format!("model rows failed: {}", e))?`) and
+`usage.rs:128` (per-use-case, after `"use case rows failed"`). The adjacent-case sweep is
+`grep -rn '\.ok())' rig/src-tauri/src/commands/*.rs`, returning these two plus `tools.rs:237`
+(`env::var`), `:502`, `:548` and `:762` (all `read_dir`).`
+
+---

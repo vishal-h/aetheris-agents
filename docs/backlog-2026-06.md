@@ -9789,3 +9789,46 @@ rather than discarded, and a test covers the drop path.
 (`env::var`), `:502`, `:548` and `:762` (all `read_dir`).`
 
 ---
+
+### BL-219 — the reflector's `findings` describe its own input, not the harness (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D1 channel (b)
+**Size:** S · **Priority:** low
+**Section:** harness (`../aetheris/agents/skill_extractor.exs`)
+
+The extractor's system prompt asks, under `"findings"`, for *"any observation about the HARNESS
+that this run suggests: a confusing tool contract, a prompt convention that misled the agent, a
+missing capability"*. In P1's discharge run all three findings instead describe the
+**pre-reflection envelope** — the deterministic candidate floor the reflector was handed and then
+asked to rewrite.
+
+The floor emits raw material by design: a candidate's `name` before reflection is the run's own
+command string. So a finding reading *"Candidate 1 name: 'scripts/payslip_compute.py
+data/payroll.csv python3' … not rewritten as imperative instructions"* reports the input arriving
+in the shape it is supposed to arrive in. Two of the three go further and report a defect the same
+response had already fixed: finding 2 says candidate 4's template *"contains a full
+markdown-formatted report with inline data rather than a generalized instruction template"* and
+finding 3 says candidate 2's *"hardcodes BTL_999, BTL_998, and BTL_997"* — the emitted templates
+ask for a table of employee details and pass `<EMPLOYEE_ID>` respectively.
+
+**Why it matters despite the channel being small.** D1 channel (b) findings reach a human inbox by
+hand (`candidate.ex:9`) — a human is the only consumer, so a finding that misreports a fixed defect
+as live spends the review attention this channel exists to buy. Nothing downstream filters them:
+the curator never reads `"findings"`.
+
+**Not a curator or floor defect.** The floor's output shape is correct, the reflection is correct,
+and the absent consumer is the documented design. This is the prompt's framing of one key.
+
+**Done when.** The `findings` instruction distinguishes an observation about the harness from a
+description of the envelope the reflector was given — or the key is closed with a recorded reason
+for keeping it as is; and a live run produces findings that are about the harness or none, an empty
+list already being the stated right answer when the run suggests nothing.
+
+`Source: m14 P1 discharge, 2026-09-12, harness `f5249d2` (`docs/aetheris/milestones/m14-p1-discharge.md`).
+Extractor run `skill-extract-_1xmpw` over `payslip-orch-5Jhdvw`; the three findings are in that run's
+single `llm_responded` response. Citations re-resolved at that commit: the `"findings"` instruction is
+`agents/skill_extractor.exs:79`–`:84`; the by-hand inbox route is `lib/aetheris/skill/candidate.ex:9`
+and the channel's definition `:117`. `grep -n findings lib/aetheris/skill/curator.ex` returns nothing,
+against a positive control of five hits in `candidate.ex`.`
+
+---

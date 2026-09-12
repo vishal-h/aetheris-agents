@@ -9800,3 +9800,36 @@ and the channel's definition `:117`. `grep -n findings lib/aetheris/skill/curato
 against a positive control of five hits in `candidate.ex`.`
 
 ---
+
+### BL-220 — a recorded eval-suite split does not survive a store round-trip (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** S · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/store.ex`, `../aetheris/lib/aetheris/eval/`)
+
+`Eval.Suite` gained `:split` at m14 T8. `eval_suites` has five columns and no split column, and
+`Store.row_to_eval_suite/1` does not set the field, so a suite reloaded from the store comes back
+`split: nil` — `split_status/1` `:none`, holding nothing out. Verified at T8 by a round-trip probe
+on an in-memory test DB.
+
+The failure is safe rather than silent at the struct level: the reload reports no split rather than
+a wrong one. It is **not** safe at the gate level. m14 T9 cannot distinguish "no split was ever
+recorded" from "the split did not survive the reload" — both read `:none` from the struct alone —
+so a gate that reloads its suite silently runs with nothing held out and reports a clean result.
+That is the **Silent-wrong-answer** class, in the component whose whole purpose is holding the same
+tasks out across runs.
+
+**Sequencing.** Must land before m14 T9. Ruled at the T8 review.
+
+**Done when.** A recorded split survives insert and reload with both sides intact and in order; a
+suite that never had one still reads `:none`; and a test asserts the two are distinguishable after
+a round-trip, not merely that the happy path works.
+
+`Source: m14 T8, 2026-09-12, harness `1c459cd`. Citations re-resolved at that commit: the DDL is
+`lib/aetheris/store.ex:965`–`:971` (five columns), the insert `:2066`, the three read paths `:2087`,
+`:2101` and `:2115`, and `row_to_eval_suite/1` `:2125`. `lib/aetheris/eval/store.ex` carries no
+second path — `insert_suite/1`, `get_suite/1`, `get_suite_by_name/1` and `list_suites/0` (`:81`,
+`:89`, `:97`, `:103`) delegate to `Aetheris.Store`. The struct's own moduledoc records the gap under
+§Not persisted (`lib/aetheris/eval/suite.ex:63`–`:70`).`
+
+---

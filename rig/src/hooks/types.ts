@@ -601,3 +601,40 @@ export interface PlaygroundViolation {
   code:    string;
   message: string;
 }
+
+// ── Skills catalogue (m14 T7) ────────────────────────────────────────────────
+
+/**
+ * The three lifecycle dispositions an operator must tell apart. Derived in
+ * `commands/skills.rs` from the curator's own `active/1` predicate; never a
+ * stored column.
+ */
+export type SkillDisposition = 'active' | 'superseded' | 'retired';
+
+export interface SkillRow {
+  id:                 string;
+  name:               string;
+  description:        string;
+  prompt_template:    string;
+  tool_sequence:      string[];
+  step_count:         number;
+  example_count:      number;
+  source_run_ids:     string[];
+  extracted_at:       string;
+  use_case:           string | null;
+  status:             string;
+  content_hash:       string | null;
+  superseded_by:      string | null;
+  superseded_by_name: string | null;
+  approved_by:        string | null;
+  approved_at:        string | null;
+  disposition:        SkillDisposition;
+  parse_errors:       string[];
+}
+
+export interface SkillCatalog {
+  rows:             SkillRow[];
+  active_count:     number;
+  superseded_count: number;
+  retired_count:    number;
+}

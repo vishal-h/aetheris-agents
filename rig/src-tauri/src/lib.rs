@@ -86,6 +86,7 @@ pub fn run() {
       commands::fork::fork_run,
       commands::capability_matrix::capability_matrix_load,
       commands::usage::usage_stats_load,
+      commands::skills::skills_catalog_load,
       commands::tools::tools_list_inventory,
       commands::tools::tools_read_script,
       commands::tools::tools_run_script,

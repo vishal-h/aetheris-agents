@@ -10,6 +10,7 @@ const harnessModule: Module = {
     { id: 'diff',              label: 'Diff',   icon: 'GitCompare',  path: '/diff'              },
     { id: 'capability-matrix', label: 'Agents', icon: 'Library',     path: '/capability-matrix' },
     { id: 'usage',             label: 'Usage',  icon: 'TrendingUp',  path: '/usage'             },
+    { id: 'skills',            label: 'Skills', icon: 'Blocks',      path: '/skills'            },
   ],
 };
 

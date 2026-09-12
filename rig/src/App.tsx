@@ -13,6 +13,7 @@ import { F2Operations, F2Viewer } from '@/components/modules/f2';
 import { SettingsRoute } from '@/components/modules/settings/SettingsRoute';
 import { CapabilityMatrixView } from '@/components/modules/harness/CapabilityMatrixView';
 import { UsageView } from '@/components/modules/harness/UsageView';
+import { SkillsView } from '@/components/modules/harness/SkillsView';
 import { CorpusOverview } from '@/components/modules/provenance/CorpusOverview';
 import { ClassificationReview } from '@/components/modules/provenance/ClassificationReview';
 import { MigrationStatus } from '@/components/modules/provenance/MigrationStatus';
@@ -74,6 +75,13 @@ function App() {
             <Route path="/usage" element={
               <div className="flex flex-1 flex-col h-full bg-background overflow-hidden">
                 <UsageView />
+              </div>
+            } />
+
+            {/* Skills — extracted candidate catalogue (read-only, m14 T7) */}
+            <Route path="/skills" element={
+              <div className="flex flex-1 flex-col h-full bg-background overflow-hidden">
+                <SkillsView />
               </div>
             } />
 

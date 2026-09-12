@@ -70,9 +70,27 @@ CREATE TABLE skills (
   step_count          INTEGER NOT NULL DEFAULT 0,
   examples_json       TEXT NOT NULL DEFAULT '[]',
   source_run_ids_json TEXT NOT NULL DEFAULT '[]',  -- run IDs this skill was extracted from
-  extracted_at        TEXT NOT NULL
+  extracted_at        TEXT NOT NULL,
+  use_case            TEXT,                          -- m14 T1 — dedup/cap scope; NULL = unscoped
+  status              TEXT NOT NULL DEFAULT 'candidate',  -- candidate | validated | approved | retired | rejected
+  content_hash        TEXT,                          -- identity; the id is derived from it (D6)
+  superseded_by       TEXT,                          -- id of the successor row, NULL while current
+  approved_by         TEXT,                          -- m14 q3 — written outside Rig until T11
+  approved_at         TEXT                           -- ISO 8601 | NULL
 );
 ```
+
+The six columns after `extracted_at` are m14 T1's lifecycle and identity set. A
+fresh store gets them from this `CREATE TABLE`; a pre-m14 store gets them from
+`ensure_skills_lifecycle_columns/1` one `ALTER TABLE` at a time, so both shapes
+are live and the column order differs between them. `status` is constrained in
+`Aetheris.Skill.valid_status?/1`, not by a CHECK — the permitted set lives with
+the lifecycle it describes.
+
+**Active is a derived predicate, not a column.** A row is current when
+`superseded_by IS NULL AND status != 'retired'` (harness
+`lib/aetheris/skill/curator.ex`, `active/1`). `skills_catalog_load` (§4) is the
+only place Rig computes it.
 
 ### Harness-internal tables (not read by Rig)
 
@@ -388,6 +406,37 @@ pub struct UsageStats {
     pub by_use_case:         Vec<UseCaseUsageRow>,
 }
 ```
+
+### Skills command (`commands/skills.rs`) — m14 T7
+
+**`skills_catalog_load`** — Takes no args. Reads every row of the `skills`
+table (§2) read-only; Rig never writes it. Returns:
+```rust
+pub struct SkillCatalog {
+    pub rows:             Vec<SkillRow>,
+    pub active_count:     i64,
+    pub superseded_count: i64,
+    pub retired_count:    i64,
+}
+```
+
+`SkillRow` carries the row's stored columns with the JSON ones decoded —
+`tool_sequence: Vec<String>` and `source_run_ids: Vec<String>` from
+`tool_sequence_json` / `source_run_ids_json`, and `example_count: i64` from the
+length of `examples_json` — plus three fields that are computed, not stored:
+
+- `disposition: String` — `active` | `superseded` | `retired`, inverting the
+  curator's `active/1` predicate (§2). Supersession is checked first, so a row
+  that is ever both reads as `superseded`; `status` travels beside it, so
+  nothing is hidden.
+- `superseded_by_name: Option<String>` — the successor's `name`, resolved
+  within the returned set. `None` when the successor is absent from it.
+- `parse_errors: Vec<String>` — the JSON columns that failed to decode, named.
+  Empty on every well-formed row. A malformed column is reported rather than
+  defaulted to empty, which would render identically to a genuinely empty one.
+
+Rows are ordered `extracted_at DESC, id ASC` — one curator pass writes many rows
+with the same timestamp, so the id tie-break is what makes two reads agree.
 
 ### Tools commands (`commands/tools.rs`) — p4-tools
 

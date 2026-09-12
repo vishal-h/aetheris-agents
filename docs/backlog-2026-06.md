@@ -9524,6 +9524,10 @@ re-resolved at harness `35256af` before filing: `:213` is `content: nil` inside 
 by the non-tool branch at `:228`, so the tool branch discards a value it has already
 extracted.`
 
+Same construction site drops `stop_reason`: the adapter parses it and `llm_responded` is
+appended without it. BL-215's truncation detection needs it. Land both fields or neither.
+(Recorded at the m14 T7 round, 2026-09-12.)
+
 ---
 ### BL-211 — Segmenter's public surface: an events-taking entry point, and fence-stripping's home (#TBD)
 **Status:** OPEN

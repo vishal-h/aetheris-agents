@@ -10154,6 +10154,24 @@ payslip orchestrator as a nine-child spawner; at agents `8a2737e` that file's `t
 `spawn_agent` declarers there are `eduloka/agents/eduloka_orchestrator.exs:143`,
 `provenance/agents/classification_orchestrator.exs:41` and `provenance/agents/zip_orchestrator.exs:41`.`
 
+**Third producer, appended at the BL-221 review, 2026-09-13.**
+`Runner.build_run_config/3` sets neither `use_case` nor `tool_surface_extras`, so no
+eval run is served anything — including Gate's held-in 'with entry' runs and
+control 1's arm B, whatever `make_available` does to the task template. BL-221's
+marker reports those runs truthfully as `:unavailable`; the point is that the
+'with' arm cannot be made available at all.
+
+This producer is what blocks m14 P2's discharge: the discharge is one real
+`Gate.run/3`, and the gate cannot serve an entry through Runner as it stands.
+Cited at harness `ab98249`.
+
+`Citations resolved at harness `ab98249` (pushed): `build_run_config/3` is
+`lib/aetheris/eval/runner.ex:268`, its `%RunConfig{}` at `:272`–`:288` with neither field; Gate's
+held-in arm applies `make_available` at `lib/aetheris/skill/gate.ex:448` and runs through
+`Runner.run_task/2` (default at `:442`); control 1's arm B is `with_entry` at `:365`, in `fork_one/5`
+(`:363`).
+The append was not amended into the row because the row is pushed.`
+
 ---
 
 ### BL-230 — `broadcast_message_test.exs:258` is a timing race between two agents (#TBD)
@@ -10191,5 +10209,139 @@ injection as the mechanism.
 `Source: m14 T12, harness `95f3ccb` (pushed). Citations resolved at that commit: the doc's `:47`
 (re-injection into the system prompt), `:79` (`Aetheris.Skill.Injector.inject/2` example) and `:115`
 (`inject/2` prepends skill context).`
+
+---
+
+### BL-232 — `AB.run_forked/5` does not fork: control 1's arms run from scratch (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** L · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/eval/ab.ex`, `../aetheris/lib/aetheris/eval/runner.ex`)
+
+D8's control 1 *"forks both variants from `fork_run_id` at `fork_step`, sharing the common prefix"*.
+`AB.run_forked/5` sets `fork_from` and `fork_step` on each arm's template and `Runner` copies them
+into the `RunConfig`, but only `fork_context` builds a prefix and `Runner` never sets it, so both arms
+start from nothing. Established by reading the code at the BL-221 round, not by a run.
+
+**Why high.** m14 T9's gate harness was built and reviewed against this executor. Its structure is
+sound; what it measures is not what D8 specifies. Two arms run from scratch differ by every source of
+run-to-run variance, not only by the entry's availability, which is what sharing a prefix exists to
+remove. A cost delta measured this way is noisier than the effect it looks for, and nothing says so
+where the number is produced. Second consequence: no fork prefix can carry a served body into an arm,
+so the "with entry" arm cannot inherit one.
+
+**Done when.** `run_forked/5` builds the shared prefix D8 specifies, or the gap is closed the other
+way — the function is renamed and D8's control 1 is re-specified with the arbiter's ruling on the
+record. A function whose name asserts a property it does not have is not a resolution.
+
+`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed), named in
+`docs/aetheris/milestones/bl-221-implementation-notes.md` under Exposures. Citations resolved at that
+commit: `run_forked/5` is `lib/aetheris/eval/ab.ex:77`, documented at `:69` as sharing the prefix;
+`apply_fork/3` (`:130`) puts `mode`, `fork_from` and `fork_step` at `:133`–`:135`;
+`build_run_config/3` (`lib/aetheris/eval/runner.ex:268`) copies the two at `:285`–`:286` and sets no
+`fork_context`. The prefix is read only where `fork_context != []`: `lib/aetheris/agent/server.ex:632`
+and `lib/aetheris/execution/loop.ex:71`. Its one builder is `Fork.from_step/3`
+(`lib/aetheris/execution/fork.ex:40`, `fork_context` at `:186`), called from `lib/aetheris.ex:74` and
+`lib/aetheris/cli/commands/fork.ex:115`, never from `Eval`. D8's wording is quoted at
+`docs/aetheris/milestones/m14-skills-auto-extraction.md:147`; Gate defaults to this executor at
+`lib/aetheris/skill/gate.ex:341`.`
+
+---
+
+### BL-233 — a recorded run does not say which agent file produced it (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** `../aetheris/docs/aetheris/determinism-contract.md`
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/agent/server.ex`, `../aetheris/lib/aetheris/cli/commands/run_helpers.ex`)
+
+Trajectory meta records `tools`, `max_steps`, `sandbox_path`, `model` and the system prompt, and no
+agent-file path. Establishing which file produced `payslip-orch-Nl32Vw` at the BL-221 round required
+byte-comparing the recorded `system_prompt` against each historical revision of the candidate file.
+
+**Why it matters.** In a harness whose premise is reproducible runs, a recorded run whose producer can
+only be inferred cannot be re-run with confidence, and a corpus assembled from such runs describes a
+population nobody can enumerate. The payslip corpus is the live instance: its one run was recorded
+under a revision the current file cannot reproduce — agents `5abd4b9` removed `spawn_agent` and
+`wait_for_all` from `payslip/agents/payslip_orchestrator.exs` after the run.
+
+**Done when.** A run records what produced it — the agent file's path and the commit or content hash
+it was read at — and a test asserts a recorded run can name its producer without inference.
+
+`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed). Citations resolved at that commit:
+the meta map is `lib/aetheris/agent/server.ex:663`–`:680`, and the resume path's at `:969`, neither
+carrying a path; `load_agent_file/1` (`lib/aetheris/cli/commands/run_helpers.ex:357`) holds the path
+and nothing downstream records it. The run is `priv/runs/payslip-orch-Nl32Vw/trajectory.json` under
+the harness, runtime state in neither repo: its meta has 13 keys, none a path, `tools` is
+`["run_command", "spawn_agent", "wait_for_all"]`, and it ran 2026-06-10 10:28:17Z–10:29:09Z.
+`5abd4b9` is dated 2026-06-10 16:14:40 +0530 (10:44:40Z). **Deviation from the filing prompt:** it
+said 22 minutes after the run; resolved, the commit is 15m31s after the run finished and 16m23s after
+it started.`
+
+---
+
+### BL-234 — baselines locked before BL-221 were computed over unmarked runs (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/eval/baseline.ex`, `../aetheris/lib/aetheris/store.ex`, `../aetheris/lib/aetheris/skill/gate.ex`)
+
+BL-221 makes `lock/2` select `:unavailable` runs only. Baselines locked before it were selected over
+runs that are all now `:unknown`, and Gate's held-in arm reads `get_latest_baseline/1`, which cannot
+tell how a baseline was selected: `eval_baselines` has no column for it. Fixing `lock/2` does not
+retire them.
+
+**Affected rows: 12, over 7 tasks, snapshotted 2026-05-19 to 2026-05-20,** from
+`sqlite3 priv/aetheris.db "SELECT COUNT(*), COUNT(DISTINCT task_id), MIN(snapshotted_at), MAX(snapshotted_at) FROM eval_baselines;"`
+in the harness checkout (runtime state, in neither repo; file dated 2026-09-12 19:25:29 +0530). All
+12 predate BL-221: that database's `eval_runs` has no `skill_availability` column
+(`PRAGMA table_info(eval_runs)`), so the application has not started against it since `ab98249`.
+
+**Done when.** A baseline records the selection rule it was locked under, and a baseline predating
+BL-221 is either re-locked or refused by the gate rather than used silently.
+
+`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed), named in
+`docs/aetheris/milestones/bl-221-implementation-notes.md` under Exposures. Citations resolved at that
+commit: `lock/2` is `lib/aetheris/eval/baseline.ex:124`, selecting at `:140`; the `eval_baselines`
+DDL is `lib/aetheris/store.ex:1051`; Gate reads the baseline at `lib/aetheris/skill/gate.ex:463`
+through `lib/aetheris/eval/store.ex:148`.`
+
+---
+
+### BL-235 — eval test files tagged `:integration` are excluded from every gate run (#TBD)
+**Status:** OPEN
+**Kind:** defect
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/test/test_helper.exs`, `../aetheris/test/aetheris/eval/`)
+
+`runner_test.exs` and `baseline_test.exs` carry `@moduletag :integration`, which `test_helper.exs`
+excludes, so `mix test` never runs them. Discovered at the BL-221 round, when a Done-when test placed
+in one of them would not have executed. The gate set has been reported green all through m14 with
+these files never running.
+
+**Census at harness `ab98249`.** `mix test` reports `1194 tests, 0 failures, 136 excluded`; the
+excluded figure spans all five tags in `exclude:`. For `:integration`:
+
+- **Eval files:** `runner_test.exs` 10, `baseline_test.exs` 17, and a third the filing prompt did not
+  name, `ab_test.exs` 14 — each from `mix test <file>`, which printed `N tests, 0 failures, N excluded`.
+- **Every `@moduletag :integration` file** — those three plus `integration/checkpoint_resume_test.exs`,
+  `codebase_qa_test.exs`, `fork_join_test.exs`, `mcp_github_test.exs`, `mcp_http_test.exs`,
+  `skill_extraction_test.exs`, `spawn_agent_test.exs`, `wait_for_event_test.exs` and
+  `worker/client_internet_test.exs`. `mix test` over exactly those files printed
+  `71 tests, 0 failures, 65 excluded`; the 6 that ran are `skill_extraction_test.exs`'s first module,
+  the tag being on its second.
+- **`@tag :integration` on single tests:** `skill/segmenter_test.exs:330` is the one in a gated file
+  (`12 tests, 0 failures, 1 excluded`). `codebase_qa_test.exs:34`, `mcp_github_test.exs:42` and
+  `worker/client_test.exs:171` sit in modules already excluded.
+
+**Done when.** Either the files run under the standard gate, or the exclusion is deliberate and
+recorded where a reader of the gate output can see what it does not cover.
+
+`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed), named in
+`docs/aetheris/milestones/bl-221-implementation-notes.md` under Deviations. Citations resolved at that
+commit: `:integration` is in `exclude:` at `test/test_helper.exs:12`; the eval tags are
+`test/aetheris/eval/runner_test.exs:3`, `baseline_test.exs:3` and `ab_test.exs:3`; the other module
+tags are found by `git grep -n "@moduletag :integration" -- test`, the single-test tags by
+`git grep -n "@tag :integration" -- test`. Harness `CLAUDE.md:204`–`:206` lists all three eval files
+as `@moduletag :integration`, so the tag is documented; the gate's output does not say it.`
 
 ---

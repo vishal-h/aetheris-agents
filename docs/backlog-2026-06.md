@@ -9614,6 +9614,13 @@ Its sequencing constraint is unchanged: before m14 T11. T11 approves a validated
 validated with no record of what the gate measured is approved unauditable. Cited at harness
 `3fcceeb`.
 
+**Third producer, appended at the BL-223 review, 2026-09-13.** `Skill.Body.resolve/2` withholds an
+approved entry when its file is absent, outside the declared tool surface, or changed since
+approval, and logs a warning naming the entry, path and reason. The warning is ephemeral: nothing
+durable records which approved entries a run was NOT served. An operator asking later why an
+approved entry never reached a run has the console or nothing. Same log, same Done-when — the
+curator's report, the gate's verdict reasons, and the withheld set. Cited at harness `017f4e2`.
+
 ---
 ### BL-214 — the pre-reflection envelope is recoverable and unused (#TBD)
 **Status:** OPEN
@@ -9912,6 +9919,8 @@ commit: `insert_skill/1` is `lib/aetheris/store.ex:132`, whose only guard is
 `store.ex:257` and `approve_skill/3` is `:277`; the parametrised case is `store_test.exs:139`–`:163`.
 T11's notes name the gap at `docs/aetheris/milestones/m14-t11-implementation-notes.md:51`–`:55`.`
 
+`approve_skill/3` became `approve_skill/4` at BL-223 (harness `017f4e2`); this row's text predates that. (Recorded at the BL-223 review, 2026-09-13.)
+
 ---
 
 ### BL-223 — approved skill bodies have no file substrate, so D2's served path points at nothing (#TBD)
@@ -9965,6 +9974,19 @@ Citations resolved at that commit: the `skills` columns are the `INSERT` at
 the outside-surface clause is §4 *Anything outside the tool surface*; T13's consultation measure is
 `docs/aetheris/milestones/m14-skills-auto-extraction.md` §4 T13 *Scope*.`
 
+**Corrected at the BL-223 review, 2026-09-13.** This row's ruling said a body is "declared in
+`tool_surface_extras`". That is over-specific: the invariant is membership of the run's DECLARED
+TOOL SURFACE, which `tools_hash` covers by both branches — git-tracked under `sandbox_path`, or
+named in `tool_surface_extras`. A body tracked under `sandbox_path` is in the hash and is a
+committed human artifact, so requiring an extras entry adds ceremony with no determinism content.
+`Skill.Body.resolve/2` as implemented checks surface membership and is correct; this row's wording
+was not. The Done-when's "outside the declared tool surface" already read correctly.
+
+Approval remains stricter than resolution by design: `approval/2` requires the file to be
+git-tracked under `:root` with no extras, because the body must be a committed artifact; resolution
+requires only that the run's surface covers it. Both tighten safely. Implemented at harness
+`017f4e2`.
+
 ---
 
 ### BL-224 — retire m04's `Skill.Extractor` and `extract_skill/3` (#TBD)
@@ -10011,5 +10033,63 @@ the prior.
 
 `Source: the m14 T12 scope check, 2026-09-13; harness `437a3ac` (pushed). Citation resolved at that
 commit: the union and its stated reason are `lib/aetheris/skill/frequency_prior.ex:19`–`:24`.`
+
+---
+
+### BL-226 — an edited approved body has no re-approval path (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D7, BL-223
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/lifecycle.ex`, `../aetheris/lib/aetheris/skill/body.ex`, `../aetheris/lib/aetheris/store.ex`)
+
+Approval is one-way (m14 T11) and records `body_hash` (BL-223). A human who edits an approved body
+file gets `{:withheld, {:body_changed, recorded, current}}` on every run thereafter. The only
+remedies today are reverting the file byte-for-byte or superseding the entry, and supersession is
+the curator's write, not an operator action.
+
+This is the predictable steady state, not an edge case: a body is documentation a human maintains,
+so it will be edited. An approved entry that silently stops being served after an ordinary edit —
+visible only as a console warning — is where the one-way guarantee turns from a safety property
+into an operational trap.
+
+**To decide as part of the row.** Whether re-approval is a new row linked by `superseded_by`
+(preserving one-way), or an explicit re-approval write that records both approvals. Do not weaken
+T11's `WHERE` clause to get there.
+
+**Done when.** An operator who edits an approved body has a supported path back to served, the path
+leaves a record of both approvals, and a test asserts the original approval is not overwritten.
+
+`Source: the BL-223 review, 2026-09-13; harness `017f4e2` (pushed). Citations resolved at that
+commit: the withheld reason is `lib/aetheris/skill/body.ex:64` (type) and `:161` (returned); T11's
+guard is `do_approve_skill/5`'s `WHERE id = ?5 AND status = 'validated'` at
+`lib/aetheris/store.ex:1486`; supersession's write is `set_skill_superseded_by/2` (`store.ex:231`),
+called by the curator at `lib/aetheris/skill/curator.ex:499`. BL-223's notes name the gap under
+Owed (`docs/aetheris/milestones/bl-223-implementation-notes.md:56`).`
+
+---
+
+### BL-227 — `docs/rig/specs.md` §2 is two columns behind on `skills` (#TBD)
+**Status:** OPEN
+**Kind:** chore
+**Size:** XS · **Priority:** low
+**Section:** Rig (`docs/rig/specs.md` §2)
+
+`body_path` and `body_hash` are in `store.ex` and not in §2, raising two `db_schema` INFOs (observed
+at the BL-223 review; code 17 columns, doc 15). m14 T7 closed the previous six of the same class.
+
+**Why the check only ever sees the `CREATE TABLE`.** `store.ex`'s `ALTER TABLE` uses an interpolated
+column name, and `drift_check`'s `ALTER` regex does not match it. That is not a defect to fix here,
+but a reader reconciling code against doc will otherwise miscount.
+
+**Done when.** §2's `skills` block lists both columns and `db_schema` emits no `skills` INFO.
+
+`Source: the BL-223 review, 2026-09-13; harness `017f4e2` (pushed), agents `fc21a4b`. Citations
+resolved there: the `CREATE TABLE IF NOT EXISTS skills` block is harness `lib/aetheris/store.ex:915`–`:933`
+(17 columns, `body_path`/`body_hash` at `:931`–`:932`); the guarded `ALTER` is `:1102`,
+`"ALTER TABLE skills ADD COLUMN #{column} #{definition}"`; the parser is agents
+`scripts/drift_check.py:306`, `r"ALTER TABLE (\w+) ADD COLUMN (\w+)"`, which `#{column}` cannot
+match; §2's block is `docs/rig/specs.md:62` (15 columns). The two INFOs are
+`db_schema: skills.body_hash in store.ex but not in specs.md §2` and the same for `body_path`, from
+`python3 scripts/drift_check.py` at agents `fc21a4b`. The six were added at agents `95b1161`.`
 
 ---

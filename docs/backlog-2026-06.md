@@ -10093,3 +10093,103 @@ match; §2's block is `docs/rig/specs.md:62` (15 columns). The two INFOs are
 `python3 scripts/drift_check.py` at agents `fc21a4b`. The six were added at agents `95b1161`.`
 
 ---
+
+### BL-228 — a resumed run loses its served catalog mid-run (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D2, D9
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/application.ex`, `../aetheris/lib/aetheris/agent/server.ex`)
+
+m14 T12 serves the catalog at step 0. A run resumed after a restart has its config rebuilt from
+`config_json`, which holds the declared prompt, and the resume path never serves. The run's early
+steps had the catalog and its later steps do not, within one run, and nothing in the trajectory marks
+the transition.
+
+**Why it matters.** Silent-wrong-answer, and worse than a run that never had a catalog: the run
+completes, its trajectory is well-formed, and a step-0 `skill_injected` event asserts entries were
+served that the resumed half cannot reach. m14 T13's consultation measurement reads that as
+served-and-not-consulted.
+
+**Done when.** A resumed run either re-serves the same catalog — same entries, same body hashes — or
+records in the trajectory, not only in a log, that it could not. The row decides which; a resume that
+silently differs from its original is what it exists to remove.
+
+`Source: m14 T12, harness `95f3ccb` (pushed); named in T12's notes under Exposures
+(`docs/aetheris/milestones/m14-t12-implementation-notes.md`). Citations resolved at that commit:
+`do_resume_checkpoint/2` is `lib/aetheris/application.ex:135`, rebuilding through
+`reconstruct_config/2` at `:148`; `config_json` is written from the declared config at
+`lib/aetheris/agent/server.ex:235`; the only `Injector.serve/2` call is `:716`, inside
+`serve_skills_and_run/5` (`:715`); `resume_run/8` (`:938`) goes to `Loop.resume` (`:949`) and does
+not serve.`
+
+---
+
+### BL-229 — `use_case` reaches a run through no path but a hand-written agent file (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D2, D7
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/execution/tool/spawn_agent.ex`, `../aetheris/lib/aetheris/api/run_policy.ex`)
+
+`RunConfig` gained `use_case` at m14 T12, and `nil` serves nothing — correctly, absent is unknown. Two
+producers never set it, so their runs are served nothing while appearing to be ordinary runs:
+
+- `spawn_agent` builds child configs without it. Sub-agents doing the repeated work of a fan-out are
+  exactly the population an extracted skill would help.
+- The playground API's `RunPolicy` builds its sanitized map key by key, and `use_case` is not a key.
+
+One row because it is one defect: `use_case` fails to propagate everywhere except where a human types
+it. Fixing one producer and not the other leaves the same hole.
+
+**Done when.** A spawned child inherits its parent's `use_case` unless overridden; the playground API
+accepts one and passes it through; a test per producer asserts the run's recorded config carries it.
+Inheritance is a decision the implementing round states, with why inherit rather than require.
+
+`Source: m14 T12, harness `95f3ccb` (pushed); named in T12's notes under Exposures. Citations resolved
+at that commit: `build_child_config/4` is `lib/aetheris/execution/tool/spawn_agent.ex:122`, its
+`%RunConfig{}` at `:126` with no `use_case`; `build_sanitized/2` is `lib/aetheris/api/run_policy.ex:418`,
+consumed by `RunConfig.from_map/2` at `lib/aetheris/api/playground_router.ex:90`, which reads
+`use_case` at `lib/aetheris/run_config.ex:194`. **Deviation from the filing prompt:** it named the
+payslip orchestrator as a nine-child spawner; at agents `8a2737e` that file's `tools` is
+`["run_command"]` (`payslip/agents/payslip_orchestrator.exs:21`) and it spawns nothing. The
+`spawn_agent` declarers there are `eduloka/agents/eduloka_orchestrator.exs:143`,
+`provenance/agents/classification_orchestrator.exs:41` and `provenance/agents/zip_orchestrator.exs:41`.`
+
+---
+
+### BL-230 — `broadcast_message_test.exs:258` is a timing race between two agents (#TBD)
+**Status:** OPEN
+**Kind:** defect
+**Size:** S · **Priority:** low
+**Section:** harness (`../aetheris/test/aetheris/execution/tool/broadcast_message_test.exs`)
+
+Failed once in a full `mix test` run at the m14 T12 round; passed five solo runs and a second full
+run. Unrelated to T12 by territory. BL-075 covers `RunHelpersTimeoutTest`, a different test and a
+different mechanism.
+
+Filed to name it, not to triage it. It is known to be flaky; nothing is known about why.
+
+**Done when.** The mechanism is identified and the test no longer races, or the row records why it
+cannot be made deterministic.
+
+`Source: m14 T12 round, 2026-09-13; harness `95f3ccb` (pushed). The line is `refute is_nil(received)`
+in `test "broadcast_message in a full 2-agent orb produces correct trajectory events"` (`:211`). The
+failing run's output is held in neither repo.`
+
+---
+
+### BL-231 — `uc3-skill-extraction.md` describes the retired injector (#TBD)
+**Status:** OPEN
+**Kind:** chore
+**Size:** XS · **Priority:** low
+**Section:** harness (`../aetheris/docs/aetheris/use-cases/uc3-skill-extraction.md`)
+
+m14 T12 retired m04's content injector and `apply_skill/2`. The use-case doc still describes content
+injection as the mechanism.
+
+**Done when.** The doc is swept to index injection, or marked as describing m04 as history.
+
+`Source: m14 T12, harness `95f3ccb` (pushed). Citations resolved at that commit: the doc's `:47`
+(re-injection into the system prompt), `:79` (`Aetheris.Skill.Injector.inject/2` example) and `:115`
+(`inject/2` prepends skill context).`
+
+---

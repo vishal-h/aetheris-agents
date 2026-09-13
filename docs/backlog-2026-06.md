@@ -9966,3 +9966,50 @@ the outside-surface clause is §4 *Anything outside the tool surface*; T13's con
 `docs/aetheris/milestones/m14-skills-auto-extraction.md` §4 T13 *Scope*.`
 
 ---
+
+### BL-224 — retire m04's `Skill.Extractor` and `extract_skill/3` (#TBD)
+**Status:** OPEN
+**Kind:** chore · **Contract:** m14 §1.1, D3
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/extractor.ex`, `../aetheris/lib/aetheris.ex`)
+
+m04's whole-run extractor was superseded by m14 T5's segment-scoped extractor, which landed. §1.1
+assigned its retirement to T12; T12 is L and blocked on BL-223, and this is neither. Split out at the
+T12 scope check.
+
+**Scope.** Remove `Skill.Extractor` and the public `Aetheris.extract_skill/3`. Convert rather than
+delete any test asserting m04's extraction behaviour — each becomes an assertion about the T5 path, or
+is recorded as an invariant no longer held. Sweep any doc naming either. A deleted assertion is a lost
+invariant; that rule cost m04's injector tests a ruling at T12 and applies here too.
+
+**Done when.** `grep -rn 'extract_skill\|Skill.Extractor' lib/` returns 0; the suite is green with
+every m04 extraction assertion converted or explicitly retired with its reason; no doc names either.
+
+`Source: the m14 T12 scope check, 2026-09-13; recorded in m14 §1.1 at harness `437a3ac` (pushed).
+Citations resolved at that commit: `extract_skill/3` is `lib/aetheris.ex:115`; the module is
+`lib/aetheris/skill/extractor.ex:1`; `docs/aetheris/test-plan.md:31` is a doc row naming it.`
+
+---
+
+### BL-225 — FrequencyPrior's corpus should read the run's recorded `use_case` (#TBD)
+**Status:** OPEN
+**Kind:** enhancement · **Contract:** D8
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/frequency_prior.ex`)
+
+`Skill.FrequencyPrior` derives its corpus by unioning `source_run_ids` across a use_case's skills rows,
+because no run recorded its own scope. Once `RunConfig` carries `use_case` — ruled at the T12 scope
+check and recorded in m14 at harness `437a3ac` — the recorded value is the better source: the union
+covers only runs the extractor was pointed at, a biased subset of the use_case's actual population,
+and control 2's prior is only as good as that population.
+
+**Blocked on** `RunConfig.use_case` landing, which is part of m14 T12.
+
+**Done when.** The corpus comes from runs' recorded `use_case` where present; the union remains the
+fallback for runs predating the field; a test asserts a run never extracted from still counts toward
+the prior.
+
+`Source: the m14 T12 scope check, 2026-09-13; harness `437a3ac` (pushed). Citation resolved at that
+commit: the union and its stated reason are `lib/aetheris/skill/frequency_prior.ex:19`–`:24`.`
+
+---

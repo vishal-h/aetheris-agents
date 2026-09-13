@@ -9913,3 +9913,56 @@ commit: `insert_skill/1` is `lib/aetheris/store.ex:132`, whose only guard is
 T11's notes name the gap at `docs/aetheris/milestones/m14-t11-implementation-notes.md:51`–`:55`.`
 
 ---
+
+### BL-223 — approved skill bodies have no file substrate, so D2's served path points at nothing (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D2, D9, D10; `../aetheris/docs/aetheris/determinism-contract.md` §2 *Tool surface*, §4
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/skill/`, `../aetheris/lib/aetheris/store.ex`)
+
+D2 says index injection serves `(id, name, description, path)` and the body is read on demand. No
+body file exists. Bodies live in the `skills` table's `prompt_template` column; the table carries no
+path, and no m14 ticket creates one. m04 kept the body in the table because it injected content
+directly.
+
+m14 T12 cannot land without this: it is the ticket that serves the path. T13 inherits it —
+consultation is measured as `read_file` events under the skills path, so with no files there are no
+reads to count. P3 is blocked entirely.
+
+**RULED at the T12 scope check, 2026-09-13. The row implements this; it does not reopen it.**
+
+The injector never writes a body file. A file written at run start is not git-tracked, so it is
+outside the tool surface BL-197 declared (git-tracked files under `sandbox_path` plus
+`tool_surface_extras`). The determinism contract §4 places anything outside the tool surface outside
+the fork guarantee, so an injector-written body either escapes `tools_hash` — two runs with identical
+hashes reading different content, which is the failure the hash exists to prevent — or forces the
+surface to widen at runtime, which is the same as having no declared surface. m14 §6's
+machine-written-documents non-goal agrees, but the contract argument stands on its own.
+
+Bodies are human-committed files: git-tracked under the agent root, declared in
+`tool_surface_extras`, read through `read_file` so the read is a recorded event. Approval remains a
+human decision (q3) and now has a human artifact attached to it.
+
+**Done when.**
+- A skills row can name its body file, and the name is set as part of approval rather than at
+  insert — an unapproved row has no served body. m14 T11 made approval one-way in the store's own
+  statement; whatever carries the path must not reopen that.
+- An approved row whose file is absent, or present but outside the declared tool surface, is NOT
+  served and the omission is visible — never served as a path that fails to read, and never silently
+  dropped from the catalog. Absent is unknown, and a catalog that quietly omits an entry is the same
+  silent-wrong-answer class as one that serves a dead path.
+- A test asserts the surface membership check, not merely that the file exists on disk.
+- The relationship to `content_hash` is decided and stated: whether the row's hash covers the file,
+  the table's prose, or both, and what happens when they disagree.
+
+**Do not generate.** Any injector-side write. Any change to m14 T12's serving design beyond giving it
+a substrate to serve — T12 is written and waiting.
+
+`Source: the m14 T12 scope check, 2026-09-13, at harness `737a8b4` (pushed); ruled by the arbiter.
+Citations resolved at that commit: the `skills` columns are the `INSERT` at
+`lib/aetheris/store.ex:1333`–`:1337`, none a path; the tool surface is
+`docs/aetheris/determinism-contract.md` §2 *Tool surface* and `lib/aetheris/run_config.ex:64`–`:67`;
+the outside-surface clause is §4 *Anything outside the tool surface*; T13's consultation measure is
+`docs/aetheris/milestones/m14-skills-auto-extraction.md` §4 T13 *Scope*.`
+
+---

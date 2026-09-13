@@ -10460,3 +10460,62 @@ commit: rule 15 is `CLAUDE.md:429`; `build_run_config/3` is `lib/aetheris/eval/r
 10 at `:169`.`
 
 ---
+
+### BL-239 — the held-in arm's comparison differs by more than the candidate (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/skill/gate.ex`, `../aetheris/lib/aetheris/eval/baseline.ex`, `../aetheris/lib/aetheris/skill/injector.ex`)
+
+BL-236 serves a measured run the use_case's eligible catalog plus the listed candidate, so control 1's
+arms differ by exactly the candidate. The held-in arm does not have that property. It compares a
+measured run (catalog + candidate) against a baseline `lock/2` builds only from runs BL-221 marks
+`:unavailable` — runs with no `skill_injected` event, which carry no catalog at all. Where the use_case
+has any approved entry, the held-in comparison differs by the whole catalog plus the candidate.
+
+**Why high.** The held-in arm exists to reject a candidate that regresses tasks outside the held-out
+split, and a held-in regression rejects regardless of what control 1 shows. A regression it attributes
+to the candidate may belong to the catalog, and an improvement may mask one.
+
+Distinct from BL-234, which is historical contamination of baselines locked before BL-221; this is a
+structural mismatch between what a measured run carries and what its baseline carries.
+
+**Done when.** The held-in comparison's two sides differ by the candidate alone — either the baseline
+is locked from runs carrying the same catalog, or the measured held-in run carries only the candidate —
+and a test asserts the difference. The resolution states which direction and why; both change what a
+baseline means.
+
+`Source: the BL-236 review, 2026-09-13, by the round that created the condition; harness `901f7d1`
+(pushed). Citations resolved at that commit: `serve_measured/3` serves the eligible catalog beside the
+listed entries at `lib/aetheris/skill/injector.ex:122`–`:136`; the held-in arm is given the same
+measurement at `lib/aetheris/skill/gate.ex:459` and compared against `EvalStore.get_latest_baseline/1`
+at `:479`, documented at `:62`–`:64`; `lock/2` keeps only `:unavailable` runs at
+`lib/aetheris/eval/baseline.ex:140`; `:unavailable` is "no `skill_injected` event" at
+`lib/aetheris/eval/run.ex:75`–`:80`.`
+
+---
+
+### BL-240 — `specs.md` §6 does not list `skill_injected`'s marker fields (#TBD)
+**Status:** OPEN
+**Kind:** chore
+**Size:** XS · **Priority:** low
+**Section:** aetheris-agents (`docs/rig/specs.md`)
+
+BL-236 adds `served_under` and `status` to the `skill_injected` payload of an entry served under a
+gate measurement. §6 lists `skill_id` and `content_hash` only. `drift_check.py`'s `payload_fields`
+reports an unlisted key as INFO, so nothing fails. Both appear only on marked events, so they are
+optional fields: `served_under?`, `status?`.
+
+These are the fields the BL-236 invariant rests on — an event without `served_under` names an approved
+entry — so a reader of §6 alone cannot see what marks a gate measurement.
+
+**Done when.** §6's `skill_injected` row lists `served_under?` and `status?` and says that
+`served_under` marks a gate measurement.
+
+`Source: the BL-236 review, 2026-09-13; harness `901f7d1` (pushed). Citations resolved: the two keys are
+merged into a listed entry's payload at `lib/aetheris/skill/injector.ex:196`, and
+`served_under_measurement?/1` reads `served_under` at `:71`–`:72`; §6's row is `docs/rig/specs.md:689`
+at agents `2fe2e6c`; `scripts/drift_check.py` reports an unlisted key as INFO at `:510`–`:511` and an
+unobserved `?` field as INFO at `:505`–`:507`.`
+
+---

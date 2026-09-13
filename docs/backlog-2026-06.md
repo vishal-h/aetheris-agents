@@ -10677,3 +10677,41 @@ turn at `lib/aetheris/execution/fork.ex:134`. The orchestrator's `tools:` is
 2026-05-21T13:45Z–2026-06-10T10:28Z, and 11 declaring `["run_command"]`, started from
 2026-06-10T10:53Z. **Deviation from the filing prompt:** "carry" is true of the 43's declared tools;
 41 of them recorded `tool_called` events for both.`
+
+---
+
+### BL-245 — a corpus run's recorded segmentation cannot be found, so the prior re-segments it (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D3, D8
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/skill/frequency_prior.ex`, `../aetheris/lib/aetheris/skill/candidate.ex`, `../aetheris/lib/aetheris/store.ex`)
+
+BL-242's prior reads each corpus run through `Candidate.extract/2`, paying one labeling call per corpus
+run per gate run, and can segment a run differently from the extraction that produced the candidate it
+is judging.
+
+Every corpus run was segmented once already — the corpus is by definition runs the extractor was
+pointed at — and 32 `skill-extract-*` runs carry the pre-reflection envelope with its anchors in their
+`user_prompt`. The prior cannot use them: nothing recorded links a skills row or a corpus run to the
+extraction that segmented it. The envelope sits inside prompt text, the run label is not a contract,
+and one source run can have several extractions.
+
+Same family as BL-233 (a run cannot name its producer): the harness records the artifact and not the
+link to what made it.
+
+**Done when.** An extraction is findable from the run it segmented and from the skills rows it
+produced; the prior reuses a recorded segmentation where one exists and says so; a test asserts the
+prior and the candidate agree on segment boundaries for the same run.
+
+`Source: the BL-242 review, 2026-09-13; harness `95c6840` (pushed). Established from code and the live
+run store, not from a gate run. Citations resolved at that commit: the prior defaults to
+`Candidate.extract/1` and calls it once per corpus run at `lib/aetheris/skill/frequency_prior.ex:113`–`:114`,
+the cost stated at `:40`–`:43`; `extract/2` segments at `lib/aetheris/skill/candidate.ex:104`–`:112`
+and the envelope is `:122`–`:128`; the extractor's run id is a generated label at
+`agents/skill_extractor.exs:52`; the `skills` DDL (`lib/aetheris/store.ex:915`) carries
+`source_run_ids_json` (`:923`) and no extraction id. Under the harness's `priv/runs/` (runtime state, in
+neither repo) `ls | grep -c '^skill-extract-'` gives 32, and each one's `meta.user_prompt` parses as an
+envelope whose candidates carry `start_seq`/`end_seq`. Three source runs have several extractions:
+`payslip-orch-5Jhdvw` 3, `payslip-orch-Nl32Vw` 3, `fixture-solo-1156` 2. **Deviation from the filing
+prompt:** "can segment a run differently" is a possibility, not an observation — each of those three
+runs yielded the same normalised segment patterns at every extraction.`

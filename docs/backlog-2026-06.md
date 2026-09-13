@@ -9833,3 +9833,37 @@ second path — `insert_suite/1`, `get_suite/1`, `get_suite_by_name/1` and `list
 §Not persisted (`lib/aetheris/eval/suite.ex:63`–`:70`).`
 
 ---
+
+### BL-221 — eval runs carry no availability marker, so a baseline can be contaminated by skill-available runs (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/eval/`)
+
+`Runner.run_task/2` stores every eval run under the task's own id, with nothing recording whether a
+skill entry was available to that run. A later `Baseline.lock/2` over a held-in task pulls those
+runs into the no-skill baseline. `AB.run_forked/5` executes through `Runner.run_task/2`, so both
+arms of control 1 land the same way.
+
+**Why high rather than medium.** D8's control 1 compares an arm with the entry available against an
+arm without. If the "without" baseline silently contains runs that had it, the comparison measures
+nothing and still reports a number — **Silent-wrong-answer**, in the measurement m14's P2 exists to
+produce.
+
+**Sequencing.** Must land before any real `Gate.run/3`, not merely before m14 T10. A gate run
+against a contaminated baseline is worse than none, because it produces a figure that will be
+cited.
+
+**Done when.** An eval run records whether a skill entry was available to it; `Baseline.lock/2`
+selects on that; and a test asserts a mixed-availability task cannot produce a no-skill baseline
+containing available runs.
+
+`Source: m14 T9, harness `6633a4b` (pushed); authorised by the arbiter at the T9 review. Citations
+resolved at that commit: `run_task/2` is `lib/aetheris/eval/runner.ex:47`, persisting at `:193`
+(scored) and `:219` (failed); the `eval_runs` DDL is `lib/aetheris/store.ex:980`–`:994`, no
+availability column; `Baseline.lock/2` is `lib/aetheris/eval/baseline.ex:110`, reading every run for
+the task at `:113` and taking the K most recent at `:118`; `AB`'s executor calls `Runner.run_task`
+at `lib/aetheris/eval/ab.ex:112`. T9's notes name the gap at
+`docs/aetheris/milestones/m14-t9-implementation-notes.md:58`–`:62`.`
+
+---

@@ -10519,3 +10519,43 @@ at agents `2fe2e6c`; `scripts/drift_check.py` reports an unlisted key as INFO at
 unobserved `?` field as INFO at `:505`–`:507`.`
 
 ---
+
+### BL-241 — a forked arm drops its template's pre-tools output (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8, `../aetheris/docs/aetheris/determinism-contract.md` §2
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/eval/runner.ex`, `../aetheris/lib/aetheris/execution/fork.ex`, `../aetheris/lib/aetheris/agent/server.ex`)
+
+BL-232 made forked arms start from the recorded prefix. The loop prefers `fork_context` over
+`user_prompt`, so the pre-tools block appended at run start is dropped, and the prefix's first user turn
+is `meta["user_prompt"]`, recorded from the config before pre-tools are applied. For a task with
+pre-tools, both arms begin from decisions taken on context neither of them can see.
+
+Control 1's difference survives — the effect is identical in both arms — so this is not a defect in the
+comparison. It is a defect in fidelity: a forked arm does not run the task as it was recorded, and
+anyone reading a forked run as a reproduction of the original is reading something else. The pre-tools
+themselves still execute in a forked arm; only their output is discarded.
+
+**Done when.** A forked run's first turn carries the same context an unforked run of the same template
+would — either the prefix is built after pre-tools, or the pre-tools block is re-applied on top of it —
+and a test asserts a task with pre-tools produces the same first-turn context forked and unforked. The
+resolution states which direction and why; they differ in whether pre-tools re-execute.
+
+`Source: the BL-232 review, 2026-09-13, by the round that made forking work; harness `86b4287`
+(pushed). Citations resolved at that commit: `with_fork_prefix/1` takes `fork_context` from
+`Fork.from_step/3` at `lib/aetheris/eval/runner.ex:146`–`:154`; the loop prefers it at
+`lib/aetheris/execution/loop.ex:70`–`:72`, as `initial_context/1` does at
+`lib/aetheris/agent/server.ex:630`–`:638`; `apply_pre_tools/3` appends the block to `user_prompt` at
+`:739`, on the config built at `:718`, while meta records `"user_prompt"` at `:671` from the config
+`execute_run/6` was given; the prefix's first user turn is `meta["user_prompt"]` at
+`lib/aetheris/execution/fork.ex:87`–`:92`, as contract §2 defines the transcript
+(`docs/aetheris/determinism-contract.md:48`–`:50`). `PreTools.run/3` skips only `:replay` and
+`:verify` (`lib/aetheris/execution/pre_tools.ex:59`–`:60`), and `apply_fork/3` sets mode `"fork"`
+(`lib/aetheris/eval/ab.ex:146`), so a forked arm re-executes its pre-tools. **Deviation from the filing
+prompt:** it said the held-in arm inherits this where its task carries pre-tools. It does not by
+itself: the held-in arm calls `Runner.run_task/2` on the task's template unmodified
+(`lib/aetheris/skill/gate.ex:458`–`:459`, `:487`), and a prefix is built only for a template naming
+`fork_from` (`runner.ex:146`), so the held-in arm inherits it only for a task whose stored template
+itself names one.`
+
+---

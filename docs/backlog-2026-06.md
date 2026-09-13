@@ -10172,6 +10172,19 @@ held-in arm applies `make_available` at `lib/aetheris/skill/gate.ex:448` and run
 (`:363`).
 The append was not amended into the row because the row is pushed.`
 
+Done-when corrected at the BL-229 review, 2026-09-13. The clause 'a spawned
+child inherits its parent's use_case unless overridden' is wrong, and the
+implementation is right to have no override. The only channel an override could
+arrive through is the model's spawn_agent call, and the model is not the party
+that chooses which approved entries its own run is served — the same boundary
+that keeps tool_surface_extras off the playground's client field list. Read the
+clause as: a spawned child inherits its parent's use_case, with no per-spawn
+override. Implemented at harness `c2c7099`.
+
+`Citations resolved at harness `c2c7099` (pushed): the no-override statement is
+`lib/aetheris/execution/tool/spawn_agent.ex:15`–`:22`; `tool_surface_extras` is stated not to be a
+client field at `lib/aetheris/api/run_policy.ex:29`. Appended, not amended: the row is pushed.`
+
 ---
 
 ### BL-230 — `broadcast_message_test.exs:258` is a timing race between two agents (#TBD)
@@ -10343,5 +10356,107 @@ commit: `:integration` is in `exclude:` at `test/test_helper.exs:12`; the eval t
 tags are found by `git grep -n "@moduletag :integration" -- test`, the single-test tags by
 `git grep -n "@tag :integration" -- test`. Harness `CLAUDE.md:204`–`:206` lists all three eval files
 as `@moduletag :integration`, so the tag is documented; the gate's output does not say it.`
+
+---
+
+### BL-236 — the gate cannot serve the candidate it is gating (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D7, D8
+**Size:** L · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/skill/gate.ex`, `../aetheris/lib/aetheris/skill/injector.ex`, `../aetheris/lib/aetheris/skill/body.ex`)
+
+`Skill.Gate` accepts only `status: "candidate"`. `Skill.Injector` serves only approved rows, and
+`Skill.Body` withholds any other status. So D8's control 1 — "arm B the task with the entry made
+available" — cannot make a candidate available, and arm B is arm A for every entry the gate can gate.
+
+This is circular in the ratified design, not in the code: D7 requires validation before approval,
+D8's validation requires serving, and serving requires approval. No m14 ticket could have surfaced
+it — T9 deferred `make_available` to T12's injection, and T12 built serving for the approved path,
+each correct in isolation.
+
+**RULED at the BL-229 review, 2026-09-13.** This row implements the ruling; it does not reopen it.
+
+The gate serves its candidate through the SAME injector, selected by explicit entry list rather than
+by status eligibility, and the run records that it was served under a gate measurement. Two
+alternatives were rejected: approving before validating makes approval a stamp on unmeasured
+entries, which is what D8 exists to prevent; a gate-only content path rebuilds m04's injector under
+another name, which m14 T12 retired so two injectors could not coexist.
+
+The "only approved" rule protects production runs from unvetted content. A gate run is the vetting —
+the one context where serving an unapproved entry is the point. Explicit and recorded, not bypassed:
+the marker is what keeps the invariant checkable.
+
+**Done when.** `Gate.run/3` can serve the candidate under measurement; the serving path takes an
+explicit entry list only from the gate and from nowhere else; a run that was served a non-approved
+entry carries a recorded marker saying so; a test asserts a run WITHOUT that marker cannot have been
+served a non-approved entry — that assertion is the row's point, not the happy path. State where the
+marker lives and why a caller cannot forge or omit it.
+
+**Do not generate.** Any status change to reach serving. Any second injector or content-injection
+path.
+
+`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Citations resolved at that
+commit: `fetch_candidate/1` admits only `"candidate"` at `lib/aetheris/skill/gate.ex:271`;
+`eligible?/2` admits only `"approved"` at `lib/aetheris/skill/injector.ex:78`; `classify/2` withholds
+every other status at `lib/aetheris/skill/body.ex:135`–`:136`. D7's "Only approved entries are served
+by the injector" is `docs/aetheris/research/bl-008-synthesis-2026-08.md:117`, D8's control 1 `:126`;
+T9's deferral is `docs/aetheris/milestones/m14-t9-implementation-notes.md:16`.`
+
+---
+
+### BL-237 — `baseline_test.exs` has been red since BL-221, invisible behind its tag (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/test/aetheris/eval/baseline_test.exs`)
+
+6 of 17 tests in `test/aetheris/eval/baseline_test.exs` fail with `{:error, {:no_unavailable_runs, _}}`.
+BL-221 made `lock/2` select `:unavailable` runs only; these tests insert runs with no marker, which
+decode to `:unknown`, which `lock/2` correctly refuses. The file carries `@moduletag :integration`
+and is excluded from `mix test`, so BL-221's own round reported the gate green with these failures
+present.
+
+BL-235 owns the exclusion. This row owns the red: the tests encode `lock/2`'s pre-BL-221 contract and
+need converting to the new one, not deleting. A deleted assertion is a lost invariant.
+
+**Done when.** Each of the six either asserts the post-BL-221 contract or is recorded as an invariant
+no longer held, with the reason; the file is green under whatever tag regime BL-235 settles on.
+
+`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Reproduced at that commit by
+`mix test --include integration test/aetheris/eval/baseline_test.exs`, which printed
+`17 tests, 6 failures`, with `no_unavailable_runs` on 6 lines of its output. The six:
+`lock/2 computes and persists a baseline` (`:124`), `lock/2 takes only k most recent runs` (`:137`),
+`compare/2 detects regression when pass rate drops below threshold` (`:159`),
+`compare/2 reports no regression when pass rate holds` (`:180`), `compare/2 respects custom threshold`
+(`:199`), `compare/2 includes step_delta when step data available` (`:222`). The tag is `:3`;
+`lock/2` is `lib/aetheris/eval/baseline.ex:124`, filtering at `:140` and refusing at `:142`. BL-221
+is harness `ab98249`.`
+
+---
+
+### BL-238 — `Runner.build_run_config/3` hand-builds a `RunConfig`, bypassing rule 15 (#TBD)
+**Status:** OPEN
+**Kind:** defect
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/eval/runner.ex`, `../aetheris/lib/aetheris/run_config.ex`)
+
+Rule 15 names `RunConfig.from_map/2` as the single constructor. `Runner` builds the struct field by
+field, which is how it silently dropped `use_case` and `tool_surface_extras` until BL-229. Any field
+added to `RunConfig` in future is dropped there again by default.
+
+Not switched at BL-229 because the two paths differ in two ways that must be settled first:
+`max_steps` is `Map.fetch!` in `Runner` and defaults to 10 in `from_map/2`, and an unknown mode
+raises in `Runner` where `from_map/2` makes an atom.
+
+**Done when.** `Runner` constructs through `from_map/2`, the two divergences are resolved with the
+choice stated, and a test asserts a newly added `RunConfig` field reaches a Runner-built config
+without a Runner change — that test is what makes the fix durable rather than a one-time sweep.
+
+`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Citations resolved at that
+commit: rule 15 is `CLAUDE.md:429`; `build_run_config/3` is `lib/aetheris/eval/runner.ex:272`, its
+`%RunConfig{}` at `:276`–`:294` (`use_case` and `tool_surface_extras` at `:292`–`:293`, added by
+`c2c7099`), `max_steps` by `Map.fetch!` at `:283`, `parse_mode/1` raising at `:312`; `from_map/2` is
+`lib/aetheris/run_config.ex:161`, `mode` by `String.to_atom/1` at `:165`, `max_steps` defaulting to
+10 at `:169`.`
 
 ---

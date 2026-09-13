@@ -9602,6 +9602,18 @@ function and not a call. §2's constraint is
 `docs/aetheris/milestones/m14-skills-auto-extraction.md:77`–`:78`. T6 named the gap in its commit
 body and its implementation notes; until this row it had no executor.`
 
+**Scope broadened at the m14 T10 review, 2026-09-12.** `Skill.Gate` produces the same class of
+record from a second producer: `result.reasons` carries why a candidate was rejected or left
+inconclusive, and it is returned and persisted nowhere. `skills` has no column for it and should
+not grow one — the reason is per-verdict, not per-row, and an inconclusive verdict writes no row at
+all. One provenance log serves both producers; two tables for one question is the wrong shape. This
+row covers the curator's report and the gate's verdict reasons together, and its Done-when reads
+over both.
+
+Its sequencing constraint is unchanged: before m14 T11. T11 approves a validated row, and a row
+validated with no record of what the gate measured is approved unauditable. Cited at harness
+`3fcceeb`.
+
 ---
 ### BL-214 — the pre-reflection envelope is recoverable and unused (#TBD)
 **Status:** OPEN

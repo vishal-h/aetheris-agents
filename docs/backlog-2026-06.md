@@ -10559,3 +10559,121 @@ itself: the held-in arm calls `Runner.run_task/2` on the task's template unmodif
 itself names one.`
 
 ---
+
+### BL-242 — the frequency prior compares whole-run sequences against segment-sized candidates (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D3, D8
+**Size:** L · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/skill/frequency_prior.ex`, `../aetheris/lib/aetheris/skill/gate.ex`)
+
+`FrequencyPrior` computes the dominant tool sequence per whole run. `Skill.Candidate` emits one candidate
+per segment. `re_encodes?/2` tests equality between the two, so a segment-sized candidate equals the
+dominant only when a whole run is a single segment. The four live `payslip` rows normalise to
+`[run_command]`, `[spawn_agent]`, `[wait_for_all]` and `[]`; their source run normalises to
+`run_command → spawn_agent → wait_for_all`.
+
+On a multi-segment corpus every non-empty candidate is therefore `:distinct` and every empty one is
+`:no_sequence`. Control 2 cannot reject there, and cannot be made to by tuning its constants: they
+decide whether a dominant exists, not what unit it is.
+
+Neither half is wrong at its own granularity. D8 specified the prior when m04's extractor produced
+whole-run skills; m14 D3 replaced that with segmentation, and nothing re-derived the prior against the
+new shape.
+
+**Why high.** P2's kill criterion is "no candidate beats the frequency prior across the eval suite".
+With control 2 structurally abstaining, that verdict rests on control 1 alone, and a discharge run would
+report two controls where one ran. T9's Do-not-generate exists because "a gate that validates on
+control 1 alone is the prior art's named failure".
+
+**Done when.** Control 2 compares like with like — the prior is computed over the same unit a candidate
+describes — and a test asserts a candidate that DOES re-encode its scope's dominant pattern, on a corpus
+of multi-segment runs, is rejected. That test is the row's point. State whether `min_corpus_runs` and
+the majority rule still hold at the new granularity; they were unmeasured at the old one.
+
+Must land before m14 P2's discharge.
+
+`Source: the BL-239 review, 2026-09-13; harness `8ea4194` (pushed). Established from code, not from a
+run. Citations resolved at that commit: one sequence per whole run at
+`lib/aetheris/skill/frequency_prior.ex:149`–`:156`, counted at `:94`–`:97`; `re_encodes?/2` at
+`:121`–`:122`; the constants at `:2` and `:158`–`:164`. One candidate per segment is `extract/2` at
+`lib/aetheris/skill/candidate.ex:104`, its `tool_sequence` bounded to the segment at `:191`. Control 2 is
+`lib/aetheris/skill/gate.ex:316`–`:333`, rejecting only at `:517`. D3 is
+`docs/aetheris/research/bl-008-synthesis-2026-08.md:80`, D8's control 2 `:127`–`:129`; m14's whole-run →
+segment row is `docs/aetheris/milestones/m14-skills-auto-extraction.md:44`, P2's kill `:425`, T9's
+Do-not-generate `:484`–`:486`. The four rows are the `use_case = 'payslip'` rows of `priv/aetheris.db`'s
+`skills` table, all `candidate`, all citing `payslip-orch-5Jhdvw`, whose `tool_called` events read
+`run_command`, `spawn_agent` ×3, `wait_for_all`. **Deviation from the filing prompt:** it said no input
+can make control 2 reject. One can: a corpus whose runs are one segment each, which is T10's own fixture
+(`test/aetheris/skill/gate_test.exs:28`, the rejection test at `:145`) — every corpus run there is a
+single-tool sequence a hand-built candidate can equal. The claim holds for multi-segment corpora, which
+is what segmentation exists to produce. Nor does the live table have a dominant: one source run is a
+thin corpus, so the sequence above is that run's, not a computed prior.`
+
+---
+
+### BL-243 — after a use_case's first approval, no ordinary run can seed a baseline (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** M · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/eval/baseline.ex`, `../aetheris/lib/aetheris/skill/injector.ex`, `../aetheris/lib/aetheris/skill/gate.ex`)
+
+An unmeasured run is served the eligible catalog, which makes it `:available`
+(`Eval.Run.skill_availability/1`), and BL-221's `lock/2` keeps only `:unavailable` runs. So once any
+entry in a use_case is approved, ordinary runs of its tasks stop qualifying as baseline material, a
+held-in task without a baseline stays unobserved, and the gate is inconclusive for that scope from then
+on.
+
+A bootstrap deadlock: the first approval closes the door on locking baselines for every later candidate
+in the same scope.
+
+It does not block P2, which reaches `validated` rather than `approved`. It blocks every gate run after
+the first approval in a scope, which is the steady state.
+
+**Done when.** A baseline can be locked for a use_case that has approved entries — state the mechanism
+and what a baseline then means — and a test asserts a scope with one approved entry can still seed a
+baseline for a new candidate.
+
+`Source: the BL-239 review, 2026-09-13; harness `8ea4194` (pushed). Established from code, not from a
+run. Citations resolved at that commit: an unmeasured run is served `eligible/1` at
+`lib/aetheris/skill/injector.ex:92`–`:96`, which admits `approved` entries of the run's scope at
+`:110`–`:120`; `serve_selected/3` records nothing only when nothing is selected (`:155`).
+`skill_availability/1` is `:available` on any `skill_injected` event at `lib/aetheris/eval/run.ex:75`–`:80`;
+`lock/2` keeps only `:unavailable` runs at `lib/aetheris/eval/baseline.ex:139`–`:142`. A held-in task
+with no baseline is `:no_baseline` at `lib/aetheris/skill/gate.ex:490`, collected as unobserved at `:508`
+and turned into a gap at `:536`–`:537`. P2 stopping at `validated` is T10's Do-not-generate,
+`docs/aetheris/milestones/m14-skills-auto-extraction.md:510`–`:511`.`
+
+---
+
+### BL-244 — a forked arm takes its tool list from the template and only its prefix from the recorded run (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** M · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/eval/runner.ex`, `../aetheris/lib/aetheris/execution/fork.ex`)
+
+`Runner.with_fork_prefix/1` keeps only `fork_context`; `tools` comes from the template. All 43 pre-cutoff
+payslip orchestrator runs declare `spawn_agent` and `wait_for_all`, while today's payslip orchestrator
+declares `tools: ["run_command"]`. A task built from the current file and forked from one of those runs
+replays tool calls its tool list no longer offers.
+
+Distinct from BL-233 (a run cannot name its producer) and BL-241 (pre-tools output is dropped): this is
+the recorded prefix and the live template disagreeing about what the agent can do.
+
+Directly blocks using the 43 payslip runs as fork points, which is the only recorded corpus P2's
+discharge has.
+
+**Done when.** A fork either refuses a template whose tool list cannot execute the prefix, or the
+mismatch is recorded on the run; a test covers a prefix calling a tool the template omits. Refusing is
+the safer default — say why if you choose otherwise.
+
+`Source: the BL-239 review, 2026-09-13; harness `8ea4194` (pushed). Established from code and the live
+run store, not from a run. Citations resolved at that commit: `with_fork_prefix/1` reads `fork_context`
+alone from `Fork.from_step/3` at `lib/aetheris/eval/runner.ex:146`–`:156`; `build_run_config/4` takes
+`tools` from the template at `:309`, `:322`; the prefix rebuilds each recorded tool call as a `tool_use`
+turn at `lib/aetheris/execution/fork.ex:134`. The orchestrator's `tools:` is
+`payslip/agents/payslip_orchestrator.exs:21` at agents `c8aa4e3`; `spawn_agent` left it at agents
+`5abd4b9` (2026-06-10 16:14 +0530), the cutoff. In `priv/aetheris.db`, `payslip-orch%` runs group by
+`config_json` tools into 43 declaring `["run_command","spawn_agent","wait_for_all"]`, started
+2026-05-21T13:45Z–2026-06-10T10:28Z, and 11 declaring `["run_command"]`, started from
+2026-06-10T10:53Z. **Deviation from the filing prompt:** "carry" is true of the 43's declared tools;
+41 of them recorded `tool_called` events for both.`

@@ -8,8 +8,6 @@ All file references verified against code as of `docs/rig/current-state-2026-06.
 Sizes: **S** < half a day · **M** a day or two · **L** milestone-sized (gets its
 own `docs/rig/milestones/` directory and issue docs before implementation).
 
-GitHub issues: #42–#55 on vishal-h/aetheris-agents.
-
 ---
 
 > **This file holds the OPEN rows.** Terminal rows — `**Status:** DONE` — live in
@@ -247,120 +245,44 @@ is already green at 38; it is not this row's transition.
 
 ## Harness (aetheris/)
 
-### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X") (#TBD)
-**Status:** OPEN
-**Size:** M · **Priority:** low
-
-BL-007 D4, deferred at that milestone with this entry as the record (README
-"Open decisions" — *"Deferral gets a backlog entry, not silence"*).
-
-BL-007 ships parent-link **display** only: Rig reads `fork_from`/`fork_step` from
-the forked run's trajectory meta. The reverse query — *list the forks of run X* —
-needs an index or a `config_json`-deserializing scan, neither of which exists.
-
-- **Compose with `caused_by`, don't grow a parallel mechanism.** t0 landed the
-  `caused_by` event-lineage field; a fork-only lineage index would be a second,
-  overlapping causal structure. Any lineage query should build on general causal
-  lineage.
-- **The store is not single-shaped — design for two fork-provenance shapes.**
-  Verified against 1,201 `fork_from`-bearing metas in the dev store: BL-007's
-  `Fork.from_step` writes an **integer** `fork_step` (661 metas), while the older
-  `replay-source-*` / `verify-*` producers write `fork_from` with `fork_step:
-  **null**` (540 metas). The key is always co-present; only the value varies. A
-  lineage view that assumes an integer step will mis-render or drop 45% of the
-  existing rows. (Surfaced at t4 r2 F6; Rig already tolerates both via
-  `fork_step?: number | null` plus a banner guard.)
-- **Deferred verification, with its trigger.** The null-`fork_step` banner render
-  is currently unverified end-to-end because those runs are file-only and do not
-  appear in the runs list. **Trigger: when file-only runs become listable, that
-  ticket's e2e picks up the null-`fork_step` banner render.** Not a standalone
-  e2e — it rides the ticket that makes it reachable.
-
-**Done when:** a lineage query exists that composes with `caused_by`, handles both
-provenance shapes, and has an e2e covering the null-`fork_step` case.
+### BL-024 — Fork lineage queries (`fork_event_id` / "list forks of run X")
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: M
+- evidence: docs/evidence/BL-024.md
+- done-when: a lineage query exists that composes with `caused_by`, handles both provenance shapes, and has an e2e covering the null-`fork_step` case.
 
 ---
 
-### BL-026 — Verify: divergence report names no first diverging event (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low — **PARKED ON TRIGGER**
-
-**This row activates on its trigger, and not before. Trigger: the first `verify`
-run against a multi-agent / orb trajectory.** Human-ratified 2026-07-19 (BL-007 t5
-boundary). Until that trigger fires, this is recorded, not scheduled — do not pick
-it up as ready work.
-
-`VerifyReport` (`verifier.ex:176-186`) carries only `run_id`, `verified`, `failed`,
-and a flat `steps` list; the renderer (`:188-242`) prints per-step rows. Nothing
-identifies **the first step at which the run diverged** — the single most useful
-fact when a verify fails, since later divergences are usually consequences of the
-first. An operator gets a wall of per-step results and reconstructs the ordering by
-eye.
-
-**Done when:** a failing verify names the first diverging event/step explicitly,
-and the trigger condition above has actually occurred.
+### BL-026 — Verify: divergence report names no first diverging event
+- state: triggered
+- type: not stated
+- area: Harness
+- priority: low — **PARKED ON TRIGGER** · size: S
+- blocked-by / trigger: the first `verify` run against a multi-agent / orb trajectory
+- evidence: docs/evidence/BL-026.md
+- done-when: a failing verify names the first diverging event/step explicitly, and the trigger condition above has actually occurred.
 
 ---
 
-### BL-032 — WAL connection-lifecycle follow-ups (#TBD)
-**Status:** OPEN
-**Size:** M · **Priority:** low
-
-BL-007 t4 added `PRAGMA busy_timeout=5000` (load-bearing), `:busy` handling in
-`run_stmt/3`, and `PRAGMA journal_mode=WAL` to `Store.init/1` (`059c92e`). WAL is
-kept **opportunistic with a comment**: SQLite can only convert the journal mode
-when no reads are in flight, so with Rig holding a read connection the store may
-stay in `delete` mode indefinitely and convert later at idle. Verified: an idle
-real store converts to `wal`; under continuous read-hammering it stays `delete` and
-forks still exit 0. The fix does not depend on the conversion — but it does mean
-**WAL adoption is not something the harness can currently guarantee**, and that is
-a connection-lifecycle question, not a pragma question.
-
-If WAL is genuinely wanted rather than opportunistic, the three follow-ups:
-
-- **(a) Checkpointing / `-wal` growth.** Rig holding a long read snapshot prevents
-  checkpointing; the `-wal` file can grow unbounded.
-- **(b) Dirty-`-wal` recovery under a read-only connection.** A read-only
-  connection cannot recover a dirty `-wal` left by a harness crash with no live
-  writer. It resolves on the next harness write, but Rig reads can fail in that
-  window.
-- **(c) Observability.** WAL's success or failure is currently silent — log the
-  post-pragma `journal_mode` so the mode in effect is a fact, not an assumption.
-
-Surfaced at t4 r4.
-
-**Done when:** a decision is recorded — either WAL is made deterministic via
-connection lifecycle (with the three items addressed), or opportunistic WAL is
-ratified as the permanent design and documented as such.
-
-**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: is opportunistic WAL ratified as permanent, or made deterministic. Changes when that ruling is recorded here.
+### BL-032 — WAL connection-lifecycle follow-ups
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: M
+- evidence: docs/evidence/BL-032.md
+- done-when: a decision is recorded — either WAL is made deterministic via connection lifecycle (with the three items addressed), or opportunistic WAL is ratified as the permanent design and documented as such.
 
 ---
 
-### BL-033 — Remove `:fork` from the `RunConfig` mode union (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low
-
-`@type mode :: :record | :replay | :verify | :explore | :fork`
-(`run_config.ex:115`) still lists `:fork`, but **no code path in the harness sets
-or matches it.** `mode` is behaviourally significant only for `:replay` and
-`:verify`; BL-007 t2 dropped `mode: :fork` from the CLI fork path deliberately, so
-that forks are behaviourally identical to `fork_run/3`. Fork lineage is carried by
-`fork_from`/`fork_step`, not by mode.
-
-The member is therefore vestigial, and actively misleading: it invites consumers to
-key off `meta["mode"] == "fork"`, which is **never** true for a fork.
-
-Ratified at the BL-007 t5 boundary as *no code change now* — deleting it is a
-harness code change outside the milestone that surfaced it. The
-`../aetheris/docs/aetheris/architecture.md` Execution Modes table is annotated to
-document the discrepancy in the meantime.
-
-Check before deleting: nothing in-repo (or in Rig) pattern-matches `:fork`, and no
-persisted `config_json` decodes to it.
-
-**Done when:** `:fork` is removed from the union, or a reason to keep it is
-recorded on this entry.
+### BL-033 — Remove `:fork` from the `RunConfig` mode union
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: S
+- evidence: docs/evidence/BL-033.md
+- done-when: `:fork` is removed from the union, or a reason to keep it is recorded on this entry.
 
 ---
 

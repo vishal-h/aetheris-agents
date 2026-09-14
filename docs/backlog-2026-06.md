@@ -9188,18 +9188,30 @@ a relative path and still silent about what it does with an absolute one. Named 
 evidence for the row's claim rather than as a second row — whichever branch the Done-when
 takes, one of these two strings becomes false and has to move with it.]`
 
-**Done when:** a decision is recorded ON THIS ROW between at least these three, with its
-reasoning — the row does not prescribe a fix:
+**Documentation half discharged 2026-09-14 (harness `603b7d5`).** Both copies of the
+`run_command` schema (`registry.ex`, `native/aetheris_exec_server/src/main.rs`) now state: not
+a shell, a fixed set of permitted names, only the default working directory is the sandbox
+root. The `EffectClass` comments, contract §2 **Environment** and `architecture.md` match;
+`ToolSchemaTest` asserts no containment claim and parity between the copies. Containment is
+unchanged. Not discharged: the ten `git_*` schemas' `working_dir` descriptions still read
+*"relative to sandbox root"* (`registry.ex`), over the same `resolve_working_dir`.
 
-1. **Confine `resolve_working_dir` to the root** the way `Sandbox::resolve` confines paths,
-   and rule what happens to the argument surface, which that does not reach.
-2. **`pivot_root` in the worker**, which reaches the argument surface and the PATH lookup
-   together and costs the run its access to the host toolchain the permitted commands live in.
-3. **An explicit ruling that `run_command` is intentionally uncontained**, with what that
-   means for the determinism contract written down — the contract's §2 Environment definition
-   (`../aetheris/docs/aetheris/determinism-contract.md:54-55`) scopes the environment to *"the
-   per-run OverlayFS working directory, the wall clock, and the RNG seed"*, and an uncontained
-   `run_command` is a fourth thing not named there.
+**Done when:** a decision is recorded ON THIS ROW between:
+
+- **(a)** `pivot_root` inside the worker's existing mount namespace, plus a shared confinement
+  crate the exec server can depend on; or
+- **(b)** `run_command` permanently declared-uncontained, stated in the determinism contract as
+  a standing position.
+
+`[Re-scoped 2026-09-14 by the arbiter. Superseded options: (1) confine resolve_working_dir to
+the root; (2) pivot_root in the worker; (3) an explicit ruling that run_command is uncontained.]`
+
+**Measured at harness `2845995`, ruling out the other directions:**
+- Exec server depends on no worker or shared crate (`native/aetheris_exec_server/Cargo.toml`); `Sandbox::resolve` cannot reach it.
+- Exec server is spawned before the seccomp filter (worker `main.rs:127` vs `:150`); the filter never applies to it.
+- 11 exec-server handlers share `resolve_working_dir` (`grep -c 'let working_dir = resolve_working_dir' native/aetheris_exec_server/src/main.rs`).
+- 24 of 36 tracked agent `.exs` files use `run_command` (`git ls-files '*.exs' | xargs grep -l '"run_command"' | wc -l`, agents `f57151b`).
+- Reclassifying `run_command` `:uncontained` makes verify serve it, not re-execute it (`verifier.ex:210-211`).
 
 **Not done-when:** narrowing `PERMITTED_COMMANDS`. A shorter allowlist changes which host
 binaries a run can reach and leaves the containment asymmetry exactly where it is.

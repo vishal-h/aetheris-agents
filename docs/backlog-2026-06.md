@@ -10356,3 +10356,16 @@ non-async — with the choice and its cost recorded. The fix must make the asser
 merely pass on some seed. BL-075 is out of scope.
 
 `Source: found 2026-09-14 during the BL-207 git_* follow-up round, not prompt-supplied.`
+
+---
+
+### BL-252 — backlog index split — open rows reduced to field lists, bodies moved to docs/evidence/ (#TBD)
+**Status:** OPEN
+**Kind:** documentation + code · **Size:** not stated · **Priority:** not stated
+**Section:** aetheris-agents (`docs/backlog-2026-06.md`, `docs/evidence/`, `scripts/backlog_status.py`, `scripts/drift_check.py`)
+
+Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown is the status authority, the open backlog becomes an index, and BL-145 closes.
+
+**Truth-maker.** The open file is 716,946 bytes over 10,358 lines at `fd53474` (`wc -c -l docs/backlog-2026-06.md`). That the store cannot answer "what next" from it is the arbiter's observation of 2026-09-14, not measured here.
+
+**Done when:** every open row is a field list ≤ 12 lines with a resolvable evidence link; all three readers pass on the new shape; `drift_check --strict` is at baseline.

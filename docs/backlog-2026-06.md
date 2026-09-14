@@ -1,40 +1,23 @@
 # Backlog — 2026-06
 
-Distilled from the reality-check / drift-apparatus work of 2026-06-11.
-All file references verified against code as of `docs/rig/current-state-2026-06.md`
-(plus subsequent commits: stale-run/cost `88705f1`/`0eddf20`, drift checker
-`66566b6` + `bd2c3d8` and follow-ups).
-
-Sizes: **S** < half a day · **M** a day or two · **L** milestone-sized (gets its
-own `docs/rig/milestones/` directory and issue docs before implementation).
-
----
-
-> **This file holds the OPEN rows.** Terminal rows — `**Status:** DONE` — live in
-> [`backlog-2026-06-closed.md`](backlog-2026-06-closed.md). The **id is the address**;
-> the path is never load-bearing, so a `BL-nnn` that returns nothing here is in the
-> archive, not gone. `scripts/backlog_status.py` and `drift_check.py`'s
-> `backlog_resolution` check both read the **union**, and so does the harness sprint's
-> KNOWN_RED resolver.
+> **The open-row index.** One section per open row: its heading and a field list, nothing
+> else. Terminal rows live in [`backlog-2026-06-closed.md`](backlog-2026-06-closed.md). The id
+> is the address: `scripts/backlog_status.py`, `drift_check.py`'s `backlog_resolution` and the
+> harness sprint's KNOWN_RED resolver all read the union of the two files.
 >
-> **The export set carries BOTH halves.** `docs/project-knowledge-manifest.md` has a
-> row for `backlog-2026-06.md` and, since `c508341`, one for the archive as well.
-> The ruling that added it lives in that file, in the inclusion-rule family — read
-> the `THE CLOSED BACKLOG HALF` block there. It is pointed at rather than
-> restated, so there is one surface to amend and not two.
+> **Row fields are the only status surface.** GitHub Issues carry none (arbiter ruling R1,
+> 2026-09-14).
 >
-> **But the archive's row is BORN GREEN, and the store does not hold that half
-> yet.** A row pinned at the commit that last touched its file makes check 8
-> compare equal and emit no WARN — a currency result, never evidence of an upload.
-> So until the next export actually runs, an uploaded backlog still describes the
-> open set and not the closed one. That consequence is stated rather than left
-> silent, as it was before, and it now has an end date rather than being permanent.
+> **Evidence path: `docs/evidence/<ID>.md`**, derived from the id; no index lists the files.
+> Each holds the row's body verbatim, with corrections and later evidence appended below it.
 >
-> **What was decided about the open rows, and when.** The 2026-09-14 triage is recorded in
-> [`backlog-triage-2026-09.md`](backlog-triage-2026-09.md): the totals, the R40 dispositions,
-> the rows the closing sweep left open, and the roadmap reconciliation. Each row's own dated
-> disposition line is the authority; that file records the pass.
-
+> **Fields, in order:** `state` · `type` · `area` · `priority · size` · `blocked-by / trigger`
+> (optional) · `evidence` · `done-when` · `disposition` (terminal rows only).
+> `python3 scripts/backlog_status.py --check` enforces the shape.
+>
+> **`state`** ∈ `open`, `committed`, `ready`, `blocked`, `triggered`, `verifying`, `done`.
+> **`disposition`** ∈ `fixed`, `verified`, `accepted-risk`, `evidence-only`, `superseded`,
+> `rejected`.
 
 ---
 
@@ -45,13 +28,16 @@ own `docs/rig/milestones/` directory and issue docs before implementation).
 > behaved wrongly, was diagnosed, and whose row records the diagnosis. A `BL-` row
 > is **enhancement or hardening** — work that makes something better or safer,
 > including defects filed as opportunities rather than as diagnosed faults. Both
-> spaces are read by `scripts/backlog_status.py` and `drift_check.py`'s
-> `backlog_resolution` check via the same union; the id remains the address, and
+> spaces are parsed by `scripts/backlog_status.py` via the same union, and
+> `drift_check.py`'s `backlog_resolution` resolves `BL-` references only; the id
+> remains the address, and
 > nothing about the prefix changes where a row may live or when it closes.
 > `[Declared 2026-09-07 with BUG-001, the first row in this space. The convention
 > had been proposed and used in filenames — the ticket was `bug-001`, its reviews
 > are `docs/reviews/bug-001-review*.md` — with no row anchoring it, which is the
 > shape BL-162 names: a rule alive only in the artifacts that assume it.]`
+> [Corrected 2026-09-14, BL-252: this sentence said both spaces were read by both readers.
+> When written, both parsed `BL-` headings only; `backlog_status.py` reads `BUG-` since `995b4d0`.]
 
 ### BUG-001 — the Drive upload step ignored the requested month and uploaded every archived month into it
 - state: verifying

@@ -975,6 +975,36 @@ disposition. Read the wording there.
 
 ---
 
+### R41 — a round declares every type it contains.
+
+`2026-09-14 — landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R41]` item (item 12 at harness `1f0e9bd`), which states the rule and its source; this entry points at it and does not restate it. The entry was written in the round that landed R42, after the tag had pointed at nothing — the gap R42 exists to close. Landed under R22.`
+
+---
+
+### R42 — a methodology item and its registry row land together.
+
+`2026-09-14 — ruled by the arbiter in the cc:prompt of that date, which supplied its wording, and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R42]` item (item 13 at harness `58991d5`), which states the rule and its source; this entry points at it and does not restate it. It is the rule's first application: this entry lands in the same round as its tag. Landed under R22.`
+
+---
+
+### R43 — a round holds at most one commit for review.
+
+`2026-09-14 — the arbiter's round discipline, recorded in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R43]` item (item 14 at harness `58991d5`), which states the rule and names m4 decision 6 as what it bounds; this entry points at it and does not restate it. Landed under R22.`
+
+---
+
+### R44 — a commit held for review is pushed by a later session, unamended.
+
+`2026-09-14 — the arbiter's round discipline, recorded in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R44]` item (item 15 at harness `58991d5`), which states the rule; this entry points at it and does not restate it. Landed under R22.`
+
+---
+
+### R45 — a measurement is predicted before it is run, and the prediction is published in the packet.
+
+`2026-09-14 — the arbiter's round discipline, recorded in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R45]` item (item 16 at harness `58991d5`), which states the rule and names the narrower `CLAUDE.md` §Learning — ds form it generalises; this entry points at it and does not restate it. Landed under R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

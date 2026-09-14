@@ -31,6 +31,11 @@ GitHub issues: #42–#55 on vishal-h/aetheris-agents.
 > So until the next export actually runs, an uploaded backlog still describes the
 > open set and not the closed one. That consequence is stated rather than left
 > silent, as it was before, and it now has an end date rather than being permanent.
+>
+> **What was decided about the open rows, and when.** The 2026-09-14 triage is recorded in
+> [`backlog-triage-2026-09.md`](backlog-triage-2026-09.md): the totals, the R40 dispositions,
+> the rows the closing sweep left open, and the roadmap reconciliation. Each row's own dated
+> disposition line is the authority; that file records the pass.
 
 
 ---

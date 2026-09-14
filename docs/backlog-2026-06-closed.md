@@ -9385,3 +9385,68 @@ T9's deferral is `docs/aetheris/milestones/m14-t9-implementation-notes.md:16`.`
 A run that fails before serving is recorded `:unavailable`, found by M2 in that round. BL-250 owns it.
 
 ---
+
+### BL-145 — DONE 2026-09-14 · the backlog has two status surfaces and says so nowhere (#TBD)
+**Status:** DONE
+**Kind:** defect · **Census items:** n/a (surfaced by gc t1's row census) · **Contract:** none — the file states no status convention
+**Size:** S to decide, M to fix · **Priority:** medium
+**Section:** process / backlog hygiene (`docs/backlog-2026-06.md`)
+
+Filed 2026-08-12 at gc t3. **This row poses the question; it does not settle it.**
+
+**What happened.** gc t1 needed every row's status to cross-join against gate claims, and derived it
+programmatically. It found **two** surfaces that carry status and **they disagree in both
+directions**. Row bodies carry `DONE`/`CLOSED`/`Closed <date>` markers for **33** rows. The
+`## Suggested order` table at `:5662` carries ✔ marks for **28**. The union is **48**, and neither
+surface alone is right: **20** rows are closed in their body and not ticked in the table
+(BL-069, BL-070, BL-073, BL-074, BL-083, BL-090, BL-092, BL-095, BL-096, BL-099, BL-100, BL-101,
+BL-104, BL-105, BL-106, BL-107, BL-121, BL-127, BL-131, BL-132), and **15** are ticked with no
+closure marker in the body (BL-001, BL-002, BL-003, BL-004, BL-005, BL-009, BL-015, BL-028, BL-029,
+BL-031, BL-038, BL-039, BL-050, BL-055, BL-056). Every one of the 20 the table misses closed on or
+after 2026-08-04; the table has not been maintained since 2026-07-26.
+
+**Why the existing rules do not cover it.** Nothing in the file says there are two surfaces, so a
+reader consulting either alone gets a confident wrong answer about a different 20 or 15 rows — and
+the wrongness is invisible from inside whichever surface was consulted. `drift_check` has no check
+over this file. The nearest analogous rule, *A document that quotes repo state is a snapshot with no
+invalidation* (`aetheris/CLAUDE.md`), binds a reader who suspects staleness; here there is nothing to
+prompt the suspicion, because both surfaces read as authoritative.
+
+**Determine what the backlog's status convention is** — one surface or two, which is authoritative,
+and whether the second is a view that must be regenerated or a duplicate that should be retired.
+The `## Suggested order` table carries a second thing the row bodies do not: a sequencing opinion.
+Whether that survives a de-duplication is part of the question and not assumed here.
+
+**RULED 2026-08-12 by the arbiter, at the gc t3 review. The question this row posed is answered;
+the execution is not done, and this row owns it.**
+
+**The row bodies are authoritative. The `## Suggested order` ✔ table is retired.** The ruling is on
+the ground the row states: the table has not been maintained since 2026-07-26 and misses every one
+of the 20 rows that closed on or after 2026-08-04, while the bodies are written by the session that
+changes a row's state and are therefore current by construction. Two surfaces where one is
+maintained is not a redundancy, it is a trap.
+
+**What the ruling does not decide**, and what this row must therefore still establish: the table
+carries a **sequencing opinion** the bodies do not — an ordering of what to do next — and retiring
+the table drops it unless it is reconstructed somewhere. Whether that opinion is worth preserving,
+and where, is execution and belongs here.
+
+**Done when:** the `## Suggested order` table is either **retired** or **reconstructed from the row
+bodies** as a derived view that cannot drift; the file **states in its own text which surface
+answers the question**, so a reader is not left to infer it; and, if the table is retired, its
+sequencing opinion is either carried somewhere named or dropped with the reason recorded.
+
+**Costs:** M. The ruling removes the decision cost; what remains is 28 ✔ rows to reconcile against
+48 closures, and one judgement about the sequencing opinion.
+
+`Source: gc t1's row census, 2026-08-11 — 143 rows, extraction and both controls published at
+docs/milestones/gc-t1-implementation-notes.md §A and §H. The two figures and the two disagreement
+sets above are derived, not counted by eye. Filed gc t3, 2026-08-12, per D4. Ruled by the arbiter
+2026-08-12 at the gc t3 review; the ruling is recorded here rather than in the round document
+because it is a fact about this file, and the round that surfaced it does not own it.`
+
+**Still open, 2026-09-14 (closing sweep).** Unmet: the first and third clauses — the `## Suggested order` table is still in the file with its ✔ marks, neither retired nor derived, and its sequencing opinion has no disposition. The second clause is met by the marker under that heading and the file's header.
+
+**Closed 2026-09-14.** The `## Suggested order` table is deleted and its sequencing opinion dropped, because nothing else needs it: the milestone doc is the execution authority (arbiter ruling R3, 2026-09-14).
+
+---

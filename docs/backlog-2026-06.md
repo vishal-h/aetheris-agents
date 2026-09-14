@@ -10715,3 +10715,34 @@ envelope whose candidates carry `start_seq`/`end_seq`. Three source runs have se
 `payslip-orch-5Jhdvw` 3, `payslip-orch-Nl32Vw` 3, `fixture-solo-1156` 2. **Deviation from the filing
 prompt:** "can segment a run differently" is a possibility, not an observation — each of those three
 runs yielded the same normalised segment patterns at every extraction.`
+
+---
+
+### BL-246 — a run declaring `tools: []` is still offered spawn_agent, wait_for_event and wait_for_all (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D5, D10
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/execution/loop.ex`, `../aetheris/agents/skill_extractor.exs`)
+
+`Loop.tool_schema_for/2` prepends the `WaitForAll`, `WaitForEvent` and `SpawnAgent` schemas to every
+run whatever `config.tools` holds, so `tools: []` does not mean no tools. `agents/skill_extractor.exs`
+rests on the opposite: *"It carries no tools at all, which is what makes D10's constraint structural
+here rather than enforced."*
+
+Observed at the dominant-set review's payslip corpus build, 2026-09-14. In 2 of 39 extractions the
+reflector called `spawn_agent` with a restated reflector prompt, then `wait_for_event`, and stopped at
+`max_steps_reached`. Both runs report `done` and carry no text response, so no envelope exists and
+both sources left the corpus without anything noticing — BL-215's silent loss, by another cause. Each
+child (`run_bOEO-g`, `run_vKNqRA`) was left `running`, with 2 events and no trajectory directory,
+when the CLI exited. The next app start's orphan sweep failed one and skipped the other as recent.
+
+**Done when.** A run is offered exactly its declared `tools`, plus what a stated contract adds, or
+the extractor stops claiming it has none and its run fails rather than reports done when it produces
+no envelope. A test asserts whichever is chosen.
+
+`Source: the dominant-set review's corpus build, 2026-09-14; harness `552dbb9` (pushed). Citations
+resolved at that commit: `tool_schema_for/2` at `lib/aetheris/execution/loop.ex:633`, the
+always-available comment at `:639`, the prepended schemas at `:642`–`:645`; the claim at
+`agents/skill_extractor.exs:33`–`:35`. In `priv/aetheris.db` (runtime state, in neither repo),
+`agent_trees` holds `skill-extract-H2LL0Q → run_bOEO-g` and `skill-extract-kdMj6Q → run_vKNqRA`,
+the only children of any of the 71 `skill-extract-*` runs.`

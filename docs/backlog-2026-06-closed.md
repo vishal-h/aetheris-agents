@@ -9240,3 +9240,84 @@ Recorded per R40: a deferral is recorded on the row it defers.
 3. *Whether `min_corpus_runs` and the majority rule still hold* — `bl-242-implementation-notes.md` (:49–:50, :62–:65) and `docs/aetheris/research/bl-008-synthesis-2026-08.md` (:144–:154).
 
 ---
+
+### BL-235 — DONE 2026-09-14 · eval test files tagged `:integration` are excluded from every gate run (#TBD)
+**Status:** DONE
+**Kind:** defect
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/test/test_helper.exs`, `../aetheris/test/aetheris/eval/`)
+
+`runner_test.exs` and `baseline_test.exs` carry `@moduletag :integration`, which `test_helper.exs`
+excludes, so `mix test` never runs them. Discovered at the BL-221 round, when a Done-when test placed
+in one of them would not have executed. The gate set has been reported green all through m14 with
+these files never running.
+
+**Census at harness `ab98249`.** `mix test` reports `1194 tests, 0 failures, 136 excluded`; the
+excluded figure spans all five tags in `exclude:`. For `:integration`:
+
+- **Eval files:** `runner_test.exs` 10, `baseline_test.exs` 17, and a third the filing prompt did not
+  name, `ab_test.exs` 14 — each from `mix test <file>`, which printed `N tests, 0 failures, N excluded`.
+- **Every `@moduletag :integration` file** — those three plus `integration/checkpoint_resume_test.exs`,
+  `codebase_qa_test.exs`, `fork_join_test.exs`, `mcp_github_test.exs`, `mcp_http_test.exs`,
+  `skill_extraction_test.exs`, `spawn_agent_test.exs`, `wait_for_event_test.exs` and
+  `worker/client_internet_test.exs`. `mix test` over exactly those files printed
+  `71 tests, 0 failures, 65 excluded`; the 6 that ran are `skill_extraction_test.exs`'s first module,
+  the tag being on its second.
+- **`@tag :integration` on single tests:** `skill/segmenter_test.exs:330` is the one in a gated file
+  (`12 tests, 0 failures, 1 excluded`). `codebase_qa_test.exs:34`, `mcp_github_test.exs:42` and
+  `worker/client_test.exs:171` sit in modules already excluded.
+
+**Done when.** Either the files run under the standard gate, or the exclusion is deliberate and
+recorded where a reader of the gate output can see what it does not cover.
+
+`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed), named in
+`docs/aetheris/milestones/bl-221-implementation-notes.md` under Deviations. Citations resolved at that
+commit: `:integration` is in `exclude:` at `test/test_helper.exs:12`; the eval tags are
+`test/aetheris/eval/runner_test.exs:3`, `baseline_test.exs:3` and `ab_test.exs:3`; the other module
+tags are found by `git grep -n "@moduletag :integration" -- test`, the single-test tags by
+`git grep -n "@tag :integration" -- test`. Harness `CLAUDE.md:204`–`:206` lists all three eval files
+as `@moduletag :integration`, so the tag is documented; the gate's output does not say it.`
+
+**Closed 2026-09-14.** Landed at harness `55bd2f8` (pushed). The Done-when offered two directions and the implementation took both; each clause is met on its own.
+
+1. *The files run under the standard gate* — `@moduletag :integration` is gone from `runner_test.exs`, `baseline_test.exs` and `ab_test.exs`: `git grep -n '@moduletag :integration' 55bd2f8 -- test/aetheris/eval/` returns 0 lines, and the same command over `test` returns 9. `mix test` at `55bd2f8` printed `1227 tests, 0 failures, 95 excluded`, against `136 excluded` before (the commit's own figure); 41 = 10 + 17 + 14, the census above.
+2. *The gate output records what it does not cover* — `test/support/exclusion_report.ex`, registered at `test/test_helper.exs:2` and `:8`, ends every run with the excluded tests grouped by filter, with their modules. At `55bd2f8` it printed `Not run by this gate: 95 excluded test(s), by filter`, four groups summing to 95, with no `Aetheris.Eval.*` module in any group.
+
+No criterion was applied to the rest of the `:integration` population (`bl-235-implementation-notes.md`, Decision 3). BL-249 owns that audit.
+
+---
+
+### BL-237 — DONE 2026-09-14 · `baseline_test.exs` has been red since BL-221, invisible behind its tag (#TBD)
+**Status:** DONE
+**Kind:** defect · **Contract:** D8
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/test/aetheris/eval/baseline_test.exs`)
+
+6 of 17 tests in `test/aetheris/eval/baseline_test.exs` fail with `{:error, {:no_unavailable_runs, _}}`.
+BL-221 made `lock/2` select `:unavailable` runs only; these tests insert runs with no marker, which
+decode to `:unknown`, which `lock/2` correctly refuses. The file carries `@moduletag :integration`
+and is excluded from `mix test`, so BL-221's own round reported the gate green with these failures
+present.
+
+BL-235 owns the exclusion. This row owns the red: the tests encode `lock/2`'s pre-BL-221 contract and
+need converting to the new one, not deleting. A deleted assertion is a lost invariant.
+
+**Done when.** Each of the six either asserts the post-BL-221 contract or is recorded as an invariant
+no longer held, with the reason; the file is green under whatever tag regime BL-235 settles on.
+
+`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Reproduced at that commit by
+`mix test --include integration test/aetheris/eval/baseline_test.exs`, which printed
+`17 tests, 6 failures`, with `no_unavailable_runs` on 6 lines of its output. The six:
+`lock/2 computes and persists a baseline` (`:124`), `lock/2 takes only k most recent runs` (`:137`),
+`compare/2 detects regression when pass rate drops below threshold` (`:159`),
+`compare/2 reports no regression when pass rate holds` (`:180`), `compare/2 respects custom threshold`
+(`:199`), `compare/2 includes step_delta when step data available` (`:222`). The tag is `:3`;
+`lock/2` is `lib/aetheris/eval/baseline.ex:124`, filtering at `:140` and refusing at `:142`. BL-221
+is harness `ab98249`.`
+
+**Closed 2026-09-14.** Landed at harness `55bd2f8` (pushed). Done-when:
+
+1. *Each of the six asserts the post-BL-221 contract, or is recorded as no longer held* — all six are converted and none retired. Every run a `lock/2` call selects is built by `make_unavailable_run/4` (`test/aetheris/eval/baseline_test.exs:30`), at `:132`–`:133`, `:148`–`:149`, `:171`, `:192`, `:211` and `:233`. The guarantee each test now asserts is tabulated in `bl-237-implementation-notes.md` Decision 1.
+2. *The file is green under BL-235's tag regime* — the tag is removed (BL-235, direction (i)). `mix test test/aetheris/eval/baseline_test.exs` at `55bd2f8` printed `17 tests, 0 failures` and `Not run by this gate: nothing excluded.` The full `mix test` there printed `1227 tests, 0 failures, 95 excluded`, with `Aetheris.Eval.BaselineTest` in no exclusion group.
+
+---

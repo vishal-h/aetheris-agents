@@ -9923,45 +9923,6 @@ through `lib/aetheris/eval/store.ex:148`.`
 
 ---
 
-### BL-235 — eval test files tagged `:integration` are excluded from every gate run (#TBD)
-**Status:** OPEN
-**Kind:** defect
-**Size:** S · **Priority:** medium
-**Section:** harness (`../aetheris/test/test_helper.exs`, `../aetheris/test/aetheris/eval/`)
-
-`runner_test.exs` and `baseline_test.exs` carry `@moduletag :integration`, which `test_helper.exs`
-excludes, so `mix test` never runs them. Discovered at the BL-221 round, when a Done-when test placed
-in one of them would not have executed. The gate set has been reported green all through m14 with
-these files never running.
-
-**Census at harness `ab98249`.** `mix test` reports `1194 tests, 0 failures, 136 excluded`; the
-excluded figure spans all five tags in `exclude:`. For `:integration`:
-
-- **Eval files:** `runner_test.exs` 10, `baseline_test.exs` 17, and a third the filing prompt did not
-  name, `ab_test.exs` 14 — each from `mix test <file>`, which printed `N tests, 0 failures, N excluded`.
-- **Every `@moduletag :integration` file** — those three plus `integration/checkpoint_resume_test.exs`,
-  `codebase_qa_test.exs`, `fork_join_test.exs`, `mcp_github_test.exs`, `mcp_http_test.exs`,
-  `skill_extraction_test.exs`, `spawn_agent_test.exs`, `wait_for_event_test.exs` and
-  `worker/client_internet_test.exs`. `mix test` over exactly those files printed
-  `71 tests, 0 failures, 65 excluded`; the 6 that ran are `skill_extraction_test.exs`'s first module,
-  the tag being on its second.
-- **`@tag :integration` on single tests:** `skill/segmenter_test.exs:330` is the one in a gated file
-  (`12 tests, 0 failures, 1 excluded`). `codebase_qa_test.exs:34`, `mcp_github_test.exs:42` and
-  `worker/client_test.exs:171` sit in modules already excluded.
-
-**Done when.** Either the files run under the standard gate, or the exclusion is deliberate and
-recorded where a reader of the gate output can see what it does not cover.
-
-`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed), named in
-`docs/aetheris/milestones/bl-221-implementation-notes.md` under Deviations. Citations resolved at that
-commit: `:integration` is in `exclude:` at `test/test_helper.exs:12`; the eval tags are
-`test/aetheris/eval/runner_test.exs:3`, `baseline_test.exs:3` and `ab_test.exs:3`; the other module
-tags are found by `git grep -n "@moduletag :integration" -- test`, the single-test tags by
-`git grep -n "@tag :integration" -- test`. Harness `CLAUDE.md:204`–`:206` lists all three eval files
-as `@moduletag :integration`, so the tag is documented; the gate's output does not say it.`
-
----
-
 ### BL-236 — the gate cannot serve the candidate it is gating (#TBD)
 **Status:** OPEN
 **Kind:** defect · **Contract:** D7, D8
@@ -10006,36 +9967,6 @@ by the injector" is `docs/aetheris/research/bl-008-synthesis-2026-08.md:117`, D8
 T9's deferral is `docs/aetheris/milestones/m14-t9-implementation-notes.md:16`.`
 
 **Still open, 2026-09-14 (closing sweep).** Unmet: *"the serving path takes an explicit entry list only from the gate and from nowhere else"* — `Runner.run_task/2` accepts `:skill_measurement` from any caller (`../aetheris/lib/aetheris/eval/runner.ex:67`), and `bl-236-implementation-notes.md:28` records that a test or hand-written `.exs` can build one. The other four clauses hold at harness `901f7d1`.
-
----
-
-### BL-237 — `baseline_test.exs` has been red since BL-221, invisible behind its tag (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D8
-**Size:** S · **Priority:** medium
-**Section:** harness (`../aetheris/test/aetheris/eval/baseline_test.exs`)
-
-6 of 17 tests in `test/aetheris/eval/baseline_test.exs` fail with `{:error, {:no_unavailable_runs, _}}`.
-BL-221 made `lock/2` select `:unavailable` runs only; these tests insert runs with no marker, which
-decode to `:unknown`, which `lock/2` correctly refuses. The file carries `@moduletag :integration`
-and is excluded from `mix test`, so BL-221's own round reported the gate green with these failures
-present.
-
-BL-235 owns the exclusion. This row owns the red: the tests encode `lock/2`'s pre-BL-221 contract and
-need converting to the new one, not deleting. A deleted assertion is a lost invariant.
-
-**Done when.** Each of the six either asserts the post-BL-221 contract or is recorded as an invariant
-no longer held, with the reason; the file is green under whatever tag regime BL-235 settles on.
-
-`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Reproduced at that commit by
-`mix test --include integration test/aetheris/eval/baseline_test.exs`, which printed
-`17 tests, 6 failures`, with `no_unavailable_runs` on 6 lines of its output. The six:
-`lock/2 computes and persists a baseline` (`:124`), `lock/2 takes only k most recent runs` (`:137`),
-`compare/2 detects regression when pass rate drops below threshold` (`:159`),
-`compare/2 reports no regression when pass rate holds` (`:180`), `compare/2 respects custom threshold`
-(`:199`), `compare/2 includes step_delta when step data available` (`:222`). The tag is `:3`;
-`lock/2` is `lib/aetheris/eval/baseline.ex:124`, filtering at `:140` and refusing at `:142`. BL-221
-is harness `ab98249`.`
 
 ---
 
@@ -10348,3 +10279,46 @@ both halves: 4 `events` rows match `pseudo-device busy` for that run. Where the 
 `../aetheris/docs/aetheris/research/universal-ingestion-extraction-pipeline-2026-06.md:317`–`:324`
 and open question 1 at `:401`–`:406`. The brief poses it as share-or-copy, and the code does neither:
 each child gets its own worker process from the same binary.`
+
+---
+
+### BL-249 — the harness ExUnit `:integration` population has no audit (#TBD)
+**Status:** OPEN
+**Kind:** gate
+**Size:** M · **Priority:** low–medium
+**Section:** harness (`../aetheris/test/test_helper.exs`, `../aetheris/test/`)
+
+24 tests in 9 modules carry `@moduletag :integration` and are excluded from `mix test`, against no
+recorded criterion for what belongs behind the tag. BL-235 removed the tag from three eval files after
+examining those three; it applied no rule, and said so.
+
+BL-158 is the agents repo's `@pytest.mark.integration` population. This is a different set in a
+different language with a different exclusion mechanism, and nothing audits it.
+
+Lower priority than it would have been before BL-235: the exclusion report now names every excluded
+module on every run, so these 24 went from invisible to unaudited. What remains is that nobody has said
+whether excluding them is right.
+
+**Done when.** A criterion exists for what the harness `:integration` tag means; the 24 are audited
+against it; each either loses the tag or keeps it with the reason recorded where a reader of the gate
+output can reach it.
+
+**Census at harness `55bd2f8`, and one deviation from the filing prompt.** The 24-in-9 figure holds for
+`@moduletag :integration`. Two more tests carry `@tag :integration` in modules without it,
+`skill/segmenter_test.exs:330` and `worker/client_test.exs:171`, so 26 tests in 11 modules carry the
+tag. The exclusion report's `24 due to integration filter, in 9 module(s)` is a different set with the
+same two numbers. ExUnit credits each excluded test to one filter, the first in `exclude:` that it
+matches, so `McpHttpTest`'s one test and `client_test.exs:171` print under `requires_worker` because
+they also carry `:requires_worker`, and `SegmenterObservationTest`'s one prints under `integration`. The
+tag's population cannot be read off that line.
+
+`Source: the BL-235/BL-237 closure round, 2026-09-14; harness `55bd2f8` (pushed). BL-235's no-criterion
+statement is `docs/aetheris/milestones/bl-235-implementation-notes.md` Decision 3. The module tags are
+`git grep -n '@moduletag :integration' -- test` (9 lines), the single-test tags
+`git grep -n '@tag :integration' -- test` (5 lines, three inside modules already tagged). Figures from
+`mix test` at that commit: the full run's exclusion report; `mix test
+test/aetheris/integration/mcp_http_test.exs` printed `1 due to requires_worker filter`; `mix test
+test/aetheris/skill/segmenter_test.exs test/aetheris/worker/client_test.exs` printed `1 due to
+integration filter, in 1 module(s): Aetheris.Skill.SegmenterObservationTest` and `14 due to
+requires_worker filter, in 1 module(s): Aetheris.Worker.ClientTest`. `McpHttpTest` carries both module
+tags at `mcp_http_test.exs:14`–`:15`.`

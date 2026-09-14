@@ -1246,6 +1246,17 @@ def _wire_backlog(monkeypatch, tmp_path, scope_text, open_md=None, closed_md=Non
     )
 
 
+def test_backlog_resolution_scopes_every_evidence_file(tmp_path, monkeypatch):
+    """BL-252: open rows' bodies live in docs/evidence/, so their references are scoped."""
+    evidence = tmp_path / "evidence"
+    evidence.mkdir()
+    for name in ("BL-204.md", "BL-205.md"):
+        (evidence / name).write_text("# fixture\n")
+    monkeypatch.setattr(drift_check, "BACKLOG_EVIDENCE_DIR", evidence)
+    labels = {label for _, label in drift_check._backlog_scope_files()}
+    assert {"docs/evidence/BL-204.md", "docs/evidence/BL-205.md"} <= labels
+
+
 def test_backlog_resolution_resolves_across_the_union(tmp_path, monkeypatch):
     """The point of the check: a row in EITHER file resolves.
 

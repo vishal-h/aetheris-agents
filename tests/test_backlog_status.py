@@ -509,7 +509,7 @@ def test_every_row_id_carries_exactly_one_field_in_the_vocabulary():
 
     valued = [r for r in rows if r.value is not None]
     noted = bs.archived_only(rows)
-    assert all(r.value in bs.VOCABULARY for r in valued)
+    assert all(r.value in bs.ALL_VALUES for r in valued)
     assert len(valued) + len(noted) == len(rows), [
         r.row_id for r in rows if r.value is None and not r.archived_only
     ]
@@ -535,11 +535,13 @@ def test_the_census_the_test_derives_equals_the_cli_s():
     printed = {}
     for line in result.stdout.split("\n"):
         parts = line.split()
-        if len(parts) == 2 and parts[0] in bs.VOCABULARY:
+        if len(parts) == 2 and parts[0] in bs.ALL_VALUES:
             printed[parts[0]] = int(parts[1])
 
     assert printed == counts
-    assert f"THE OPEN SET IS {counts['OPEN']}." in result.stdout
+    # The open set is every non-terminal value in either shape (BL-252).
+    open_n = sum(n for value, n in counts.items() if value not in bs.ALL_TERMINAL)
+    assert f"THE OPEN SET IS {open_n}." in result.stdout
 
     # The exhaustiveness identity, in its C1 form. It previously read
     # `sum(counts.values()) == len(load())`, which asserted that every row has a
@@ -635,10 +637,17 @@ def test_defeat_5_changes_exactly_one_row_over_the_live_corpus():
     assert set(old) == set(new)
     assert len(old) == len(new)
 
+    # BL-252: an index-shaped row declares its state on a field-list line, which the
+    # depth-blind reading does not read, so defeat 5 has nothing to say about it. The
+    # comparison is over the legacy-shaped rows.
+    index_ids = {i for s in bs.parse_files(bs.BACKLOG_FILES) if s.is_index for i in s.ids}
+    legacy = set(new) - index_ids
+    assert legacy, "positive control: legacy-shaped rows remain to compare"
+
     # 2. THE PER-ROW FIELD-COUNT SET. Not a summary string: the count for every id
     #    under both readings, compared id by id.
-    old_counts = {k: len(v) for k, v in old.items()}
-    new_counts = {k: r.n_fields for k, r in new.items()}
+    old_counts = {k: len(old[k]) for k in legacy}
+    new_counts = {k: new[k].n_fields for k in legacy}
     differing = {k for k in old_counts if old_counts[k] != new_counts[k]}
 
     # 3. THE DIFF IS THE SET OF ROWS CARRYING A FIELD INSIDE `<details>` — derived
@@ -658,10 +667,9 @@ def test_defeat_5_changes_exactly_one_row_over_the_live_corpus():
     assert deep, "positive control: defeat 5 has at least one subject in the corpus"
     assert {r.row_id for r in bs.archived_only(bs.load())} <= deep
 
-    # 5. Every row OUTSIDE the diff resolves to the same value it did before.
-    for row_id, r in new.items():
-        if row_id in deep:
-            continue
+    # 5. Every legacy row OUTSIDE the diff resolves to the same value it did before.
+    for row_id in legacy - deep:
+        r = new[row_id]
         assert old[row_id] == ([r.value] if r.value else []), (row_id, old[row_id])
 
 
@@ -711,6 +719,9 @@ def test_the_deep_field_rows_are_exactly_what_a_raw_depth_scan_finds():
 # nothing checked. Both directions are tested, because one direction is half a guard.
 
 
+_ONLY_TERMINAL_ARCHIVES = f"only {', '.join(bs.ALL_TERMINAL)} archives"
+
+
 def _sec(row_id, value, path, *, title=True):
     """A minimal title (or closure) section, standing in one file."""
     suffix = " (#TBD)" if title else ""
@@ -729,14 +740,14 @@ def test_a_non_terminal_row_in_the_archive_fails():
     sec = _sec("BL-902", "OPEN", bs.BACKLOG_ARCHIVE_MD)
     (row,) = bs.resolve([sec])
     assert row.value == "OPEN"
-    assert any("only DONE archives" in p for p in row.problems), row.problems
+    assert any(_ONLY_TERMINAL_ARCHIVES in p for p in row.problems), row.problems
 
 
 def test_unruled_is_not_terminal_and_must_not_archive():
     """C4: UNRULED has an open remainder, so the archive is wrong for it."""
     assert bs.resolve([_sec("BL-903", "UNRULED", bs.BACKLOG_MD)])[0].problems == ()
     archived = bs.resolve([_sec("BL-904", "UNRULED", bs.BACKLOG_ARCHIVE_MD)])[0]
-    assert any("only DONE archives" in p for p in archived.problems), archived.problems
+    assert any(_ONLY_TERMINAL_ARCHIVES in p for p in archived.problems), archived.problems
 
 
 def test_each_side_accepts_the_rows_that_belong_on_it():
@@ -772,3 +783,144 @@ def test_the_real_backlog_honours_the_split():
          if s.path == bs.BACKLOG_ARCHIVE_MD]
     )
     assert archived and all(r.value in bs.TERMINAL for r in archived)
+
+
+# ---------------------------------------------------------------------------
+# THE INDEX SHAPE (BL-252) — field-list rows, bodies in docs/evidence/<ID>.md
+# ---------------------------------------------------------------------------
+
+INDEX_ROW = """\
+### BL-993 — an index row
+- state: open
+- type: defect
+- area: harness
+- priority: medium · size: S
+- evidence: docs/evidence/BL-993.md
+- done-when: the thing is done.
+"""
+
+
+def _index_tree(tmp_path, rows=INDEX_ROW, evidence=("BL-993",)):
+    """A backlog at `<tmp>/docs/backlog.md`, each named row's evidence file beside it."""
+    docs = tmp_path / "docs"
+    (docs / "evidence").mkdir(parents=True)
+    for row_id in evidence:
+        (docs / "evidence" / f"{row_id}.md").write_text(f"# {row_id} — an index row\nbody\n")
+    path = docs / "backlog.md"
+    path.write_text(rows)
+    return path
+
+
+def _read(path):
+    return bs.resolve(bs.parse_sections(path.read_text(), path))
+
+
+def test_the_index_vocabulary_is_the_declared_one():
+    assert set(bs.INDEX_STATES) == {
+        "open", "committed", "ready", "blocked", "triggered", "verifying", "done"}
+    assert bs.INDEX_TERMINAL == ("done",)
+    assert set(bs.DISPOSITIONS) == {
+        "fixed", "verified", "accepted-risk", "evidence-only", "superseded", "rejected"}
+    assert bs.ALL_TERMINAL == ("DONE", "done")
+
+
+def test_an_index_row_resolves_to_its_state_with_no_status_line(tmp_path):
+    path = _index_tree(tmp_path)
+    (sec,) = bs.parse_sections(path.read_text(), path)
+    assert sec.is_index and sec.is_title and sec.field_hits() == []
+    (row,) = _read(path)
+    assert (row.value, row.problems, row.n_fields) == ("open", (), 1)
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+
+def test_the_evidence_link_must_resolve_and_the_restore_is_verified(tmp_path):
+    """The mutation test for the evidence arm: remove the file, watch it fail, restore."""
+    path = _index_tree(tmp_path)
+    evidence = tmp_path / "docs" / "evidence" / "BL-993.md"
+    original = evidence.read_text()
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+    evidence.unlink()
+    assert not evidence.exists()                                   # the mutation landed
+    (row,) = _read(path)
+    assert any("does not exist" in p for p in row.problems), row.problems
+    assert bs.main(["--check", "--file", str(path)]) == 1
+
+    evidence.write_text(original)
+    assert evidence.read_text() == original                        # the restore, verified
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+
+def test_evidence_must_open_with_its_own_id(tmp_path):
+    path = _index_tree(tmp_path)
+    (tmp_path / "docs" / "evidence" / "BL-993.md").write_text("# BL-994 — another row\n")
+    (row,) = _read(path)
+    assert any("does not open" in p for p in row.problems), row.problems
+
+
+@pytest.mark.parametrize("mutate,expect", [
+    (lambda t: t.replace("- state: open", "- state: captured"), "is not one of"),
+    (lambda t: t.replace("- done-when: the thing is done.\n", ""), "are not"),
+    (lambda t: t.replace("- type: defect\n- area: harness\n",
+                         "- area: harness\n- type: defect\n"), "are not"),
+    (lambda t: t + "A body line that should have moved to evidence.\n",
+     "not a field-list line"),
+    (lambda t: t.replace("medium · size: S", "medium"), "size"),
+    (lambda t: t.replace("docs/evidence/BL-993.md", "docs/evidence/BL-994.md"),
+     "is not `docs/evidence/BL-993.md`"),
+    (lambda t: t.replace("an index row\n", "an index row (#TBD)\n", 1), "suffix"),
+    (lambda t: t.replace("- done-when:", "- disposition: fixed\n- done-when:"), "are not"),
+])
+def test_an_index_row_that_breaks_the_shape_fails(tmp_path, mutate, expect):
+    path = _index_tree(tmp_path)
+    assert bs.main(["--check", "--file", str(path)]) == 0          # unmutated control
+    path.write_text(mutate(INDEX_ROW))
+    (row,) = _read(path)
+    assert any(expect in p for p in row.problems), row.problems
+    assert bs.main(["--check", "--file", str(path)]) == 1
+
+
+def test_an_index_row_over_the_line_cap_fails(tmp_path):
+    path = _index_tree(tmp_path, rows=INDEX_ROW + "x\n" * 6)
+    (row,) = _read(path)
+    assert any(f"over {bs.INDEX_MAX_LINES}" in p for p in row.problems), row.problems
+
+
+def test_a_terminal_index_row_needs_a_disposition_and_a_live_one_may_not_carry_one(tmp_path):
+    done = INDEX_ROW.replace("- state: open", "- state: done")
+    path = _index_tree(tmp_path, rows=done)
+    assert any("needs `- disposition:`" in p for p in _read(path)[0].problems)
+    path.write_text(done + "- disposition: fixed\n")
+    assert _read(path)[0].problems == ()
+    path.write_text(INDEX_ROW + "- disposition: fixed\n")
+    assert any("non-terminal" in p for p in _read(path)[0].problems)
+
+
+def test_a_container_heading_ends_an_index_row(tmp_path):
+    rows = (INDEX_ROW + "\n---\n\n## Next section\n\n> container prose, not the row's\n\n"
+            + INDEX_ROW.replace("BL-993", "BL-994"))
+    path = _index_tree(tmp_path, rows=rows, evidence=("BL-993", "BL-994"))
+    got = {r.row_id: r.problems for r in _read(path)}
+    assert got == {"BL-993": (), "BL-994": ()}, got
+    assert bs.main(["--check", "--file", str(path)]) == 0
+
+
+def test_both_shapes_resolve_side_by_side(tmp_path):
+    """The split lands in batches, so one file holding both shapes is a lawful state."""
+    legacy = ("### BL-995 — a legacy row (#TBD)\n**Status:** OPEN\n"
+              "**Size:** S · **Priority:** low\n\n---\n\n")
+    path = _index_tree(tmp_path, rows=legacy + INDEX_ROW)
+    got = {r.row_id: (r.value, r.problems) for r in _read(path)}
+    assert got == {"BL-995": ("OPEN", ()), "BL-993": ("open", ())}, got
+
+
+def test_placement_covers_the_index_vocabulary():
+    def placement(value, path):
+        lines = ("### BL-996 — synthetic", f"- state: {value}", "")
+        (row,) = bs.resolve([bs.Section(("BL-996",), lines[0], 1, lines, path)])
+        return [p for p in row.problems if "archives" in p or "belongs in" in p]
+
+    assert placement("done", bs.BACKLOG_MD)                        # terminal, open file
+    assert placement("open", bs.BACKLOG_ARCHIVE_MD)                # live, archive
+    assert placement("open", bs.BACKLOG_MD) == []                  # positive controls
+    assert placement("done", bs.BACKLOG_ARCHIVE_MD) == []

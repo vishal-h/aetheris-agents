@@ -29,7 +29,8 @@ Checks:
                         SWEPT / NO_MANIFEST_YET, the tools.json set and tools.rs's vec!
                         (ds t1a). No strict exemption.
   backlog_resolution  — every strict-form `BL-nnn` in the scoped corpus (the two backlog
-                        files plus every *.py/*.sh in both repos) names a row in the
+                        files, every docs/evidence/*.md, and every *.py/*.sh in both
+                        repos) names a row in the
                         UNION of the open file and the closed archive. FAIL, never WARN;
                         allowlist keyed by (id, file), each entry with its reason (ds t1b).
   index_integrity     — for every manifest row whose path is an `index.md` (an INDEXED
@@ -1125,6 +1126,11 @@ BACKLOG_ROW_RE = re.compile(r"^### ((?:BL-\d+)(?:\s*\+\s*BL-\d+)*)\s*—", re.M)
 # aetheris-agents, so the bit would exclude every script the check exists to cover.
 BACKLOG_SCOPE_GLOBS = ("*.py", "*.sh")
 
+# BL-252: open rows' bodies live in `docs/evidence/<ID>.md`, so the references they carry
+# are scoped there. Read from the filesystem, not `git ls-files`, so an evidence file is
+# checked before the commit that adds it.
+BACKLOG_EVIDENCE_DIR = REPO_ROOT / "docs" / "evidence"
+
 # An unresolvable reference FAILS. It is deliberately NOT a WARN: the two standing
 # `project_knowledge` staleness WARNs are strict-exempt and read as expected truth,
 # and a dangling-id WARN sitting beside them would inherit that reading — which is
@@ -1134,11 +1140,6 @@ BACKLOG_SCOPE_GLOBS = ("*.py", "*.sh")
 # reason. Keyed by BOTH so that an id excused in one file is not silently excused
 # everywhere it might later appear.
 BACKLOG_REF_ALLOW: dict[tuple[str, str], str] = {
-    ("BL-063", "docs/backlog-2026-06.md"):
-        "historical: folded into BL-030 r1 (agents 4bf0fd6) before it acquired a "
-        "section. The prose is a true statement about what r1 did; minting a row "
-        "or deleting the sentence would both destroy the record. This occurrence is "
-        "the retired `## Suggested order` table's BL-030 line.",
     ("BL-063", "docs/backlog-2026-06-closed.md"):
         "the same historical statement, inside BL-030's own body — which is DONE and "
         "so travelled to the archive at ds t1b. Two occurrences, one per file, is a "
@@ -1186,8 +1187,13 @@ BACKLOG_REF_ALLOW: dict[tuple[str, str], str] = {
                   # the prose-and-fence masking regression: 990 the row whose
                   # PROSE names the tag, 991 the heading quoted inside a fence,
                   # 992 the row after it that must survive both.
-                  "990", "991", "992")
+                  "990", "991", "992",
+                  # BL-252's index shape: 993 the index row, 994 the wrong-id and
+                  # second-row fixtures, 995 the legacy row beside it, 996 placement.
+                  "993", "994", "995", "996")
     },
+    ("BL-998", "tests/test_known_red_resolver.py"):
+        "the canonical NONEXISTENT id, as the resolver test's dangling-reference control.",
 }
 
 
@@ -1206,6 +1212,8 @@ def _backlog_scope_files() -> list[tuple[Path, str]]:
     out: list[tuple[Path, str]] = []
     for path in BACKLOG_FILES:
         out.append((path, str(path.relative_to(REPO_ROOT))))
+    for path in sorted(BACKLOG_EVIDENCE_DIR.glob("*.md")):
+        out.append((path, f"docs/evidence/{path.name}"))
     for root, prefix in ((REPO_ROOT, ""), (HARNESS_ROOT, "../aetheris/")):
         try:
             listed = subprocess.run(

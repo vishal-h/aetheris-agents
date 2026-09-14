@@ -88,6 +88,27 @@ has already gone wrong:
     is `ARCHIVED-ONLY`, reported by `--check` as a loud NOTE and NOT as a failure —
     see `_cmd_check` for the ruling and its cost. A row with no `**Status:**` line
     at any depth is unchanged: still a hard FAIL.
+
+THE INDEX SHAPE (BL-252, 2026-09-14). Open rows are reduced to a field list and their
+bodies moved to `docs/evidence/<ID>.md`. A section is INDEX-SHAPED when the line under
+its heading starts `- state: `; it is then read by `Section.index_reading()` and never
+by `field_hits()`:
+
+    ### <ID> — <title>
+    - state: <INDEX_STATES>
+    - type: …
+    - area: …
+    - priority: … · size: …
+    - blocked-by / trigger: …          optional
+    - evidence: docs/evidence/<ID>.md
+    - done-when: …
+    - disposition: <DISPOSITIONS>      present iff the state is terminal
+
+Keys in exactly that order and nothing else before the trailer (blank lines, `---`, or a
+`## ` container heading, which ends the row); at most `INDEX_MAX_LINES` lines; one id;
+no `(#…)` suffix; and, for a section read from a file, the evidence file exists beside
+the backlog and opens `# <ID> — `. Both shapes are accepted in both files, so the split
+lands in batches; placement covers both vocabularies (`ALL_TERMINAL`).
 """
 
 import argparse
@@ -113,6 +134,21 @@ BACKLOG_FILES = (BACKLOG_MD, BACKLOG_ARCHIVE_MD)
 # not archive at t1b.
 VOCABULARY = ("OPEN", "DONE", "UNRULED")
 TERMINAL = ("DONE",)
+
+# The index vocabulary (BL-252). Lower-case, so an index value is never mistaken for a
+# legacy one. Declared in the open file's header; `disposition` is for terminal rows.
+INDEX_STATES = ("open", "committed", "ready", "blocked", "triggered", "verifying", "done")
+INDEX_TERMINAL = ("done",)
+DISPOSITIONS = ("fixed", "verified", "accepted-risk", "evidence-only", "superseded", "rejected")
+INDEX_MAX_LINES = 12
+INDEX_LINE_RE = re.compile(
+    r"- (state|type|area|priority|blocked-by / trigger|evidence|done-when|disposition): (\S.*)"
+)
+
+# Every value either shape can declare, and every terminal one. Placement and the census
+# read these; `VOCABULARY` / `TERMINAL` stay the legacy shape's own sets.
+ALL_VALUES = VOCABULARY + INDEX_STATES
+ALL_TERMINAL = TERMINAL + INDEX_TERMINAL
 
 # Defeat 1: the row-heading anchor. `^### BL-` and nothing wider.
 HEADING_RE = re.compile(r"^### BL-\d+")
@@ -238,7 +274,73 @@ class Section(NamedTuple):
 
     @property
     def is_title(self) -> bool:
-        return bool(TITLE_SUFFIX_RE.search(self.heading))
+        return bool(TITLE_SUFFIX_RE.search(self.heading)) or self.is_index
+
+    @property
+    def is_index(self) -> bool:
+        return len(self.lines) > 1 and self.lines[1].startswith("- state: ")
+
+    def index_reading(self) -> tuple[str | None, list[str]]:
+        """`(state, problems)` for an index-shaped section. `state` is None when invalid."""
+        body = []
+        for line in self.lines[1:]:
+            if line.startswith("## "):
+                break                   # a container heading ends the row
+            body.append(line)
+        while body and body[-1].strip() in ("", "---"):
+            body.pop()
+
+        problems, fields = [], []
+        for offset, line in enumerate(body, start=1):
+            m = INDEX_LINE_RE.fullmatch(line)
+            if m is None:
+                problems.append(f"line {self.start + offset} is not a field-list line")
+            else:
+                fields.append((m.group(1), m.group(2)))
+        values = dict(fields)
+
+        expected = ["state", "type", "area", "priority"]
+        if "blocked-by / trigger" in values:
+            expected.append("blocked-by / trigger")
+        expected += ["evidence", "done-when"]
+        if "disposition" in values:
+            expected.append("disposition")
+        if [k for k, _ in fields] != expected:
+            problems.append(f"fields {[k for k, _ in fields]} are not {expected}")
+
+        state = values.get("state")
+        if state not in INDEX_STATES:
+            problems.append(f"`- state: {state}` is not one of {'/'.join(INDEX_STATES)}")
+            state = None
+        if " · size: " not in values.get("priority", ""):
+            problems.append("`- priority:` carries no ` · size: `")
+        disposition = values.get("disposition")
+        if state in INDEX_TERMINAL and disposition not in DISPOSITIONS:
+            problems.append(f"terminal state needs `- disposition:` in {'/'.join(DISPOSITIONS)}")
+        if state not in INDEX_TERMINAL and disposition is not None:
+            problems.append("`- disposition:` on a non-terminal row")
+        if 1 + len(body) > INDEX_MAX_LINES:
+            problems.append(f"{1 + len(body)} lines, over {INDEX_MAX_LINES}")
+        if TITLE_SUFFIX_RE.search(self.heading):
+            problems.append("an index heading carries no `(#…)` suffix")
+
+        if len(self.ids) != 1:
+            problems.append("an index heading names exactly one id")
+            return state, problems
+        want = f"docs/evidence/{self.ids[0]}.md"
+        if values.get("evidence") != want:
+            problems.append(f"`- evidence:` is not `{want}`")
+        elif self.path is not None:
+            # Beside the backlog: `<root>/docs/backlog….md` → `<root>/docs/evidence/<ID>.md`.
+            evidence = self.path.parent.parent / want
+            try:
+                first = evidence.read_text().split("\n", 1)[0]
+            except OSError:
+                problems.append(f"evidence `{want}` does not exist")
+            else:
+                if not first.startswith(f"# {self.ids[0]} — "):
+                    problems.append(f"evidence `{want}` does not open `# {self.ids[0]} — `")
+        return state, problems
 
     def field_hits(self, deep: bool = False) -> list[tuple[int, str]]:
         """Canonical field lines in the WHOLE section (defeat 3), at ONE depth.
@@ -331,14 +433,22 @@ def resolve(sections: list[Section]) -> list[RowStatus]:
     for row_id in sorted(by_id, key=lambda s: int(s.split("-")[1])):
         hits = []
         deep_hits = []
+        problems = []
+        notes = []
         for sec in by_id[row_id]:
+            if sec.is_index:
+                state, index_problems = sec.index_reading()
+                problems.extend(index_problems)
+                if state is not None:
+                    hits.append((sec, 1, state))
+                continue
             for offset, value in sec.field_hits():
                 hits.append((sec, offset, value))
             for offset, value in sec.field_hits(deep=True):
                 deep_hits.append((sec, offset, value))
-        problems = []
-        notes = []
-        if not hits and deep_hits:
+        if problems and not hits:
+            pass                        # an index row's own problems already say why
+        elif not hits and deep_hits:
             # Defeat 5's new state. NOT a failure — see `_cmd_check`.
             where = ", ".join(f"{s.start + o}" for s, o, _ in deep_hits)
             values = "/".join(v for _, _, v in deep_hits)
@@ -400,16 +510,16 @@ def _placement_problems(row_id, value, hits) -> list[str]:
     if where not in (BACKLOG_MD.resolve(), BACKLOG_ARCHIVE_MD.resolve()):
         return []
     in_archive = where == BACKLOG_ARCHIVE_MD.resolve()
-    should_be_archived = value in TERMINAL
+    should_be_archived = value in ALL_TERMINAL
     if should_be_archived and not in_archive:
         return [
-            f"`**Status:** {value}` is terminal, but the row is in "
+            f"`{value}` is terminal, but the row is in "
             f"{BACKLOG_MD.name} — a terminal row belongs in {BACKLOG_ARCHIVE_MD.name}"
         ]
     if in_archive and not should_be_archived:
         return [
-            f"`**Status:** {value}` is not terminal, but the row is in "
-            f"{BACKLOG_ARCHIVE_MD.name} — only {', '.join(TERMINAL)} archives"
+            f"`{value}` is not terminal, but the row is in "
+            f"{BACKLOG_ARCHIVE_MD.name} — only {', '.join(ALL_TERMINAL)} archives"
         ]
     return []
 
@@ -429,7 +539,7 @@ def load(paths=BACKLOG_FILES) -> list[RowStatus]:
 
 
 def census(rows: list[RowStatus]) -> dict[str, int]:
-    counts = {v: 0 for v in VOCABULARY}
+    counts = {v: 0 for v in ALL_VALUES}
     for row in rows:
         if row.value in counts:
             counts[row.value] += 1
@@ -487,10 +597,13 @@ def _cmd_check(paths) -> int:
     # Silent-wrong-answer this check exists to remove — well-formed, reassuring,
     # and false about the one row anybody is reading the line to learn about.
     carried = len(rows) - len(noted)
+    index_ids = {i for s in sections if s.is_index for i in s.ids}
+    print(f"shape: {len(index_ids)} row ids index-shaped, "
+          f"{len(rows) - len(index_ids)} legacy")
     print(
         f"OK: {carried} of {len(rows)} row ids carry exactly one field, all in "
         f"vocabulary, and each is on the correct side of the split "
-        f"({'/'.join(TERMINAL)} archives, everything else stays open)"
+        f"({'/'.join(ALL_TERMINAL)} archives, everything else stays open)"
         + (f"; the remaining {len(noted)} are ARCHIVED-ONLY, noted above and not "
            f"blocking" if noted else "")
     )
@@ -502,19 +615,20 @@ def _cmd_census(paths) -> int:
     sections = parse_files(paths)
     rows = resolve(sections)
     counts = census(rows)
-    open_n = counts["OPEN"]
-    terminal_n = sum(counts[v] for v in TERMINAL)
+    terminal_n = sum(counts[v] for v in ALL_TERMINAL)
+    # The open set is every row with a non-terminal value, in either shape.
+    open_n = sum(counts.values()) - terminal_n
     archived_n = len(archived_only(rows))
 
     w = 14  # widest label is `ARCHIVED-ONLY` (13) + 1
     print(f"{'rows':<{w}}{len(rows)}")
-    for value in VOCABULARY:
+    for value in ALL_VALUES:
         print(f"{value:<{w}}{counts[value]}")
     # Printed always, including as 0. A line that appears only when non-zero is a
     # line whose absence a reader cannot distinguish from the state not existing,
     # and 0 here is the assertion that every row has a live declaration.
     print(f"{'ARCHIVED-ONLY':<{w}}{archived_n}   (no depth-0 field; only <details> text)")
-    print(f"{'terminal':<{w}}{terminal_n}   ({', '.join(TERMINAL)})")
+    print(f"{'terminal':<{w}}{terminal_n}   ({', '.join(ALL_TERMINAL)})")
     print(f"{'partition':<{w}}{sum(counts.values())} + {archived_n} = {len(rows)}"
           f"   ({'OK' if sum(counts.values()) + archived_n == len(rows) else 'BROKEN'})")
     print()

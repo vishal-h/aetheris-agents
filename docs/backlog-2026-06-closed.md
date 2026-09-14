@@ -9450,3 +9450,24 @@ because it is a fact about this file, and the round that surfaced it does not ow
 **Closed 2026-09-14.** The `## Suggested order` table is deleted and its sequencing opinion dropped, because nothing else needs it: the milestone doc is the execution authority (arbiter ruling R3, 2026-09-14).
 
 ---
+
+### BL-252 — DONE 2026-09-14 · backlog index split — open rows reduced to field lists, bodies moved to docs/evidence/ (#TBD)
+**Status:** DONE
+**Kind:** documentation + code · **Size:** not stated · **Priority:** not stated
+**Section:** aetheris-agents (`docs/backlog-2026-06.md`, `docs/evidence/`, `scripts/backlog_status.py`, `scripts/drift_check.py`)
+
+Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown is the status authority, the open backlog becomes an index, and BL-145 closes.
+
+**Truth-maker.** The open file is 716,946 bytes over 10,358 lines at `fd53474` (`wc -c -l docs/backlog-2026-06.md`). That the store cannot answer "what next" from it is the arbiter's observation of 2026-09-14, not measured here.
+
+**Done when:** every open row is a field list ≤ 12 lines with a resolvable evidence link; all three readers pass on the new shape; `drift_check --strict` is at baseline.
+
+**Closed 2026-09-14.** Done-when, each clause read on this commit's tree before it was committed:
+
+1. *Every open row is a field list ≤ 12 lines with a resolvable evidence link* — `python3 scripts/backlog_status.py --check`: `shape: 153 row ids index-shaped, 99 legacy`, `OK: 252 of 252 row ids carry exactly one field, …`. The index-shape check enforces the line cap and the link; `tests/test_backlog_status.py::test_the_open_file_holds_index_rows_only` asserts no legacy row is left in the open file.
+2. *All three readers pass on the new shape* — `backlog_status.py` as above; `drift_check.py`'s `backlog_resolution` PASS; the harness KNOWN_RED resolver, unchanged, accepts a row from each file and refuses a nonexistent id (`python3 -m pytest -q -m integration tests/test_known_red_resolver.py`: `1 passed, 1 deselected in 0.05s`).
+3. *`drift_check --strict` at baseline* — `19 PASS  0 FAIL  4 WARN  11 INFO` post-commit at `7ff79b6`, this commit's parent; the four WARNs are the baseline files.
+
+**Sizes.** `docs/backlog-2026-06.md`: 716,946 bytes at `fd53474` → 73,978 bytes here (`wc -c`). `docs/evidence/`: absent at `fd53474` → 153 files, 709,897 bytes here (`ls docs/evidence/*.md | wc -l`; `cat docs/evidence/*.md | wc -c`). This row's own evidence file is removed at its close; its body is the section above.
+
+---

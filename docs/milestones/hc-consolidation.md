@@ -963,6 +963,18 @@ disposition. Read the wording there.
 
 ---
 
+### R39 — a prediction of what a checker will output is derived by reading that checker's own filter, not by reconstructing it.
+
+`2026-09-12 — landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R39]` item (item 10 at harness `167e543`), which states the rule and its evidence; this entry points at it and does not restate it. The motivating instance is m14 T8, where a prediction filtered the manifest to surface `export` where drift_check excludes `on-demand`, dropping both `both` rows. The entry was written 2026-09-14, two days after the tag, which pointed at nothing in the meantime. Landed under R22.`
+
+---
+
+### R40 — a decision to defer is recorded on the row it defers.
+
+`2026-09-14 — proposed by the arbiter at the backlog-growth discussion of 2026-09-13, ruled in the cc:prompt of 2026-09-14 and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R40]` item (item 11 at harness `ee7f529`), which states the rule, its scope and its source; this entry points at it and does not restate it. The motivating instance is the three m14 sequencing-void appends on BL-229, BL-242 and BL-244 at agents `1ae2db1`, which cite R40 by number before either the methodology item or this entry existed. Landed under R22.`
+
+---
+
 ## Ticket set
 
 Five tickets, and a sixth session. Per **R12**, anatomy is authored here before the ticket opens;

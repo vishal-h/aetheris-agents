@@ -455,6 +455,13 @@ and why; the procedural gap it exposed is **BL-196**.]`
 > `docs/` has no `index.md`, so like `backlog-scale-2026-09.md` this row is the document's only
 > map entry.
 
+> **THE EVIDENCE TREE — on-demand by construction, 2026-09-14 (BL-252).** `docs/evidence/<ID>.md`
+> holds each open backlog row's body, moved verbatim when `backlog-2026-06.md` became an index of
+> field lists. The path is derived from the row id, so the tree gets no row per file and no
+> generated `index.md`: a reader holding an id holds the path. Nothing is uploaded or re-pinned by
+> this block; the backlog row's staleness WARN is expected until the next export, a separate
+> BL-002 round.
+
 ---
 
 Exported: 2026-08-03 at aetheris-agents `0fc9396` / aetheris `265d336` (m2-cloudcost CLOSED —

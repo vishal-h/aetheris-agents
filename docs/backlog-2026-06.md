@@ -328,6 +328,8 @@ Surfaced at t4 r4.
 connection lifecycle (with the three items addressed), or opportunistic WAL is
 ratified as the permanent design and documented as such.
 
+**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: is opportunistic WAL ratified as permanent, or made deterministic. Changes when that ruling is recorded here.
+
 ---
 
 ### BL-033 — Remove `:fork` from the `RunConfig` mode union (#TBD)
@@ -575,6 +577,8 @@ contract rather than inheriting the string-comparison guard.
 `run_id`; the run_id fallback is applied once, at display; `cargo test` + `tsc -b` +
 `bun run lint` green.
 
+**DEFERRED, 2026-09-14** (R40). Inherits BL-024's deferral: this row's lineage view is BL-024's. Changes when BL-024 returns.
+
 ---
 
 ### BL-058 — specs §5 (TypeScript Interfaces) is unchecked, and already stale (#TBD)
@@ -639,6 +643,8 @@ leave it.
 sentence is corrected and its ref repointed under §8 ratification; operator access
 (picker vs CLI-only) is decided and recorded.
 
+**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
+
 ---
 
 ### BL-064 — Fork with additional instructions (#TBD)
@@ -664,6 +670,8 @@ and would likely share its plumbing; a `system_prompt` override is already an
 **Do not start from this row.** Get the scope from whoever parked it, write it
 here, then implement. Anyone who fills this in should treat the paragraph above as
 leads, not facts.
+
+**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: a parked stub with no scope, awaiting a ruling on whether it is work at all. Changes when that ruling is recorded here.
 
 ---
 
@@ -707,6 +715,8 @@ seeds the scope (which signals are worth surfacing, what noise looks like); read
 gated behind its own IAM.
 
 `Source: m2-cloudcost decisions F + G (t4 spike), ratified 2026-08-01.`
+
+**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
 
 ---
 
@@ -1273,6 +1283,8 @@ account-specific figures and would retire the static table rather than extend it
 
 `Source: m2-cloudcost t4 live read.`
 
+**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
+
 ### BL-080 — `detect_optimization_signals` reports `partial` for intentional honesty, not only for a read gap (#TBD)
 **Status:** OPEN
 **Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
@@ -1312,6 +1324,8 @@ intentional omission), and a test asserts a run whose ONLY finding is an unrated
 **Batch with BL-081** — same file, same envelope, and both are t4 review tidy-ups.
 
 `Source: m2-cloudcost t4 review N1.`
+
+**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
 
 ### BL-081 — `s3_no_lifecycle_policy` fires on an observably empty bucket (#TBD)
 **Status:** OPEN
@@ -1395,6 +1409,8 @@ Declaring `CLOUDCOST_AWS_*` in the manifest therefore produces the config rows *
 forms; descriptions match `capability-matrix.md`; the other three use cases are filed or done.
 
 `Source: m2-cloudcost close-out, 2026-08-03.`
+
+**Still open, 2026-09-14 (closing sweep).** Unmet: *"descriptions match `capability-matrix.md`"* — true of five of six at `4f08264`, of none at HEAD, because the matrix was regenerated (`4d98ec2`, `e0c1ee2`) and `cloudcost/tools.json` never followed. The other-use-cases clause is met by BL-089; the no-amber-badge clause is recorded as live-only in `cloudcost/docs/bl-084-implementation-notes.md` and never recorded as observed.
 
 ### BL-085 — Cloudcost credentials + per-launch provider selection in Rig (#TBD)
 **Status:** OPEN
@@ -1481,6 +1497,8 @@ Done-when is a disposition and this ticket files rather than disposes.
 
 `Source: m2-cloudcost close-out, 2026-08-03.`
 
+**Still open, 2026-09-14 (closing sweep).** Unmet: *"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`"* as written — the key names appear in the guard's warning in the Rig-launched run's trajectory. `cloudcost/runbook.md` substitutes "no secret values", which holds, but the Done-when was never amended; and per-launch selection stays open on this row's own 2026-09-01 note (BL-187). The runbook-posture clause is met (§D2 posture).
+
 ### BL-086 — Trajectory: label steps by their `run_command` stage (#TBD)
 **Status:** OPEN
 **Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
@@ -1497,6 +1515,8 @@ stay "Step N".
 `CLOUDCOST_OPTIMIZATION=1`); a docbuilder run shows its stages; non-script steps render unchanged.
 
 `Source: m2-cloudcost close-out, 2026-08-03.`
+
+**Still open, 2026-09-14 (closing sweep).** Unmet: *"plus `detect_optimization_signals` when `CLOUDCOST_OPTIMIZATION=1`"* — no recorded run has exercised it, and no owner or closing condition is named. The rendered badges are recorded as owed in `docs/rig/milestones/bl-086-trajectory-stage-labels-implementation-notes.md`; the label logic is proven offline and non-script steps keep "Step N" (`rig/src/components/modules/harness/stageLabel.ts`, `stepBadge`).
 
 ### BL-087 — `payslip/tools.json` omits a runnable CLI (#TBD)
 **Status:** OPEN
@@ -1550,6 +1570,8 @@ mirrors into `src/hooks/types.ts`, gates the Run button, and is rejected server-
 
 `Source: BL-084, 2026-08-03.`
 
+**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
+
 ### BL-089 — tools.json for the three use cases that still have none (#TBD)
 **Status:** OPEN
 **Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`docbuilder/`, `provenance/`, `boxy-pipeline/`)
@@ -1598,100 +1620,7 @@ mechanism is intended.
 
 `Source: BL-085, 2026-08-04.`
 
-### BL-097 — Orchestrator: selecting a Recent prompt covers Run and the env disclosure (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
-
-Filed 2026-08-04. On the Orchestrator idle view, clicking a **Recent** entry renders a card over the
-Run button and the "Additional env vars" disclosure. The screen is unusable — env cannot be set, no
-other prompt can be picked, the run cannot be started — until you navigate away and back.
-
-**Mechanism (one line).** The overlaying element is the *filter-suggestions* dropdown, not the
-Recent list: it is absolutely positioned (`absolute left-0 right-0 top-full mt-1 z-10`,
-`OrchestratorView.tsx:170-171`) inside the `relative` wrapper that holds only the textarea (`:159`),
-so it paints over everything below — the env disclosure (`:186-239`) and Run (`:241-246`). Its
-visibility is derived **purely** from `suggestions.length > 0` (`:169`), and `suggestions` is
-`history.filter(h => h.toLowerCase().includes(request.toLowerCase()))` (`:133-135`). Selecting a
-Recent entry calls `setRequest(h)` (`:257`), after which `h` trivially contains itself — so the
-dropdown opens and **can never close**, because the condition that opens it is now permanently true.
-Navigating away "fixes" it only by unmounting the component and resetting `request`.
-
-The Recent list itself is innocent and correctly hides once the box is populated (`:247`, gated on
-an empty request).
-
-**Wider than the reported repro.** The same permanent overlay appears whenever *typed* text
-substring-matches any stored history entry — Recent selection is just the reliable way to reach it,
-since it guarantees an exact self-match. There is no blur, Escape, or selection dismissal anywhere.
-
-**Minimal fix (this row).** Give the dropdown an explicit open flag instead of deriving visibility
-from the filter result: opened by typing, closed by selection, Escape, and blur. No relayout, no
-relocation, no change to the `extra_env` panel or `ParamsStrip`.
-
-**Done when:** selecting a Recent entry populates the request box and dismisses cleanly; Run and the
-env disclosure stay clickable; a second selection works inline with no click-away; `bun run lint`
-and `bun run build` green.
-
-**Follow-up, deliberately NOT in scope here:** move Recent into a scrollable right-side panel. That
-is a UX enhancement — it would also make Recent reachable while the box is populated, which the
-current design intentionally does not do — and it should be decided on its own merits, not folded
-into an unbreak.
-
-`Source: BL-097, 2026-08-04 (reported from the Rig UI during the cloudcost batch).`
-
----
-
 ## Milestones (L — issue docs first, per repo convention)
-
-### BL-007 — Replay / fork from step (Rig p9 candidate) (#48)
-**Status:** OPEN
-**Size:** L · **Priority:** medium
-
-Feasibility confirmed (report Gap C + §3.1): trajectory files store full
-untruncated prompts (`meta.system_prompt`/`user_prompt`) and complete
-tool-call/tool-result payloads, so the conversation at step N is
-mechanically reconstructable for completed runs — `run_checkpoints` is
-only needed for live ones. No recording changes required.
-
-Scope sketch for the milestone docs:
-- ~~Harness: `Aetheris.fork_run(run_id, step)` — rebuild messages up to
-  step N from the trajectory, start a new run with provenance back-link
-  (consider reusing `agent_trees` for the parent/child relation).~~
-  **Already built — struck 2026-07-17, see the annotation below.**
-- ~~Rig: one Tauri command + a "Fork from here" affordance on a step group
-  in TrajectoryView. *(Verified absent — this is the real work.)*~~
-  **Built — struck 2026-07-20.** Shipped exactly as sketched: the `fork_run`
-  Tauri command (t3) and a per-step "Fork from here" affordance with a
-  provenance banner in `TrajectoryView` (t4, `6dd2d55`).
-- Decide divergence semantics up front: forked run gets a fresh run_id
-  and records normally; original is never mutated.
-- New event types or config fields → event.ex/specs §6 in the same
-  commit (drift_check enforces).
-
-> **Verified state 2026-07-17 (BL-022's source check — this sketch was stale).**
-> The harness half of the sketch describes work that already shipped:
->
-> | Claimed as work | Verified state |
-> |---|---|
-> | `Aetheris.fork_run(run_id, step)` | **exists** — `lib/aetheris.ex:73` |
-> | "rebuild messages up to step N" | **exists** — `Fork.from_step/3`, `lib/aetheris/execution/fork.ex`, since 2026-05-17 |
-> | "provenance back-link" | **exists** — `fork_from` / `fork_step` are first-class `RunConfig` fields (`run_config.ex:82,196`), set at `fork.ex:119`, and **persisted into the trajectory's `meta`** by `maybe_add_fork_meta` (`agent/server.ex:717-720`). Shipped as a direct field link, not via `agent_trees` — the sketch's parenthetical was a suggestion, and a simpler design won. |
-> | — | `:fork` is first-class in the mode union (`run_config.ex:115`); CLI `cli/commands/fork.ex`; tests in `execution/fork_test.exs` and `cli/commands/fork_test.exs` |
->
-> ~~**Verified absent:** the Rig side — no fork command in `rig/src-tauri/src/*.rs`, no
-> frontend references, nothing in `specs.md` §4.~~ **Closed 2026-07-20:** all three
-> now exist — `fork_run` in `rig/src-tauri/src/commands/fork.rs:34`, the
-> `useFork`/`TrajectoryView` frontend path, and the `specs.md` §4 command row.
->
-> Not re-scoped here; that is the planning session's job. Noting only that the shape
-> has changed: provenance, determinism contract, and Rig UX **on top of an existing
-> core**, rather than a from-scratch build.
->
-> **Milestone scoping starts from source, not this sketch.**
-
-**Done when:** milestone README + issue docs exist; implementation gated
-on them, per the p3 pattern (docs → mock/real split if useful → UI).
-
----
 
 ### BL-094 — A direct, non-LLM launch door for config-style orchestrators (#TBD)
 **Status:** OPEN
@@ -1813,6 +1742,8 @@ and `eval/scorer/exit_code.ex`, which read `:tool_result` payload fields, and
 row is taken.]`
 
 `Source: BL-028 (2026-07-21), BL-027/BL-025 (2026-07-23) — same root cause, third reader.`
+
+**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: the 2026-09-10 note above says the key-collapse question resolves first. Changes when that ruling is recorded here.
 
 ---
 
@@ -2034,6 +1965,8 @@ Not re-ruled here.]`
 
 `Source: BL-025 execution, rev-2 adjacent finding, 2026-07-23.`
 
+**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: the 2026-09-10 rename ruling was found false, and a re-ruling is owed. Changes when the re-ruling is recorded here.
+
 ---
 
 ### BL-185 — `backlog_status.py --check` reports ARCHIVED-ONLY as a NOTE, and the corpus population is now zero (#TBD)
@@ -2085,88 +2018,6 @@ and this row is its executor. Population at filing: `ARCHIVED-ONLY 0`, from
 
 
 ## boxy-pipeline
-
-### BL-010 — Clean order_formatter output: strip extra sheets and clear stale template formulas (#51)
-**Status:** OPEN
-**Size:** S · **Priority:** now
-
-Two output defects observed on first real run:
-
-1. **Extra sheets in output xlsx.** `--template` and `--catalog` point to the
-   same file (`Updated_Boxy_MSRP_Sales_Order_Form.xlsx`), which contains all
-   five `{N}000 Price List` and `{N}000 Order Form` sheets. openpyxl loads and
-   saves the whole workbook, so the output carries all those sheets. Only
-   `2000 Order Form` should be in the output file.
-
-2. **`#NAME?` errors in unused template rows.** The template has VLOOKUP
-   formulas pre-filled in rows 12–67. The formatter writes items into rows
-   12–N, but rows N+1 through 67 retain the original VLOOKUP formulas. When
-   openpyxl saves the workbook, named-range references in those formulas break,
-   producing `#NAME?` errors visible in Excel.
-
-**Fix (both in `scripts/order_formatter.py`):**
-- After loading the template workbook, delete all sheets except `2000 Order Form`.
-- After writing all line items and fee placeholder rows, clear all cells in
-  columns B–K (cols 2–11) for rows `(last_written_row + 1)` through `67`. Set to `None`.
-
-**Touches.**
-- `scripts/order_formatter.py`
-- `tests/test_order_formatter.py` — add tests: output has exactly one sheet;
-  no `#NAME?` errors beyond last written row (`@pytest.mark.integration`)
-- `docs/runbook.md` — update §"Understanding the output": rows beyond fee
-  placeholders are now blank, not VLOOKUP
-
-**Do not generate.**
-- Changes to any other script
-- Changes to `schema.py`
-
-**Done-check.**
-```bash
-cd aetheris-agents/boxy-pipeline
-pip install -r requirements.txt -q
-python3 -m pytest tests/test_order_formatter.py -v
-python3 main.py \
-  --drawings data/samples/Joey-_Kitchen_2D_Plans_V2.pdf \
-             data/samples/Joey-_Kitchen_Plan_V2.pdf \
-  --catalog  data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
-  --template data/samples/Updated_Boxy_MSRP_Sales_Order_Form.xlsx \
-  --project  Joey_Kitchen_V2 \
-  --upper-finish "2001:Ivory White:2000" \
-  --lower-finish "2004:Mingo Oak:2000"
-python3 -c "
-import openpyxl
-wb = openpyxl.load_workbook('output/Joey_Kitchen_V2_order_form.xlsx')
-print('Sheets:', wb.sheetnames)
-assert wb.sheetnames == ['2000 Order Form'], 'Expected exactly one sheet'
-ws = wb.active
-errors = [(r, c, ws.cell(r,c).value) for r in range(31,68) for c in range(1,12)
-          if ws.cell(r,c).value and '#NAME?' in str(ws.cell(r,c).value)]
-assert not errors, f'#NAME? errors found: {errors}'
-print('OK — one sheet, no #NAME? errors')
-"
-```
-
-**Claude-code prompt.**
-> Fix two output defects in `scripts/order_formatter.py` per
-> `docs/backlog-2026-06.md §BL-010`.
->
-> 1. After loading the template workbook with openpyxl, delete all sheets
->    except `"2000 Order Form"` before writing any data.
-> 2. After writing all line items and fee placeholder rows, clear all cells
->    in columns B–K (cols 2–11) for rows `(last_written_row + 1)` through
->    `67` by setting each cell's value to `None`.
->
-> Update `tests/test_order_formatter.py`:
-> - Unit test: output workbook has exactly one sheet named `"2000 Order Form"`.
-> - Integration test (`@pytest.mark.integration`): no cell in rows 31–67
->   contains a string with `"#NAME?"` after a full pipe run.
->
-> Update `docs/runbook.md` §"Understanding the output": replace the note
-> about rows 42–67 retaining VLOOKUP formulas with a note that all rows
-> beyond the fee placeholders are blank.
->
-> Run the done-check from §BL-010 and include actual output (including the
-> Python verification snippet result) in your review packet.
 
 ### BL-011 — Extract shared parsing helpers into `scripts/parsing_utils.py` (#52)
 **Status:** OPEN
@@ -2486,6 +2337,8 @@ reads as milestone-only if it currently does.
 deliberately — filing it inside would have re-staled the backlog row the boundary had just
 pinned and reopened a WARN the boundary existed to close).`
 
+**STANDING, 2026-09-14** (R40). The deferral is spent: its "next batch close" trigger has fired, so nothing defers it now. Changes only by being taken.
+
 ---
 
 ### BL-103 — The store may hold documents the manifest does not describe, and "remove all" is undefined against them (#TBD)
@@ -2528,6 +2381,8 @@ rather than leaving the reader the fork it leaves today.
 
 `Source: m3-cloudcost export boundary, 2026-08-05 — post-upload verification, 26 documents
 against a 25-row manifest; document identified by the human at filing.`
+
+**Still open, 2026-09-14 (closing sweep).** Unmet: the first clause, both halves — `claude/aetheris-agents--inbox-brief.md`'s writer is still inferred, and whether it persists is recorded nowhere. The other three clauses are met: `docs/project-knowledge-manifest.md` (the `claude/` namespace paragraph, :62–:69), and `prompts/bl-002-refresh-project-knowledge.md` Step 5's remove instruction (:233–:235) and post-upload check 3 (:292).
 
 ---
 
@@ -3588,6 +3443,8 @@ packet carries it; nothing in the repository does, which is the gap the row hold
 in docs/milestones/hc-consolidation.md §Ticket set and recorded on no row here. The work is hc-d's;
 only the record was missing.`
 
+**Still open, 2026-09-14 (closing sweep).** Unmet: face 1 — reviews remain session artifacts. R2 (`docs/milestones/hc-consolidation.md`) binds `hc-*` tickets only, and no later mechanism retains a round's findings; the 2026-08-19 append above is an instance after R2.
+
 ---
 
 ### BL-134 — verify the seven comment-anchored census claims, and hand-classify the eight the sweep could not reach (#TBD)
@@ -3727,6 +3584,8 @@ itself: `cloudcost/m2-milestone.md` §H — *Per-provider reporting; no cross-pr
 roll-up (ratified 2026-07-30, rev 3)*. Filed at the human's direction at the **m5-D2**
 ruling, where H's consequent was named as neither decided nor owned —
 `cloudcost/m5-n1-compose.md` §Ratified decisions, m5-D2's *What this does not decide*.`
+
+**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
 
 ---
 
@@ -4263,48 +4122,7 @@ sets above are derived, not counted by eye. Filed gc t3, 2026-08-12, per D4. Rul
 2026-08-12 at the gc t3 review; the ruling is recorded here rather than in the round document
 because it is a fact about this file, and the round that surfaced it does not own it.`
 
----
-
-### BL-146 — a row's status marker can be a quotation of a different row's disposition (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Census items:** n/a (surfaced by gc t1's row census) · **Contract:** none
-**Size:** S · **Priority:** low–medium
-**Section:** process / backlog hygiene (`docs/backlog-2026-06.md`)
-
-Filed 2026-08-12 at gc t3. **This row poses the question; it does not settle it.**
-
-**What happened.** gc t1's status extraction classified **BL-137** as closed. It is not. The marker
-it matched is at `:8155`, and it is a **quotation of a row in `cloudcost/m2-milestone.md`** — BL-137's
-body quotes that row's disposition, in the same bold-marker form a row uses for its own status, as a
-lead for BL-137's own census. BL-137 was filed 2026-08-10 and is open. The extraction was corrected
-by hand and the exclusion recorded; the point of this row is that **the correction was a human
-judgement, not something the file's structure made available**.
-
-*(The offending marker is described above rather than reproduced. Quoting it literally — as the
-first draft of this row did — made **this** row trip the same extraction, which the done-check
-caught. That is the hazard demonstrating itself, and it is recorded here rather than left armed: a
-row that reads as closed to any marker-keyed reader is not a row that stays open.)*
-
-**Why the existing rules do not cover it.** Any status extraction keyed on bold markers inside a row
-body will read a quoted marker as the row's own. There is no syntactic difference between a row
-saying it is closed and a row quoting something else that is closed. The same trap caught a second
-row from the other direction — **BL-014**, whose body carries no status at all and which a
-span-bounding defect briefly credited with a marker from a table about other rows.
-
-**Determine whether row status should be structurally distinguishable from quoted text** — a
-dedicated field, a fixed position, or a rule that quoted dispositions are fenced. Any answer must
-survive the file's actual practice, in which rows quote other rows' dispositions routinely and
-usefully; the goal is not to stop that.
-
-**Done when:** either a structural convention is stated and the existing rows conform to it, or the
-hazard is recorded as accepted with the reason, so a later extraction author is warned rather than
-surprised.
-
-**Costs:** S. The population is small — one confirmed false positive across 143 rows — but the cost
-of the failure is a wrong closed/open answer that reads as confident.
-
-`Source: gc t1's row census, 2026-08-11; the BL-137 false positive and the BL-014 span defect are
-recorded at docs/milestones/gc-t1-implementation-notes.md §I. Filed gc t3, 2026-08-12, per D4.`
+**Still open, 2026-09-14 (closing sweep).** Unmet: the first and third clauses — the `## Suggested order` table is still in the file with its ✔ marks, neither retired nor derived, and its sequencing opinion has no disposition. The second clause is met by the marker under that heading and the file's header.
 
 ---
 
@@ -5138,6 +4956,8 @@ list is empty.
 docs/milestones/hc-consolidation.md. Row created in the same commit, per R23's own stamp. The five
 findings that prompted it are BL-145–BL-149, which stand as separately filed.`
 
+**RECORD-ONLY, 2026-09-14** (R40). An R23 collector whose Done-when is an unmade system decision is a record, not work. Changes only if a separate row is filed to take that decision.
+
 ---
 
 ### BL-151 — standing: code findings, append-only (#TBD)
@@ -5673,6 +5493,8 @@ them; two of those are seeded above, and the third entry is a finding of t2b's o
 recovered one — the dropped third is not reconstructed here, and this note says so instead of
 letting the seed count imply it was.`
 
+**RECORD-ONLY, 2026-09-14** (R40). An R26 collector whose Done-when is an unmade system decision is a record, not work. Changes only if a separate row is filed to take that decision.
+
 ---
 
 ### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place (#TBD)
@@ -6005,6 +5827,8 @@ producer it is true of. Verified at agents `0e5e0d2`.]`
 commit. Filed at the reviewer's direction rather than left as packet prose, per the standing rule
 that a deferred finding gets a backlog row in the round it is deferred — and filed as its own row
 rather than into BL-151, which is for defects that break nothing today.`
+
+**Still open, 2026-09-14 (closing sweep).** Unmet: ruling 1's closing condition — a failed credential gate does not mark the run directory as not the current run; every credential branch of the cloudcost arm in `../aetheris/scripts/sprint.sh` only `fail`s and `exit 1`s before the clear. The stamp itself landed at `0e5e0d2`/`c8aa4e3`.
 
 ---
 
@@ -7901,6 +7725,8 @@ not yet fired, and the population is not enumerated here — enumerate it in the
 rather than trusting that the gate would have caught the rest, since it catches each only on the
 day its own threshold passes.
 
+**Still open, 2026-09-14 (closing sweep).** The Done-when is met at `390569f` (option 2, reference date pinned), which closed **BL-205** — the same defect filed three days later; neither row cites the other. Unmet: the sweep owed with the fix. BL-205's close says every other cross-stage test pins a reference date; `cloudcost/tests/test_fetch_linode.py`'s seam test (`test_the_normalized_inventory_is_readable_by_the_shared_rule_engine`) does not. Its assertion is date-independent, so the sweep's population is likely empty, but the claim recorded against it is false.
+
 ---
 
 ### BL-191 — `drive/runbook.md` documents two folder-ID env vars nothing has read since `72367ac`, and the sprint's drive arm gates on both (#TBD)
@@ -8660,6 +8486,8 @@ survives.
 Rig hint table, the sprint arm, the spec's example plan, the matrix rows and the
 guide's pattern. The technical brief the milestone doc mentions is claude-ui's and is
 not in either tree; the milestone doc is the citable source.`
+
+**STANDING, 2026-09-14** (R40). Its blocking target, `m-payslip-release`, is a draft (`docs/milestones/m-payslip-release.md:3`), so not a live blocking target. Changes when that milestone is approved.
 
 ### BL-196 — the export procedure says nothing about upload ROUTES: a route that namespaces a new bare filename put two manifest-tracked documents under `claude/`, where neither post-upload check could see them (#TBD)
 **Status:** OPEN
@@ -9461,6 +9289,8 @@ read from the failure's own stacktrace, and `ANTHROPIC_API_KEY` was re-checked a
 declaration line and the assertion line are recorded separately because the ExUnit header
 names the first and the stacktrace the second, and BL-208's report conflated them.`
 
+**DEFERRED, 2026-09-14** (R40). Waits on BL-224's retirement of m04's extractor. Changes when BL-224 lands.
+
 ---
 ### BL-210 — the Anthropic adapter discards the text block on tool-calling responses (#TBD)
 **Status:** OPEN
@@ -9820,73 +9650,6 @@ against a positive control of five hits in `candidate.ex`.`
 
 ---
 
-### BL-220 — a recorded eval-suite split does not survive a store round-trip (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D8
-**Size:** S · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/store.ex`, `../aetheris/lib/aetheris/eval/`)
-
-`Eval.Suite` gained `:split` at m14 T8. `eval_suites` has five columns and no split column, and
-`Store.row_to_eval_suite/1` does not set the field, so a suite reloaded from the store comes back
-`split: nil` — `split_status/1` `:none`, holding nothing out. Verified at T8 by a round-trip probe
-on an in-memory test DB.
-
-The failure is safe rather than silent at the struct level: the reload reports no split rather than
-a wrong one. It is **not** safe at the gate level. m14 T9 cannot distinguish "no split was ever
-recorded" from "the split did not survive the reload" — both read `:none` from the struct alone —
-so a gate that reloads its suite silently runs with nothing held out and reports a clean result.
-That is the **Silent-wrong-answer** class, in the component whose whole purpose is holding the same
-tasks out across runs.
-
-**Sequencing.** Must land before m14 T9. Ruled at the T8 review.
-
-**Done when.** A recorded split survives insert and reload with both sides intact and in order; a
-suite that never had one still reads `:none`; and a test asserts the two are distinguishable after
-a round-trip, not merely that the happy path works.
-
-`Source: m14 T8, 2026-09-12, harness `1c459cd`. Citations re-resolved at that commit: the DDL is
-`lib/aetheris/store.ex:965`–`:971` (five columns), the insert `:2066`, the three read paths `:2087`,
-`:2101` and `:2115`, and `row_to_eval_suite/1` `:2125`. `lib/aetheris/eval/store.ex` carries no
-second path — `insert_suite/1`, `get_suite/1`, `get_suite_by_name/1` and `list_suites/0` (`:81`,
-`:89`, `:97`, `:103`) delegate to `Aetheris.Store`. The struct's own moduledoc records the gap under
-§Not persisted (`lib/aetheris/eval/suite.ex:63`–`:70`).`
-
----
-
-### BL-221 — eval runs carry no availability marker, so a baseline can be contaminated by skill-available runs (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D8
-**Size:** M · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/eval/`)
-
-`Runner.run_task/2` stores every eval run under the task's own id, with nothing recording whether a
-skill entry was available to that run. A later `Baseline.lock/2` over a held-in task pulls those
-runs into the no-skill baseline. `AB.run_forked/5` executes through `Runner.run_task/2`, so both
-arms of control 1 land the same way.
-
-**Why high rather than medium.** D8's control 1 compares an arm with the entry available against an
-arm without. If the "without" baseline silently contains runs that had it, the comparison measures
-nothing and still reports a number — **Silent-wrong-answer**, in the measurement m14's P2 exists to
-produce.
-
-**Sequencing.** Must land before any real `Gate.run/3`, not merely before m14 T10. A gate run
-against a contaminated baseline is worse than none, because it produces a figure that will be
-cited.
-
-**Done when.** An eval run records whether a skill entry was available to it; `Baseline.lock/2`
-selects on that; and a test asserts a mixed-availability task cannot produce a no-skill baseline
-containing available runs.
-
-`Source: m14 T9, harness `6633a4b` (pushed); authorised by the arbiter at the T9 review. Citations
-resolved at that commit: `run_task/2` is `lib/aetheris/eval/runner.ex:47`, persisting at `:193`
-(scored) and `:219` (failed); the `eval_runs` DDL is `lib/aetheris/store.ex:980`–`:994`, no
-availability column; `Baseline.lock/2` is `lib/aetheris/eval/baseline.ex:110`, reading every run for
-the task at `:113` and taking the K most recent at `:118`; `AB`'s executor calls `Runner.run_task`
-at `lib/aetheris/eval/ab.ex:112`. T9's notes name the gap at
-`docs/aetheris/milestones/m14-t9-implementation-notes.md:58`–`:62`.`
-
----
-
 ### BL-222 — a skill row can be INSERTED already approved, bypassing the gate (#TBD)
 **Status:** OPEN
 **Kind:** defect · **Contract:** D7
@@ -9920,72 +9683,6 @@ commit: `insert_skill/1` is `lib/aetheris/store.ex:132`, whose only guard is
 T11's notes name the gap at `docs/aetheris/milestones/m14-t11-implementation-notes.md:51`–`:55`.`
 
 `approve_skill/3` became `approve_skill/4` at BL-223 (harness `017f4e2`); this row's text predates that. (Recorded at the BL-223 review, 2026-09-13.)
-
----
-
-### BL-223 — approved skill bodies have no file substrate, so D2's served path points at nothing (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D2, D9, D10; `../aetheris/docs/aetheris/determinism-contract.md` §2 *Tool surface*, §4
-**Size:** M · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/skill/`, `../aetheris/lib/aetheris/store.ex`)
-
-D2 says index injection serves `(id, name, description, path)` and the body is read on demand. No
-body file exists. Bodies live in the `skills` table's `prompt_template` column; the table carries no
-path, and no m14 ticket creates one. m04 kept the body in the table because it injected content
-directly.
-
-m14 T12 cannot land without this: it is the ticket that serves the path. T13 inherits it —
-consultation is measured as `read_file` events under the skills path, so with no files there are no
-reads to count. P3 is blocked entirely.
-
-**RULED at the T12 scope check, 2026-09-13. The row implements this; it does not reopen it.**
-
-The injector never writes a body file. A file written at run start is not git-tracked, so it is
-outside the tool surface BL-197 declared (git-tracked files under `sandbox_path` plus
-`tool_surface_extras`). The determinism contract §4 places anything outside the tool surface outside
-the fork guarantee, so an injector-written body either escapes `tools_hash` — two runs with identical
-hashes reading different content, which is the failure the hash exists to prevent — or forces the
-surface to widen at runtime, which is the same as having no declared surface. m14 §6's
-machine-written-documents non-goal agrees, but the contract argument stands on its own.
-
-Bodies are human-committed files: git-tracked under the agent root, declared in
-`tool_surface_extras`, read through `read_file` so the read is a recorded event. Approval remains a
-human decision (q3) and now has a human artifact attached to it.
-
-**Done when.**
-- A skills row can name its body file, and the name is set as part of approval rather than at
-  insert — an unapproved row has no served body. m14 T11 made approval one-way in the store's own
-  statement; whatever carries the path must not reopen that.
-- An approved row whose file is absent, or present but outside the declared tool surface, is NOT
-  served and the omission is visible — never served as a path that fails to read, and never silently
-  dropped from the catalog. Absent is unknown, and a catalog that quietly omits an entry is the same
-  silent-wrong-answer class as one that serves a dead path.
-- A test asserts the surface membership check, not merely that the file exists on disk.
-- The relationship to `content_hash` is decided and stated: whether the row's hash covers the file,
-  the table's prose, or both, and what happens when they disagree.
-
-**Do not generate.** Any injector-side write. Any change to m14 T12's serving design beyond giving it
-a substrate to serve — T12 is written and waiting.
-
-`Source: the m14 T12 scope check, 2026-09-13, at harness `737a8b4` (pushed); ruled by the arbiter.
-Citations resolved at that commit: the `skills` columns are the `INSERT` at
-`lib/aetheris/store.ex:1333`–`:1337`, none a path; the tool surface is
-`docs/aetheris/determinism-contract.md` §2 *Tool surface* and `lib/aetheris/run_config.ex:64`–`:67`;
-the outside-surface clause is §4 *Anything outside the tool surface*; T13's consultation measure is
-`docs/aetheris/milestones/m14-skills-auto-extraction.md` §4 T13 *Scope*.`
-
-**Corrected at the BL-223 review, 2026-09-13.** This row's ruling said a body is "declared in
-`tool_surface_extras`". That is over-specific: the invariant is membership of the run's DECLARED
-TOOL SURFACE, which `tools_hash` covers by both branches — git-tracked under `sandbox_path`, or
-named in `tool_surface_extras`. A body tracked under `sandbox_path` is in the hash and is a
-committed human artifact, so requiring an extras entry adds ceremony with no determinism content.
-`Skill.Body.resolve/2` as implemented checks surface membership and is correct; this row's wording
-was not. The Done-when's "outside the declared tool surface" already read correctly.
-
-Approval remains stricter than resolution by design: `approval/2` requires the file to be
-git-tracked under `:root` with no extras, because the body must be a committed artifact; resolution
-requires only that the run's surface covers it. Both tighten safely. Implemented at harness
-`017f4e2`.
 
 ---
 
@@ -10124,74 +9821,6 @@ not serve.`
 
 ---
 
-### BL-229 — `use_case` reaches a run through no path but a hand-written agent file (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D2, D7
-**Size:** M · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/execution/tool/spawn_agent.ex`, `../aetheris/lib/aetheris/api/run_policy.ex`)
-
-`RunConfig` gained `use_case` at m14 T12, and `nil` serves nothing — correctly, absent is unknown. Two
-producers never set it, so their runs are served nothing while appearing to be ordinary runs:
-
-- `spawn_agent` builds child configs without it. Sub-agents doing the repeated work of a fan-out are
-  exactly the population an extracted skill would help.
-- The playground API's `RunPolicy` builds its sanitized map key by key, and `use_case` is not a key.
-
-One row because it is one defect: `use_case` fails to propagate everywhere except where a human types
-it. Fixing one producer and not the other leaves the same hole.
-
-**Done when.** A spawned child inherits its parent's `use_case` unless overridden; the playground API
-accepts one and passes it through; a test per producer asserts the run's recorded config carries it.
-Inheritance is a decision the implementing round states, with why inherit rather than require.
-
-`Source: m14 T12, harness `95f3ccb` (pushed); named in T12's notes under Exposures. Citations resolved
-at that commit: `build_child_config/4` is `lib/aetheris/execution/tool/spawn_agent.ex:122`, its
-`%RunConfig{}` at `:126` with no `use_case`; `build_sanitized/2` is `lib/aetheris/api/run_policy.ex:418`,
-consumed by `RunConfig.from_map/2` at `lib/aetheris/api/playground_router.ex:90`, which reads
-`use_case` at `lib/aetheris/run_config.ex:194`. **Deviation from the filing prompt:** it named the
-payslip orchestrator as a nine-child spawner; at agents `8a2737e` that file's `tools` is
-`["run_command"]` (`payslip/agents/payslip_orchestrator.exs:21`) and it spawns nothing. The
-`spawn_agent` declarers there are `eduloka/agents/eduloka_orchestrator.exs:143`,
-`provenance/agents/classification_orchestrator.exs:41` and `provenance/agents/zip_orchestrator.exs:41`.`
-
-**Third producer, appended at the BL-221 review, 2026-09-13.**
-`Runner.build_run_config/3` sets neither `use_case` nor `tool_surface_extras`, so no
-eval run is served anything — including Gate's held-in 'with entry' runs and
-control 1's arm B, whatever `make_available` does to the task template. BL-221's
-marker reports those runs truthfully as `:unavailable`; the point is that the
-'with' arm cannot be made available at all.
-
-This producer is what blocks m14 P2's discharge: the discharge is one real
-`Gate.run/3`, and the gate cannot serve an entry through Runner as it stands.
-Cited at harness `ab98249`.
-
-`Citations resolved at harness `ab98249` (pushed): `build_run_config/3` is
-`lib/aetheris/eval/runner.ex:268`, its `%RunConfig{}` at `:272`–`:288` with neither field; Gate's
-held-in arm applies `make_available` at `lib/aetheris/skill/gate.ex:448` and runs through
-`Runner.run_task/2` (default at `:442`); control 1's arm B is `with_entry` at `:365`, in `fork_one/5`
-(`:363`).
-The append was not amended into the row because the row is pushed.`
-
-Done-when corrected at the BL-229 review, 2026-09-13. The clause 'a spawned
-child inherits its parent's use_case unless overridden' is wrong, and the
-implementation is right to have no override. The only channel an override could
-arrive through is the model's spawn_agent call, and the model is not the party
-that chooses which approved entries its own run is served — the same boundary
-that keeps tool_surface_extras off the playground's client field list. Read the
-clause as: a spawned child inherits its parent's use_case, with no per-spawn
-override. Implemented at harness `c2c7099`.
-
-`Citations resolved at harness `c2c7099` (pushed): the no-override statement is
-`lib/aetheris/execution/tool/spawn_agent.ex:15`–`:22`; `tool_surface_extras` is stated not to be a
-client field at `lib/aetheris/api/run_policy.ex:29`. Appended, not amended: the row is pushed.`
-
-**Sequencing void, 2026-09-14.** m14's P2 kill criterion fired at harness `1c717cf` (pushed), so
-there is no discharge run for this row to block, which is what the sentence above claims it does. The
-defect stands and its priority is unchanged; what is void is the deadline, not the row. Recorded per
-R40: a deferral is recorded on the row it defers.
-
----
-
 ### BL-230 — `broadcast_message_test.exs:258` is a timing race between two agents (#TBD)
 **Status:** OPEN
 **Kind:** defect
@@ -10227,42 +9856,6 @@ injection as the mechanism.
 `Source: m14 T12, harness `95f3ccb` (pushed). Citations resolved at that commit: the doc's `:47`
 (re-injection into the system prompt), `:79` (`Aetheris.Skill.Injector.inject/2` example) and `:115`
 (`inject/2` prepends skill context).`
-
----
-
-### BL-232 — `AB.run_forked/5` does not fork: control 1's arms run from scratch (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D8
-**Size:** L · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/eval/ab.ex`, `../aetheris/lib/aetheris/eval/runner.ex`)
-
-D8's control 1 *"forks both variants from `fork_run_id` at `fork_step`, sharing the common prefix"*.
-`AB.run_forked/5` sets `fork_from` and `fork_step` on each arm's template and `Runner` copies them
-into the `RunConfig`, but only `fork_context` builds a prefix and `Runner` never sets it, so both arms
-start from nothing. Established by reading the code at the BL-221 round, not by a run.
-
-**Why high.** m14 T9's gate harness was built and reviewed against this executor. Its structure is
-sound; what it measures is not what D8 specifies. Two arms run from scratch differ by every source of
-run-to-run variance, not only by the entry's availability, which is what sharing a prefix exists to
-remove. A cost delta measured this way is noisier than the effect it looks for, and nothing says so
-where the number is produced. Second consequence: no fork prefix can carry a served body into an arm,
-so the "with entry" arm cannot inherit one.
-
-**Done when.** `run_forked/5` builds the shared prefix D8 specifies, or the gap is closed the other
-way — the function is renamed and D8's control 1 is re-specified with the arbiter's ruling on the
-record. A function whose name asserts a property it does not have is not a resolution.
-
-`Source: the BL-221 review, 2026-09-13; harness `ab98249` (pushed), named in
-`docs/aetheris/milestones/bl-221-implementation-notes.md` under Exposures. Citations resolved at that
-commit: `run_forked/5` is `lib/aetheris/eval/ab.ex:77`, documented at `:69` as sharing the prefix;
-`apply_fork/3` (`:130`) puts `mode`, `fork_from` and `fork_step` at `:133`–`:135`;
-`build_run_config/3` (`lib/aetheris/eval/runner.ex:268`) copies the two at `:285`–`:286` and sets no
-`fork_context`. The prefix is read only where `fork_context != []`: `lib/aetheris/agent/server.ex:632`
-and `lib/aetheris/execution/loop.ex:71`. Its one builder is `Fork.from_step/3`
-(`lib/aetheris/execution/fork.ex:40`, `fork_context` at `:186`), called from `lib/aetheris.ex:74` and
-`lib/aetheris/cli/commands/fork.ex:115`, never from `Eval`. D8's wording is quoted at
-`docs/aetheris/milestones/m14-skills-auto-extraction.md:147`; Gate defaults to this executor at
-`lib/aetheris/skill/gate.ex:341`.`
 
 ---
 
@@ -10407,6 +10000,8 @@ every other status at `lib/aetheris/skill/body.ex:135`–`:136`. D7's "Only appr
 by the injector" is `docs/aetheris/research/bl-008-synthesis-2026-08.md:117`, D8's control 1 `:126`;
 T9's deferral is `docs/aetheris/milestones/m14-t9-implementation-notes.md:16`.`
 
+**Still open, 2026-09-14 (closing sweep).** Unmet: *"the serving path takes an explicit entry list only from the gate and from nowhere else"* — `Runner.run_task/2` accepts `:skill_measurement` from any caller (`../aetheris/lib/aetheris/eval/runner.ex:67`), and `bl-236-implementation-notes.md:28` records that a test or hand-written `.exs` can build one. The other four clauses hold at harness `901f7d1`.
+
 ---
 
 ### BL-237 — `baseline_test.exs` has been red since BL-221, invisible behind its tag (#TBD)
@@ -10463,40 +10058,6 @@ commit: rule 15 is `CLAUDE.md:429`; `build_run_config/3` is `lib/aetheris/eval/r
 `c2c7099`), `max_steps` by `Map.fetch!` at `:283`, `parse_mode/1` raising at `:312`; `from_map/2` is
 `lib/aetheris/run_config.ex:161`, `mode` by `String.to_atom/1` at `:165`, `max_steps` defaulting to
 10 at `:169`.`
-
----
-
-### BL-239 — the held-in arm's comparison differs by more than the candidate (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D8
-**Size:** M · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/skill/gate.ex`, `../aetheris/lib/aetheris/eval/baseline.ex`, `../aetheris/lib/aetheris/skill/injector.ex`)
-
-BL-236 serves a measured run the use_case's eligible catalog plus the listed candidate, so control 1's
-arms differ by exactly the candidate. The held-in arm does not have that property. It compares a
-measured run (catalog + candidate) against a baseline `lock/2` builds only from runs BL-221 marks
-`:unavailable` — runs with no `skill_injected` event, which carry no catalog at all. Where the use_case
-has any approved entry, the held-in comparison differs by the whole catalog plus the candidate.
-
-**Why high.** The held-in arm exists to reject a candidate that regresses tasks outside the held-out
-split, and a held-in regression rejects regardless of what control 1 shows. A regression it attributes
-to the candidate may belong to the catalog, and an improvement may mask one.
-
-Distinct from BL-234, which is historical contamination of baselines locked before BL-221; this is a
-structural mismatch between what a measured run carries and what its baseline carries.
-
-**Done when.** The held-in comparison's two sides differ by the candidate alone — either the baseline
-is locked from runs carrying the same catalog, or the measured held-in run carries only the candidate —
-and a test asserts the difference. The resolution states which direction and why; both change what a
-baseline means.
-
-`Source: the BL-236 review, 2026-09-13, by the round that created the condition; harness `901f7d1`
-(pushed). Citations resolved at that commit: `serve_measured/3` serves the eligible catalog beside the
-listed entries at `lib/aetheris/skill/injector.ex:122`–`:136`; the held-in arm is given the same
-measurement at `lib/aetheris/skill/gate.ex:459` and compared against `EvalStore.get_latest_baseline/1`
-at `:479`, documented at `:62`–`:64`; `lock/2` keeps only `:unavailable` runs at
-`lib/aetheris/eval/baseline.ex:140`; `:unavailable` is "no `skill_injected` event" at
-`lib/aetheris/eval/run.ex:75`–`:80`.`
 
 ---
 
@@ -10562,62 +10123,6 @@ itself: the held-in arm calls `Runner.run_task/2` on the task's template unmodif
 (`lib/aetheris/skill/gate.ex:458`–`:459`, `:487`), and a prefix is built only for a template naming
 `fork_from` (`runner.ex:146`), so the held-in arm inherits it only for a task whose stored template
 itself names one.`
-
----
-
-### BL-242 — the frequency prior compares whole-run sequences against segment-sized candidates (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D3, D8
-**Size:** L · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/skill/frequency_prior.ex`, `../aetheris/lib/aetheris/skill/gate.ex`)
-
-`FrequencyPrior` computes the dominant tool sequence per whole run. `Skill.Candidate` emits one candidate
-per segment. `re_encodes?/2` tests equality between the two, so a segment-sized candidate equals the
-dominant only when a whole run is a single segment. The four live `payslip` rows normalise to
-`[run_command]`, `[spawn_agent]`, `[wait_for_all]` and `[]`; their source run normalises to
-`run_command → spawn_agent → wait_for_all`.
-
-On a multi-segment corpus every non-empty candidate is therefore `:distinct` and every empty one is
-`:no_sequence`. Control 2 cannot reject there, and cannot be made to by tuning its constants: they
-decide whether a dominant exists, not what unit it is.
-
-Neither half is wrong at its own granularity. D8 specified the prior when m04's extractor produced
-whole-run skills; m14 D3 replaced that with segmentation, and nothing re-derived the prior against the
-new shape.
-
-**Why high.** P2's kill criterion is "no candidate beats the frequency prior across the eval suite".
-With control 2 structurally abstaining, that verdict rests on control 1 alone, and a discharge run would
-report two controls where one ran. T9's Do-not-generate exists because "a gate that validates on
-control 1 alone is the prior art's named failure".
-
-**Done when.** Control 2 compares like with like — the prior is computed over the same unit a candidate
-describes — and a test asserts a candidate that DOES re-encode its scope's dominant pattern, on a corpus
-of multi-segment runs, is rejected. That test is the row's point. State whether `min_corpus_runs` and
-the majority rule still hold at the new granularity; they were unmeasured at the old one.
-
-Must land before m14 P2's discharge.
-
-`Source: the BL-239 review, 2026-09-13; harness `8ea4194` (pushed). Established from code, not from a
-run. Citations resolved at that commit: one sequence per whole run at
-`lib/aetheris/skill/frequency_prior.ex:149`–`:156`, counted at `:94`–`:97`; `re_encodes?/2` at
-`:121`–`:122`; the constants at `:2` and `:158`–`:164`. One candidate per segment is `extract/2` at
-`lib/aetheris/skill/candidate.ex:104`, its `tool_sequence` bounded to the segment at `:191`. Control 2 is
-`lib/aetheris/skill/gate.ex:316`–`:333`, rejecting only at `:517`. D3 is
-`docs/aetheris/research/bl-008-synthesis-2026-08.md:80`, D8's control 2 `:127`–`:129`; m14's whole-run →
-segment row is `docs/aetheris/milestones/m14-skills-auto-extraction.md:44`, P2's kill `:425`, T9's
-Do-not-generate `:484`–`:486`. The four rows are the `use_case = 'payslip'` rows of `priv/aetheris.db`'s
-`skills` table, all `candidate`, all citing `payslip-orch-5Jhdvw`, whose `tool_called` events read
-`run_command`, `spawn_agent` ×3, `wait_for_all`. **Deviation from the filing prompt:** it said no input
-can make control 2 reject. One can: a corpus whose runs are one segment each, which is T10's own fixture
-(`test/aetheris/skill/gate_test.exs:28`, the rejection test at `:145`) — every corpus run there is a
-single-tool sequence a hand-built candidate can equal. The claim holds for multi-segment corpora, which
-is what segmentation exists to produce. Nor does the live table have a dominant: one source run is a
-thin corpus, so the sequence above is that run's, not a computed prior.`
-
-**Sequencing void, 2026-09-14.** m14's P2 kill criterion fired at harness `1c717cf` (pushed), so
-there is no discharge run for this row to precede, which *"Must land before m14 P2's discharge"*
-requires. The defect stands and its priority is unchanged; what is void is the deadline, not the row.
-Recorded per R40: a deferral is recorded on the row it defers.
 
 ---
 
@@ -10788,3 +10293,53 @@ membership is even evaluated; `assess_control_2/2` maps `true` to `:re_encodes` 
 `lib/aetheris/skill/gate.ex:337`–`:338`; the `control_2` type is `outcome`, `insufficiency`,
 `candidate_sequence` and `prior` at `:143`–`:148`, and `decide/2` turns it into the single reason
 `:control_2_re_encodes` at `:524`.`
+
+### BL-248 — the ETXTBSY / `spawn_agent` worker-sharing question is answered in code and recorded nowhere (#TBD)
+**Status:** OPEN
+**Kind:** documentation · **Contract:** none
+**Size:** S · **Priority:** medium
+**Section:** both repos (`ROADMAP.md` §Cross-repo dependencies in each; agents `ROADMAP.md` §uc-ingestion)
+
+Both roadmaps' cross-repo tables carry *"does a spawned sub-agent re-copy the worker binary?"* as
+open, and uc-ingestion's phase 1 is gated on it. The code answers it: no. The worker binary is
+copied only by the compile task. A spawned child is started in-process under its own
+`Agent.Supervisor`, which starts the child's own worker client; that client `Port.open`s the
+existing priv binary. That is an exec, which a busy text file permits, not a write, which it does
+not. A child with `tools: []` or the stub provider gets no worker at all.
+
+ETXTBSY remains real for a nested `mix aetheris run` inside a run, because Mix recompiles the
+project first and the compile task's copy hits the binary the outer run holds open. That is a
+different question and stays open; agents `CLAUDE.md` §Learning — rig-p9 records it.
+
+**Done when.** The answer is recorded where the question is asked: both cross-repo tables, with the
+citations; uc-ingestion phase 1 no longer names it as a gate; and the nested-mix case is stated
+separately so the answer is not read wider than it goes.
+
+**Deviation from the filing prompt.** Three of its statements did not survive re-resolution.
+(1) The Server's loop does not obtain or start the worker. `Agent.Supervisor` starts it beside the
+Server, and the Server looks it up in the Registry. (2) No document records "two live runs" as
+corroboration. The store holds such pairs, and the two below are the best. (3)
+`../aetheris/agents/skill_extractor.exs` is not an instance of a nested mix. At `:29`–`:35` it
+explains that it avoids one. The recorded instances are the runs `lsjxug` and `run_O0_s9w`.
+
+`Source: the triage packet's item 3(c) C1, 2026-09-14; re-resolved before filing at harness
+`ee7f529` and agents `e6f0227`, both pushed. The only copy is `copy_binary/3`'s `File.copy!` at
+`lib/mix/tasks/compile/aetheris_worker.ex:46`, registered as a compiler at `mix.exs:10`;
+`git grep -nE 'File\.(copy|cp|cp_r|copy!|cp!|cp_r!|rename|rename!|ln|ln_s)|:file\.(copy|rename)' -- lib mix.exs`
+returns that line and three trajectory-file renames, with the same pattern returning 1 on the
+compile task file as a positive control. `spawn_agent` starts the child at
+`lib/aetheris/execution/tool/spawn_agent.ex:90` through `DynamicSupervisor.start_child` at
+`lib/aetheris/agent/dynamic_supervisor.ex:34`–`:36`; `Agent.Supervisor` adds `worker_child_spec/1`
+beside the Server at `lib/aetheris/agent/supervisor.ex:44`–`:55`, with no worker for `stub` or
+`tools: []` at `:62`–`:63`; the client resolves `priv/worker/aetheris_worker` and
+`Port.open({:spawn_executable, …})` at `lib/aetheris/worker/client.ex:241`–`:243`. Live corroboration,
+from `priv/aetheris.db`, a local store in neither tree: `payslip-orch-Nl32Vw`'s nine children all
+finished `done` inside the parent's window, and the run is cited at
+`docs/aetheris/milestones/m14-t4-implementation-notes.md:67`; `docbuilder-ctx-orch-WRNyiQ`'s spawned
+child `run_O0_s9w` ran with its own live worker and then hit `File.CopyError … text file or
+pseudo-device busy` from `aetheris_worker.ex:46` on a nested `mix aetheris run`. That one pair shows
+both halves: 4 `events` rows match `pseudo-device busy` for that run. Where the question is asked:
+`../aetheris/ROADMAP.md:207`; `ROADMAP.md:113`, `:146`, `:152`, `:163`; the ingestion brief
+`../aetheris/docs/aetheris/research/universal-ingestion-extraction-pipeline-2026-06.md:317`–`:324`
+and open question 1 at `:401`–`:406`. The brief poses it as share-or-copy, and the code does neither:
+each child gets its own worker process from the same binary.`

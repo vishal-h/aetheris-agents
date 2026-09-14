@@ -641,142 +641,44 @@ is already green at 38; it is not this row's transition.
 
 ## boxy-pipeline
 
-### BL-011 — Extract shared parsing helpers into `scripts/parsing_utils.py` (#52)
-**Status:** OPEN
-**Size:** S · **Priority:** before next catalog/resolver change
-
-`_parse_dimensions`, `_extract_cabinet_type`, `_parse_color_columns`, and
-`_color_name_from_header` are duplicated verbatim between
-`catalog_resolver.py` and `catalog_extractor.py` (noted in t1 review,
-m-boxy-pipeline-1a). A bug fix in one won't propagate to the other.
-
-**Fix:** extract all four helpers into `scripts/parsing_utils.py`; import
-from both scripts. No logic changes — pure refactor.
-
-**Touches.**
-- `scripts/parsing_utils.py` (new)
-- `scripts/catalog_resolver.py` (import from parsing_utils; remove local copies)
-- `scripts/catalog_extractor.py` (import from parsing_utils; remove local copies)
-- `tests/test_parsing_utils.py` (new — move or copy the relevant unit tests
-  from `test_catalog_resolver.py` and `test_catalog_extractor.py`)
-
-**Do not generate.**
-- Any logic change to the helpers
-- Changes to `schema.py`, `main.py`, `order_formatter.py`, `plan_extractor.py`
-
-**Done-check.**
-```bash
-cd aetheris-agents/boxy-pipeline
-pip install -r requirements.txt -q
-python3 -m pytest tests/ -v
-# All existing tests must pass unchanged
-# parsing_utils.py must be the only location of the four helpers
-grep -rn "_parse_dimensions\|_extract_cabinet_type\|_parse_color_columns\|_color_name_from_header" \
-  scripts/catalog_resolver.py scripts/catalog_extractor.py
-# Expected: only import lines, no function definitions
-```
-
-**Depends on:** BL-010 merged (clean baseline before refactor)
+### BL-011 — Extract shared parsing helpers into `scripts/parsing_utils.py`
+- state: open
+- type: not stated
+- area: boxy-pipeline
+- priority: before next catalog/resolver change · size: S
+- evidence: docs/evidence/BL-011.md
+- done-when: not stated — see evidence
 
 ---
 
-### BL-012 — Catalog enrichment merge strategy (#53)
-**Status:** OPEN
-**Size:** S–M · **Priority:** before anyone enriches `catalog.jsonl`
-
-`catalog_extractor.py` currently overwrites `catalog.jsonl` on every run.
-Once `mapped_20_20_codes` or `notes` fields are manually populated, a
-re-extraction would silently discard all enrichment. No merge logic exists.
-
-**Design options (decide before implementing):**
-
-**Option A — Merge on re-extraction.** If `catalog.jsonl` already exists,
-read it first, build a `{sku → enrichment}` index, then re-extract from
-Excel and carry forward non-empty `mapped_20_20_codes` and non-None `notes`
-from the existing file. Write the merged result.
-
-**Option B — Separate enrichment file.** Keep `catalog.jsonl` as a
-pure extraction artifact (always overwritable). Store enrichment in a
-separate `data/catalog-enrichment.jsonl` keyed by SKU. The resolver merges
-at load time. Enrichment file is committed (it's hand-maintained, not
-generated).
-
-**Option C — Versioned files, no overwrite.** `catalog_extractor.py` always
-writes `catalog-{YYYY-MM-DD}.jsonl`; never overwrites. `catalog.jsonl` is a
-symlink or a manually updated pointer. Enrichment lives in the dated file and
-is carried forward manually when updating.
-
-**Recommendation:** Option B. Cleanest separation of concerns — extraction
-is always safe to re-run; enrichment is a human-maintained artifact that
-belongs in git. The resolver's `load_catalog_jsonl` merges the two at load
-time (after t3 lands).
-
-**This ticket requires a design decision before implementation.** Capture the
-chosen option and rationale in `docs/m-boxy-pipeline-1a.md §Enrichment
-strategy` before handing to claude-code.
-
-**Depends on:** m-boxy-pipeline-1a t3 merged (resolver reads JSONL)
+### BL-012 — Catalog enrichment merge strategy
+- state: triggered
+- type: not stated
+- area: boxy-pipeline
+- priority: before anyone enriches `catalog.jsonl` · size: S–M
+- blocked-by / trigger: m-boxy-pipeline-1a t3 merged (resolver reads JSONL)
+- evidence: docs/evidence/BL-012.md
+- done-when: not stated — see evidence
 
 ---
 
-### BL-013 — Parameterise column x-boundaries in `so_extractor.py` (#54)
-**Status:** OPEN
-**Size:** S–M · **Priority:** before processing a second SO PDF
-
-`so_extractor.py` has four hardcoded x-boundary constants (`_QTY_X_MAX`,
-`_SPECIAL_X`, `_RATE_X`, `_AMOUNT_X`) calibrated from SO86708_Aria_Joey.pdf.
-A different Boxy SO template (different page margins, font, or column widths)
-could shift columns enough to mis-assign words to the wrong column bucket.
-
-**Fix:** detect column boundaries dynamically from the table header row
-(`Quantity`, `Item`, `Special`, `Rate`, `Amount`) on the first page, rather
-than using hardcoded constants. Use the header word x0 positions plus a
-configurable margin to compute the bucket ranges at runtime.
-
-**Touches.**
-- `scripts/so_extractor.py` — replace four constants with a
-  `_detect_col_bounds(page)` function
-- `tests/test_so_extractor.py` — add unit test for `_detect_col_bounds` using
-  a minimal mock page
-
-**Do not generate.**
-- Changes to `schema.py` or any other script
-
-**Done-check.**
-```bash
-cd aetheris-agents/boxy-pipeline
-python3 -m pytest tests/test_so_extractor.py -v
-# SO86708 extraction must still produce 34 items, $8,099.54
-python3 scripts/so_extractor.py \
-  --so data/samples/SO86708_Aria_Joey.pdf \
-  --project joey --output-dir data/projects/
-```
+### BL-013 — Parameterise column x-boundaries in `so_extractor.py`
+- state: open
+- type: not stated
+- area: boxy-pipeline
+- priority: before processing a second SO PDF · size: S–M
+- evidence: docs/evidence/BL-013.md
+- done-when: not stated — see evidence
 
 ---
 
-### BL-014 — Parse Bill To and Ship To addresses separately in `_parse_header` (#55)
-**Status:** OPEN
-**Size:** S · **Priority:** low (before multi-customer use)
-
-`so_extractor._parse_header` currently sets both `bill_to` and `ship_to` to
-the customer company name (extracted from the first line of the address block).
-The `SOHeader` schema has distinct fields for a reason: real SOs may bill to
-one address and ship to another. SO86708 happens to use the same company name
-for both, so the approximation is invisible in the done-check.
-
-**Fix:** use word x-coordinate extraction on the address block (the three
-columns below "Bill To | Ship To | Customer") to separately capture the Bill
-To address (x < ~200) and Ship To address (~200 < x < ~370), including
-multi-line street/city/state/zip.
-
-**Touches.**
-- `scripts/so_extractor.py` — extend `_parse_header` with coordinate-based
-  address block parsing
-- `tests/test_so_extractor.py` — add integration tests: `bill_to` contains
-  "Brokaw" (the SO86708 bill-to street), `ship_to` contains "Laurel"
-
-**Do not generate.**
-- Changes to `schema.py` or any other script
+### BL-014 — Parse Bill To and Ship To addresses separately in `_parse_header`
+- state: open
+- type: not stated
+- area: boxy-pipeline
+- priority: low (before multi-customer use) · size: S
+- evidence: docs/evidence/BL-014.md
+- done-when: not stated — see evidence
 
 ---
 

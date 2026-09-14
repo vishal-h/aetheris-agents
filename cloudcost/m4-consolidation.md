@@ -108,6 +108,14 @@ ratified all of them unless marked otherwise.
 > beside — the count-beside-the-enumeration shape, one level up and about a party rather than a
 > number.]`
 
+> **Decision 6 narrowed 2026-09-14 by R43 — appended; nothing above is amended.** *"Pushes are held
+> for review"* now binds only the one commit under review. Everything else a round produces —
+> pushes of already-reviewed work, filed rows, doc corrections — is pushed within the round. The
+> rule is `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R43]` item (item 14 at
+> harness `58991d5`), which names this decision as what it bounds; the registry row is
+> `docs/milestones/hc-consolidation.md` R43. R43 speaks to the first clause only: the
+> cross-citing-pair clause and the 2026-08-08 amendment above are untouched by it.
+
 ### Document handling
 
 | # | Decision | Date |

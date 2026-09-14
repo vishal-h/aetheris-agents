@@ -99,6 +99,7 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
 | `m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
+| `backlog-triage-2026-09.md` | `docs/backlog-triage-2026-09.md` | aetheris-agents | `29ed2a2` | 2026-09-14 | on-demand |
 | `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `4339ba7` | 2026-07-16 | export |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 | on-demand |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 | on-demand |
@@ -445,6 +446,14 @@ and why; the procedural gap it exposed is **BL-196**.]`
 > beside this edit rather than landed with it, because a warning that fires on every run from
 > the day it lands is BL-009's alarm-fatigue class and the figure is dominated by one row the
 > backlog split removes.
+
+> **THE TRIAGE RECORD — one row added, 2026-09-14.** `backlog-triage-2026-09.md` is the record
+> the next planning conversation reads, and until this row it was covered by no check and
+> reachable from no index. `on-demand`, so nothing is uploaded and the kernel budget is
+> unchanged; check 8 does not compare it (`check_project_knowledge` skips `on-demand` before any
+> git read). Pinned by hand at the file's last-touching commit, `29ed2a2`, and that commit's date.
+> `docs/` has no `index.md`, so like `backlog-scale-2026-09.md` this row is the document's only
+> map entry.
 
 ---
 

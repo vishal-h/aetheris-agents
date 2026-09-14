@@ -291,1261 +291,278 @@ is already green at 38; it is not this row's transition.
 
 ## Rig (aetheris-agents/rig/)
 
-### BL-006 — Document `stop_reason` when first observed (#47)
-**Status:** OPEN
-**Size:** S · **Priority:** tracked (event-triggered, not scheduled)
-
-Confirmed absent from all current DB events (count = 0). The trigger is
-mechanical: when drift_check emits
-`INFO payload_fields: llm_responded.stop_reason in DB events but not
-listed in specs.md §6`, add `stop_reason` to the §6 `llm_responded` row —
-no `?` suffix needed, since by then it is observed. The `?` convention
-exists for the general case; this ticket just records the trigger.
-
-**Done when:** the INFO fires once and the field is promoted.
+### BL-006 — Document `stop_reason` when first observed
+- state: triggered
+- type: not stated
+- area: Rig
+- priority: tracked (event-triggered, not scheduled) · size: S
+- blocked-by / trigger: when drift_check emits `INFO payload_fields: llm_responded.stop_reason in DB events but not listed in specs.md §6`
+- evidence: docs/evidence/BL-006.md
+- done-when: the INFO fires once and the field is promoted.
 
 ---
 
-### BL-023 — Retry parity for hosted-provider adapters: 429 handling (#74)
-**Status:** OPEN
-**Size:** S · **Priority:** answered-and-parked (event-triggered, not scheduled)
-
-Surfaced by BL-021's verify step, which read every adapter's error path and found
-an asymmetry pointing the *opposite* way to the one BL-021 was filed about.
-Recorded rather than acted on: this is a design question for the human, and the
-answer may legitimately be "leave it".
-
-Current retry behaviour, verified by reading each catch-all:
-
-| Adapter | Retries | Hosted? | Rate-limits? |
-|---|---|---|---|
-| `anthropic` | 429, 529, + transient network errors (`with_retry/2`, 6× exponential backoff) | yes | yes |
-| `gemini` | 429 + transient network errors (`with_retry/2`) | yes | yes |
-| `openrouter` | **nothing** | **yes** | **yes** |
-| `ollama` | **nothing** | no — local | no |
-
-Ollama not retrying is defensible: it is a local process with no rate limiting.
-**OpenRouter is the odd one** — a hosted, rate-limiting service with no 429
-handling, so a rate-limit response surfaces as a terminal
-`{:error, "OpenRouter HTTP 429: ..."}` and fails the step where anthropic/gemini
-would back off and succeed.
-
-**The question (human's to answer, do not decide in-ticket):** should hosted-provider
-adapters have retry parity for 429? Reasonable answers include:
-- **Yes** — add `with_retry/2` + 429 to openrouter, matching gemini. Note this makes
-  the `TransportError` terminality clause **newly load-bearing there**, so it must be
-  added in the same commit, and BL-021's regression guard is exactly the test that
-  catches its absence — that guard was written for this.
-- **No** — openrouter is used for cheap small-model experiments where failing fast
-  is preferable to a 63 s backoff; the eval runner's window is short.
-- **Not yet** — no observed 429 from openrouter in practice; wait for the trigger
-  (the BL-006 pattern).
-
-**Done when:** the question is answered and recorded here. If the answer is yes, the
-implementation follows as its own scoped work.
-
-**Answered 2026-07-17: not yet** (human call on claude-ui recommendation). Parked
-with a trigger, per the BL-006 convention — waiting on a named event, not on
-anyone's attention.
-
-- **Trigger:** an observed 429 from OpenRouter in a real run's trajectory.
-- **On trigger:** add `with_retry/2` + 429 matching gemini's shape, with the
-  `%Req.TransportError{reason: :timeout}` terminality clause **in the same
-  commit** — retry logic and the timeout exclusion are one change, never two.
-  BL-021's (#72) `openrouter_test.exs` regression guard is the test that enforces
-  it: it asserts terminal-never-`:retry` and exactly-one-call, so it fails the
-  moment retry arrives without the exclusion. That guard was written for this
-  branch.
-- **Until then:** fail-fast stands. OpenRouter surfaces a 429 as a terminal
-  `{:error, "OpenRouter HTTP 429: ..."}`, which is the intended behaviour for
-  cheap small-model experiments where a 63 s backoff would exhaust the eval
-  runner's window.
+### BL-023 — Retry parity for hosted-provider adapters: 429 handling
+- state: triggered
+- type: not stated
+- area: Rig
+- priority: answered-and-parked (event-triggered, not scheduled) · size: S
+- blocked-by / trigger: an observed 429 from OpenRouter in a real run's trajectory
+- evidence: docs/evidence/BL-023.md
+- done-when: the question is answered and recorded here.
 
 ---
 
-### BL-035 — Extract `formatCost` / `formatTokens` to `src/lib/format.ts` (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low
-
-`rig/CLAUDE.md` ("React / Frontend patterns") sets the rule: these helpers are
-duplicated in `TrajectoryView.tsx:54,60`, `UsageView.tsx:8,13`, and
-`useRunDiff.ts:9`, "acceptable for three locations. Extract to `src/lib/format.ts`
-if they spread to a fourth."
-
-BL-004 added a third `formatTokens` copy in `RunList.tsx` (for the Cost cell's token
-tooltip) — at the threshold, not past it, so extraction was deliberately *not* done
-in that ticket: it would have touched three files outside the ticket's Touches list.
-The next site tips it over.
-
-Note the copies have **diverged in signature**: `TrajectoryView`/`RunList` take
-`number | null` and return `'—'` for null; `UsageView` takes a bare `number`. The
-extracted helper should be the nullable form, with `UsageView`'s call sites passing
-non-null values unchanged.
-
-**Done when:** one `src/lib/format.ts` exports both helpers; all four sites import
-them; no local copies remain; `bunx tsc -b && bun run lint` green.
+### BL-035 — Extract `formatCost` / `formatTokens` to `src/lib/format.ts`
+- state: open
+- type: not stated
+- area: Rig
+- priority: low · size: XS
+- evidence: docs/evidence/BL-035.md
+- done-when: one `src/lib/format.ts` exports both helpers; all four sites import them; no local copies remain; `bunx tsc -b && bun run lint` green.
 
 ---
 
-### BL-054 — The twelfth `requires_worker` failure is a load-sensitive flake with no stable identity (#TBD)
-**Status:** OPEN
-**Size:** XS–S · **Priority:** low · **Section:** Harness (aetheris/)
-
-Filed 2026-07-25 during BL-053's done-check, per the standing rule that a red gate gets a tracked
-ticket the day it is found — and per **BL-051**, whose whole lesson is that a flake without a name
-is met as a first sighting every time.
-
-After BL-053 closed the fs_hash strand, `mix test --include requires_worker` reports 12 failures:
-pwd ×3 (BL-048), SIGSYS ×8 (BL-043) — and **one slot that changes identity between runs**:
-
-| Run | pwd | SIGSYS | Twelfth failure |
-|---|---|---|---|
-| diagnosis, 2026-07-25 (`af56a57`) | 3 | 8 | `RunOverlayTest` "overlay dirs are created and upper is empty…" — **BL-050**'s handshake race |
-| BL-053 done-check, run 1 | 3 | 8 | `RunHelpersTimeoutTest` "a status change alone counts as activity, with no events at all" (`run_helpers_timeout_test.exs:84`) |
-| BL-053 done-check, run 2 | 3 | 8 | `RunOverlayTest` again — `RunHelpersTimeoutTest` green |
-
-Three consecutive runs, same arithmetic (3 + 8 + 1 = 12), **two different occupants** of the
-twelfth slot and each green in the run where the other failed. That is the evidence the slot is a
-race rather than a defect: the two stable strands never move, and the twelfth never sits still.
-
-The `RunHelpersTimeoutTest` case asserts `await_bounded(run_id, await_inactivity_timeout_ms: 300)`
-reaches `:done`; under the full suite's load it instead returns
-`stalled: no status or event activity for 300ms (last status: running, last event seq: -1)`.
-**10/10 green in isolation** (five isolated runs × two tests). BL-053's diff touches only
-`verifier.ex`, `verify_report.ex` and verify/worker tests — nothing in the `await_bounded` path —
-so it is not attributable to that change. Both candidates are timing races whose window is a
-few hundred ms; the full suite is where the load exists to lose them.
-
-Not merged into BL-050: that row is one specific race with a mechanism, while this is the
-*pattern* — a fixed-ms inactivity window asserted inside a suite whose scheduling is not bounded.
-The candidates share the shape, not the site.
-
-**Done when:** the fixed-ms windows in `run_helpers_timeout_test.exs` are made load-insensitive
-(poll for the state transition rather than assert against a wall-clock budget — the pattern the
-harness `CLAUDE.md` already promotes, *"poll for trajectory events, not time"*), or the tests are
-tagged so a loaded full-suite run cannot flake them; and BL-050's race is settled. Until then the
-twelfth slot is **named here** rather than re-triaged each run.
-
-`Source: BL-053 done-check, 2026-07-25. Captures: full_requires_worker.txt (both runs),
-rht_1..5.txt (isolation).`
+### BL-054 — The twelfth `requires_worker` failure is a load-sensitive flake with no stable identity
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: XS–S
+- evidence: docs/evidence/BL-054.md
+- done-when: the fixed-ms windows in `run_helpers_timeout_test.exs` are made load-insensitive (poll for the state transition rather than assert against a wall-clock budget — the pattern the harness `CLAUDE.md` already promotes, *"poll for trajectory events, not time"*), or the tests are tagged so a loaded full-suite run cannot flake them; and BL-050's race is settled.
 
 ---
 
-### BL-052 — drift_check check 9: ghost-struct arm is scoped to `commands/*.rs` (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low · **Trigger-fired**
-
-`check_command_fields` (check 9, BL-036, `11675cc`) resolves each §4-documented struct against
-`_parse_command_structs_from_source(COMMANDS_DIR)`, which globs
-`rig/src-tauri/src/commands/*.rs` only. A documented struct that the checker cannot find there
-draws a **ghost** WARN:
-
-```
-struct 'X' documented in specs.md §4 but not found in commands/*.rs (ghost)
-```
-
-All nine structs documented in §4 live in `commands/` today, so the arm is accurate at HEAD and
-the scope matches BL-036's ticket text. It is the arm most likely to produce the checker's first
-**false positive**: a §4 block documenting a struct defined elsewhere under `src-tauri/src`, or
-re-exported into `commands/` from another module, would be reported as a ghost that isn't one.
-A false WARN in a `--strict` sprint is a red gate, and a red gate that is wrong is what trains
-the "the check is probably stale" reflex the standing gates rule exists to prevent.
-
-**Fix (trivial):** widen the source scan to `rig/src-tauri/src/**/*.rs` (`rglob`), keeping the
-join on struct name. Nothing else changes — `_parse_structs_from_rust_text` is already
-file-agnostic. Adjust the ghost message to name the widened scope, and add a test that a struct
-defined outside `commands/` is found rather than ghosted.
-
-**Deliberately deferred, not overlooked.** Widening now would broaden the surface with no live
-case and no test that could distinguish the two behaviours at HEAD. This row makes the
-recurrence countable if it lands.
-
-**Done when:** the source scan covers `src-tauri/src/**/*.rs`, or the row is closed with a
-recorded reason for keeping the narrow scope; `tests/test_drift_check.py` covers a
-non-`commands/` struct either way.
-
-`Source: BL-041(b)+BL-036 review F3 (claude-ui, 2026-07-25), raised as the packet's §8 flagged
-observation and promoted from prose to a row. Review: docs/reviews/bl-041b-bl-036-review.md.`
+### BL-052 — drift_check check 9: ghost-struct arm is scoped to `commands/*.rs`
+- state: open
+- type: not stated
+- area: Rig
+- priority: low · size: XS
+- evidence: docs/evidence/BL-052.md
+- done-when: the source scan covers `src-tauri/src/**/*.rs`, or the row is closed with a recorded reason for keeping the narrow scope; `tests/test_drift_check.py` covers a non-`commands/` struct either way.
 
 ---
 
-### BL-037 — Nullable `label` in RunSummary/RunDetail: backend distinguishes real from fallback (#TBD)
-**Status:** OPEN
-**Size:** XS–S · **Priority:** low
-
-BL-029 made both harness queries return `COALESCE(runs.label, run_id)`, so the wire
-type cannot express "this run has no label" — the fallback is indistinguishable from
-a run genuinely labelled with its own id.
-
-Every consumer that needs the distinction must re-derive it by string comparison. The
-fork rider already does:
-
-```ts
-// TrajectoryView.tsx
-run && run.label && run.label !== run.run_id ? run.label : undefined
-```
-
-That is the frontend reconstructing a fact the backend erased, and it will be wanted
-again — **BL-024's lineage view** needs real-vs-fallback to render sensibly, and any
-further consumer either repeats this guard or gets it wrong silently (the failure
-mode is a run_id displayed as if it were a chosen name, which is precisely the BL-029
-symptom returning by a different route).
-
-Shape: `label: Option<String>` / `string | null` on the wire; the `COALESCE` comes out
-of both queries; the run_id fallback moves to the display layer where it belongs; the
-`TrajectoryView` guard simplifies to a null check. Note this also removes the
-`label: ''` placeholder hazard in `RunList.tsx` `handleForked` (BL-029 review
-finding 6) — `null` is expressible where `''` was a stand-in.
-
-Sequence **with or before BL-024** so the lineage view is built against the corrected
-contract rather than inheriting the string-comparison guard.
-
-**Done when:** `label` is nullable end-to-end; no consumer compares `label` to
-`run_id`; the run_id fallback is applied once, at display; `cargo test` + `tsc -b` +
-`bun run lint` green.
-
-**DEFERRED, 2026-09-14** (R40). Inherits BL-024's deferral: this row's lineage view is BL-024's. Changes when BL-024 returns.
+### BL-037 — Nullable `label` in RunSummary/RunDetail: backend distinguishes real from fallback
+- state: blocked
+- type: not stated
+- area: Rig
+- priority: low · size: XS–S
+- blocked-by / trigger: BL-024
+- evidence: docs/evidence/BL-037.md
+- done-when: `label` is nullable end-to-end; no consumer compares `label` to `run_id`; the run_id fallback is applied once, at display; `cargo test` + `tsc -b` + `bun run lint` green.
 
 ---
 
-### BL-058 — specs §5 (TypeScript Interfaces) is unchecked, and already stale (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low-medium · **Section:** Rig (`aetheris-agents/rig/` + `scripts/drift_check.py`)
-
-Found during BL-038 while adding `RunListResult` to both halves of the doc contract.
-
-`drift_check` check 9 (`command_fields`, BL-036) compares specs §4's ` ```rust ` structs
-against `rig/src-tauri/src/commands/*.rs`. **Nothing checks §5**, the TypeScript half of
-the same contract, against `rig/src/hooks/types.ts` — so the frontend-facing types drift
-silently while the Rust-facing ones are guarded.
-
-It has already drifted. §5's `interface RunSummary` carries nine fields; `types.ts` has
-thirteen — `last_event_at`, `total_cost_usd`, `total_input_tokens`, `total_output_tokens`
-are all absent from §5, the last three since BL-004 (2026-07-20). §5 also narrows
-`status` to a five-member union where `types.ts` widens it with `| string`. A reader
-trusting §5 gets a well-formed, confidently wrong picture of the type — the same shape
-BL-036 closed one section up.
-
-**Not** a §4-style port: the two sections describe different surfaces (§4 is the Rust
-wire shape, §5 is what the hooks hand components), so the fix is a check keyed on the
-interfaces §5 actually declares, plus the one-time correction of `RunSummary`. Decide
-whether §5 is authoritative for *all* of `types.ts` or only the harness block before
-writing the check — the section is currently a partial mirror, and a check that demands
-totality would fail on types nobody intended to document there.
-
-`RunListResult` was added to §5 by BL-038, so that ticket contributed no new drift.
-
-**Done when:** a `drift_check` check compares specs §5 interfaces against
-`src/hooks/types.ts` with a documented scope rule, §5's `RunSummary` matches source, and
-`--strict` is green.
+### BL-058 — specs §5 (TypeScript Interfaces) is unchecked, and already stale
+- state: open
+- type: not stated
+- area: Rig
+- priority: low-medium · size: S
+- evidence: docs/evidence/BL-058.md
+- done-when: a `drift_check` check compares specs §5 interfaces against `src/hooks/types.ts` with a documented scope rule, §5's `RunSummary` matches source, and `--strict` is green.
 
 ---
 
-### BL-062 — Fork provider/model overrides (#TBD)
-**Status:** OPEN
-**Size:** S–M · **Priority:** medium · **Section:** harness CLI + Rig fork dialog · **§8 edit required**
-
-Split out of BL-030 during its scoping so that ticket stayed §8-free (adjudicated
-2026-07-26). `Aetheris.fork_run/3` already accepts arbitrary `RunConfig` overrides
-and the harness threads them into the fork's config; cross-provider forking works
-by design (determinism contract §4, ratified at BL-039). The CLI and Rig simply
-never expose it — `fork_overrides/1` (`../aetheris/lib/aetheris/cli/commands/fork.ex`)
-maps `--name` to `label` and nothing else.
-
-**Wanted.** CLI: widen `fork_overrides/1` and the fork `@switches` to accept
-`--provider` / `--model` into the overrides map. Rig: a provider/model picker in
-the fork dialog so the flag is operator-reachable rather than wired to nothing —
-or an explicit record of "CLI-only for now" with the picker deferred to its own
-row.
-
-**§8.** Determinism contract §4 currently says *"Selecting a different provider is
-a capability of `Aetheris.fork_run/3`'s `overrides`; the CLI and Rig entry points
-pass a label only (BL-030)."* That sentence stays **true** until this lands, but
-its `(BL-030)` ref already points at a closed ticket that never carried the
-overrides — this row's §8 edit corrects the sentence *and* repoints the ref. §4
-has form for decayed parentheticals (D2's `cli/commands/fork.ex:47-55`), so do not
-leave it.
-
-**Done when:** the CLI accepts the flags and they reach the fork run; the §4
-sentence is corrected and its ref repointed under §8 ratification; operator access
-(picker vs CLI-only) is decided and recorded.
-
-**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
+### BL-062 — Fork provider/model overrides
+- state: triggered
+- type: not stated
+- area: harness CLI + Rig fork dialog
+- priority: medium · size: S–M
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-062.md
+- done-when: the CLI accepts the flags and they reach the fork run; the §4 sentence is corrected and its ref repointed under §8 ratification; operator access (picker vs CLI-only) is decided and recorded.
 
 ---
 
-### BL-064 — Fork with additional instructions (#TBD)
-**Status:** OPEN
-**Size:** TBD · **Priority:** TBD · **Section:** TBD
-
-Parked at BL-030 closure, 2026-07-26. **Scope not yet written** — this row exists
-so the idea has an owner and a number rather than living in a review thread, per
-the deferred-finding rule. It is a stub, not a spec.
-
-**What is known:** the intent is to fork a run *and* supply new or amended
-instructions at the fork point, rather than replaying the recorded prefix and
-continuing unchanged. Nothing beyond that has been adjudicated here — not the
-surface (CLI flag, Rig dialog, or both), not where the instruction lands (appended
-user turn, `system_prompt` override, something else), and not what it means for
-the determinism contract's fork guarantee, which today describes a fork as the
-recorded prefix continued live.
-
-**Adjacent:** BL-062 is the same seam (fork-time overrides reaching CLI and Rig)
-and would likely share its plumbing; a `system_prompt` override is already an
-`overrides` key, so part of this may be reachable the same way.
-
-**Do not start from this row.** Get the scope from whoever parked it, write it
-here, then implement. Anyone who fills this in should treat the paragraph above as
-leads, not facts.
-
-**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: a parked stub with no scope, awaiting a ruling on whether it is work at all. Changes when that ruling is recorded here.
+### BL-064 — Fork with additional instructions
+- state: open
+- type: not stated
+- area: TBD
+- priority: TBD · size: TBD
+- evidence: docs/evidence/BL-064.md
+- done-when: not stated — see evidence
 
 ---
 
-### BL-071 — Resource-level AWS cost + the resource-rate spot-check (#TBD)
-**Status:** OPEN
-**Size:** M · **Priority:** low (deferred) · **Section:** aetheris-agents (cloudcost)
-
-m2 settled AWS cost at **service-level** (decision B) because current AWS usage is low, so
-resource-level (`GetCostAndUsageWithResources` — a paid hourly/resource opt-in, ~14-day
-window, EC2-centric; or a CUR→S3 pipeline) would prove little and risk a vacuous proof.
-The resource-level cost path is still unproven, and with it the m1 **resource-rate
-spot-check** (checking the inventory size/type estimates against a real per-resource bill),
-which has now been deferred past DO and AWS.
-
-**Trigger:** the first provider actually billed per resource, or AWS usage growing enough
-that enabling CE resource-level granularity is worthwhile. On trigger, the cost snapshot
-carries `source_granularity:"resource"` with per-line `resource_id` where the provider
-attributes it, and the rate spot-check lands as a test.
-
-**Done when:** a resource-level cost path emits per-resource cost lines for at least one
-provider, and the rate spot-check compares them against the inventory estimates.
-
-`Source: m2-cloudcost decision B, ratified 2026-08-01; m1 open item (rate spot-check), re-forwarded.`
+### BL-071 — Resource-level AWS cost + the resource-rate spot-check
+- state: triggered
+- type: not stated
+- area: aetheris-agents
+- priority: low (deferred) · size: M
+- blocked-by / trigger: the first provider actually billed per resource, or AWS usage growing enough that enabling CE resource-level granularity is worthwhile
+- evidence: docs/evidence/BL-071.md
+- done-when: a resource-level cost path emits per-resource cost lines for at least one provider, and the rate spot-check compares them against the inventory estimates.
 
 ---
 
-### BL-072 — Cost Optimization Hub / Compute Optimizer optimization milestone (#TBD)
-**Status:** OPEN
-**Size:** L · **Priority:** low · **Section:** Milestones
-
-m2's t4 is a **hand-rolled read-only spike** for S3/ECR/Secrets waste signals
-(no-lifecycle, incomplete-multipart, unused-secret), deliberately *not* the engine-backed
-integration. AWS's own **Cost Optimization Hub** and **Compute Optimizer** already compute
-rightsizing and waste recommendations across services; the full optimization milestone
-sources from them rather than reinventing per-service heuristics. This is also where the
-decision-F MCP evaluation's one genuine forward item lands (Hub/Compute Optimizer as an
-alternative signal source to cross-check `detect_orphans.py`).
-
-**Done when:** milestone docs exist (docs-first, per repo convention); t4's real-bill read
-seeds the scope (which signals are worth surfacing, what noise looks like); read-only,
-gated behind its own IAM.
-
-`Source: m2-cloudcost decisions F + G (t4 spike), ratified 2026-08-01.`
-
-**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
+### BL-072 — Cost Optimization Hub / Compute Optimizer optimization milestone
+- state: triggered
+- type: not stated
+- area: Milestones
+- priority: low · size: L
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-072.md
+- done-when: milestone docs exist (docs-first, per repo convention); t4's real-bill read seeds the scope (which signals are worth surfacing, what noise looks like); read-only, gated behind its own IAM.
 
 ---
 
-### BL-075 — `mix test` flakes on a fixed 300 ms inactivity window in `RunHelpersTimeoutTest` (#TBD)
-**Status:** OPEN
-**Size:** XS–S · **Priority:** low · **Section:** harness (`../aetheris/test/`)
-
-Filed 2026-08-02 at the m2-cloudcost **t2** boundary, per the gate rule (*a red gate gets a
-tracked ticket the day it's found, never carried silently*). t2 is single-repo Python work, so
-`mix test` was an **off-territory** run — exactly the kind the rule exists to force.
-
-**What was observed.** First run: `969 tests, 1 failure, 133 excluded`. Three consecutive
-re-runs immediately after, same tree, same command: `969 tests, 0 failures, 133 excluded`.
-Nothing in this ticket touches the harness (`../aetheris` is untouched at t2), so the failure
-cannot be attributed to the change under test.
-
-**What is not known — and why.** *The failing test's name.* The first run's output was piped
-through `tail -12`, which showed the summary line and none of the failure block; by the time
-the gap was noticed the run was gone. That is the **Complete-output** rule failing in its
-mildest form — a count characterised from a fragment — and it is recorded here rather than
-quietly dropped, because "1 failure" with no name is not a finding anyone can act on.
-
-**Likely home, unconfirmed.** `BL-054` already exists for the `requires_worker` twelfth-slot
-flake, and a 1-in-4 timing failure in the 88s sync block fits that shape. It is **not** claimed
-as the same defect — no evidence connects them beyond plausibility.
-
-**Done when:** either the flake is reproduced with its name captured (run the suite in a loop
-with full output retained, e.g. `mix test --seed 0` plus repeated seeded runs) and folded into
-BL-054 or filed on its own, or three further full-output runs come back clean and this row is
-closed as unreproducible with that stated. Whichever way it goes, capture the **whole** output.
-
-**Annotated 2026-08-08 (m4 close-b) — the flake reproduced, and this time it has a name.**
-`mix test` was run off-territory at this ticket's boundary (close-b edits four markdown files and
-no code, so the failure cannot be attributed to the change under test — the same reasoning this row
-recorded in 2026-08). It reproduced **the 2026-08-02 shape exactly**: one failure, then three
-consecutive clean runs on the same tree with the same command.
-
-```
-run 1:  969 tests, 1 failure,  133 excluded
-run 2:  969 tests, 0 failures, 133 excluded
-run 3:  969 tests, 0 failures, 133 excluded
-run 4:  969 tests, 0 failures, 133 excluded
-```
-
-**The identity, which is what this row was filed to obtain:**
-
-```
-1) test a status change alone counts as activity, with no events at all
-   (Aetheris.CLI.Commands.RunHelpersTimeoutTest)
-   test/aetheris/cli/commands/run_helpers_timeout_test.exs:84
-   code:  assert {:ok, %{run_id: ^run_id, status: :done}} =
-            await_bounded(run_id, await_inactivity_timeout_ms: 300)
-   right: {:error, "run await-status-activity-7139 stalled: no status or event
-           activity for 300ms (last status: running, last event seq: -1)"}
-   stacktrace: test/aetheris/cli/commands/run_helpers_timeout_test.exs:98
-```
-
-A **fixed 300 ms inactivity window** the machine missed under load.
-
-**The "likely home" hypothesis is refuted, not confirmed.** This row was careful to call the BL-054
-connection *plausible, not established*, and it was right to be: **BL-054 is the `requires_worker`
-twelfth-slot flake**, and this is a different test in a different file, not `requires_worker`-tagged
-(it ran — the 133 excluded are elsewhere). What the two do share is the **mechanism class** — a
-fixed-ms window rather than a poll — which is exactly the cure BL-054's §Suggested order entry
-already names: *"Fold into a polling-based rewrite of the fixed-ms windows when someone is in that
-file."* So the two rows converge on one fix while remaining two defects.
-
-**Deliberately not closed and not folded here.** The first Done-when arm asks for the flake
-reproduced with its name captured **and then** folded into BL-054 or filed on its own; the fold-or-file
-is the closing action, and close-b closes no row. The evidence is now on the row, in the repo, where
-the next ticket can act on it — **note that the runs themselves are not retained anywhere, only this
-transcription of them, which is BL-133's subject exactly.**
-
-**And the second arm still has nowhere to be satisfied.** *"Three further full-output runs come
-back clean"* requires that those runs' full output be **retained somewhere durable**, and **BL-133**
-establishes that no such place exists: `../aetheris/sprint/` archives `run.json` alone, and
-`mix test` output is archived nowhere at all. Three clean runs were observed here and their output
-lives in a session scratchpad — which is to say the arm was *performed* and cannot be *evidenced*,
-and a later tally assembled from packets would be a count over a capture nobody can check. That is
-the very defect this row's own *"What is not known — and why"* paragraph records, arriving a second
-time.
-
-**The Done-when is deliberately left as written.** Amending it now — narrowing it to "three runs
-observed in a session", say — would be writing a clause around the gap instead of naming it, and
-would quietly relax a row rather than fix what makes it unsatisfiable.
-
-**Where this row now stands:** arm 1's evidence is captured and durable (above); arm 1's *action*
-— fold into BL-054 or file on its own — is the next ticket's, and BL-054 is now known to be the
-wrong home. Arm 2 stays blocked on **BL-133**.
-
-**Annotated 2026-08-09 (hc-c) — one green run, on a tree that edited this flake's own module.**
-`mix test` at hc-c's boundary: **972 tests, 0 failures, 133 excluded**. It does **not** count
-toward arm 2 (a single run, and its output is retained nowhere durable — the same BL-133 block),
-and it is **not** evidence of a fix.
-
-**It also cannot be read as an untouched-tree observation, which is why it is qualified rather
-than just recorded.** hc-c edits `../aetheris/lib/aetheris/cli/commands/run_helpers.ex`, the module
-`RunHelpersTimeoutTest` exercises, and **no `mix test` was run on this tree before those edits** —
-so "green because of hc-c" and "green despite hc-c" are not separated by any measurement. What is
-established from source: the flake's own file
-(`../aetheris/test/aetheris/cli/commands/run_helpers_timeout_test.exs`) is untouched by hc-c; the
-assertion it flakes on is the `:done` success path, while hc-c changed only `handle_run_status/5`'s
-`failed` and `cancelled` branches; the branch it failed into — `continue_or_timeout/5`'s inactivity
-arm — is unchanged; and no timing, poll interval or window is touched. **That is reasoning from the
-diff, not a measurement.** Not re-run to chase a red: one green does not refute a flake and one red
-would not confirm it.
-
-**Annotated 2026-08-09 (hc-e's opening edit, E3) — a third observation, folded in from BL-135,
-which was a duplicate row.** hc-d r3's boundary gate hit **the same defect**: same module, same
-`…run_helpers_timeout_test.exs:84`, same `:98` stacktrace, same
-`await_bounded(…, await_inactivity_timeout_ms: 300)`, same `stalled: … for 300ms … last event
-seq: -1`. Only the generated run id differs (`-7139` at close-b, `-8610` here), and that is
-`System.unique_integer`. **BL-135 should not have been filed** — the gate rule requires a tracked
-row the day a red is found, not a row filed without checking whether one exists. BL-135 is kept as
-the record of the duplication, not deleted.
-
-```
-run 1 (2026-08-02, m2 t2)        969 tests, 1 failure    identity uncaptured (tail -12)
-run 2 (2026-08-08, m4 close-b)   969 tests, 1 failure    identity captured
-run 3 (2026-08-09, hc-d r3)      972 tests, 1 failure    identity captured, same assertion
-```
-
-**What is new, and it is the first probe of the reproduction conditions rather than another
-failure count: nine non-reproductions.** Eight consecutive runs of `…:84` alone on an idle machine
-(all PASS), one under six deliberate CPU spin loops (PASS), and one full suite immediately after
-(`972 tests, 0 failures`). So across three observations the failure is real and its trigger is still
-**not established** — only the **100 ms margin** that makes it possible (a feeder sleeping 200 ms
-against a 300 ms bound) is established, from the test's own source.
-
-**Do not widen the bound to buy margin.** `await_inactivity_timeout_ms` is the behaviour under
-test; inflating it weakens the assertion it exists to make. That is this row's own *"fixed-ms window
-rather than a poll"* mechanism class, and BL-054's §Suggested order entry already names the cure —
-*"fold into a polling-based rewrite of the fixed-ms windows when someone is in that file."*
-
-**Annotated 2026-08-09 (hc-e's opening edit, E4) — arm 2's blocker is PARTLY lifted, and the
-remaining gap is a different shape.** The blocking clause read: *"Three further full-output runs
-come back clean"* requires that those runs' full output be **retained somewhere durable**, and
-**BL-133** establishes that no such place exists: `../aetheris/sprint/` archives `run.json` alone,
-and `mix test` output is archived nowhere at all.*
-
-**The first half of that premise is now false.** hc-d discharged BL-133 face 2: every sprint run
-retains `console.log` — every arm, in order, untruncated, streams merged — beside a
-`provenance.txt` naming both repos' commits, the target and the command, under a stated, bounded and
-enforced 30-day retention. A durable place with provenance **exists**.
-
-**The second half still holds, and it is the half arm 2 needs.** Established rather than assumed:
-
-- `sprint.sh` invokes `mix test` **once**, at `:1517`, on **two named files**
-  (`server_checkpoint_test.exs`, `server_inject_test.exs`) inside one case — not the suite.
-- It never references this flake's file: `grep -c 'run_helpers_timeout_test'` over
-  `../aetheris/scripts/sprint.sh` → **0**. *Positive control:* `grep -c 'server_checkpoint_test'`
-  → **3**, so the pattern finds referenced test files where they exist.
-- The boundary-gate `mix test` is a **direct invocation**, outside any sprint process, and
-  `SPRINT_CONSOLE` exists only inside one — so its output is not captured.
-- Measured against the retained corpus: `grep -rlE '[0-9]+ tests, [0-9]+ failures' sprint/*/console.log`
-  → **0 files**. *Positive control:* the same pattern over a direct `mix test` capture → **1**.
-
-**So: the place exists; the routing does not.** Arm 2 remains unsatisfiable as written, but the
-blocker has changed shape — from *"no durable place exists"* to *"the full suite is never run where
-the durable place would capture it."* That is smaller, and it is a routing decision rather than a
-ruling. **Face 1 (reviews as session artifacts) is untouched and is not what arm 2 needed** — arm 2
-is about run output.
-
-**One thing recorded against hc-d's own reasoning:** hc-d chose the 30-day retention bound *citing
-this row's "three further full-output runs come back clean"* as its justification. That citation was
-optimistic — the bound was set for a consumer the mechanism does not yet serve. The bound is not
-wrong; its stated rationale reached one step further than the mechanism does.
-
-**Arm 2 is not started here.** E4's whole scope was establishing the blocker's status.
-
-**Annotated 2026-08-19 (ds cycle, stage B) — a fourth observation, and it is the first pair that
-pins the flake to an *unchanged tree in both directions*.** Three runs come from the ds cycle's
-stage A of 2026-08-18 and the fourth is this session's own boundary gate:
-
-```
-2026-08-18, ds stage A    harness 9ba6c8c    green
-2026-08-18, ds stage A    harness 8eb960d    green
-2026-08-18, ds stage A    harness 8eb960d    RED
-2026-08-19, ds stage B    harness 8eb960d    972 tests, 0 failures, 133 excluded (90.8 s)
-```
-
-**What is new is the second and third rows: the same tree, opposite outcomes.** Every earlier
-observation on this row compared runs across *different* trees — m2 t2, m4 close-b, hc-d r3 — and
-had to argue from the diff that the tree was irrelevant; hc-c's annotation says so in as many
-words, *"that is reasoning from the diff, not a measurement."* This is the measurement. At
-`8eb960d`, clean and unchanged, `mix test` has now returned both red and green, and this session's
-fourth run is a third pass over that same tree. The failure is **intermittent at a fixed tree and
-not deterministic in the tree**, which removes the last reading under which it could have been a
-tree-dependent failure rather than a flake.
-
-**One of the three stage-A data points is not in either repository and is the reviewer's account.**
-The red was reported, not captured here: no output of it exists in this repo, in the harness, or in
-any committed artifact, and this session did not observe it. It is carried on attribution, and it
-is **not** evidence about the failing test's identity — nothing establishes that it hit
-`…run_helpers_timeout_test.exs:84` rather than something else, which is the same gap the
-2026-08-02 run left and for the same reason. The two stage-A greens are that session's account on
-the same terms. The fourth run is this session's own with its full output retained — in a session
-scratchpad, which is **BL-133** arriving on this row for the fourth time.
-
-**Neither Done-when arm moves, and neither is amended.** Arm 1 wants the flake reproduced *with its
-name captured*; the red above has no name. Arm 2 wants three further full-output runs come back
-clean **retained somewhere durable**; this session's green is retained nowhere durable, so E4's
-finding stands exactly as written — the place exists, the routing does not.
-
-**The row's heading was corrected in the same commit, and it is a label rather than a record.** It
-read *"`mix test` failed once then passed three times, identity uncaptured"* — a heading its own
-body has falsified since 2026-08-08, when the m4 close-b annotation captured the identity. The
-filing narrative it described is intact in the body and is not edited. One transcription of the old
-heading survives at `cloudcost/docs/m5-scoping-landing-notes.md:272`; that is a milestone working
-artifact and a point-in-time record, and it is deliberately left.
-
-`Source: m2-cloudcost t2 done-check, 2026-08-02 (aetheris-agents 7a7b7ec; aetheris fd9ac48,
-untouched). Annotated at m4-cloudcost close-b, 2026-08-08 — close-a Part 5 for the retention
-finding; the reproduction and the failing test's identity are this close's own four runs, at agents
-2806305 / aetheris 288c8ef, neither of which touches harness code. Annotated again 2026-08-09 at
-hc-e's opening edit (E3 fold, E4 blocker status), at agents f8ed90f / aetheris 48f59e7.
-Annotated again 2026-08-19 at the ds cycle's stage B, at agents `9b9b274` / aetheris `8eb960d`,
-the harness untouched by that commit; three of the four runs recorded there are the ds cycle's own
-account and one is this session's, as the annotation distinguishes.`
+### BL-075 — `mix test` flakes on a fixed 300 ms inactivity window in `RunHelpersTimeoutTest`
+- state: open
+- type: not stated
+- area: harness
+- priority: low · size: XS–S
+- evidence: docs/evidence/BL-075.md
+- done-when: either the flake is reproduced with its name captured (run the suite in a loop with full output retained, e.g. `mix test --seed 0` plus repeated seeded runs) and folded into BL-054 or filed on its own, or three further full-output runs come back clean and this row is closed as unreproducible with that stated.
 
 ---
 
-### BL-076 — `compose_report_data` sums *every* provider's prior snapshot into one `prior_total` (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** medium · **Section:** cloudcost (`cloudcost/scripts/compose_report_data.py`)
-
-Filed 2026-08-02 at the m2-cloudcost **t3** boundary. A **Silent-wrong-answer**: the month-on-month
-headline is well-formed, plausible, and wrong.
-
-**The defect.** `load_prior_snapshots` (`:711`) globs the prior month's directory
-indiscriminately —
-
-```python
-for path in sorted(directory.glob("*.json")):   # history/{prior}/ — every provider
-```
-
-— and `month_on_month` sums whatever it returns into one figure (`:334`, `:342`):
-
-```python
-prior_total = round(sum(prior_providers.values()), 2)
-"delta_amount": round(current_total - prior_total, 2),
-```
-
-That is m1's N-provider merge assumption (*everything in the month belongs to this report*)
-meeting m2 decision H (*each provider is its own solo run*). Under H it is false: a solo run's
-report is about the providers **in that run**, so its delta must read those providers' prior
-snapshots and no others.
-
-**Demonstrated, not inferred.** t3 ran the real AWS pipeline's output through `compose` twice,
-changing only `--history-dir`:
-
-| history tree | `mom_delta.status` | headline |
-|---|---|---|
-| shared `history/2026-07/` | `ok` | `prior_total 185.50` (DigitalOcean, July) vs `current_total 0.29` (AWS, August) → **`delta_amount −185.21`** |
-| per-provider `history/aws/` | `no_prior_month` | — |
-
-The `ok` row is the wrong answer: it reports a −$185.21 month-on-month movement for an account
-whose first-ever snapshot this is. It also contradicts §t3's own done-check ("first run → the
-m1-tested 'no prior month' path"). `providers_only_in_prior: ["digitalocean"]` is emitted as a
-caveat, so the report is not *silent* — but the headline figure is the thing a human reads.
-
-**Why it is not fixed here.** §t3 permits exactly one enumerated `compose`/`render` change (A4);
-anything further is a contract-leak finding to report, not to write. t3 therefore mitigated it
-**at the orchestrator** — each provider gets `--history-dir history/{provider}`, decision H's own
-`history/{provider}/{period}/` layout, needing no script change. The mitigation is real and
-verified live, but it is a *convention* the caller must honour: a direct `compose` invocation
-with the m1-shaped shared tree still produces the wrong figure.
-
-**Done when:** `load_prior_snapshots`/`month_on_month` scope priors to the providers present in
-the run's own bundles, with a test asserting the `no_prior_month` path survives another
-provider's history sitting in the same tree, and a second asserting an N>1 run is unchanged (so
-the fix does not over-filter). Natural batch with **BL-070**, which retires the surrounding
-cross-provider merge code — this row is the one piece of that code that is not merely dead but
-actively wrong, so if BL-070 slips, do this alone. Fold in the duplicated `slug()`/`provider_slug()`
-convergence at the same time (t2 deferred it precisely to keep `compose` unedited).
-
-`[Annotated 2026-08-16 at BL-153 s0 — **this row's convention-only mitigation has now been
-observed failing in the tree, unprompted**, and the observation is recorded here rather than
-as a new row because this row already owns the mechanism and stays open. s0's read of
-`cloudcost/history/` found two directory shapes on disk. They are **not two composer
-layouts**: `persist_history` writes exactly one shape,
-`{history_dir}/{period}/{provider}_costs_{period}.json`
-(`cloudcost/scripts/compose_report_data.py:989`), and the two shapes are two values of
-`--history-dir`. The orchestrator passes `history/{provider_slug}`
-(`cloudcost/agents/cloudcost_orchestrator.exs:141`) — this row's mitigation — giving
-`history/{provider}/{period}/`, which is what four providers have. The odd one,
-`cloudcost/history/2026-08/github_costs_2026-08.json`, is the **default** path:
-`--history-dir` defaults to `DEFAULT_HISTORY_DIR`, the shared `cloudcost/history`
-(`:111`, `:1037`). **Not residue of a layout change** — the per-provider layout predates it
-and its mtime is `2026-08-14 08:18`, six hours *before* that same day's provider-scoped
-GitHub run at `14:29`. It is a direct `compose` invocation that omitted the flag, i.e. the
-very *"a direct `compose` invocation with the m1-shaped shared tree still produces the wrong
-figure"* this row's **Why it is not fixed here** paragraph names, firing in the tree twelve
-days after the row predicted it and noticed by nobody at the time.
-
-**The stray artifact itself is inert and needs no cleanup.** `cloudcost/history/` is
-gitignored (`cloudcost/.gitignore:10`, `history/*`; only `.gitkeep` is tracked), and
-`load_prior_snapshots` reads `history_dir / previous` (`:1002`), which under the
-orchestrator is `history/github/2026-07` — never the flat tree. Nothing an orchestrated run
-does can read it. What is *not* inert is the default that produced it, and that is this
-row's subject, not a new one. `cloudcost/tools.json:514` already documents the consequence
-in the operator-facing description, and `cloudcost/runbook.md:415` documents a migration
-command for the old shape — so the hazard is captioned in two places and guarded in none,
-which is what **Done when** above is for.
-
-**Also: two of this row's own citations have drifted.** `load_prior_snapshots` is at `:994`
-(the glob at `:1006`), not `:711`; the two `month_on_month` lines are `:352` and `:360`, not
-`:334`/`:342`. The code at those lines is unchanged in substance — the row's quoted
-`for path in sorted(directory.glob("*.json"))` and
-`prior_total = round(sum(prior_providers.values()), 2)` are both present verbatim. Verified
-at agents `900662f`. **No fix proposed and no scope widened**; the Done-when stands as
-written.]`
-
-`Source: m2-cloudcost t3, 2026-08-02 (aetheris-agents cbf3fbf). Verified by reading
-compose_report_data.py:711/:334/:342 and by the two-run demonstration above.`
+### BL-076 — `compose_report_data` sums *every* provider's prior snapshot into one `prior_total`
+- state: open
+- type: not stated
+- area: cloudcost
+- priority: medium · size: S
+- evidence: docs/evidence/BL-076.md
+- done-when: `load_prior_snapshots`/`month_on_month` scope priors to the providers present in the run's own bundles, with a test asserting the `no_prior_month` path survives another provider's history sitting in the same tree, and a second asserting an N>1 run is unchanged (so the fix does not over-filter).
 
 ---
 
-### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low-medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
-
-Raised 2026-07-26 by BL-039's review (F1). **Not a demonstrated defect** — a reachable gap
-whose provider-side effect is unestablished, filed so the question has an owner and a
-trigger rather than living as a contract sentence with neither.
-
-**The gap.** Gemini returns a thought signature on a tool call. `gemini.ex` parses it off
-`extra_content.google.thought_signature`, carries it on the response as
-`:thought_signature_blob`, and `CanonicalMessage.assistant_tool_use_message/2` puts it on
-the canonical `tool_use` block; `build_tool_calls/1` re-attaches it on the way out. So a
-**live** Gemini run round-trips the signature. It is not among the ten keys `loop.ex`
-writes to `:llm_responded`, so a **forked** one cannot: reconstruction calls the same
-builder with a payload-derived map that lacks the key, `Map.get/2` returns nil, and the
-block is emitted signature-free. That degradation is deliberate and is what lets one
-builder serve both paths (BL-039 §4) — the open question is only what Gemini does with it.
-
-**What is *not* the gap.** The review sketched this as Anthropic interleaved thinking
-requiring a signed thinking block on a replayed assistant turn. That case cannot arise
-here: the harness sends no `thinking` parameter from any call site, so Anthropic returns
-no thinking blocks to lose. `:thought_signature_blob` has exactly one producer
-(`gemini.ex`) and one consumer (the same file). The invariant the review named holds —
-§4's "does not preserve" list was incomplete — but against the Gemini family, not the
-Anthropic one.
-
-**Trigger:** the first fork of a Gemini tool run. Nobody has run one; if the answer is
-"degrades silently and correctly", this closes as a one-line §4 confirmation with the
-run recorded.
-
-**Two dispositions, and the cheap one may be enough.** (a) Record the signature — add
-`"thought_signature"` to the `:llm_responded` payload and read it back in
-`tool_call_messages/2`. This is a **record-path change**, which BL-039 was explicitly
-forbidden; it also touches `payload_fields` in `drift_check` and specs.md §6 (a `?`-suffixed
-optional field, per the optional-payload-fields rule). (b) Confirm Gemini tolerates a
-missing signature on a replayed call and leave §4's limitation standing as documentation.
-Do **not** ship (a) before establishing (b) is insufficient — the harness records what it
-needs, not everything it sees, and one un-round-tripped provider hint is not obviously
-worth widening the event schema for.
-
-**Done when:** a Gemini fork of a tool step has been run and its outcome recorded, **and §4
-is updated from that work either way** — the limitation is confirmed harmless and the clause
-says so, *or* the signature is recorded, the fork round-trips it, and the clause's Gemini
-scoping is corrected in the same change, with a test that fails if the block loses its
-signature. §4 currently states the omission as unestablished-in-effect; the moment the effect
-is established, that sentence is stale in whichever direction the answer goes, so neither
-branch closes without touching it. (Review r2: the soft end of the same both-ends discipline
-BL-059 carries in its hard form — there the coupling is code-to-code and a diff can break the
-other side invisibly; here it is code-to-contract and the contract can go quietly wrong
-instead.)
+### BL-061 — Gemini thought signatures are not recorded, so a forked Gemini run loses them
+- state: triggered
+- type: not stated
+- area: harness
+- priority: low-medium · size: S
+- blocked-by / trigger: the first fork of a Gemini tool run
+- evidence: docs/evidence/BL-061.md
+- done-when: a Gemini fork of a tool step has been run and its outcome recorded, **and §4 is updated from that work either way** — the limitation is confirmed harmless and the clause says so, *or* the signature is recorded, the fork round-trips it, and the clause's Gemini scoping is corrected in the same change, with a test that fails if the block loses its signature.
 
 ---
 
-### BL-059 — Parallel tool calls are silently discarded: the adapter keeps the first `tool_use` block (#TBD)
-**Status:** OPEN
-**Size:** M · **Priority:** medium · **Section:** harness (`../aetheris/lib/aetheris/execution/`)
-
-Raised 2026-07-26 by BL-039's §8 contract adjudication, which was about to make this
-defect load-bearing. Not part of BL-039 — that ticket must not change the record path.
-
-**The defect.** `anthropic.ex`'s response parse selects the tool block with
-`Enum.find/2`:
-
-```elixir
-tool_block = Enum.find(content_blocks, fn b -> Map.get(b, "type") == "tool_use" end)
-```
-
-`find`, not `filter`. When a response carries several `tool_use` blocks, the first is
-executed and **every other one is dropped before any event is written** — no
-`tool_called`, no `tool_result`, no warning, no trace in the trajectory that a call was
-ever requested. The model's turn is answered with one result where it asked for several.
-
-**Why this is live, not theoretical.** Anthropic's API permits parallel tool use and it
-is **on by default**; the documented client contract is to execute every `tool_use` block
-and return all `tool_result` blocks in one user turn. The harness never opts out:
-`RunConfig` defaults `tool_choice: nil` (`run_config.ex:96`) and `build_request_body/2`'s
-`maybe_put` drops a nil, so `disable_parallel_tool_use` is never sent. Every real
-Anthropic run is therefore eligible for parallel calls, and would silently lose them.
-
-Whether any recorded run has actually hit it is **unknown and not established by the scout
-sweep**: 537 recorded tool steps across 91 trajectories all carry exactly one
-`tool_result`, but that is the *post-discard* record — it is what a step looks like both
-when the model asked for one tool and when it asked for four. The record cannot
-distinguish the two cases, which is the defect's own signature. Do not read that sweep as
-evidence the case has never fired.
-
-**Blast radius beyond the dropped call.** `loop.ex` builds one `assistant_tool_use_message`
-per step from the single surviving response, so the transcript sent back on the next step
-also claims the model made one call. The conversation the provider sees is not the
-conversation it produced.
-
-**Why BL-039 raised it.** Fork reconstruction pairs a recorded tool result with the tool
-call at the same step, positionally. That is sound *only* while a step carries at most one
-call — which is true today solely because of this discard. The ratified §4 clause
-(`../aetheris/docs/reviews/bl-039-contract-draft.md`) names the dependency and its
-enforcement point rather than asserting one-call-per-step as a property of the world, so
-fixing this row does not silently break fork pairing; it obliges a matching change there.
-
-**Two dispositions, and the choice is a product decision.** (a) Honour parallel calls —
-execute each block, record a `tool_called`/`tool_result` pair per call, and emit one
-assistant turn carrying all `tool_use` blocks followed by one user turn carrying all
-`tool_result` blocks. Touches the response shape (`tool_use_id` is already parsed but only
-one survives), the loop's per-step event model, and every reader that assumes one result
-per step — including `Fork.event_to_messages/1` and the verifier. (b) Decline them
-explicitly — send `disable_parallel_tool_use: true` so the provider returns one call and
-the record is honest. (b) is small and stops the silent loss immediately; (a) is the real
-fix. They are not exclusive: (b) is a defensible interim if (a) is not scheduled, but
-shipping (b) alone must be recorded as a deliberate capability limit, not a fix.
-
-**Sequencing.** Independent of BL-039 and must not be batched with it — BL-039 is
-docs-first with an explicit do-not-generate on record-path changes. If (a) lands first,
-BL-039's positional pairing needs revisiting before it is written.
-
-**(b) is not closure, and must not be recorded as it.** Disabling parallel tool use stops
-*future* silent loss. It tells you nothing about whether past runs dropped calls, and
-nothing ever will: the recorded step is byte-identical whether the model asked for one
-tool or four, so the corpus cannot be audited after the fact. That indistinguishability is
-why (a) is the real fix. If (b) ships alone, record it as a deliberate capability limit
-with the un-auditable history named — not as "parallel tool calls: handled".
-
-**Done when:** a run whose provider response carries multiple `tool_use` blocks either
-executes and records all of them (a), or cannot occur because the request disables
-parallel tool use (b) — with the choice recorded in the determinism contract, and a test
-that fails if the extra blocks are silently dropped. A stub response carrying two
-`tool_use` blocks is the cheap regression exercise; assert on the recorded events, not on
-the run's status.
-
-**Additionally, for disposition (a) — the reciprocal of BL-039's §4 note, and the reason
-this line exists:** the same commit must update fork reconstruction to pair *N* `tool_use`
-blocks against *N* `tool_result` blocks per step. BL-039's positional pairing is sound only
-under one-call-per-step; the day (a) lands, that premise is gone. **A (a) diff confined to
-`anthropic.ex`/`run_config.ex` breaks `fork.ex` without touching it** — the same
-diff-invisible break the §4 clause guards against, running the other direction. §4 names
-the dependency from the fork side; this line names it from the adapter side, so neither
-ticket can land its half and leave the other silently wrong. Fork's done-check must be
-re-run as part of (a), not deferred to whoever next opens `fork.ex`.
-
-**BL-039 has landed (2026-07-26), so the fork side is now concrete.** The pairing lives
-in `Fork.event_to_messages/1` and the id in `Fork.synthetic_tool_use_id/1`, which derives
-`"fork-toolu-#{step}"` — one id per *step*, which is precisely the assumption (a)
-removes. Both the function's comment and §4 point here. Under (a) the id must become one
-per *call*, and the `:tool_result` clause must consume N results rather than one; the
-canonical blocks themselves need no change, since `CanonicalMessage` already builds one
-block at a time and both turns take a list.
+### BL-059 — Parallel tool calls are silently discarded: the adapter keeps the first `tool_use` block
+- state: open
+- type: not stated
+- area: harness
+- priority: medium · size: M
+- evidence: docs/evidence/BL-059.md
+- done-when: a run whose provider response carries multiple `tool_use` blocks either executes and records all of them (a), or cannot occur because the request disables parallel tool use (b) — with the choice recorded in the determinism contract, and a test that fails if the extra blocks are silently dropped.
 
 ---
 
-### BL-040 — Event-type list exists in three places; drift between them is silent (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low-medium
-
-The set of trajectory event types is written out three times:
-
-| Site | Shape | Purpose |
-|---|---|---|
-| `../aetheris/lib/aetheris/trajectory/event.ex` `@type event_type` | type union | documentation / dialyzer |
-| `../aetheris/lib/aetheris/trajectory/event.ex` `@event_types` | literal atom list | atom-table guarantee; `known_types/0` |
-| `../aetheris/lib/aetheris/trajectory/file.ex` `@event_type_map` | `~w[…]a` → map | JSON trajectory deserialisation |
-
-`Store` was made to derive from the canonical list at BL-031 r2 (`a935038`), so it is
-no longer a fourth copy. `Trajectory.File` still holds its own, and the `@type` union
-cannot be derived from a list at all — so nothing makes the three agree.
-
-**The drift is not hypothetical — it is already present.** `:run_started` appears in
-`File.@event_type_map` and in `@event_types`, is **absent** from the `@type
-event_type` union, and is emitted by **no code path in `lib/`** (verified at
-`a935038`). So one deserialiser accepts a type the type spec denies and the harness
-never writes. Nobody noticed because no mechanism could.
-
-**Done when:** `Trajectory.File` derives its map from `Event.known_types/0`, and a
-test asserts the `@type` union and `@event_types` agree — the union is not derivable,
-so the test is the only possible guard. The test must also adjudicate `:run_started`:
-delete it as a phantom, or add it to the union and name what emits it.
-
-**Surfaced by** BL-031 r2's boot-crash regression, where `Store`'s
-`String.to_existing_atom` deserialisation depended on some *other* module having
-mentioned the atom first (`docs/reviews/bl-031-review.md`).
-
-> **Sequencing note, correcting the round-2 finding.** F23 suggested sequencing near
-> BL-033 and checking BL-033's `:fork` removal against `@event_types`. These are two
-> different unions: BL-033 concerns `RunConfig.@type mode` (`run_config.ex:115`),
-> whose vestigial member is `:fork`. `:fork` is a **mode, not an event type** — its
-> absence from `@event_types` is not a deliberate removal, and there is no
-> interaction between the two rows. Sequence BL-040 on its own merits.
-
-### BL-078 — Converge the AWS client plumbing into a shared `scripts/_aws.py` (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/`)
-
-Filed 2026-08-02 at the m2-cloudcost **t4** boundary, deferred deliberately rather than
-discovered.
-
-**The state.** `detect_optimization_signals.py` needs the same AWS plumbing `fetch_aws.py`
-already carries — `load_credentials`, `warn_shadowing_env`, `AWSClients` (explicit-session
-construction, the `AWS_PROFILE` neutralization, `redact`), `enumerate_regions`, `paginate`,
-`error_code`, `write_json` — so it **imports them from `fetch_aws`**. That is a CLI-to-CLI
-import, which the repo's own rule (`CLAUDE.md`, m2b learning) says should be a shared
-`scripts/_helper.py` instead.
-
-**Why it was not done at t4.** Lifting them means editing `fetch_aws.py`, and t4's
-Do-not-generate list forbids touching it. The alternative — duplicating `AWSClients` — would
-put a second copy of the D2 credential guarantee in the tree, which is strictly worse than one
-import: two copies of that guarantee are two things that can drift apart, and the one that
-drifts silently is a credential falling back to the default chain.
-
-**Done when:** `AWSClients` / `load_credentials` / `warn_shadowing_env` / `enumerate_regions`
-live in `scripts/_aws.py`; both CLIs import from there; `fetch_aws.py`'s existing 62 AWS tests
-and t4's suite stay green with no fixture change (the check that it *was* a relocation and not
-a change — the same evidence t2 used when the type constants moved to `_normalized.py`).
-
-**Trigger, not a calendar:** do it the next time `fetch_aws.py` is legitimately edited. This is
-the BL-070 precedent exactly — compose's duplicated `slug()` was left alone for the same reason
-and for the same duration.
-
-`Source: m2-cloudcost t4.`
-
-### BL-079 — cloudcost holds no S3 storage rate for `ap-south-1`, where this account's buckets live (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
-
-Filed 2026-08-02 from the m2-cloudcost **t4 live read**. Not a defect — the designed
-omit-and-warn path firing in production — but it means the S3 half of the spike produces no
-dollar figure on the one account it is pointed at.
-
-**Observed.** All three buckets are in `ap-south-1`, which `S3_STANDARD_USD_PER_GB_MONTH` does
-not carry, so all three `s3_no_lifecycle_policy` signals omitted `monthly_cost_estimate` and
-warned by name:
-
-```
-s3 s3-b1-campustrack-net: no published Standard rate is held for ap-south-1, so its cost
-estimate is omitted rather than taken from another region
-```
-
-That is the rule working: never a fallback to another region's rate. The nine `secret_unused`
-signals were priced (flat charge), so the run still produced figures — $3.60/month against a
-Secrets Manager line that t1 measured at $4.14 of a $4.99 bill.
-
-**Done when:** an `ap-south-1` Standard rate is added **from a verified source with its
-`as_of`**, or the table is dropped in favour of whatever BL-072's engine-backed integration
-returns. Do **not** close this by copying another region's number — that is the exact failure
-the omit path exists to prevent, and the table is deliberately partial rather than
-optimistically complete.
-
-**Batch with BL-072** if that milestone lands first: Cost Optimization Hub returns real,
-account-specific figures and would retire the static table rather than extend it.
-
-`Source: m2-cloudcost t4 live read.`
-
-**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
-
-### BL-080 — `detect_optimization_signals` reports `partial` for intentional honesty, not only for a read gap (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
-
-Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N1, non-blocking).
-
-**The observation.** The stdout `status` is `"partial" if (denied or warnings) else "ok"`. A
-fully-granted run that merely declined to price something — an unrated region, bytes in an
-unrated storage class — therefore reads as `partial`. On the live account **every** run will,
-because every bucket is in `ap-south-1` (BL-079). A status field that is permanently `partial`
-is a field readers learn to skip, which is the alarm-fatigue shape the strict-mode WARN
-exemption in `CLAUDE.md` exists to name. `status` is informational here — not gating, not the
-exit code — so this is cosmetic, not a defect.
-
-**Why the review's two-way fix is not quite it.** N1 suggests reserving `partial` for `denied[]`
-and letting figure-omission ride under `ok`. That would be right if `warnings[]` held only
-intentional omissions — but it currently holds two different kinds:
-
-- *intentional omission* — "no published Standard rate is held for ap-south-1", "GlacierStorage
-  is excluded from the cost estimate". Nothing is unknown; a figure was declined on purpose.
-- *a genuinely unknown fact* — "no NumberOfObjects datapoint published, so whether it is empty
-  is unknown", "size and object count are unknown". Something the run wanted to know and does
-  not.
-
-Collapsing both under `ok` would hide the second kind, which is the same
-absent-read-as-fine failure the `denied[]`/`warnings[]` split was introduced to prevent. So the
-fix is a **three-way** split, not a two-way one: `denied[]` (refused), `warnings[]` (unknown
-fact), and a new third bucket for priced-declined-on-purpose — with `status` keying on the first
-two only.
-
-**Done when:** the third category exists in the envelope, `status` reads `partial` for
-`denied[] or warnings[]` and `ok` for omissions alone, the render section distinguishes the
-third (it currently renders warnings under "Left unknown", which is the wrong heading for an
-intentional omission), and a test asserts a run whose ONLY finding is an unrated region reports
-`ok`.
-
-**Batch with BL-081** — same file, same envelope, and both are t4 review tidy-ups.
-
-`Source: m2-cloudcost t4 review N1.`
-
-**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
-
-### BL-081 — `s3_no_lifecycle_policy` fires on an observably empty bucket (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low · **Section:** cloudcost (`cloudcost/scripts/detect_optimization_signals.py`)
-
-Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N2, non-blocking).
-
-**The observation.** A bucket with no lifecycle policy and zero objects raises both
-`s3_empty_bucket` and `s3_no_lifecycle_policy` (fixture `cc-empty` does exactly this). The
-second is low-value noise: an empty bucket has nothing to expire or transition, so the missing
-policy costs nothing today.
-
-**The care needed when fixing it.** Suppress only on an **observed** zero — `objects == 0` read
-from a real datapoint. An *absent* `NumberOfObjects` datapoint must NOT suppress, because absent
-means unknown, and a bucket whose metric has not published looks identical to an empty one. That
-is the same unknown-is-not-zero rule the empty-bucket signal itself already turns on
-(`aws_cloudwatch_metrics_cc_unknown` is the existing control), so the fix must not quietly
-invert it in the neighbouring branch — a suppression driven by `not metrics.get("objects")`
-would do precisely that.
-
-**Done when:** `s3_no_lifecycle_policy` is suppressed when and only when the object count was
-observed to be 0; a test asserts an unknown-count bucket with no policy still raises it.
-
-**Batch with BL-080.**
-
-`Source: m2-cloudcost t4 review N2.`
-
-### BL-082 — no end-to-end orchestrated run of the `CLOUDCOST_OPTIMIZATION=1` path (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** cloudcost (`cloudcost/agents/cloudcost_orchestrator.exs`, `../aetheris/scripts/sprint.sh`)
-
-Filed 2026-08-02 from the m2-cloudcost **t4** review (claude-ui N3, non-blocking). The row the
-note asked for: t4 flagged this as "no trigger yet", and a gap with no trigger is what a row is
-for.
-
-**What IS proven.** The prompt the orchestrator builds, both ways — byte-identical to t3's with
-the gate unset (same md5, for both providers), exactly one extra step with it set; the raise when
-the gate is set for a non-AWS provider; `detect_optimization_signals.py` end-to-end offline
-through the stub; and `render_report.py --optimization-file` against the live signals file.
-
-**What is NOT.** The LLM actually executing STEP 2b and threading the printed path into STEP 4's
-`--optimization-file`. Every link is verified; the chain is not. That is the shape m6-docbuilder
-promoted a learning about — cross-stage wiring defects pass the per-stage check and surface only
-when the real pipeline runs.
-
-**Why it was skipped:** the run needs live AWS credentials and an LLM call, and t4 is
-non-gating. The risk is genuinely low (the threading is one placeholder substitution, identical
-in form to the four the prompt already does) but it is not zero.
-
-**Done when:** either a `cloudcost` sprint leg runs the orchestrator with
-`CLOUDCOST_OPTIMIZATION=1` and asserts the rendered report contains the optimization section, or
-an operator runs it once and the trajectory is recorded in the implementation notes. Sequence
-after **BL-069** if the sprint route is chosen — that case is already known-red on its orphan
-assertion, and adding a second assertion to a red case buries it.
-
-`Source: m2-cloudcost t4 review N3.`
-
-### BL-084 — Tools manifests for the four use cases that have none (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`cloudcost/`, `docbuilder/`, …)
-
-Filed 2026-08-03. Cloudcost's six pipeline scripts show undeclared/amber in the Tools tree —
-runnable but raw-args, no descriptions. Add `cloudcost/tools.json` declaring `fetch_aws`,
-`fetch_do`, `detect_orphans`, `detect_optimization_signals`, `compose_report_data`,
-`render_report` with descriptions (reuse the capability-matrix wording) and arg forms.
-`_normalized.py` is an import-only shared module, not a CLI — describe-only or omit, never Run.
-
-**Same adjacent-case as BL-083:** `tools.json` exists for payslip, drive, email, api and eduloka;
-it is **absent for cloudcost, docbuilder, provenance and boxy-pipeline**. Cloudcost is one of four.
-Do cloudcost first (its scripts are freshly documented), but file the others in the same sweep
-rather than rediscovering the gap per use case.
-
-**Sequence before BL-085, because it partly delivers it.** `env_deps` is *derived from the
-manifests* — `tools.rs:594` walks every script's `env` array and the Settings tab renders any key
-not in the static `AGENT_CONFIG_DEFS` as a dynamic config row (`AgentConfigTab.tsx:185`).
-`api/tools.json` already declares 16 such keys, so the path is exercised, not theoretical.
-Declaring `CLOUDCOST_AWS_*` in the manifest therefore produces the config rows **without** editing
-`agentConfigDefs.ts` at all.
-
-**Done when:** the six cloudcost scripts show without the amber badge and with structured arg
-forms; descriptions match `capability-matrix.md`; the other three use cases are filed or done.
-
-`Source: m2-cloudcost close-out, 2026-08-03.`
-
-**Still open, 2026-09-14 (closing sweep).** Unmet: *"descriptions match `capability-matrix.md`"* — true of five of six at `4f08264`, of none at HEAD, because the matrix was regenerated (`4d98ec2`, `e0c1ee2`) and `cloudcost/tools.json` never followed. The other-use-cases clause is met by BL-089; the no-amber-badge clause is recorded as live-only in `cloudcost/docs/bl-084-implementation-notes.md` and never recorded as observed.
-
-### BL-085 — Cloudcost credentials + per-launch provider selection in Rig (#TBD)
-**Status:** OPEN
-**Size:** M · **Priority:** medium · **Section:** aetheris-agents (`rig/`, `cloudcost/runbook.md`)
-
-Filed 2026-08-03. Surface the read-only AWS key in Rig's Agent Config and let an operator launch
-the cloudcost orchestrator from Rig. **This is the one row of the four with unresolved design** —
-the other three are drop-in.
-
-**Config surface — mostly free once BL-084 lands.** Declaring `CLOUDCOST_AWS_ACCESS_KEY_ID`,
-`CLOUDCOST_AWS_SECRET_ACCESS_KEY` (masked), and optional `_REGION` / `_REGIONS` / `_SESSION_TOKEN`
-in `cloudcost/tools.json` renders them as dynamic config rows already. A static `agentConfigDefs.ts`
-group is then only worth adding for grouping/labels/masking polish — decide which, don't do both.
-
-**Open question 1 — launch affordance.** How does an operator launch
-`cloudcost_orchestrator.exs` from Rig: the meta-orchestrator prefill (`/orchestrator`, which adds
-an LLM planning turn) or a direct control? Prefer the direct path if one exists; do not route a
-four-stage deterministic pipeline through an LLM planner just because that is the existing door.
-
-**Open question 2 — per-launch provider, and it has no home today.** `CLOUDCOST_PROVIDER` must be
-selectable **per launch**, and agent config is single-valued and global. The nearest precedent
-(`PAYSLIP_MONTH`, `PAYSLIP_START_STEP` — static defs an operator edits *between* runs) is exactly
-the shape this row rejects. So either the launch control grows a parameter concept, or the
-selection lives in the request the meta-orchestrator reads. **If the answer is "Rig needs a
-launch-parameter concept", that is the trigger to peel this row into its own small milestone** —
-it stops being a ticket at that point.
-
-**D2 posture — decide and document, do not code.** A Rig-launched run injects the config env but
-**not** the `env -u AWS_* AWS_SHARED_CREDENTIALS_FILE=/dev/null` hermetic prefix (Rig cannot set it
-per-agent). That is **suspenders-only**, and the suspenders genuinely hold: the adapter's explicit
-session refuses boto3's default chain by construction, proven live and offline by t1's poison
-guard. One sharpening the belt-and-suspenders framing misses, found while scoping: `api/tools.json`
-**already declares `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as env deps**, so Rig's own
-config surface actively *invites* the operator to set the two variables the D2 belt exists to
-strip. A Rig-launched cloudcost run is therefore not merely missing the belt — it may run with the
-poison present. The guard still holds, but say so in `cloudcost/runbook.md` rather than leaving the
-next reader to infer that "no belt" means "clean environment". Also: `agent-config.json` is
-plaintext on disk — a read-only key there is the same trust level as the GitHub PAT already stored
-there; a write key must never go in it.
-
-**Done when:** with the credentials set, a Rig-launched AWS run authenticates with the read-only
-key and produces its report; `CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`;
-the operator can pick aws vs do per launch; the runbook records the posture above.
-
-**Annotated 2026-08-14 (m6 t4) — the planner has never been told the key exists, so Open question
-2 is open in a way the row does not yet say.** This row's answer to per-launch provider selection
-is Rig's "Additional env vars" box, and the mechanism ships and works
-(`orchestrate.rs:57-66`; `cloudcost/runbook.md` §Rig step 2). What was never wired is the *other*
-end of the same door. `agents/orchestrator.exs`'s **Known params** block (`:65-70`) — the only
-place the planner LLM is told which env keys it may emit — lists `PAYSLIP_MONTH` and
-`PAYSLIP_EMPLOYEE_ID` and **has never mentioned any cloudcost key**, at any commit. Verified at
-agents `97c61a0`. So the LLM standing between the operator and the agent cannot surface, confirm,
-or default the provider, and `cloudcost_orchestrator.exs:58` defaults to `digitalocean` when the
-key is absent. **Provider selection therefore depends entirely on an operator having read the
-runbook before each launch** — a run requested as GitHub and launched without that knowledge
-executes as DigitalOcean, produces a well-formed DigitalOcean report, and nothing in the plan
-card, the run, or the artifact says the request was not honoured. That is a **Silent-wrong-answer**
-(harness `CLAUDE.md`) sitting on this row's Open question 2, not on BL-094: BL-094 is the *direct,
-non-LLM* door — the path that removes the planner — and closing it would leave this defect intact
-for every launch that still goes through the planner. Recorded here, on the row that owns
-per-launch provider selection.
-
-**Discharged in part, 2026-09-01 — the prompt-side half above is no longer true, and the sentence
-it turns on is left as written because it was true when verified.** *"has never mentioned any
-cloudcost key, at any commit. Verified at agents `97c61a0`"* was correct at `97c61a0` and is false
-from the commit carrying this note: `agents/orchestrator.exs`'s **Known params** block now names
-`CLOUDCOST_PROVIDER`, its four-value enum, the no-abbreviation rule, and the omit-to-default
-behaviour this row's `:58` citation describes, and the Examples block carries a cloudcost example.
-Verified live: the request *"Run the cloudcost report pipeline for DigitalOcean for Aug 2026"*
-emitted `CLOUDCOST_PROVIDER: "digitalocean"` where the same request against the pre-fix file
-emitted `"do"`. **What this does NOT discharge**, and the reason the row stays open on this point:
-a prompt instruction has no truth-maker, so the planner is now *told* the enum rather than *held*
-to it — nothing between the model and `System.put_env` validates the value, and the only enum check
-is the agent's own run-time raise, downstream of the operator's approval. That residue is
-**BL-187**, filed the same day and pointing back here. This row's Open question 2 — whether
-per-launch selection lives in a launch-parameter concept or in the request the planner reads — is
-untouched: the fix makes the second option work as designed, and does not decide between them.
-
-**Also stale in this row's own Done-when, noted rather than edited:** *"the operator can pick aws
-vs do per launch"* is itself a two-provider enumeration, written 2026-08-03 before Linode (m3) and
-GitHub (m6). The criterion is right and its enumeration is short by two — the same defect m6 t4
-repaired in `cloudcost/runbook.md` §Adding a provider. Left as written because rewriting a
-Done-when is a disposition and this ticket files rather than disposes.
-
-`Source: m2-cloudcost close-out, 2026-08-03.`
-
-**Still open, 2026-09-14 (closing sweep).** Unmet: *"`CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`"* as written — the key names appear in the guard's warning in the Rig-launched run's trajectory. `cloudcost/runbook.md` substitutes "no secret values", which holds, but the Done-when was never amended; and per-launch selection stays open on this row's own 2026-09-01 note (BL-187). The runbook-posture clause is met (§D2 posture).
-
-### BL-086 — Trajectory: label steps by their `run_command` stage (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** medium · **Section:** aetheris-agents (`rig/`)
-
-Filed 2026-08-03. `TrajectoryView` shows a generic "Step N". For each step carrying a
-`run_command` tool call whose first arg is a `.py`, derive `stage = basename(arg, ".py")` and
-render it as the step badge — "Step 0 · fetch_aws", "Step 1 · detect_orphans". Pure frontend, no
-harness or event change, retroactive on existing runs, and **generic**: every scripted pipeline
-gets it, not just cloudcost. Steps with no script call — the orchestrator's final summary turn —
-stay "Step N".
-
-**Done when:** a cloudcost run labels its stages (`fetch_aws` → `detect_orphans` →
-`compose_report_data` → `render_report`, plus `detect_optimization_signals` when
-`CLOUDCOST_OPTIMIZATION=1`); a docbuilder run shows its stages; non-script steps render unchanged.
-
-`Source: m2-cloudcost close-out, 2026-08-03.`
-
-**Still open, 2026-09-14 (closing sweep).** Unmet: *"plus `detect_optimization_signals` when `CLOUDCOST_OPTIMIZATION=1`"* — no recorded run has exercised it, and no owner or closing condition is named. The rendered badges are recorded as owed in `docs/rig/milestones/bl-086-trajectory-stage-labels-implementation-notes.md`; the label logic is proven offline and non-script steps keep "Step N" (`rig/src/components/modules/harness/stageLabel.ts`, `stepBadge`).
-
-### BL-087 — `payslip/tools.json` omits a runnable CLI (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`payslip/`)
-
-Filed 2026-08-03 by BL-084. `payslip/scripts/merge_employee_payslips.py` is a real CLI
-(`argparse` at :48, `if __name__ == "__main__":` at :76) and is absent from
-`payslip/tools.json`, which declares only `scripts/payslip_compute.py` and
-`scripts/generate_employee_payslips.py`. So it renders in Rig with the amber badge, the
-"not declared in tools.json" banner, and a raw-args box instead of a structured form.
-
-**Found by an off-territory sweep, not by working payslip.** BL-084's new
-`tests/test_tools_manifests.py` audits every manifest, not just the one it was written for;
-this was the only pre-existing red across api/drive/eduloka/email/payslip. It is carried as
-`xfail(strict=True)` on `test_no_undeclared_scripts[payslip]` **only** — payslip's parse,
-declared-files and env-dep params are unmarked and green. `strict=True` means the marker must
-be deleted in the same commit that fixes this, or the suite fails on the unexpected pass.
-
-Not auto-fixed at BL-084 because payslip is outside that ticket's cloudcost scope, and a
-manifest entry needs its arg forms read off `--help` rather than guessed.
-
-**Done when:** the entry is declared with arg forms derived from
-`python3 scripts/merge_employee_payslips.py --help`; the `xfail` marker in
-`tests/test_tools_manifests.py` is removed in the same commit.
-
-`Source: BL-084, 2026-08-03.`
-
-### BL-088 — `ManifestScript.runnable`: mark a manifest entry describe-only (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** aetheris-agents (`rig/`)
-
-Filed 2026-08-03 by BL-084. A `tools.json` entry cannot say "this is not a CLI". The Run
-button at `ToolDetail.tsx:175-186` renders for every script, declared or not, gated only on
-empty required args, and `ManifestScript` (`tools.rs:29-46`) has no field to suppress it.
-
-The live case is `cloudcost/scripts/_normalized.py`, an import-only shared module. BL-084's
-row asked for it to be "describe-only, never Run"; only the describe half was deliverable, so
-BL-084 declares it with `args: []` and a description saying it is import-only. Running it is
-genuinely harmless there — no `__main__`, so `python3 scripts/_normalized.py` exits 0 with no
-output — which is why this is low priority rather than a correctness bug. Omitting the entry
-instead is strictly worse: the walker synthesises it as `undeclared` anyway
-(`tools.rs:560-575`), so it stays amber *and* stays runnable.
-
-Not unique to cloudcost: `docbuilder/scripts/_drive.py`, `_format.py`, `_table_html.py`,
-eduloka's eight import-only modules and `drive/scripts/drive_utils.py` are the same class —
-enumerate them when this lands rather than fixing the one that was noticed.
-
-**Done when:** `runnable: Option<bool>` (serde default true) exists on `ManifestScript`,
-mirrors into `src/hooks/types.ts`, gates the Run button, and is rejected server-side in
-`tools_run_script` so the gate is not frontend-only; `p4-001-manifest-spec.md` documents it.
-
-`Source: BL-084, 2026-08-03.`
-
-**DEFERRED, 2026-09-14** (R40). No live milestone wants this feature, and the backlog is not where features wait to be noticed. Changes when a milestone claims it.
-
-### BL-089 — tools.json for the three use cases that still have none (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`docbuilder/`, `provenance/`, `boxy-pipeline/`)
-
-Filed 2026-08-03 by BL-084 (Decision A). `tools.json` is absent for docbuilder, provenance and
-boxy-pipeline; every runnable CLI in each renders amber with a raw-args box in Rig. BL-084 did
-cloudcost only and carried these three as `xfail(strict=True)` in `tests/test_tools_manifests.py`
-(`test_manifest_parses` + `test_no_undeclared_scripts`), so they cannot rot silently.
-
-Declare each use case's runnable CLIs (arg forms off each script's `--help`, descriptions from
-`capability-matrix.md`), import-only modules describe-only per BL-088. May land per-use-case or
-together; each landing must delete that use case from `NO_MANIFEST_YET` in the suite in the same
-commit, or the strict xfail fails on the unexpected pass.
-
-`Source: BL-084, 2026-08-03.`
-
-### BL-091 — exportConfig() drops every manifest-derived env key (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low-medium · **Section:** aetheris-agents (`rig/`)
-
-Filed 2026-08-03 by BL-084. `exportConfig()` (`rig/src/hooks/useAgentConfig.ts:33-41`) iterates
-`AGENT_CONFIG_DEFS` only, so every dynamic env_deps key — api's 16, cloudcost's 6 — is editable and
-persisted in agent-config but silently omitted from Export. Pre-existing (api already affected);
-BL-084 surfaced it. Decide the masked-key policy deliberately when fixing: omitting secret keys from
-export may be intended hygiene, but omitting the non-masked keys (region, access-key-id) is silent
-data loss on config transfer.
-
-`Source: BL-084, 2026-08-03.`
-
-### BL-093 — runbook drift: PAYSLIP_MONTH described as non-persistent (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low · **Section:** aetheris-agents (`rig/docs/`)
-
-Filed 2026-08-04 by BL-085. `rig/docs/runbook.md:316-317` states "`PAYSLIP_MONTH` is injected
-per-invocation by the orchestrator — it is not a persistent Agent Config setting." That is true of
-the meta-orchestrator's `params` mechanism (`agents/orchestrator.exs:272-273`, restored `:295-298`)
-and **false** of `rig/src/components/modules/settings/agentConfigDefs.ts:38`, which renders it as a
-persistent, savable, exported row alongside `PAYSLIP_START_STEP` and `PAYSLIP_EMPLOYEE_ID`. Both
-realities ship; the runbook denies one of them.
-
-Fix by describing both mechanisms, or by moving the three payslip rows out of the static defs —
-decide deliberately. Note the second option is the same question BL-085 answered for cloudcost
-(per-launch values belong in `extra_env`, not in global config), so this row is the payslip half of
-that adjudication and should not be closed by editing the sentence alone without deciding which
-mechanism is intended.
-
-`Source: BL-085, 2026-08-04.`
+### BL-040 — Event-type list exists in three places; drift between them is silent
+- state: open
+- type: not stated
+- area: Rig
+- priority: low-medium · size: S
+- evidence: docs/evidence/BL-040.md
+- done-when: `Trajectory.File` derives its map from `Event.known_types/0`, and a test asserts the `@type` union and `@event_types` agree — the union is not derivable, so the test is the only possible guard.
+
+### BL-078 — Converge the AWS client plumbing into a shared `scripts/_aws.py`
+- state: triggered
+- type: not stated
+- area: cloudcost
+- priority: low · size: S
+- blocked-by / trigger: do it the next time `fetch_aws.py` is legitimately edited
+- evidence: docs/evidence/BL-078.md
+- done-when: `AWSClients` / `load_credentials` / `warn_shadowing_env` / `enumerate_regions` live in `scripts/_aws.py`; both CLIs import from there; `fetch_aws.py`'s existing 62 AWS tests and t4's suite stay green with no fixture change (the check that it *was* a relocation and not a change — the same evidence t2 used when the type constants moved to `_normalized.py`).
+
+### BL-079 — cloudcost holds no S3 storage rate for `ap-south-1`, where this account's buckets live
+- state: triggered
+- type: not stated
+- area: cloudcost
+- priority: low · size: XS
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-079.md
+- done-when: an `ap-south-1` Standard rate is added **from a verified source with its `as_of`**, or the table is dropped in favour of whatever BL-072's engine-backed integration returns.
+
+### BL-080 — `detect_optimization_signals` reports `partial` for intentional honesty, not only for a read gap
+- state: triggered
+- type: not stated
+- area: cloudcost
+- priority: low · size: S
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-080.md
+- done-when: the third category exists in the envelope, `status` reads `partial` for `denied[] or warnings[]` and `ok` for omissions alone, the render section distinguishes the third (it currently renders warnings under "Left unknown", which is the wrong heading for an intentional omission), and a test asserts a run whose ONLY finding is an unrated region reports `ok`.
+
+### BL-081 — `s3_no_lifecycle_policy` fires on an observably empty bucket
+- state: open
+- type: not stated
+- area: cloudcost
+- priority: low · size: XS
+- evidence: docs/evidence/BL-081.md
+- done-when: `s3_no_lifecycle_policy` is suppressed when and only when the object count was observed to be 0; a test asserts an unknown-count bucket with no policy still raises it.
+
+### BL-082 — no end-to-end orchestrated run of the `CLOUDCOST_OPTIMIZATION=1` path
+- state: open
+- type: not stated
+- area: cloudcost
+- priority: low · size: S
+- evidence: docs/evidence/BL-082.md
+- done-when: either a `cloudcost` sprint leg runs the orchestrator with `CLOUDCOST_OPTIMIZATION=1` and asserts the rendered report contains the optimization section, or an operator runs it once and the trajectory is recorded in the implementation notes.
+
+### BL-084 — Tools manifests for the four use cases that have none
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: low-medium · size: S
+- evidence: docs/evidence/BL-084.md
+- done-when: the six cloudcost scripts show without the amber badge and with structured arg forms; descriptions match `capability-matrix.md`; the other three use cases are filed or done.
+
+### BL-085 — Cloudcost credentials + per-launch provider selection in Rig
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: medium · size: M
+- evidence: docs/evidence/BL-085.md
+- done-when: with the credentials set, a Rig-launched AWS run authenticates with the read-only key and produces its report; `CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`; the operator can pick aws vs do per launch; the runbook records the posture above.
+
+### BL-086 — Trajectory: label steps by their `run_command` stage
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: medium · size: S
+- evidence: docs/evidence/BL-086.md
+- done-when: a cloudcost run labels its stages (`fetch_aws` → `detect_orphans` → `compose_report_data` → `render_report`, plus `detect_optimization_signals` when `CLOUDCOST_OPTIMIZATION=1`); a docbuilder run shows its stages; non-script steps render unchanged.
+
+### BL-087 — `payslip/tools.json` omits a runnable CLI
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: low · size: XS
+- evidence: docs/evidence/BL-087.md
+- done-when: the entry is declared with arg forms derived from `python3 scripts/merge_employee_payslips.py --help`; the `xfail` marker in `tests/test_tools_manifests.py` is removed in the same commit.
+
+### BL-088 — `ManifestScript.runnable`: mark a manifest entry describe-only
+- state: triggered
+- type: not stated
+- area: aetheris-agents
+- priority: low · size: S
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-088.md
+- done-when: `runnable: Option<bool>` (serde default true) exists on `ManifestScript`, mirrors into `src/hooks/types.ts`, gates the Run button, and is rejected server-side in `tools_run_script` so the gate is not frontend-only; `p4-001-manifest-spec.md` documents it.
+
+### BL-089 — tools.json for the three use cases that still have none
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: low-medium · size: S
+- evidence: docs/evidence/BL-089.md
+- done-when: not stated — see evidence
+
+### BL-091 — exportConfig() drops every manifest-derived env key
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: low-medium · size: S
+- evidence: docs/evidence/BL-091.md
+- done-when: not stated — see evidence
+
+### BL-093 — runbook drift: PAYSLIP_MONTH described as non-persistent
+- state: open
+- type: not stated
+- area: aetheris-agents
+- priority: low · size: XS
+- evidence: docs/evidence/BL-093.md
+- done-when: not stated — see evidence
 
 ## Milestones (L — issue docs first, per repo convention)
 

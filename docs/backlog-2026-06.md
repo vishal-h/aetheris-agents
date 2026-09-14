@@ -9193,8 +9193,7 @@ takes, one of these two strings becomes false and has to move with it.]`
 a shell, a fixed set of permitted names, only the default working directory is the sandbox
 root. The `EffectClass` comments, contract §2 **Environment** and `architecture.md` match;
 `ToolSchemaTest` asserts no containment claim and parity between the copies. Containment is
-unchanged. Not discharged: the ten `git_*` schemas' `working_dir` descriptions still read
-*"relative to sandbox root"* (`registry.ex`), over the same `resolve_working_dir`.
+unchanged. The ten `git_*` schemas' `working_dir` descriptions were corrected the same way at harness `83a79c5`.
 
 **Done when:** a decision is recorded ON THIS ROW between:
 
@@ -10327,3 +10326,29 @@ round's packet, `scratchpad/packet.md` of its session, in neither tree. Citation
 `lib/aetheris/eval/baseline.ex:140`; the Runner check M2 removed is `lib/aetheris/eval/runner.ex:72`;
 the serve call and its error arm are `lib/aetheris/agent/server.ex:716` and `:721`–`:729`. BL-221 is
 in `docs/backlog-2026-06-closed.md`.`
+
+### BL-251 — `mix test` green is seed-dependent: `Skill.BodyTest` captures a concurrent test's warning (#TBD)
+**Status:** OPEN
+**Kind:** defect (test infrastructure)
+**Size:** TBD · **Priority:** medium — a gate whose green depends on the seed is not evidence the suite passed
+**Section:** harness (`../aetheris/test/aetheris/skill/body_test.exs`)
+
+- `Aetheris.Skill.BodyTest` "visibility a served resolution logs nothing" fails under `mix test --seed 156452`
+  (twice) and passes under `--seed 376243`, on the harness tree committed as `83a79c5` (1233 tests, 95 excluded).
+- It predates that round. With the round's four changed files replaced by their `603b7d5` blobs (sha256-checked
+  in place, then restored from sha256-verified backups), `mix test --seed 156452` fails the same test (1231 tests,
+  1 failure).
+- Assertion: `assert log == ""` (`test/aetheris/skill/body_test.exs:175`) over `capture_log` (`:170`–`:173`), in an
+  `async: true` module.
+- Captured text: `[warning] [ContextManager] summarise failed for run cm-1255, falling back to :rolling —
+  "simulated failure"`. Origin **observed by content**: `cm-` run ids are minted only at
+  `test/aetheris/execution/context_manager_test.exs:8`, `"simulated failure"` is stubbed only at `:168`
+  (`:summarise falls back to :rolling when LLM call fails`), and the line is emitted at
+  `lib/aetheris/execution/context_manager.ex:147`. That the two ran concurrently is **inferred** from both modules
+  being `async: true`; the timing was not observed.
+- Consequence: `mix test`'s green is seed-dependent, so a passing gate is not evidence the suite passed.
+
+**Done when:** the assertion distinguishes this test's own log output from concurrent output, or the test is made
+non-async — with the choice and its cost recorded.
+
+`Source: found 2026-09-14 during the BL-207 git_* follow-up round, not prompt-supplied.`

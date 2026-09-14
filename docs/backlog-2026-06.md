@@ -578,339 +578,63 @@ is already green at 38; it is not this row's transition.
 
 ## Drift apparatus (optional hardening)
 
-### BL-046 — Tool-result payload key is a convention, not a contract: `"output"` vs `"result"` (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
-
-Three tickets have now fixed the *same root cause* on the read side, one reader at a time:
-
-| Ticket | Reader fixed | Failure shape it produced |
-|---|---|---|
-| BL-028 (`9b2b102`) | `Fork.event_to_messages/1` — `Map.get(payload, "output", "")` | **Silent empty** tool messages; fork proceeds from a wrong transcript |
-| BL-025 | `Verifier.serve_step/1` (new path) | — (written correctly from the start) |
-| BL-027 (folded into BL-025) | `Verifier.verify_step/2` — `Map.fetch!(payload, "output")` | **Crash**; verify dies on any failed-tool trajectory |
-
-The writers remain unreconciled. `Loop` emits `:tool_result` payloads under **`"output"`**
-for worker and MCP dispatch, **`"result"`** for in-process tools, and **`"result"` +
-`"is_error"`** for every tool error regardless of dispatch route (`record_tool_error/7`).
-Nothing declares this; each new reader must rediscover it, and the two failure shapes above
-are what rediscovery costs. A fourth reader will be written eventually.
-
-Note the two fixes differ in a way worth preserving: BL-028's read-side fallback also
-normalizes (nil → `""`, non-binary → JSON) per contract §2's string invariant; BL-025's does
-not, because verify must reflect the record verbatim rather than improve on it. So "one
-shared helper" is not automatically the right answer — the *convention* needs declaring even
-if the readers stay separate.
-
-**Done when:** the `:tool_result` payload contract is stated in one place (a `@type` plus
-docstring on the writer side, or a documented accessor), the existing readers are pointed at
-it, and adding a writer that invents a third key is caught — by a test or by there being
-only one way to write the payload. Decide explicitly whether the readers share code or only
-share the convention.
-
-**Ruled 2026-09-10: one writer constructor; readers share the convention.**
-A single function constructs the `:tool_result` payload — the Done-when's
-second arm, "only one way to write the payload" — carrying a `@type` and
-docstring. The existing readers are pointed at it and keep their own
-normalization; they do NOT share an accessor, because BL-028's reader
-normalizes while BL-025's must reflect the record verbatim.
-
-**Touches:** (harness, resolved at `377d455`)
-- `lib/aetheris/execution/loop.ex` — every writer: the in-process `"result"`
-  clauses of `handle_tool_call/5` (`:428-530`), the MCP `"output"` clause
-  (`:548-555`), `exec_server_payload/2` (`:577`), and `record_tool_error/7`
-  (`:355`); the new constructor lands here
-- `lib/aetheris/execution/fork.ex` — `event_to_messages/1`'s `:tool_result`
-  clause (`:115`), BL-028's normalizing reader
-- `lib/aetheris/execution/verifier.ex` — `serve_step/2` (`:301`) and
-  `verify_step/2` (`:331`), BL-025's verbatim readers
-- `test/aetheris/execution/loop_tool_error_test.exs` — asserts the error
-  payload's `"result"` + `"is_error"` keys
-- `test/aetheris/execution/fork_test.exs` — asserts reconstruction from both
-  `"output"`- and `"result"`-keyed payloads
-- `test/aetheris/execution/verifier_test.exs` — asserts both reader paths,
-  including the `"result"`-only failed-tool step
-
-`[Noted 2026-09-10. The ruling does not say whether the constructor collapses
-`"output"` and `"result"` into one key. The Done-when's "only one way to write
-the payload" reads as a collapse, which would break the verbatim reader and
-recorded trajectories. Absent from the Touches list: `eval/scorer/fs_hash.ex`
-and `eval/scorer/exit_code.ex`, which read `:tool_result` payload fields, and
-`cli/commands/run_helpers.ex`'s `format_verbose_detail/1`. Resolve before the
-row is taken.]`
-
-`Source: BL-028 (2026-07-21), BL-027/BL-025 (2026-07-23) — same root cause, third reader.`
-
-**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: the 2026-09-10 note above says the key-collapse question resolves first. Changes when that ruling is recorded here.
+### BL-046 — Tool-result payload key is a convention, not a contract: `"output"` vs `"result"`
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: S
+- evidence: docs/evidence/BL-046.md
+- done-when: the `:tool_result` payload contract is stated in one place (a `@type` plus docstring on the writer side, or a documented accessor), the existing readers are pointed at it, and adding a writer that invents a third key is caught — by a test or by there being only one way to write the payload.
 
 ---
 
-### BL-044 — `mix aetheris` discards every command's exit code (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
-
-`Mix.Tasks.Aetheris.run/1` is `_ = Aetheris.CLI.run(argv); :ok`
-(`lib/mix/tasks/aetheris.ex:10-11`). `Aetheris.CLI.run/1` returns `Formatter.print/2`'s
-`0 | 1` — which the escript entry point does halt on (`main.ex:33-34`) — but the Mix task
-throws it away. So **`mix aetheris <anything>` exits 0 regardless of outcome**, for every
-command, not just verify.
-
-Surfaced at BL-025, where `aetheris verify` was given a failure-reflecting exit code: the
-escript honours it, `mix aetheris verify` does not. The BL-025 test therefore asserts the code
-at `Formatter.print/2` rather than by shelling out through `mix`.
-
-**Not fixed at BL-025 deliberately** — making the Mix task halt non-zero would change
-behaviour for every command at once, and `scripts/sprint.sh` runs `mix aetheris` under
-`set -euo pipefail`, so any command that starts reporting failure honestly could abort the
-sprint. That is a wanted outcome eventually, but it needs the sprint audited in the same
-change rather than as a side effect.
-
-**Done when:** `mix aetheris` propagates the exit code (or documents why it cannot), and
-`sprint.sh` is audited for commands that would newly abort it.
-
-**A concrete audit input, found 2026-08-06 (m4 t2) — one site where the discarded code makes an
-existing assertion vacuous.** The cloudcost case wraps its real run in an exit-status test
-(`../aetheris/scripts/sprint.sh`, the `if "${CC_HERMETIC[@]}" mix aetheris --json run …` block) and
-`fail`s on "non-zero exit". Because the Mix task discards the code, that branch is reachable only
-when the task *raises*; a run that ends `:failed` exits 0 and the case prints `[OK]`. So the
-assertion passes identically whether or not the run succeeded — the **Silent-wrong-answer** shape,
-in the apparatus. Verified at harness `871a720`: `lib/mix/tasks/aetheris.ex` is still
-`_ = Aetheris.CLI.run(argv); :ok`, and `CLI.run/1`'s `System.halt(exit_code)` is still commented
-out. Named here rather than fixed at t2, which does not open that file; it is the kind of site
-this row's audit exists to enumerate, and there is no reason to think it is the only one.
-
-**A second audit input, found 2026-08-06 (m4 t3) — three sites that are NOT affected, recorded as
-a negative so the audit does not re-derive them.** The cloudcost case's three no-silent-fallback
-guards (`CLOUDCOST_PROVIDER=aws` with no key, `linode` with no token, unknown provider) run
-`mix run --eval`, not `mix aetheris`, and `mix run` does **not** swallow the code. Verified both
-directions at harness `f8bbac8`: each guard exits 1 with its own `RuntimeError` message, and the
-same command with nothing to raise about exits 0. So these three need no change when this row is
-fixed. **The guards do have a defect, but it is not this one**: each asserts only *that* an eval
-raised, never *which* raise fired, so any raise passes — including one caused by an environment
-change. m4 t3 fixed that for the one guard whose environment it moved (the Linode guard now matches
-the raise message) and left the other two, whose failure direction is safe.
-
-`Source: BL-025 execution, 2026-07-23; audit input appended m4 t2, 2026-08-06; second audit input
-appended m4 t3, 2026-08-06.`
+### BL-044 — `mix aetheris` discards every command's exit code
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: S
+- evidence: docs/evidence/BL-044.md
+- done-when: `mix aetheris` propagates the exit code (or documents why it cannot), and `sprint.sh` is audited for commands that would newly abort it.
 
 ---
 
-### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute (#TBD)
-**Status:** OPEN
-**Size:** S–M · **Priority:** medium · **Section:** Harness (aetheris/)
-
-Found during the BL-048 closeout while diagnosing `OverlayAutonomousTest`, which is skipped
-pending this.
-
-`Agent.Supervisor.worker_child_spec/1`'s **first** clause is
-
-```elixir
-defp worker_child_spec(%{provider: "stub", mcp_servers: []}), do: []
-defp worker_child_spec(%{tools: [], mcp_servers: []}), do: []
-```
-
-The first matches on `provider` and `mcp_servers` **without looking at `tools`**, and it is
-matched before the clause that does. So a run with `provider: "stub"` and
-`tools: ["write_file"]` starts **no worker at all**. Its stub responses can still drive tool
-calls; those calls silently do not execute; and the run reports `:done`.
-
-`OverlayAutonomousTest` is exactly that shape, which is why it fails identically before and
-after BL-050's reorder — no worker means nothing mounts an overlay, so the probe file lands
-nowhere and the test's `assert File.exists?(probe_in_upper)` cannot pass. It is **not** the
-BL-050 race, and BL-050 correctly did not claim it.
-
-**Why this was not fixed in the BL-048 closeout.** The honest fix is the clause — a stub run
-that declares tools does need a worker — but that clause governs **six test files, three of them
-in the default suite** (`loop_test.exs`, `pre_tools_test.exs`, `injector_test.exs`, plus
-`spawn_agent_test.exs`, `skill_extraction_test.exs`, and the overlay test). Changing it turns
-default-suite tests into worker-dependent runs, which is a product decision about what a stub run
-*is*, not a test fix — and BL-048 was explicitly forbidden from weakening or reshaping product
-behaviour to make tests green.
-
-**The question to settle:** should a `provider: "stub"` run that declares tools start a worker
-and execute them (making the stub a *model* stub only), or is a stub run defined as
-tool-inert — in which case declaring tools on one should be rejected at config validation rather
-than silently ignored? Either answer is defensible; the current behaviour — accept the config,
-start no worker, execute nothing, report success — is not.
-
-**Done when:** the question is answered and recorded; the behaviour matches the answer (worker
-started, or config rejected); `OverlayAutonomousTest`'s `@moduletag :skip` is removed and it
-passes, or the test is rewritten against whatever the answer makes correct; and the blast radius
-on the six files is walked, not assumed.
-
-`Source: BL-048 closeout, 2026-07-25 (harness 6e2fad8).`
+### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute
+- state: open
+- type: not stated
+- area: Harness
+- priority: medium · size: S–M
+- evidence: docs/evidence/BL-057.md
+- done-when: the question is answered and recorded; the behaviour matches the answer (worker started, or config rejected); `OverlayAutonomousTest`'s `@moduletag :skip` is removed and it passes, or the test is rewritten against whatever the answer makes correct; and the blast radius on the six files is walked, not assumed.
 
 ---
 
-### BL-051 — One unidentified `mix test` failure, and the capture discipline that lost its name (#TBD)
-**Status:** OPEN
-**Size:** XS · **Priority:** low (capture fix) / unknown (the flake itself) · **Section:** Harness (aetheris/)
-
-A single `mix test` run at `c80a8e4` (BL-049 r1) reported `921 tests, 1 failure, 122 excluded`.
-**Nine consecutive runs before and after were `0 failures`**, and the default suite has not
-otherwise been red on this branch. The failing test cannot be named: the gate command piped
-through `tail -2`, keeping the summary line and discarding the failure block.
-
-**The nameable defect is the capture, not the flake.** This is the Complete-output rule
-failing in its most ordinary form — a summary line preserved, the detail that made it
-actionable thrown away — and it cost the one occurrence that would have identified the test.
-BL-016 and BL-020 are the same class on counts; this is the class on failure identity.
-
-**Not attributed to BL-049.** The r1 diff is a test, a `@doc false` seam, and comments — no
-runtime behaviour change — and the r0 diff had nine clean default-suite runs across the
-cycle. But attribution is *unknown*, not *cleared*, and this row says so rather than assuming
-the comfortable answer.
-
-**Rerun burst (r2 suggestion, run at `c80a8e4`+r2 notes): 20 of 20 clean** (`921 tests, 0
-failures` each). BL-049's default-suite additions are pure and deterministic
-(`VolatileMetadataTest`, `async: true`, no worker; the verdict/effects tests are
-`:requires_worker`, excluded from default `mix test`), so a flake in them would be a real
-ordering/async defect rather than env noise — and none surfaced in 20 runs. That is evidence
-toward "pre-existing / env, not BL-049's", **not** proof: the original occurrence still has no
-name, and one clean burst cannot clear a one-in-thirty-odd intermittent. Attribution stays
-*unknown*. The capture-discipline fix below is what actually closes this; the burst just lowers
-the prior that BL-049 introduced it.
-
-**Done when:** gate runs capture full test output to a file (summary *and* failure blocks) so
-a single occurrence is identifiable — this is a habit fix, not a code fix, and belongs in
-whatever runs the gates; and if the flake recurs with a name, it gets its own row with a
-mechanism. Until then this row exists so a second sighting has something to attach to rather
-than being met as a first sighting again.
-
-`Source: BL-049 review r1 done-check, 2026-07-24. Observed once at c80a8e4; unreproduced in 9
-subsequent runs, then 0/20 in a dedicated r2 burst (29 clean total); name lost to a truncated
-capture.`
+### BL-051 — One unidentified `mix test` failure, and the capture discipline that lost its name
+- state: open
+- type: not stated
+- area: Harness
+- priority: low (capture fix) / unknown (the flake itself) · size: XS
+- evidence: docs/evidence/BL-051.md
+- done-when: gate runs capture full test output to a file (summary *and* failure blocks) so a single occurrence is identifiable — this is a habit fix, not a code fix, and belongs in whatever runs the gates; and if the flake recurs with a name, it gets its own row with a mechanism.
 
 ---
 
-### BL-045 — `RunConfig mode: :verify` is a misnomer: no verification semantics (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** Harness (aetheris/)
-
-After BL-025 routed `aetheris verify` through `Aetheris.Execution.Verifier`, nothing in the
-harness treats `mode: :verify` as verification. The mode does exactly two things — skip
-context trimming (`loop.ex:409-411`) and skip pre-tools (`pre_tools.ex:59`) — and is
-otherwise a normal **live** run: live model calls, live tool execution, no comparison against
-any record.
-
-**This is not a BL-033-shaped deletion.** BL-033 removes `:fork` from the same union because
-it is unused; `:verify` is *still reachable* — from agent-file config
-(`run_helpers.ex`, `normalize_config_value(:mode, …)`) and from eval task templates
-(`eval/runner.ex:298`). The defect is naming, not deadness: a config author writing
-`mode: "verify"` reasonably expects verification and gets a live run. That mis-expectation is
-precisely what let the CLI diverge from determinism-contract §3 unnoticed for the life of the
-doc (BL-025 §3 edit separates the two by name).
-
-**Scope note:** this is the `RunConfig` **mode** union (`run_config.ex:115`), *not* the
-event-type union (BL-040). Conflating those two is a recorded sketch-failure; keep them apart.
-
-**Done when:** the mode is renamed to what it does (e.g. `:replay_context`) with its two
-call-site parsers updated, or kept with a docstring stating it performs no verification —
-decided, not left ambiguous.
-
-**Ruled 2026-09-10: rename.** The mode becomes `:replay_context`; both string
-decoders are updated. No deprecated alias, because the mode is not settable
-from any external surface: no CLI switch (`run.ex` and `verify.ex` @switches),
-no Rig field, and the only decoder that accepts a stored `"verify"`
-(`run_helpers.ex:462`) is reached solely through `lookup_run/1`, whose three
-callers all discard or override the mode. The one channel that would execute
-it — the eval task template (`eval/runner.ex:269,298`) — has no CLI
-subcommand, no file loader, and no builtin task that sets it.
-
-**Amended 2026-09-10.** The rename also makes `from_map/2`'s mode decode
-total. `run_config.ex:152` decodes with a bare `String.to_atom/1`, so after
-the rename a stored `"verify"` still becomes `:verify`, matches neither
-guard, and yields a live run that silently loses both skips — the rename
-would introduce the wrong answer it exists to remove. The decode returns an
-error on any unrecognised mode instead. Still no alias; `run_config.ex` is
-already in the Touches list, so the row stays S.
-
-**Touches:** (harness, resolved at `377d455`)
-- `lib/aetheris/run_config.ex` — the `mode` union (`:115`) and the two mode
-  docstrings (`:47`, `:54`)
-- `lib/aetheris/execution/loop.ex` — `prepare_llm_messages/3`'s
-  `when mode in [:replay, :verify]` guard (`:416-418`)
-- `lib/aetheris/execution/pre_tools.ex` — the `run/3` skip clause (`:59`) and
-  the two docstrings (`:10`, `:48`)
-- `lib/aetheris/cli/commands/run_helpers.ex` — `normalize_config_value(:mode, …)`
-  (`:462`), the first string decoder
-- `lib/aetheris/eval/runner.ex` — `parse_mode/1` (`:298`) and its call site in
-  `build_run_config/3` (`:269`), the second string decoder
-- `test/aetheris/run_config_test.exs` — covers `from_map/2` mode decoding
-- `test/aetheris/execution/loop_test.exs` — covers mode-gated loop behaviour
-- `test/aetheris/execution/pre_tools_test.exs` — covers the mode skip clause
-- `test/aetheris/cli/commands/run_helpers_test.exs` — covers config normalization
-- `test/aetheris/eval/runner_test.exs` — covers template mode parsing
-
-`[Corrected 2026-09-10. The ruling above states that the only decoder
-accepting a stored `"verify"` is `run_helpers.ex:462`, reached solely through
-`lookup_run/1`. That is FALSE. `fork.ex`'s `assemble_config/5` decodes stored
-trajectory meta with `String.to_existing_atom`, and `server.ex` writes that
-string at two sites — so after the rename, forking a recorded `:verify` run
-raises ArgumentError. The wording is quoted rather than replaced because a
-reader would otherwise act on it.
-
-Two further gaps found the same day. The amendment's total decode has four
-callers that bind `%{RunConfig.from_map(...) | ...}` and cannot consume an
-`{:error, _}`: `application.ex`, `aetheris.ex`, `scheduler.ex`,
-`api/playground_router.ex`. And the row's premise that the mode carries no
-behaviour is stale — `client.ex`'s `startup_verdict/5` branches on
-`mode == :verify` for the seccomp and overlay gates, added by BL-055/BL-184
-after this row was filed.
-
-The ruling and its Touches list need re-examination before the row is taken.
-Not re-ruled here.]`
-
-`Source: BL-025 execution, rev-2 adjacent finding, 2026-07-23.`
-
-**AWAITING-RULING, 2026-09-14** (R40). Blocked on the arbiter, not unscheduled: the 2026-09-10 rename ruling was found false, and a re-ruling is owed. Changes when the re-ruling is recorded here.
+### BL-045 — `RunConfig mode: :verify` is a misnomer: no verification semantics
+- state: open
+- type: not stated
+- area: Harness
+- priority: low · size: S
+- evidence: docs/evidence/BL-045.md
+- done-when: the mode is renamed to what it does (e.g. `:replay_context`) with its two call-site parsers updated, or kept with a docstring stating it performs no verification — decided, not left ambiguous.
 
 ---
 
-### BL-185 — `backlog_status.py --check` reports ARCHIVED-ONLY as a NOTE, and the corpus population is now zero (#TBD)
-**Status:** OPEN
-**Size:** S · **Priority:** low · **Section:** Drift apparatus (aetheris-agents/scripts/)
-
-Filed 2026-08-25 by the ticket that created the state, in the commit that emptied it — a
-deferral needs an executor in the round it is deferred, and prose in a packet files nothing.
-
-**The state.** Defeat 5 (`5003173`) taught the parser that a `**Status:**` line inside a
-`<details>` block is archived text rather than a field. That created a state the parser could
-not previously express: a row whose ONLY `**Status:**` lines are archived has **no live
-declaration at all**. `_cmd_check` reports it as a loud `NOTE`, by row id and by line, and
-**exits 0**.
-
-**Why it is a NOTE today, and this is not the thing to re-litigate.** The commit that
-corrected the reading is the commit that created the state, and turning a corrected reading
-straight into a blocking failure makes a parser fix and a live-corpus repair one landing —
-the coupling `CLAUDE.md` §Definition of done forbids (*before making a soft failure hard,
-enumerate what else that gate holds*). That enumeration was run and was exact: one row,
-BL-047, and it is closed by the commit that files this.
-
-**Why the NOTE should not stay.** The check's contract is *every row id carries exactly one
-field*. ARCHIVED-ONLY means the row carries **zero** live fields, so while this is a NOTE a
-row can silently lose its declaration and `--check` still exits 0. That is a real hole in the
-one assertion this module exists to make, and it is the **Silent-wrong-answer** shape: a
-well-formed green over a row nobody has declared anything about.
-
-**Done when:** `ARCHIVED-ONLY` is promoted from `notes` to `problems` in `resolve`, so
-`--check` exits 1 on it; the promotion lands with its own red-by-mutation evidence (a fixture
-row put into the state, watched to fail, restored from a sha-verified working-copy backup);
-and the corpus population is **re-measured at the promoting commit and found to be 0** rather
-than inherited from this row — `python3 scripts/backlog_status.py --census` prints it on the
-`ARCHIVED-ONLY` line, and the line prints even when it is zero for exactly this reason. If it
-is non-zero, the rows are closed or repaired first and the promotion is the *second* landing,
-never the same one. **R7 applies**: promotion is a later ticket's act, with that ticket's own
-evidence.
-
-**Not a carried red.** Nothing is red. This is a soft gate that should become hard once its
-population is provably empty, which is the ordinary BL-077 sequencing and not a tracked
-failure being deferred.
-
-`Source: the BL-047 close, 2026-08-25. The design choice is recorded at the site that takes
-it — `scripts/backlog_status.py`, `_cmd_check`, which states both the ruling and its cost —
-and this row is its executor. Population at filing: `ARCHIVED-ONLY 0`, from
-`python3 scripts/backlog_status.py --census` at this commit.`
+### BL-185 — `backlog_status.py --check` reports ARCHIVED-ONLY as a NOTE, and the corpus population is now zero
+- state: open
+- type: not stated
+- area: Drift apparatus
+- priority: low · size: S
+- evidence: docs/evidence/BL-185.md
+- done-when: `ARCHIVED-ONLY` is promoted from `notes` to `problems` in `resolve`, so `--check` exits 1 on it; the promotion lands with its own red-by-mutation evidence (a fixture row put into the state, watched to fail, restored from a sha-verified working-copy backup); and the corpus population is **re-measured at the promoting commit and found to be 0** rather than inherited from this row — `python3 scripts/backlog_status.py --census` prints it on the `ARCHIVED-ONLY` line, and the line prints even when it is zero for exactly this reason.
 
 ---
 

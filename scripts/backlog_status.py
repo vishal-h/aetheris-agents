@@ -313,6 +313,9 @@ class Section(NamedTuple):
         if state not in INDEX_STATES:
             problems.append(f"`- state: {state}` is not one of {'/'.join(INDEX_STATES)}")
             state = None
+        # Header rule (2026-09-14): `ready` requires a stated `done-when`.
+        if state == "ready" and values.get("done-when", "").startswith("not stated"):
+            problems.append("`state: ready` needs a stated `done-when`, not `not stated`")
         if " · size: " not in values.get("priority", ""):
             problems.append("`- priority:` carries no ` · size: `")
         disposition = values.get("disposition")

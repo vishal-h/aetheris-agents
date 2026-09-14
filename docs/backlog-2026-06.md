@@ -18,6 +18,13 @@
 > **`state`** ∈ `open`, `committed`, `ready`, `blocked`, `triggered`, `verifying`, `done`.
 > **`disposition`** ∈ `fixed`, `verified`, `accepted-risk`, `evidence-only`, `superseded`,
 > `rejected`.
+>
+> **Closing an index row** (ruling 2026-09-14, reverses BL-252 D7 going forward): set
+> `state: done`, add `disposition`, move the field list to `backlog-2026-06-closed.md`; the
+> evidence file stays. BL-252 itself predates this rule and is left as committed.
+>
+> **`ready` requires a stated `done-when`.** A row whose `done-when` reads `not stated` may not
+> be set `ready`.
 
 ---
 

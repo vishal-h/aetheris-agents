@@ -942,3 +942,21 @@ def test_the_open_file_holds_index_rows_only():
     assert legacy == [], legacy
     assert any(i.startswith("BUG-") for s in sections for i in s.ids), \
         "positive control: the BUG- space is read"
+
+
+def test_ready_with_done_when_not_stated_fails(tmp_path):
+    """Header rule, 2026-09-14: a row whose done-when reads `not stated` may not be `ready`."""
+    rows = (INDEX_ROW.replace("- state: open", "- state: ready")
+            .replace("- done-when: the thing is done.", "- done-when: not stated — see evidence"))
+    path = _index_tree(tmp_path, rows=rows)
+    (row,) = _read(path)
+    assert any("needs a stated `done-when`" in p for p in row.problems), row.problems
+    assert bs.main(["--check", "--file", str(path)]) == 1
+
+
+def test_ready_with_a_stated_done_when_passes(tmp_path):
+    """The other direction: `ready` over a stated done-when is lawful."""
+    path = _index_tree(tmp_path, rows=INDEX_ROW.replace("- state: open", "- state: ready"))
+    (row,) = _read(path)
+    assert (row.value, row.problems) == ("ready", ())
+    assert bs.main(["--check", "--file", str(path)]) == 0

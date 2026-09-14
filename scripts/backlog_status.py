@@ -150,15 +150,16 @@ INDEX_LINE_RE = re.compile(
 ALL_VALUES = VOCABULARY + INDEX_STATES
 ALL_TERMINAL = TERMINAL + INDEX_TERMINAL
 
-# Defeat 1: the row-heading anchor. `^### BL-` and nothing wider.
-HEADING_RE = re.compile(r"^### BL-\d+")
+# Defeat 1: the row-heading anchor. `^### BL-` and nothing wider — plus the `BUG-` id
+# space since BL-252, which the open file's Bugs section declares both readers read.
+HEADING_RE = re.compile(r"^### (?:BL|BUG)-\d+")
 
 # Defeat 2: the id-list prefix. Ids are read from the heading text BEFORE the em
 # dash, so `### BL-050 + BL-055 + BL-056 — DONE …` yields three and
 # `### Worked instance — BL-025, …` yields none (it is not a heading at all, per
 # HEADING_RE, and this is the second line of defence if that ever changes).
-ID_PREFIX_RE = re.compile(r"^### ((?:BL-\d+)(?:\s*\+\s*BL-\d+)*)\s*—")
-ID_RE = re.compile(r"BL-\d+")
+ID_PREFIX_RE = re.compile(r"^### ((?:BL|BUG)-\d+(?:\s*\+\s*(?:BL|BUG)-\d+)*)\s*—")
+ID_RE = re.compile(r"(?:BL|BUG)-\d+")
 
 # Defeat 4: fullmatch, column-anchored, closed value set.
 FIELD_RE = re.compile(r"\*\*Status:\*\* (%s)" % "|".join(VOCABULARY))
@@ -430,7 +431,7 @@ def resolve(sections: list[Section]) -> list[RowStatus]:
             by_id.setdefault(row_id, []).append(sec)
 
     rows = []
-    for row_id in sorted(by_id, key=lambda s: int(s.split("-")[1])):
+    for row_id in sorted(by_id, key=lambda s: (s.split("-")[0], int(s.split("-")[1]))):
         hits = []
         deep_hits = []
         problems = []

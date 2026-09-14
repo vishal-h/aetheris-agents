@@ -924,3 +924,21 @@ def test_placement_covers_the_index_vocabulary():
     assert placement("open", bs.BACKLOG_ARCHIVE_MD)                # live, archive
     assert placement("open", bs.BACKLOG_MD) == []                  # positive controls
     assert placement("done", bs.BACKLOG_ARCHIVE_MD) == []
+
+
+def test_a_bug_row_is_a_row(tmp_path):
+    """The `BUG-` id space is read by the same parser (BL-252)."""
+    path = _index_tree(tmp_path, rows=INDEX_ROW.replace("BL-993", "BUG-993"),
+                       evidence=("BUG-993",))
+    got = {r.row_id: (r.value, r.problems) for r in _read(path)}
+    assert got == {"BUG-993": ("open", ())}, got
+
+
+def test_the_open_file_holds_index_rows_only():
+    """BL-252's end state, over the real file: every open row is a field list."""
+    sections = bs.parse_sections(bs.BACKLOG_MD.read_text(), bs.BACKLOG_MD)
+    assert sections, "positive control: the open file parses"
+    legacy = [s.heading[:60] for s in sections if not s.is_index]
+    assert legacy == [], legacy
+    assert any(i.startswith("BUG-") for s in sections for i in s.ids), \
+        "positive control: the BUG- space is read"

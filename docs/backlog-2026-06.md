@@ -10185,6 +10185,11 @@ override. Implemented at harness `c2c7099`.
 `lib/aetheris/execution/tool/spawn_agent.ex:15`–`:22`; `tool_surface_extras` is stated not to be a
 client field at `lib/aetheris/api/run_policy.ex:29`. Appended, not amended: the row is pushed.`
 
+**Sequencing void, 2026-09-14.** m14's P2 kill criterion fired at harness `1c717cf` (pushed), so
+there is no discharge run for this row to block, which is what the sentence above claims it does. The
+defect stands and its priority is unchanged; what is void is the deadline, not the row. Recorded per
+R40: a deferral is recorded on the row it defers.
+
 ---
 
 ### BL-230 — `broadcast_message_test.exs:258` is a timing race between two agents (#TBD)
@@ -10609,6 +10614,11 @@ single-tool sequence a hand-built candidate can equal. The claim holds for multi
 is what segmentation exists to produce. Nor does the live table have a dominant: one source run is a
 thin corpus, so the sequence above is that run's, not a computed prior.`
 
+**Sequencing void, 2026-09-14.** m14's P2 kill criterion fired at harness `1c717cf` (pushed), so
+there is no discharge run for this row to precede, which *"Must land before m14 P2's discharge"*
+requires. The defect stands and its priority is unchanged; what is void is the deadline, not the row.
+Recorded per R40: a deferral is recorded on the row it defers.
+
 ---
 
 ### BL-243 — after a use_case's first approval, no ordinary run can seed a baseline (#TBD)
@@ -10677,6 +10687,12 @@ turn at `lib/aetheris/execution/fork.ex:134`. The orchestrator's `tools:` is
 2026-05-21T13:45Z–2026-06-10T10:28Z, and 11 declaring `["run_command"]`, started from
 2026-06-10T10:53Z. **Deviation from the filing prompt:** "carry" is true of the 43's declared tools;
 41 of them recorded `tool_called` events for both.`
+
+**Sequencing void, 2026-09-14.** m14's P2 kill criterion fired at harness `1c717cf` (pushed), so
+there is no P2 discharge run for this row to block, which *"the only recorded corpus P2's discharge
+has"* assumes. A later gate run forking from those 43 runs is still blocked. The defect stands and its
+priority is unchanged; what is void is the deadline, not the row. Recorded per R40: a deferral is
+recorded on the row it defers.
 
 ---
 

@@ -9923,53 +9923,6 @@ through `lib/aetheris/eval/store.ex:148`.`
 
 ---
 
-### BL-236 — the gate cannot serve the candidate it is gating (#TBD)
-**Status:** OPEN
-**Kind:** defect · **Contract:** D7, D8
-**Size:** L · **Priority:** high
-**Section:** harness (`../aetheris/lib/aetheris/skill/gate.ex`, `../aetheris/lib/aetheris/skill/injector.ex`, `../aetheris/lib/aetheris/skill/body.ex`)
-
-`Skill.Gate` accepts only `status: "candidate"`. `Skill.Injector` serves only approved rows, and
-`Skill.Body` withholds any other status. So D8's control 1 — "arm B the task with the entry made
-available" — cannot make a candidate available, and arm B is arm A for every entry the gate can gate.
-
-This is circular in the ratified design, not in the code: D7 requires validation before approval,
-D8's validation requires serving, and serving requires approval. No m14 ticket could have surfaced
-it — T9 deferred `make_available` to T12's injection, and T12 built serving for the approved path,
-each correct in isolation.
-
-**RULED at the BL-229 review, 2026-09-13.** This row implements the ruling; it does not reopen it.
-
-The gate serves its candidate through the SAME injector, selected by explicit entry list rather than
-by status eligibility, and the run records that it was served under a gate measurement. Two
-alternatives were rejected: approving before validating makes approval a stamp on unmeasured
-entries, which is what D8 exists to prevent; a gate-only content path rebuilds m04's injector under
-another name, which m14 T12 retired so two injectors could not coexist.
-
-The "only approved" rule protects production runs from unvetted content. A gate run is the vetting —
-the one context where serving an unapproved entry is the point. Explicit and recorded, not bypassed:
-the marker is what keeps the invariant checkable.
-
-**Done when.** `Gate.run/3` can serve the candidate under measurement; the serving path takes an
-explicit entry list only from the gate and from nowhere else; a run that was served a non-approved
-entry carries a recorded marker saying so; a test asserts a run WITHOUT that marker cannot have been
-served a non-approved entry — that assertion is the row's point, not the happy path. State where the
-marker lives and why a caller cannot forge or omit it.
-
-**Do not generate.** Any status change to reach serving. Any second injector or content-injection
-path.
-
-`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Citations resolved at that
-commit: `fetch_candidate/1` admits only `"candidate"` at `lib/aetheris/skill/gate.ex:271`;
-`eligible?/2` admits only `"approved"` at `lib/aetheris/skill/injector.ex:78`; `classify/2` withholds
-every other status at `lib/aetheris/skill/body.ex:135`–`:136`. D7's "Only approved entries are served
-by the injector" is `docs/aetheris/research/bl-008-synthesis-2026-08.md:117`, D8's control 1 `:126`;
-T9's deferral is `docs/aetheris/milestones/m14-t9-implementation-notes.md:16`.`
-
-**Still open, 2026-09-14 (closing sweep).** Unmet: *"the serving path takes an explicit entry list only from the gate and from nowhere else"* — `Runner.run_task/2` accepts `:skill_measurement` from any caller (`../aetheris/lib/aetheris/eval/runner.ex:67`), and `bl-236-implementation-notes.md:28` records that a test or hand-written `.exs` can build one. The other four clauses hold at harness `901f7d1`.
-
----
-
 ### BL-238 — `Runner.build_run_config/3` hand-builds a `RunConfig`, bypassing rule 15 (#TBD)
 **Status:** OPEN
 **Kind:** defect
@@ -10322,3 +10275,43 @@ test/aetheris/skill/segmenter_test.exs test/aetheris/worker/client_test.exs` pri
 integration filter, in 1 module(s): Aetheris.Skill.SegmenterObservationTest` and `14 due to
 requires_worker filter, in 1 module(s): Aetheris.Worker.ClientTest`. `McpHttpTest` carries both module
 tags at `mcp_http_test.exs:14`–`:15`.`
+
+---
+
+### BL-250 — a run that fails before serving is recorded `:unavailable` and counted as a no-skill run (#TBD)
+**Status:** OPEN
+**Kind:** defect · **Contract:** D8
+**Size:** S · **Priority:** medium
+**Section:** harness (`../aetheris/lib/aetheris/eval/run.ex`, `../aetheris/lib/aetheris/eval/runner.ex`)
+
+`Eval.Run.skill_availability/1` reads "no `skill_injected` event" as `:unavailable`, and
+`Baseline.lock/2` selects on `:unavailable`. A run whose serve fails at step 0 has no such event and was
+never a no-skill run: it never reached serving, so its availability is unknown.
+
+Absent-is-unknown, in the marker BL-221 built to prevent exactly this contamination in the other
+direction. A failed-serve run entering a no-skill baseline is the same defect BL-221 closed, arriving
+through a route BL-221 did not consider.
+
+**Which routes are demonstrated and which are read.**
+- **Demonstrated** by mutation M2 at the BL-236 residual round: with `Runner.run_task/2`'s issued-check
+  removed, a forged run failed at the injector and was recorded `{:ok, [:unavailable]}`,
+  `runner_recorded: 1`.
+- **Read from code, not run:** `{:measured_entry_unreadable, …}` (`injector.ex:160`) and a store error
+  (`injector.ex:129`, which an unmeasured run reaches too) fail the serve the same way. The route is
+  `server.ex:716`, whose error arm appends a step-0 `:error` event (`:721`–`:729`); the run fails, Runner
+  reads it as `{:error, :run_failed}` (`runner.ex:197`, `:169`) and records it through
+  `persist_failed_eval_run/5`, whose availability is `skill_availability(TrajectoryFile.read(run_id))`
+  (`:264`); a readable trajectory with no `skill_injected` event is `:unavailable` (`run.ex:78`).
+
+Holds at `55bd2f8` as well as at the fix: `lib/aetheris/eval/run.ex` and `baseline.ex` are unchanged
+between the two commits.
+
+**Done when.** A run that failed before serving reads `:unknown`, not `:unavailable`; `lock/2` therefore
+refuses it; and a test covers a run that fails at step 0 with its serve incomplete.
+
+`Source: the BL-236 residual round, 2026-09-14; harness `2845995` (pushed). M2 is recorded in that
+round's packet, `scratchpad/packet.md` of its session, in neither tree. Citations resolved at
+`2845995`: `skill_availability/1` is `lib/aetheris/eval/run.ex:75`–`:82`; `lock/2` filters at
+`lib/aetheris/eval/baseline.ex:140`; the Runner check M2 removed is `lib/aetheris/eval/runner.ex:72`;
+the serve call and its error arm are `lib/aetheris/agent/server.ex:716` and `:721`–`:729`. BL-221 is
+in `docs/backlog-2026-06-closed.md`.`

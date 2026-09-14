@@ -9321,3 +9321,67 @@ is harness `ab98249`.`
 2. *The file is green under BL-235's tag regime* — the tag is removed (BL-235, direction (i)). `mix test test/aetheris/eval/baseline_test.exs` at `55bd2f8` printed `17 tests, 0 failures` and `Not run by this gate: nothing excluded.` The full `mix test` there printed `1227 tests, 0 failures, 95 excluded`, with `Aetheris.Eval.BaselineTest` in no exclusion group.
 
 ---
+
+### BL-236 — DONE 2026-09-14 · the gate cannot serve the candidate it is gating (#TBD)
+**Status:** DONE
+**Kind:** defect · **Contract:** D7, D8
+**Size:** L · **Priority:** high
+**Section:** harness (`../aetheris/lib/aetheris/skill/gate.ex`, `../aetheris/lib/aetheris/skill/injector.ex`, `../aetheris/lib/aetheris/skill/body.ex`)
+
+`Skill.Gate` accepts only `status: "candidate"`. `Skill.Injector` serves only approved rows, and
+`Skill.Body` withholds any other status. So D8's control 1 — "arm B the task with the entry made
+available" — cannot make a candidate available, and arm B is arm A for every entry the gate can gate.
+
+This is circular in the ratified design, not in the code: D7 requires validation before approval,
+D8's validation requires serving, and serving requires approval. No m14 ticket could have surfaced
+it — T9 deferred `make_available` to T12's injection, and T12 built serving for the approved path,
+each correct in isolation.
+
+**RULED at the BL-229 review, 2026-09-13.** This row implements the ruling; it does not reopen it.
+
+The gate serves its candidate through the SAME injector, selected by explicit entry list rather than
+by status eligibility, and the run records that it was served under a gate measurement. Two
+alternatives were rejected: approving before validating makes approval a stamp on unmeasured
+entries, which is what D8 exists to prevent; a gate-only content path rebuilds m04's injector under
+another name, which m14 T12 retired so two injectors could not coexist.
+
+The "only approved" rule protects production runs from unvetted content. A gate run is the vetting —
+the one context where serving an unapproved entry is the point. Explicit and recorded, not bypassed:
+the marker is what keeps the invariant checkable.
+
+**Done when.** `Gate.run/3` can serve the candidate under measurement; the serving path takes an
+explicit entry list only from the gate and from nowhere else; a run that was served a non-approved
+entry carries a recorded marker saying so; a test asserts a run WITHOUT that marker cannot have been
+served a non-approved entry — that assertion is the row's point, not the happy path. State where the
+marker lives and why a caller cannot forge or omit it.
+
+**Do not generate.** Any status change to reach serving. Any second injector or content-injection
+path.
+
+`Source: the BL-229 review, 2026-09-13; harness `c2c7099` (pushed). Citations resolved at that
+commit: `fetch_candidate/1` admits only `"candidate"` at `lib/aetheris/skill/gate.ex:271`;
+`eligible?/2` admits only `"approved"` at `lib/aetheris/skill/injector.ex:78`; `classify/2` withholds
+every other status at `lib/aetheris/skill/body.ex:135`–`:136`. D7's "Only approved entries are served
+by the injector" is `docs/aetheris/research/bl-008-synthesis-2026-08.md:117`, D8's control 1 `:126`;
+T9's deferral is `docs/aetheris/milestones/m14-t9-implementation-notes.md:16`.`
+
+**Still open, 2026-09-14 (closing sweep).** Unmet: *"the serving path takes an explicit entry list only from the gate and from nowhere else"* — `Runner.run_task/2` accepts `:skill_measurement` from any caller (`../aetheris/lib/aetheris/eval/runner.ex:67`), and `bl-236-implementation-notes.md:28` records that a test or hand-written `.exs` can build one. The other four clauses hold at harness `901f7d1`.
+
+**Closed 2026-09-14.** Landed at harness `2845995` (pushed), the residual round, on the four clauses closed at `901f7d1` and the one the closing sweep left open. Done-when:
+
+1. *`Gate.run/3` can serve the candidate under measurement* — `gate_test.exs:1020`, end to end with the default executors: arm B and the held-in run each carry one `skill_injected` event with payload `served_under: "gate_measurement"`, `status: "candidate"` (`:1057`–`:1067`), and the row stays `candidate` (`:1074`).
+2. *The serving path takes an explicit entry list only from the gate, and from nowhere else* — **met, with three bounds.** A `Measurement` is sealed only in `Gate.measurement/3` by `seal/2` (`lib/aetheris/skill/gate.ex:308`–`:317`); `Gate.issued?/1` accepts only that seal over the measurement's own entries and catalog (`:202`–`:206`). `Injector.serve/2` refuses any other with `:measurement_not_from_gate` before the store is read (`lib/aetheris/skill/injector.ex:94`–`:98`), and `Runner.run_task/2` refuses before any run starts or is recorded (`lib/aetheris/eval/runner.ex:72`–`:75`). `RunConfig.from_map/2` does not read the field: `git grep -n skill_measurement 2845995 -- lib/aetheris/run_config.ex` returns the doc (`:74`), the default (`:133`) and the type (`:253`) only. `gate_test.exs:894` asserts a measurement built outside the gate is served by none of `Runner.run_task/2`, `Aetheris.start_run/1`, `Injector.serve/2`; `:978` asserts `issued?/1` refuses seven forgery shapes against a positive control. The bounds:
+   - **A caller-supplied executor may retain a sealed measurement for the entries the gate chose.** `run/3`'s `run_forked` and `run_task` options (`gate.ex:409`, `:510`) receive it; `test/support/gate_issued.ex` uses this channel.
+   - **A fresh gate seal over the same entries and catalog is accepted**, on any struct carrying it; `gate_test.exs:1016` asserts it.
+   - **A term crafted through `binary_to_term/1`, or a replaced `Gate` module, is outside what any in-VM check refuses.**
+
+   All three are recorded at `docs/aetheris/milestones/bl-236-implementation-notes.md:58`–`:63` (§Residual, *What the seal does not stop*), the first as the executor channel of Deviation 1 (`:70`–`:73`).
+3. *A run served a non-approved entry carries a recorded marker* — written only in `Injector.payload/2`'s listed clause (`injector.ex:207`–`:213`), appended at step 0 (`:198`–`:201`); `served_under_measurement?/1` reads it (`:77`–`:81`).
+4. *A test asserts a run without the marker cannot have been served a non-approved entry* — `injector_test.exs:264`–`:291`, over every non-approved status and seven configs, with a positive control at `:288`; and `:360` over events from both paths.
+5. *Where the marker lives and why a caller cannot forge or omit it* — `bl-236-implementation-notes.md:11`–`:19` (the marker) and `:43`–`:51` (acceptance).
+
+`mix test test/aetheris/skill/gate_test.exs test/aetheris/skill/injector_test.exs` at `2845995` printed `67 tests, 0 failures` and `Not run by this gate: nothing excluded.` The residual round's mutation pass (M1–M5, each red on its named test and restored by sha) is in that round's packet, `scratchpad/packet.md` of its session, in neither tree.
+
+A run that fails before serving is recorded `:unavailable`, found by M2 in that round. BL-250 owns it.
+
+---

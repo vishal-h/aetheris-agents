@@ -9609,3 +9609,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-200 — scheduler safety audit against the moadim brief's Cluster 2: seven items, each answered has / lacks deliberately / lacks by omission
+- state: done
+- type: verification
+- area: harness
+- priority: medium — a scheduled run here can carry irreversible effects (payslip release, cleanup execution), which is the brief's reason the *missed-fire* item is a stated rule and not an accident · size: S
+- evidence: docs/evidence/BL-200.md
+- done-when: a seven-row table is on the record — in this row's DONE section or in a committed implementation-notes file it names — giving each item one of the three verdicts **with the `file:line` that establishes it**, and for every *lacks by omission* verdict either a filed row or the arbiter's recorded decision not to file one.
+- disposition: evidence-only
+
+---

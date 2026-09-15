@@ -1097,14 +1097,6 @@
 
 ---
 
-### BL-200 — scheduler safety audit against the moadim brief's Cluster 2: seven items, each answered has / lacks deliberately / lacks by omission
-- state: ready
-- type: verification
-- area: harness
-- priority: medium — a scheduled run here can carry irreversible effects (payslip release, cleanup execution), which is the brief's reason the *missed-fire* item is a stated rule and not an accident · size: S
-- evidence: docs/evidence/BL-200.md
-- done-when: a seven-row table is on the record — in this row's DONE section or in a committed implementation-notes file it names — giving each item one of the three verdicts **with the `file:line` that establishes it**, and for every *lacks by omission* verdict either a filed row or the arbiter's recorded decision not to file one.
-
 ### BL-202 — measure the two-surface fetch-instruction condition: the generated index's fetch header has never been in front of a probe
 - state: open
 - type: measurement
@@ -1469,3 +1461,59 @@
 - priority: low · size: XS
 - evidence: docs/evidence/BL-255.md
 - done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
+
+### BL-256 — scheduler overlap: a due schedule starts a new run while its previous run is still live
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-256.md
+- done-when: the scheduler applies a stated overlap policy where it starts a scheduled run — for a schedule whose previous run is still live it skips, queues, or explicitly allows the fire — and a skipped fire leaves a record naming the schedule and the reason.
+
+### BL-257 — no global concurrency cap: nothing limits how many runs the harness admits at once
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-257.md
+- done-when: run admission enforces a global cap derived from live runs rather than an in-memory counter, for scheduler- and trigger-started runs alike; a refused start is recorded with its reason; and the cap's value and configuration key are stated.
+
+### BL-258 — same-minute double fire: a manual trigger and a due tick both start runs for one schedule
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-258.md
+- done-when: one schedule cannot start two runs for the same cron minute across the tick path and the trigger path — the second is refused or recorded as a duplicate — and a test drives both paths inside one minute.
+
+### BL-259 — no global lock: nothing halts all scheduled fires and triggers at once
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-259.md
+- done-when: one operator action halts every scheduled fire and every trigger, and one resumes them; a fire that falls due while halted is recorded rather than started; and the halt survives a harness restart.
+
+### BL-260 — missed fires catch up silently: a schedule due while the harness was down runs on startup, with no alert
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-260.md
+- done-when: the scheduler's missed-fire rule is stated in `Aetheris.Scheduler`'s moduledoc and enforced — a fire whose time passed while the harness was down is surfaced to the operator, naming the schedule and the missed time, and is not launched automatically — unless the arbiter rules catch-up deliberate, in which case the moduledoc records that ruling and its ground.
+
+### BL-261 — retention family: no solo-run max-runtime stop, and no reaping or eviction of run artifacts
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness — retention (the moadim brief's E6 candidate)
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-261.md
+- done-when: a solo run has an enforced max-runtime that stops it and records why (`RunConfig.max_duration` enforced, or retired with its CLI flag); and run artifacts carry a stated retention rule — TTL reaping that never touches a live run, and oldest-first, finished-only eviction under a disk ceiling — with each part either implemented or ruled out on the record.
+
+### BL-262 — cap composition: per-schedule runtime and TTL values must be tighten-only
+- state: open
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-262.md
+- done-when: once per-schedule runtime or TTL values exist (BL-257, BL-261), they compose with the derived defaults tighten-only — a per-schedule value can shorten a default and never extend it — and a test shows an extending value refused or clamped.

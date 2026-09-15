@@ -1585,3 +1585,92 @@ def test_project_knowledge_five_cell_row_reads_as_export(tmp_path, monkeypatch):
     reset()
     drift_check.check_project_knowledge()
     assert len(warns_of("project_knowledge")) == 1
+
+
+# --------------------------------------------------------------------------- #
+# project_knowledge — the table stands alone (BL-253)                           #
+# --------------------------------------------------------------------------- #
+#
+# BL-253 moved every boundary record and inclusion ruling out of the manifest. This
+# fixture is what is left, header prose and the table with nothing after it. Check 8,
+# the shared parser and the re-pinner must each read it unaided.
+
+_PK_TABLE_ONLY = """\
+# Project Knowledge Manifest
+
+Header prose only: surfaces, budget, connector notice.
+
+---
+
+| export name | repo path | repo | commit | last changed | surface |
+|-------------|-----------|------|--------|--------------|---------|
+| `k.md` | `docs/k.md` | aetheris | `{k}` | {k_date} | export |
+| `brief.md` | `docs/brief.md` | aetheris | `{b}` | {b_date} | on-demand |
+| `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-01-01 | export |
+"""
+
+
+def _pk_table_only_world(tmp_path, monkeypatch):
+    """Every row pinned current, each hash and date read back out of git."""
+    harness = _ii_init(tmp_path / "harness")
+    _ii_commit(harness, "docs/k.md", "k\n")
+    _ii_commit(harness, "docs/brief.md", "brief\n")
+
+    def pin(rel):
+        return _ii_git(harness, "log", "-1", "--format=%h %ad", "--date=short", "--", rel).split()
+
+    (k, k_date), (b, b_date) = pin("docs/k.md"), pin("docs/brief.md")
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(_PK_TABLE_ONLY.format(k=k, k_date=k_date, b=b, b_date=b_date), encoding="utf-8")
+    monkeypatch.setattr(drift_check, "MANIFEST_MD", manifest)
+    monkeypatch.setattr(drift_check, "_REPO_DIR_MAP", {"aetheris": harness})
+    reset()
+    return manifest, {"aetheris": harness, "aetheris-agents": tmp_path}
+
+
+def test_project_knowledge_passes_on_a_table_only_manifest(tmp_path, monkeypatch):
+    _pk_table_only_world(tmp_path, monkeypatch)
+    drift_check.check_project_knowledge()
+    assert not warns_of("project_knowledge") and not fails_of("project_knowledge")
+    assert passes_of("project_knowledge") == [
+        "1 kernel manifest entries all match git HEAD; 1 on-demand row(s) not compared — HEAD is their surface"
+    ]
+
+
+def test_shared_parser_reads_a_table_only_manifest(tmp_path, monkeypatch):
+    import _manifest
+
+    manifest, _ = _pk_table_only_world(tmp_path, monkeypatch)
+    rows = _manifest.read_rows(manifest)
+    assert [r.export_name for r in rows] == ["k.md", "brief.md", "project-knowledge-manifest.md"]
+
+
+def test_repin_dry_run_on_a_table_only_manifest_is_exit_0_and_deterministic(tmp_path, monkeypatch, capsys):
+    import repin_manifest
+
+    manifest, repo_dirs = _pk_table_only_world(tmp_path, monkeypatch)
+    before = manifest.read_bytes()
+
+    assert repin_manifest.repin(manifest, dry_run=True, repo_dirs=repo_dirs) == 0
+    first, out_first = manifest.read_bytes(), capsys.readouterr().out
+    assert repin_manifest.repin(manifest, dry_run=True, repo_dirs=repo_dirs) == 0
+    second, out_second = manifest.read_bytes(), capsys.readouterr().out
+
+    assert first == before and second == first
+    assert out_first == out_second and "all current" in out_first
+
+
+def test_a_table_only_manifest_without_its_header_row_does_not_parse(tmp_path, monkeypatch):
+    """The table parse is bounded by the header row, so losing that row must fail."""
+    import _manifest
+    import repin_manifest
+
+    manifest, repo_dirs = _pk_table_only_world(tmp_path, monkeypatch)
+    headerless = "".join(
+        line for line in manifest.read_text().splitlines(keepends=True)
+        if not line.startswith("| export name |")
+    )
+    with pytest.raises(_manifest.ManifestError):
+        _manifest.parse_rows(headerless)
+    manifest.write_text(headerless)
+    assert repin_manifest.repin(manifest, dry_run=True, repo_dirs=repo_dirs) == 1

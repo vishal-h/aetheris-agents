@@ -9532,3 +9532,36 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: rejected
 
 ---
+
+### BL-253 — split the project-knowledge manifest: boundary records and inclusion rulings move to docs/export-boundaries/
+- state: done
+- type: method
+- area: process / project knowledge
+- priority: medium · size: M
+- evidence: docs/evidence/BL-253.md
+- done-when: the manifest holds header + table + `## Inclusion rulings` + `## Export boundary log` and nothing else; every moved block is byte-verbatim under docs/export-boundaries/ with a provenance header; and the whole-corpus splice at 1592c95 reproduces the original manifest byte-for-byte (the step-8 identity assertion).
+- disposition: fixed
+
+---
+
+### BL-165 — `bl-002` Step 5 states the remove half as a hand enumeration of document kinds, not as the manifest set
+- state: done
+- type: defect
+- area: process / project knowledge
+- priority: medium · size: S
+- evidence: docs/evidence/BL-165.md
+- done-when: Step 5's remove half states the manifest set as its scope, by rule or by pointer with the choice recorded; the `claude/` namespace's exclusion from *remove-all* is legible to the operator at the point of the deletion; and the history question above is answered or recorded as unanswerable.
+- disposition: fixed
+
+---
+
+### BL-196 — the export procedure says nothing about upload ROUTES: a route that namespaces a new bare filename put two manifest-tracked documents under `claude/`, where neither post-upload check could see them
+- state: done
+- type: decision — the gap is a procedural defect; which of its two repairs to take is not a session's to choose
+- area: process / project knowledge
+- priority: medium — owed before the next boundary that uploads by the second route, which is the only route claude-ui can drive · size: S
+- evidence: docs/evidence/BL-196.md
+- done-when: the procedure states which upload routes are permitted, or the discriminator in both checks no longer depends on the namespace.
+- disposition: fixed
+
+---

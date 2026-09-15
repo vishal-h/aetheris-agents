@@ -949,16 +949,6 @@
 
 ---
 
-### BL-165 — `bl-002` Step 5 states the remove half as a hand enumeration of document kinds, not as the manifest set
-- state: ready
-- type: defect
-- area: process / project knowledge
-- priority: medium · size: S
-- evidence: docs/evidence/BL-165.md
-- done-when: Step 5's remove half states the manifest set as its scope, by rule or by pointer with the choice recorded; the `claude/` namespace's exclusion from *remove-all* is legible to the operator at the point of the deletion; and the history question above is answered or recorded as unanswerable.
-
----
-
 ### BL-166 — `drift_check --strict` is green because of an untracked personal profile export
 - state: ready
 - type: defect
@@ -1114,14 +1104,6 @@
 - priority: high — **blocking `docs/milestones/m-payslip-release.md`**, its §5 dependency 1 · size: S
 - evidence: docs/evidence/BL-195.md
 - done-when: exactly one email orchestrator file exists under `email/agents/`; it carries the eval-time `raise` for `PAYSLIP_MONTH` and the `timeout_ms` hints; every site in the table names it — `OrchestratorView.tsx`, `sprint.sh`, the orchestrator spec — and the capability matrix's Email section is **regenerated**, not hand-edited, per `CLAUDE.md` §Learning — m6-cloudcost (*a generated artefact with consumers is a wiring place in its own right*), so it lists one email agent.
-
-### BL-196 — the export procedure says nothing about upload ROUTES: a route that namespaces a new bare filename put two manifest-tracked documents under `claude/`, where neither post-upload check could see them
-- state: ready
-- type: decision — the gap is a procedural defect; which of its two repairs to take is not a session's to choose
-- area: process / project knowledge
-- priority: medium — owed before the next boundary that uploads by the second route, which is the only route claude-ui can drive · size: S
-- evidence: docs/evidence/BL-196.md
-- done-when: the procedure states which upload routes are permitted, or the discriminator in both checks no longer depends on the namespace.
 
 ---
 
@@ -1509,11 +1491,3 @@
 - priority: medium — a gate whose result varies at a fixed seed is not evidence the suite passed · size: TBD
 - evidence: docs/evidence/BL-251.md
 - done-when: the assertion distinguishes this test's own log output from concurrent output, or the test is made non-async — with the choice and its cost recorded.
-
-### BL-253 — split the project-knowledge manifest: boundary records and inclusion rulings move to docs/export-boundaries/
-- state: ready
-- type: method
-- area: process / project knowledge
-- priority: medium · size: M
-- evidence: docs/evidence/BL-253.md
-- done-when: the manifest holds header + table + `## Inclusion rulings` + `## Export boundary log` and nothing else; every moved block is byte-verbatim under docs/export-boundaries/ with a provenance header; and the whole-corpus splice at 1592c95 reproduces the original manifest byte-for-byte (the step-8 identity assertion).

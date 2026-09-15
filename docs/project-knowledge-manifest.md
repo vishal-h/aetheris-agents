@@ -26,10 +26,11 @@ here and its reasons are the dated **THE SURFACE COLUMN** block after the table.
 
 **Kernel budget: 120 KB** — the design note's §2.1 figure, over the committed sizes of the
 `export` and `both` rows. Exceeding it is a drift warning `[not yet mechanised — BL-201]`.
-Measured at agents `799ddc9` / harness `a950ca9`, before the commit that added this line:
-**869 KiB, over budget by more than seven times**, and two rows carry almost all of it —
-`backlog-2026-06.md` (617 KB, the pre-split queue the D-B table names as `queue.md
-post-split`) and this manifest (134 KB, mostly boundary records). Reproduce:
+Measured at agents `ea915cf` / harness `83a79c5`, after BL-253 moved the boundary records out:
+the ten kernel documents sum to **243,025 bytes, about twice the budget**. The largest are
+`backlog-2026-06.md` (72,874) and `rig--current-state-2026-06.md` (47,285); this manifest is
+18,975. The assembler prints no total, so the sum comes from its ten size lines. The first
+measurement, 869 KiB, moved to `export-boundaries/2026-09-08.md`. Reproduce:
 `python3 scripts/assemble_export_bundle.py $(mktemp -d)/bundle` prints every kernel document's
 size beside its name. A new kernel row names what it displaces, or triggers a probe re-run
 (design §3) to justify the growth.

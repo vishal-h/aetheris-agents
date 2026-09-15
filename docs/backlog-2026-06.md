@@ -1135,14 +1135,6 @@
 - evidence: docs/evidence/BL-200.md
 - done-when: a seven-row table is on the record — in this row's DONE section or in a committed implementation-notes file it names — giving each item one of the three verdicts **with the `file:line` that establishes it**, and for every *lacks by omission* verdict either a filed row or the arbiter's recorded decision not to file one.
 
-### BL-201 — kernel budget: a `drift_check` arm that warns when the `export`+`both` rows exceed the manifest's stated cap
-- state: ready
-- type: mechanism
-- area: aetheris-agents
-- priority: low until the backlog split lands — the figure is dominated by one row the split removes, and an arm landed before it is red from its first run · size: S
-- evidence: docs/evidence/BL-201.md
-- done-when: a `kernel_budget` arm in `drift_check.py` sums `git show HEAD:<path> | wc -c` over `export_rows()` in each row's own repo, reads the cap from the manifest header's **Kernel budget** line, and WARNs — not strict-exempt — when the sum exceeds it, printing the sum, the cap and the largest rows; a red fixture test whose cap sits below its fixture's sum; and the header's `[not yet mechanised — BL-201]` marker removed in the same commit.
-
 ### BL-202 — measure the two-surface fetch-instruction condition: the generated index's fetch header has never been in front of a probe
 - state: open
 - type: measurement

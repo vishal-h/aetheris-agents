@@ -1433,57 +1433,58 @@
 - done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
 
 ### BL-256 — scheduler overlap: a due schedule starts a new run while its previous run is still live
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-256.md
-- done-when: the scheduler applies a stated overlap policy where it starts a scheduled run — for a schedule whose previous run is still live it skips, queues, or explicitly allows the fire — and a skipped fire leaves a record naming the schedule and the reason.
+- done-when: overlap is a refusal reason `overlap-live` at INV-2's chokepoint, not a separate path; a due schedule whose previous run is live starts no new run, the skip is recorded as an event, and next_run_at advances; a test asserts a due tick against a live prior run is refused with `overlap-live`, and that a paused scheduler (INV-1) skips before the overlap check.
 
 ### BL-257 — no global concurrency cap: nothing limits how many runs the harness admits at once
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-257.md
-- done-when: run admission enforces a global cap derived from live runs rather than an in-memory counter, for scheduler- and trigger-started runs alike; a refused start is recorded with its reason; and the cap's value and configuration key are stated.
+- done-when: run admission passes through one chokepoint (INV-2) that admits or refuses with a named reason; a global cap bounds concurrency; the cap and live count rebuild from live runs at startup so a restart cannot exceed it; the refusal-reason set is extensible for later rows; the cap is a config key with a conservative default stated in the ticket; a test asserts the (N+1)th concurrent run is refused and the count rebuilds from live runs after restart.
 
 ### BL-258 — same-minute double fire: a manual trigger and a due tick both start runs for one schedule
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-258.md
-- done-when: one schedule cannot start two runs for the same cron minute across the tick path and the trigger path — the second is refused or recorded as a duplicate — and a test drives both paths inside one minute.
+- done-when: the same-minute dedup guard sits at INV-2's chokepoint, shared by the tick and trigger paths — one dedup point, not two; a test asserts a same-minute trigger+tick yields exactly one admitted run, and that both paths honor INV-1.
 
 ### BL-259 — no global lock: nothing halts all scheduled fires and triggers at once
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-259.md
-- done-when: one operator action halts every scheduled fire and every trigger, and one resumes them; a fire that falls due while halted is recorded rather than started; and the halt survives a harness restart.
+- done-when: a single global pause sentinel (INV-1) halts every run start — due tick, manual trigger, and startup catch-up; the due query and both start paths honor it; enable/disable is a CLI+API action; the sentinel is the single point later scheduler rows extend, exposed by a test fixture; a test asserts no path starts a run under pause and that unpause resumes.
 
 ### BL-260 — missed fires catch up silently: a schedule due while the harness was down runs on startup, with no alert
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-260.md
-- done-when: the scheduler's missed-fire rule is stated in `Aetheris.Scheduler`'s moduledoc and enforced — a fire whose time passed while the harness was down is surfaced to the operator, naming the schedule and the missed time, and is not launched automatically — unless the arbiter rules catch-up deliberate, in which case the moduledoc records that ruling and its ground.
+- done-when: missed fires coalesce into at most one catch-up run per schedule, each catch-up passing through INV-2's chokepoint and obeying INV-1; a catch-up emits an alert event naming the schedule and the missed count so it is never silent; under pause the catch-up does not run but the alert still fires, naming pause as the suppressor; a test asserts N missed intervals → one admitted run + one alert carrying N, and under pause → no run with the alert still fired.
 
 ### BL-261 — retention family: no solo-run max-runtime stop, and no reaping or eviction of run artifacts
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness — retention (the moadim brief's E6 candidate)
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-261.md
-- done-when: a solo run has an enforced max-runtime that stops it and records why (`RunConfig.max_duration` enforced, or retired with its CLI flag); and run artifacts carry a stated retention rule — TTL reaping that never touches a live run, and oldest-first, finished-only eviction under a disk ceiling — with each part either implemented or ruled out on the record.
+- done-when: (a) a run exceeding RunConfig.max_duration is stopped by a lib watchdog (not only orbs) with a terminal event that decrements INV-2's live count; (b) run directories and verify overlays have a stated retention — a reaper with a TTL, or a recorded keep decision with an on-demand reap command; a test covers each arm, including that a watchdog-stopped run frees admission. May split 261a/261b at implementation.
 
 ### BL-262 — cap composition: per-schedule runtime and TTL values must be tighten-only
-- state: open
+- state: committed
 - type: defect — found by audit, not demonstrated live
 - area: harness
 - priority: unset — the arbiter's · size: unset
+- blocked-by / trigger: BL-257, BL-261
 - evidence: docs/evidence/BL-262.md
-- done-when: once per-schedule runtime or TTL values exist (BL-257, BL-261), they compose with the derived defaults tighten-only — a per-schedule value can shorten a default and never extend it — and a test shows an extending value refused or clamped.
+- done-when: per-schedule runtime/TTL values are clamped against INV-2's cap and BL-261's max_duration/TTL by name; from_map refuses or clamps a value looser than either named cap; a test asserts a looser value is clamped/refused and a tighter one honored; lands after BL-257 and BL-261.

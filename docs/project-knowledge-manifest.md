@@ -80,7 +80,7 @@ and why; the procedural gap it exposed is **BL-196**.]`
 
 | export name | repo path | repo | commit | last changed | surface |
 |-------------|-----------|------|--------|--------------|---------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `99a46df` | 2026-08-04 | on-demand |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `95b1161` | 2026-09-12 | on-demand |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 | on-demand |
 | `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 | on-demand |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 | on-demand |
@@ -88,12 +88,12 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 | on-demand |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 | on-demand |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 | on-demand |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `f1c7d15` | 2026-09-08 | on-demand |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `718bbc5` | 2026-09-10 | on-demand |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 | on-demand |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 | export |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `30164d6` | 2026-09-08 | export |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `3973748` | 2026-09-15 | export |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 | on-demand |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `8a3a1d0` | 2026-08-26 | on-demand |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `3973748` | 2026-09-15 | on-demand |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 | on-demand |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
@@ -101,21 +101,21 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-triage-2026-09.md` | `docs/backlog-triage-2026-09.md` | aetheris-agents | `29ed2a2` | 2026-09-14 | on-demand |
 | `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `4339ba7` | 2026-07-16 | export |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `a49d05a` | 2026-08-23 | on-demand |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `ca11d35` | 2026-08-26 | on-demand |
-| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `915d582` | 2026-07-25 | on-demand |
-| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `ca11d35` | 2026-08-26 | on-demand |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `2845995` | 2026-09-14 | on-demand |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2bb9ff7` | 2026-09-13 | on-demand |
+| `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
+| `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
 | `aetheris--ROADMAP.md` | `ROADMAP.md` | aetheris | `481ae2a` | 2026-08-12 | export |
 | `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `324584c` | 2026-09-09 | on-demand |
-| `aetheris--research-index.md` | `docs/aetheris/research/index.md` | aetheris | `f77e565` | 2026-09-09 | both |
+| `aetheris--research-index.md` | `docs/aetheris/research/index.md` | aetheris | `6c62345` | 2026-09-10 | both |
 | `aetheris--jiyi-brief.md` | `docs/aetheris/research/jiyi-memory-service-2026-06.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--skill-mining-brief.md` | `docs/aetheris/research/skill-mining-2606.20363-2026-06.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--dirge-brief.md` | `docs/aetheris/research/dirge-agent-2026-06.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--coming-loop-brief.md` | `docs/aetheris/research/coming-loop-ronacher-2026-06.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
-| `aetheris--bl-008-synthesis.md` | `docs/aetheris/research/bl-008-synthesis-2026-08.md` | aetheris | `49e9ebf` | 2026-09-08 | both |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `c3e70a0` | 2026-09-08 | export |
+| `aetheris--bl-008-synthesis.md` | `docs/aetheris/research/bl-008-synthesis-2026-08.md` | aetheris | `19ba133` | 2026-09-14 | both |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `58991d5` | 2026-09-14 | export |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `2050c04` | 2026-08-21 | export |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 | export |
 
@@ -2184,6 +2184,83 @@ Exported: 2026-09-09 at aetheris-agents *(the commit carrying this record)* / ae
 
 Previous export: **2026-09-08** (eleven rows advanced; 37 rows; the first KERNEL export, at which
 the bundle first became smaller than the table).
+
+**Export boundary — 2026-09-15, the first index-shaped backlog.** Appended; nothing above is
+rewritten. **Eleven rows re-pinned**, four kernel and seven `on-demand`:
+
+| row | repo | surface | was | now | last changed |
+|---|---|---|---|---|---|
+| `backlog-2026-06.md` | aetheris-agents | export | `30164d6` | `3973748` | 2026-09-15 |
+| `aetheris--research-index.md` | aetheris | both | `f77e565` | `6c62345` | 2026-09-10 |
+| `aetheris--bl-008-synthesis.md` | aetheris | both | `49e9ebf` | `19ba133` | 2026-09-14 |
+| `methodology--milestone-methodology.md` | aetheris | export | `c3e70a0` | `58991d5` | 2026-09-14 |
+| `rig--specs.md` | aetheris-agents | on-demand | `99a46df` | `95b1161` | 2026-09-12 |
+| `aetheris-agents--CLAUDE.md` | aetheris-agents | on-demand | `f1c7d15` | `718bbc5` | 2026-09-10 |
+| `backlog-2026-06-closed.md` | aetheris-agents | on-demand | `8a3a1d0` | `3973748` | 2026-09-15 |
+| `aetheris--CLAUDE.md` | aetheris | on-demand | `a49d05a` | `2845995` | 2026-09-14 |
+| `aetheris--runbook.md` | aetheris | on-demand | `ca11d35` | `2bb9ff7` | 2026-09-13 |
+| `aetheris--architecture.md` | aetheris | on-demand | `915d582` | `603b7d5` | 2026-09-14 |
+| `aetheris--determinism-contract.md` | aetheris | on-demand | `ca11d35` | `603b7d5` | 2026-09-14 |
+
+**The kernel is unchanged at ten rows.** No row was added, removed or moved between surfaces since
+the 2026-09-09 boundary (the one row added since, `backlog-triage-2026-09.md`, is `on-demand`), so
+*remove-all* and *upload-all* address the same ten names: none leaves the store without
+replacement and **no new bare filename is created. This boundary therefore neither tests nor risks
+BL-196**, whose open question is what the store route does with a NEW bare filename.
+
+**What moved.** Each row's commits are `git log --oneline <was>..<now> -- <path>` in its owning
+repo. The backlog row carries the **BL-252 index split** (closed at `2888a56`) and the **state
+pass** (`97bc429`): this is the first export of the index-shaped backlog. The research index gained
+one entry at `6c62345` — 28 entries for 28 files, against 27 at the last export — which is this
+procedure's own index-gains-entries trigger. The seven `on-demand` movers are pin staleness check 8
+does not compare; the re-pin is what clears it.
+
+**Off the store, by rule.** `docs/backlog-2026-06-closed.md` is an `on-demand` row, re-pinned above
+and not uploaded. `docs/evidence/` carries no row per file and is not uploaded — **THE EVIDENCE
+TREE** block above (`7ff79b6`). *Remove-all* is scoped to the manifest set (**BL-143**'s ruling);
+`claude/` documents are untouched.
+
+> **Step 0 — both halves PASS.** **0a:** `python3 scripts/gen_index.py
+> ../aetheris/docs/aetheris/research --check` exited 0 (`index.md is current (42 lines)`), and
+> `python3 scripts/drift_check.py --check index_integrity` exited 0 with `28 index entries ↔ 28
+> files at HEAD, every file indexed and every entry current`. No regeneration was owed, so no
+> research-only harness commit precedes this boundary. **0b:** `cd ~/sandbox/elixirws/aetheris &&
+> ./scripts/sprint.sh export_mechanism`, foreground under `timeout 600`, **ended by its own exit,
+> not the cap**, exit 0, BL-077 final tally 0 blocking failures. Six assertions, six green:
+> `repin_manifest.py --dry-run` exit 0 with the manifest byte-unchanged (sha256 `9314e0d8edd7`);
+> an unreadable `--manifest` exits 1 into the shell; `assemble_export_bundle.py DEST` exit 0, 10
+> documents including the manifest's own row, 28 `on-demand` rows left out; the U2 sweep `[PASS]`
+> over 19 patterns with no `_UNSWEPT-DO-NOT-UPLOAD.txt`; a non-empty destination without
+> `--replace` exits 1; the temp destination removed and no tracked file written. This is
+> **BL-161**'s branch 1 reaching its executor.
+
+> **The kernel budget, measured and NOT adjudicated.** The 0b assembly at agents `5f069bb` /
+> harness `83a79c5` printed ten per-document sizes; **the assembler prints no total line**, so the
+> total is derived from those ten lines: **390,691 bytes (381.5 KiB)** against the header's 120 KB.
+> `backlog-2026-06.md` is **72,290** bytes, from 620,170 at the 2026-09-09 measurement; this
+> manifest, at 167,225, is now the largest kernel document. The delivered bundle's manifest is
+> larger by this record; its sizes are in this boundary's review packet. The header's budget line
+> is not edited here. The arm is **BL-201**.
+
+> **The connector grant was NOT checked from this session**; no instrument here can see the
+> project. The first fetch after upload is the check.
+
+> **The bundle** is assembled after the commit carrying this record, from `git show HEAD:`, at
+> harness `83a79c5`. The upload waits until that commit is on `origin/main`, because the index cites
+> paths the connector serves from `main`.
+
+> **Done-check prediction, written before the run.** `python3 scripts/drift_check.py --strict`
+> with `AETHERIS_DB_PATH` set, post-commit. **Predicted: 0 FAIL, WARN set EMPTY.** Check 8's
+> filter is kernel rows: all nine non-self kernel rows PASS after the re-pin, the self row is
+> skipped, and this commit touches only this file. For the other checks the prediction rests on
+> no filter reading and is stated so it can be falsified.
+
+**Ordering.** One agents commit, and no harness commit. The re-pinned table and this record are
+the only tracked write, committed together and last per the BL-034 invariant.
+
+Exported: 2026-09-15 at aetheris-agents *(the commit carrying this record)* / aetheris `83a79c5`.
+
+Previous export: **2026-09-09** (two rows re-pinned; 37 rows; the boundary that read the store).
 
 
 

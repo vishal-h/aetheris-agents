@@ -33,8 +33,8 @@ runs them sequentially via the `run_command` tool and halts on any non-zero exit
 | Variable | Description |
 |---|---|
 | `GOOGLE_SERVICE_ACCOUNT` | Absolute path to the service account JSON key file |
-| `DRIVE_PAYROLL_FOLDER_ID` | Drive folder ID containing the monthly payroll CSV |
-| `DRIVE_OUTPUT_FOLDER_ID` | Drive folder ID where payslip files will be uploaded |
+| `DRIVE_ROOT_FOLDER_ID` | Drive root folder ID; each month's `YYYY-MM/` folder under it holds the payroll CSV and the uploaded payslips |
+| `PAYSLIP_MONTH` | Month to download or upload, `YYYY-MM` (`drive_upload.py` also takes `--month`) |
 
 ## Running
 

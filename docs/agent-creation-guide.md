@@ -500,8 +500,8 @@ HttpError 403: storageQuotaExceeded
 
 **Fix:** the output folder must be a Shared Drive (formerly Team Drive). Create
 a Shared Drive in Google Drive, add the service account email as a Contributor,
-and use that folder's ID as `DRIVE_OUTPUT_FOLDER_ID`. The payroll source folder
-(read-only) can be a regular folder.
+and use that folder's ID as `DRIVE_ROOT_FOLDER_ID` (the payslip pipeline reads and
+writes every month's folder under that one root).
 
 All `files().list()` and `files().create()` calls must include
 `supportsAllDrives=True` (and `includeItemsFromAllDrives=True` for list calls)

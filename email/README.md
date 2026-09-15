@@ -21,7 +21,7 @@ email_send.py --month 2026-04
 - Drive SDK already installed (`pip install -r drive/requirements.txt`)
 - `email/data/smtp.cfg` — copy from `email/data/smtp.cfg.example` and fill in credentials
 - `GOOGLE_SERVICE_ACCOUNT` — path to service account JSON key (for template download)
-- `DRIVE_OUTPUT_FOLDER_ID` — Shared Drive folder containing `payslip_email_template.html`
+- `DRIVE_TEMPLATES_FOLDER_ID` — Shared Drive folder containing `payslip_email_template.html`
 
 No additional Python dependencies — `smtplib`, `email.mime`, and `configparser`
 are all stdlib.

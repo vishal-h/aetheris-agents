@@ -9620,3 +9620,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: evidence-only
 
 ---
+
+### BL-194 — misplaced payslip objects in Drive period folders have no owner: `2026-07/` holds 36 May files and nothing is filed to remove them
+- state: done
+- type: defect
+- area: aetheris-agents
+- priority: medium · size: S
+- evidence: docs/evidence/BL-194.md
+- done-when: `2026-07/` passes the identity test — every object's filename month prefix equals its containing period folder's name — with the 36 misplaced May objects in a quarantine outside `payslips/`, and a committed-or-archived dry-run report naming every `source → quarantine` pair.
+- disposition: fixed
+
+---

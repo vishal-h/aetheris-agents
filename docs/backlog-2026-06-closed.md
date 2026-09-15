@@ -9631,3 +9631,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-110 — the payslip case asserts a reference employee the run cannot produce
+- state: done
+- type: not stated
+- area: harness
+- priority: medium · size: XS
+- evidence: docs/evidence/BL-110.md
+- done-when: the reference employee the assertion names is one the run can actually produce — either by keying the check to an id read out of the CSV the orchestrator was given, or by running the assertion leg against `sample_payroll.csv` explicitly rather than depending on whether `payroll.csv` exists.
+- disposition: fixed
+
+---

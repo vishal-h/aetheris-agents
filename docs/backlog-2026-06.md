@@ -517,16 +517,6 @@
 
 ---
 
-### BL-110 — the payslip case asserts a reference employee the run cannot produce
-- state: ready
-- type: not stated
-- area: harness
-- priority: medium · size: XS
-- evidence: docs/evidence/BL-110.md
-- done-when: the reference employee the assertion names is one the run can actually produce — either by keying the check to an id read out of the CSV the orchestrator was given, or by running the assertion leg against `sample_payroll.csv` explicitly rather than depending on whether `payroll.csv` exists.
-
----
-
 ### BL-111 — session memory is a durable instruction surface outside git, and no census, review or gate can reach it
 - state: open
 - type: not stated

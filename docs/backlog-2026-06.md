@@ -1491,3 +1491,11 @@
 - priority: low · size: XS
 - evidence: docs/evidence/BL-254.md
 - done-when: the three pointers (manifest header :25 the SURFACE COLUMN reference, and the 2026-09-07 record references at :71 and :76 — re-derive the line numbers at the fixing commit) resolve to where the blocks now live, by naming the `## Inclusion rulings` / `## Export boundary log` index entry or `docs/export-boundaries/`, rather than to a position in the file; and a check or sweep confirms no retained-header sentence still points at a moved block.
+
+### BL-255 — the kernel-ceiling decrease-only rule sets zero headroom, so the next backlog filing fails --strict
+- state: open
+- type: defect
+- area: process / project knowledge
+- priority: low · size: XS
+- evidence: docs/evidence/BL-255.md
+- done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.

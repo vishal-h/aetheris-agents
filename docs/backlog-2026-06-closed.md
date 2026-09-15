@@ -9471,3 +9471,60 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 **Sizes.** `docs/backlog-2026-06.md`: 716,946 bytes at `fd53474` → 73,978 bytes here (`wc -c`). `docs/evidence/`: absent at `fd53474` → 153 files, 709,897 bytes here (`ls docs/evidence/*.md | wc -l`; `cat docs/evidence/*.md | wc -c`). This row's own evidence file is removed at its close; its body is the section above.
 
 ---
+
+## The close — 2026-09-15
+
+### BL-103 — The store may hold documents the manifest does not describe, and "remove all" is undefined against them
+- state: done
+- type: not stated
+- area: aetheris-agents
+- priority: medium · size: S
+- evidence: docs/evidence/BL-103.md
+- done-when: `claude/aetheris-agents--inbox-brief.md`'s writer is established rather than inferred, and whether it is expected to persist; the manifest states whether non-manifest documents may coexist and are out of scope; BL-002 Step 5's remove-all names its scope; and the post-upload verification's check 3 says what an older timestamp means *given* that policy, rather than leaving the reader the fork it leaves today.
+- disposition: superseded
+
+---
+
+### BL-075 — `mix test` flakes on a fixed 300 ms inactivity window in `RunHelpersTimeoutTest`
+- state: done
+- type: not stated
+- area: harness
+- priority: low · size: XS–S
+- evidence: docs/evidence/BL-075.md
+- done-when: either the flake is reproduced with its name captured (run the suite in a loop with full output retained, e.g. `mix test --seed 0` plus repeated seeded runs) and folded into BL-054 or filed on its own, or three further full-output runs come back clean and this row is closed as unreproducible with that stated.
+- disposition: superseded
+
+---
+
+### BL-150 — standing: documentation-system findings, append-only
+- state: done
+- type: standing
+- area: process / documentation system
+- priority: medium · size: n/a — does not close on any single item
+- evidence: docs/evidence/BL-150.md
+- done-when: the collection question is answered in one named document with its scope — or declined, with the reason recorded and this row's fate stated either way.
+- disposition: evidence-only
+
+---
+
+### BL-151 — standing: code findings, append-only
+- state: done
+- type: standing
+- area: code / cloudcost and any use case
+- priority: medium · size: n/a — does not close on any single item
+- evidence: docs/evidence/BL-151.md
+- done-when: the sweep-and-retirement question is answered in one named document with its scope — or declined, with the reason recorded and this row's fate stated either way.
+- disposition: evidence-only
+
+---
+
+### BL-064 — Fork with additional instructions
+- state: done
+- type: not stated
+- area: TBD
+- priority: TBD · size: TBD
+- evidence: docs/evidence/BL-064.md
+- done-when: not stated — see evidence
+- disposition: rejected
+
+---

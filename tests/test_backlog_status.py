@@ -782,7 +782,8 @@ def test_the_real_backlog_honours_the_split():
         [s for s in bs.parse_files(bs.BACKLOG_FILES)
          if s.path == bs.BACKLOG_ARCHIVE_MD]
     )
-    assert archived and all(r.value in bs.TERMINAL for r in archived)
+    assert archived and all(r.value in bs.ALL_TERMINAL for r in archived)
+    assert any(r.value == "done" for r in archived), "positive control: an index-shaped close is read"
 
 
 # ---------------------------------------------------------------------------

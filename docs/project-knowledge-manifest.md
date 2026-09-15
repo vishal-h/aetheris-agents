@@ -24,16 +24,23 @@ nothing else. Kernel composition follows the design note's ratified D-B table
 (`aetheris/docs/aetheris/research/hybrid-context-design-2026-08.md` §2); the assignment made
 here and its reasons are the dated **THE SURFACE COLUMN** block after the table.
 
-**Kernel budget: 120 KB** — the design note's §2.1 figure, over the committed sizes of the
-`export` and `both` rows. Exceeding it is a drift warning `[not yet mechanised — BL-201]`.
+**Kernel budget** — over the committed byte sizes of the `export` and `both` rows, each read by
+`git show HEAD:<path>` in its owning repo. `drift_check.py`'s `kernel_budget` arm compares their
+sum against the ceiling (a WARN above it, not strict-exempt) and reports the distance to the
+target as context; it reads both figures from this paragraph and FAILs if it cannot.
+- **Kernel design target: 120 KB** (122,880 bytes) — the design note's §2.1 figure, the size the
+  kernel should reach; not the enforced bar.
+- **Kernel ceiling: 250,000 bytes** — the enforced bar. DECREASE-ONLY: a round that shrinks the
+  kernel lowers it to the new measured size. It may be RAISED only by a recorded inclusion ruling
+  in `export-boundaries/rulings.md`, and a new kernel row still names what it displaces, or
+  triggers a probe re-run (design §3) to justify the growth. Set 2026-09-15 (BL-201, on the
+  arbiter's ruling of that date) at the measured sum below, rounded up.
+
 Measured at agents `ea915cf` / harness `83a79c5`, after BL-253 moved the boundary records out:
-the ten kernel documents sum to **243,025 bytes, about twice the budget**. The largest are
-`backlog-2026-06.md` (72,874) and `rig--current-state-2026-06.md` (47,285); this manifest is
-18,975. The assembler prints no total, so the sum comes from its ten size lines. The first
-measurement, 869 KiB, moved to `export-boundaries/2026-09-08.md`. Reproduce:
-`python3 scripts/assemble_export_bundle.py $(mktemp -d)/bundle` prints every kernel document's
-size beside its name. A new kernel row names what it displaces, or triggers a probe re-run
-(design §3) to justify the growth.
+the ten kernel documents sum to **243,025 bytes**; at agents `a595d73`, 241,995. The largest are
+`backlog-2026-06.md` and `rig--current-state-2026-06.md`. The first measurement, 869 KiB, moved
+to `export-boundaries/2026-09-08.md`. Reproduce the current sum and distance:
+`python3 scripts/drift_check.py --check kernel_budget`.
 
 **Connector notice — the corpus is fetch-only.** Everything on the `on-demand` surface, and
 every document reachable through an indexed tree's `index.md`, lives in git only and is served

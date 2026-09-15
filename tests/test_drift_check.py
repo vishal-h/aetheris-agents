@@ -1674,3 +1674,84 @@ def test_a_table_only_manifest_without_its_header_row_does_not_parse(tmp_path, m
         _manifest.parse_rows(headerless)
     manifest.write_text(headerless)
     assert repin_manifest.repin(manifest, dry_run=True, repo_dirs=repo_dirs) == 1
+
+
+# --------------------------------------------------------------------------- #
+# kernel_budget (check 13, BL-201) — a two-repo git world in tmp_path            #
+# --------------------------------------------------------------------------- #
+#
+# Kernel rows sit in both repos, an on-demand row outweighs them, and the agents row has
+# uncommitted growth: a sum that ignored the owning repo, the surface column or HEAD
+# could not land on the fixture total of 500 (a.md 300 + h.md 200).
+
+_KB_TABLE = """\
+| export name | repo path | repo | commit | last changed | surface |
+|-------------|-----------|------|--------|--------------|---------|
+| `a.md` | `docs/a.md` | aetheris-agents | `0000000` | 2026-01-01 | export |
+| `h.md` | `docs/h.md` | aetheris | `0000000` | 2026-01-01 | both |
+| `o.md` | `docs/o.md` | aetheris | `0000000` | 2026-01-01 | on-demand |
+"""
+
+_KB_RED_CEILING = "499"
+_KB_GREEN_CEILING = "500"
+
+
+def _kb_header(ceiling):
+    return (
+        "# fixture manifest\n\n"
+        "**Kernel budget** — fixture.\n"
+        "- **Kernel design target: 120 KB** (100 bytes) — fixture target.\n"
+        f"- **Kernel ceiling: {ceiling} bytes** — fixture ceiling.\n\n"
+    )
+
+
+def _kb_world(tmp_path, monkeypatch, header):
+    agents = _ii_init(tmp_path / "agents")
+    harness = _ii_init(tmp_path / "harness")
+    _ii_commit(agents, "docs/a.md", "a" * 300)
+    _ii_commit(harness, "docs/h.md", "h" * 200)
+    _ii_commit(harness, "docs/o.md", "o" * 5000)
+    (agents / "docs" / "a.md").write_text("a" * 9000, encoding="utf-8")
+    manifest = tmp_path / "manifest.md"
+    manifest.write_text(header + _KB_TABLE, encoding="utf-8")
+    monkeypatch.setattr(drift_check, "MANIFEST_MD", manifest)
+    monkeypatch.setattr(drift_check._manifest, "REPO_DIRS", {"aetheris-agents": agents, "aetheris": harness})
+    reset()
+
+
+def test_kernel_budget_ceiling_below_the_sum_is_warn_and_not_strict_exempt(tmp_path, monkeypatch):
+    _kb_world(tmp_path, monkeypatch, _kb_header(_KB_RED_CEILING))
+    drift_check.check_kernel_budget()
+    assert warns_of("kernel_budget") == [
+        "kernel 500 bytes over 2 rows exceeds the ceiling 499 by 1; largest: a.md 300, h.md 200"
+    ]
+    assert not passes_of("kernel_budget") and not fails_of("kernel_budget")
+
+    reset()
+    monkeypatch.setattr(drift_check, "_strict", True)
+    drift_check.check_kernel_budget()
+    assert fails_of("kernel_budget"), "an over-ceiling kernel must FAIL under --strict"
+
+
+def test_kernel_budget_ceiling_at_or_above_the_sum_passes(tmp_path, monkeypatch):
+    _kb_world(tmp_path, monkeypatch, _kb_header(_KB_GREEN_CEILING))
+    drift_check.check_kernel_budget()
+    assert passes_of("kernel_budget") == [
+        "kernel 500 bytes over 2 rows ≤ ceiling 500; 400 bytes above the 100-byte design target"
+    ]
+    assert not warns_of("kernel_budget") and not fails_of("kernel_budget")
+
+
+def test_kernel_budget_header_with_no_parseable_ceiling_is_fail(tmp_path, monkeypatch):
+    """The pre-BL-201 header shape: one cap in KB, no byte ceiling to read."""
+    _kb_world(tmp_path, monkeypatch, "# fixture manifest\n\n**Kernel budget: 120 KB** — one cap.\n\n")
+    drift_check.check_kernel_budget()
+    assert len(fails_of("kernel_budget")) == 1
+    assert not passes_of("kernel_budget") and not warns_of("kernel_budget")
+
+
+def test_kernel_budget_is_registered_beside_the_existing_checks():
+    assert len(drift_check.CHECKS) == 13
+    assert drift_check.CHECKS[-1] is drift_check.check_kernel_budget
+    for name in ("backlog_resolution", "index_integrity", "kernel_budget"):
+        assert name in drift_check._CHECK_NAMES

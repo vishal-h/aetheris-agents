@@ -42,6 +42,11 @@ Checks:
                         The tree list comes from the manifest, never from a second list
                         here. Uncommitted edits under the tree get a strict-exempt WARN on
                         check 8's terms — the reading is about HEAD.
+  kernel_budget       — the byte-sum at HEAD of `_manifest.export_rows()`, each row read in
+                        its owning repo, against the **Kernel ceiling** in the manifest
+                        header (BL-201). Above it: WARN, not strict-exempt. The PASS line
+                        reports the distance to the **Kernel design target**, which is
+                        never enforced. Header figures unparseable: FAIL.
 
 --strict promotes WARN to FAIL, with one exemption: project_knowledge
 manifest-STALENESS WARNs stay WARN and do not affect the exit code (mid-cycle
@@ -62,6 +67,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 from _frontmatter import FrontmatterError, read_document  # noqa: E402
+import _manifest  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Repo layout                                                                  #
@@ -1461,6 +1467,71 @@ def check_index_integrity() -> None:
                        f"every file indexed and every entry current")
 
 
+# --------------------------------------------------------------------------- #
+# Check 13: kernel_budget (hybrid-context design §2.1, BL-201)                  #
+# --------------------------------------------------------------------------- #
+#
+# The kernel is `_manifest.export_rows()`, each row read by `_manifest.git_show` in the
+# repo `_manifest.REPO_DIRS` names — the assembler's own read, so the arm measures
+# exactly what the bundle carries. Both figures come from the manifest header's
+# **Kernel budget** paragraph. The ceiling is a decrease-only ratchet and the enforced
+# bar; the design target is reported as a distance and never enforced.
+
+_KERNEL_BUDGET_RE = re.compile(r"^\*\*Kernel budget\*\*.*?(?=\n[ \t]*\n|\Z)", re.MULTILINE | re.DOTALL)
+_KERNEL_TARGET_RE = re.compile(r"\*\*Kernel design target:[^*\n]*\*\* \((\d[\d,]*) bytes\)")
+_KERNEL_CEILING_RE = re.compile(r"\*\*Kernel ceiling: (\d[\d,]*) bytes\*\*")
+
+
+def _parse_kernel_budget(text: str) -> tuple[int, int] | None:
+    """(design target, ceiling) in bytes from the Kernel budget paragraph, or None."""
+    para = _KERNEL_BUDGET_RE.search(text)
+    if not para:
+        return None
+    target = _KERNEL_TARGET_RE.search(para.group(0))
+    ceiling = _KERNEL_CEILING_RE.search(para.group(0))
+    if not target or not ceiling:
+        return None
+    return int(target.group(1).replace(",", "")), int(ceiling.group(1).replace(",", ""))
+
+
+def check_kernel_budget() -> None:
+    check = "kernel_budget"
+
+    if not MANIFEST_MD.exists():
+        _fail(check, "docs/project-knowledge-manifest.md not found — no kernel to measure")
+        return
+    text = MANIFEST_MD.read_text(encoding="utf-8")
+
+    budget = _parse_kernel_budget(text)
+    if budget is None:
+        _fail(check, "the manifest's **Kernel budget** paragraph carries no parseable "
+                     "`**Kernel ceiling: N bytes**` and `**Kernel design target: … (N bytes)**` — "
+                     "a budget arm that cannot find its cap is broken, not passing")
+        return
+    target, ceiling = budget
+
+    try:
+        rows = _manifest.export_rows(_manifest.parse_rows(text))
+        sizes = [
+            (len(_manifest.git_show(_manifest.repo_dir(row), row.repo_path)), row.export_name)
+            for row in rows
+        ]
+    except (_manifest.ManifestError, OSError, subprocess.SubprocessError) as exc:
+        _fail(check, f"cannot measure the kernel: {exc}")
+        return
+
+    total = sum(n for n, _ in sizes)
+    if total > ceiling:
+        largest = ", ".join(f"{name} {n:,}" for n, name in sorted(sizes, reverse=True)[:3])
+        _warn(check, f"kernel {total:,} bytes over {len(sizes)} rows exceeds the ceiling "
+                     f"{ceiling:,} by {total - ceiling:,}; largest: {largest}")
+    else:
+        distance = (f"{total - target:,} bytes above" if total > target
+                    else f"{target - total:,} bytes under")
+        _ok(check, f"kernel {total:,} bytes over {len(sizes)} rows ≤ ceiling {ceiling:,}; "
+                   f"{distance} the {target:,}-byte design target")
+
+
 CHECKS = [
     check_event_types,
     check_tauri_commands,
@@ -1474,6 +1545,7 @@ CHECKS = [
     check_use_case_registry,
     check_backlog_resolution,
     check_index_integrity,
+    check_kernel_budget,
 ]
 
 _CHECK_NAMES = {fn.__name__.replace("check_", ""): fn for fn in CHECKS}

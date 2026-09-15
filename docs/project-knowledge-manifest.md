@@ -133,3 +133,46 @@ and why; the procedural gap it exposed is **BL-196**.]`
 > The mirror's own last change is `7328755`, which is why it carries no manifest row —
 > the row tracks the canonical copy, and a second row would drift against it.
 
+## Inclusion rulings
+
+One line per ruling block, in the order they stood in this file; each block's full text is in
+`export-boundaries/rulings.md`, found by the quoted opening phrase.
+
+- `docs/milestones/` out as a kind (2026-08-09) — working artifacts are out and milestone specifications are in; the rule reads an artifact's kind, never its directory · [rulings.md](export-boundaries/rulings.md) — "`docs/milestones/` is out of the manifest, and it is out as a *kind* rather than as a"
+- Fork-arc re-application (undated) — fifteen working artifacts out, including a ratified contract draft · [rulings.md](export-boundaries/rulings.md) — "Re-applied unchanged at this (fork-arc) export."
+- m1-cloudcost export (undated) — `cloudcost--milestone.md` added as a milestone specification; use-case runbooks stay out · [rulings.md](export-boundaries/rulings.md) — "m1-cloudcost export — the rule applied in both directions, one add."
+- BL-066/067/068 export (undated) — no adds; artifact-specific runbooks and generator data stay out · [rulings.md](export-boundaries/rulings.md) — "BL-066/067/068 export — the rule applied unchanged, no adds, no drops."
+- DESIGN BRIEFS (2026-08-24) — a design brief earns a row when a store-side actor must read it; four rows added, two refused · [rulings.md](export-boundaries/rulings.md) — "DESIGN BRIEFS — the inclusion rule stated, 2026-08-24. Four rows added, two refused."
+- THE CLOSED BACKLOG HALF (2026-08-25) — `backlog-2026-06-closed.md` earns a row, because a closed row's disposition is promoted nowhere else · [rulings.md](export-boundaries/rulings.md) — "THE CLOSED BACKLOG HALF — ruled 2026-08-25. One row added, and a question reserved at three"
+- THE SURFACE COLUMN (2026-09-08) — every row assigned `export`, `on-demand` or `both` per design D-B; four rows added · [rulings.md](export-boundaries/rulings.md) — "THE SURFACE COLUMN — the design note's D-B applied, 2026-09-08. Every row assigned, four"
+- THE TRIAGE RECORD (2026-09-14) — `backlog-triage-2026-09.md` added `on-demand` · [rulings.md](export-boundaries/rulings.md) — "THE TRIAGE RECORD — one row added, 2026-09-14."
+- THE EVIDENCE TREE (2026-09-14) — `docs/evidence/` is `on-demand` by construction, with no row per file · [rulings.md](export-boundaries/rulings.md) — "THE EVIDENCE TREE — on-demand by construction, 2026-09-14 (BL-252)."
+
+## Export boundary log
+
+One line per record, oldest first. Records live in `export-boundaries/<date>.md`, one file per
+date, found within the file by the quoted opening phrase. Everything up to 2026-09-15 is verbatim
+from this file at `1592c95`.
+
+- 2026-08-03 · m2-cloudcost close · 6 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-03.md](export-boundaries/2026-08-03.md) — "Exported: 2026-08-03 at aetheris-agents `0fc9396` / aetheris `265d336`"
+- 2026-08-04 · cloudcost-in-Rig batch close · 2 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-04.md](export-boundaries/2026-08-04.md) — "Export boundary — 2026-08-04, cloudcost-in-Rig batch close."
+- 2026-08-05 · m3-cloudcost close · 4 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-05.md](export-boundaries/2026-08-05.md) — "Export boundary — 2026-08-05, m3-cloudcost close (Linode as provider three)."
+- 2026-08-08 · m4-cloudcost close · 5 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-08.md](export-boundaries/2026-08-08.md) — "Export boundary — 2026-08-08, m4-cloudcost close (the consolidation cycle)."
+- 2026-08-09 · hc round close (hc-e r8) · 4 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-09.md](export-boundaries/2026-08-09.md) — "Regenerated 2026-08-09 at the hc round's export boundary (hc-e r8)."
+- 2026-08-12 · gc round close · 6 rows re-pinned, one of them twice · kernel — · [docs/export-boundaries/2026-08-12.md](export-boundaries/2026-08-12.md) — "Export boundary — 2026-08-12, the gc round's close (stale gate claims)."
+- 2026-08-14 · m6-cloudcost close · 4 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-14.md](export-boundaries/2026-08-14.md) — "Export boundary — 2026-08-14, the m6-cloudcost close (GitHub as provider four)."
+- 2026-08-16 · BL-152 / BL-153-s0 / export-mechanism arc · 2 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-16.md](export-boundaries/2026-08-16.md) — "Export boundary — 2026-08-16, the BL-152 / BL-153-s0 / export-mechanism arc."
+- 2026-08-16 · amendment pass · 2 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-16.md](export-boundaries/2026-08-16.md) — "Export boundary — 2026-08-16, amendment pass."
+- 2026-08-16 · second amendment · 2 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-16.md](export-boundaries/2026-08-16.md) — "Export boundary — 2026-08-16, second amendment."
+- 2026-08-16 · note, no boundary run: the replaced condition discharged by BL-143's ruling · 0 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-16.md](export-boundaries/2026-08-16.md) — "2026-08-16 — the replaced condition is DISCHARGED, by BL-143's ruling of the same date"
+- 2026-08-18 · ds boundary · 4 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-18.md](export-boundaries/2026-08-18.md) — "Export boundary — 2026-08-18, the ds boundary."
+- 2026-08-18 · standing note, no boundary run: Repo push state paragraphs are not maintained · 0 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-18.md](export-boundaries/2026-08-18.md) — "[2026-08-18 — the Repo push state paragraphs in this file are point-in-time"
+- 2026-08-21 · note, no boundary run: `use-cases.md` added, `ds-milestone.md` refused · 0 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-21.md](export-boundaries/2026-08-21.md) — "2026-08-21 — one row ADDED, one row REFUSED, and NO BOUNDARY WAS RUN."
+- 2026-08-22 · the Step 0 first · 4 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-22.md](export-boundaries/2026-08-22.md) — "Export boundary — 2026-08-22."
+- 2026-08-25 · design-brief boundary · 4 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-25.md](export-boundaries/2026-08-25.md) — "Export boundary — 2026-08-25, the design-brief boundary."
+- 2026-08-27 · first run under the repaired Step 3 · 5 rows re-pinned · kernel — · [docs/export-boundaries/2026-08-27.md](export-boundaries/2026-08-27.md) — "Export boundary — 2026-08-27."
+- 2026-09-07 · upload-first boundary, `claude/` placement corrected the same day · 2 rows re-pinned, 2 added · kernel — · [docs/export-boundaries/2026-09-07.md](export-boundaries/2026-09-07.md) — "Export boundary — 2026-09-07."
+- 2026-09-08 · first KERNEL export · 11 rows re-pinned · kernel 900,128 bytes · [docs/export-boundaries/2026-09-08.md](export-boundaries/2026-09-08.md) — "Export boundary — 2026-09-08, the first KERNEL export."
+- 2026-09-09 · the boundary that read the store · 2 rows re-pinned · kernel 916,423 bytes · [docs/export-boundaries/2026-09-09.md](export-boundaries/2026-09-09.md) — "Export boundary — 2026-09-09, the boundary that read the store."
+- 2026-09-15 · first index-shaped backlog · 11 rows re-pinned · kernel 390,691 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, the first index-shaped backlog."
+

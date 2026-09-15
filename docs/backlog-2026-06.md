@@ -1462,7 +1462,7 @@
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-259.md
-- done-when: a single global pause sentinel (INV-1) halts every run start — due tick, manual trigger, and startup catch-up; the due query and both start paths honor it; enable/disable is a CLI+API action; the sentinel is the single point later scheduler rows extend, exposed by a test fixture; a test asserts no path starts a run under pause and that unpause resumes.
+- done-when: a single global pause sentinel (INV-1) halts every run start — due tick, manual trigger, and startup catch-up; the sentinel is store-backed and survives a harness restart; the due query and both start paths honor it; enable/disable is a CLI+API action; the sentinel is the single point later scheduler rows extend, exposed by a test fixture; a test asserts no path starts a run under pause, that unpause resumes, and that a pause set before a restart still holds after it.
 
 ### BL-260 — missed fires catch up silently: a schedule due while the harness was down runs on startup, with no alert
 - state: committed
@@ -1470,7 +1470,7 @@
 - area: harness
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-260.md
-- done-when: missed fires coalesce into at most one catch-up run per schedule, each catch-up passing through INV-2's chokepoint and obeying INV-1; a catch-up emits an alert event naming the schedule and the missed count so it is never silent; under pause the catch-up does not run but the alert still fires, naming pause as the suppressor; a test asserts N missed intervals → one admitted run + one alert carrying N, and under pause → no run with the alert still fired.
+- done-when: missed fires do not auto-run — a fire whose time passed while the harness was down starts no run; the scheduler emits an alert event naming the schedule and the missed count so it is never silent, then advances next_run_at; the alert fires regardless of pause (INV-1 gates run-starts, of which there are none here). Adopts the moadim brief's alert-only rule (:76-80) over catch-up, on the ground that a scheduled run can carry irreversible effects (payslip release). A test asserts N missed intervals → zero runs + one alert carrying N, and that the schedule advances.
 
 ### BL-261 — retention family: no solo-run max-runtime stop, and no reaping or eviction of run artifacts
 - state: committed
@@ -1478,7 +1478,7 @@
 - area: harness — retention (the moadim brief's E6 candidate)
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-261.md
-- done-when: (a) a run exceeding RunConfig.max_duration is stopped by a lib watchdog (not only orbs) with a terminal event that decrements INV-2's live count; (b) run directories and verify overlays have a stated retention — a reaper with a TTL, or a recorded keep decision with an on-demand reap command; a test covers each arm, including that a watchdog-stopped run frees admission. May split 261a/261b at implementation.
+- done-when: (a) a run exceeding RunConfig.max_duration is stopped by a lib watchdog (not only orbs) with a terminal event that decrements INV-2's live count; (b) run artifacts carry a stated retention with two arms — TTL reaping that never touches a live run, and oldest-first, finished-only eviction under a disk ceiling — each implemented or ruled out on the record, plus an on-demand reap command; a test covers each arm, including that a watchdog-stopped run frees admission. May split 261a/261b at implementation.
 
 ### BL-262 — cap composition: per-schedule runtime and TTL values must be tighten-only
 - state: committed

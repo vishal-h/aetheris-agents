@@ -97,11 +97,11 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 | on-demand |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 | on-demand |
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `718bbc5` | 2026-09-10 | on-demand |
-| `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `18b9b01` | 2026-06-19 | on-demand |
-| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `e0c1ee2` | 2026-08-14 | export |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `3973748` | 2026-09-15 | export |
+| `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `7a94164` | 2026-09-15 | on-demand |
+| `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `633b4e5` | 2026-09-15 | export |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `c2b57f2` | 2026-09-15 | export |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 | on-demand |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `3973748` | 2026-09-15 | on-demand |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `c2b57f2` | 2026-09-15 | on-demand |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 | on-demand |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
@@ -183,4 +183,5 @@ from this file at `1592c95`.
 - 2026-09-08 · first KERNEL export · 11 rows re-pinned · kernel 900,128 bytes · [docs/export-boundaries/2026-09-08.md](export-boundaries/2026-09-08.md) — "Export boundary — 2026-09-08, the first KERNEL export."
 - 2026-09-09 · the boundary that read the store · 2 rows re-pinned · kernel 916,423 bytes · [docs/export-boundaries/2026-09-09.md](export-boundaries/2026-09-09.md) — "Export boundary — 2026-09-09, the boundary that read the store."
 - 2026-09-15 · first index-shaped backlog · 11 rows re-pinned · kernel 390,691 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, the first index-shaped backlog."
+- 2026-09-15 · capability matrix catches up, first run under the BL-253 split · 4 rows re-pinned · kernel 241,086 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, second record: the capability matrix catches up."
 

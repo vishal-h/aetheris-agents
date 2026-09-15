@@ -36,6 +36,39 @@
       ],
       "output": "text",
       "example": "python3 scripts/drive_upload.py --source payslip/output/"
+    },
+    {
+      "name": "drive_quarantine",
+      "file": "scripts/drive_quarantine.py",
+      "description": "Find payslip objects misplaced in one Drive period folder and write a dry-run report; --execute moves the reported objects to a quarantine folder beside the payslips root (live Drive; never deletes)",
+      "args": [
+        {
+          "name": "period",
+          "flag": "--period",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Period folder to test, YYYY-MM (dry run only; read from the report under --execute)"
+        },
+        {
+          "name": "report",
+          "flag": "--report",
+          "type": "file",
+          "required": true,
+          "default": null,
+          "description": "Dry-run report path: written by the dry run (never overwritten), read by --execute"
+        },
+        {
+          "name": "execute",
+          "flag": "--execute",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Move exactly the pairs a reviewed dry-run report names; refuses a report already executed"
+        }
+      ],
+      "output": "json",
+      "example": "python3 scripts/drive_quarantine.py --period 2026-07 --report output/bl-194/2026-07-dry-run.json"
     }
   ]
 }

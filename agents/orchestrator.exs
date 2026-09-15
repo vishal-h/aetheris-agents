@@ -282,6 +282,17 @@ get_step_result = fn run_id ->
   end
 end
 
+# The card renders `error` verbatim, so an error already written as prose travels
+# as-is — inspect/1 on a binary would quote it (BL-193). A harness error map carries
+# its prose in `:error`; anything else is not prose and is inspected.
+# step_error_text:begin
+step_error_text = fn
+  reason when is_binary(reason)          -> reason
+  %{error: error} when is_binary(error)  -> error
+  reason                                 -> inspect(reason)
+end
+# step_error_text:end
+
 Enum.reduce_while(steps, :ok, fn step, _acc ->
   step_id    = step["id"]
   agent_file = step["agent"]
@@ -292,24 +303,16 @@ Enum.reduce_while(steps, :ok, fn step, _acc ->
   original = Enum.map(params, fn {k, _} -> {k, System.get_env(k)} end)
   Enum.each(params, fn {k, v} -> System.put_env(k, v) end)
 
-  await_with_timeout = fn run_id ->
-    task = Task.async(fn -> RunHelpers.await_run(run_id, verbose: false) end)
-    case Task.yield(task, 300_000) do
-      {:ok, {:ok, outcome}}   -> {:ok, outcome}
-      {:ok, {:error, reason}} -> {:error, reason}
-      nil ->
-        Task.shutdown(task, :brutal_kill)
-        {:error, "step timed out after 5 minutes"}
-    end
-  end
-
+  # await_run is the only clock (BL-193). Its inactivity bound resets on progress and,
+  # on expiry, returns a diagnosis naming the bound, the last status and the last seq.
+  # A fixed outer cap here raced it and always won, reporting its own wait as the step's.
   result =
     with {:ok, config}  <- RunHelpers.load_agent_file(agent_path),
          {:ok, run_id}  <- Aetheris.start_run(config),
-         {:ok, outcome} <- await_with_timeout.(run_id) do
+         {:ok, outcome} <- RunHelpers.await_run(run_id, verbose: false) do
       get_step_result.(outcome.run_id)
     else
-      {:error, reason} -> {:error, inspect(reason)}
+      {:error, reason} -> {:error, step_error_text.(reason)}
     end
 
   Enum.each(original, fn

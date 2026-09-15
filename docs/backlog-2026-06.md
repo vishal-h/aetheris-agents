@@ -1067,16 +1067,6 @@
 
 ---
 
-### BL-193 — the Rig step card's "step timed out after 5 minutes" is the orchestrator describing its own wait, rendered as a statement about the step; it is emitted by this repo, not by the harness
-- state: ready
-- type: defect
-- area: aetheris-agents
-- priority: medium · size: S
-- evidence: docs/evidence/BL-193.md
-- done-when: on a `Task.yield` expiry the step card no longer asserts that the *step* timed out — the emitted `error` names the orchestrator's own wait as its subject and states the bound it actually applied; **and** the operator can reach the harness's `await_run` diagnosis, either by giving the orchestrator's cap headroom over the harness's inactivity bound so the accurate message wins, or by dropping the outer cap and letting `await_run` be the one clock; **and** the replacement message does not arrive quote-wrapped — whatever hop 2 becomes, it must not hand the card `inspect/1` of a string that was already prose.
-
----
-
 ### BL-194 — misplaced payslip objects in Drive period folders have no owner: `2026-07/` holds 36 May files and nothing is filed to remove them
 - state: ready
 - type: defect

@@ -132,6 +132,9 @@ Branch 1 reads *"the sprint arm exists and is named in a boundary record"*. In t
 repository a **boundary record** is a dated entry in
 `docs/project-knowledge-manifest.md`'s export-boundary log; ds t3 runs no export boundary,
 so no such entry can honestly be written here.
+[Corrected 2026-09-15, BL-253: boundary records now live in
+`docs/export-boundaries/<date>.md`, each indexed by one line in the manifest's
+`## Export boundary log`.]
 
 The naming landed in `CLAUDE.md` §Definition of done instead, in the paragraph that
 already carries the mechanism's pointer and its `Tests:` line. That is where branch 2

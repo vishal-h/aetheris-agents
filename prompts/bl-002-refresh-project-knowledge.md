@@ -105,8 +105,9 @@ each source out of committed history: a row whose path is not in HEAD
 fails the run and no bundle is written. Nothing is silently dropped.
 
 Adding or removing a document, or moving one between surfaces, is an
-edit to that table, made deliberately and with its reason recorded in
-the manifest's prose — not a change to this prompt. A new KERNEL row
+edit to that table, made deliberately and with its reason recorded as an
+inclusion ruling in `docs/export-boundaries/rulings.md`, indexed by one
+line in the manifest's `## Inclusion rulings` — not a change to this prompt. A new KERNEL row
 names what it displaces or triggers a probe re-run (design §2.1); the
 kernel budget line in the manifest header is the figure it is measured
 against.
@@ -121,8 +122,8 @@ reading: the commit cell, and the `last changed` cell beside it, the date
 coming from `git log -1 --format=%ad --date=short <commit>` on the commit
 just resolved rather than independently from the path — so the two cannot
 disagree, and a date-only move is reported as one. Nothing else is
-touched: not the prose, not the deviation section, not the per-boundary
-sections, not the self-referential row, which keeps `_(this export)_`.
+touched: not the prose, not the `## Inclusion rulings` or `## Export
+boundary log` lines, not the self-referential row, which keeps `_(this export)_`.
 Run against a manifest already current it writes nothing at all;
 idempotence is the correctness property.
 
@@ -137,10 +138,24 @@ reading", and its `current_date` handling — not from this file's history.
 `CLAUDE.md` §Definition of done already stated it correctly, which is the
 second surface this one was drifting from.]`
 
-The manifest's narrative — what moved this boundary and why, what stayed
-out and on what rule — is still written by hand, in the same commit. It
-also names Step 0's arm and the verdict it returned; that sentence is
-this procedure's discharge of BL-161's branch 1 and is not optional.
+**The boundary record goes to `docs/export-boundaries/<date>.md`, not into
+the manifest** (BL-253). It is the narrative — what moved this boundary
+and why, what stayed out and on what rule — written by hand, in the same
+commit. It also names Step 0's arm and the verdict it returned; that
+sentence is this procedure's discharge of BL-161's branch 1 and is not
+optional.
+
+- **One file per date.** A record goes to the file named for its
+  boundary's date. If that file already exists, for instance for a
+  same-day amendment, append below its content so the records stay in
+  the order they were written. A dated note that belongs to no boundary
+  goes to the file of its own date. A new file opens with
+  `# Project-knowledge manifest — export-boundary records, <date>`.
+- **The manifest gets one line**, appended to `## Export boundary log`:
+  `<date> · <label> · <N> rows re-pinned · kernel <size or —> ·
+  [docs/export-boundaries/<date>.md](export-boundaries/<date>.md) —
+  "<the record's opening bold phrase, verbatim>"`. That line is the
+  index entry; everything else goes in the record.
 
 The table's format is the contract (check 8 of drift_check.py parses it;
 deviation = FAIL on zero rows):
@@ -160,8 +175,8 @@ Formatting rules:
   OWNING repo (use ../aetheris for the harness file — its hashes come
   from that repo's history, not this one's); last changed = the
   commit date.
-- Add a final line after the table: "Exported: <today's date> at
-  aetheris-agents <HEAD short hash> / aetheris <HEAD short hash>."
+- End the boundary record, not the table, with: "Exported: <today's
+  date> at aetheris-agents <HEAD short hash> / aetheris <HEAD short hash>."
 - After writing, run: python3 scripts/drift_check.py --check project_knowledge
   Confirm PASS before proceeding to Step 3. If it FAILs on zero rows,
   the formatting is wrong — fix the table before continuing.
@@ -221,7 +236,8 @@ for months after BL-160 replaced the mechanism it described.
 Step 4 — Commit the manifest only if its content changed. Run:
   git diff --quiet docs/project-knowledge-manifest.md
 If the diff is non-empty, stage and commit docs/project-knowledge-manifest.md
-only (not the bundle) with message "BL-002: project-knowledge manifest".
+and this boundary's docs/export-boundaries/<date>.md only (not the bundle)
+with message "BL-002: project-knowledge manifest".
 If the diff is empty, print "manifest unchanged — nothing to commit" and
 skip the commit. The bundle in /tmp is ephemeral either way.
 
@@ -230,10 +246,33 @@ Step 5 — Print for the human:
   - whether the U2 marker is still present. If it is, the bundle is
     unswept and the upload cannot proceed on it — say so rather than
     printing upload instructions under it.
-  - upload instructions: in the Claude.ai project, REMOVE the old
-    knowledge files (everything at a bare export name — the previous
-    kernel, and any document that has since moved to `on-demand`),
-    then upload everything in /tmp/claude-project-export/
+  - upload instructions. **The upload is the human operator's job**, and
+    the reference route is the **bundle route**: the human uploads this
+    bundle in the Claude.ai project UI, where every document lands at its
+    bare export name.
+    **REMOVE — scope: the manifest set, and nothing else.** Remove every
+    store document outside `claude/` whose name is in the manifest
+    table's export-name column: the previous kernel, any row since moved
+    to `on-demand`, and any row deleted from the table this boundary,
+    under its old name. **Remove nothing under `claude/`**: those
+    documents carry no row, sit outside the manifest set, and post-upload
+    check 3 lists them instead.
+    Then upload everything in /tmp/claude-project-export/.
+  - **Upload routes (BL-196).** A route is supported only if every
+    document lands at its exact export name. The bundle route does. The
+    **store route**, claude-ui's Projects tool, can overwrite an existing
+    bare name in place but cannot create one: it forces a new bare
+    filename under `claude/`. So:
+    - a boundary that ADDS a kernel row, or moves a row onto `export` or
+      `both`, creates a bare name and uses the bundle route only;
+    - on the store route, replace each kernel document in place, then
+      remove the names that left the kernel. Never remove a name that is
+      about to be replaced: removing it destroys the only handle that can
+      write it back (BL-165, measured 2026-08-18);
+    - a route that cannot preserve the exact export names is unsupported.
+      **STOP before uploading** and hand the bundle to the human. Never
+      upload under `claude/`, and never re-pin an export name to wherever
+      a route happened to put a document.
   - the connector: the on-demand surface is served by the GitHub
     connector granted for both repos; the boundary is not the place to
     change that, but the record should say whether the grant was
@@ -243,9 +282,11 @@ Step 5 — Print for the human:
     before any handoff; the manifest commit hash is how a future
     session detects staleness.
 
-Constraints: read-only outside docs/project-knowledge-manifest.md and
-/tmp/claude-project-export/. The manifest is the ONLY tracked file this
-task writes, and it is the LAST tracked write — do NOT append to, or
+Constraints: read-only outside docs/project-knowledge-manifest.md,
+docs/export-boundaries/ and /tmp/claude-project-export/. The manifest and
+this boundary's record file are the ONLY tracked files this task writes,
+and they are the LAST tracked write. The record file carries no manifest
+row, so writing it stales nothing. Do NOT append to, or
 otherwise edit, any manifest-tracked doc (current-state-2026-06.md, the
 CLAUDE.mds, backlog, specs, runbook, architecture, …) after Step 2. Any
 such edit moves that file's commit hash past the value the manifest just

@@ -634,6 +634,9 @@ and what settled it. Three units were below scope; each is answered.
   beside the mechanism's pointer instead, which is where branch 2 places its own outcome
   and what the next boundary record's author reads. **A substitution of surface, recorded
   as one**, and the arbiter's to accept or reverse.
+  [Corrected 2026-09-15, BL-253: boundary records now live in
+  `docs/export-boundaries/<date>.md`, each indexed by one line in the manifest's
+  `## Export boundary log`.]
 - **"both arms of the filing tiebreak" — only one arm ran, and criterion 8 cannot see it.**
   The Scope paragraph above says t3 and t1b between them exercise both arms and that
   criterion 8 *"depends on at least one running"*. Both did run, so the criterion is

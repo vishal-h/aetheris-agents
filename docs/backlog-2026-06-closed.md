@@ -5236,6 +5236,10 @@ why the amendment exists and why the row did not close honestly without it.
 now; what changed is that the second half of branch 1 is now performed by a procedure instead of
 asserted by a document.]`
 
+[Corrected 2026-09-15, BL-253: both sentences above that define a boundary record as an entry in
+`docs/project-knowledge-manifest.md` describe the file as it was. Records now live in
+`docs/export-boundaries/<date>.md`, each indexed by one line in the manifest's `## Export boundary log`.]
+
 ---
 
 

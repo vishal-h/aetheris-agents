@@ -137,7 +137,7 @@
 ---
 
 ### BL-054 — The twelfth `requires_worker` failure is a load-sensitive flake with no stable identity
-- state: open
+- state: committed
 - type: not stated
 - area: Harness
 - priority: low · size: XS–S
@@ -231,7 +231,7 @@
 ---
 
 ### BL-076 — `compose_report_data` sums *every* provider's prior snapshot into one `prior_total`
-- state: open
+- state: committed
 - type: not stated
 - area: cloudcost
 - priority: medium · size: S
@@ -252,7 +252,7 @@
 ---
 
 ### BL-059 — Parallel tool calls are silently discarded: the adapter keeps the first `tool_use` block
-- state: open
+- state: committed
 - type: not stated
 - area: harness
 - priority: medium · size: M
@@ -412,7 +412,7 @@
 ---
 
 ### BL-057 — A stub run that declares tools silently gets no worker, so its tool calls never execute
-- state: open
+- state: committed
 - type: not stated
 - area: Harness
 - priority: medium · size: S–M
@@ -442,7 +442,7 @@
 ---
 
 ### BL-185 — `backlog_status.py --check` reports ARCHIVED-ONLY as a NOTE, and the corpus population is now zero
-- state: open
+- state: committed
 - type: not stated
 - area: Drift apparatus
 - priority: low · size: S
@@ -498,7 +498,7 @@
 ## Unsectioned
 
 ### BL-098 — The inventory envelope has no extras key, so adapter run-metadata dies at stdout
-- state: open
+- state: committed
 - type: not stated
 - area: aetheris-agents
 - priority: medium · size: M
@@ -508,7 +508,7 @@
 ---
 
 ### BL-102 — The complete-but-unmarked sweep runs at milestone closes only, so batch closes leave rows silently open
-- state: open
+- state: committed
 - type: not stated
 - area: aetheris-agents
 - priority: low-medium · size: XS–S
@@ -548,7 +548,7 @@
 ---
 
 ### BL-110 — the payslip case asserts a reference employee the run cannot produce
-- state: open
+- state: ready
 - type: not stated
 - area: harness
 - priority: medium · size: XS
@@ -568,7 +568,7 @@
 ---
 
 ### BL-112 — the BEAM's latin1 fallback silently corrupts non-ASCII in `--json` payloads
-- state: open
+- state: committed
 - type: not stated
 - area: harness
 - priority: medium · size: S
@@ -598,7 +598,7 @@
 ---
 
 ### BL-115 — a stopped instance with no attached storage and a non-zero own estimate yields no candidate
-- state: open
+- state: committed
 - type: defect
 - area: cloudcost
 - priority: **high** · size: S–M
@@ -789,7 +789,7 @@
 ---
 
 ### BL-139 — record the conditions under which a triad exchange may be looped without a human turn
-- state: open
+- state: committed
 - type: method
 - area: process / methodology
 - priority: low · size: S to rule
@@ -799,7 +799,7 @@
 ---
 
 ### BL-140 — whether a correction owes a same-commit sweep for recurrences as a standing obligation
-- state: open
+- state: committed
 - type: method
 - area: process / methodology
 - priority: medium · size: S to rule
@@ -809,7 +809,7 @@
 ---
 
 ### BL-141 — a Done-check that cannot fail, and whether a positional claim must carry path:line
-- state: open
+- state: ready
 - type: method
 - area: process / methodology
 - priority: medium · size: S–M to rule (two questions, one document)
@@ -819,7 +819,7 @@
 ---
 
 ### BL-142 — whether §6 should require `Touches` to be derived from a search for the premise
-- state: open
+- state: committed
 - type: method
 - area: process / methodology
 - priority: medium · size: S to rule
@@ -829,7 +829,7 @@
 ---
 
 ### BL-143 — the `project_knowledge` export boundary has no owner and no schedule
-- state: open
+- state: ready
 - type: decision
 - area: process / project knowledge
 - priority: medium · size: S to decide
@@ -839,7 +839,7 @@
 ---
 
 ### BL-144 — a round whose output is a derivation may leave it only in a scratch directory
-- state: open
+- state: committed
 - type: decision
 - area: process / round records
 - priority: medium · size: S to decide
@@ -859,7 +859,7 @@
 ---
 
 ### BL-148 — C7 and C13 state adapter obligations with no exemplar and no verdict in the contract
-- state: open
+- state: committed
 - type: defect
 - area: cloudcost
 - priority: medium — before provider four · size: S–M
@@ -869,7 +869,7 @@
 ---
 
 ### BL-149 — two live documents use "live" in incompatible senses
-- state: open
+- state: committed
 - type: decision
 - area: process / round vocabulary
 - priority: medium · size: S to decide
@@ -899,7 +899,7 @@
 ---
 
 ### BL-153 — the cloudcost sprint's credential gate exits before the stale-artifact guard, so a credential-less leg leaves the previous run's artifacts in place
-- state: open
+- state: committed
 - type: defect
 - area: harness
 - priority: medium · size: S
@@ -909,7 +909,7 @@
 ---
 
 ### BL-154 — Rig's Cancel kills the direct child only, and transitions nothing
-- state: open
+- state: committed
 - type: defect
 - area: aetheris-agents
 - priority: medium · size: M
@@ -919,7 +919,7 @@
 ---
 
 ### BL-155 — the capability matrix has three consumers, no gate, and is the one wiring place an LLM writes
-- state: open
+- state: committed
 - type: defect
 - area: aetheris-agents
 - priority: medium-high · size: M
@@ -929,7 +929,7 @@
 ---
 
 ### BL-156 — the approval card's step text is written by the planner per run, and nothing checks it
-- state: open
+- state: committed
 - type: defect
 - area: aetheris-agents
 - priority: medium · size: M
@@ -970,7 +970,7 @@
 ---
 
 ### BL-160 — the U2 export gate has never returned information in either direction
-- state: open
+- state: committed
 - type: gate
 - area: process / project knowledge
 - priority: medium · size: M
@@ -980,7 +980,7 @@
 ---
 
 ### BL-162 — an inbound pointer is not a scope change, and nothing tells the row
-- state: open
+- state: committed
 - type: decision
 - area: process / backlog discipline
 - priority: medium · size: S to decide
@@ -990,7 +990,7 @@
 ---
 
 ### BL-164 — a test that hard-codes a value the code derives goes red when the derivation moves, not when the code breaks
-- state: open
+- state: committed
 - type: defect (instance fixed) + decision (the class)
 - area: testing discipline
 - priority: medium · size: S to decide the class; the instance is already done
@@ -1000,7 +1000,7 @@
 ---
 
 ### BL-165 — `bl-002` Step 5 states the remove half as a hand enumeration of document kinds, not as the manifest set
-- state: open
+- state: ready
 - type: defect
 - area: process / project knowledge
 - priority: medium · size: S
@@ -1010,7 +1010,7 @@
 ---
 
 ### BL-166 — `drift_check --strict` is green because of an untracked personal profile export
-- state: open
+- state: ready
 - type: defect
 - area: process / gates
 - priority: medium _(proposed)_ · size: S _(proposed)_
@@ -1020,7 +1020,7 @@
 ---
 
 ### BL-167 — run-level completion needs a harness post-run hook; it is not satisfiable agents-side
-- state: open
+- state: committed
 - type: gap
 - area: harness
 - priority: medium _(proposed)_ · size: M _(proposed)_
@@ -1040,7 +1040,7 @@
 ---
 
 ### BL-170 — the concurrency detector is probabilistic, and a single green is not evidence the lock is present
-- state: open
+- state: committed
 - type: bug
 - area: aetheris-agents
 - priority: medium · size: S
@@ -1050,7 +1050,7 @@
 ---
 
 ### BL-175 — nothing can report a workflow cache path that names nothing, and the instrument that can is uncommitted
-- state: open
+- state: ready
 - type: bug
 - area: harness
 - priority: medium · size: S
@@ -1071,7 +1071,7 @@
 ---
 
 ### BL-183 — `orb_blackboard_test.exs:73` reads a blackboard key one step after the other agent writes it, with nothing synchronising the two
-- state: open
+- state: committed
 - type: bug
 - area: harness
 - priority: not stated · size: not stated
@@ -1080,7 +1080,7 @@
 
 
 ### BL-187 — the planner's `params` map has no declared per-use-case spec, and nothing validates it before the operator approves
-- state: open
+- state: committed
 - type: defect
 - area: aetheris-agents
 - priority: medium · size: M
@@ -1098,7 +1098,7 @@
 
 
 ### BL-189 — a degraded run has no representation: the stage CLIs' three-valued status is collapsed to a boolean on both operator surfaces, in opposite directions
-- state: open
+- state: committed
 - type: defect
 - area: aetheris-agents and harness
 - priority: medium · size: M
@@ -1108,7 +1108,7 @@
 ---
 
 ### BL-190 — the whole-suite gate is red: a cloudcost seat test compares a frozen fixture against a reference date that is the wall clock
-- state: open
+- state: ready
 - type: defect
 - area: aetheris-agents
 - priority: medium · size: S
@@ -1118,7 +1118,7 @@
 ---
 
 ### BL-191 — `drive/runbook.md` documents two folder-ID env vars nothing has read since `72367ac`, and the sprint's drive arm gates on both
-- state: open
+- state: ready
 - type: defect
 - area: aetheris-agents and harness
 - priority: medium · size: M
@@ -1128,7 +1128,7 @@
 ---
 
 ### BL-192 — `email_send.py` crashes on a malformed month instead of degrading: `strptime` is called for display, so its validation is incidental
-- state: open
+- state: ready
 - type: defect
 - area: aetheris-agents
 - priority: low · size: S
@@ -1138,7 +1138,7 @@
 ---
 
 ### BL-193 — the Rig step card's "step timed out after 5 minutes" is the orchestrator describing its own wait, rendered as a statement about the step; it is emitted by this repo, not by the harness
-- state: open
+- state: ready
 - type: defect
 - area: aetheris-agents
 - priority: medium · size: S
@@ -1148,7 +1148,7 @@
 ---
 
 ### BL-194 — misplaced payslip objects in Drive period folders have no owner: `2026-07/` holds 36 May files and nothing is filed to remove them
-- state: open
+- state: ready
 - type: defect
 - area: aetheris-agents
 - priority: medium · size: S
@@ -1158,7 +1158,7 @@
 ---
 
 ### BL-195 — two email orchestrators with one label: `email_orchestrator.exs` is what Rig, the sprint and the spec wire; `email_orchestrator2.exs` is what the guide's pattern and the live run use; nothing says which is current
-- state: open
+- state: ready
 - type: debt
 - area: aetheris-agents
 - priority: high — **blocking `docs/milestones/m-payslip-release.md`**, its §5 dependency 1 · size: S
@@ -1166,7 +1166,7 @@
 - done-when: exactly one email orchestrator file exists under `email/agents/`; it carries the eval-time `raise` for `PAYSLIP_MONTH` and the `timeout_ms` hints; every site in the table names it — `OrchestratorView.tsx`, `sprint.sh`, the orchestrator spec — and the capability matrix's Email section is **regenerated**, not hand-edited, per `CLAUDE.md` §Learning — m6-cloudcost (*a generated artefact with consumers is a wiring place in its own right*), so it lists one email agent.
 
 ### BL-196 — the export procedure says nothing about upload ROUTES: a route that namespaces a new bare filename put two manifest-tracked documents under `claude/`, where neither post-upload check could see them
-- state: open
+- state: ready
 - type: decision — the gap is a procedural defect; which of its two repairs to take is not a session's to choose
 - area: process / project knowledge
 - priority: medium — owed before the next boundary that uploads by the second route, which is the only route claude-ui can drive · size: S
@@ -1176,7 +1176,7 @@
 ---
 
 ### BL-198 — MVML record-mode assertion: at prompt assembly, the assembled prompt equals the log-derived prompt
-- state: open
+- state: committed
 - type: gate
 - area: harness
 - priority: medium · size: S
@@ -1186,7 +1186,7 @@
 ---
 
 ### BL-199 — length-stop tool-call guard: a tool call inside a response the token limit cut off is executed as if it were whole, on both provider paths
-- state: open
+- state: ready
 - type: defect — reachable by reading, not demonstrated live
 - area: harness
 - priority: medium · size: S
@@ -1196,7 +1196,7 @@
 ---
 
 ### BL-200 — scheduler safety audit against the moadim brief's Cluster 2: seven items, each answered has / lacks deliberately / lacks by omission
-- state: open
+- state: ready
 - type: verification
 - area: harness
 - priority: medium — a scheduled run here can carry irreversible effects (payslip release, cleanup execution), which is the brief's reason the *missed-fire* item is a stated rule and not an accident · size: S
@@ -1204,7 +1204,7 @@
 - done-when: a seven-row table is on the record — in this row's DONE section or in a committed implementation-notes file it names — giving each item one of the three verdicts **with the `file:line` that establishes it**, and for every *lacks by omission* verdict either a filed row or the arbiter's recorded decision not to file one.
 
 ### BL-201 — kernel budget: a `drift_check` arm that warns when the `export`+`both` rows exceed the manifest's stated cap
-- state: open
+- state: ready
 - type: mechanism
 - area: aetheris-agents
 - priority: low until the backlog split lands — the figure is dominated by one row the split removes, and an arm landed before it is red from its first run · size: S
@@ -1240,7 +1240,7 @@
 ---
 
 ### BL-207 — `run_command` is not confined to the sandbox root; `read_file` and `write_file` are
-- state: open
+- state: ready
 - type: hardening
 - area: harness
 - priority: high — a permitted basename with an out-of-root argument executes today, and the containment the two file tools enforce is absent from the tool that spawns processes · size: TBD — the row states the severity; scoping belongs to the round that takes it
@@ -1260,7 +1260,7 @@
 
 ---
 ### BL-210 — the Anthropic adapter discards the text block on tool-calling responses
-- state: open
+- state: ready
 - type: defect
 - area: harness
 - priority: medium · size: S
@@ -1326,7 +1326,7 @@
 ---
 
 ### BL-218 — `usage.rs` drops undecodable DB rows silently
-- state: open
+- state: committed
 - type: defect
 - area: Rig
 - priority: medium · size: S
@@ -1407,7 +1407,7 @@
 ---
 
 ### BL-230 — `broadcast_message_test.exs:258` is a timing race between two agents
-- state: open
+- state: committed
 - type: defect
 - area: harness
 - priority: low · size: S
@@ -1427,7 +1427,7 @@
 ---
 
 ### BL-233 — a recorded run does not say which agent file produced it
-- state: open
+- state: committed
 - type: defect
 - area: harness
 - priority: medium · size: M
@@ -1447,7 +1447,7 @@
 ---
 
 ### BL-238 — `Runner.build_run_config/3` hand-builds a `RunConfig`, bypassing rule 15
-- state: open
+- state: ready
 - type: defect
 - area: harness
 - priority: medium · size: S
@@ -1507,7 +1507,7 @@
 ---
 
 ### BL-246 — a run declaring `tools: []` is still offered spawn_agent, wait_for_event and wait_for_all
-- state: open
+- state: ready
 - type: defect
 - area: harness
 - priority: medium · size: S
@@ -1525,7 +1525,7 @@
 - done-when: The control-2 result names which check fired, both when only one does and when both do; a test asserts a candidate matching only the modal path reports that reason and not membership.
 
 ### BL-248 — the ETXTBSY / `spawn_agent` worker-sharing question is answered in code and recorded nowhere
-- state: open
+- state: committed
 - type: documentation
 - area: both repos
 - priority: medium · size: S
@@ -1545,7 +1545,7 @@
 ---
 
 ### BL-250 — a run that fails before serving is recorded `:unavailable` and counted as a no-skill run
-- state: open
+- state: committed
 - type: defect
 - area: harness
 - priority: medium · size: S
@@ -1553,7 +1553,7 @@
 - done-when: A run that failed before serving reads `:unknown`, not `:unavailable`; `lock/2` therefore refuses it; and a test covers a run that fails at step 0 with its serve incomplete.
 
 ### BL-251 — `mix test` results vary between runs at the same seed: `Skill.BodyTest` captures a concurrent test's warning
-- state: open
+- state: ready
 - type: defect (test infrastructure)
 - area: harness
 - priority: medium — a gate whose result varies at a fixed seed is not evidence the suite passed · size: TBD

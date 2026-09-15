@@ -1097,16 +1097,6 @@
 
 ---
 
-### BL-195 — two email orchestrators with one label: `email_orchestrator.exs` is what Rig, the sprint and the spec wire; `email_orchestrator2.exs` is what the guide's pattern and the live run use; nothing says which is current
-- state: ready
-- type: debt
-- area: aetheris-agents
-- priority: high — **blocking `docs/milestones/m-payslip-release.md`**, its §5 dependency 1 · size: S
-- evidence: docs/evidence/BL-195.md
-- done-when: exactly one email orchestrator file exists under `email/agents/`; it carries the eval-time `raise` for `PAYSLIP_MONTH` and the `timeout_ms` hints; every site in the table names it — `OrchestratorView.tsx`, `sprint.sh`, the orchestrator spec — and the capability matrix's Email section is **regenerated**, not hand-edited, per `CLAUDE.md` §Learning — m6-cloudcost (*a generated artefact with consumers is a wiring place in its own right*), so it lists one email agent.
-
----
-
 ### BL-198 — MVML record-mode assertion: at prompt assembly, the assembled prompt equals the log-derived prompt
 - state: committed
 - type: gate

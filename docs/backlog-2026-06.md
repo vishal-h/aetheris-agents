@@ -1491,3 +1491,11 @@
 - priority: medium — a gate whose result varies at a fixed seed is not evidence the suite passed · size: TBD
 - evidence: docs/evidence/BL-251.md
 - done-when: the assertion distinguishes this test's own log output from concurrent output, or the test is made non-async — with the choice and its cost recorded.
+
+### BL-254 — three retained-manifest-header sentences point "after the table" / "below" at blocks BL-253 moved out
+- state: open
+- type: defect
+- area: process / project knowledge
+- priority: low · size: XS
+- evidence: docs/evidence/BL-254.md
+- done-when: the three pointers (manifest header :25 the SURFACE COLUMN reference, and the 2026-09-07 record references at :71 and :76 — re-derive the line numbers at the fixing commit) resolve to where the blocks now live, by naming the `## Inclusion rulings` / `## Export boundary log` index entry or `docs/export-boundaries/`, rather than to a position in the file; and a check or sweep confirms no retained-header sentence still points at a moved block.

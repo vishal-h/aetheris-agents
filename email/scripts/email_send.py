@@ -206,6 +206,11 @@ def main():
     if not args.month:
         print("--month or PAYSLIP_MONTH env var is required.", file=sys.stderr)
         sys.exit(1)
+    # Validated here, before any work, rather than incidentally by the display strptime
+    # below — which also accepts a one-digit month such as '2026-4'.
+    if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", args.month):
+        print(f"--month/PAYSLIP_MONTH must be YYYY-MM, got: {args.month!r}", file=sys.stderr)
+        sys.exit(1)
 
     if args.employee_id is None:
         args.employee_id = os.environ.get("PAYSLIP_EMPLOYEE_ID") or None

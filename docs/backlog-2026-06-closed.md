@@ -9587,3 +9587,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-192 — `email_send.py` crashes on a malformed month instead of degrading: `strptime` is called for display, so its validation is incidental
+- state: done
+- type: defect
+- area: aetheris-agents
+- priority: low · size: S
+- evidence: docs/evidence/BL-192.md
+- done-when: `email_send.py` rejects a non-`YYYY-MM` month with a message and `sys.exit(1)` before doing any work, and a test pins the rejection.
+- disposition: fixed
+
+---

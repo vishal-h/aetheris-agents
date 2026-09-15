@@ -434,3 +434,30 @@ def test_no_employee_id_filter(monkeypatch, tmp_path, capsys):
     assert exc.value.code == 0
     out = capsys.readouterr().out
     assert "2 sent" in out
+
+
+# ---------------------------------------------------------------------------
+# month validation (BL-192)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("month", ["2026-*", "2026-4", "2026-13", "April 2026", "2026-04-01"])
+def test_main_rejects_malformed_month_before_any_work(monkeypatch, capsys, month):
+    monkeypatch.setattr(sys, "argv", ["email_send.py", "--month", month])
+    with patch(f"{MODULE}.load_config") as load, patch(f"{MODULE}.get_employees") as employees:
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 1
+    assert f"--month/PAYSLIP_MONTH must be YYYY-MM, got: {month!r}" in capsys.readouterr().err
+    load.assert_not_called()
+    employees.assert_not_called()
+
+
+def test_main_rejects_malformed_payslip_month_env(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["email_send.py"])
+    monkeypatch.setenv("PAYSLIP_MONTH", "2026-*")
+    with patch(f"{MODULE}.load_config") as load:
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 1
+    assert "--month/PAYSLIP_MONTH must be YYYY-MM, got: '2026-*'" in capsys.readouterr().err
+    load.assert_not_called()

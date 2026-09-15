@@ -1509,3 +1509,11 @@
 - priority: medium — a gate whose result varies at a fixed seed is not evidence the suite passed · size: TBD
 - evidence: docs/evidence/BL-251.md
 - done-when: the assertion distinguishes this test's own log output from concurrent output, or the test is made non-async — with the choice and its cost recorded.
+
+### BL-253 — split the project-knowledge manifest: boundary records and inclusion rulings move to docs/export-boundaries/
+- state: ready
+- type: method
+- area: process / project knowledge
+- priority: medium · size: M
+- evidence: docs/evidence/BL-253.md
+- done-when: the manifest holds header + table + `## Inclusion rulings` + `## Export boundary log` and nothing else; every moved block is byte-verbatim under docs/export-boundaries/ with a provenance header; and the whole-corpus splice at 1592c95 reproduces the original manifest byte-for-byte (the step-8 identity assertion).

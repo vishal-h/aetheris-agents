@@ -1047,16 +1047,6 @@
 
 ---
 
-### BL-191 — `drive/runbook.md` documents two folder-ID env vars nothing has read since `72367ac`, and the sprint's drive arm gates on both
-- state: ready
-- type: defect
-- area: aetheris-agents and harness
-- priority: medium · size: M
-- evidence: docs/evidence/BL-191.md
-- done-when: 1. `drive/runbook.md` names `DRIVE_ROOT_FOLDER_ID` throughout, including the troubleshooting entry currently keyed to a message the script cannot emit (`### DRIVE_OUTPUT_FOLDER_ID not set`), and the sibling docs are swept with it. 2. `sprint.sh`'s drive arm gates on the variable the scripts read, and its `email_download_template.py` invocation passes the one that script reads. 3. The Expected-output block matches what the script prints, verified by running it rather than by reading the source. 4. The sweep is enumerated **in the fixing ticket** at that ticket's commit — not in this row, whose counts will already be stale by then.
-
----
-
 ### BL-198 — MVML record-mode assertion: at prompt assembly, the assembled prompt equals the log-derived prompt
 - state: committed
 - type: gate

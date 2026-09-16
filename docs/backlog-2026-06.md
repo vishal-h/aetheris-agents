@@ -1432,14 +1432,6 @@
 - evidence: docs/evidence/BL-255.md
 - done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
 
-### BL-261 — retention family: no solo-run max-runtime stop, and no reaping or eviction of run artifacts
-- state: committed
-- type: defect — found by audit, not demonstrated live
-- area: harness — retention (the moadim brief's E6 candidate)
-- priority: unset — the arbiter's · size: unset
-- evidence: docs/evidence/BL-261.md
-- done-when: (a) a run exceeding RunConfig.max_duration is stopped by a lib watchdog (not only orbs) with a terminal event that decrements INV-2's live count; (b) run artifacts carry a stated retention with two arms — TTL reaping that never touches a live run, and oldest-first, finished-only eviction under a disk ceiling — each implemented or ruled out on the record, plus an on-demand reap command; a test covers each arm, including that a watchdog-stopped run frees admission. May split 261a/261b at implementation.
-
 ### BL-262 — cap composition: per-schedule runtime and TTL values must be tighten-only
 - state: committed
 - type: defect — found by audit, not demonstrated live

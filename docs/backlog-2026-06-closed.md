@@ -9708,3 +9708,12 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-261 — retention family: no solo-run max-runtime stop, and no reaping or eviction of run artifacts
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness — retention (the moadim brief's E6 candidate)
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-261.md
+- done-when: (a) a run exceeding RunConfig.max_duration is stopped by a lib watchdog (not only orbs) with a terminal event that decrements INV-2's live count; (b) run artifacts carry a stated retention with two arms — TTL reaping that never touches a live run, and oldest-first, finished-only eviction under a disk ceiling — each implemented or ruled out on the record, plus an on-demand reap command; a test covers each arm, including that a watchdog-stopped run frees admission. May split 261a/261b at implementation.
+- disposition: fixed

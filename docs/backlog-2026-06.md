@@ -1448,14 +1448,6 @@
 - evidence: docs/evidence/BL-258.md
 - done-when: the same-minute dedup guard sits at INV-2's chokepoint, shared by the tick and trigger paths — one dedup point, not two; a test asserts a same-minute trigger+tick yields exactly one admitted run, and that both paths honor INV-1.
 
-### BL-259 — no global lock: nothing halts all scheduled fires and triggers at once
-- state: committed
-- type: defect — found by audit, not demonstrated live
-- area: harness
-- priority: unset — the arbiter's · size: unset
-- evidence: docs/evidence/BL-259.md
-- done-when: a single global pause sentinel (INV-1) halts every run start — due tick, manual trigger, and startup catch-up; the sentinel is store-backed and survives a harness restart; the due query and both start paths honor it; enable/disable is a CLI+API action; the sentinel is the single point later scheduler rows extend, exposed by a test fixture; a test asserts no path starts a run under pause, that unpause resumes, and that a pause set before a restart still holds after it.
-
 ### BL-260 — missed fires catch up silently: a schedule due while the harness was down runs on startup, with no alert
 - state: committed
 - type: defect — found by audit, not demonstrated live

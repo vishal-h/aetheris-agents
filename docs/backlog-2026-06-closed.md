@@ -9664,3 +9664,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-259 — no global lock: nothing halts all scheduled fires and triggers at once
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-259.md
+- done-when: a single global pause sentinel (INV-1) halts every run start — due tick, manual trigger, and startup catch-up; the sentinel is store-backed and survives a harness restart; the due query and both start paths honor it; enable/disable is a CLI+API action; the sentinel is the single point later scheduler rows extend, exposed by a test fixture; a test asserts no path starts a run under pause, that unpause resumes, and that a pause set before a restart still holds after it.
+- disposition: fixed
+
+---

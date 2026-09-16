@@ -1440,14 +1440,6 @@
 - evidence: docs/evidence/BL-256.md
 - done-when: overlap is a refusal reason `overlap-live` at INV-2's chokepoint, not a separate path; a due schedule whose previous run is live starts no new run, the skip is recorded as an event, and next_run_at advances; a test asserts a due tick against a live prior run is refused with `overlap-live`, and that a paused scheduler (INV-1) skips before the overlap check.
 
-### BL-257 — no global concurrency cap: nothing limits how many runs the harness admits at once
-- state: committed
-- type: defect — found by audit, not demonstrated live
-- area: harness
-- priority: unset — the arbiter's · size: unset
-- evidence: docs/evidence/BL-257.md
-- done-when: run admission passes through one chokepoint (INV-2) that admits or refuses with a named reason; a global cap bounds concurrency; the cap and live count rebuild from live runs at startup so a restart cannot exceed it; the refusal-reason set is extensible for later rows; the cap is a config key with a conservative default stated in the ticket; a test asserts the (N+1)th concurrent run is refused and the count rebuilds from live runs after restart.
-
 ### BL-258 — same-minute double fire: a manual trigger and a due tick both start runs for one schedule
 - state: committed
 - type: defect — found by audit, not demonstrated live

@@ -9653,3 +9653,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-257 — no global concurrency cap: nothing limits how many runs the harness admits at once
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-257.md
+- done-when: run admission passes through one chokepoint (INV-2) that admits or refuses with a named reason; a global cap bounds concurrency; **the cap is a production admission cap, not an absolute process/resource ceiling**; the cap and live count rebuild from live runs at startup so a restart cannot exceed it; the refusal-reason set is extensible for later rows; the cap is a config key with a conservative default stated in the ticket; a test asserts the (N+1)th concurrent run is refused and the count rebuilds from live runs after restart.
+- disposition: fixed
+
+---

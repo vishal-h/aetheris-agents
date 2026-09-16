@@ -1432,14 +1432,6 @@
 - evidence: docs/evidence/BL-255.md
 - done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
 
-### BL-256 — scheduler overlap: a due schedule starts a new run while its previous run is still live
-- state: committed
-- type: defect — found by audit, not demonstrated live
-- area: harness
-- priority: unset — the arbiter's · size: unset
-- evidence: docs/evidence/BL-256.md
-- done-when: overlap is a refusal reason `overlap-live` at INV-2's chokepoint, not a separate path; a due schedule whose previous run is live starts no new run, the skip is recorded as an event, and next_run_at advances; a test asserts a due tick against a live prior run is refused with `overlap-live`, and that a paused scheduler (INV-1) skips before the overlap check.
-
 ### BL-258 — same-minute double fire: a manual trigger and a due tick both start runs for one schedule
 - state: committed
 - type: defect — found by audit, not demonstrated live
@@ -1472,3 +1464,11 @@
 - blocked-by / trigger: BL-257, BL-261
 - evidence: docs/evidence/BL-262.md
 - done-when: per-schedule runtime/TTL values are clamped against INV-2's cap and BL-261's max_duration/TTL by name; from_map refuses or clamps a value looser than either named cap; a test asserts a looser value is clamped/refused and a tighter one honored; lands after BL-257 and BL-261.
+
+### BL-263 — a boot-resumed run is not yet registered when the scheduler's first tick runs, so `:overlap_live` cannot see it
+- state: open
+- type: defect — found while implementing BL-256, not demonstrated live
+- area: harness — scheduler / admission (INV-2)
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-263.md
+- done-when: a run restored by boot resume is registered before the scheduler's first tick can admit a start for its schedule — or the scheduler's first tick is held until resume has completed — so `:overlap_live` cannot return false for a schedule whose previous run the harness has just restored; a test asserts a schedule whose prior run is restored at boot is refused `:overlap_live` by the first tick, and names the window it closes.

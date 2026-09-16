@@ -687,6 +687,15 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 | `context_summarised` | rolling-context summary was applied |
 | `run_orphaned` | `reason`, `last_event_type?` — written by the startup / `mix aetheris sweep` cure when an orphaned `running` run is marked `failed` |
 | `skill_injected` | `skill_id`, `content_hash` — one per served catalogue entry at step 0 (m14 D9); registered by m14 T2, emitted from m14 T12 |
+| `schedule_skipped` | `schedule`, `reason`, `skipped_fire_at` — written by `Aetheris.Scheduler` when a due fire is refused at the admission chokepoint with a `:skip` disposition (BL-256); carries a pseudo `run_id`, see the note below |
+
+**Note on `schedule_skipped`:** it describes a **schedule, not a run** — no run
+was started, so there is no trajectory to append to. Its `run_id` is the pseudo
+id `schedule_<name>` (`Aetheris.Scheduler.schedule_event_run_id/1`), which has
+no `runs` row. Rig lists runs from the `runs` table (§2), so a schedule's events
+never surface as a run in any Rig view; they are read with
+`Store.events_for_run/1` against that pseudo id. `step` is always `0` — these
+are not steps in a run — and `seq` carries the ordering within one schedule.
 
 **Note on `run_orphaned`:** unlike every other terminal event, `run_orphaned`
 is written *by the harness sweep*, not by the run's own loop — the owning

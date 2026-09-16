@@ -9675,3 +9675,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-256 — scheduler overlap: a due schedule starts a new run while its previous run is still live
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-256.md
+- done-when: overlap is a refusal reason `overlap-live` at INV-2's chokepoint, not a separate path; a due schedule whose previous run is live starts no new run, the skip is recorded as an event, and next_run_at advances; a test asserts a due tick against a live prior run is refused with `overlap-live`, and that a paused scheduler (INV-1) skips before the overlap check.
+- disposition: fixed
+
+---

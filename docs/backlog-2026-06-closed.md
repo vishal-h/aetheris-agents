@@ -9686,3 +9686,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-258 — same-minute double fire: a manual trigger and a due tick both start runs for one schedule
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-258.md
+- done-when: the same-minute dedup guard sits at INV-2's chokepoint, shared by the tick and trigger paths — one dedup point, not two; a test asserts a same-minute trigger+tick yields exactly one admitted run, and that both paths honor INV-1.
+- disposition: fixed
+
+---

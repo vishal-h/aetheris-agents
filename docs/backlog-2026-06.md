@@ -1432,14 +1432,6 @@
 - evidence: docs/evidence/BL-255.md
 - done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
 
-### BL-258 — same-minute double fire: a manual trigger and a due tick both start runs for one schedule
-- state: committed
-- type: defect — found by audit, not demonstrated live
-- area: harness
-- priority: unset — the arbiter's · size: unset
-- evidence: docs/evidence/BL-258.md
-- done-when: the same-minute dedup guard sits at INV-2's chokepoint, shared by the tick and trigger paths — one dedup point, not two; a test asserts a same-minute trigger+tick yields exactly one admitted run, and that both paths honor INV-1.
-
 ### BL-260 — missed fires catch up silently: a schedule due while the harness was down runs on startup, with no alert
 - state: committed
 - type: defect — found by audit, not demonstrated live

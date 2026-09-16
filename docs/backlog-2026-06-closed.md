@@ -9697,3 +9697,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - disposition: fixed
 
 ---
+
+### BL-260 — missed fires catch up silently: a schedule due while the harness was down runs on startup, with no alert
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-260.md
+- done-when: missed fires do not auto-run — a fire whose time passed while the harness was down starts no run; the scheduler emits an alert event naming the schedule and the missed count so it is never silent, then advances next_run_at; the alert fires regardless of pause (INV-1 gates run-starts, of which there are none here). Adopts the moadim brief's alert-only rule (:76-80) over catch-up, on the ground that a scheduled run can carry irreversible effects (payslip release). A test asserts N missed intervals → zero runs + one alert carrying N, and that the schedule advances.
+- disposition: fixed
+
+---

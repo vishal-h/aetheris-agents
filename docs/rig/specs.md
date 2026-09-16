@@ -688,14 +688,16 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 | `run_orphaned` | `reason`, `last_event_type?` — written by the startup / `mix aetheris sweep` cure when an orphaned `running` run is marked `failed` |
 | `skill_injected` | `skill_id`, `content_hash` — one per served catalogue entry at step 0 (m14 D9); registered by m14 T2, emitted from m14 T12 |
 | `schedule_skipped` | `schedule`, `reason`, `skipped_fire_at` — written by `Aetheris.Scheduler` when a due fire is refused at the admission chokepoint with a `:skip` disposition (BL-256); carries a pseudo `run_id`, see the note below |
+| `schedule_missed_fires` | `schedule`, `missed_count`, `truncated`, `from`, `through` — one per affected schedule, written by the scheduler's **startup** sweep when fires passed while the harness was down (BL-260). Starts no run, so it fires **regardless of the global pause**. `truncated` is `true` when the walk hit its 10,000-occurrence cap and `missed_count` is therefore that cap, not the real total. Carries a pseudo `run_id`, see the note below |
 
-**Note on `schedule_skipped`:** it describes a **schedule, not a run** — no run
+**Note on `schedule_skipped` and `schedule_missed_fires`:** each describes a **schedule, not a run** — no run
 was started, so there is no trajectory to append to. Its `run_id` is the pseudo
 id `schedule_<name>` (`Aetheris.Scheduler.schedule_event_run_id/1`), which has
 no `runs` row. Rig lists runs from the `runs` table (§2), so a schedule's events
 never surface as a run in any Rig view; they are read with
 `Store.events_for_run/1` against that pseudo id. `step` is always `0` — these
-are not steps in a run — and `seq` carries the ordering within one schedule.
+are not steps in a run — and `seq` carries the ordering within one schedule,
+interleaving skips and missed-fire alerts in the order they happened.
 
 **Note on `run_orphaned`:** unlike every other terminal event, `run_orphaned`
 is written *by the harness sweep*, not by the run's own loop — the owning

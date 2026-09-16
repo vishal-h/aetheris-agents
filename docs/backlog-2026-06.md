@@ -1456,3 +1456,11 @@
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-263.md
 - done-when: a run restored by boot resume is registered before the scheduler's first tick can admit a start for its schedule — or the scheduler's first tick is held until resume has completed — so `:overlap_live` cannot return false for a schedule whose previous run the harness has just restored; a test asserts a schedule whose prior run is restored at boot is refused `:overlap_live` by the first tick, and names the window it closes.
+
+### BL-264 — the suite's live scheduler fires other modules' residue schedule rows, starting untracked runs mid-suite
+- state: open
+- type: defect — demonstrated live (seed 70665, two `Aetheris.AdmissionDedupTest` failures)
+- area: harness — test environment
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-264.md
+- done-when: a `mix test` run starts no run the suite did not ask for — either `Store.ScheduledRunTest` removes the `sched-test-*` rows it inserts, or the suite's scheduler does not act on rows a test left behind; and the run directories such starts leave under `priv/runs/` are named as in or out of BL-261b's retention scope. A test asserts that a `HarnessRestart.with_file_store/1` round trip starts no scheduled run.

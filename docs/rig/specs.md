@@ -676,6 +676,7 @@ A field suffixed with `?` (e.g. `` `stop_reason?` ``) is optional — the drift 
 | `agent_message_received` | `message_id`, `from_run_id`, `content` |
 | `observation` | agent-defined structured note |
 | `run_cancelled` | emitted when a run is cancelled mid-flight |
+| `run_timed_out` | `reason`, `max_duration`, `elapsed_ms` — written by `Agent.Server`'s `max_duration` watchdog (BL-261a) when a run exceeds `RunConfig.max_duration`. The run's `runs.status` becomes **`failed`**, not a status of its own: the distinguishing detail rides this event. Appended **before** the status upsert, so a harness that dies between the two is reconciled by `Aetheris.Sweep` rather than left with a `failed` row that says nothing |
 | `loop_detected` | emitted when the harness detects a tool-call loop |
 | `escalation_requested` | multi-agent: agent is requesting human escalation |
 | `escalation_responded` | response to an escalation request |

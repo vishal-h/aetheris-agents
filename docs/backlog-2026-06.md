@@ -369,6 +369,16 @@
 
 ---
 
+### BL-266 — no streaming transport for run/trajectory updates: a UI must poll
+- state: open
+- type: missing capability
+- area: harness — API (Rig/UI consumer)
+- priority: medium _(proposed)_ · size: L _(proposed; docs-first per repo convention)_
+- evidence: docs/evidence/BL-266.md
+- done-when: a UI can follow a run without polling — each trajectory event is pushed as it is appended, over BOTH an HTTP stream (SSE or chunked) and a WebSocket, each auth-gated by the existing token model; the push originates at the event-append site (one source of truth), never a server-side poll-and-forward that reintroduces the polling this row removes; a subscriber's connect-time contract is stated and tested (from-now, or replay-from-start then live); events arrive in (step, seq) order and the stream closes on the run's terminal event; a slow or disconnected client neither wedges the run nor leaks; specs.md documents the endpoints and drift stays green; a test asserts subscribe → append N → receive N in order → terminal closes, and that an unauthenticated subscribe is refused. May split (SSE first, WebSocket second) at implementation; the shared core is the observable event feed, which also owes full event payloads — today's GET /api/runs/:id/trajectory returns a summary (step_count, event_count, event_types) only.
+
+---
+
 ## Drift apparatus (optional hardening)
 
 ### BL-046 — Tool-result payload key is a convention, not a contract: `"output"` vs `"result"`

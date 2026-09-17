@@ -88,7 +88,7 @@ and why; the procedural gap it exposed is **BL-196**.]`
 
 | export name | repo path | repo | commit | last changed | surface |
 |-------------|-----------|------|--------|--------------|---------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `95b1161` | 2026-09-12 | on-demand |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `d648d7b` | 2026-09-16 | on-demand |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 | on-demand |
 | `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 | on-demand |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 | on-demand |
@@ -99,9 +99,9 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `718bbc5` | 2026-09-10 | on-demand |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `7a94164` | 2026-09-15 | on-demand |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `633b4e5` | 2026-09-15 | export |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `c2b57f2` | 2026-09-15 | export |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `4fd59b6` | 2026-09-17 | export |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 | on-demand |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `c2b57f2` | 2026-09-15 | on-demand |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `4fd59b6` | 2026-09-17 | on-demand |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 | on-demand |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
@@ -109,8 +109,8 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-triage-2026-09.md` | `docs/backlog-triage-2026-09.md` | aetheris-agents | `29ed2a2` | 2026-09-14 | on-demand |
 | `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `4339ba7` | 2026-07-16 | export |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `2845995` | 2026-09-14 | on-demand |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `2bb9ff7` | 2026-09-13 | on-demand |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `b079130` | 2026-09-17 | on-demand |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `7257ca3` | 2026-09-16 | on-demand |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
 | `aetheris--ROADMAP.md` | `ROADMAP.md` | aetheris | `481ae2a` | 2026-08-12 | export |
@@ -184,4 +184,5 @@ from this file at `1592c95`.
 - 2026-09-09 · the boundary that read the store · 2 rows re-pinned · kernel 916,423 bytes · [docs/export-boundaries/2026-09-09.md](export-boundaries/2026-09-09.md) — "Export boundary — 2026-09-09, the boundary that read the store."
 - 2026-09-15 · first index-shaped backlog · 11 rows re-pinned · kernel 390,691 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, the first index-shaped backlog."
 - 2026-09-15 · capability matrix catches up, first run under the BL-253 split · 4 rows re-pinned · kernel 241,086 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, second record: the capability matrix catches up."
+- 2026-09-17 · m-scheduler-hardening close · 5 rows re-pinned · kernel 239,911 bytes · [docs/export-boundaries/2026-09-17.md](export-boundaries/2026-09-17.md) — "Export boundary — 2026-09-17, the m-scheduler-hardening close."
 

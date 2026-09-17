@@ -9717,3 +9717,15 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-261.md
 - done-when: (a) a run exceeding RunConfig.max_duration is stopped by a lib watchdog (not only orbs) with a terminal event that decrements INV-2's live count; (b) run artifacts carry a stated retention with two arms — TTL reaping that never touches a live run, and oldest-first, finished-only eviction under a disk ceiling — each implemented or ruled out on the record, plus an on-demand reap command; a test covers each arm, including that a watchdog-stopped run frees admission. May split 261a/261b at implementation.
 - disposition: fixed
+
+---
+
+### BL-262 — cap composition: per-schedule runtime and TTL values must be tighten-only
+- state: done
+- type: defect — found by audit, not demonstrated live
+- area: harness
+- priority: unset — the arbiter's · size: unset
+- blocked-by / trigger: BL-257, BL-261
+- evidence: docs/evidence/BL-262.md
+- done-when: per-schedule runtime/TTL values are clamped against INV-2's cap and BL-261's max_duration/TTL by name; from_map refuses or clamps a value looser than either named cap; a test asserts a looser value is clamped/refused and a tighter one honored; lands after BL-257 and BL-261.
+- disposition: fixed

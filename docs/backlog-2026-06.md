@@ -1432,15 +1432,6 @@
 - evidence: docs/evidence/BL-255.md
 - done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
 
-### BL-262 — cap composition: per-schedule runtime and TTL values must be tighten-only
-- state: committed
-- type: defect — found by audit, not demonstrated live
-- area: harness
-- priority: unset — the arbiter's · size: unset
-- blocked-by / trigger: BL-257, BL-261
-- evidence: docs/evidence/BL-262.md
-- done-when: per-schedule runtime/TTL values are clamped against INV-2's cap and BL-261's max_duration/TTL by name; from_map refuses or clamps a value looser than either named cap; a test asserts a looser value is clamped/refused and a tighter one honored; lands after BL-257 and BL-261.
-
 ### BL-263 — a boot-resumed run is not yet registered when the scheduler's first tick runs, so `:overlap_live` cannot see it
 - state: open
 - type: defect — found while implementing BL-256, not demonstrated live
@@ -1456,3 +1447,11 @@
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-264.md
 - done-when: a `mix test` run starts no run the suite did not ask for — either `Store.ScheduledRunTest` removes the `sched-test-*` rows it inserts, or the suite's scheduler does not act on rows a test left behind; and the run directories such starts leave under `priv/runs/` are named as in or out of BL-261b's retention scope. A test asserts that a `HarnessRestart.with_file_store/1` round trip starts no scheduled run.
+
+### BL-265 — a default or inherited `max_duration` bound for unattended scheduled runs
+- state: open
+- type: gap — deferred by the arbiter at BL-262, not demonstrated live
+- area: harness — scheduler / watchdog
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-265.md
+- done-when: a ruling states whether a scheduled run that sets no `max_duration` gets a bound, and from what; before any such bound lands, the ruling records whether any legitimate run (m13 persistent agents especially) lives longer than the intended default, and how boot resume grandfathers a run that was admitted unbounded — the watchdog measures from the original start, so a default applied on resume retroactively bounds a parked run; if a bound lands, a test asserts an unattended run without `max_duration` is bounded and a previously-unbounded resumed run is treated as the ruling says.

@@ -1,8 +1,10 @@
 # BL-266 — Run event streaming (design brief)
 
-**Status:** design decided — tranches T0–T3 not started.
+**Status:** design decided — T0 applied; T1–T3 not started.
 **Type:** design brief. A contract for T0–T3 cc:prompts, cited by item number (`§3 C5`).
 **Date:** 2026-09-17
+**Amended:** 2026-09-18, at T0 apply — the T0 rulings (R-S1–R-S3, R-D1, R-D2, R-D4) in C3, C5.1,
+C6, C7, C8.3, C9.3; C5.8 and C16 added; §5's T0 items and the C9.3 T1 item removed.
 **Row:** BL-266. **Blocked by:** BL-267 (T1 only).
 **Citations:** `H` = harness `aetheris` at `191970a`; `A` = `aetheris-agents` at `2cb3fa7`.
 Paths under `deps/` are the versions pinned by harness `mix.lock@H`.
@@ -80,10 +82,11 @@ live. Order is by `seq` only; `step` is not monotonic (§4 F7).
 
 **C3 — Wakeups.** Sent from inside `Store`, after commit:
 - C3.1 `{:event_appended, run_id, seq}` after `insert_event` returns `:ok`.
-- C3.2 A status wakeup after every `upsert_run`.
+- C3.2 A status wakeup after every successful `upsert_run`.
 - C3.3 A wakeup is a hint. The subscriber always reads `events_after(run_id, last_sent, 200)`,
   looping batches until empty, and coalesces queued wakeups.
 - C3.4 `last_sent` advances only after a successful write.
+- C3.5 Wakeups fire only after a successful durable write, never on error.
 
 **C4 — Handover.** In order:
 1. Subscribe.
@@ -93,8 +96,13 @@ live. Order is by `seq` only; `step` is not monotonic (§4 F7).
 5. Go live.
 
 **C5 — Terminal.**
-- C5.1 `runs.terminal_seq` is set in the same statement as the first terminal status write:
-  `COALESCE(terminal_seq, (SELECT MAX(seq) FROM events WHERE events.run_id = runs.run_id), -1)`.
+- C5.1 `runs.terminal_seq` is set in the same statement as the first terminal status write, and
+  only on a transition whose OLD status is non-terminal (set-once):
+  `CASE WHEN excluded.status IN (terminal) AND runs.status NOT IN (terminal)
+  THEN COALESCE(runs.terminal_seq, (SELECT MAX(seq) FROM events WHERE events.run_id = runs.run_id), -1)
+  ELSE runs.terminal_seq END`. The insert arm sets
+  `COALESCE((SELECT MAX(seq) FROM events WHERE run_id = ?), -1)` for a terminal status.
+  Terminal = `done | failed | cancelled`.
 - C5.2 Later terminal writes, including the duplicate `failed`, do not move it.
 - C5.3 The stream delivers events with `seq <= terminal_seq`, then sends `stream_end`
   (`reason: "run_terminal"`, with `status`) and closes.
@@ -103,6 +111,10 @@ live. Order is by `seq` only; `step` is not monotonic (§4 F7).
 - C5.6 `NULL` on a terminal row is a legacy row: deliver everything stored, then close. Its
   boundary is unknowable.
 - C5.7 Terminal state is never inferred from event type.
+- C5.8 A non-null `terminal_seq` is an irrevocable delivery boundary regardless of the stored
+  status. A row carrying one under a non-terminal status is corrupt durable state: the stream
+  drains through `terminal_seq` and closes with `inconsistent_run_state` (C8.3), and never resumes
+  live delivery.
 
 **C6 — Local availability.** If durable status is non-terminal and `Admission.live?/1` is
 false on this node:
@@ -111,7 +123,9 @@ false on this node:
 3. If unchanged: replay the eligible stored range, send `stream_end`
    (`reason: "run_unavailable_on_node"`), and close.
 
-The grace value and the mid-stream trigger for liveness loss are T0 plan STOPs (§5).
+The grace is 5_000 ms, config key `:stream_liveness_grace_ms`. Mid-stream liveness loss is
+detected by a monitor on the run's `Agent.Server` and by a `check_liveness` call; T0 builds both,
+and T1's heartbeat is the periodic caller.
 
 **C7 — Store loss.**
 1. The subscriber monitors the current Store pid. An exit from a Store call (`:noproc`,
@@ -120,6 +134,8 @@ The grace value and the mid-stream trigger for liveness loss are T0 plan STOPs (
 3. Resolve and monitor the replacement within a bounded window.
 4. Catch up from `last_sent`.
 5. Re-read durable status, then continue or close per C5.
+6. The bound is 10_000 ms, config key `:stream_store_recovery_ms`, with the Store registration
+   checked every 100 ms. On expiry the stream ends with `store_unavailable` (C8.3).
 
 A Store exit must not kill the subscriber before this runs.
 
@@ -128,7 +144,12 @@ A Store exit must not kill the subscriber before this runs.
   `payload` is the raw JSON string, matching Rig `EventRow` (§4 F11).
 - C8.2 Cursors are opaque to clients.
 - C8.3 `{kind: "control", control: "stream_end", reason, run_id, status?}`, with `reason` ∈
-  `run_terminal | run_unavailable_on_node | auth_revoked`.
+  `run_terminal | run_unavailable_on_node | auth_revoked | store_unavailable |
+  inconsistent_run_state`.
+  `store_unavailable` ends a stream whose Store did not recover within C7's bound: the frame is
+  sent before closing when a write is still possible, and the stream closes anyway when it is not.
+  `inconsistent_run_state` ends a stream whose run carries a `terminal_seq` under a non-terminal
+  stored status (C5.8): it drains through `terminal_seq`, then closes carrying the stored `status`.
 - C8.4 No frame ever includes `runs.config_json`.
 
 **C9 — Admission.**
@@ -136,7 +157,9 @@ A Store exit must not kill the subscriber before this runs.
   streams regardless of run.
 - C9.2 Register in `StreamRegistry`, then count. Over the cap: unregister, then `503` with
   `Retry-After`, before headers or upgrade.
-- C9.3 The config key and its default are documented.
+- C9.3 The config key and its default are documented: `:max_concurrent_streams`, default 32 in
+  `config/config.exs`; `config/test.exs` sets an explicit uncapped value, as for
+  `:max_concurrent_runs`.
 - C9.4 The slot is released on process exit.
 - C9.5 No per-token or per-run caps.
 
@@ -181,6 +204,20 @@ A Store exit must not kill the subscriber before this runs.
 - C15.4 Measured maximum at scout time: 195 events and 402,271 bytes per run. A measurement,
   not a bound.
 
+**C16 — Subscriber state-machine invariants.** `high_water` is the highest `seq` known to be
+committed: the stored maximum `H` captured at a durable read, raised by every
+`{:event_appended, _, s}` wakeup received before `stream_end` is written, in every phase that can
+still deliver — replay, live, the liveness grace and Store recovery. Every batch is bounded by
+`delivery_upper_bound = terminal_seq` when `terminal_seq` is known, and by `high_water` otherwise:
+`terminal_seq` is a durable committed boundary, so it is never narrowed by `high_water`. When
+`terminal_seq` and the stored status disagree, classification follows `terminal_seq` (C5.8).
+1. `high_water` never decreases.
+2. `last_sent` never decreases.
+3. `last_sent <= terminal_seq` whenever `terminal_seq` is known (a legacy NULL row has none).
+4. Entering live cannot discard a wakeup received during replay: it sets
+   `high_water = max(high_water, H)`.
+5. No event beyond `terminal_seq` is ever emitted.
+
 ## 4. Scout facts relied on
 
 - F1 Store is a single GenServer on one connection — `lib/aetheris/store.ex:684-706@H`.
@@ -214,7 +251,4 @@ A Store exit must not kill the subscriber before this runs.
 
 ## 5. Open for plan STOPs
 
-- T0: the grace value and the mid-stream liveness-loss trigger (C6); the `upsert_run` SQL
-  form for C5.1; the Store-replacement wait bound (C7).
-- T1: the stream cap's default value (C9.3).
 - T2: credential precedence (C12.5).

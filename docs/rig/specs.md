@@ -30,7 +30,10 @@ CREATE TABLE runs (
   config_json  TEXT,          -- JSON: RunConfig snapshot
   started_at   TEXT NOT NULL DEFAULT '',         -- ISO 8601
   finished_at  TEXT,                             -- ISO 8601 | NULL
-  label        TEXT           -- added via migration; extracted from config_json
+  label        TEXT,          -- added via migration; extracted from config_json
+  terminal_seq INTEGER        -- added via migration (BL-266 T0); MAX(events.seq) at the first
+                              -- non-terminal → done|failed|cancelled write, set once; -1 = terminal
+                              -- before any event; NULL = not terminal, or a pre-migration terminal row
 );
 ```
 

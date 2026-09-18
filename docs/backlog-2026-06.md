@@ -1489,3 +1489,11 @@
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-269.md
 - done-when: _(proposed)_ each multi-VM hazard in the evidence is either prevented (single-writer enforcement or cross-VM coordination) or documented as an unsupported deployment with a guard; tests or recorded dispositions for each.
+
+### BL-270 — a busy read crashes the singleton Store: `collect_rows/3` has no `:busy` arm
+- state: open
+- type: defect
+- area: harness — Store
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-270.md
+- done-when: _(proposed)_ a busy read returns an error to the caller instead of crashing Store, with a test.

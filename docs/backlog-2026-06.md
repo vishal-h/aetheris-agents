@@ -375,7 +375,7 @@
 - area: harness — API (Rig/UI consumer)
 - priority: medium _(proposed)_ · size: L _(proposed; docs-first per repo convention)_
 - evidence: docs/evidence/BL-266.md
-- done-when: a UI can follow a run without polling — each trajectory event is pushed as it is appended, over BOTH an HTTP stream (SSE or chunked) and a WebSocket, each auth-gated by the existing token model; the push originates at the event-append site (one source of truth), never a server-side poll-and-forward that reintroduces the polling this row removes; a subscriber's connect-time contract is stated and tested (from-now, or replay-from-start then live); events arrive in (step, seq) order and the stream closes on the run's terminal event; a slow or disconnected client neither wedges the run nor leaks; specs.md documents the endpoints and drift stays green; a test asserts subscribe → append N → receive N in order → terminal closes, and that an unauthenticated subscribe is refused. May split (SSE first, WebSocket second) at implementation; the shared core is the observable event feed, which also owes full event payloads — today's GET /api/runs/:id/trajectory returns a summary (step_count, event_count, event_types) only.
+- done-when: a UI can follow a run without polling over BOTH an SSE stream and a WebSocket, each auth-gated by the existing token model, built on a transport-neutral core (tranches T0 core, T1 SSE, T2 WebSocket, T3 Rig consumer); wakeups originate inside Store after commit, never a server-side poll-and-forward; no cursor replays from the start and a cursor resumes after it; events arrive in seq order; each frame carries the full event body (the EventRow projection: id, run_id, step, seq, event_type, payload, timestamp) rather than the trajectory summary; once runs.status is terminal the stream delivers every event with seq ≤ runs.terminal_seq, sends a stream_end control frame and closes; non-terminal runs stream only from the hosting VM; a slow or disconnected client neither wedges the run nor leaks; harness playground-api.md documents the endpoints (T1/T2) and Rig's specs.md documents its consumer with drift green (T3); tests assert subscribe → append N → receive N in seq order → terminal closes, and that an unauthenticated subscribe is refused. Design: docs/aetheris/backlog/bl-266-run-event-streaming.md. T1 is blocked by BL-267.
 
 ---
 
@@ -1465,3 +1465,27 @@
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-265.md
 - done-when: a ruling states whether a scheduled run that sets no `max_duration` gets a bound, and from what; before any such bound lands, the ruling records whether any legitimate run (m13 persistent agents especially) lives longer than the intended default, and how boot resume grandfathers a run that was admitted unbounded — the watchdog measures from the original start, so a default applied on resume retroactively bounds a parked run; if a bound lands, a test asserts an unattended run without `max_duration` is bounded and a previously-unbounded resumed run is treated as the ruling says.
+
+### BL-267 — worker `:DOWN` does not persist `failed`: the run row can read `running` indefinitely
+- state: open
+- type: defect
+- area: harness — Agent.Server
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-267.md
+- done-when: _(proposed)_ a worker :DOWN whose run is not already terminal durably writes runs.status = failed through Store.upsert_run; a run already terminal is not overwritten; a test kills the worker client and asserts the persisted status in both cases.
+
+### BL-268 — terminal transitions are not final: events and status writes follow the first terminal write
+- state: open
+- type: defect
+- area: harness — Agent.Server / execution loop
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-268.md
+- done-when: _(proposed)_ no event is appended to a run after its first terminal status write, or each remaining case is documented as intended; each item in the evidence has a regression test or a recorded disposition.
+
+### BL-269 — multiple VMs write one store: every CLI command boots its own Store, Scheduler and sweep on the same file
+- state: open
+- type: defect
+- area: harness — Store / Scheduler / Sweep
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-269.md
+- done-when: _(proposed)_ each multi-VM hazard in the evidence is either prevented (single-writer enforcement or cross-VM coordination) or documented as an unsupported deployment with a guard; tests or recorded dispositions for each.

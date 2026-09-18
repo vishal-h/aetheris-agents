@@ -9729,3 +9729,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-262.md
 - done-when: per-schedule runtime/TTL values are clamped against INV-2's cap and BL-261's max_duration/TTL by name; from_map refuses or clamps a value looser than either named cap; a test asserts a looser value is clamped/refused and a tighter one honored; lands after BL-257 and BL-261.
 - disposition: fixed
+
+---
+
+### BL-267 — worker `:DOWN` does not persist `failed`: the run row can read `running` indefinitely
+- state: done
+- type: defect
+- area: harness — Agent.Server
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-267.md
+- done-when: a worker :DOWN whose run is not already terminal durably writes runs.status = failed through Store.upsert_run; a run already terminal is not overwritten; a test kills the worker client and asserts the persisted status in both cases.
+- disposition: fixed

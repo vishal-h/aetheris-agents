@@ -1466,14 +1466,6 @@
 - evidence: docs/evidence/BL-265.md
 - done-when: a ruling states whether a scheduled run that sets no `max_duration` gets a bound, and from what; before any such bound lands, the ruling records whether any legitimate run (m13 persistent agents especially) lives longer than the intended default, and how boot resume grandfathers a run that was admitted unbounded — the watchdog measures from the original start, so a default applied on resume retroactively bounds a parked run; if a bound lands, a test asserts an unattended run without `max_duration` is bounded and a previously-unbounded resumed run is treated as the ruling says.
 
-### BL-267 — worker `:DOWN` does not persist `failed`: the run row can read `running` indefinitely
-- state: open
-- type: defect
-- area: harness — Agent.Server
-- priority: unset — the arbiter's · size: S _(proposed)_
-- evidence: docs/evidence/BL-267.md
-- done-when: _(proposed)_ a worker :DOWN whose run is not already terminal durably writes runs.status = failed through Store.upsert_run; a run already terminal is not overwritten; a test kills the worker client and asserts the persisted status in both cases.
-
 ### BL-268 — terminal transitions are not final: events and status writes follow the first terminal write
 - state: open
 - type: defect
@@ -1497,3 +1489,11 @@
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-270.md
 - done-when: _(proposed)_ a busy read returns an error to the caller instead of crashing Store, with a test.
+
+### BL-271 — a terminal worker `:DOWN` never notifies waiters or the agent tree
+- state: open
+- type: defect
+- area: harness — Agent.Server
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-271.md
+- done-when: _(proposed)_ a run driven terminal by a worker `:DOWN` notifies the same surfaces as `{:run_failed, _}`; a test asserts a parent waiting on `agent_done` is woken when its child's worker dies.

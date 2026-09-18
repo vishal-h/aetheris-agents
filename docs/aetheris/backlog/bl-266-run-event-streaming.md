@@ -1,10 +1,11 @@
 # BL-266 — Run event streaming (design brief)
 
-**Status:** design decided — T0 applied; T1–T3 not started.
+**Status:** design decided — T0 and T1 applied; T2–T3 not started.
 **Type:** design brief. A contract for T0–T3 cc:prompts, cited by item number (`§3 C5`).
 **Date:** 2026-09-17
 **Amended:** 2026-09-18, at T0 apply — the T0 rulings (R-S1–R-S3, R-D1, R-D2, R-D4) in C3, C5.1,
 C6, C7, C8.3, C9.3; C5.8 and C16 added; §5's T0 items and the C9.3 T1 item removed.
+2026-09-18, at T1 apply — rulings O4, O1, D2 and O6: C1.4 and C8.5 added; C10.2 amended.
 **Row:** BL-266. **Blocked by:** BL-267 (T1 only).
 **Citations:** `H` = harness `aetheris` at `191970a`; `A` = `aetheris-agents` at `2cb3fa7`.
 Paths under `deps/` are the versions pinned by harness `mix.lock@H`.
@@ -76,6 +77,7 @@ before SSE headers are sent or the WebSocket upgrade is performed.
 - C1.1 `401`: missing or invalid token.
 - C1.2 `404`: no `runs` row, including `schedule_*` pseudo-runs.
 - C1.3 `400`: malformed cursor, or a cursor beyond the stored max `seq`.
+- C1.4 `503` with `Retry-After`: the Store cannot be read at open (`store_unavailable`).
 
 **C2 — Replay.** No cursor replays from the start; a cursor resumes strictly after it. Then
 live. Order is by `seq` only; `step` is not monotonic (§4 F7).
@@ -151,6 +153,7 @@ A Store exit must not kill the subscriber before this runs.
   `inconsistent_run_state` ends a stream whose run carries a `terminal_seq` under a non-terminal
   stored status (C5.8): it drains through `terminal_seq`, then closes carrying the stored `status`.
 - C8.4 No frame ever includes `runs.config_json`.
+- C8.5 SSE carries the cursor in `id:` on event frames only; control frames carry none.
 
 **C9 — Admission.**
 - C9.1 One per-node cap on concurrent streams, shared by SSE and WS, counting admitted
@@ -165,8 +168,10 @@ A Store exit must not kill the subscriber before this runs.
 
 **C10 — Connection process.**
 - C10.1 It is the single owner of every network write.
-- C10.2 A 15 s heartbeat via `send_after(self())`. Each tick revalidates the token against the
-  current token list; on failure it sends `stream_end` (`reason: "auth_revoked"`) and closes.
+- C10.2 A 15 s heartbeat via `send_after(self())`: `:stream_heartbeat_ms`, default 15 000 in
+  `config/config.exs`. Each tick revalidates the token against the current token list; on failure
+  it sends `stream_end` (`reason: "auth_revoked"`) when a write is still possible, and closes
+  regardless.
 - C10.3 Slow consumer: ThousandIsland `send_timeout` 30 s with close-on-timeout is the v1
   rule (§4 F10).
 - C10.4 Mailbox growth is a recorded residual risk.

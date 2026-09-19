@@ -370,8 +370,11 @@ export function TrajectoryView({ run, onForked }: Props) {
   // The trigger is the run row reaching a **terminal status**, not the
   // `run_complete` event, and that choice is the whole race story. The harness
   // appends `run_complete` to SQLite inside the loop (`loop.ex:267`), *then*
-  // writes the file (`server.ex:680`, tmp + atomic rename), *then* sets the
-  // status (`server.ex:456`). Reloading on the event would race the write and
+  // writes the file (`Agent.Server.execute_run/6` (`server.ex:741`) →
+  // `Trajectory.File.write/3` (`file.ex:37-38`), tmp + atomic rename), *then*
+  // sets the status (`execute_run/6`'s `{:run_complete, :done}` cast
+  // (`server.ex:744`) → `handle_cast({:run_complete, :done}, state)`
+  // (`server.ex:502-507`)). Reloading on the event would race the write and
   // land back on `fileMissing`; reloading on the status cannot, because the
   // status flip strictly follows the completed rename. No retry is needed, and
   // none is used — if the load still fails at terminal status the file genuinely

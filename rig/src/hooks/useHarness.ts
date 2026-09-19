@@ -149,8 +149,11 @@ const TERMINAL_STATUSES = ['done', 'failed', 'cancelled'];
  *   1. the `run_complete` **event** is appended to SQLite  (`loop.ex:267`)
  *   2. the loop returns
  *   3. `trajectory.json` is written — tmp file, then atomic rename
- *      (`server.ex:680` → `file.ex:37-38`)
- *   4. `runs.status` is set to a terminal value       (`server.ex:456-465`)
+ *      (`Agent.Server.execute_run/6` (`server.ex:741`) →
+ *      `Trajectory.File.write/3` (`file.ex:37-38`))
+ *   4. `runs.status` is set to a terminal value — `execute_run/6`'s
+ *      `{:run_complete, :done}` cast (`server.ex:744`) →
+ *      `handle_cast({:run_complete, :done}, state)` (`server.ex:502-507`)
  *
  * So the `run_complete` event arrives *before* the file exists — a reload fired
  * on seeing it in the event stream races the write — whereas the status flip

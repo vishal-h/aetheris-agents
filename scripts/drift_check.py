@@ -872,6 +872,370 @@ def check_command_fields() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Check 14: stream_envelope (BL-266 T3.8)                                      #
+# --------------------------------------------------------------------------- #
+# Envelope parity for the run event stream, across three sides parsed from
+# source: the harness frame typespecs (`lib/aetheris/stream/frame.ex`), Rig's
+# Rust wire types (`commands/run_stream.rs`), and specs.md §9. There is no DB
+# table to sample. Every divergence is a FAIL, and so is a serde attribute on a
+# wire type that this arm does not interpret — a mis-parse must never read as
+# agreement. `command_fields` cannot do this: it skips attributes and enums.
+
+FRAME_EX      = HARNESS_ROOT / "lib" / "aetheris" / "stream" / "frame.ex"
+RUN_STREAM_RS = COMMANDS_DIR / "run_stream.rs"
+
+# UiFrame kinds that Rig originates and the wire never carries (specs.md §9.4).
+_UI_ONLY_KINDS = {"client_error", "client_status"}
+_WIRE_RUST_TYPES = ("WireFrame", "StreamEvent", "StreamControl", "StreamEndReason")
+_EX_TYPES = {"String.t()": "string", "integer()": "integer"}
+_RUST_SCALARS = {"String": "string", "i64": "integer", "StreamControl": "string", "StreamEndReason": "string"}
+
+
+def _snake(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def _brace_body(text: str, open_pos: int) -> str | None:
+    """The text between the `{` at open_pos and its matching `}`."""
+    depth = 0
+    for i in range(open_pos, len(text)):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[open_pos + 1:i]
+    return None
+
+
+def _split_top(body: str, opens: str, closes: str) -> list[str]:
+    """Split on commas outside any bracket pair."""
+    parts, depth, cur = [], 0, []
+    for ch in body:
+        if ch in opens:
+            depth += 1
+        elif ch in closes:
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    parts.append("".join(cur))
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _parse_ex_map(body: str, prefix: str, out: dict, check: str) -> bool:
+    """Elixir map typespec → {dotted_key: (type, required)}; nested maps flatten."""
+    for part in _split_top(body, "{([", "})]"):
+        m = re.fullmatch(r"(required|optional)\(:(\w+)\)\s*=>\s*(.+)", part, re.DOTALL)
+        if m:
+            required, key, typ = m.group(1) == "required", m.group(2), m.group(3).strip()
+        else:
+            m = re.fullmatch(r"(\w+):\s*(.+)", part, re.DOTALL)
+            if not m:
+                _fail(check, f"frame.ex: cannot read map field {part!r}")
+                return False
+            required, key, typ = True, m.group(1), m.group(2).strip()
+        name = prefix + key
+        if typ.startswith("%{") and required:
+            inner = _brace_body(typ, 1)
+            if inner is None or not _parse_ex_map(inner, name + ".", out, check):
+                return False
+        elif typ in _EX_TYPES:
+            out[name] = (_EX_TYPES[typ], required)
+        else:
+            _fail(check, f"frame.ex: unrecognised type {typ!r} for {name}")
+            return False
+    return True
+
+
+def _parse_stream_frames_from_frame_ex(text: str, check: str) -> dict | None:
+    m = _require_section(text, r"@type reason ::(.*?)(?=\n\s*@type)", check, "@type reason ::")
+    if not m:
+        return None
+    reasons = set(re.findall(r":(\w+)", m.group(1)))
+    if not reasons:
+        _fail(check, "zero reasons parsed from frame.ex @type reason")
+        return None
+
+    fields: dict[str, dict[str, tuple[str, bool]]] = {}
+    for frame, anchor in (("event", "@type event_frame ::"), ("control", "@type control_frame ::")):
+        m = _require_section(text, re.escape(anchor) + r"\s*%\{", check, anchor)
+        if not m:
+            return None
+        body = _brace_body(text, m.end() - 1)
+        parsed: dict[str, tuple[str, bool]] = {}
+        if body is None or not _parse_ex_map(body, "", parsed, check):
+            return None
+        if parsed.pop("kind", None) is None:
+            _fail(check, f"frame.ex {anchor} has no kind key")
+            return None
+        if not parsed:
+            _fail(check, f"zero fields parsed from frame.ex {anchor}")
+            return None
+        fields[frame] = parsed
+
+    guarded: set[str] = set()
+    carrying: set[str] = set()
+    for g in re.finditer(
+        r"def stream_end\(\s*reason\s*,\s*run_id\s*,\s*(_?status)\s*\)\s*when reason in \[([^\]]*)\]", text
+    ):
+        atoms = set(re.findall(r":(\w+)", g.group(2)))
+        guarded |= atoms
+        if g.group(1) == "status":
+            carrying |= atoms
+    if not guarded:
+        _fail(check, "zero stream_end/3 guard clauses parsed from frame.ex")
+        return None
+    if guarded != reasons:
+        _fail(check, f"frame.ex stream_end/3 guards cover {sorted(guarded)} but @type reason is {sorted(reasons)}")
+        return None
+
+    kinds = set(re.findall(r'\bkind: "(\w+)"', text))
+    controls = set(re.findall(r'\bcontrol: "(\w+)"', text))
+    if not kinds or not controls:
+        _fail(check, "frame.ex: kind/control discriminator literals not found")
+        return None
+    return {"fields": fields, "reasons": reasons, "carrying": carrying, "kinds": kinds, "controls": controls}
+
+
+def _rust_items(text: str) -> dict[str, dict]:
+    """{name: {"serde": [attr bodies], "body": str}} for every `pub enum|struct X {`."""
+    items: dict[str, dict] = {}
+    for m in re.finditer(r"((?:^[ \t]*(?:#\[.*\]|///.*)\n)*)^[ \t]*pub (?:enum|struct) (\w+)\s*\{", text, re.M):
+        body = _brace_body(text, m.end() - 1)
+        if body is not None:
+            items[m.group(2)] = {"serde": re.findall(r"#\[serde\((.*)\)\]", m.group(1)), "body": body}
+    return items
+
+
+def _rust_members(body: str) -> list[tuple[str, list[str], dict[str, str] | None]]:
+    """Enum variants or struct fields: [(name, inner_attrs, {field: type} | None)].
+
+    For a struct the "fields" slot is None and the member's type is under key "".
+    """
+    body = re.sub(r"//.*$", "", body, flags=re.M)
+    out = []
+    for part in _split_top(body, "{([<", "})]>"):
+        attrs = re.findall(r"#\[(.*?)\]\s*", part)
+        part = re.sub(r"#\[.*?\]\s*", "", part).strip()
+        part = re.sub(r"^pub\s+", "", part)
+        m = re.fullmatch(r"(\w+)\s*:\s*(.+)", part, re.DOTALL)
+        if m:
+            out.append((m.group(1), attrs, {"": re.sub(r"\s+", "", m.group(2))}))
+            continue
+        m = re.fullmatch(r"(\w+)\s*(\{(.*)\})?", part, re.DOTALL)
+        if not m:
+            out.append((part, attrs, None))
+            continue
+        fields = None
+        if m.group(2):
+            fields = {}
+            for fname, fattrs, ftype in _rust_members(m.group(3)):
+                attrs.extend(fattrs)
+                fields[fname] = (ftype or {}).get("", "")
+        out.append((m.group(1), attrs, fields))
+    return out
+
+
+def _serde_container(attrs: list[str], name: str, check: str) -> dict[str, str] | None:
+    """Interpret `tag` and `rename_all = "snake_case"`; anything else FAILs."""
+    result: dict[str, str] = {}
+    for attr in attrs:
+        for kv in _split_top(attr, "(", ")"):
+            m = re.fullmatch(r'(\w+)\s*=\s*"([^"]*)"', kv)
+            if m and m.group(1) == "tag":
+                result["tag"] = m.group(2)
+            elif m and m.group(1) == "rename_all" and m.group(2) == "snake_case":
+                result["rename_all"] = m.group(2)
+            else:
+                _fail(check, f"run_stream.rs: uninterpreted serde attribute on {name}: {kv!r}")
+                return None
+    return result
+
+
+def _rust_type(typ: str) -> tuple[str, bool] | None:
+    m = re.fullmatch(r"Option<(.+)>", typ)
+    inner, optional = (m.group(1), True) if m else (typ, False)
+    if inner in _RUST_SCALARS:
+        return _RUST_SCALARS[inner], not optional
+    if inner == "StreamEvent" and not optional:
+        return "object", True
+    return None
+
+
+def _variant_name(name: str, serde: dict[str, str]) -> str:
+    return _snake(name) if serde.get("rename_all") == "snake_case" else name
+
+
+def _parse_stream_types_from_rust(text: str, check: str) -> dict | None:
+    items = _rust_items(text)
+    for name in _WIRE_RUST_TYPES + ("UiFrame",):
+        if name not in items:
+            _fail(check, f"run_stream.rs: `pub enum|struct {name}` not found")
+            return None
+
+    serde = {}
+    for name in _WIRE_RUST_TYPES + ("UiFrame",):
+        s = _serde_container(items[name]["serde"], name, check)
+        if s is None:
+            return None
+        serde[name] = s
+    if serde["StreamEvent"]:
+        _fail(check, f"run_stream.rs: uninterpreted serde attribute on StreamEvent: {serde['StreamEvent']}")
+        return None
+
+    members = {name: _rust_members(items[name]["body"]) for name in _WIRE_RUST_TYPES + ("UiFrame",)}
+    for name in _WIRE_RUST_TYPES:
+        for member, attrs, _ in members[name]:
+            if any(a.startswith("serde") for a in attrs):
+                _fail(check, f"run_stream.rs: uninterpreted serde attribute inside {name}::{member}")
+                return None
+
+    event_fields: dict[str, tuple[str, bool]] = {}
+    for fname, _, ftype in members["StreamEvent"]:
+        t = _rust_type((ftype or {}).get("", ""))
+        if t is None or t[0] == "object":
+            _fail(check, f"run_stream.rs: StreamEvent.{fname} has an unrecognised type")
+            return None
+        event_fields[fname] = t
+
+    tag = serde["WireFrame"].get("tag")
+    if tag is None:
+        _fail(check, "run_stream.rs: WireFrame has no serde tag")
+        return None
+    fields: dict[str, dict[str, tuple[str, bool]]] = {}
+    for variant, _, vfields in members["WireFrame"]:
+        kind = _variant_name(variant, serde["WireFrame"])
+        parsed: dict[str, tuple[str, bool]] = {}
+        for fname, ftype in (vfields or {}).items():
+            t = _rust_type(ftype)
+            if t is None:
+                _fail(check, f"run_stream.rs: WireFrame::{variant}.{fname} has an unrecognised type {ftype!r}")
+                return None
+            if t[0] == "object":
+                parsed.update({f"{fname}.{k}": v for k, v in event_fields.items()})
+            else:
+                parsed[fname] = t
+        fields[kind] = parsed
+
+    ui_fields = {
+        _variant_name(v, serde["UiFrame"]): set(vf or {}) for v, _, vf in members["UiFrame"]
+    }
+    return {
+        "tag": tag,
+        "ui_tag": serde["UiFrame"].get("tag"),
+        "fields": fields,
+        "reasons": {_variant_name(v, serde["StreamEndReason"]) for v, _, _ in members["StreamEndReason"]},
+        "controls": {_variant_name(v, serde["StreamControl"]) for v, _, _ in members["StreamControl"]},
+        "event_fields": set(event_fields),
+        "ui_fields": ui_fields,
+    }
+
+
+def _parse_stream_docs(text: str, check: str) -> dict | None:
+    m = _require_section(text, r"## 9\. Emitted Tauri Events(.*?)(?=\n## |\Z)", check, "## 9. Emitted Tauri Events")
+    if not m:
+        return None
+    section = m.group(1)
+    subs = {}
+    for num, anchor in (("2", "### 9.2"), ("3", "### 9.3"), ("4", "### 9.4")):
+        s = _require_section(section, rf"### 9\.{num} (.*?)(?=\n### |\Z)", check, anchor)
+        if not s:
+            return None
+        subs[num] = s.group(1)
+
+    fields: dict[str, dict[str, tuple[str, bool]]] = {}
+    for frame, field, typ, req in re.findall(r"^\| `(\w+)` \| `([\w.]+)` \| (\w+) \| (yes|no) \|", subs["2"], re.M):
+        fields.setdefault(frame, {})[field] = (typ, req == "yes")
+    reasons = dict(re.findall(r"^\| `(\w+)` \| (yes|no) \|", subs["3"], re.M))
+    ui_kinds = set(re.findall(r"^\| `(\w+)` \|", subs["4"], re.M))
+    for label, parsed in (("§9.2 wire fields", fields), ("§9.3 reasons", reasons), ("§9.4 UI kinds", ui_kinds)):
+        if not parsed:
+            _fail(check, f"zero rows parsed from specs.md {label}")
+            return None
+    return {
+        "fields": fields,
+        "reasons": set(reasons),
+        "carrying": {r for r, carries in reasons.items() if carries == "yes"},
+        "ui_kinds": ui_kinds,
+    }
+
+
+def _diff_sets(check: str, what: str, a_name: str, a: set, b_name: str, b: set) -> None:
+    for x in sorted(a - b):
+        _fail(check, f"{what} {x!r} in {a_name} but not in {b_name}")
+    for x in sorted(b - a):
+        _fail(check, f"{what} {x!r} in {b_name} but not in {a_name}")
+
+
+def _diff_fields(check: str, a_name: str, a: dict, b_name: str, b: dict) -> None:
+    _diff_sets(check, "frame", a_name, set(a), b_name, set(b))
+    for frame in sorted(set(a) & set(b)):
+        _diff_sets(check, f"{frame} field", a_name, set(a[frame]), b_name, set(b[frame]))
+        for field in sorted(set(a[frame]) & set(b[frame])):
+            (ta, ra), (tb, rb) = a[frame][field], b[frame][field]
+            if ta != tb:
+                _fail(check, f"{frame}.{field} type: {a_name} {ta}, {b_name} {tb}")
+            if ra != rb:
+                _fail(check, f"{frame}.{field} required: {a_name} {ra}, {b_name} {rb}")
+
+
+def _evaluate_stream_envelope(frame_ex: str, rust: str, specs: str, check: str = "stream_envelope") -> None:
+    h = _parse_stream_frames_from_frame_ex(frame_ex, check)
+    r = _parse_stream_types_from_rust(rust, check)
+    d = _parse_stream_docs(specs, check)
+    if h is None or r is None or d is None:
+        return
+
+    _diff_fields(check, "frame.ex", h["fields"], "run_stream.rs", r["fields"])
+    _diff_fields(check, "frame.ex", h["fields"], "specs.md §9.2", d["fields"])
+    _diff_sets(check, "reason", "frame.ex", h["reasons"], "run_stream.rs", r["reasons"])
+    _diff_sets(check, "reason", "frame.ex", h["reasons"], "specs.md §9.3", d["reasons"])
+    _diff_sets(check, "status-carrying reason", "frame.ex", h["carrying"], "specs.md §9.3", d["carrying"])
+
+    _diff_sets(check, "kind literal", "frame.ex", h["kinds"], "run_stream.rs", set(r["fields"]))
+    _diff_sets(check, "control literal", "frame.ex", h["controls"], "run_stream.rs", r["controls"])
+    if r["tag"] != "kind":
+        _fail(check, f"run_stream.rs WireFrame tag is {r['tag']!r}, frame.ex discriminates on 'kind'")
+    if r["ui_tag"] != r["tag"]:
+        _fail(check, f"run_stream.rs UiFrame tag {r['ui_tag']!r} differs from WireFrame tag {r['tag']!r}")
+
+    if "cursor" not in r["fields"].get("event", {}):
+        _fail(check, "run_stream.rs: cursor missing from the WireFrame event variant")
+    if "cursor" in r["event_fields"]:
+        _fail(check, "run_stream.rs: StreamEvent carries cursor, which reaches the webview")
+    for kind, names in sorted(r["ui_fields"].items()):
+        if "cursor" in names:
+            _fail(check, f"run_stream.rs: UiFrame::{kind} carries cursor, which reaches the webview")
+
+    ui_kinds = set(r["ui_fields"])
+    _diff_sets(check, "UiFrame kind", "run_stream.rs UiFrame", ui_kinds,
+               "wire kinds + UI-only kinds", set(r["fields"]) | _UI_ONLY_KINDS)
+    _diff_sets(check, "UiFrame kind", "run_stream.rs UiFrame", ui_kinds, "specs.md §9.4", d["ui_kinds"])
+    for kind in sorted(_UI_ONLY_KINDS & (h["kinds"] | set(r["fields"]))):
+        _fail(check, f"UI-only kind {kind!r} appears on the wire")
+
+    if not any(l == "FAIL" and c == check for l, c, _ in FINDINGS):
+        n = sum(len(f) for f in h["fields"].values())
+        _ok(check, f"{len(h['fields'])} frames ({n} fields), {len(h['reasons'])} reasons: "
+                   f"frame.ex / run_stream.rs / specs.md §9")
+    _info(check, "UI-only UiFrame kinds, documented in §9.4 and absent from the wire: "
+                 + ", ".join(sorted(_UI_ONLY_KINDS)))
+
+
+def check_stream_envelope() -> None:
+    check = "stream_envelope"
+    frame_ex = _require_file(FRAME_EX, check)
+    rust = _require_file(RUN_STREAM_RS, check)
+    specs = _require_file(SPECS_MD, check)
+    if frame_ex is None or rust is None or specs is None:
+        return
+    _evaluate_stream_envelope(frame_ex, rust, specs, check)
+
+
+# --------------------------------------------------------------------------- #
 # Check 10: use_case_registry                                                  #
 # --------------------------------------------------------------------------- #
 # docs/use-cases.md is the declaration of what the use cases are and which are dormant
@@ -1542,6 +1906,7 @@ CHECKS = [
     check_milestone_status,
     check_project_knowledge,
     check_command_fields,
+    check_stream_envelope,
     check_use_case_registry,
     check_backlog_resolution,
     check_index_integrity,

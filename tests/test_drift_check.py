@@ -1751,7 +1751,328 @@ def test_kernel_budget_header_with_no_parseable_ceiling_is_fail(tmp_path, monkey
 
 
 def test_kernel_budget_is_registered_beside_the_existing_checks():
-    assert len(drift_check.CHECKS) == 13
+    assert len(drift_check.CHECKS) == 14
     assert drift_check.CHECKS[-1] is drift_check.check_kernel_budget
-    for name in ("backlog_resolution", "index_integrity", "kernel_budget"):
+    for name in ("backlog_resolution", "index_integrity", "kernel_budget", "stream_envelope"):
         assert name in drift_check._CHECK_NAMES
+
+
+# --------------------------------------------------------------------------- #
+# stream_envelope (check 14, BL-266 T3.8) — inline fixtures                     #
+# --------------------------------------------------------------------------- #
+# Each FAIL fixture below is also the mutation for its test: it constructs the
+# broken state from the good one and watches the arm fail in it.
+
+_FRAME_EX = '''
+  @type reason ::
+          :run_terminal
+          | :run_unavailable_on_node
+          | :auth_revoked
+          | :store_unavailable
+          | :inconsistent_run_state
+
+  @type event_frame :: %{
+          kind: String.t(),
+          cursor: String.t(),
+          event: %{
+            id: String.t(),
+            run_id: String.t(),
+            step: integer(),
+            seq: integer(),
+            event_type: String.t(),
+            payload: String.t(),
+            timestamp: String.t()
+          }
+        }
+
+  @type control_frame :: %{
+          required(:kind) => String.t(),
+          required(:control) => String.t(),
+          required(:reason) => String.t(),
+          required(:run_id) => String.t(),
+          optional(:status) => String.t()
+        }
+
+  @type t :: event_frame() | control_frame()
+
+  def event(row) do
+    %{kind: "event", cursor: Cursor.encode(row.seq), event: %{}}
+  end
+
+  def stream_end(reason, run_id, status)
+      when reason in [:run_terminal, :inconsistent_run_state] and is_binary(status) do
+    Map.put(control(reason, run_id), :status, status)
+  end
+
+  def stream_end(reason, run_id, _status)
+      when reason in [:run_unavailable_on_node, :auth_revoked, :store_unavailable] do
+    control(reason, run_id)
+  end
+
+  defp control(reason, run_id) do
+    %{kind: "control", control: "stream_end", reason: Atom.to_string(reason), run_id: run_id}
+  end
+'''
+
+_RUN_STREAM_RS = '''
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum WireFrame {
+    Event   { cursor: String, event: StreamEvent },
+    Control { control: StreamControl, reason: StreamEndReason, run_id: String, status: Option<String> },
+}
+
+/// Same field names and types as `harness::EventRow`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StreamEvent {
+    pub id:         String,
+    pub run_id:     String,
+    pub step:       i64,
+    pub seq:        i64,
+    pub event_type: String,
+    pub payload:    String,
+    pub timestamp:  String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StreamControl {
+    StreamEnd,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StreamEndReason {
+    RunTerminal,
+    RunUnavailableOnNode,
+    AuthRevoked,
+    StoreUnavailable,
+    InconsistentRunState,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum UiFrame {
+    Event   { event: StreamEvent },
+    Control {
+        control: StreamControl,
+        reason:  StreamEndReason,
+        run_id:  String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        status:  Option<String>,
+    },
+    /// Rig-side failure; final (ruling O2).
+    ClientError {
+        reason:      ClientErrorReason,
+        http_status: Option<u16>,
+        code:        Option<String>,
+        message:     String,
+    },
+    ClientStatus { state: ClientStatusState },
+}
+'''
+
+_SPECS_S9 = '''
+## 8. Module Structure
+
+## 9. Emitted Tauri Events
+
+### 9.1 `aetheris-run-stream`
+
+### 9.2 Wire frames
+
+| frame | field | type | required |
+|-------|-------|------|----------|
+| `event` | `cursor` | string | yes |
+| `event` | `event.id` | string | yes |
+| `event` | `event.run_id` | string | yes |
+| `event` | `event.step` | integer | yes |
+| `event` | `event.seq` | integer | yes |
+| `event` | `event.event_type` | string | yes |
+| `event` | `event.payload` | string | yes |
+| `event` | `event.timestamp` | string | yes |
+| `control` | `control` | string | yes |
+| `control` | `reason` | string | yes |
+| `control` | `run_id` | string | yes |
+| `control` | `status` | string | no |
+
+### 9.3 Stream-end reasons
+
+| reason | carries status |
+|--------|----------------|
+| `run_terminal` | yes |
+| `run_unavailable_on_node` | no |
+| `auth_revoked` | no |
+| `store_unavailable` | no |
+| `inconsistent_run_state` | yes |
+
+### 9.4 UI frames
+
+| kind | fields | final |
+|------|--------|-------|
+| `event` | `event` | no |
+| `control` | `reason` | yes |
+| `client_error` | `reason` | yes |
+| `client_status` | `state` | no |
+
+### 9.5 Reconnect and stop
+'''
+
+
+def _run_stream_envelope(frame_ex=_FRAME_EX, rust=_RUN_STREAM_RS, specs=_SPECS_S9):
+    reset()
+    drift_check._evaluate_stream_envelope(frame_ex, rust, specs)
+    return fails_of("stream_envelope")
+
+
+def _replace_once(text, old, new):
+    assert text.count(old) == 1, old
+    return text.replace(old, new)
+
+
+def test_stream_envelope_parse_frame_ex():
+    reset()
+    h = drift_check._parse_stream_frames_from_frame_ex(_FRAME_EX, "t")
+    assert h["reasons"] == {"run_terminal", "run_unavailable_on_node", "auth_revoked",
+                            "store_unavailable", "inconsistent_run_state"}
+    assert h["carrying"] == {"run_terminal", "inconsistent_run_state"}
+    assert h["fields"]["event"]["event.seq"] == ("integer", True)
+    assert h["fields"]["control"]["status"] == ("string", False)
+    assert "kind" not in h["fields"]["event"]
+    assert h["kinds"] == {"event", "control"} and h["controls"] == {"stream_end"}
+
+
+def test_stream_envelope_parse_rust():
+    reset()
+    r = drift_check._parse_stream_types_from_rust(_RUN_STREAM_RS, "t")
+    assert r["tag"] == "kind" and r["ui_tag"] == "kind"
+    assert r["fields"]["event"]["cursor"] == ("string", True)
+    assert r["fields"]["event"]["event.step"] == ("integer", True)
+    assert r["fields"]["control"]["status"] == ("string", False)
+    assert r["reasons"] == drift_check._parse_stream_frames_from_frame_ex(_FRAME_EX, "t")["reasons"]
+    assert set(r["ui_fields"]) == {"event", "control", "client_error", "client_status"}
+
+
+def test_stream_envelope_parse_docs():
+    reset()
+    d = drift_check._parse_stream_docs(_SPECS_S9, "t")
+    assert d["fields"]["control"]["status"] == ("string", False)
+    assert d["carrying"] == {"run_terminal", "inconsistent_run_state"}
+    assert d["ui_kinds"] == {"event", "control", "client_error", "client_status"}
+
+
+def test_stream_envelope_happy_path_passes():
+    assert _run_stream_envelope() == []
+    assert passes_of("stream_envelope")
+    infos = [m for l, c, m in drift_check.FINDINGS if l == "INFO" and c == "stream_envelope"]
+    assert any("client_error" in m and "client_status" in m for m in infos), infos
+
+
+def test_stream_envelope_missing_anchor_frame_ex_fails():
+    fails = _run_stream_envelope(frame_ex=_FRAME_EX.replace("@type control_frame ::", "@type ctl ::"))
+    assert any("anchor not found" in f and "control_frame" in f for f in fails), fails
+
+
+def test_stream_envelope_missing_anchor_rust_fails():
+    fails = _run_stream_envelope(rust=_RUN_STREAM_RS.replace("pub enum WireFrame", "pub enum Frame"))
+    assert any("WireFrame" in f and "not found" in f for f in fails), fails
+
+
+def test_stream_envelope_missing_anchor_specs_fails():
+    fails = _run_stream_envelope(specs=_SPECS_S9.replace("## 9. Emitted Tauri Events", "## 9. Events"))
+    assert any("anchor not found" in f for f in fails), fails
+
+
+def test_stream_envelope_zero_reasons_fails():
+    frame_ex = _replace_once(
+        _FRAME_EX,
+        """          :run_terminal
+          | :run_unavailable_on_node
+          | :auth_revoked
+          | :store_unavailable
+          | :inconsistent_run_state""",
+        "          String.t()",
+    )
+    fails = _run_stream_envelope(frame_ex=frame_ex)
+    assert any("zero reasons" in f for f in fails), fails
+
+
+def test_stream_envelope_key_missing_harness_fails():
+    fails = _run_stream_envelope(frame_ex=_replace_once(_FRAME_EX, "            timestamp: String.t()\n", ""))
+    assert any("event.timestamp" in f and "not in frame.ex" in f for f in fails), fails
+
+
+def test_stream_envelope_key_missing_rust_fails():
+    fails = _run_stream_envelope(rust=_replace_once(_RUN_STREAM_RS, "    pub timestamp:  String,\n", ""))
+    assert any("event.timestamp" in f and "not in run_stream.rs" in f for f in fails), fails
+
+
+def test_stream_envelope_key_missing_docs_fails():
+    fails = _run_stream_envelope(specs=_replace_once(_SPECS_S9, "| `event` | `event.timestamp` | string | yes |\n", ""))
+    assert any("event.timestamp" in f and "not in specs.md" in f for f in fails), fails
+
+
+def test_stream_envelope_integer_against_string_fails():
+    fails = _run_stream_envelope(rust=_replace_once(_RUN_STREAM_RS, "    pub seq:        i64,", "    pub seq:        String,"))
+    assert any("event.seq type" in f for f in fails), fails
+
+
+def test_stream_envelope_status_required_on_one_side_fails():
+    rust = _replace_once(_RUN_STREAM_RS, "status: Option<String> },", "status: String },")
+    fails = _run_stream_envelope(rust=rust)
+    assert any("control.status required" in f for f in fails), fails
+
+
+def test_stream_envelope_reason_added_harness_only_fails():
+    frame_ex = _FRAME_EX.replace("| :inconsistent_run_state\n", "| :inconsistent_run_state\n          | :node_draining\n")
+    frame_ex = _replace_once(frame_ex, ":auth_revoked, :store_unavailable]", ":auth_revoked, :store_unavailable, :node_draining]")
+    fails = _run_stream_envelope(frame_ex=frame_ex)
+    assert any("'node_draining' in frame.ex but not in run_stream.rs" in f for f in fails), fails
+    assert any("'node_draining' in frame.ex but not in specs.md" in f for f in fails), fails
+
+
+def test_stream_envelope_status_carrying_set_differs_fails():
+    fails = _run_stream_envelope(specs=_replace_once(_SPECS_S9, "| `inconsistent_run_state` | yes |", "| `inconsistent_run_state` | no |"))
+    assert any("status-carrying reason 'inconsistent_run_state'" in f for f in fails), fails
+
+
+def test_stream_envelope_rename_all_missing_fails():
+    rust = _replace_once(
+        _RUN_STREAM_RS,
+        '#[serde(rename_all = "snake_case")]\npub enum StreamEndReason',
+        "pub enum StreamEndReason",
+    )
+    fails = _run_stream_envelope(rust=rust)
+    assert any("'RunTerminal'" in f for f in fails), fails
+
+
+def test_stream_envelope_uninterpreted_serde_attribute_fails():
+    rust = _replace_once(_RUN_STREAM_RS, "    pub payload:    String,", '    #[serde(rename = "body")]\n    pub payload:    String,')
+    fails = _run_stream_envelope(rust=rust)
+    assert any("uninterpreted serde attribute" in f for f in fails), fails
+
+
+def test_stream_envelope_cursor_on_ui_frame_fails():
+    rust = _replace_once(_RUN_STREAM_RS, "    Event   { event: StreamEvent },", "    Event   { cursor: String, event: StreamEvent },")
+    fails = _run_stream_envelope(rust=rust)
+    assert any("UiFrame::event carries cursor" in f for f in fails), fails
+
+
+def test_stream_envelope_client_status_missing_from_ui_frame_fails():
+    rust = _replace_once(_RUN_STREAM_RS, "    ClientStatus { state: ClientStatusState },\n", "")
+    fails = _run_stream_envelope(rust=rust)
+    assert any("'client_status'" in f and "UI-only kinds" in f for f in fails), fails
+
+
+def test_stream_envelope_client_status_missing_from_docs_fails():
+    fails = _run_stream_envelope(specs=_replace_once(_SPECS_S9, "| `client_status` | `state` | no |\n", ""))
+    assert any("'client_status'" in f and "specs.md" in f for f in fails), fails
+
+
+@pytest.mark.integration
+def test_stream_envelope_live_repos_pass():
+    """Against the real files. `integration`: it reads the sibling harness repo."""
+    reset()
+    drift_check.check_stream_envelope()
+    assert not fails_of("stream_envelope"), fails_of("stream_envelope")
+    assert passes_of("stream_envelope")

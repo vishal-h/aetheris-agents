@@ -1,12 +1,13 @@
 # BL-266 — Run event streaming (design brief)
 
-**Status:** design decided — T0, T1 and T2 applied; T3 not started.
+**Status:** design decided — T0, T1, T2 and T3 applied; T3's click-through merge gate not yet run.
 **Type:** design brief. A contract for T0–T3 cc:prompts, cited by item number (`§3 C5`).
 **Date:** 2026-09-17
 **Amended:** 2026-09-18, at T0 apply — the T0 rulings (R-S1–R-S3, R-D1, R-D2, R-D4) in C3, C5.1,
 C6, C7, C8.3, C9.3; C5.8 and C16 added; §5's T0 items and the C9.3 T1 item removed.
 2026-09-18, at T1 apply — rulings O4, O1, D2 and O6: C1.4 and C8.5 added; C10.2 amended.
 2026-09-19, at T2 apply — rulings O2, O3, O4 and O6: C3.4 amended; C12.6 and C12.7 added.
+2026-09-19, at T3 apply — ruling 13: T3.6 reworded.
 **Row:** BL-266. **Blocked by:** BL-267 (T1 only).
 **Citations:** `H` = harness `aetheris` at `191970a`; `A` = `aetheris-agents` at `2cb3fa7`.
 Paths under `deps/` are the versions pinned by harness `mix.lock@H`.
@@ -66,7 +67,7 @@ Blocked by BL-267.
 - T3.3 Event/control union handling (C8).
 - T3.4 `EventRow` compatibility (§4 F11).
 - T3.5 Replaces `useRunEvents`/`useRunDetail` polling on this path.
-- T3.6 BL-058 shared-envelope check.
+- T3.6 Not BL-058 (out of scope, stays open): the envelope check is T3.8's parity arm.
 - T3.7 `docs/rig/specs.md` Tauri command and event docs (C13).
 - T3.8 A new envelope-parity drift arm (C13).
 - T3.9 Fix the stale harness line references at `rig/src/hooks/useHarness.ts:152-153@A`.

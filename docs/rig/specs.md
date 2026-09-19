@@ -802,3 +802,106 @@ rig/src/components/modules/
     ZipStatus.tsx
     shared.tsx
 ```
+
+---
+
+## 9. Emitted Tauri Events
+
+Rust → webview events. §9.2–§9.4 are parsed by `drift_check.py`'s `stream_envelope` arm
+against harness `lib/aetheris/stream/frame.ex` and `commands/run_stream.rs`.
+
+### 9.1 `aetheris-run-stream` — BL-266 T3
+
+Emitted app-wide (`AppHandle::emit`) by the subscription threads of `commands/run_stream.rs`,
+one thread per `run_stream_subscribe` call. It relays harness SSE frames
+(`GET /api/playground/runs/:run_id/events`, harness `docs/aetheris/playground-api.md` §3.5).
+
+Payload `RunStreamEmit`: `{ subscription_id, run_id, frame: UiFrame }`. The webview drops any
+payload whose `subscription_id` and `run_id` are not its own.
+
+Ordering:
+- One thread per subscription emits in wire order, which is `seq` order.
+- At most one final frame per subscription, and it is the last one: a `control` frame other
+  than `store_unavailable`, or a `client_error`. `store_unavailable` is followed by a
+  reconnect. `client_status` is never final.
+- A reconnect sends `Last-Event-ID`, so the server gives no duplicate and no gap.
+- The cursor stays in Rust: no `UiFrame` has a `cursor` field.
+
+### 9.2 Wire frames
+
+The SSE `data:` JSON, discriminated by `kind`. An event frame's `id:` line must equal its
+`cursor`, and a control frame must have no `id:` line; either mismatch is a final
+`client_error` with reason `protocol`.
+
+| frame | field | type | required |
+|-------|-------|------|----------|
+| `event` | `cursor` | string | yes |
+| `event` | `event.id` | string | yes |
+| `event` | `event.run_id` | string | yes |
+| `event` | `event.step` | integer | yes |
+| `event` | `event.seq` | integer | yes |
+| `event` | `event.event_type` | string | yes |
+| `event` | `event.payload` | string | yes |
+| `event` | `event.timestamp` | string | yes |
+| `control` | `control` | string | yes |
+| `control` | `reason` | string | yes |
+| `control` | `run_id` | string | yes |
+| `control` | `status` | string | no |
+
+`event.*` has the same fields as `EventRow` (§5). `control` is always `stream_end`.
+
+### 9.3 Stream-end reasons
+
+| reason | carries status |
+|--------|----------------|
+| `run_terminal` | yes |
+| `run_unavailable_on_node` | no |
+| `auth_revoked` | no |
+| `store_unavailable` | no |
+| `inconsistent_run_state` | yes |
+
+### 9.4 UI frames (`UiFrame`)
+
+What the webview receives in `RunStreamEmit.frame`. `client_error` and `client_status` are
+UI-only: Rig originates them and they never appear on the wire.
+
+| kind | fields | final |
+|------|--------|-------|
+| `event` | `event: EventRow` | no |
+| `control` | `control`, `reason`, `run_id`, `status?` | yes, except `store_unavailable` |
+| `client_error` | `reason` (`unauthorized` \| `bad_request` \| `not_found` \| `http` \| `protocol`), `http_status: number \| null`, `code: string \| null` (the error envelope's `code`), `message` | yes |
+| `client_status` | `state` (`reconnecting` \| `connected`) | no |
+
+`client_status` rules:
+- A connection counts as successful only once it delivers a valid frame or a heartbeat
+  comment. HTTP 200 alone does not count.
+- `reconnecting` is emitted once, after the second consecutive attempt that delivered nothing.
+- `connected` is emitted once, after the first valid item of the next successful connection.
+- The first successful connection emits no status.
+
+### 9.5 Reconnect and stop
+
+| outcome | action |
+|---------|--------|
+| connect or read error (read deadline 45 s, three heartbeats); body ends without `stream_end` | reconnect with backoff, cursor kept |
+| HTTP 429 or 503 | reconnect after `Retry-After` (whole seconds), else backoff |
+| other HTTP 5xx | reconnect with backoff |
+| HTTP 401 / 400 / 404 / other 4xx | `client_error` (`unauthorized` / `bad_request` / `not_found` / `http`); never retried |
+| `stream_end` `store_unavailable` | forward it, then reconnect with backoff |
+| `stream_end` any other reason | forward it and stop |
+| unparseable frame, unknown `kind` or `reason`, or a cursor-copy mismatch | `client_error` `protocol` and stop |
+
+Backoff: 1, 2, 4, 8, 15 s, then 15 s, each plus 0–20 % jitter. It resets once a connection
+delivers a valid frame or a heartbeat.
+
+### 9.6 Divergences
+
+- **Event set.** A streamed view ends at the run's `terminal_seq`. A polled view
+  (`harness_get_events`) shows every stored row, including events appended after the
+  terminal status. So the two can differ for the same finished run.
+- **Slot held after unsubscribe.** `run_stream_unsubscribe` only sets a flag. The thread
+  notices at its next read, so it keeps its HTTP connection, and one of the node's stream
+  slots (`:max_concurrent_streams`, default 32), for up to about 15 s on a live stream and up
+  to 45 s on a silent one.
+- **`useRunDetail`.** On the stream path it fetches the run row once, for `config`; the
+  terminal status comes from the `run_terminal` frame. On the poll path it polls as before.

@@ -1,11 +1,12 @@
 # BL-266 — Run event streaming (design brief)
 
-**Status:** design decided — T0 and T1 applied; T2–T3 not started.
+**Status:** design decided — T0, T1 and T2 applied; T3 not started.
 **Type:** design brief. A contract for T0–T3 cc:prompts, cited by item number (`§3 C5`).
 **Date:** 2026-09-17
 **Amended:** 2026-09-18, at T0 apply — the T0 rulings (R-S1–R-S3, R-D1, R-D2, R-D4) in C3, C5.1,
 C6, C7, C8.3, C9.3; C5.8 and C16 added; §5's T0 items and the C9.3 T1 item removed.
 2026-09-18, at T1 apply — rulings O4, O1, D2 and O6: C1.4 and C8.5 added; C10.2 amended.
+2026-09-19, at T2 apply — rulings O2, O3, O4 and O6: C3.4 amended; C12.6 and C12.7 added.
 **Row:** BL-266. **Blocked by:** BL-267 (T1 only).
 **Citations:** `H` = harness `aetheris` at `191970a`; `A` = `aetheris-agents` at `2cb3fa7`.
 Paths under `deps/` are the versions pinned by harness `mix.lock@H`.
@@ -87,7 +88,9 @@ live. Order is by `seq` only; `step` is not monotonic (§4 F7).
 - C3.2 A status wakeup after every successful `upsert_run`.
 - C3.3 A wakeup is a hint. The subscriber always reads `events_after(run_id, last_sent, 200)`,
   looping batches until empty, and coalesces queued wakeups.
-- C3.4 `last_sent` advances only after a successful write.
+- C3.4 `last_sent` advances only after a successful write. On WebSocket, a batch counts as
+  written once the callback returns it to Bandit as `{:push, …}`. If the socket write then
+  fails, the connection terminates and the client resumes from its last received cursor.
 - C3.5 Wakeups fire only after a successful durable write, never on error.
 
 **C4 — Handover.** In order:
@@ -191,6 +194,11 @@ A Store exit must not kill the subscriber before this runs.
 - C12.4 The credential is never logged.
 - C12.5 Precedence when both a header and a subprotocol credential are present is a T2 plan
   STOP (§5).
+- C12.6 The WebSocket cursor is one `cursor` query parameter; repeated → `400 invalid_cursor`.
+  `Last-Event-ID` is not read on WebSocket.
+- C12.7 WebSocket close codes: 1000 whenever a `stream_end` frame carries the reason; 1011 for
+  infrastructure loss; 1003, with no `stream_end`, for a client text or binary frame; Bandit's
+  own codes otherwise.
 
 **C13 — Docs ownership.**
 - C13.1 T1/T2: harness `docs/aetheris/playground-api.md`.

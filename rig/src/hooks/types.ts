@@ -638,3 +638,38 @@ export interface SkillCatalog {
   superseded_count: number;
   retired_count:    number;
 }
+
+// ============================================================================
+// Run stream types — matching src-tauri/src/commands/run_stream.rs (BL-266 T3)
+// Payload of the `aetheris-run-stream` Tauri event; docs/rig/specs.md §9.
+// ============================================================================
+
+export type StreamEndReason =
+  | 'run_terminal'
+  | 'run_unavailable_on_node'
+  | 'auth_revoked'
+  | 'store_unavailable'
+  | 'inconsistent_run_state';
+
+export type ClientErrorReason = 'unauthorized' | 'bad_request' | 'not_found' | 'http' | 'protocol';
+
+export type ClientStatusState = 'reconnecting' | 'connected';
+
+/** No variant carries the stream cursor: it stays in Rust. */
+export type UiFrame =
+  | { kind: 'event'; event: EventRow }
+  | { kind: 'control'; control: 'stream_end'; reason: StreamEndReason; run_id: string; status?: string }
+  /** Rig-side failure; final. */
+  | { kind: 'client_error'; reason: ClientErrorReason; http_status: number | null; code: string | null; message: string }
+  /** Connection liveness; not final. */
+  | { kind: 'client_status'; state: ClientStatusState };
+
+export interface RunStreamEmit {
+  subscription_id: string;
+  run_id:          string;
+  frame:           UiFrame;
+}
+
+export interface RunStreamSubscribeResult {
+  mode: 'stream' | 'poll';
+}

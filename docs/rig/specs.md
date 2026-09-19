@@ -656,6 +656,35 @@ type OrchestratorPhase =
   | 'error';
 
 type StepStatus = 'pending' | 'running' | 'done' | 'failed';
+
+// ── Run stream (BL-266 T3; the `aetheris-run-stream` payload, §9) ────────────
+
+type StreamEndReason =
+  | 'run_terminal'
+  | 'run_unavailable_on_node'
+  | 'auth_revoked'
+  | 'store_unavailable'
+  | 'inconsistent_run_state';
+
+type ClientErrorReason = 'unauthorized' | 'bad_request' | 'not_found' | 'http' | 'protocol';
+
+type ClientStatusState = 'reconnecting' | 'connected';
+
+type UiFrame =
+  | { kind: 'event'; event: EventRow }
+  | { kind: 'control'; control: 'stream_end'; reason: StreamEndReason; run_id: string; status?: string }
+  | { kind: 'client_error'; reason: ClientErrorReason; http_status: number | null; code: string | null; message: string }
+  | { kind: 'client_status'; state: ClientStatusState };
+
+interface RunStreamEmit {
+  subscription_id: string;
+  run_id:          string;
+  frame:           UiFrame;
+}
+
+interface RunStreamSubscribeResult {
+  mode: 'stream' | 'poll';
+}
 ```
 
 The interfaces above cover the core Harness, Trajectory, Diff, and Orchestrator

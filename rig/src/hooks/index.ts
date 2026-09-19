@@ -32,6 +32,9 @@ export type { ScanStatus } from './useScanStatus';
 export type { UseProvenanceStatusResult } from './useProvenanceStatus';
 
 export { useHarnessStatus, useRunList, useRunEvents, useRunDetail } from './useHarness';
+export { useRunStream } from './useRunStream';
+export type { RunStreamMode, RunStreamResult } from './useRunStream';
+export type { UiFrame, RunStreamEmit, RunStreamSubscribeResult, StreamEndReason, ClientErrorReason, ClientStatusState } from './types';
 export type { HarnessStatus, RunSummary, RunListResult, EventRow, RunDetail } from './types';
 export type { TrajectoryMeta, TrajectoryEvent, TrajectoryFile } from './types';
 export type { PlanStep, OrchestratorPlan, PollResult, OrchestratorPhase, StepStatus } from './types';

@@ -1497,3 +1497,19 @@
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-271.md
 - done-when: _(proposed)_ a run driven terminal by a worker `:DOWN` notifies the same surfaces as `{:run_failed, _}`; a test asserts a parent waiting on `agent_done` is woken when its child's worker dies.
+
+### BL-272 — Rig infers run completion from `run_complete` on the poll path
+- state: open
+- type: defect
+- area: rig — harness views (`useRunEvents`, RunList EventsContent)
+- priority: unset — the arbiter's · size: unset
+- evidence: docs/evidence/BL-272.md
+- done-when: _(proposed)_ both sites take completion from the run row's status (`TERMINAL_STATUSES`, `useHarness.ts:141`), or from a stream control frame where one is present, and neither reads `run_complete` as a status.
+
+### BL-273 — stale `server.ex:` line citations across Rig source, one of them a false claim
+- state: open
+- type: defect
+- area: rig — source comments citing harness `lib/aetheris/agent/server.ex`
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-273.md
+- done-when: _(proposed)_ every `server.ex:` citation in `rig/src` and `rig/src-tauri/src` names its anchor with the line as a parenthetical and resolves at the harness commit it cites; `useTrajectory.ts`'s write-result sentence states what `run_outcome/2` does.

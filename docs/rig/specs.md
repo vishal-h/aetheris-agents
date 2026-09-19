@@ -9,8 +9,8 @@
 | `AETHERIS_DB_PATH` | Yes (harness features) | — | Path to `aetheris/priv/aetheris.db`; also used by `trajectory.rs` to derive run directory |
 | `AETHERIS_AGENTS_PATH` | Yes (orchestrator/tools) | — | Path to `aetheris-agents/` root; used by orchestrate.rs, tools.rs, capability_matrix.rs |
 | `AETHERIS_PROVIDER` | No | `anthropic` | Default LLM provider passed to every `.exs` agent; not read by Rig Rust code directly |
-| `AETHERIS_API_URL` | Yes (playground features) | — | Base URL of the running aetheris harness API (e.g. `http://localhost:4001`); read by `commands/playground.rs` |
-| `AETHERIS_API_TOKEN` | Yes (playground features) | — | Bearer token matching one of `AETHERIS_PLAYGROUND_TOKENS` configured in the harness; read by `commands/playground.rs` |
+| `AETHERIS_API_URL` | Yes (playground features) | — | Base URL of the running aetheris harness API (e.g. `http://localhost:4001`); read by `commands/playground.rs` and `commands/run_stream.rs` (run event stream, BL-266 T3) |
+| `AETHERIS_API_TOKEN` | Yes (playground features) | — | Bearer token matching one of `AETHERIS_PLAYGROUND_TOKENS` configured in the harness; read by `commands/playground.rs` and `commands/run_stream.rs` (run event stream, BL-266 T3) |
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | — | Path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | — | Not read by Rig Rust; intended for the `search_agent.exs` file when the corpus-search MCP is active |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No | — | Stored in `agent-config.json`; injected as env var when orchestrator spawns agents — not read from env directly by Rig |
@@ -495,6 +495,19 @@ the only Rig command that runs arbitrary code from the agent repo.
 | `playground_run_status` | `{ runId: String }` | `PlaygroundRunStatus` |
 
 (Types are in `src/hooks/types.ts`.)
+
+### Run stream commands (`commands/run_stream.rs`) — BL-266 T3
+
+| Command | Input | Output |
+|---------|-------|--------|
+| `run_stream_subscribe` | `{ request: RunStreamSubscribeRequest }` — `{ subscription_id, run_id }`, snake_case inside `request` | `RunStreamSubscribeResult` — `{ mode: 'stream' \| 'poll' }` |
+| `run_stream_unsubscribe` | `{ subscriptionId: String }` | `()` |
+
+`subscribe` returns `poll` and starts nothing when `AETHERIS_API_URL` or `AETHERIS_API_TOKEN`
+is unset. Otherwise it starts the subscription thread and returns `stream` without waiting.
+The webview mints `subscription_id` (`runId:Date.now():counter`); a duplicate id is refused
+with `Err`. `unsubscribe` sets the cancel flag and returns; an unknown id is `Ok`. Frames arrive
+as the `aetheris-run-stream` event (§9).
 
 ---
 

@@ -9,8 +9,8 @@
 | `AETHERIS_DB_PATH` | Yes (harness features) | Absolute path to `aetheris/priv/aetheris.db` |
 | `AETHERIS_AGENTS_PATH` | Yes (tools features) | Absolute path to `aetheris-agents/` root |
 | `AETHERIS_PROVIDER` | No | Default LLM provider for agents (`anthropic`); not read by Rig itself |
-| `AETHERIS_API_URL` | Yes (playground features) | Base URL of the running aetheris harness API (e.g. `http://localhost:4001`) |
-| `AETHERIS_API_TOKEN` | Yes (playground features) | Bearer token — must match one entry in `AETHERIS_PLAYGROUND_TOKENS` on the harness side |
+| `AETHERIS_API_URL` | Yes (playground features) | Base URL of the running aetheris harness API (e.g. `http://localhost:4001`); also enables the run event stream in the Trajectory view (BL-266 T3) |
+| `AETHERIS_API_TOKEN` | Yes (playground features) | Bearer token — must match one entry in `AETHERIS_PLAYGROUND_TOKENS` on the harness side; also enables the run event stream in the Trajectory view (BL-266 T3) |
 | `PROVENANCE_DB_PATH` | Yes (Provenance features) | Absolute path to corpus DuckDB |
 | `CORPUS_SEARCH_MCP_ENABLED` | No | Set `true` to enable corpus-search MCP |
 | `GITHUB_PERSONAL_ACCESS_TOKEN` | No (GitHub MCP) | PAT for GitHub MCP server — or set in Rig Settings |
@@ -28,8 +28,8 @@ export AETHERIS_DB_PATH=~/sandbox/elixirws/aetheris/priv/aetheris.db
 export AETHERIS_AGENTS_PATH=~/sandbox/elixirws/aetheris-agents
 export PROVENANCE_DB_PATH=~/sandbox/provenance-test/corpus.duckdb      # optional
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...                             # optional, or set in Settings
-export AETHERIS_API_URL=http://localhost:4001  # optional: enables Playground module
-export AETHERIS_API_TOKEN=tok-abc              # optional: see Playground module section
+export AETHERIS_API_URL=http://localhost:4001  # optional: enables Playground module and the run event stream
+export AETHERIS_API_TOKEN=tok-abc              # optional: see Playground module section; also used by the run event stream
 
 # Start dev server
 cargo tauri dev

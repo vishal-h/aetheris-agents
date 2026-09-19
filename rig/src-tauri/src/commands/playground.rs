@@ -269,7 +269,7 @@ pub fn playground_run_status(
 // Private helpers
 // ============================================================================
 
-fn require_connection(
+pub(crate) fn require_connection(
     state: &State<'_, PlaygroundState>,
 ) -> Result<(String, String), String> {
     let url = state

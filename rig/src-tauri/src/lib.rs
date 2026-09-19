@@ -41,6 +41,7 @@ pub struct ToolsState {
 }
 
 pub use commands::playground::PlaygroundState;
+pub use commands::run_stream::RunStreamState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -97,6 +98,8 @@ pub fn run() {
       commands::playground::playground_get_sandboxes,
       commands::playground::playground_submit_run,
       commands::playground::playground_run_status,
+      commands::run_stream::run_stream_subscribe,
+      commands::run_stream::run_stream_unsubscribe,
     ])
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_dialog::init())
@@ -214,6 +217,10 @@ pub fn run() {
         api_url:   std::env::var("AETHERIS_API_URL").ok(),
         api_token: std::env::var("AETHERIS_API_TOKEN").ok(),
       });
+
+      // Run event stream subscriptions (BL-266 T3); threads read the
+      // PlaygroundState connection above.
+      app.manage(RunStreamState::new());
 
       Ok(())
     })

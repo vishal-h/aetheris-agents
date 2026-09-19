@@ -6,6 +6,7 @@ pub mod harness;
 pub mod orchestrate;
 pub mod playground;
 pub mod provenance;
+pub mod run_stream;
 pub mod skills;
 pub mod tools;
 pub mod trajectory;

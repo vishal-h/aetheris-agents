@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { ChevronDown, ChevronRight, Download, FileText, GitBranch, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTrajectory, useRunEvents, useRunDetail, useFork, useRunArtifacts } from '@/hooks';
+import { useTrajectory, useRunEvents, useRunDetail, useRunStream, useFork, useRunArtifacts } from '@/hooks';
 import type { RunSummary, TrajectoryEvent, TrajectoryFile, TokenSummary } from '@/hooks/types';
 import { reconstructTrajectory, reconstructedBanner } from '@/lib/reconstructTrajectory';
 import { stepBadge } from './stageLabel';
@@ -327,22 +327,31 @@ export function TrajectoryView({ run, onForked }: Props) {
   const fileMissing = fileError !== null;
   const fallbackRunId = fileMissing ? runId : null;
 
-  // Poll the run row whenever the fallback is engaged. Not gated on a status of
-  // our own: `useRunDetail` stops itself the moment the row reads terminal, and
-  // gating it on the status it is the source of would be circular. The cost when
-  // the fallback engages for an already-terminal run (a BL-003-swept orphan) is
-  // one extra fetch before it stops. A completed run with a file never gets here
-  // at all — `fallbackRunId` stays null — so BL-005's "completed runs unaffected"
-  // gating is intact.
-  const detail = useRunDetail(fallbackRunId, { polling: fallbackRunId !== null });
+  // Push path (BL-266 T3): the harness event stream, when AETHERIS_API_URL and
+  // _TOKEN are set. Otherwise, or when the stream hands back, `mode` is `poll`
+  // and everything below runs exactly as before.
+  const stream = useRunStream(fallbackRunId);
+  const onStream = stream.mode === 'stream';
+  const pollRunId = stream.mode === 'poll' ? fallbackRunId : null;
+
+  // Poll the run row whenever the fallback is engaged on the poll path. Not
+  // gated on a status of our own: `useRunDetail` stops itself the moment the row
+  // reads terminal, and gating it on the status it is the source of would be
+  // circular. The cost when the fallback engages for an already-terminal run (a
+  // BL-003-swept orphan) is one extra fetch before it stops. A completed run with
+  // a file never gets here at all — `fallbackRunId` stays null — so BL-005's
+  // "completed runs unaffected" gating is intact. On the stream path the row is
+  // fetched once, for `config`; the terminal status comes from the stream.
+  const detail = useRunDetail(fallbackRunId, { polling: fallbackRunId !== null && stream.mode === 'poll' });
 
   // The *real* run row is the authority on status, not the summary we were
   // handed. A run navigated to straight from a fork carries a synthesized
   // summary (RunList `handleForked`) whose `status` is a seed that never
   // changes; reading the row is what lets a run finishing in place be noticed.
-  // Falls back to the prop until the first row arrives.
-  const liveStatus = detail.data?.status ?? run?.status;
-  const events = useRunEvents(fallbackRunId, { polling: liveStatus === 'running' });
+  // Falls back to the prop until the first row arrives. On the stream path the
+  // `run_terminal` frame's status comes first.
+  const liveStatus = stream.terminalStatus ?? detail.data?.status ?? run?.status;
+  const events = useRunEvents(pollRunId, { polling: liveStatus === 'running' });
 
   // Preserve the interrupted-write / corrupt-file signal the runbook documents:
   // the banner reports the file as "unavailable" generically, so log the actual
@@ -370,7 +379,10 @@ export function TrajectoryView({ run, onForked }: Props) {
   // the terminal banner is the correct final state, which `reload` preserves.
   //
   // Generalizes beyond forks: any run watched live through its own completion
-  // gets the same in-place transition.
+  // gets the same in-place transition. On the stream path `liveStatus` turns
+  // terminal on the `stream_end run_terminal` frame, which the harness sends only
+  // after that status write (BL-266 C5.3), so the same effect is its reload
+  // trigger.
   const isTerminal = liveStatus !== undefined && liveStatus !== 'running';
   useEffect(() => {
     if (fileMissing && isTerminal) reload();
@@ -393,13 +405,21 @@ export function TrajectoryView({ run, onForked }: Props) {
   if (fileMissing) {
     // Events are required; config (from harness_get_run) is best-effort and only
     // enriches meta, so a detail error does not block reconstruction.
-    const eventsPending = events.data === null && events.error === null;
+    const eventsData = onStream ? stream.data : events.data;
+    const eventsPending =
+      stream.mode === 'pending' || (!onStream && events.data === null && events.error === null);
     const detailPending = detail.data === null && detail.error === null;
     if (eventsPending || detailPending) {
       return <CentredMessage>Loading…</CentredMessage>;
     }
 
-    if (events.error !== null) {
+    // A stream error keeps the events already shown; with none yet, it replaces
+    // the body, since it is the error the user needs.
+    if (onStream && stream.error !== null && (eventsData ?? []).length === 0) {
+      return <div className="p-4 text-sm text-red-600">{stream.error}</div>;
+    }
+
+    if (!onStream && events.error !== null) {
       // Neither the file nor the event stream is available — surface the original
       // trajectory-load error the user was trying to resolve.
       return <div className="p-4 text-sm text-red-600">{fileError}</div>;
@@ -409,8 +429,14 @@ export function TrajectoryView({ run, onForked }: Props) {
       runId,
       run,
       detail.data,
-      events.data ?? [],
+      eventsData ?? [],
     );
+    const banner = [
+      reconstructedBanner(liveStatus),
+      onStream && stream.reconnecting ? 'reconnecting…' : null,
+      stream.warning,
+      stream.error,
+    ].filter((part): part is string => part !== null).join(' · ');
 
     return (
       <TrajectoryBody
@@ -418,8 +444,8 @@ export function TrajectoryView({ run, onForked }: Props) {
         // The row's status, not the (possibly synthesized) summary's — so a run
         // that finishes while watched and whose file is genuinely absent stops
         // claiming to be "live".
-        banner={reconstructedBanner(liveStatus)}
-        isPolling={events.isPolling}
+        banner={banner}
+        isPolling={onStream ? stream.isLive && !stream.reconnecting : events.isPolling}
         showExport={false}
         canFork={false}
         onForked={onForked}

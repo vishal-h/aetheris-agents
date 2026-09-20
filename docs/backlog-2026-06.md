@@ -1512,7 +1512,7 @@
 - area: rig — BL-266 T3 run-event-stream consumer
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-274.md
-- done-when: _(proposed)_ each of the five — live append on a running run, reconnect with cursor resumption, `auth_revoked` mid-stream, slot release on navigate-away, and the poll fallback with both env vars unset — is exercised once against a live harness and its result recorded, or an automated substitute exists; the T3 notes' §Click-through carries the outcome either way.
+- done-when: _(proposed)_ each of the five — live append on a running run, reconnect with cursor resumption, `auth_revoked` mid-stream, slot release on navigate-away, and the poll fallback with both env vars unset — is exercised once against a live harness and its result recorded, or an automated substitute exists **that exercises the real run path** — an agent loop and a real terminal transition, not a `live_run/1`-style fabricated run row; the T3 notes' §Click-through carries the outcome either way.
 
 ---
 
@@ -1543,3 +1543,13 @@
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-278.md
 - done-when: _(proposed)_ a boundary can be run without the manifest's own growth being what consumes the remaining headroom — by bounding or relocating the growing sections, or by a recorded ruling that resets the ceiling on a stated basis; carried by a measured figure at a boundary or by a recorded disposition.
+
+---
+
+### BL-279 — `mix hex.audit` is red on `mint` 1.10.0, EEF-CVE-2026-82672 (MEDIUM)
+- state: open
+- type: defect (supply chain)
+- area: harness — `../aetheris/mix.exs` + `mix.lock`
+- priority: unset — the arbiter's · size: XS _(proposed)_
+- evidence: docs/evidence/BL-279.md
+- done-when: _(proposed)_ `mix hex.audit` exits 0 from the harness root, or the residual advisory carries a recorded rationale and the gate runs expected-red named with this ref; carried by a version bump or a recorded disposition.

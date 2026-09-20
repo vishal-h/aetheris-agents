@@ -9751,3 +9751,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-266.md
 - done-when: a UI can follow a run without polling over BOTH an SSE stream and a WebSocket, each auth-gated by the existing token model, built on a transport-neutral core (tranches T0 core, T1 SSE, T2 WebSocket, T3 Rig consumer); wakeups originate inside Store after commit, never a server-side poll-and-forward; no cursor replays from the start and a cursor resumes after it; events arrive in seq order; each frame carries the full event body (the EventRow projection: id, run_id, step, seq, event_type, payload, timestamp) rather than the trajectory summary; once runs.status is terminal the stream delivers every event with seq ≤ runs.terminal_seq, sends a stream_end control frame and closes; non-terminal runs stream only from the hosting VM; a slow or disconnected client neither wedges the run nor leaks; harness playground-api.md documents the endpoints (T1/T2) and Rig's specs.md documents its consumer with drift green (T3); tests assert subscribe → append N → receive N in seq order → terminal closes, and that an unauthenticated subscribe is refused. Design: docs/aetheris/backlog/bl-266-run-event-streaming.md. T1 is blocked by BL-267.
 - disposition: fixed
+
+---
+
+### BL-276 — harness runbook entry for run event streaming (BL-266 runbook-update rule)
+- state: done
+- type: docs
+- area: harness — runbook
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-276.md
+- done-when: the harness runbook documents the streaming endpoints' operational surface — the four config keys, the working token recipe with the BL-275 trap named, reverse-proxy requirements, and the capacity refusal — and the runbook introduces the `/api/playground/*` namespace, its bearer auth and `api_bind` default, so the streaming section does not reference surfaces the file never establishes.
+- disposition: fixed

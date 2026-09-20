@@ -1523,3 +1523,13 @@
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-275.md
 - done-when: _(proposed)_ starting the server the way the runbook documents honours `AETHERIS_PLAYGROUND_TOKENS`, or the docs state the supported way to start it so the override is reached; carried by a test or by a recorded disposition.
+
+---
+
+### BL-277 — `compile.aetheris_worker` copies the worker and exec-server binaries unconditionally, so any mix invocation fails while either is running
+- state: open
+- type: defect
+- area: harness — compile task
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-277.md
+- done-when: _(proposed)_ a mix invocation succeeds while previously built binaries are running — **both** the worker and the exec server, verified separately — by a staleness check or an equivalent; carried by a test or a recorded disposition.

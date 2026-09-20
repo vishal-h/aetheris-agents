@@ -1533,3 +1533,13 @@
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-277.md
 - done-when: _(proposed)_ a mix invocation succeeds while previously built binaries are running — **both** the worker and the exec server, verified separately — by a staleness check or an equivalent; carried by a test or a recorded disposition.
+
+---
+
+### BL-278 — the kernel ceiling is reached by manifest-row growth alone, and the ceiling is DECREASE-ONLY
+- state: open
+- type: gate
+- area: aetheris-agents — project-knowledge kernel budget (`drift_check.py` `kernel_budget`, BL-002 boundary)
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-278.md
+- done-when: _(proposed)_ a boundary can be run without the manifest's own growth being what consumes the remaining headroom — by bounding or relocating the growing sections, or by a recorded ruling that resets the ceiling on a stated basis; carried by a measured figure at a boundary or by a recorded disposition.

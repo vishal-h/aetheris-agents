@@ -314,5 +314,21 @@ Moved from docs/project-knowledge-manifest.md at 1592c95, 2026-09-15. Body verba
 > this block; the backlog row's staleness WARN is expected until the next export, a separate
 > BL-002 round.
 
+> **THE STREAMING CONTRACT AND ITS BRIEF — two rows added, 2026-09-20.**
+> `aetheris/docs/aetheris/playground-api.md` is the normative wire contract for
+> every `/api/playground/*` route, including the two run-event stream endpoints
+> (§3.5, §3.6) by which a non-Rig client connects. It carried no row, so the
+> kernel pointed a store-side session at no copy of it and a session needing the
+> contract had to already know the path. Added `on-demand`.
+> `aetheris-agents/docs/aetheris/backlog/bl-266-run-event-streaming.md` is the
+> ratified design contract the streaming implementation is cited against by item
+> number; it meets the DESIGN BRIEFS rule of 2026-08-24 — a store-side actor
+> reasoning about stream behaviour must read it. Added `on-demand`.
+> Both are `on-demand` deliberately: neither enters the kernel, so the ceiling is
+> untouched and no row is displaced. `on-demand` buys addressability, not drift
+> detection — `drift_check.py:681` exempts the surface from staleness by
+> construction, and contract-vs-code drift for the stream envelope is the
+> `stream_envelope` arm's job, not this manifest's.
+
 ---
 

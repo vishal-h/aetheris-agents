@@ -88,9 +88,9 @@ and why; the procedural gap it exposed is **BL-196**.]`
 
 | export name | repo path | repo | commit | last changed | surface |
 |-------------|-----------|------|--------|--------------|---------|
-| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `d648d7b` | 2026-09-16 | on-demand |
+| `rig--specs.md` | `docs/rig/specs.md` | aetheris-agents | `a660ea3` | 2026-09-19 | on-demand |
 | `rig--architecture.md` | `docs/rig/architecture.md` | aetheris-agents | `c0977c2` | 2026-07-25 | on-demand |
-| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `7d6013a` | 2026-07-26 | on-demand |
+| `rig--runbook.md` | `docs/rig/runbook.md` | aetheris-agents | `4a08e3d` | 2026-09-19 | on-demand |
 | `rig--protocol.md` | `docs/rig/milestones/p3/protocol.md` | aetheris-agents | `d82cf7e` | 2026-06-11 | on-demand |
 | `rig--current-state-2026-06.md` | `docs/rig/current-state-2026-06.md` | aetheris-agents | `f723ee5` | 2026-07-20 | export |
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 | on-demand |
@@ -99,20 +99,22 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `718bbc5` | 2026-09-10 | on-demand |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `7a94164` | 2026-09-15 | on-demand |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `633b4e5` | 2026-09-15 | export |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `4fd59b6` | 2026-09-17 | export |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `d3f43b7` | 2026-09-20 | export |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 | on-demand |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `4fd59b6` | 2026-09-17 | on-demand |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `5a64de3` | 2026-09-20 | on-demand |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 | on-demand |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
+| `aetheris-agents--bl-266-brief.md` | `docs/aetheris/backlog/bl-266-run-event-streaming.md` | aetheris-agents | `bef509b` | 2026-09-20 | on-demand |
 | `m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-triage-2026-09.md` | `docs/backlog-triage-2026-09.md` | aetheris-agents | `29ed2a2` | 2026-09-14 | on-demand |
 | `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `4339ba7` | 2026-07-16 | export |
-| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `b079130` | 2026-09-17 | on-demand |
-| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `7257ca3` | 2026-09-16 | on-demand |
+| `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `53951cc` | 2026-09-19 | on-demand |
+| `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `179e7c5` | 2026-09-20 | on-demand |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
 | `aetheris--determinism-contract.md` | `docs/aetheris/determinism-contract.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
+| `aetheris--playground-api.md` | `docs/aetheris/playground-api.md` | aetheris | `2d93851` | 2026-09-19 | on-demand |
 | `aetheris--ROADMAP.md` | `ROADMAP.md` | aetheris | `481ae2a` | 2026-08-12 | export |
 | `aetheris--research-README.md` | `docs/aetheris/research/README.md` | aetheris | `324584c` | 2026-09-09 | on-demand |
 | `aetheris--research-index.md` | `docs/aetheris/research/index.md` | aetheris | `6c62345` | 2026-09-10 | both |
@@ -155,6 +157,7 @@ One line per ruling block, in the order they stood in this file; each block's fu
 - THE SURFACE COLUMN (2026-09-08) — every row assigned `export`, `on-demand` or `both` per design D-B; four rows added · [rulings.md](export-boundaries/rulings.md) — "THE SURFACE COLUMN — the design note's D-B applied, 2026-09-08. Every row assigned, four"
 - THE TRIAGE RECORD (2026-09-14) — `backlog-triage-2026-09.md` added `on-demand` · [rulings.md](export-boundaries/rulings.md) — "THE TRIAGE RECORD — one row added, 2026-09-14."
 - THE EVIDENCE TREE (2026-09-14) — `docs/evidence/` is `on-demand` by construction, with no row per file · [rulings.md](export-boundaries/rulings.md) — "THE EVIDENCE TREE — on-demand by construction, 2026-09-14 (BL-252)."
+- THE STREAMING CONTRACT AND ITS BRIEF (2026-09-20) — `aetheris--playground-api.md` and `aetheris-agents--bl-266-brief.md` added `on-demand` · [rulings.md](export-boundaries/rulings.md) — "THE STREAMING CONTRACT AND ITS BRIEF — two rows added, 2026-09-20."
 
 ## Export boundary log
 
@@ -185,4 +188,5 @@ from this file at `1592c95`.
 - 2026-09-15 · first index-shaped backlog · 11 rows re-pinned · kernel 390,691 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, the first index-shaped backlog."
 - 2026-09-15 · capability matrix catches up, first run under the BL-253 split · 4 rows re-pinned · kernel 241,086 bytes · [docs/export-boundaries/2026-09-15.md](export-boundaries/2026-09-15.md) — "Export boundary — 2026-09-15, second record: the capability matrix catches up."
 - 2026-09-17 · m-scheduler-hardening close · 5 rows re-pinned · kernel 239,911 bytes · [docs/export-boundaries/2026-09-17.md](export-boundaries/2026-09-17.md) — "Export boundary — 2026-09-17, the m-scheduler-hardening close."
+- 2026-09-20 · streaming-contract boundary · 6 rows re-pinned, 2 added · kernel 244,750 bytes · [docs/export-boundaries/2026-09-20.md](export-boundaries/2026-09-20.md) — "Export boundary — 2026-09-20, the streaming-contract boundary."
 

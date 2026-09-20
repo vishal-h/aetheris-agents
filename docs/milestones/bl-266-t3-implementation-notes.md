@@ -36,8 +36,23 @@ no harness file.
 - **`TrajectoryView.tsx` holds both a §2.8 commit-5 hunk and a commit-6 (T3.9) hunk.** Splitting
   them needs `git add -p`.
 
+## Click-through
+
+`2026-09-20, against main at agents 4a43ee9 / harness 2d93851 — API on 127.0.0.1:4001, tokens
+configured, Rig on the same database. Partial: the gate (plan §2.7) is not discharged.`
+
+- **Verified.** With the trajectory file moved aside, a terminal run's trajectory opened through
+  the stream and rendered "reconstructed from events". With a wrong `AETHERIS_API_TOKEN` the same
+  view surfaced `stream failed (unauthorized HTTP 401 unauthorized): Invalid or missing bearer
+  token` — the `client_error` path, so the stream and not SQLite served the view. curl against the
+  harness confirmed its own SSE output: 40 events in seq order, `id:` on event frames only, a
+  control frame with no `id:`, `run_terminal`/`done`, then close.
+- **Not exercised.** Live append on a running run; reconnect after a harness restart;
+  `auth_revoked` mid-stream; slot release on navigate-away; the poll fallback with both env vars
+  unset — BL-274.
+
 ## Owed
 
-- The click-through merge gate (plan §2.7). It is not run: a live harness with both env vars
-  set, a running run streaming, then completing and reloading, then the same with the vars unset.
+- The click-through merge gate (plan §2.7), partial — see §Click-through. The five checks it did
+  not reach are BL-274.
 - BL-272 (O5) and BL-273 (O6), filed open.

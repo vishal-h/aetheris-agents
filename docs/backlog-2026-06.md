@@ -369,16 +369,6 @@
 
 ---
 
-### BL-266 — no streaming transport for run/trajectory updates: a UI must poll
-- state: open
-- type: missing capability
-- area: harness — API (Rig/UI consumer)
-- priority: medium _(proposed)_ · size: L _(proposed; docs-first per repo convention)_
-- evidence: docs/evidence/BL-266.md
-- done-when: a UI can follow a run without polling over BOTH an SSE stream and a WebSocket, each auth-gated by the existing token model, built on a transport-neutral core (tranches T0 core, T1 SSE, T2 WebSocket, T3 Rig consumer); wakeups originate inside Store after commit, never a server-side poll-and-forward; no cursor replays from the start and a cursor resumes after it; events arrive in seq order; each frame carries the full event body (the EventRow projection: id, run_id, step, seq, event_type, payload, timestamp) rather than the trajectory summary; once runs.status is terminal the stream delivers every event with seq ≤ runs.terminal_seq, sends a stream_end control frame and closes; non-terminal runs stream only from the hosting VM; a slow or disconnected client neither wedges the run nor leaks; harness playground-api.md documents the endpoints (T1/T2) and Rig's specs.md documents its consumer with drift green (T3); tests assert subscribe → append N → receive N in seq order → terminal closes, and that an unauthenticated subscribe is refused. Design: docs/aetheris/backlog/bl-266-run-event-streaming.md. T1 is blocked by BL-267.
-
----
-
 ## Drift apparatus (optional hardening)
 
 ### BL-046 — Tool-result payload key is a convention, not a contract: `"output"` vs `"result"`
@@ -1513,3 +1503,23 @@
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-273.md
 - done-when: _(proposed)_ every `server.ex:` citation in `rig/src` and `rig/src-tauri/src` names its anchor with the line as a parenthetical and resolves at the harness commit it cites; `useTrajectory.ts`'s write-result sentence states what `run_outcome/2` does.
+
+---
+
+### BL-274 — five of BL-266 T3's click-through checks were never exercised
+- state: open
+- type: verification
+- area: rig — BL-266 T3 run-event-stream consumer
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-274.md
+- done-when: _(proposed)_ each of the five — live append on a running run, reconnect with cursor resumption, `auth_revoked` mid-stream, slot release on navigate-away, and the poll fallback with both env vars unset — is exercised once against a live harness and its result recorded, or an automated substitute exists; the T3 notes' §Click-through carries the outcome either way.
+
+---
+
+### BL-275 — `mix aetheris` does not load `config/runtime.exs`, so the documented token override has no effect
+- state: open
+- type: defect
+- area: harness — `mix aetheris` task / runtime config
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-275.md
+- done-when: _(proposed)_ starting the server the way the runbook documents honours `AETHERIS_PLAYGROUND_TOKENS`, or the docs state the supported way to start it so the override is reached; carried by a test or by a recorded disposition.

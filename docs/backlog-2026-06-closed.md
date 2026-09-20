@@ -9740,3 +9740,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-267.md
 - done-when: a worker :DOWN whose run is not already terminal durably writes runs.status = failed through Store.upsert_run; a run already terminal is not overwritten; a test kills the worker client and asserts the persisted status in both cases.
 - disposition: fixed
+
+---
+
+### BL-266 — no streaming transport for run/trajectory updates: a UI must poll
+- state: done
+- type: missing capability
+- area: harness — API (Rig/UI consumer)
+- priority: medium _(proposed)_ · size: L _(proposed; docs-first per repo convention)_
+- evidence: docs/evidence/BL-266.md
+- done-when: a UI can follow a run without polling over BOTH an SSE stream and a WebSocket, each auth-gated by the existing token model, built on a transport-neutral core (tranches T0 core, T1 SSE, T2 WebSocket, T3 Rig consumer); wakeups originate inside Store after commit, never a server-side poll-and-forward; no cursor replays from the start and a cursor resumes after it; events arrive in seq order; each frame carries the full event body (the EventRow projection: id, run_id, step, seq, event_type, payload, timestamp) rather than the trajectory summary; once runs.status is terminal the stream delivers every event with seq ≤ runs.terminal_seq, sends a stream_end control frame and closes; non-terminal runs stream only from the hosting VM; a slow or disconnected client neither wedges the run nor leaks; harness playground-api.md documents the endpoints (T1/T2) and Rig's specs.md documents its consumer with drift green (T3); tests assert subscribe → append N → receive N in seq order → terminal closes, and that an unauthenticated subscribe is refused. Design: docs/aetheris/backlog/bl-266-run-event-streaming.md. T1 is blocked by BL-267.
+- disposition: fixed

@@ -1,6 +1,9 @@
 # BL-266 — Run event streaming (design brief)
 
-**Status:** design decided — T0, T1, T2 and T3 applied; T3's click-through merge gate not yet run.
+**Status:** all four tranches landed — T0, T1 and T2 in the harness, T3 in agents. T3's
+click-through merge gate is partial: what was and was not exercised is recorded in
+`docs/milestones/bl-266-t3-implementation-notes.md` §Click-through, and the five
+unexercised checks are BL-274. Row BL-266 closed 2026-09-20.
 **Type:** design brief. A contract for T0–T3 cc:prompts, cited by item number (`§3 C5`).
 **Date:** 2026-09-17
 **Amended:** 2026-09-18, at T0 apply — the T0 rulings (R-S1–R-S3, R-D1, R-D2, R-D4) in C3, C5.1,
@@ -8,6 +11,8 @@ C6, C7, C8.3, C9.3; C5.8 and C16 added; §5's T0 items and the C9.3 T1 item remo
 2026-09-18, at T1 apply — rulings O4, O1, D2 and O6: C1.4 and C8.5 added; C10.2 amended.
 2026-09-19, at T2 apply — rulings O2, O3, O4 and O6: C3.4 amended; C12.6 and C12.7 added.
 2026-09-19, at T3 apply — ruling 13: T3.6 reworded.
+2026-09-20, at the BL-266 close — Status only: tranches landed, click-through partial. No
+item changed.
 **Row:** BL-266. **Blocked by:** BL-267 (T1 only).
 **Citations:** `H` = harness `aetheris` at `191970a`; `A` = `aetheris-agents` at `2cb3fa7`.
 Paths under `deps/` are the versions pinned by harness `mix.lock@H`.

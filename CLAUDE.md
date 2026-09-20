@@ -333,19 +333,30 @@ is the only thing covering it.
 it was verified against; claude-code treats divergence between ticket text and repo reality
 as a deviation to note, never to silently follow. Source: BL-001, BL-015, BL-002.
 
-**Amend a commit while it is private to the ticket and uncited; append once a packet has been
-issued against it.** A review packet cites its commit in its done-checks, so amending afterwards
-leaves those citations pointing at a tree that never existed — an unfalsifiable reference, which is
-the class the rules in this section exist to remove, and the reader cannot tell a stale hash from a
-fabricated one. The price of the alternative is one extra commit in the log. Applied three times on
-2026-08-16: the export-mechanism round landed its amendment as a fourth commit (`6ffcd76`, after
-`5dae22b`/`67b1127`/`907b3fa`) rather than an amend, on exactly this ground; BL-152's and BL-153
-s0's amendment rounds each landed as a second commit (`ace771c` after `2868a3e`; `8653546` after
-`900662f`) for the same reason.
-`Source: the cc:prompt preambles of 2026-08-16, promoted at the handoff of 2026-08-17. It lands
-beside the rule above because that one says a claim cites the commit it was verified against and
-this one says what a cited commit may then do. The six commits were resolved from `git log` at the
-promotion, not transcribed from the handoff.`
+**Amend a commit while it is unpushed; append once it is pushed.** A SHA that has not been pushed
+resolves for no one but the executing checkout, so a citation to it is not yet a durable reference
+and nothing is protected by refusing to amend it; a pushed SHA resolves for others, and amending it
+leaves their citations pointing at a tree that never existed — the unfalsifiable-reference class the
+rules in this section exist to remove. **Once a packet has been issued against a commit, amend it
+only on the arbiter's instruction** — an unprompted amendment changes bytes the reviewer has already
+read. **An amend that supersedes a SHA named in an issued packet states that SHA in its message and
+says what cited it.** The limbs protect different things — push state protects **resolvability**, the
+packet protects **review integrity** — and a commit can be inside one and outside the other, which is
+the case the arbiter's instruction settles.
+`Source: the cc:prompt preambles of 2026-08-16, promoted at the handoff of 2026-08-17; trigger
+corrected 2026-09-20 on the arbiter's ruling of that date. It lands beside the rule above because
+that one says a claim cites the commit it was verified against and this one says what a cited
+commit may then do.`
+`[Corrected 2026-09-20 (BL-280). The trigger was citation and is now push state, and the packet's
+protection is stated as its own limb rather than carried by the trigger. It previously read:
+*"Amend a commit while it is private to the ticket and uncited; append once a packet has been issued
+against it."* Found by following it — the BL-274 fixture round amended `722e226` on the arbiter's
+instruction, a SHA an issued packet's `drift_check` done-check had cited and that had never been
+pushed, and the executing session complied and reported the contradiction rather than letting the
+two practices diverge; the superseded-SHA obligation above is that round's mitigation promoted. The
+three 2026-08-16 landings the superseded entry carried as instances were decided on the citation
+trigger and are not carried forward as instances of this one — whether those commits were pushed is
+not established here. Evidence: `docs/evidence/BL-280.md`.]`
 
 The **prose budget** in the harness `CLAUDE.md` binds every artifact this repo produces —
 packets, notes, reviews, backlog rows, boundary records. It caps expression, not coverage.

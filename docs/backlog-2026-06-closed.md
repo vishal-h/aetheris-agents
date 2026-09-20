@@ -9762,3 +9762,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-276.md
 - done-when: the harness runbook documents the streaming endpoints' operational surface — the four config keys, the working token recipe with the BL-275 trap named, reverse-proxy requirements, and the capacity refusal — and the runbook introduces the `/api/playground/*` namespace, its bearer auth and `api_bind` default, so the streaming section does not reference surfaces the file never establishes.
 - disposition: fixed
+
+---
+
+### BL-280 — the amend rule's trigger is push state, not citation
+- state: done
+- type: docs
+- area: aetheris-agents — `CLAUDE.md` §Definition of done
+- priority: unset — the arbiter's · size: XS _(proposed)_
+- evidence: docs/evidence/BL-280.md
+- done-when: `CLAUDE.md` §Definition of done states the amend rule on all three limbs — amend while unpushed and append once pushed; amend a commit a packet has been issued against only on the arbiter's instruction; and an amend superseding a SHA an issued packet named states that SHA in its message and says what cited it — with push state named as protecting resolvability and the packet as protecting review integrity, and the superseded wording quoted once in a dated block.
+- disposition: fixed

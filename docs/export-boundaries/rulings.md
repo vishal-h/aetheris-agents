@@ -330,5 +330,42 @@ Moved from docs/project-knowledge-manifest.md at 1592c95, 2026-09-15. Body verba
 > construction, and contract-vs-code drift for the stream envelope is the
 > `stream_envelope` arm's job, not this manifest's.
 
+> **THE SYNTHESIS DEMOTION — `aetheris--bl-008-synthesis.md` goes from `both` to `on-demand`,
+> 2026-09-21 (R2).** Demoting `aetheris--bl-008-synthesis.md` from `both` to `on-demand` executes
+> the deferred transition already specified and justified by ratified D-B; it does not make a new
+> surface-assignment decision. Therefore BL-202 does not require a new probe. BL-203 continues to
+> gate surface assignments not already determined by a ratified ruling. D-B was ratified in the
+> design note's r1 (`aetheris/docs/aetheris/research/hybrid-context-design-2026-08.md` §2). It
+> assigned the synthesis
+> `both` *"while under ratification; demote after"*, so the demotion and its condition were decided
+> together. The condition was met on 2026-09-11, when the arbiter ratified the synthesis: see its
+> frontmatter `status: ratified` and the dated block at line 43. Reachability is unchanged. The
+> synthesis lives under `docs/aetheris/research/`, and
+> `aetheris--research-index.md` indexes that tree and is itself a kernel row. The index carries the
+> synthesis's entry, so a session working from the store reaches the synthesis at HEAD through it.
+> The row keeps its pin. The kernel goes from ten rows to nine, and the research index is now the
+> only `both` row.
+
+> **THE CEILING RATCHET MOVES TO THE BOUNDARY, 2026-09-21 (R3).** At each export boundary, with
+> the measured sum taken after all of that boundary's manifest edits:
+>
+> ```
+> candidate   = ceil_1000(measured_kernel_bytes + 10,000)
+> new_ceiling = min(current_ceiling, candidate)
+> ```
+>
+> An increase requires a separate recorded inclusion ruling in this file. A new kernel row still
+> names what it displaces, or it triggers a probe re-run (design §2.1). The 10,000 is the margin at
+> the boundary that sets the ceiling, not a standing guarantee: a boundary that leaves the ceiling
+> unchanged can leave less. Why: the margin stops ordinary filings between boundaries from failing
+> `--strict` on the ratchet alone (**BL-255**). The ratchet moves to the boundary step because the
+> previous trigger, *"a round that shrinks the kernel"*, went unapplied at the second 2026-09-15
+> boundary and at 2026-09-17.
+
+> **THE BACKLOG ROW IS D-B'S QUEUE, 2026-09-21 (R5).** Today's `docs/backlog-2026-06.md` is D-B's
+> *"backlog queue (`queue.md` post-split)"*, and its row stays `export`. Why: the index split of
+> **BL-252**, which reduced open rows to field lists, is the split D-B anticipated, and `queue.md`
+> was a name, not a requirement.
+
 ---
 

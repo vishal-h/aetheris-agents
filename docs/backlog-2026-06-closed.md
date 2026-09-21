@@ -9773,3 +9773,25 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-280.md
 - done-when: `CLAUDE.md` §Definition of done states the amend rule on all three limbs — amend while unpushed and append once pushed; amend a commit a packet has been issued against only on the arbiter's instruction; and an amend superseding a SHA an issued packet named states that SHA in its message and says what cited it — with push state named as protecting resolvability and the packet as protecting review integrity, and the superseded wording quoted once in a dated block.
 - disposition: fixed
+
+---
+
+### BL-255 — the kernel-ceiling decrease-only rule sets zero headroom, so the next backlog filing fails --strict
+- state: done
+- type: defect
+- area: process / project knowledge
+- priority: low · size: XS
+- evidence: docs/evidence/BL-255.md
+- done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
+- disposition: fixed
+
+---
+
+### BL-278 — the kernel ceiling's headroom is consumed mainly by backlog filings, not manifest bookkeeping, and the ceiling is DECREASE-ONLY
+- state: done
+- type: gate
+- area: aetheris-agents — project-knowledge kernel budget (`drift_check.py` `kernel_budget`, BL-002 boundary)
+- priority: unset — the arbiter's · size: S _(proposed)_
+- evidence: docs/evidence/BL-278.md
+- done-when: _(proposed)_ a boundary can be run without the manifest's own growth being what consumes the remaining headroom — by bounding or relocating the growing sections, or by a recorded ruling that resets the ceiling on a stated basis; carried by a measured figure at a boundary or by a recorded disposition.
+- disposition: fixed

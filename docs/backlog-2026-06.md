@@ -1424,14 +1424,6 @@
 - evidence: docs/evidence/BL-254.md
 - done-when: the three pointers (manifest header :25 the SURFACE COLUMN reference, and the 2026-09-07 record references at :71 and :76 — re-derive the line numbers at the fixing commit) resolve to where the blocks now live, by naming the `## Inclusion rulings` / `## Export boundary log` index entry or `docs/export-boundaries/`, rather than to a position in the file; and a check or sweep confirms no retained-header sentence still points at a moved block.
 
-### BL-255 — the kernel-ceiling decrease-only rule sets zero headroom, so the next backlog filing fails --strict
-- state: open
-- type: defect
-- area: process / project knowledge
-- priority: low · size: XS
-- evidence: docs/evidence/BL-255.md
-- done-when: the manifest header's Kernel ceiling rule states how much headroom a downward ratchet leaves — a fixed slack or a round-up — so that lowering the ceiling cannot make an ordinary backlog filing fail kernel_budget under --strict; and the rule names what re-tightens the slack as the kernel shrinks toward the target.
-
 ### BL-263 — a boot-resumed run is not yet registered when the scheduler's first tick runs, so `:overlap_live` cannot see it
 - state: open
 - type: defect — found while implementing BL-256, not demonstrated live
@@ -1533,16 +1525,6 @@
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-277.md
 - done-when: _(proposed)_ a mix invocation succeeds while previously built binaries are running — **both** the worker and the exec server, verified separately — by a staleness check or an equivalent; carried by a test or a recorded disposition.
-
----
-
-### BL-278 — the kernel ceiling is reached by manifest-row growth alone, and the ceiling is DECREASE-ONLY
-- state: open
-- type: gate
-- area: aetheris-agents — project-knowledge kernel budget (`drift_check.py` `kernel_budget`, BL-002 boundary)
-- priority: unset — the arbiter's · size: S _(proposed)_
-- evidence: docs/evidence/BL-278.md
-- done-when: _(proposed)_ a boundary can be run without the manifest's own growth being what consumes the remaining headroom — by bounding or relocating the growing sections, or by a recorded ruling that resets the ceiling on a stated basis; carried by a measured figure at a boundary or by a recorded disposition.
 
 ---
 

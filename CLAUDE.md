@@ -53,6 +53,23 @@ the very next round's prompt for that exact reason.
 documentation rounds were accumulating with nobody counting them — a declared
 type is what makes them countable. Landed here 2026-08-27.`
 
+**The round types are exactly three: `code`, `documentation`, `mechanical`.**
+- **code** — the diff changes executable source, tests, build/runtime configuration,
+  dependency manifests, or lockfiles.
+- **documentation** — the diff contains authored prose or authored procedural
+  instructions, and no code-classified change.
+- **mechanical** — every change is tool-produced or a semantics-preserving move,
+  re-pin, regeneration, or formatting operation, with no authored content and no
+  code-classified change.
+A mixed diff takes the first type that applies, in the order code → documentation →
+mechanical. So a lockfile bump is `code`; a generated index plus authored explanation
+is `documentation`; a pure re-pin or index refresh is `mechanical`. `refactor` and
+`defect fix (test)` describe a `code` round and are not types. A cc:prompt carries
+`ROUND TYPE: <type>` as its first substantive line; the template is
+`prompts/cc-prompt-template.md`.
+`Source: the arbiter's ruling of 2026-09-21. Earlier instances it subsumes:
+docs/reviews/bug-001-review-r2.md:65; docs/evidence/BL-279.md:115.`
+
 ---
 
 ## Commands

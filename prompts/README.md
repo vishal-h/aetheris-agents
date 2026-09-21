@@ -15,6 +15,7 @@ result as running it once. They do not assume any prior conversation context.
 |------|------|-------|
 | `bl-002-refresh-project-knowledge.md` | Assemble the Claude.ai project-knowledge bundle and update the manifest | [#43](https://github.com/vishal-h/aetheris-agents/issues/43) |
 | `reality-check.md` | Ground-truth snapshot of Rig current state from source code | — |
+| `cc-prompt-template.md` | Opening lines every cc:prompt carries | — |
 
 ---
 

@@ -989,9 +989,11 @@ disposition. Read the wording there.
 
 ---
 
-### R43 — a round holds at most one commit for review.
+### R43 — a round holds at most one commit per repository for review.
 
 `2026-09-14 — the arbiter's round discipline, recorded in the cc:prompt of that date and landed by claude-code. The text lives in ONE place, the harness methodology: `../aetheris/docs/methodology/milestone-methodology.md` §1's `[R43]` item (item 14 at harness `58991d5`), which states the rule and names m4 decision 6 as what it bounds; this entry points at it and does not restate it. Landed under R22.`
+
+`[Widened 2026-09-21 by the arbiter's ruling of that date: the item now bounds held commits per repository. The heading previously read "a round holds at most one commit for review."]`
 
 ---
 

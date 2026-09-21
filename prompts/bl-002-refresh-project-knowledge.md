@@ -40,7 +40,19 @@ the one place the rule is applied and the assembler uses it.
 
 Step 0 — Pre-flight, two halves, both before anything is written.
 
-**0a — Index generation first.** Every indexed tree's `index.md` is a
+**0a — Mirror check, then index generation.**
+
+First, before index generation or any write:
+
+    diff -q ../aetheris/docs/methodology/triad-loop.md docs/triad-loop.md
+
+Non-zero is a blocking STOP. Report both paths and resolve the mirror drift in its
+own justified edit (edit the harness copy; the manifest's mirror note says why)
+before continuing the boundary. Do not pin or assemble while the pair differs.
+`drift_check` has no byte-identity check between mirrors, so this command is the
+only detector. `[Added 2026-09-21, the arbiter's ruling of that date.]`
+
+Every indexed tree's `index.md` is a
 kernel row and the retrieval map of everything on the on-demand surface,
 so a stale index exported here is a stale map in the store until the
 next boundary. For each manifest row whose path is an `index.md`:

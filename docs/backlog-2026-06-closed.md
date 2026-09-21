@@ -9806,3 +9806,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-279.md
 - done-when: _(proposed)_ `mix hex.audit` exits 0 from the harness root, or the residual advisory carries a recorded rationale and the gate runs expected-red named with this ref; carried by a version bump or a recorded disposition.
 - disposition: fixed
+
+---
+
+### BL-281 — two documents still state the amend rule's superseded citation trigger; both edits are transcription, nothing is left to decide
+- state: done
+- type: docs
+- area: harness — `docs/methodology/milestone-methodology.md` `[R44]`; aetheris-agents — `docs/milestones/hc-consolidation.md` R22 note
+- priority: unset — the arbiter's · size: XS _(proposed)_
+- evidence: docs/evidence/BL-281.md
+- done-when: _(proposed)_ `[R44]:134` states its "unamended" as following from BL-280's review-integrity limb — *once a packet has been issued against a commit, amend it only on the arbiter's instruction* — rather than from the superseded amend-while-uncited wording, R44's conclusion unchanged; and the `hc-consolidation.md` R22 note carries a dated supersession block quoting the superseded sentence in the position it occupied. Both are restatements against a rule already settled at BL-280; carried by the two edits.
+- disposition: fixed

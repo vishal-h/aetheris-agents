@@ -23,13 +23,12 @@
 > `state: done`, add `disposition`, move the field list to `backlog-2026-06-closed.md`; the
 > evidence file stays. BL-252 itself predates this rule and is left as committed.
 >
-> **`ready` requires a stated `done-when`.** A row whose `done-when` reads `not stated` may not
-> be set `ready`.
+> **Every open row states its `done-when`.** A non-terminal row whose `done-when` reads
+> `not stated` fails `--check`.
 >
 > **`done-when` length.** The backlog index states the closure test in at most 240 UTF-8
 > bytes. Supporting cases, rationale, history, and procedural detail belong in the row's
-> evidence file. Convention from 2026-09-21: it binds new filings and rows touched since;
-> `backlog_status.py` does not enforce it yet.
+> evidence file. `backlog_status.py --check` enforces it on non-terminal rows (2026-09-21).
 
 ---
 

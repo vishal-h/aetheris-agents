@@ -108,7 +108,9 @@ Keys in exactly that order and nothing else before the trailer (blank lines, `--
 `## ` container heading, which ends the row); at most `INDEX_MAX_LINES` lines; one id;
 no `(#…)` suffix; and, for a section read from a file, the evidence file exists beside
 the backlog and opens `# <ID> — `. Both shapes are accepted in both files, so the split
-lands in batches; placement covers both vocabularies (`ALL_TERMINAL`).
+lands in batches; placement covers both vocabularies (`ALL_TERMINAL`). A non-terminal
+row's `done-when` must not read `not stated` and is at most `DONE_WHEN_MAX_BYTES` UTF-8
+bytes; a terminal row is exempt from both.
 """
 
 import argparse
@@ -141,6 +143,7 @@ INDEX_STATES = ("open", "committed", "ready", "blocked", "triggered", "verifying
 INDEX_TERMINAL = ("done",)
 DISPOSITIONS = ("fixed", "verified", "accepted-risk", "evidence-only", "superseded", "rejected")
 INDEX_MAX_LINES = 12
+DONE_WHEN_MAX_BYTES = 240
 INDEX_LINE_RE = re.compile(
     r"- (state|type|area|priority|blocked-by / trigger|evidence|done-when|disposition): (\S.*)"
 )
@@ -313,9 +316,15 @@ class Section(NamedTuple):
         if state not in INDEX_STATES:
             problems.append(f"`- state: {state}` is not one of {'/'.join(INDEX_STATES)}")
             state = None
-        # Header rule (2026-09-14): `ready` requires a stated `done-when`.
-        if state == "ready" and values.get("done-when", "").startswith("not stated"):
-            problems.append("`state: ready` needs a stated `done-when`, not `not stated`")
+        # Header rules (2026-09-21): a non-terminal row states its `done-when`, in at most
+        # DONE_WHEN_MAX_BYTES UTF-8 bytes. A terminal row's done-when stays as it stood.
+        if state is not None and state not in INDEX_TERMINAL:
+            done_when = values.get("done-when", "")
+            if done_when.startswith("not stated"):
+                problems.append("a non-terminal row needs a stated `done-when`, not `not stated`")
+            n = len(done_when.encode("utf-8"))
+            if n > DONE_WHEN_MAX_BYTES:
+                problems.append(f"`- done-when:` is {n} UTF-8 bytes, over {DONE_WHEN_MAX_BYTES}")
         if " · size: " not in values.get("priority", ""):
             problems.append("`- priority:` carries no ` · size: `")
         disposition = values.get("disposition")

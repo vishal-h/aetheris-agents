@@ -945,14 +945,55 @@ def test_the_open_file_holds_index_rows_only():
         "positive control: the BUG- space is read"
 
 
-def test_ready_with_done_when_not_stated_fails(tmp_path):
-    """Header rule, 2026-09-14: a row whose done-when reads `not stated` may not be `ready`."""
-    rows = (INDEX_ROW.replace("- state: open", "- state: ready")
-            .replace("- done-when: the thing is done.", "- done-when: not stated — see evidence"))
-    path = _index_tree(tmp_path, rows=rows)
+NON_TERMINAL = [s for s in bs.INDEX_STATES if s not in bs.INDEX_TERMINAL]
+
+
+def _with(state="open", done_when="the thing is done."):
+    rows = (INDEX_ROW.replace("- state: open", f"- state: {state}")
+            .replace("- done-when: the thing is done.", f"- done-when: {done_when}"))
+    if state in bs.INDEX_TERMINAL:
+        rows += "- disposition: fixed\n"
+    return rows
+
+
+def test_the_non_terminal_states_are_six():
+    assert len(NON_TERMINAL) == 6, NON_TERMINAL
+
+
+@pytest.mark.parametrize("state", NON_TERMINAL)
+def test_a_non_terminal_row_with_done_when_not_stated_fails(tmp_path, state):
+    """Header rule, 2026-09-21: every open row states its done-when (was `ready` only)."""
+    path = _index_tree(tmp_path, rows=_with(state, "not stated — see evidence"))
     (row,) = _read(path)
-    assert any("needs a stated `done-when`" in p for p in row.problems), row.problems
+    assert "a non-terminal row needs a stated `done-when`, not `not stated`" in row.problems, \
+        row.problems
     assert bs.main(["--check", "--file", str(path)]) == 1
+
+
+@pytest.mark.parametrize("n,fails", [(240, False), (241, True)])
+def test_done_when_is_at_most_240_bytes(tmp_path, n, fails):
+    path = _index_tree(tmp_path, rows=_with(done_when="x" * n))
+    (row,) = _read(path)
+    msg = f"`- done-when:` is {n} UTF-8 bytes, over 240"
+    assert (msg in row.problems) is fails, row.problems
+    assert row.problems == ((msg,) if fails else ())
+    assert bs.main(["--check", "--file", str(path)]) == (1 if fails else 0)
+
+
+def test_done_when_length_is_bytes_not_characters(tmp_path):
+    """239 characters, one of them `→` (3 bytes): 241 bytes, so it fails."""
+    done_when = "→" + "x" * 238
+    assert (len(done_when), len(done_when.encode("utf-8"))) == (239, 241)
+    path = _index_tree(tmp_path, rows=_with(done_when=done_when))
+    (row,) = _read(path)
+    assert row.problems == ("`- done-when:` is 241 UTF-8 bytes, over 240",), row.problems
+
+
+@pytest.mark.parametrize("done_when", ["not stated — see evidence", "x" * 300])
+def test_a_terminal_row_is_exempt_from_both_done_when_rules(tmp_path, done_when):
+    path = _index_tree(tmp_path, rows=_with("done", done_when))
+    (row,) = _read(path)
+    assert (row.value, row.problems) == ("done", ()), row.problems
 
 
 def test_ready_with_a_stated_done_when_passes(tmp_path):

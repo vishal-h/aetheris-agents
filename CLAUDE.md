@@ -384,9 +384,9 @@ The **prose budget** in the harness `CLAUDE.md` binds every artifact this repo p
 packets, notes, reviews, backlog rows, boundary records. It caps expression, not coverage.
 Canonical there; do not restate it here.
 
-**Every existing gate runs at ticket boundaries, even off-territory** (`mix test`,
+**Every existing gate runs at the ticket boundaries of a `code` round, even off-territory** (`mix test`,
 `tsc -b`/`bun run build`, `bun run lint`, sprint, `drift_check --strict`, the Python
-whole-suite gate below). A red gate gets a
+whole-suite gate below). `[Scoped to code rounds 2026-09-21, the arbiter's ruling of that date; see Gates by round type.]` A red gate gets a
 tracked ticket the day it's found — never carried silently. Gates that only run when a ticket
 happens to touch their territory rot invisibly, and each rot normalizes the next: `mix test`
 was red before BL-003, `tsc -b`/`bun run build` red for three weeks (p9-t4), `bun run lint` red

@@ -147,7 +147,7 @@
 - area: Harness
 - priority: low · size: XS–S
 - evidence: docs/evidence/BL-054.md
-- done-when: the fixed-ms windows in `run_helpers_timeout_test.exs` are made load-insensitive (poll for the state transition rather than assert against a wall-clock budget — the pattern the harness `CLAUDE.md` already promotes, *"poll for trajectory events, not time"*), or the tests are tagged so a loaded full-suite run cannot flake them; and BL-050's race is settled.
+- done-when: the fixed-ms windows in `run_helpers_timeout_test.exs` poll for the state transition, or the tests are tagged so a loaded full-suite run cannot flake them; and BL-050's race is settled.
 
 ---
 
@@ -210,7 +210,7 @@
 - area: cloudcost
 - priority: medium · size: S
 - evidence: docs/evidence/BL-076.md
-- done-when: `load_prior_snapshots`/`month_on_month` scope priors to the providers present in the run's own bundles, with a test asserting the `no_prior_month` path survives another provider's history sitting in the same tree, and a second asserting an N>1 run is unchanged (so the fix does not over-filter).
+- done-when: `load_prior_snapshots`/`month_on_month` scope priors to the run's own providers; one test keeps `no_prior_month` alive beside another provider's history, a second shows an N>1 run unchanged.
 
 ---
 
@@ -221,7 +221,7 @@
 - priority: low-medium · size: S
 - blocked-by / trigger: the first fork of a Gemini tool run
 - evidence: docs/evidence/BL-061.md
-- done-when: a Gemini fork of a tool step has been run and its outcome recorded, **and §4 is updated from that work either way** — the limitation is confirmed harmless and the clause says so, *or* the signature is recorded, the fork round-trips it, and the clause's Gemini scoping is corrected in the same change, with a test that fails if the block loses its signature.
+- done-when: a Gemini fork of a tool step is run and recorded, and §4 is updated either way: the limitation is confirmed harmless, or the signature is recorded and round-trips with a test that fails if it is lost.
 
 ---
 
@@ -231,7 +231,7 @@
 - area: harness
 - priority: medium · size: M
 - evidence: docs/evidence/BL-059.md
-- done-when: a run whose provider response carries multiple `tool_use` blocks either executes and records all of them (a), or cannot occur because the request disables parallel tool use (b) — with the choice recorded in the determinism contract, and a test that fails if the extra blocks are silently dropped.
+- done-when: multiple `tool_use` blocks in one response are all executed and recorded, or the request disables parallel tool use; the choice is in the determinism contract; a test fails if extra blocks are dropped.
 
 ---
 
@@ -250,7 +250,7 @@
 - priority: low · size: S
 - blocked-by / trigger: do it the next time `fetch_aws.py` is legitimately edited
 - evidence: docs/evidence/BL-078.md
-- done-when: `AWSClients` / `load_credentials` / `warn_shadowing_env` / `enumerate_regions` live in `scripts/_aws.py`; both CLIs import from there; `fetch_aws.py`'s existing 62 AWS tests and t4's suite stay green with no fixture change (the check that it *was* a relocation and not a change — the same evidence t2 used when the type constants moved to `_normalized.py`).
+- done-when: the four AWS client helpers live in `scripts/_aws.py` and both CLIs import them; `fetch_aws.py`'s AWS tests and t4's suite stay green with no fixture change.
 
 ### BL-079 — cloudcost holds no S3 storage rate for `ap-south-1`, where this account's buckets live
 - state: triggered
@@ -300,7 +300,7 @@
 - area: aetheris-agents
 - priority: medium · size: M
 - evidence: docs/evidence/BL-085.md
-- done-when: with the credentials set, a Rig-launched AWS run authenticates with the read-only key and produces its report; `CLOUDCOST_AWS_*` appears nowhere in the trajectory or `config_json`; the operator can pick aws vs do per launch; the runbook records the posture above.
+- done-when: a Rig-launched AWS run authenticates with the read-only key and reports; `CLOUDCOST_AWS_*` appears in no trajectory or `config_json`; the operator picks aws or do per launch; the runbook records the posture.
 
 ### BL-086 — Trajectory: label steps by their `run_command` stage
 - state: open
@@ -308,7 +308,7 @@
 - area: aetheris-agents
 - priority: medium · size: S
 - evidence: docs/evidence/BL-086.md
-- done-when: a cloudcost run labels its stages (`fetch_aws` → `detect_orphans` → `compose_report_data` → `render_report`, plus `detect_optimization_signals` when `CLOUDCOST_OPTIMIZATION=1`); a docbuilder run shows its stages; non-script steps render unchanged.
+- done-when: a cloudcost run and a docbuilder run label their steps by `run_command` stage, including `detect_optimization_signals` when enabled; non-script steps render unchanged.
 
 ### BL-087 — `payslip/tools.json` omits a runnable CLI
 - state: open
@@ -359,7 +359,7 @@
 - area: aetheris-agents
 - priority: medium · size: M/L
 - evidence: docs/evidence/BL-094.md
-- done-when: an operator can launch a named config-style orchestrator from Rig without an LLM planning turn; the driver-vs-config discriminator is explicit and tested (including the negative — a config file through the wrong path must fail loudly, not exit 0); `specs.md`, `architecture.md` and the p9 t4 notes agree with the code; cloudcost is the first consumer and its runbook §Rig loses the "interim" caveat.
+- done-when: Rig launches a named config-style orchestrator with no LLM planning turn; the driver-vs-config discriminator is tested, including a loud failure on the wrong path; specs, architecture and cloudcost's runbook agree.
 
 ---
 
@@ -371,7 +371,7 @@
 - area: Harness
 - priority: low · size: S
 - evidence: docs/evidence/BL-046.md
-- done-when: the `:tool_result` payload contract is stated in one place (a `@type` plus docstring on the writer side, or a documented accessor), the existing readers are pointed at it, and adding a writer that invents a third key is caught — by a test or by there being only one way to write the payload.
+- done-when: the `:tool_result` payload contract is stated in one place, existing readers point at it, and a writer inventing a third key is caught by a test or by construction.
 
 ---
 
@@ -391,7 +391,7 @@
 - area: Harness
 - priority: medium · size: S–M
 - evidence: docs/evidence/BL-057.md
-- done-when: the question is answered and recorded; the behaviour matches the answer (worker started, or config rejected); `OverlayAutonomousTest`'s `@moduletag :skip` is removed and it passes, or the test is rewritten against whatever the answer makes correct; and the blast radius on the six files is walked, not assumed.
+- done-when: the question is answered and recorded; behaviour matches it (worker started, or config rejected); `OverlayAutonomousTest` passes unskipped or is rewritten to the answer; the six files' blast radius is walked.
 
 ---
 
@@ -401,7 +401,7 @@
 - area: Harness
 - priority: low (capture fix) / unknown (the flake itself) · size: XS
 - evidence: docs/evidence/BL-051.md
-- done-when: gate runs capture full test output to a file (summary *and* failure blocks) so a single occurrence is identifiable — this is a habit fix, not a code fix, and belongs in whatever runs the gates; and if the flake recurs with a name, it gets its own row with a mechanism.
+- done-when: gate runs capture full test output (summary and failure blocks) to a file; if the flake recurs with a name it gets its own row with a mechanism.
 
 ---
 
@@ -421,7 +421,7 @@
 - area: Drift apparatus
 - priority: low · size: S
 - evidence: docs/evidence/BL-185.md
-- done-when: `ARCHIVED-ONLY` is promoted from `notes` to `problems` in `resolve`, so `--check` exits 1 on it; the promotion lands with its own red-by-mutation evidence (a fixture row put into the state, watched to fail, restored from a sha-verified working-copy backup); and the corpus population is **re-measured at the promoting commit and found to be 0** rather than inherited from this row — `python3 scripts/backlog_status.py --census` prints it on the `ARCHIVED-ONLY` line, and the line prints even when it is zero for exactly this reason.
+- done-when: `resolve` promotes `ARCHIVED-ONLY` from `notes` to `problems` so `--check` exits 1; the promotion carries red-by-mutation evidence; `--census` at that commit prints a population of 0.
 
 ---
 
@@ -445,7 +445,7 @@
 - priority: before anyone enriches `catalog.jsonl` · size: S–M
 - blocked-by / trigger: m-boxy-pipeline-1a t3 merged (resolver reads JSONL)
 - evidence: docs/evidence/BL-012.md
-- done-when: the enrichment option (A, B or C) is recorded in `docs/m-boxy-pipeline-1a.md`; a test shows populated `mapped_20_20_codes` and `notes` survive re-extraction.
+- done-when: the enrichment option (A, B or C) is recorded in `boxy-pipeline/docs/m-boxy-pipeline-1a.md`; a test shows populated `mapped_20_20_codes` and `notes` survive re-extraction.
 
 ---
 
@@ -477,7 +477,7 @@
 - area: aetheris-agents
 - priority: medium · size: M
 - evidence: docs/evidence/BL-098.md
-- done-when: the §Normalized inventory envelope carries a sanctioned extras key, ratified doc-first per m3 §D-C (section-scoped edit applied against HEAD and diffed by the arbiter, before any adapter emits it); all three adapters emit it; `compose_report_data.py` carries it through; and the report surfaces "this class could not be assessed" distinctly from "this class is empty".
+- done-when: the §Normalized inventory envelope carries an extras key, ratified doc-first per m3 §D-C; all three adapters emit it; compose carries it; the report separates "could not be assessed" from "empty".
 
 ---
 
@@ -487,7 +487,7 @@
 - area: aetheris-agents
 - priority: low-medium · size: XS–S
 - evidence: docs/evidence/BL-102.md
-- done-when: the export procedure states what the complete-but-unmarked sweep reads at a batch close; BL-084 and BL-085 are each adjudicated done-or-open, with a DONE section written for any that is done; and the rule's wording in `CLAUDE.md` §Definition of done — doc sync no longer reads as milestone-only if it currently does.
+- done-when: the export procedure states what the complete-but-unmarked sweep reads at a batch close; BL-084 and BL-085 are adjudicated done-or-open; the `CLAUDE.md` rule no longer reads as milestone-only.
 
 ---
 
@@ -497,7 +497,7 @@
 - area: harness
 - priority: low · size: XS
 - evidence: docs/evidence/BL-108.md
-- done-when: the gate's parse is robust to anything on stderr (or the capture stops merging it); the ambient-variable question is settled and recorded; and the anti-vacuity posture is shown — a constructed stderr-contaminated run must still yield the right verdict or fail loudly.
+- done-when: the gate's parse survives anything on stderr, or the capture stops merging it; the ambient-variable question is recorded; a constructed stderr-contaminated run yields the right verdict or fails loudly.
 
 ---
 
@@ -517,7 +517,7 @@
 - area: process
 - priority: medium · size: S to characterise
 - evidence: docs/evidence/BL-111.md
-- done-when: the surface is characterised to a ruling — is it a private scratchpad whose staleness is nobody's problem, or an untracked normative document that a retirement, a promotion or a correction owes an update? — and, if the latter, what a census owes it is written down somewhere a session will read.
+- done-when: a ruling says whether session memory is a private scratchpad or an untracked normative document; if the latter, what a census owes it is written where a session will read it.
 
 ---
 
@@ -527,7 +527,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-112.md
-- done-when: a `--json` payload containing non-ASCII is byte-identical with and without a UTF-8 locale in the environment, or the harness refuses to emit one and names the reason; the mutation posture is recorded against a run with no `LANG` and one with it; and Rig's fork consumer is verified unbroken either way.
+- done-when: a `--json` payload with non-ASCII is byte-identical with and without a UTF-8 locale, or the harness refuses with a reason; runs with and without `LANG` are recorded; Rig's fork consumer is verified.
 
 ---
 
@@ -537,7 +537,7 @@
 - area: aetheris-agents
 - priority: low · size: XS
 - evidence: docs/evidence/BL-113.md
-- done-when: an adapter constant naming a credential cannot be added, renamed, or mis-categorised without either the sprint selecting it correctly or a test failing; and the mutation posture is recorded for the **silent** cases specifically — a missed knob, a missed optional credential, and a credential mis-categorised as a knob — not only for the mandatory-credential case that already fails loudly.
+- done-when: an adapter credential constant cannot be added, renamed or mis-categorised without the sprint selecting it correctly or a test failing; the mutation posture is recorded for the three silent cases.
 
 ---
 
@@ -687,7 +687,7 @@
 - area: cloudcost
 - priority: medium · size: S–M
 - evidence: docs/evidence/BL-137.md
-- done-when: Every one of the eleven items in §Open items is read against HEAD and marked one of: still accurate; **trigger fired** (the condition it waits on has occurred — say what discharged it and whether the item survives); **framing stale** (the sentence is true but its stated reason is not — corrected in place with the superseded wording quoted, per decision 7); or **discharged elsewhere** (another milestone closed it — cite where).
+- done-when: each of the eleven §Open items in `cloudcost/milestone.md` is read against HEAD and marked still accurate, trigger fired, framing stale (corrected in place, old wording quoted) or discharged elsewhere (cited).
 
 ---
 
@@ -717,7 +717,7 @@
 - area: process / methodology
 - priority: medium · size: S to rule
 - evidence: docs/evidence/BL-140.md
-- done-when: the obligation is either stated in one named document with its scope (every correction, or a named subset) or declined with the reason recorded, and the existing `CLAUDE.md` correction-chasing entry is reconciled with whichever answer lands.
+- done-when: the same-commit recurrence sweep is stated in one named document with its scope, or declined with a reason; the `CLAUDE.md` correction-chasing entry is reconciled with the answer.
 
 ---
 
@@ -747,7 +747,7 @@
 - area: process / project knowledge
 - priority: medium · size: S to decide
 - evidence: docs/evidence/BL-143.md
-- done-when: either the refresh has a named owner and a trigger with a mechanism behind it (something that fires without a human remembering), or the permanent occupancy is accepted in writing with its reason recorded **where `drift_check`'s output sends a reader**.
+- done-when: the refresh has a named owner and a trigger that fires without a human remembering, or the permanent occupancy is accepted in writing where `drift_check`'s output sends a reader.
 
 ---
 
@@ -787,7 +787,7 @@
 - area: process / round vocabulary
 - priority: medium · size: S to decide
 - evidence: docs/evidence/BL-149.md
-- done-when: either a discriminator is stated in one named document and the citing rounds are consistent with it, or the collision is recorded as accepted with the reason, so the next census author is warned before building an instrument that cannot see it.
+- done-when: a discriminator for "live" is stated in one named document and the citing rounds match it, or the collision is recorded as accepted with its reason.
 
 ---
 
@@ -807,7 +807,7 @@
 - area: aetheris-agents
 - priority: medium · size: M
 - evidence: docs/evidence/BL-154.md
-- done-when: cancelling a run from Rig leaves a record that says it was cancelled — a terminal event and a `runs.status` distinguishable from both `running` and an unattended `failed` — and the UI reflects the actual end state of the steps rather than freezing them; **or** it is ruled that `failed`-by-sweep is the intended record for a cancel, in which case the sweep's own `run_orphaned` framing is corrected to say so and the UI half is still owed.
+- done-when: a Rig cancel leaves a terminal event and a `runs.status` distinct from `running` and `failed`, and the UI shows the steps' real end state; or `failed`-by-sweep is ruled intended, the sweep's framing corrected, the UI half still owed.
 
 ---
 
@@ -817,7 +817,7 @@
 - area: aetheris-agents
 - priority: medium-high · size: M
 - evidence: docs/evidence/BL-155.md
-- done-when: a stale or wrong capability matrix is caught by something other than a person noticing — with the mechanism's own blind spots named, since a row-existence check and a cell-content check are different instruments and the first does not imply the second; **or** it is ruled that the matrix is not gate-worthy, with that ruling recorded and the three consumers documented as reading an unchecked artefact.
+- done-when: a stale or wrong capability matrix is caught by a mechanism whose blind spots are named, or the matrix is ruled not gate-worthy and its three consumers are documented as reading an unchecked artefact.
 
 ---
 
@@ -827,7 +827,7 @@
 - area: aetheris-agents
 - priority: medium · size: M
 - evidence: docs/evidence/BL-156.md
-- done-when: the text on the approval card is either derived from something checkable — the agent's own manifest description, its matrix row, a per-agent template — or it is labelled on the card as model-generated and unverified, so an operator knows what they are reading.
+- done-when: the approval card's step text is derived from something checkable (manifest description, matrix row or per-agent template), or the card labels it model-generated and unverified.
 
 ---
 
@@ -858,7 +858,7 @@
 - priority: low until boxy-pipeline resumes, then blocking · size: M
 - blocked-by / trigger: boxy-pipeline resumes
 - evidence: docs/evidence/BL-159.md
-- done-when: boxy-pipeline's work resumes and, before the `pytestmark` lines are removed, the set has been run to completion once under a cap large enough to finish, its true duration recorded, every failure identified by name, and a decision taken on whether the set can be part of the gate at that duration or needs splitting.
+- done-when: boxy-pipeline resumes and, before the `pytestmark` lines go, the dormant set has run to completion once, its duration and every failure by name are recorded, and gate membership or a split is decided.
 
 ---
 
@@ -868,7 +868,7 @@
 - area: process / project knowledge
 - priority: medium · size: M
 - evidence: docs/evidence/BL-160.md
-- done-when: a decision is recorded on (3), and (1) and (2) are answered against whatever that decision makes possible — either the pattern set is ruled sufficient with its under-reach accepted in writing, or a corpus and its custody are defined and the value sweep is restored beside it.
+- done-when: a decision on (3) is recorded, and (1) and (2) are answered against it: the pattern set is ruled sufficient with its under-reach accepted, or a corpus and its custody are defined and the value sweep restored.
 
 ---
 
@@ -878,7 +878,7 @@
 - area: process / backlog discipline
 - priority: medium · size: S to decide
 - evidence: docs/evidence/BL-162.md
-- done-when: one of the three remedies is chosen and written into a named document with its scope, or the gap is accepted in writing with its reason — either way stating what a citing document owes its target, and where a reader of a row learns what has been routed to it.
+- done-when: one of the three remedies is written into a named document with its scope, or the gap is accepted with a reason; either way it states what a citing document owes its target and where a row's reader learns of it.
 
 ---
 
@@ -888,7 +888,7 @@
 - area: testing discipline
 - priority: medium · size: S to decide the class; the instance is already done
 - evidence: docs/evidence/BL-164.md
-- done-when: the class has a stated check — a rule in a standing document, a lint, or a sweep with a recorded result — **or** is accepted in writing with its reason, and either way the sweep above has been run and its result recorded, including the result that there is nothing else, if that is what it finds.
+- done-when: the class has a stated check (rule, lint or recorded sweep) or is accepted in writing with its reason; either way the sweep has been run and its result recorded, including a result of nothing.
 
 ---
 
@@ -898,7 +898,7 @@
 - area: process / gates
 - priority: medium _(proposed)_ · size: S _(proposed)_
 - evidence: docs/evidence/BL-166.md
-- done-when: `drift_check --strict` is green in a fresh clone at HEAD with no untracked environment, **or** the dependency is declared in a tracked file the gate reads and a run without it is a stated, legible skip rather than a machine-dependent pass — and, either way, a published `drift_check` done-check says what `payload_fields` sampled.
+- done-when: `drift_check --strict` is green in a fresh clone with no untracked environment, or the dependency is declared in a tracked file and its absence is a legible skip; a published done-check says what `payload_fields` sampled.
 
 ---
 
@@ -908,7 +908,7 @@
 - area: harness
 - priority: medium _(proposed)_ · size: M _(proposed)_
 - evidence: docs/evidence/BL-167.md
-- done-when: a reader can distinguish a complete run from an interrupted one **for all six producers**, by a mechanism no prompt line can skip — or it is ruled that per-step attestation is sufficient and the run-level property is retired, in which case BL-153's "writer that runs LAST UNCONDITIONALLY" clause is corrected to say so rather than left standing unmet.
+- done-when: a reader can tell a complete run from an interrupted one for all six producers by a mechanism no prompt line can skip; or per-step attestation is ruled sufficient and BL-153's "runs LAST UNCONDITIONALLY" clause is corrected.
 
 ---
 
@@ -949,7 +949,7 @@
 - area: documentation system
 - priority: medium · size: M
 - evidence: docs/evidence/BL-180.md
-- done-when: a form is chosen and stated; the population is converted **by a committed script**, with the script named and its before-and-after render on a real drawn sample published; **and** something keeps new instances out — a check, a lint, or a `drift_check` arm — that has been demonstrated red against a deliberately reintroduced instance and restored.
+- done-when: a form is chosen and stated; a committed, named script converts the population, with a before-and-after render on a real sample; a check, lint or `drift_check` arm is shown red on a reintroduced instance and restored.
 
 ---
 
@@ -959,7 +959,7 @@
 - area: harness
 - priority: not stated · size: not stated
 - evidence: docs/evidence/BL-183.md
-- done-when: all three: 1. The interleaving is **forced** — A's write held until after B's read — and the outcome recorded whichever way it lands. 2. If it is a real race, B's read is synchronised against A's write by a mechanism in the test or the agent, **not** by a sleep, a retry or a relaxed assertion — the same prohibitions BL-181 carried, and for the same reason. 3. The sibling assertions in that test named in BL-181's census output are ruled on rather than left implied
+- done-when: the interleaving is forced (A's write held past B's read) and the outcome recorded; a real race is synchronised by a mechanism, never a sleep, retry or relaxed assertion; the sibling assertions from BL-181's census are ruled on.
 
 
 ### BL-187 — the planner's `params` map has no declared per-use-case spec, and nothing validates it before the operator approves
@@ -968,7 +968,7 @@
 - area: aetheris-agents
 - priority: medium · size: M
 - evidence: docs/evidence/BL-187.md
-- done-when: an operator cannot approve a plan carrying a param key no agent in that plan reads, or a value outside that key's declared admissible set — either because the plan is rejected before the card renders, or because the card marks the offending param as unvalidated.
+- done-when: an operator cannot approve a plan with a param key no agent in it reads, or a value outside the key's declared set: the plan is rejected before the card renders, or the card marks the param unvalidated.
 
 
 ### BL-188 — nothing carries a month from a cloudcost request to the pipeline, so a month-named request cannot be honoured
@@ -977,7 +977,7 @@
 - area: aetheris-agents
 - priority: medium · size: S–M
 - evidence: docs/evidence/BL-188.md
-- done-when: a cloudcost request naming a month either produces a report for that month, or produces a plan or report that says which period it will actually cover and why it differs — for every one of the four providers, not only the two with the simple semantics.
+- done-when: for each of the four providers, a cloudcost request naming a month yields a report for that month, or a plan or report stating which period it covers and why it differs.
 
 
 ### BL-189 — a degraded run has no representation: the stage CLIs' three-valued status is collapsed to a boolean on both operator surfaces, in opposite directions
@@ -986,7 +986,7 @@
 - area: aetheris-agents and harness
 - priority: medium · size: M
 - evidence: docs/evidence/BL-189.md
-- done-when: on a nonzero step exit the Orchestrator step card shows the stage-CLI `errors[]` when stdout parses to that shape, else truncated stdout, **never a blank** — including the `partial`-with-`errors: null` case above, which has no `errors[]` to show; **and** a `partial` run is distinguishable from both success and failure on whichever surface the operator reads.
+- done-when: on a nonzero step exit the Orchestrator card shows the stage-CLI `errors[]`, else truncated stdout, never a blank, including `partial` with `errors: null`; a `partial` run is distinct from success and failure.
 
 ---
 
@@ -996,7 +996,7 @@
 - area: aetheris-agents
 - priority: medium · size: S
 - evidence: docs/evidence/BL-190.md
-- done-when: one of two, and the choice is the ticket's: 1. The test pins `--reference-date` to a date fixed relative to the fixture, and asserts the answer that date implies. 2. The test asserts the post-t3 truth — that a legible seat now yields a candidate — with a reference date still pinned, since without pinning the count moves with the calendar either way.
+- done-when: the seat test pins `--reference-date` relative to the fixture and asserts what that date implies, or asserts the post-t3 truth (a legible seat yields a candidate) with the date still pinned; the choice is the ticket's.
 
 ---
 
@@ -1006,7 +1006,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-198.md
-- done-when: in record mode, at the `prompt_built` site, the loop derives the prompt from prior trajectory events plus recorded config, compares it with the assembled one, and surfaces a divergence — as an event carrying the first differing position, or as a run failure; which one is the row's decision and is recorded on it.
+- done-when: in record mode, at `prompt_built`, the loop derives the prompt from prior events plus recorded config, compares it with the assembled one, and surfaces a divergence as an event or a run failure; the choice is recorded here.
 
 ---
 
@@ -1016,7 +1016,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-199.md
-- done-when: on a length stop with at least one tool call present, nothing executes; each call gets a recorded `tool_result` carrying a structured error (under `failure_category: "truncated_response"` if that vocabulary exists by then, otherwise a named error key stated on the row), and the loop continues to the next turn.
+- done-when: on a length stop with a tool call present, nothing executes; each call gets a recorded `tool_result` with a structured error (`truncated_response`, or an error key named on this row); the loop continues to the next turn.
 
 ---
 
@@ -1026,7 +1026,7 @@
 - area: aetheris
 - priority: low — cheap, and gated on nothing · size: S
 - evidence: docs/evidence/BL-202.md
-- done-when: one probe run under the TWO-SURFACE condition — Appendix A's project instructions live AND the store's index carrying the fetch header — filed as a measurement record under harness `docs/aetheris/research/` in the shape the series established: OKF frontmatter per that tree's `README.md` §Frontmatter convention (OKF F3); a **Run against** block stating both surfaces and the store copy each rests on; the operator's results file rendered verbatim as the probe table; and a **§Reading** that names the outcome against the two branches below rather than leaving the comparison to the reader.
+- done-when: one probe run under the two-surface condition is filed as a measurement record under harness `docs/aetheris/research/` in the series' shape, with a §Reading that names the outcome against the two branches in evidence.
 
 ### BL-203 — the on-demand pin column carries no obligation, and does not say so
 - state: open
@@ -1034,7 +1034,7 @@
 - area: aetheris-agents
 - priority: low — nothing fails; the cost is a reader chasing a lag that is not drift · size: XS
 - evidence: docs/evidence/BL-203.md
-- done-when: the manifest states, AT THE POINT A READER MEETS THE COLUMN — the opening paragraphs, not only the `Surfaces` paragraph below them — what the pin means for each surface: for `export` and `both` a claim about the store that check 8 compares, for `on-demand` a last-moved note that nothing compares.
+- done-when: the manifest states in its opening paragraphs what the pin means per surface: for `export` and `both`, a store claim that check 8 compares; for `on-demand`, a last-moved note nothing compares.
 
 ---
 
@@ -1044,7 +1044,7 @@
 - area: harness
 - priority: low while latent; the trigger that makes it live is ordinary work · size: S
 - evidence: docs/evidence/BL-206.md
-- done-when: all THREE harness sites hold the same set — `@event_types` (`event.ex:20`), the `@type event_type` union (`event.ex:~46`) and `@event_type_map` (`file.ex:96`) — AND that three-way identity is covered by a check, either a `drift_check.py` arm or a harness test.
+- done-when: `@event_types`, the `@type event_type` union and `@event_type_map` hold the same set, and a `drift_check.py` arm or a harness test covers that three-way identity.
 
 ---
 
@@ -1054,7 +1054,7 @@
 - area: harness
 - priority: high — a permitted basename with an out-of-root argument executes today, and the containment the two file tools enforce is absent from the tool that spawns processes · size: TBD — the row states the severity; scoping belongs to the round that takes it
 - evidence: docs/evidence/BL-207.md
-- done-when: a decision is recorded ON THIS ROW between: **(a)** `pivot_root` inside the worker's existing mount namespace, plus a shared confinement crate the exec server can depend on; or **(b)** `run_command` permanently declared-uncontained, stated in the determinism contract as a standing position.
+- done-when: a decision is recorded on this row: (a) `pivot_root` in the worker's mount namespace plus a shared confinement crate, or (b) `run_command` declared uncontained as a standing position in the determinism contract.
 
 ---
 
@@ -1065,7 +1065,7 @@
 - priority: medium · size: TBD — see the Done-when; the row's decision is whether this is fixed at all
 - blocked-by / trigger: BL-224
 - evidence: docs/evidence/BL-209.md
-- done-when: The row closes on **either**: 1. the model is taken from the run's config rather than hardcoded, and `mix test --include integration` passes that test; **or** 2. it is recorded that m14 T5's supersession retires this code path, and the row is closed against **that** — with the retirement pointed at, not merely claimed.
+- done-when: the model comes from the run's config and `mix test --include integration` passes that test; or m14 T5's supersession is recorded as retiring this code path, with the retirement pointed at.
 
 ---
 ### BL-210 — the Anthropic adapter discards the text block on tool-calling responses
@@ -1083,7 +1083,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-211.md
-- done-when: `Segmenter` takes events without re-reading the file and `Candidate` uses that path; fence-stripping has exactly one implementation in `lib/` with the existing callers pointing at it; a test asserts a fenced response and a bare one both parse through the shared path.
+- done-when: `Segmenter` takes events without re-reading the file and `Candidate` uses that path; fence-stripping has one implementation in `lib/`; a test parses a fenced and a bare response through it.
 
 ---
 ### BL-212 — `EXTRACTOR_DENY_LIST` is applied by nothing, and T3's notes claim otherwise
@@ -1092,7 +1092,7 @@
 - area: harness
 - priority: medium · size: M
 - evidence: docs/evidence/BL-212.md
-- done-when: The deny-list is reachable from a run — a `RunConfig` field (rule 15's three sites), a worker init-payload field, and `main.rs` — with a test that a run declaring it cannot write a denied path; and T3's notes sentence is corrected to say what actually landed.
+- done-when: the deny-list reaches a run through a `RunConfig` field (rule 15's three sites), a worker init-payload field and `main.rs`; a test shows a declaring run cannot write a denied path; T3's notes are corrected.
 
 ---
 
@@ -1111,7 +1111,7 @@
 - area: harness
 - priority: medium · size: M
 - evidence: docs/evidence/BL-214.md
-- done-when: The curator accepts an extractor run id, diffs the reflected envelope against the stored one, and records the differences in the same record BL-213 gives a home; a run whose extractor had `store_prompts` false produces a stated not-available outcome rather than a pass; and a test covers both.
+- done-when: the curator takes an extractor run id, diffs the reflected envelope against the stored one and records the differences in BL-213's record; `store_prompts` false yields a stated not-available outcome; a test covers both.
 
 ---
 ### BL-215 — the reflector can exceed its response budget, leaving an unparseable envelope
@@ -1120,7 +1120,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-215.md
-- done-when: A truncated or unparseable envelope is detectable by the run itself rather than by whoever tries to parse it later, and a long trajectory has a stated strategy — chunking, a per-candidate emission, or a documented cap on candidates per run.
+- done-when: a truncated or unparseable envelope is detected by the run itself, and a long trajectory has a stated strategy: chunking, per-candidate emission, or a documented cap on candidates per run.
 
 ---
 
@@ -1130,7 +1130,7 @@
 - area: Rig
 - priority: medium · size: M
 - evidence: docs/evidence/BL-217.md
-- done-when: Every `pub struct` in `commands/*.rs` is inside `command_fields`' population by one of the two routes, or is excluded by a rule the check implements rather than by absence; the sweep covers all 44; and a test asserts that a field added to a previously-unfenced struct draws a finding.
+- done-when: every `pub struct` in `commands/*.rs` is in `command_fields`' population or excluded by a rule the check implements; the sweep covers all 44; a test shows a field added to a previously-unfenced struct draws a finding.
 
 ---
 
@@ -1150,7 +1150,7 @@
 - area: harness
 - priority: low · size: S
 - evidence: docs/evidence/BL-219.md
-- done-when: The `findings` instruction distinguishes an observation about the harness from a description of the envelope the reflector was given — or the key is closed with a recorded reason for keeping it as is; and a live run produces findings that are about the harness or none, an empty list already being the stated right answer when the run suggests nothing.
+- done-when: the `findings` instruction separates an observation about the harness from a description of the envelope, or the key is closed with a recorded reason; a live run yields findings about the harness or none.
 
 ---
 
@@ -1261,7 +1261,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-238.md
-- done-when: `Runner` constructs through `from_map/2`, the two divergences are resolved with the choice stated, and a test asserts a newly added `RunConfig` field reaches a Runner-built config without a Runner change — that test is what makes the fix durable rather than a one-time sweep.
+- done-when: `Runner` constructs through `from_map/2`; the two divergences are resolved with the choice stated; a test asserts a newly added `RunConfig` field reaches a Runner-built config with no Runner change.
 
 ---
 
@@ -1281,7 +1281,7 @@
 - area: harness
 - priority: medium · size: M
 - evidence: docs/evidence/BL-241.md
-- done-when: A forked run's first turn carries the same context an unforked run of the same template would — either the prefix is built after pre-tools, or the pre-tools block is re-applied on top of it — and a test asserts a task with pre-tools produces the same first-turn context forked and unforked.
+- done-when: a forked run's first turn carries the context an unforked run of the same template would; a test asserts a task with pre-tools produces the same first-turn context forked and unforked.
 
 ---
 
@@ -1311,7 +1311,7 @@
 - area: harness
 - priority: medium · size: M
 - evidence: docs/evidence/BL-245.md
-- done-when: An extraction is findable from the run it segmented and from the skills rows it produced; the prior reuses a recorded segmentation where one exists and says so; a test asserts the prior and the candidate agree on segment boundaries for the same run.
+- done-when: an extraction is findable from its run and from the skills rows it produced; the prior reuses a recorded segmentation and says so; a test asserts prior and candidate agree on segment boundaries.
 
 ---
 
@@ -1375,7 +1375,7 @@
 - area: process / project knowledge
 - priority: low · size: XS
 - evidence: docs/evidence/BL-254.md
-- done-when: the three pointers (manifest header :25 the SURFACE COLUMN reference, and the 2026-09-07 record references at :71 and :76 — re-derive the line numbers at the fixing commit) resolve to where the blocks now live, by naming the `## Inclusion rulings` / `## Export boundary log` index entry or `docs/export-boundaries/`, rather than to a position in the file; and a check or sweep confirms no retained-header sentence still points at a moved block.
+- done-when: the three retained-header pointers resolve to where the blocks now live (the index entry or `docs/export-boundaries/`), not to a file position; a check or sweep confirms no header sentence points at a moved block.
 
 ### BL-263 — a boot-resumed run is not yet registered when the scheduler's first tick runs, so `:overlap_live` cannot see it
 - state: open
@@ -1383,7 +1383,7 @@
 - area: harness — scheduler / admission (INV-2)
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-263.md
-- done-when: a run restored by boot resume is registered before the scheduler's first tick can admit a start for its schedule — or the scheduler's first tick is held until resume has completed — so `:overlap_live` cannot return false for a schedule whose previous run the harness has just restored; a test asserts a schedule whose prior run is restored at boot is refused `:overlap_live` by the first tick, and names the window it closes.
+- done-when: a boot-resumed run is registered before the scheduler's first tick can admit a start for its schedule, or the tick waits for resume; a test asserts the first tick refuses `:overlap_live` and names the window closed.
 
 ### BL-264 — the suite's live scheduler fires other modules' residue schedule rows, starting untracked runs mid-suite
 - state: open
@@ -1391,7 +1391,7 @@
 - area: harness — test environment
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-264.md
-- done-when: a `mix test` run starts no run the suite did not ask for — either `Store.ScheduledRunTest` removes the `sched-test-*` rows it inserts, or the suite's scheduler does not act on rows a test left behind; and the run directories such starts leave under `priv/runs/` are named as in or out of BL-261b's retention scope. A test asserts that a `HarnessRestart.with_file_store/1` round trip starts no scheduled run.
+- done-when: a `mix test` run starts no run the suite did not ask for; the `priv/runs/` directories such starts leave are ruled in or out of BL-261b's retention; a test asserts a `with_file_store/1` round trip starts no scheduled run.
 
 ### BL-265 — a default or inherited `max_duration` bound for unattended scheduled runs
 - state: open
@@ -1399,7 +1399,7 @@
 - area: harness — scheduler / watchdog
 - priority: unset — the arbiter's · size: unset
 - evidence: docs/evidence/BL-265.md
-- done-when: a ruling states whether a scheduled run that sets no `max_duration` gets a bound, and from what; before any such bound lands, the ruling records whether any legitimate run (m13 persistent agents especially) lives longer than the intended default, and how boot resume grandfathers a run that was admitted unbounded — the watchdog measures from the original start, so a default applied on resume retroactively bounds a parked run; if a bound lands, a test asserts an unattended run without `max_duration` is bounded and a previously-unbounded resumed run is treated as the ruling says.
+- done-when: a ruling states whether a scheduled run with no `max_duration` gets a bound, from what, and how long-lived and boot-resumed unbounded runs are treated; if a bound lands, a test asserts both cases behave as ruled.
 
 ### BL-268 — terminal transitions are not final: events and status writes follow the first terminal write
 - state: open
@@ -1447,7 +1447,7 @@
 - area: rig — source comments citing harness `lib/aetheris/agent/server.ex`
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-273.md
-- done-when: _(proposed)_ every `server.ex:` citation in `rig/src` and `rig/src-tauri/src` names its anchor with the line as a parenthetical and resolves at the harness commit it cites; `useTrajectory.ts`'s write-result sentence states what `run_outcome/2` does.
+- done-when: _(proposed)_ every `server.ex:` citation in `rig/src` and `rig/src-tauri/src` names its anchor and resolves at the harness commit it cites; `useTrajectory.ts`'s write-result sentence states what `run_outcome/2` does.
 
 ---
 
@@ -1457,7 +1457,7 @@
 - area: rig — BL-266 T3 run-event-stream consumer
 - priority: unset — the arbiter's · size: S _(proposed)_
 - evidence: docs/evidence/BL-274.md
-- done-when: _(proposed)_ each of the five — live append on a running run, reconnect with cursor resumption, `auth_revoked` mid-stream, slot release on navigate-away, and the poll fallback with both env vars unset — is exercised once against a live harness and its result recorded, or an automated substitute exists **that exercises the real run path** — an agent loop and a real terminal transition, not a `live_run/1`-style fabricated run row; the T3 notes' §Click-through carries the outcome either way.
+- done-when: _(proposed)_ each of the five T3 click-through checks is exercised once against a live harness and recorded, or has an automated substitute that exercises the real run path; the T3 notes' §Click-through carries the outcome.
 
 ---
 

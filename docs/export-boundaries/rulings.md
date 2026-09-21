@@ -355,7 +355,7 @@ Moved from docs/project-knowledge-manifest.md at 1592c95, 2026-09-15. Body verba
 > ```
 >
 > An increase requires a separate recorded inclusion ruling in this file. A new kernel row still
-> names what it displaces, or it triggers a probe re-run (design §2.1). The 10,000 is the margin at
+> names what it displaces, or it triggers a probe re-run (design §3). The 10,000 is the margin at
 > the boundary that sets the ceiling, not a standing guarantee: a boundary that leaves the ceiling
 > unchanged can leave less. Why: the margin stops ordinary filings between boundaries from failing
 > `--strict` on the ratchet alone (**BL-255**). The ratchet moves to the boundary step because the

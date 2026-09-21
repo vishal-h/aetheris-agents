@@ -31,7 +31,7 @@ target as context; it reads both figures from this paragraph and FAILs if it can
 - **Kernel design target: 120 KB** (122,880 bytes). This is proposed in the design note's §2.1
   (r2), which gives no derivation, and it is not ratified. It is reported as a distance only and
   never enforced.
-- **Kernel ceiling: 243,000 bytes**, the enforced bar. At each export boundary, with the measured
+- **Kernel ceiling: 236,000 bytes**, the enforced bar. At each export boundary, with the measured
   sum taken after all of that boundary's manifest edits,
   `candidate = ceil_1000(measured_kernel_bytes + 10,000)` and
   `new_ceiling = min(current_ceiling, candidate)`, so the ceiling is DECREASE-ONLY. An increase
@@ -41,11 +41,11 @@ target as context; it reads both figures from this paragraph and FAILs if it can
   boundary that leaves the ceiling unchanged can leave less. The margin is what lets ordinary
   filings between boundaries pass `--strict`. Rule of 2026-09-21 (R3 in
   `export-boundaries/rulings.md`, replacing BL-201's shrink-triggered ratchet). The figure was set
-  at the 2026-09-21 boundary from the sum below.
+  at the second 2026-09-21 boundary, the backlog-retention boundary, from the sum below.
 
-Measured at the 2026-09-21 boundary, over this file as committed there: the nine kernel documents
-sum to **232,202 bytes**. The largest are `backlog-2026-06.md` and
-`rig--current-state-2026-06.md`. Earlier measurements are in the boundary records under
+Measured at the second 2026-09-21 boundary, the backlog-retention boundary, over this file as
+committed there: the nine kernel documents sum to **225,932 bytes**. The largest are
+`backlog-2026-06.md` and `rig--current-state-2026-06.md`. Earlier measurements are in the boundary records under
 `export-boundaries/`. Reproduce the current sum and distance:
 `python3 scripts/drift_check.py --check kernel_budget`.
 
@@ -103,12 +103,12 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `rig--bl-007-milestone.md` | `docs/rig/milestones/bl-007/README.md` | aetheris-agents | `675a5c2` | 2026-07-20 | on-demand |
 | `rig--CLAUDE.md` | `rig/CLAUDE.md` | aetheris-agents | `5a5089b` | 2026-06-11 | on-demand |
 | `cloudcost--milestone.md` | `cloudcost/milestone.md` | aetheris-agents | `97c61a0` | 2026-08-14 | on-demand |
-| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `5eef96e` | 2026-09-20 | on-demand |
+| `aetheris-agents--CLAUDE.md` | `CLAUDE.md` | aetheris-agents | `0bb39e8` | 2026-09-21 | on-demand |
 | `agent-creation-guide.md` | `docs/agent-creation-guide.md` | aetheris-agents | `7a94164` | 2026-09-15 | on-demand |
 | `capability-matrix.md` | `docs/capability-matrix.md` | aetheris-agents | `633b4e5` | 2026-09-15 | export |
-| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `7a35ef0` | 2026-09-21 | export |
+| `backlog-2026-06.md` | `docs/backlog-2026-06.md` | aetheris-agents | `e176efd` | 2026-09-21 | export |
 | `use-cases.md` | `docs/use-cases.md` | aetheris-agents | `9cf3689` | 2026-08-19 | on-demand |
-| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `7a35ef0` | 2026-09-21 | on-demand |
+| `backlog-2026-06-closed.md` | `docs/backlog-2026-06-closed.md` | aetheris-agents | `f174a97` | 2026-09-21 | on-demand |
 | `aetheris-agents--inbox-brief.md` | `docs/aetheris/backlog/uc-inbox.md` | aetheris-agents | `a1f8daf` | 2026-08-24 | on-demand |
 | `aetheris-agents--ravenmigrate-brief.md` | `docs/aetheris/backlog/uc-ravenmigrate.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
 | `aetheris-agents--almanac-brief.md` | `docs/aetheris/backlog/uc-almanac.md` | aetheris-agents | `b56aed3` | 2026-08-24 | on-demand |
@@ -116,7 +116,7 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `m-payslip-release.md` | `docs/milestones/m-payslip-release.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-scale-2026-09.md` | `docs/backlog-scale-2026-09.md` | aetheris-agents | `bec45d0` | 2026-09-07 | on-demand |
 | `backlog-triage-2026-09.md` | `docs/backlog-triage-2026-09.md` | aetheris-agents | `29ed2a2` | 2026-09-14 | on-demand |
-| `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `4339ba7` | 2026-07-16 | export |
+| `aetheris-agents--ROADMAP.md` | `ROADMAP.md` | aetheris-agents | `f174a97` | 2026-09-21 | export |
 | `aetheris--CLAUDE.md` | `CLAUDE.md` | aetheris | `53951cc` | 2026-09-19 | on-demand |
 | `aetheris--runbook.md` | `docs/aetheris/runbook.md` | aetheris | `9e5384c` | 2026-09-20 | on-demand |
 | `aetheris--architecture.md` | `docs/aetheris/architecture.md` | aetheris | `603b7d5` | 2026-09-14 | on-demand |
@@ -132,7 +132,7 @@ and why; the procedural gap it exposed is **BL-196**.]`
 | `aetheris--weng-harness-brief.md` | `docs/aetheris/research/weng-harness-2026-07.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--activegraph-brief.md` | `docs/aetheris/research/activegraph-log-is-agent-2026-07.md` | aetheris | `49e9ebf` | 2026-09-08 | on-demand |
 | `aetheris--bl-008-synthesis.md` | `docs/aetheris/research/bl-008-synthesis-2026-08.md` | aetheris | `19ba133` | 2026-09-14 | on-demand |
-| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `58991d5` | 2026-09-14 | export |
+| `methodology--milestone-methodology.md` | `docs/methodology/milestone-methodology.md` | aetheris | `cf90264` | 2026-09-21 | export |
 | `methodology--triad-loop.md` | `docs/methodology/triad-loop.md` | aetheris | `2050c04` | 2026-08-21 | export |
 | `project-knowledge-manifest.md` | `docs/project-knowledge-manifest.md` | aetheris-agents | _(this export)_ | 2026-08-09 | export |
 
@@ -200,4 +200,5 @@ from this file at `1592c95`.
 - 2026-09-17 · m-scheduler-hardening close · 5 rows re-pinned · kernel 239,911 bytes · [docs/export-boundaries/2026-09-17.md](export-boundaries/2026-09-17.md) — "Export boundary — 2026-09-17, the m-scheduler-hardening close."
 - 2026-09-20 · streaming-contract boundary · 6 rows re-pinned, 2 added · kernel 244,750 bytes · [docs/export-boundaries/2026-09-20.md](export-boundaries/2026-09-20.md) — "Export boundary — 2026-09-20, the streaming-contract boundary."
 - 2026-09-21 · the ceiling ratchet moves to the boundary; the synthesis leaves the kernel · 4 rows re-pinned, 1 row moved `both` → `on-demand` · kernel 232,202 bytes · [docs/export-boundaries/2026-09-21.md](export-boundaries/2026-09-21.md) — "Export boundary — 2026-09-21, the ceiling ratchet moves to the boundary."
+- 2026-09-21 · the backlog-retention boundary · 5 rows re-pinned · kernel 225,932 bytes · [docs/export-boundaries/2026-09-21.md](export-boundaries/2026-09-21.md) — "Export boundary — 2026-09-21, second record: the backlog-retention boundary."
 

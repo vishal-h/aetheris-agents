@@ -9795,3 +9795,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-278.md
 - done-when: _(proposed)_ a boundary can be run without the manifest's own growth being what consumes the remaining headroom — by bounding or relocating the growing sections, or by a recorded ruling that resets the ceiling on a stated basis; carried by a measured figure at a boundary or by a recorded disposition.
 - disposition: fixed
+
+---
+
+### BL-279 — `mix hex.audit` is red on `mint` 1.10.0, EEF-CVE-2026-82672 (MEDIUM)
+- state: done
+- type: defect (supply chain)
+- area: harness — `../aetheris/mix.exs` + `mix.lock`
+- priority: unset — the arbiter's · size: XS _(proposed)_
+- evidence: docs/evidence/BL-279.md
+- done-when: _(proposed)_ `mix hex.audit` exits 0 from the harness root, or the residual advisory carries a recorded rationale and the gate runs expected-red named with this ref; carried by a version bump or a recorded disposition.
+- disposition: fixed

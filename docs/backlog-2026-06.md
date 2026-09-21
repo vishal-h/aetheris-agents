@@ -1528,16 +1528,6 @@
 
 ---
 
-### BL-279 — `mix hex.audit` is red on `mint` 1.10.0, EEF-CVE-2026-82672 (MEDIUM)
-- state: open
-- type: defect (supply chain)
-- area: harness — `../aetheris/mix.exs` + `mix.lock`
-- priority: unset — the arbiter's · size: XS _(proposed)_
-- evidence: docs/evidence/BL-279.md
-- done-when: _(proposed)_ `mix hex.audit` exits 0 from the harness root, or the residual advisory carries a recorded rationale and the gate runs expected-red named with this ref; carried by a version bump or a recorded disposition.
-
----
-
 ### BL-281 — two documents still state the amend rule's superseded citation trigger; both edits are transcription, nothing is left to decide
 - state: open
 - type: docs

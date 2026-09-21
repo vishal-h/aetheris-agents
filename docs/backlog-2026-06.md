@@ -25,6 +25,11 @@
 >
 > **`ready` requires a stated `done-when`.** A row whose `done-when` reads `not stated` may not
 > be set `ready`.
+>
+> **`done-when` length.** The backlog index states the closure test in at most 240 UTF-8
+> bytes. Supporting cases, rationale, history, and procedural detail belong in the row's
+> evidence file. Convention from 2026-09-21: it binds new filings and rows touched since;
+> `backlog_status.py` does not enforce it yet.
 
 ---
 
@@ -182,7 +187,7 @@
 - type: not stated
 - area: harness CLI + Rig fork dialog
 - priority: medium · size: S–M
-- blocked-by / trigger: a milestone claims it
+- blocked-by / trigger: the next ticket whose Touches names `cli/commands/fork.ex` or the Rig fork dialog
 - evidence: docs/evidence/BL-062.md
 - done-when: the CLI accepts the flags and they reach the fork run; the §4 sentence is corrected and its ref repointed under §8 ratification; operator access (picker vs CLI-only) is decided and recorded.
 
@@ -196,17 +201,6 @@
 - blocked-by / trigger: the first provider actually billed per resource, or AWS usage growing enough that enabling CE resource-level granularity is worthwhile
 - evidence: docs/evidence/BL-071.md
 - done-when: a resource-level cost path emits per-resource cost lines for at least one provider, and the rate spot-check compares them against the inventory estimates.
-
----
-
-### BL-072 — Cost Optimization Hub / Compute Optimizer optimization milestone
-- state: triggered
-- type: not stated
-- area: Milestones
-- priority: low · size: L
-- blocked-by / trigger: a milestone claims it
-- evidence: docs/evidence/BL-072.md
-- done-when: milestone docs exist (docs-first, per repo convention); t4's real-bill read seeds the scope (which signals are worth surfacing, what noise looks like); read-only, gated behind its own IAM.
 
 ---
 
@@ -263,7 +257,7 @@
 - type: not stated
 - area: cloudcost
 - priority: low · size: XS
-- blocked-by / trigger: a milestone claims it
+- blocked-by / trigger: the next ticket that edits `detect_optimization_signals.py`
 - evidence: docs/evidence/BL-079.md
 - done-when: an `ap-south-1` Standard rate is added **from a verified source with its `as_of`**, or the table is dropped in favour of whatever BL-072's engine-backed integration returns.
 
@@ -272,9 +266,9 @@
 - type: not stated
 - area: cloudcost
 - priority: low · size: S
-- blocked-by / trigger: a milestone claims it
+- blocked-by / trigger: BL-081 is taken
 - evidence: docs/evidence/BL-080.md
-- done-when: the third category exists in the envelope, `status` reads `partial` for `denied[] or warnings[]` and `ok` for omissions alone, the render section distinguishes the third (it currently renders warnings under "Left unknown", which is the wrong heading for an intentional omission), and a test asserts a run whose ONLY finding is an unrated region reports `ok`.
+- done-when: a third envelope bucket holds intentional omissions; `status` is `partial` only for `denied[]` or `warnings[]`; render distinguishes it; a test asserts an unrated-region-only run reports `ok`.
 
 ### BL-081 — `s3_no_lifecycle_policy` fires on an observably empty bucket
 - state: open
@@ -329,9 +323,9 @@
 - type: not stated
 - area: aetheris-agents
 - priority: low · size: S
-- blocked-by / trigger: a milestone claims it
+- blocked-by / trigger: BL-089 is taken
 - evidence: docs/evidence/BL-088.md
-- done-when: `runnable: Option<bool>` (serde default true) exists on `ManifestScript`, mirrors into `src/hooks/types.ts`, gates the Run button, and is rejected server-side in `tools_run_script` so the gate is not frontend-only; `p4-001-manifest-spec.md` documents it.
+- done-when: `runnable` (default true) exists on `ManifestScript`, mirrors into `types.ts`, gates the Run button, and is enforced server-side in `tools_run_script`; the manifest spec documents it.
 
 ### BL-089 — tools.json for the three use cases that still have none
 - state: open
@@ -339,7 +333,7 @@
 - area: aetheris-agents
 - priority: low-medium · size: S
 - evidence: docs/evidence/BL-089.md
-- done-when: not stated — see evidence
+- done-when: `tools.json` exists for docbuilder, provenance and boxy-pipeline; `NO_MANIFEST_YET` in `tests/test_tools_manifests.py` is empty; the suite passes.
 
 ### BL-091 — exportConfig() drops every manifest-derived env key
 - state: open
@@ -347,7 +341,7 @@
 - area: aetheris-agents
 - priority: low-medium · size: S
 - evidence: docs/evidence/BL-091.md
-- done-when: not stated — see evidence
+- done-when: `exportConfig()` exports every non-masked manifest-derived env key; the masked-key policy is recorded; a test asserts a dynamic key appears in Export.
 
 ### BL-093 — runbook drift: PAYSLIP_MONTH described as non-persistent
 - state: open
@@ -355,7 +349,7 @@
 - area: aetheris-agents
 - priority: low · size: XS
 - evidence: docs/evidence/BL-093.md
-- done-when: not stated — see evidence
+- done-when: the intended `PAYSLIP_MONTH` mechanism (per-launch or persistent) is ruled and recorded; `rig/docs/runbook.md` and `agentConfigDefs.ts` both match it.
 
 ## Milestones (L — issue docs first, per repo convention)
 
@@ -440,7 +434,7 @@
 - area: boxy-pipeline
 - priority: before next catalog/resolver change · size: S
 - evidence: docs/evidence/BL-011.md
-- done-when: not stated — see evidence
+- done-when: the four helpers are defined only in `scripts/parsing_utils.py`; resolver and extractor import them; `pytest tests/` passes unchanged.
 
 ---
 
@@ -451,7 +445,7 @@
 - priority: before anyone enriches `catalog.jsonl` · size: S–M
 - blocked-by / trigger: m-boxy-pipeline-1a t3 merged (resolver reads JSONL)
 - evidence: docs/evidence/BL-012.md
-- done-when: not stated — see evidence
+- done-when: the enrichment option (A, B or C) is recorded in `docs/m-boxy-pipeline-1a.md`; a test shows populated `mapped_20_20_codes` and `notes` survive re-extraction.
 
 ---
 
@@ -461,7 +455,7 @@
 - area: boxy-pipeline
 - priority: before processing a second SO PDF · size: S–M
 - evidence: docs/evidence/BL-013.md
-- done-when: not stated — see evidence
+- done-when: `so_extractor.py` derives column bounds from the header row, with no hardcoded x constants; SO86708 still yields 34 items and $8,099.54.
 
 ---
 
@@ -471,7 +465,7 @@
 - area: boxy-pipeline
 - priority: low (before multi-customer use) · size: S
 - evidence: docs/evidence/BL-014.md
-- done-when: not stated — see evidence
+- done-when: `_parse_header` sets `bill_to` and `ship_to` separately; tests assert SO86708's `bill_to` contains "Brokaw" and `ship_to` contains "Laurel".
 
 ---
 
@@ -547,23 +541,13 @@
 
 ---
 
-### BL-114 — the recent-activity modifier has never fired against any real inventory, on any provider
-- state: open
-- type: defect
-- area: cloudcost
-- priority: low · size: XS–S
-- evidence: docs/evidence/BL-114.md
-- done-when: not stated — see evidence
-
----
-
 ### BL-115 — a stopped instance with no attached storage and a non-zero own estimate yields no candidate
 - state: committed
 - type: defect
 - area: cloudcost
 - priority: **high** · size: S–M
 - evidence: docs/evidence/BL-115.md
-- done-when: not stated — see evidence
+- done-when: a stopped compute resource with no attached storage and a non-zero own estimate yields a candidate, or the blind spot and its DO consequence are recorded; a test covers the DO shape.
 
 ---
 
@@ -573,7 +557,7 @@
 - area: cloudcost
 - priority: medium · size: S
 - evidence: docs/evidence/BL-116.md
-- done-when: not stated — see evidence
+- done-when: `rule_aged_snapshot` gates on `attached_to is None`, or the docstring is corrected and the 0.7 confidence re-ruled; tests match.
 
 ---
 
@@ -583,7 +567,7 @@
 - area: cloudcost
 - priority: medium · size: S
 - evidence: docs/evidence/BL-117.md
-- done-when: not stated — see evidence
+- done-when: `usable_resources` skips an out-of-vocabulary `type` with a reason, and `sprint.sh`'s rule-legibility arms change in the same landing so none is unreachable.
 
 ---
 
@@ -593,7 +577,7 @@
 - area: cloudcost
 - priority: medium · size: S
 - evidence: docs/evidence/BL-118.md
-- done-when: not stated — see evidence
+- done-when: the five I/O sites pass `encoding="utf-8"`; a non-ASCII-name fixture runs detect → compose → render with an assertion on the rendered bytes.
 
 ---
 
@@ -603,7 +587,7 @@
 - area: cloudcost
 - priority: medium · size: S (the warning) / M (the document-type change)
 - evidence: docs/evidence/BL-119.md
-- done-when: not stated — see evidence
+- done-when: `discover_bundles` warns and records a `skipped` entry for any document `classify` cannot type, with a test; step 2 (`document_type`) is then refiled or rejected.
 
 ---
 
@@ -613,7 +597,7 @@
 - area: cloudcost
 - priority: medium · size: XS to check
 - evidence: docs/evidence/BL-120.md
-- done-when: not stated — see evidence
+- done-when: the DO and Linode load-balancer normalizers are read and the answer — can an in-use LB present `attached_to is None`? — is recorded; a defect row or a test follows.
 
 ---
 
@@ -623,7 +607,7 @@
 - area: cloudcost
 - priority: medium · size: XS–S
 - evidence: docs/evidence/BL-122.md
-- done-when: not stated — see evidence
+- done-when: valid `source_granularity` values are enumerated; `service_totals` warns on coarser than `service` and accepts finer; a test covers both.
 
 ---
 
@@ -633,7 +617,7 @@
 - area: cloudcost
 - priority: low · size: XS
 - evidence: docs/evidence/BL-123.md
-- done-when: not stated — see evidence
+- done-when: `age_phrase` never prints an age that, as printed, would not exceed its threshold; the display convention is recorded; evidence-text tests match.
 
 ---
 
@@ -643,17 +627,7 @@
 - area: cloudcost
 - priority: medium · size: S
 - evidence: docs/evidence/BL-124.md
-- done-when: not stated — see evidence
-
----
-
-### BL-125 — C3: name the timestamp field set once instead of hardcoding the pair
-- state: open
-- type: contract consequence
-- area: cloudcost
-- priority: low · size: XS
-- evidence: docs/evidence/BL-125.md
-- done-when: not stated — see evidence
+- done-when: `parse_timestamp` rejects a naive timestamp into `timestamp_warnings`; adapter fixtures were swept for naive stamps first; the timestamp field set is named once in `_normalized.py` (BL-125).
 
 ---
 
@@ -663,7 +637,7 @@
 - area: cloudcost
 - priority: medium · size: M
 - evidence: docs/evidence/BL-126.md
-- done-when: not stated — see evidence
+- done-when: the cost snapshot carries the minor-unit exponent; `money()` takes it at every call site; the reconcile tolerance is per currency; zero-decimal and sub-cent tests pass.
 
 ---
 
@@ -673,7 +647,7 @@
 - area: cloudcost
 - priority: medium · size: M
 - evidence: docs/evidence/BL-128.md
-- done-when: not stated — see evidence
+- done-when: a boolean keep field exists in §Normalized and every adapter emits it; `has_keep_tag` reads the field, not a tag spelling; fixtures and the keep acceptance test match.
 
 ---
 
@@ -683,7 +657,7 @@
 - area: cloudcost
 - priority: medium · size: M–L
 - evidence: docs/evidence/BL-129.md
-- done-when: not stated — see evidence
+- done-when: each cost line carries a stable service id; the MoM delta keys on it; prior snapshots without an id still load, with a test.
 
 ---
 
@@ -693,7 +667,7 @@
 - area: cloudcost
 - priority: medium · size: S–M
 - evidence: docs/evidence/BL-130.md
-- done-when: not stated — see evidence
+- done-when: `swept_regions` is a first-class optional cost-envelope field; the `provider_extra` read is gone; DO and Linode reports stay byte-identical.
 
 ---
 
@@ -703,28 +677,7 @@
 - area: process / harness
 - priority: medium · size: S to rule, S–M to implement
 - evidence: docs/evidence/BL-133.md
-- done-when: not stated — see evidence
-
----
-
-### BL-134 — verify the seven comment-anchored census claims, and hand-classify the eight the sweep could not reach
-- state: open
-- type: verification
-- area: cloudcost
-- priority: low–medium · size: S
-- evidence: docs/evidence/BL-134.md
-- done-when: not stated — see evidence
-
----
-
-### BL-136 — decision H's consequent: a read-only cross-provider cost summary over the persisted per-provider snapshots
-- state: triggered
-- type: feature
-- area: cloudcost
-- priority: medium · size: S–M
-- blocked-by / trigger: a milestone claims it
-- evidence: docs/evidence/BL-136.md
-- done-when: not stated — see evidence
+- done-when: a ruling states whether a round's findings and dispositions must outlive the session; if so, a mechanism retains them in the repo for every ticket, not `hc-*` only.
 
 ---
 
@@ -844,7 +797,7 @@
 - area: harness
 - priority: medium · size: S
 - evidence: docs/evidence/BL-153.md
-- done-when: not stated — see evidence
+- done-when: on every credential branch of `sprint.sh`'s cloudcost arm, a failed credential gate leaves the run directory unable to read as the current run; a credential-less run proves it.
 
 ---
 

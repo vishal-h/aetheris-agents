@@ -9817,3 +9817,60 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-281.md
 - done-when: _(proposed)_ `[R44]:134` states its "unamended" as following from BL-280's review-integrity limb — *once a packet has been issued against a commit, amend it only on the arbiter's instruction* — rather than from the superseded amend-while-uncited wording, R44's conclusion unchanged; and the `hc-consolidation.md` R22 note carries a dated supersession block quoting the superseded sentence in the position it occupied. Both are restatements against a rule already settled at BL-280; carried by the two edits.
 - disposition: fixed
+
+---
+
+### BL-114 — the recent-activity modifier has never fired against any real inventory, on any provider
+- state: done
+- type: defect
+- area: cloudcost
+- priority: low · size: XS–S
+- evidence: docs/evidence/BL-114.md
+- done-when: not stated — see evidence
+- disposition: accepted-risk
+
+---
+
+### BL-125 — C3: name the timestamp field set once instead of hardcoding the pair
+- state: done
+- type: contract consequence
+- area: cloudcost
+- priority: low · size: XS
+- evidence: docs/evidence/BL-125.md
+- done-when: not stated — see evidence
+- disposition: superseded
+
+---
+
+### BL-134 — verify the seven comment-anchored census claims, and hand-classify the eight the sweep could not reach
+- state: done
+- type: verification
+- area: cloudcost
+- priority: low–medium · size: S
+- evidence: docs/evidence/BL-134.md
+- done-when: not stated — see evidence
+- disposition: accepted-risk
+
+---
+
+### BL-136 — decision H's consequent: a read-only cross-provider cost summary over the persisted per-provider snapshots
+- state: done
+- type: feature
+- area: cloudcost
+- priority: medium · size: S–M
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-136.md
+- done-when: not stated — see evidence
+- disposition: superseded
+
+---
+
+### BL-072 — Cost Optimization Hub / Compute Optimizer optimization milestone
+- state: done
+- type: not stated
+- area: Milestones
+- priority: low · size: L
+- blocked-by / trigger: a milestone claims it
+- evidence: docs/evidence/BL-072.md
+- done-when: milestone docs exist (docs-first, per repo convention); t4's real-bill read seeds the scope (which signals are worth surfacing, what noise looks like); read-only, gated behind its own IAM.
+- disposition: superseded

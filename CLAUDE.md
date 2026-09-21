@@ -70,6 +70,11 @@ is `documentation`; a pure re-pin or index refresh is `mechanical`. `refactor` a
 `Source: the arbiter's ruling of 2026-09-21. Earlier instances it subsumes:
 docs/reviews/bug-001-review-r2.md:65; docs/evidence/BL-279.md:115.`
 
+**Gates by round type.** A `documentation` or `mechanical` round runs
+`python3 scripts/drift_check.py --strict`, `python3 scripts/backlog_status.py --check`
+and the triad-loop mirror `diff -q`. A `code` round runs every existing gate.
+`Source: the arbiter's ruling of 2026-09-21.`
+
 ---
 
 ## Commands

@@ -153,6 +153,18 @@ once the ETXTBSY question is answered.
 
 ---
 
+### cloudcost — AWS optimization signals from Cost Optimization Hub / Compute Optimizer
+Engine-backed successor to m2 t4's hand-rolled spike; read-only, behind its own IAM.
+Spec and history: `docs/evidence/BL-072.md`. **Status:** unclaimed.
+
+---
+
+### cloudcost — read-only cross-provider cost summary
+Decision H's consequent: a reader over the persisted per-provider cost snapshots, never
+coupled to the pipeline. Spec: `docs/evidence/BL-136.md`. **Status:** unclaimed.
+
+---
+
 ## Cross-repo dependencies
 
 Items where the harness repo is upstream or downstream. Keep in sync with

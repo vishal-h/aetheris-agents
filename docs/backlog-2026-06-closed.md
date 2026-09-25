@@ -9874,3 +9874,14 @@ Filed 2026-09-14 to execute the arbiter's rulings R1–R3 of that date: Markdown
 - evidence: docs/evidence/BL-072.md
 - done-when: milestone docs exist (docs-first, per repo convention); t4's real-bill read seeds the scope (which signals are worth surfacing, what noise looks like); read-only, gated behind its own IAM.
 - disposition: superseded
+
+---
+
+### BL-207 — `run_command` is not confined to the sandbox root; `read_file` and `write_file` are
+- state: done
+- type: hardening
+- area: harness
+- priority: high — a permitted basename with an out-of-root argument executes today, and the containment the two file tools enforce is absent from the tool that spawns processes · size: TBD — the row states the severity; scoping belongs to the round that takes it
+- evidence: docs/evidence/BL-207.md
+- done-when: a decision is recorded on this row: (a) `pivot_root` in the worker's mount namespace plus a shared confinement crate, or (b) `run_command` declared uncontained as a standing position in the determinism contract.
+- disposition: superseded

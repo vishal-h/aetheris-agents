@@ -103,6 +103,26 @@
 
 ---
 
+### BL-282 — `run_command` confinement: `pivot_root` in the worker's mount namespace plus a shared confinement crate
+- state: open
+- type: hardening
+- area: harness — worker sandbox / exec server
+- priority: high · size: M–L
+- evidence: docs/evidence/BL-282.md
+- done-when: `run_command` cannot reach a path outside the sandbox root by `working_dir`, argument or PATH lookup; the exec server resolves through the shared crate; a test asserts `cat /etc/hosts` and an absolute out-of-root `working_dir` are refused.
+
+---
+
+### BL-283 — the harness runbook does not point at the Rig-side playground setup
+- state: open
+- type: documentation
+- area: harness — runbook.md
+- priority: low · size: XS
+- evidence: docs/evidence/BL-283.md
+- done-when: the harness runbook (`docs/aetheris/runbook.md`) points at the Rig-side playground setup in `docs/rig/runbook.md`.
+
+---
+
 
 ---
 
@@ -1047,16 +1067,6 @@
 
 ---
 
-### BL-207 — `run_command` is not confined to the sandbox root; `read_file` and `write_file` are
-- state: ready
-- type: hardening
-- area: harness
-- priority: high — a permitted basename with an out-of-root argument executes today, and the containment the two file tools enforce is absent from the tool that spawns processes · size: TBD — the row states the severity; scoping belongs to the round that takes it
-- evidence: docs/evidence/BL-207.md
-- done-when: a decision is recorded on this row: (a) `pivot_root` in the worker's mount namespace plus a shared confinement crate, or (b) `run_command` declared uncontained as a standing position in the determinism contract.
-
----
-
 ### BL-209 — `build_synthesis_request/1` hardcodes `model: "stub-v1"`, so skill LLM synthesis 404s against a real provider
 - state: blocked
 - type: bug
@@ -1380,7 +1390,7 @@
 - state: open
 - type: defect — found while implementing BL-256, not demonstrated live
 - area: harness — scheduler / admission (INV-2)
-- priority: unset — the arbiter's · size: unset
+- priority: medium · size: S
 - evidence: docs/evidence/BL-263.md
 - done-when: a boot-resumed run is registered before the scheduler's first tick can admit a start for its schedule, or the tick waits for resume; a test asserts the first tick refuses `:overlap_live` and names the window closed.
 
@@ -1388,7 +1398,7 @@
 - state: open
 - type: defect — demonstrated live (seed 70665, two `Aetheris.AdmissionDedupTest` failures)
 - area: harness — test environment
-- priority: unset — the arbiter's · size: unset
+- priority: medium · size: S
 - evidence: docs/evidence/BL-264.md
 - done-when: a `mix test` run starts no run the suite did not ask for; the `priv/runs/` directories such starts leave are ruled in or out of BL-261b's retention; a test asserts a `with_file_store/1` round trip starts no scheduled run.
 
@@ -1396,7 +1406,7 @@
 - state: open
 - type: gap — deferred by the arbiter at BL-262, not demonstrated live
 - area: harness — scheduler / watchdog
-- priority: unset — the arbiter's · size: unset
+- priority: low-medium · size: S
 - evidence: docs/evidence/BL-265.md
 - done-when: a ruling states whether a scheduled run with no `max_duration` gets a bound, from what, and how long-lived and boot-resumed unbounded runs are treated; if a bound lands, a test asserts both cases behave as ruled.
 
@@ -1404,7 +1414,7 @@
 - state: open
 - type: defect
 - area: harness — Agent.Server / execution loop
-- priority: unset — the arbiter's · size: unset
+- priority: high · size: M
 - evidence: docs/evidence/BL-268.md
 - done-when: _(proposed)_ no event is appended to a run after its first terminal status write, or each remaining case is documented as intended; each item in the evidence has a regression test or a recorded disposition.
 
@@ -1412,7 +1422,7 @@
 - state: open
 - type: defect
 - area: harness — Store / Scheduler / Sweep
-- priority: unset — the arbiter's · size: unset
+- priority: medium · size: S–M
 - evidence: docs/evidence/BL-269.md
 - done-when: _(proposed)_ each multi-VM hazard in the evidence is either prevented (single-writer enforcement or cross-VM coordination) or documented as an unsupported deployment with a guard; tests or recorded dispositions for each.
 
@@ -1420,7 +1430,7 @@
 - state: open
 - type: defect
 - area: harness — Store
-- priority: unset — the arbiter's · size: unset
+- priority: high · size: XS
 - evidence: docs/evidence/BL-270.md
 - done-when: _(proposed)_ a busy read returns an error to the caller instead of crashing Store, with a test.
 
@@ -1428,7 +1438,7 @@
 - state: open
 - type: defect
 - area: harness — Agent.Server
-- priority: unset — the arbiter's · size: S _(proposed)_
+- priority: medium-high · size: S
 - evidence: docs/evidence/BL-271.md
 - done-when: _(proposed)_ a run driven terminal by a worker `:DOWN` notifies the same surfaces as `{:run_failed, _}`; a test asserts a parent waiting on `agent_done` is woken when its child's worker dies.
 
@@ -1436,7 +1446,7 @@
 - state: open
 - type: defect
 - area: rig — harness views (`useRunEvents`, RunList EventsContent)
-- priority: unset — the arbiter's · size: unset
+- priority: medium · size: S
 - evidence: docs/evidence/BL-272.md
 - done-when: _(proposed)_ both sites take completion from the run row's status (`TERMINAL_STATUSES`, `useHarness.ts:141`), or from a stream control frame where one is present, and neither reads `run_complete` as a status.
 
@@ -1444,7 +1454,7 @@
 - state: open
 - type: defect
 - area: rig — source comments citing harness `lib/aetheris/agent/server.ex`
-- priority: unset — the arbiter's · size: S _(proposed)_
+- priority: low · size: S
 - evidence: docs/evidence/BL-273.md
 - done-when: _(proposed)_ every `server.ex:` citation in `rig/src` and `rig/src-tauri/src` names its anchor and resolves at the harness commit it cites; `useTrajectory.ts`'s write-result sentence states what `run_outcome/2` does.
 
@@ -1454,7 +1464,7 @@
 - state: open
 - type: verification
 - area: rig — BL-266 T3 run-event-stream consumer
-- priority: unset — the arbiter's · size: S _(proposed)_
+- priority: medium · size: S
 - evidence: docs/evidence/BL-274.md
 - done-when: _(proposed)_ each of the five T3 click-through checks is exercised once against a live harness and recorded, or has an automated substitute that exercises the real run path; the T3 notes' §Click-through carries the outcome.
 
@@ -1464,7 +1474,7 @@
 - state: open
 - type: defect
 - area: harness — `mix aetheris` task / runtime config
-- priority: unset — the arbiter's · size: S _(proposed)_
+- priority: medium · size: S
 - evidence: docs/evidence/BL-275.md
 - done-when: _(proposed)_ starting the server the way the runbook documents honours `AETHERIS_PLAYGROUND_TOKENS`, or the docs state the supported way to start it so the override is reached; carried by a test or by a recorded disposition.
 
@@ -1474,6 +1484,6 @@
 - state: open
 - type: defect
 - area: harness — compile task
-- priority: unset — the arbiter's · size: S _(proposed)_
+- priority: high · size: S
 - evidence: docs/evidence/BL-277.md
 - done-when: _(proposed)_ a mix invocation succeeds while previously built binaries are running — **both** the worker and the exec server, verified separately — by a staleness check or an equivalent; carried by a test or a recorded disposition.
